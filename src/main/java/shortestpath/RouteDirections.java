@@ -38,19 +38,28 @@ final class RouteDirections
 		// True for "Use <method>" steps: rides the overlay can interpolate progress through
 		// (carpet/canoe/glider flights) rather than freezing the ETA until landing.
 		private final boolean transport;
+		// True for "Open <door>" steps: their edge gates progress until actually crossed —
+		// straight-line proximity sees through the closed door.
+		private final boolean door;
 
 		private Step(String text, int startIndex, int endIndex, int ticks)
 		{
-			this(text, startIndex, endIndex, ticks, false);
+			this(text, startIndex, endIndex, ticks, false, false);
 		}
 
 		private Step(String text, int startIndex, int endIndex, int ticks, boolean transport)
+		{
+			this(text, startIndex, endIndex, ticks, transport, false);
+		}
+
+		private Step(String text, int startIndex, int endIndex, int ticks, boolean transport, boolean door)
 		{
 			this.text = text;
 			this.startIndex = startIndex;
 			this.endIndex = endIndex;
 			this.ticks = ticks;
 			this.transport = transport;
+			this.door = door;
 		}
 	}
 
@@ -130,7 +139,7 @@ final class RouteDirections
 				// step it is a stable landmark either way.
 				flushWalk(steps, walk, legStart, i - 1);
 				walk = 0;
-				steps.add(new Step("Open " + door.name, i - 1, i, 1));
+				steps.add(new Step("Open " + door.name, i - 1, i, 1, false, true));
 				legStart = i;
 			}
 			else

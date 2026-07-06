@@ -558,6 +558,21 @@ public class RouteDirectionsOverlay extends OverlayPanel
 			return;
 		}
 
+		// The first uncrossed door ahead gates progress: straight-line proximity sees through a
+		// closed door (path tiles beyond it are physically a wall's width away — even adjacent,
+		// from the near doorway tile), so several door steps used to complete at once while
+		// still outside. Anything at or past that edge only counts once the player is standing
+		// exactly on the path beyond it, which a one-tile doorway forces anyway.
+		int doorGate = Integer.MAX_VALUE;
+		for (RouteDirections.Step step : steps)
+		{
+			if (step.isDoor() && step.getEndIndex() > reachedIndex)
+			{
+				doorGate = step.getEndIndex();
+				break;
+			}
+		}
+
 		int best = -1;
 		double bestScore = Double.MAX_VALUE;
 		for (int i = 0; i < path.size(); i++)
@@ -569,9 +584,11 @@ public class RouteDirectionsOverlay extends OverlayPanel
 			}
 			int distance = WorldPointUtil.distanceBetween(packed, playerPacked);
 			// Eligible: an incremental move near the line (honest travel), or standing right on the
-			// path (a teleport/transport landing anywhere along the route).
-			boolean incremental = Math.abs(i - reachedIndex) <= STEP_WINDOW && distance <= NEAR_DISTANCE;
-			boolean onPath = distance <= 1;
+			// path (a teleport/transport landing anywhere along the route). Past an uncrossed door,
+			// only exact on-path presence counts.
+			boolean beyondDoor = i >= doorGate;
+			boolean incremental = !beyondDoor && Math.abs(i - reachedIndex) <= STEP_WINDOW && distance <= NEAR_DISTANCE;
+			boolean onPath = distance <= (beyondDoor ? 0 : 1);
 			if (!incremental && !onPath)
 			{
 				continue;
