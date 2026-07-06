@@ -222,9 +222,12 @@ public class ShortestPathPanel extends PluginPanel
 		JPanel titleRow = new JPanel(new BorderLayout());
 		titleRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-		JLabel title = new JLabel("Alternative routes");
+		// The plugin's identity mark: blue pin + bold white "GPS", matching the overlay header
+		// and the sidebar tab.
+		JLabel title = new JLabel("GPS", new ImageIcon(RouteIcons.gpsPin()), SwingConstants.LEADING);
+		title.setIconTextGap(6);
 		title.setFont(FontManager.getRunescapeBoldFont());
-		title.setForeground(ColorScheme.BRAND_ORANGE);
+		title.setForeground(Color.WHITE);
 		titleRow.add(title, BorderLayout.WEST);
 
 		JPanel actions = new JPanel(new FlowLayout(FlowLayout.TRAILING, 6, 0));
