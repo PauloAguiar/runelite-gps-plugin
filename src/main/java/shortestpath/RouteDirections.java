@@ -2,10 +2,12 @@ package shortestpath;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import lombok.Getter;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.transport.Transport;
+import shortestpath.transport.TransportType;
 
 /**
  * Builds the "Google Maps"-style step list for a route: walking legs with their length and target,
@@ -103,7 +105,7 @@ final class RouteDirections
 			{
 				flushWalk(steps, walk, legStart, i - 1);
 				walk = 0;
-				steps.add(new Step("Use " + route.getMethods().get(nextMethod).label(), i - 1, i,
+				steps.add(new Step(methodText(route.getMethods().get(nextMethod)), i - 1, i,
 					route.getMethodDurations().get(nextMethod), true));
 				nextMethod++;
 				legStart = i;
@@ -183,6 +185,42 @@ final class RouteDirections
 	private static String walkText(String target)
 	{
 		return "Walk to " + target;
+	}
+
+	/**
+	 * The instruction for a method step. Fairy rings get their own glyph and phrasing: the raw
+	 * data label is a spaced dial code ("A I Q", chained hops "A I R - D L R"), which reads
+	 * better compacted the way players write them ("AIQ", "AIR → DLR"); named destinations
+	 * (ZANARIS) are shouted in the data and get title-cased. Everything else keeps "Use X".
+	 */
+	static String methodText(TeleportMethod method)
+	{
+		if (TransportType.FAIRY_RING.equals(method.getType()) && method.getDisplayInfo() != null)
+		{
+			// The mushroom renders via the JVM's system-font fallback (verified in-game on
+			// Windows, monochrome); if other platforms report missing-glyph boxes, drop it.
+			return "🍄 Fairy ring to " + fairyRingLabel(method.getDisplayInfo());
+		}
+		return "Use " + method.label();
+	}
+
+	private static String fairyRingLabel(String displayInfo)
+	{
+		StringBuilder sb = new StringBuilder();
+		for (String hop : displayInfo.split(" - "))
+		{
+			if (sb.length() > 0)
+			{
+				sb.append(" → ");
+			}
+			String code = hop.replace(" ", "");
+			if (code.length() > 3)
+			{
+				code = code.charAt(0) + code.substring(1).toLowerCase(Locale.ROOT);
+			}
+			sb.append(code);
+		}
+		return sb.toString();
 	}
 
 	private static String joinLabels(Set<TeleportMethod> methods)
