@@ -101,7 +101,7 @@ public class PathMapTooltipOverlay extends Overlay
 			return false;
 		}
 
-		List<String> rows = new ArrayList<>(Arrays.asList("Shortest path:",
+		List<String> rows = new ArrayList<>(Arrays.asList("GPS route:",
 			n < 0 ? "Unused target" : ("Step " + n + " of " + path.size())));
 		if (nextPoint != WorldPointUtil.UNDEFINED)
 		{

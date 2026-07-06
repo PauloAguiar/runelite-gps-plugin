@@ -68,6 +68,15 @@ final class RouteIcons
 	static final ImageIcon DEBUG = new ImageIcon(camera(GREY));
 	static final ImageIcon DEBUG_HOVER = new ImageIcon(camera(LIGHT));
 
+	// The plugin's identity mark: the navigation-blue location pin, matching the GPS overlay's
+	// title glyph. Used for the sidebar tab (and exportable for the hub listing icon).
+	private static final Color GPS_BLUE = new Color(0x4C, 0x8B, 0xF5);
+
+	static BufferedImage gpsPin()
+	{
+		return pin(GPS_BLUE);
+	}
+
 	private RouteIcons()
 	{
 	}

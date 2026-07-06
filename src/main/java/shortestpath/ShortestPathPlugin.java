@@ -90,15 +90,19 @@ import shortestpath.transport.TransportType;
 
 @Slf4j
 @SuppressWarnings("SameParameterValue")
-@PluginDescriptor(name = "Shortest Path ALT", description = "Alternative-routes explorer built on Shortest Path:<br>"
+@PluginDescriptor(name = "GPS", description = "Turn-by-turn navigation for Gielinor:<br>"
 	+
-	"draws the shortest path to a destination and lists alternative teleport routes with a browsable method catalog.<br>"
+	"live directions with ETA, alternative teleport routes and closed-door hints.<br>"
 	+
-	"Right click on the world map or shift right click a tile to use", tags = {"pathfinder", "map", "waypoint",
-	"navigation", "alternative", "routes", "teleport"})
+	"Right click on the world map or shift right click a tile to set a destination", tags = {"gps", "navigation",
+	"directions", "route", "pathfinder", "map", "waypoint", "shortest", "path", "teleport", "eta"})
 public class ShortestPathPlugin extends Plugin
 {
-	protected static final String CONFIG_GROUP = "shortestpath";
+	protected static final String CONFIG_GROUP = "gps";
+	// The plugin-message namespace deliberately stays "shortestpath": Quest Helper and other
+	// plugins drive the pathfinder through it (set path/target, config overrides) and listen for
+	// its path broadcasts. GPS supersedes Shortest Path, so it keeps answering on its channel.
+	protected static final String MESSAGE_NAMESPACE = "shortestpath";
 
 	// POH (Player Owned House) bounds for detecting when path goes through POH
 	// Note: POH_MIN_X is 1856 to exclude the Daddy's Home miniquest area
@@ -400,8 +404,8 @@ public class ShortestPathPlugin extends Plugin
 		altPanel = new ShortestPathPanel(this);
 		altRoutesService = new AlternativeRoutesService(clientThread, pathfinderConfig.copyForPlanning());
 		navButton = NavigationButton.builder()
-			.tooltip("Shortest Path ALT routes")
-			.icon(MARKER_IMAGE)
+			.tooltip("GPS")
+			.icon(RouteIcons.gpsPin())
 			.priority(70)
 			.panel(altPanel)
 			.build();
@@ -678,7 +682,7 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onPluginMessage(PluginMessage event)
 	{
-		if (!CONFIG_GROUP.equals(event.getNamespace()))
+		if (!MESSAGE_NAMESPACE.equals(event.getNamespace()))
 		{
 			return;
 		}
@@ -814,7 +818,7 @@ public class ShortestPathPlugin extends Plugin
 			data.put("destination", transportDestinations);
 			data.put("objectInfo", transportObjectInfos);
 			data.put("displayInfo", transportDisplayInfos);
-			eventBus.post(new PluginMessage(CONFIG_GROUP, PLUGIN_MESSAGE_TRANSPORTS, data));
+			eventBus.post(new PluginMessage(MESSAGE_NAMESPACE, PLUGIN_MESSAGE_TRANSPORTS, data));
 		}
 	}
 
@@ -1120,7 +1124,7 @@ public class ShortestPathPlugin extends Plugin
 				{
 					String widgetText = widget.getText();
 					if ((fairyRingCode.equals(widgetText)
-						|| ("(Shortest Path) " + fairyRingCode).equals(widgetText)))
+						|| ("(GPS) " + fairyRingCode).equals(widgetText)))
 					{
 						codeWidget = widget;
 						break;
@@ -1138,7 +1142,7 @@ public class ShortestPathPlugin extends Plugin
 				{
 					String widgetText = widget.getText();
 					if ((fairyRingCode.equals(widgetText)
-						|| ("(Shortest Path) " + fairyRingCode).equals(widgetText)))
+						|| ("(GPS) " + fairyRingCode).equals(widgetText)))
 					{
 						codeWidget = widget;
 						break;
@@ -1154,9 +1158,9 @@ public class ShortestPathPlugin extends Plugin
 
 		codeWidget.setTextColor(0x00FF00);
 		String codeWidgetText = codeWidget.getText();
-		if (codeWidgetText != null && !codeWidgetText.contains("(Shortest Path)"))
+		if (codeWidgetText != null && !codeWidgetText.contains("(GPS)"))
 		{
-			codeWidget.setText("(Shortest Path) " + codeWidgetText);
+			codeWidget.setText("(GPS) " + codeWidgetText);
 		}
 
 		if (contentsList == null)
@@ -1774,7 +1778,7 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	/**
-	 * Manually (re)compute the alternative routes for whatever destination Shortest Path currently has
+	 * Manually (re)compute the alternative routes for whatever destination GPS currently has
 	 * set — read live from the active pathfinder. With no target set, just refreshes the methods catalog.
 	 */
 	public void recomputeAlternatives()
@@ -1803,7 +1807,7 @@ public class ShortestPathPlugin extends Plugin
 
 	/**
 	 * The start tile to search alternatives from: the player's current (instance-correct) location,
-	 * matching what Shortest Path itself uses for recalculation, falling back to the pathfinder's own
+	 * matching what GPS itself uses for recalculation, falling back to the pathfinder's own
 	 * start. Must be called on the client thread.
 	 */
 	private int altStart(Pathfinder current)
@@ -2021,7 +2025,7 @@ public class ShortestPathPlugin extends Plugin
 
 	/**
 	 * Whether the bank's contents are known this session (false until the bank has been opened once).
-	 * Bank mode cannot see banked teleports until this is true — same constraint as Shortest Path's
+	 * Bank mode cannot see banked teleports until this is true — same constraint as the classic Shortest Path engine's
 	 * own INVENTORY_AND_BANK setting.
 	 */
 	public boolean isBankContentsKnown()
@@ -2041,7 +2045,7 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	/**
-	 * Light auto-detect, run each game tick: when Shortest Path's destination changes (a new target set
+	 * Light auto-detect, run each game tick: when GPS's destination changes (a new target set
 	 * manually, by Quest Helper, on reaching the previous one, etc.) compute the alternatives once.
 	 * Deliberately keyed on the target SET only — never on start/movement — so the live path recalcs
 	 * that thrashed the old approach are ignored. If it ever misses, the panel's "Find routes" button

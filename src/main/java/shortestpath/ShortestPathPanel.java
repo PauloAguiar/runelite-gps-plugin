@@ -303,7 +303,7 @@ public class ShortestPathPanel extends PluginPanel
 		lower.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
 		JButton findButton = new JButton("Refresh routes to target");
-		findButton.setToolTipText("Recalculate alternative routes to the destination Shortest Path is currently set to");
+		findButton.setToolTipText("Recalculate alternative routes to the destination GPS is currently set to");
 		findButton.setFocusPainted(false);
 		findButton.addActionListener(e -> plugin.recomputeAlternatives());
 		JPanel findWrap = new JPanel(new BorderLayout());
@@ -322,7 +322,7 @@ public class ShortestPathPanel extends PluginPanel
 	}
 
 	/**
-	 * The status line ("N routes found", "No Shortest Path destination set", ...) and the red bank
+	 * The status line ("N routes found", "No destination set", ...) and the red bank
 	 * warning. Shown below the teleport-methods catalog, directly above the route cards.
 	 */
 	private JPanel buildNotes()
@@ -390,9 +390,9 @@ public class ShortestPathPanel extends PluginPanel
 		}
 		else
 		{
-			// Shortest Path has no active target. (Quest Helper draws its own line for some steps and
-			// doesn't hand Shortest Path a destination — set one on the map to find routes.)
-			status = "No Shortest Path destination set.";
+			// GPS has no active target. (Quest Helper draws its own line for some steps and
+			// doesn't hand GPS a destination — set one on the map to find routes.)
+			status = "No destination set.";
 		}
 		// Method toggles no longer recalculate; flag a route list generated with different exclusions.
 		if (!cachedCalculating && cachedHasTarget && plugin.isRouteListStale())

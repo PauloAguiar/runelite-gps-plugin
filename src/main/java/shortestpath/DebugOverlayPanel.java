@@ -56,7 +56,7 @@ public class DebugOverlayPanel extends OverlayPanel
 
 		components.add(
 			TitleComponent.builder()
-				.text("Shortest Path Debug")
+				.text("GPS Debug")
 				.color(Color.ORANGE)
 				.build());
 
