@@ -827,6 +827,20 @@ public class PathTileOverlay extends Overlay
 			return;
 		}
 
+		// A doorway on a plain walk edge: the collision map bakes openable doors passable, so
+		// the path assumes they are open. Hint while the door is actually closed (the closed
+		// object still stands in the scene) — opening it replaces the object, so the hint
+		// clears by itself. Edges with a mapped door transport are handled below instead.
+		if (candidateTransports.isEmpty())
+		{
+			ClosedDoors.Door door = ClosedDoors.doorBetween(location, locationEnd);
+			if (door != null && objectPresent(door.packedPosition, door.id))
+			{
+				playerTileLabelOffset = drawLabelAtPackedLocation(
+					graphics, door.packedPosition, "Open " + door.name, playerTileLabelOffset);
+			}
+		}
+
 		// Check if this is a bank step and items need to be picked up
 		Set<Integer> bankLocations = plugin.getPathfinderConfig().getDestinations("bank");
 		if (bankLocations != null && plugin.getPathfinderConfig().bank != null)
