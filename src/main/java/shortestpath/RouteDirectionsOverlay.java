@@ -82,9 +82,12 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	private long nearEndAtMillis = Long.MIN_VALUE / 2;
 	private boolean arrivalShowing;
 	private long arrivalUntilMillis;
-	// Snapshot of the last route's steps, kept so the arrival panel can show the completed list
-	// greyed out after the route object itself is gone.
-	private List<RouteDirections.Step> arrivalSteps;
+	// Wall-clock start of the current journey (stamped when a route starts being tracked) and
+	// snapshots for the arrival panel — the plugin clears the target (and its source) the moment
+	// the destination is reached, so they must be captured while the route is still alive.
+	private long journeyStartMillis;
+	private String arrivalSource;
+	private long arrivalElapsedMillis;
 
 	private static final Color ARRIVED = new Color(0x3C, 0xC8, 0x6A);
 
@@ -114,6 +117,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 			{
 				arrivalShowing = true;
 				arrivalUntilMillis = now + ARRIVAL_LINGER_MILLIS;
+				arrivalElapsedMillis = Math.max(0, now - journeyStartMillis);
 			}
 			nearEndAtMillis = Long.MIN_VALUE / 2;
 			if (arrivalShowing && now < arrivalUntilMillis)
@@ -129,7 +133,6 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		{
 			return null;
 		}
-		arrivalSteps = steps;
 		updateProgress(route, steps);
 		// Within ~2 seconds of travel from the destination counts as "about to arrive".
 		if (liveRemainingTicks <= 3.5)
@@ -154,6 +157,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		// content is neither wrapped nor needlessly clipped; only lines beyond MAX_WIDTH truncate.
 		List<Line> lines = new ArrayList<>();
 		String source = plugin.getTargetSource();
+		arrivalSource = source;
 		if (source != null)
 		{
 			lines.add(new Line("Destination set by " + source, FONT_OTHER, UPCOMING, null, null));
@@ -472,24 +476,19 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	}
 
 	/**
-	 * The lingering arrival panel: the completed step list greyed out, with a green "Arrived!" below
-	 * it. The whole panel is the dismiss button (see {@link #dismissArrivalAt}).
+	 * The lingering arrival panel: who set the destination, a green "Arrived!" and the total
+	 * wall time the journey took. The whole panel is the dismiss button (see
+	 * {@link #dismissArrivalAt}).
 	 */
 	private Dimension renderArrival(Graphics2D graphics)
 	{
 		List<Line> lines = new ArrayList<>();
-		List<RouteDirections.Step> steps = arrivalSteps != null ? arrivalSteps : List.of();
-		int shown = Math.min(steps.size(), MAX_LINES);
-		for (int i = 0; i < shown; i++)
+		if (arrivalSource != null)
 		{
-			lines.add(new Line("✓ " + (i + 1) + ". " + steps.get(i).getText(), FONT_OTHER, DONE,
-				formatTime((int) Math.ceil(steps.get(i).getTicks() * RouteDirections.SECONDS_PER_TICK)), DONE));
-		}
-		if (shown < steps.size())
-		{
-			lines.add(new Line("… " + (steps.size() - shown) + " more", FONT_OTHER, DONE, null, null));
+			lines.add(new Line("Destination set by " + arrivalSource, FONT_OTHER, UPCOMING, null, null));
 		}
 		lines.add(new Line("Arrived!", FONT_CURRENT, ARRIVED, null, null, true));
+		lines.add(new Line("in " + formatTime((int) (arrivalElapsedMillis / 1000)), FONT_NEXT, NEXT, null, null, true));
 		lines.add(new Line("(click to dismiss)", FONT_OTHER, DONE, null, null, true));
 		return renderPanel(graphics, lines);
 	}
@@ -529,6 +528,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 			reachedIndex = 0;
 			remainingTicksAt = buildRemainingTicks(steps, path.size());
 			liveRemainingTicks = remainingTicksAt.length > 0 ? remainingTicksAt[0] : 0;
+			journeyStartMillis = System.currentTimeMillis();
 		}
 		Player player = client.getLocalPlayer();
 		if (player == null || remainingTicksAt.length != path.size())
