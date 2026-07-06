@@ -18,6 +18,18 @@ public class SceneObjects
 	}
 
 	/**
+	 * Scene knowledge about an object id on a tile: standing there, verified absent (the tile is
+	 * loaded and the object isn't on it — for a door's closed variant that means it stands open),
+	 * or unknowable because the tile isn't in the loaded scene.
+	 */
+	public enum Presence
+	{
+		PRESENT,
+		ABSENT,
+		OUT_OF_SCENE
+	}
+
+	/**
 	 * Whether an object with this id currently stands on the tile (wall objects cover doors;
 	 * gates and double doors can be game objects). Only tiles inside the loaded scene can
 	 * match — which is fine for hints, they matter when the player is close enough to see the
@@ -25,6 +37,12 @@ public class SceneObjects
 	 */
 	public static boolean objectPresent(Client client, int packedLocation, int objectId)
 	{
+		return presence(client, packedLocation, objectId) == Presence.PRESENT;
+	}
+
+	public static Presence presence(Client client, int packedLocation, int objectId)
+	{
+		boolean inScene = false;
 		PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, packedLocation);
 		for (int i = 0; i < points.size(); i++)
 		{
@@ -50,10 +68,11 @@ public class SceneObjects
 			{
 				continue;
 			}
+			inScene = true;
 			WallObject wall = tile.getWallObject();
 			if (wall != null && wall.getId() == objectId)
 			{
-				return true;
+				return Presence.PRESENT;
 			}
 			GameObject[] gameObjects = tile.getGameObjects();
 			if (gameObjects != null)
@@ -62,11 +81,11 @@ public class SceneObjects
 				{
 					if (gameObject != null && gameObject.getId() == objectId)
 					{
-						return true;
+						return Presence.PRESENT;
 					}
 				}
 			}
 		}
-		return false;
+		return inScene ? Presence.ABSENT : Presence.OUT_OF_SCENE;
 	}
 }

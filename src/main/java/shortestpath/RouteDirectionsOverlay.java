@@ -172,7 +172,9 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		for (; i < steps.size() && shown < MAX_LINES; i++, shown++)
 		{
 			RouteDirections.Step step = steps.get(i);
-			String text = (i + 1) + ". " + step.getText();
+			String stepText = i >= current && step.isDoor()
+				? doorStepText(route, step) : step.getText();
+			String text = (i + 1) + ". " + stepText;
 			Color colour;
 			Font font;
 			if (i < current)
@@ -428,6 +430,29 @@ public class RouteDirectionsOverlay extends OverlayPanel
 			end--;
 		}
 		return text.substring(0, end) + "…";
+	}
+
+	/**
+	 * Live wording for a pending door step: a door that already stands open needs walking
+	 * through, not opening. Out-of-scene doors keep the "Open" default — regular doors shut
+	 * themselves, so closed is the safe assumption until the door is visible.
+	 */
+	private String doorStepText(RouteOption route, RouteDirections.Step step)
+	{
+		List<shortestpath.pathfinder.PathStep> path = route.getPath();
+		if (step.getStartIndex() < 0 || step.getEndIndex() >= path.size())
+		{
+			return step.getText();
+		}
+		ClosedDoors.Door door = ClosedDoors.doorBetween(
+			path.get(step.getStartIndex()).getPackedPosition(),
+			path.get(step.getEndIndex()).getPackedPosition());
+		if (door != null
+			&& SceneObjects.presence(client, door.packedPosition, door.id) == SceneObjects.Presence.ABSENT)
+		{
+			return "Go through " + door.name;
+		}
+		return step.getText();
 	}
 
 	/**
