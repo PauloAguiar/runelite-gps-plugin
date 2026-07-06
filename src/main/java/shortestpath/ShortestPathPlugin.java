@@ -17,6 +17,8 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.io.File;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +67,8 @@ import net.runelite.client.events.PluginMessage;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.KeyManager;
+import net.runelite.client.input.MouseAdapter;
+import net.runelite.client.input.MouseManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
@@ -177,6 +181,21 @@ public class ShortestPathPlugin extends Plugin
 	private WorldMapPointManager worldMapPointManager;
 	@Inject
 	private KeyManager keyManager;
+	@Inject
+	private MouseManager mouseManager;
+	// Click-to-dismiss for the GPS overlay's lingering "Arrived!" panel.
+	private final MouseAdapter arrivalDismissListener = new MouseAdapter()
+	{
+		@Override
+		public java.awt.event.MouseEvent mousePressed(java.awt.event.MouseEvent event)
+		{
+			if (routeDirectionsOverlay != null && routeDirectionsOverlay.dismissArrivalAt(event.getPoint()))
+			{
+				event.consume();
+			}
+			return event;
+		}
+	};
 	@Inject
 	private ClientToolbar clientToolbar;
 	// Alternative-routes feature: panel, async route generator, the methods the user has excluded, the
@@ -406,6 +425,7 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		keyManager.registerKeyListener(clearPathKeylistener);
+		mouseManager.registerMouseListener(arrivalDismissListener);
 	}
 
 	@Override
@@ -436,6 +456,7 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		keyManager.unregisterKeyListener(clearPathKeylistener);
+		mouseManager.unregisterMouseListener(arrivalDismissListener);
 	}
 
 	public void restartPathfinding(int start, Set<Integer> ends, boolean canReviveFiltered)
@@ -1835,6 +1856,144 @@ public class ShortestPathPlugin extends Plugin
 	public String getTargetSource()
 	{
 		return targetSource;
+	}
+
+	/**
+	 * Writes a JSON snapshot of the current routing state to ~/.runelite/gps-debug/ — everything
+	 * needed to reproduce and debug the current path: routes with their full tile paths, methods and
+	 * edge data, mode/exclusions, player position, GPS progress state, and the relevant config.
+	 * Triggered by the panel's camera button; confirms via a game message.
+	 */
+	public void captureDebugSnapshot()
+	{
+		clientThread.invokeLater(() ->
+		{
+			try
+			{
+				Map<String, Object> snapshot = new LinkedHashMap<>();
+				snapshot.put("capturedAt", new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date()));
+				Player local = client.getLocalPlayer();
+				snapshot.put("player", local != null ? packedPointJson(WorldPointUtil.packWorldPoint(local.getWorldLocation())) : null);
+				snapshot.put("routesMode", String.valueOf(routesMode));
+				snapshot.put("routeLimit", routeLimit);
+				snapshot.put("targetSource", targetSource);
+				snapshot.put("altStart", packedPointJson(lastAltStart));
+				List<Object> targets = new ArrayList<>();
+				for (int target : lastAltTargets)
+				{
+					targets.add(packedPointJson(target));
+				}
+				snapshot.put("targets", targets);
+				List<String> exclusions = new ArrayList<>();
+				for (TeleportMethod method : userExclusions)
+				{
+					exclusions.add(method.getType() + "|" + method.getDisplayInfo() + "|" + method.getDestination());
+				}
+				snapshot.put("userExclusions", exclusions);
+				snapshot.put("bankContentsKnown", bankContentsKnown);
+
+				Map<String, Object> configValues = new LinkedHashMap<>();
+				configValues.put("avoidWilderness", override("avoidWilderness", config.avoidWilderness()));
+				configValues.put("useTeleportationItems", String.valueOf(override("useTeleportationItems", config.useTeleportationItems())));
+				configValues.put("includeBankPath", override("includeBankPath", config.includeBankPath()));
+				configValues.put("costBankPickup", override("costBankPickup", config.costBankPickup()));
+				configValues.put("defaultRouteCount", override("defaultRouteCount", config.defaultRouteCount()));
+				snapshot.put("config", configValues);
+
+				RouteOption displayed = getDisplayedRoute();
+				List<RouteOption> routes = alternativeRoutes;
+				snapshot.put("displayedRouteIndex", displayed != null ? routes.indexOf(displayed) : -1);
+				List<Object> routesJson = new ArrayList<>();
+				for (RouteOption route : routes)
+				{
+					Map<String, Object> routeJson = new LinkedHashMap<>();
+					routeJson.put("totalCost", route.getTotalCost());
+					routeJson.put("rawCost", route.getRawCost());
+					routeJson.put("reached", route.isReached());
+					routeJson.put("viaBank", route.isViaBank());
+					List<String> methods = new ArrayList<>();
+					for (TeleportMethod method : route.getMethods())
+					{
+						methods.add(method.getType() + "|" + method.getDisplayInfo() + "|" + method.getDestination());
+					}
+					routeJson.put("methods", methods);
+					routeJson.put("methodEdgeIndexes", route.getMethodEdgeIndexes());
+					routeJson.put("methodDurations", route.getMethodDurations());
+					routeJson.put("walkBeforeSteps", route.getWalkBeforeSteps());
+					routeJson.put("trailingWalkSteps", route.getTrailingWalkSteps());
+					List<Integer> packedPath = new ArrayList<>(route.getPath().size());
+					List<Integer> bankFlips = new ArrayList<>();
+					for (int i = 0; i < route.getPath().size(); i++)
+					{
+						packedPath.add(route.getPath().get(i).getPackedPosition());
+						if (route.getPath().get(i).isBankVisited()
+							&& (i == 0 || !route.getPath().get(i - 1).isBankVisited()))
+						{
+							bankFlips.add(i);
+						}
+					}
+					routeJson.put("packedPath", packedPath);
+					routeJson.put("bankVisitedFrom", bankFlips);
+					routesJson.add(routeJson);
+				}
+				snapshot.put("routes", routesJson);
+
+				if (displayed != null)
+				{
+					List<Object> stepsJson = new ArrayList<>();
+					for (RouteDirections.Step step : getRouteDirections(displayed))
+					{
+						Map<String, Object> stepJson = new LinkedHashMap<>();
+						stepJson.put("text", step.getText());
+						stepJson.put("startIndex", step.getStartIndex());
+						stepJson.put("endIndex", step.getEndIndex());
+						stepJson.put("ticks", step.getTicks());
+						stepJson.put("transport", step.isTransport());
+						stepsJson.add(stepJson);
+					}
+					snapshot.put("directions", stepsJson);
+					Map<String, Object> progress = new LinkedHashMap<>();
+					progress.put("reachedIndex", routeDirectionsOverlay.getReachedIndex());
+					progress.put("liveRemainingTicks", routeDirectionsOverlay.getLiveRemainingTicks());
+					progress.put("speedTilesPerSecond", routeDirectionsOverlay.getSpeedTilesPerSecond());
+					snapshot.put("progress", progress);
+				}
+
+				File dir = new File(net.runelite.client.RuneLite.RUNELITE_DIR, "gps-debug");
+				//noinspection ResultOfMethodCallIgnored
+				dir.mkdirs();
+				File out = new File(dir, "gps-capture-" + new java.text.SimpleDateFormat("yyyyMMdd-HHmmss").format(new java.util.Date()) + ".json");
+				try (java.io.Writer writer = new java.io.OutputStreamWriter(
+					new java.io.FileOutputStream(out), java.nio.charset.StandardCharsets.UTF_8))
+				{
+					gson.newBuilder().setPrettyPrinting().create().toJson(snapshot, writer);
+				}
+				log.info("GPS debug snapshot saved to {}", out.getAbsolutePath());
+				if (GameState.LOGGED_IN.equals(client.getGameState()))
+				{
+					client.addChatMessage(net.runelite.api.ChatMessageType.GAMEMESSAGE, "",
+						"GPS debug snapshot saved to " + out.getAbsolutePath(), null);
+				}
+			}
+			catch (Exception e)
+			{
+				log.warn("Failed to capture GPS debug snapshot", e);
+			}
+		});
+	}
+
+	private static Map<String, Object> packedPointJson(int packed)
+	{
+		if (packed == WorldPointUtil.UNDEFINED)
+		{
+			return null;
+		}
+		Map<String, Object> point = new LinkedHashMap<>();
+		point.put("packed", packed);
+		point.put("x", WorldPointUtil.unpackWorldX(packed));
+		point.put("y", WorldPointUtil.unpackWorldY(packed));
+		point.put("plane", WorldPointUtil.unpackWorldPlane(packed));
+		return point;
 	}
 
 	/**

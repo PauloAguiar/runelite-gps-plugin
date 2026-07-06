@@ -229,6 +229,9 @@ public class ShortestPathPanel extends PluginPanel
 
 		JPanel actions = new JPanel(new FlowLayout(FlowLayout.TRAILING, 6, 0));
 		actions.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		actions.add(control(new IconActionLabel(RouteIcons.DEBUG, RouteIcons.DEBUG_HOVER,
+			"Save a debug snapshot of the current routes to disk (for reproducing issues)",
+			plugin::captureDebugSnapshot)));
 		actions.add(control(new IconActionLabel(RouteIcons.CLEAR, RouteIcons.CLEAR_HOVER,
 			"Re-include all excluded methods", plugin::clearExclusions)));
 		titleRow.add(actions, BorderLayout.EAST);

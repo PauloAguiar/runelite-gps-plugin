@@ -38,6 +38,12 @@ import shortestpath.transport.Transport;
 public class PathTileOverlay extends Overlay
 {
 	private static final int TRANSPORT_LABEL_GAP = 3;
+	// The flowing highlight on the drawn line: a train of small ripples travelling towards the
+	// destination — one every WAVE_SPACING steps, each fading over WAVE_HALF_WIDTH steps to either
+	// side, moving at WAVE_TILES_PER_SECOND.
+	private static final double WAVE_TILES_PER_SECOND = 20;
+	private static final double WAVE_SPACING = 60;
+	private static final double WAVE_HALF_WIDTH = 4;
 	private final Client client;
 	private final ShortestPathPlugin plugin;
 	private int playerTileLabelOffset = 0;
@@ -196,6 +202,10 @@ public class PathTileOverlay extends Overlay
 			if (TileStyle.LINES.equals(plugin.pathStyle) || TileStyle.ARROW_LINE.equals(plugin.pathStyle))
 			{
 				boolean arrows = TileStyle.ARROW_LINE.equals(plugin.pathStyle);
+				// Repeating ripples flow along the line towards the destination: each edge's glow is
+				// its proximity to the nearest ripple centre in a train spaced WAVE_SPACING apart.
+				double waveOffset = ((System.currentTimeMillis() % 600_000L) / 1000.0 * WAVE_TILES_PER_SECOND)
+					% WAVE_SPACING;
 				for (int i = 1; i < path.size(); i++)
 				{
 					PathStep currentStep = path.get(i - 1);
@@ -204,8 +214,15 @@ public class PathTileOverlay extends Overlay
 					boolean head = arrows && (i == path.size() - 1
 						|| directionChanges(currentStep.getPackedPosition(), nextStep.getPackedPosition(),
 							path.get(i + 1).getPackedPosition()));
+					double phase = (i - waveOffset) % WAVE_SPACING;
+					if (phase < 0)
+					{
+						phase += WAVE_SPACING;
+					}
+					double waveDistance = Math.min(phase, WAVE_SPACING - phase);
+					double glow = Math.max(0, 1 - waveDistance / WAVE_HALF_WIDTH);
 					drawLine(graphics, currentStep.getPackedPosition(), nextStep.getPackedPosition(), color,
-						1 + counter++, head);
+						1 + counter++, head, glow);
 					drawTransportInfo(graphics, currentStep, nextStep, path, i - 1);
 				}
 			}
@@ -519,6 +536,12 @@ public class PathTileOverlay extends Overlay
 
 	private void drawLine(Graphics2D graphics, int startLoc, int endLoc, Color color, int counter, boolean arrowHead)
 	{
+		drawLine(graphics, startLoc, endLoc, color, counter, arrowHead, 0);
+	}
+
+	private void drawLine(Graphics2D graphics, int startLoc, int endLoc, Color color, int counter, boolean arrowHead,
+		double glow)
+	{
 		PrimitiveIntList starts = WorldPointUtil.toLocalInstance(client, startLoc);
 		PrimitiveIntList ends = WorldPointUtil.toLocalInstance(client, endLoc);
 
@@ -558,11 +581,23 @@ public class PathTileOverlay extends Overlay
 		Line2D.Double line = new Line2D.Double(p1.getX(), p1.getY(), p2.getX(), p2.getY());
 
 		graphics.setColor(color);
-		graphics.setStroke(new BasicStroke(4));
+		graphics.setStroke(new BasicStroke(5, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 		graphics.draw(line);
 		if (arrowHead)
 		{
 			ArrowHead.draw(graphics, p1.getX(), p1.getY(), p2.getX(), p2.getY(), 12);
+		}
+		if (glow > 0)
+		{
+			// The flowing ripple: a subtly brighter core stroke — only a mild step towards white,
+			// at the path colour's own opacity, so it reads as a sheen rather than a flash.
+			graphics.setColor(new Color(
+				color.getRed() + (int) ((255 - color.getRed()) * glow * 0.18),
+				color.getGreen() + (int) ((255 - color.getGreen()) * glow * 0.18),
+				color.getBlue() + (int) ((255 - color.getBlue()) * glow * 0.18),
+				color.getAlpha()));
+			graphics.setStroke(new BasicStroke(3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+			graphics.draw(line);
 		}
 
 		if (counter == 1)

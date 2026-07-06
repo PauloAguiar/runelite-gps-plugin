@@ -64,6 +64,9 @@ final class RouteIcons
 	static final ImageIcon LOCKED = new ImageIcon(lock(ORANGE));
 	// Method whose required item is owned but sitting in the bank (route through a bank to grab it).
 	static final ImageIcon IN_BANK = new ImageIcon(coins(GOLD));
+	// Capture a debug snapshot of the current routes (camera).
+	static final ImageIcon DEBUG = new ImageIcon(camera(GREY));
+	static final ImageIcon DEBUG_HOVER = new ImageIcon(camera(LIGHT));
 
 	private RouteIcons()
 	{
@@ -228,6 +231,18 @@ final class RouteIcons
 				g.setColor(colour.darker());
 				g.draw(new Ellipse2D.Double(x, y, w, h));
 			}
+		});
+	}
+
+	private static BufferedImage camera(Color colour)
+	{
+		return render(g ->
+		{
+			g.setColor(colour);
+			// Body with a small viewfinder bump, and the lens as a hollow circle.
+			g.draw(new Line2D.Double(5.5, 4.0, 6.8, 4.0));
+			g.drawRoundRect(2, 5, 12, 8, 3, 3);
+			g.draw(new Ellipse2D.Double(6.0, 6.5, 5.0, 5.0));
 		});
 	}
 

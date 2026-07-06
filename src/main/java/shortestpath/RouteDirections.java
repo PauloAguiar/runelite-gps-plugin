@@ -33,13 +33,22 @@ final class RouteDirections
 		private final int startIndex;
 		private final int endIndex;
 		private final int ticks;
+		// True for "Use <method>" steps: rides the overlay can interpolate progress through
+		// (carpet/canoe/glider flights) rather than freezing the ETA until landing.
+		private final boolean transport;
 
 		private Step(String text, int startIndex, int endIndex, int ticks)
+		{
+			this(text, startIndex, endIndex, ticks, false);
+		}
+
+		private Step(String text, int startIndex, int endIndex, int ticks, boolean transport)
 		{
 			this.text = text;
 			this.startIndex = startIndex;
 			this.endIndex = endIndex;
 			this.ticks = ticks;
+			this.transport = transport;
 		}
 	}
 
@@ -95,7 +104,7 @@ final class RouteDirections
 				flushWalk(steps, walk, legStart, i - 1);
 				walk = 0;
 				steps.add(new Step("Use " + route.getMethods().get(nextMethod).label(), i - 1, i,
-					route.getMethodDurations().get(nextMethod)));
+					route.getMethodDurations().get(nextMethod), true));
 				nextMethod++;
 				legStart = i;
 				continue;

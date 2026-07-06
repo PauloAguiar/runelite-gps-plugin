@@ -4,6 +4,8 @@ import com.google.inject.Inject;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.font.TextLayout;
+import java.awt.geom.Rectangle2D;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.util.ArrayList;
@@ -31,11 +33,6 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	private static final int MAX_WIDTH = 280;
 	// Component insets plus the gap between the left text and the right-aligned time.
 	private static final int PANEL_PADDING = 18;
-	/**
-	 * How far (in tiles, same plane) the player may stand from a path tile and still count as being
-	 * on it — small walking deviations shouldn't stall the progress tracking.
-	 */
-	private static final int ON_PATH_DISTANCE = 3;
 
 	private static final Color DONE = new Color(0x80, 0x80, 0x80);
 	// Map-app navigation blue for the active step; the lighter shade signals "about to end".
@@ -53,15 +50,44 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	private final Client client;
 	private final ShortestPathPlugin plugin;
 
-	// Progress along the displayed route: the path index the player is currently at. Regression is
-	// allowed on purpose — walking backwards should un-complete steps and grow the ETA again. When
-	// the path crosses itself, the spatial tie is broken towards the current progress, so standing on
-	// a crossing doesn't teleport the highlight to the other leg. Reset when the route changes.
+	// Progress along the displayed route. Each frame the player's position is scored against EVERY
+	// path tile as (run time to the tile + remaining route time from it) and the minimum wins: this
+	// makes the ETA behave everywhere — it counts down smoothly mid-transport (a carpet ride's best
+	// rejoin point shifts from origin to destination), grows again when backtracking or straying off
+	// the path, and never charges a phantom "walk back" for travel the route itself performs.
 	private RouteOption progressRoute;
 	private int reachedIndex;
-	// Tiles from the player to the nearest path tile when standing off the route; added to the ETA
-	// as the walk back to the rejoin point.
-	private int offPathDistance;
+	// Remaining route time (ticks) from each path index, precomputed per route.
+	private double[] remainingTicksAt;
+	// The live remaining estimate chosen by the scoring pass.
+	private double liveRemainingTicks;
+
+	// Straight-line proximity is not reachability: a later leg can pass close by across a cliff the
+	// route detours around, and straight-line cost always underprices a transport that exists
+	// because you can't walk there. Progress therefore moves INCREMENTALLY — a few indexes per
+	// update, and only while genuinely near the line — with two jump exceptions: standing exactly ON
+	// a path tile at walking speed (teleport/transport landings), and ride interpolation.
+	private static final int STEP_WINDOW = 8;
+	private static final int NEAR_DISTANCE = 10;
+	private static final double VEHICLE_TILES_PER_SECOND = 4.5;
+	private static final long SPEED_SAMPLE_MILLIS = 400;
+	private long speedSampleAt;
+	private int speedSamplePosition = WorldPointUtil.UNDEFINED;
+	private double speedTilesPerSecond;
+
+	// Arrival lingering: the plugin clears the target the moment the destination is reached, which
+	// would vanish the panel mid-glance. When the route disappears right after progress was at the
+	// end, an "Arrived!" panel lingers instead — until clicked or the timer runs out.
+	private static final long ARRIVAL_LINGER_MILLIS = 10_000;
+	private static final long NEAR_END_GRACE_MILLIS = 4_000;
+	private long nearEndAtMillis = Long.MIN_VALUE / 2;
+	private boolean arrivalShowing;
+	private long arrivalUntilMillis;
+	// Snapshot of the last route's steps, kept so the arrival panel can show the completed list
+	// greyed out after the route object itself is gone.
+	private List<RouteDirections.Step> arrivalSteps;
+
+	private static final Color ARRIVED = new Color(0x3C, 0xC8, 0x6A);
 
 	@Inject
 	public RouteDirectionsOverlay(Client client, ShortestPathPlugin plugin)
@@ -79,17 +105,38 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		{
 			return null;
 		}
+		long now = System.currentTimeMillis();
 		RouteOption route = plugin.getDisplayedRoute();
 		if (route == null)
 		{
+			// The route just ended: if progress was at the destination moments ago, this is an
+			// arrival — linger with a farewell instead of vanishing mid-glance.
+			if (!arrivalShowing && now - nearEndAtMillis < NEAR_END_GRACE_MILLIS)
+			{
+				arrivalShowing = true;
+				arrivalUntilMillis = now + ARRIVAL_LINGER_MILLIS;
+			}
+			nearEndAtMillis = Long.MIN_VALUE / 2;
+			if (arrivalShowing && now < arrivalUntilMillis)
+			{
+				return renderArrival(graphics);
+			}
+			arrivalShowing = false;
 			return null;
 		}
+		arrivalShowing = false;
 		List<RouteDirections.Step> steps = plugin.getRouteDirections(route);
 		if (steps.isEmpty())
 		{
 			return null;
 		}
-		updateProgress(route);
+		arrivalSteps = steps;
+		updateProgress(route, steps);
+		// Within ~2 seconds of travel from the destination counts as "about to arrive".
+		if (liveRemainingTicks <= 3.5)
+		{
+			nearEndAtMillis = now;
+		}
 
 		// The first step whose span the player hasn't finished yet is the one being executed.
 		int current = steps.size() - 1;
@@ -102,26 +149,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 			}
 		}
 
-		// Remaining wall-time: full estimate before departure, live countdown as progress advances
-		// (the current step contributes only its unfinished fraction). Standing off the route adds
-		// the run back to the rejoin point, so straying visibly costs time.
-		double remainingTicks = offPathDistance > 0 ? (offPathDistance + 1) / 2.0 : 0;
-		for (int s = current; s < steps.size(); s++)
-		{
-			RouteDirections.Step step = steps.get(s);
-			if (s == current)
-			{
-				int span = Math.max(1, step.getEndIndex() - step.getStartIndex());
-				int left = Math.max(0, step.getEndIndex() - Math.max(reachedIndex, step.getStartIndex()));
-				remainingTicks += step.getTicks() * (left / (double) span);
-			}
-			else
-			{
-				remainingTicks += step.getTicks();
-			}
-		}
-
-		String etaText = "ETA: " + formatTime((int) Math.ceil(remainingTicks * RouteDirections.SECONDS_PER_TICK));
+		String etaText = "ETA: " + formatTime((int) Math.ceil(liveRemainingTicks * RouteDirections.SECONDS_PER_TICK));
 
 		// First pass: collect the lines, then size the panel to the widest one (within bounds) so
 		// content is neither wrapped nor needlessly clipped; only lines beyond MAX_WIDTH truncate.
@@ -181,6 +209,20 @@ public class RouteDirectionsOverlay extends OverlayPanel
 			lines.add(new Line("… " + (steps.size() - i) + " more", FONT_OTHER, DONE, null, null));
 		}
 
+		Dimension dimension = renderPanel(graphics, lines);
+		if (dimension != null)
+		{
+			drawEtaBadge(graphics, dimension, etaText);
+		}
+		return dimension;
+	}
+
+	/**
+	 * Sizes the panel to its widest line (within bounds), emits the header spacer and the lines, and
+	 * draws the decorated title over the reserved header row.
+	 */
+	private Dimension renderPanel(Graphics2D graphics, List<Line> lines)
+	{
 		// Fit the panel to the content: widest left text + its time column, clamped to sane bounds.
 		int contentWidth = MIN_WIDTH;
 		for (Line line : lines)
@@ -218,7 +260,6 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		if (dimension != null)
 		{
 			drawTitle(graphics, dimension);
-			drawEtaBadge(graphics, dimension, etaText);
 		}
 		return dimension;
 	}
@@ -259,22 +300,29 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	 */
 	private void drawEtaBadge(Graphics2D graphics, Dimension panelSize, String etaText)
 	{
-		java.awt.FontMetrics metrics = graphics.getFontMetrics(FONT_OTHER);
-		int width = metrics.stringWidth(etaText) + 12;
-		int height = metrics.getHeight() + 4;
-		// Slight outset past the panel edge so the badge reads as sitting on top of it.
-		int x = panelSize.width - width + 6;
-		int y = 1;
+		// TextLayout gives the glyphs' tight pixel bounds — the RuneScape fonts' metrics (ascent,
+		// leading) don't match their visual size, which kept mis-centring the text in the pill.
+		TextLayout layout = new TextLayout(etaText, FONT_OTHER, graphics.getFontRenderContext());
+		Rectangle2D bounds = layout.getBounds();
+		int width = (int) Math.ceil(bounds.getWidth()) + 12;
+		int height = (int) Math.ceil(bounds.getHeight()) + 8;
+		// Right edge pinned just inside the panel corner; the pill grows leftward as the countdown's
+		// text widens. No overhang: with the overlay snapped to the screen edge, an overhanging pill
+		// gets clipped and its text looks misaligned.
+		int x = panelSize.width - width - 2;
+		int y = 2;
 
 		graphics.setColor(CURRENT);
 		graphics.fillRoundRect(x, y, width, height, 8, 8);
 		graphics.setColor(new Color(0x2A, 0x5C, 0xC4));
 		graphics.drawRoundRect(x, y, width, height, 8, 8);
-		graphics.setFont(FONT_OTHER);
+		// Centre the tight glyph box inside the pill on both axes.
+		float textX = (float) (x + (width - bounds.getWidth()) / 2 - bounds.getX());
+		float textY = (float) (y + (height - bounds.getHeight()) / 2 - bounds.getY());
 		graphics.setColor(Color.BLACK);
-		graphics.drawString(etaText, x + 7, y + height - 5);
+		layout.draw(graphics, textX + 1, textY + 1);
 		graphics.setColor(Color.WHITE);
-		graphics.drawString(etaText, x + 6, y + height - 6);
+		layout.draw(graphics, textX, textY);
 	}
 
 	/**
@@ -353,31 +401,118 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	}
 
 	/**
-	 * Moves the progress marker to the path tile nearest the player (same plane). Spatial ties are
-	 * broken towards the current progress, so standing where the path crosses itself keeps the
-	 * highlight on the leg being travelled; genuine backtracking moves it (and the ETA) backwards.
-	 * When the player is more than {@link #ON_PATH_DISTANCE} tiles off the route, the marker snaps
-	 * to the nearest rejoin point and the detour distance is charged onto the ETA.
+	 * The lingering arrival panel: the completed step list greyed out, with a green "Arrived!" below
+	 * it. The whole panel is the dismiss button (see {@link #dismissArrivalAt}).
 	 */
-	private void updateProgress(RouteOption route)
+	private Dimension renderArrival(Graphics2D graphics)
 	{
+		List<Line> lines = new ArrayList<>();
+		List<RouteDirections.Step> steps = arrivalSteps != null ? arrivalSteps : List.of();
+		int shown = Math.min(steps.size(), MAX_LINES);
+		for (int i = 0; i < shown; i++)
+		{
+			lines.add(new Line("✓ " + (i + 1) + ". " + steps.get(i).getText(), FONT_OTHER, DONE,
+				formatTime((int) Math.ceil(steps.get(i).getTicks() * RouteDirections.SECONDS_PER_TICK)), DONE));
+		}
+		if (shown < steps.size())
+		{
+			lines.add(new Line("… " + (steps.size() - shown) + " more", FONT_OTHER, DONE, null, null));
+		}
+		lines.add(new Line("Arrived!", FONT_CURRENT, ARRIVED, null, null));
+		lines.add(new Line("(click to dismiss)", FONT_OTHER, DONE, null, null));
+		return renderPanel(graphics, lines);
+	}
+
+	/**
+	 * Dismisses the arrival panel when {@code point} (canvas coordinates) is inside it. Called from
+	 * the plugin's mouse listener; returns true when the click was consumed.
+	 */
+	public boolean dismissArrivalAt(java.awt.Point point)
+	{
+		if (!arrivalShowing)
+		{
+			return false;
+		}
+		java.awt.Rectangle bounds = getBounds();
+		if (bounds == null || !bounds.contains(point))
+		{
+			return false;
+		}
+		arrivalShowing = false;
+		return true;
+	}
+
+	/**
+	 * Scores every same-plane path tile as (run time to it + remaining route time from it) and moves
+	 * the progress marker to the minimum. A small hysteresis window prefers a candidate near the
+	 * previous position when its score is close to the global best, so standing where the path
+	 * crosses itself doesn't teleport the highlight to the other pass. No same-plane tile at all
+	 * (e.g. an off-route dungeon detour) freezes the estimate.
+	 */
+	private void updateProgress(RouteOption route, List<RouteDirections.Step> steps)
+	{
+		List<shortestpath.pathfinder.PathStep> path = route.getPath();
 		if (route != progressRoute)
 		{
 			progressRoute = route;
 			reachedIndex = 0;
-			offPathDistance = 0;
+			remainingTicksAt = buildRemainingTicks(steps, path.size());
+			liveRemainingTicks = remainingTicksAt.length > 0 ? remainingTicksAt[0] : 0;
 		}
 		Player player = client.getLocalPlayer();
-		if (player == null)
+		if (player == null || remainingTicksAt.length != path.size())
 		{
 			return;
 		}
 		int playerPacked = WorldPointUtil.fromLocalInstance(client, player.getLocalLocation());
 		int playerPlane = WorldPointUtil.unpackWorldPlane(playerPacked);
 
-		List<shortestpath.pathfinder.PathStep> path = route.getPath();
+		// Rolling speed estimate (tiles/second): faster than any running player means a transport is
+		// carrying us — freeze the estimate until we land instead of scoring transient positions.
+		long now = System.currentTimeMillis();
+		if (speedSamplePosition == WorldPointUtil.UNDEFINED || now - speedSampleAt >= SPEED_SAMPLE_MILLIS)
+		{
+			if (speedSamplePosition != WorldPointUtil.UNDEFINED && now > speedSampleAt)
+			{
+				// A plane change between samples reads as a big move (stairs/teleports).
+				int moved = WorldPointUtil.unpackWorldPlane(speedSamplePosition) == playerPlane
+					? WorldPointUtil.distanceBetween(speedSamplePosition, playerPacked)
+					: NEAR_DISTANCE * 2;
+				speedTilesPerSecond = moved * 1000.0 / (now - speedSampleAt);
+			}
+			speedSampleAt = now;
+			speedSamplePosition = playerPacked;
+		}
+		boolean riding = speedTilesPerSecond > VEHICLE_TILES_PER_SECOND;
+
+		if (riding)
+		{
+			// Mid-transport: interpolate through the ride geometrically. Distance to the landing
+			// tile over the full hop length gives the fraction completed; the ETA becomes the
+			// remainder of the ride plus everything after it. Progress itself (step completion)
+			// still only advances on landing.
+			RouteDirections.Step ride = currentStep(plugin.getRouteDirections(route));
+			if (ride != null && ride.isTransport())
+			{
+				int origin = path.get(Math.max(0, ride.getStartIndex())).getPackedPosition();
+				int destination = path.get(ride.getEndIndex()).getPackedPosition();
+				if (WorldPointUtil.unpackWorldPlane(destination) == playerPlane)
+				{
+					double total = WorldPointUtil.distanceBetween(origin, destination);
+					if (total > 4)
+					{
+						double completed = Math.min(1,
+							1 - WorldPointUtil.distanceBetween(playerPacked, destination) / total);
+						liveRemainingTicks = remainingTicksAt[ride.getEndIndex()]
+							+ ride.getTicks() * (1 - Math.max(0, completed));
+					}
+				}
+			}
+			return;
+		}
+
 		int best = -1;
-		int bestDistance = Integer.MAX_VALUE;
+		double bestScore = Double.MAX_VALUE;
 		for (int i = 0; i < path.size(); i++)
 		{
 			int packed = path.get(i).getPackedPosition();
@@ -386,20 +521,84 @@ public class RouteDirectionsOverlay extends OverlayPanel
 				continue;
 			}
 			int distance = WorldPointUtil.distanceBetween(packed, playerPacked);
-			if (distance < bestDistance
-				|| (distance == bestDistance && best >= 0
-					&& Math.abs(i - reachedIndex) < Math.abs(best - reachedIndex)))
+			// Eligible: an incremental move near the line (honest travel), or standing right on the
+			// path (a teleport/transport landing anywhere along the route).
+			boolean incremental = Math.abs(i - reachedIndex) <= STEP_WINDOW && distance <= NEAR_DISTANCE;
+			boolean onPath = distance <= 1;
+			if (!incremental && !onPath)
 			{
-				bestDistance = distance;
+				continue;
+			}
+			double score = distance / 2.0 + remainingTicksAt[i];
+			if (score < bestScore)
+			{
+				bestScore = score;
 				best = i;
 			}
 		}
 		if (best < 0)
 		{
-			// Different plane and nothing matches (e.g. mid-dungeon detour): freeze progress.
+			// Nowhere near the route (long off-path detour): hold the last honest estimate.
 			return;
 		}
 		reachedIndex = best;
-		offPathDistance = bestDistance > ON_PATH_DISTANCE ? bestDistance : 0;
+		liveRemainingTicks = bestScore;
+	}
+
+	/**
+	 * Progress state exposed for the debug snapshot.
+	 */
+	int getReachedIndex()
+	{
+		return reachedIndex;
+	}
+
+	double getLiveRemainingTicks()
+	{
+		return liveRemainingTicks;
+	}
+
+	double getSpeedTilesPerSecond()
+	{
+		return speedTilesPerSecond;
+	}
+
+	/**
+	 * The step the player is currently executing: the first whose span isn't finished.
+	 */
+	private RouteDirections.Step currentStep(List<RouteDirections.Step> steps)
+	{
+		for (RouteDirections.Step step : steps)
+		{
+			if (step.getEndIndex() > reachedIndex)
+			{
+				return step;
+			}
+		}
+		return steps.isEmpty() ? null : steps.get(steps.size() - 1);
+	}
+
+	/**
+	 * Remaining route time (ticks) from each path index: total of all later steps plus the linear
+	 * remainder of the step spanning the index. Index 0 holds the whole journey.
+	 */
+	private static double[] buildRemainingTicks(List<RouteDirections.Step> steps, int pathSize)
+	{
+		double[] remaining = new double[pathSize];
+		double after = 0;
+		for (int s = steps.size() - 1; s >= 0; s--)
+		{
+			RouteDirections.Step step = steps.get(s);
+			int start = Math.max(0, Math.min(step.getStartIndex(), pathSize - 1));
+			int end = Math.max(start, Math.min(step.getEndIndex(), pathSize - 1));
+			int span = Math.max(1, end - start);
+			for (int i = end; i >= start; i--)
+			{
+				double throughStep = step.getTicks() * ((end - i) / (double) span);
+				remaining[i] = Math.max(remaining[i], after + throughStep);
+			}
+			after += step.getTicks();
+		}
+		return remaining;
 	}
 }
