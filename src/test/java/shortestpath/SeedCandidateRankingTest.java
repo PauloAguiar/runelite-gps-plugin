@@ -41,7 +41,7 @@ public class SeedCandidateRankingTest
 		Transport far = teleport("far", 3230, 3200, 0, 0);     // 30 tiles from target
 
 		List<Transport> attempts = AlternativeRoutesService.rankSeedCandidates(
-			new ArrayList<>(List.of(far, near)), TARGET, Set.of(), 10);
+			new ArrayList<>(List.of(far, near)), Set.of(TARGET), Set.of(), 10);
 
 		assertEquals("Both candidates must be kept (no distance-based drop)", 2, attempts.size());
 		assertEquals("Closer landing must rank first", "near", attempts.get(0).getDisplayInfo());
@@ -59,7 +59,7 @@ public class SeedCandidateRankingTest
 		Transport instantFar = teleport("instant-far", 3230, 3200, 0, 0);
 
 		List<Transport> attempts = AlternativeRoutesService.rankSeedCandidates(
-			new ArrayList<>(List.of(slowCast, instantFar)), TARGET, Set.of(), 10);
+			new ArrayList<>(List.of(slowCast, instantFar)), Set.of(TARGET), Set.of(), 10);
 
 		assertEquals("Duration must be charged at 2 units per tick", "instant-far", attempts.get(0).getDisplayInfo());
 		assertEquals("slow-cast", attempts.get(1).getDisplayInfo());
@@ -75,7 +75,7 @@ public class SeedCandidateRankingTest
 		Transport crossPlane = teleport("dungeon", 3201, 3200, 1, 10);
 
 		List<Transport> attempts = AlternativeRoutesService.rankSeedCandidates(
-			new ArrayList<>(List.of(crossPlane, samePlane)), TARGET, Set.of(), 10);
+			new ArrayList<>(List.of(crossPlane, samePlane)), Set.of(TARGET), Set.of(), 10);
 
 		assertEquals("Cross-plane candidates must be kept", 2, attempts.size());
 		assertEquals("Same-plane landing must rank first", "surface", attempts.get(0).getDisplayInfo());
@@ -90,7 +90,7 @@ public class SeedCandidateRankingTest
 		Transport fast = teleport("fast-duplicate", 3210, 3200, 0, 4);
 
 		List<Transport> attempts = AlternativeRoutesService.rankSeedCandidates(
-			new ArrayList<>(List.of(slow, fast)), TARGET, Set.of(), 10);
+			new ArrayList<>(List.of(slow, fast)), Set.of(TARGET), Set.of(), 10);
 
 		assertEquals("Duplicate landings collapse to one attempt", 1, attempts.size());
 		assertEquals("The better-ranked duplicate wins", "fast-duplicate", attempts.get(0).getDisplayInfo());
@@ -103,11 +103,31 @@ public class SeedCandidateRankingTest
 		Transport excluded = teleport("excluded", 3205, 3200, 0, 0);
 
 		List<Transport> attempts = AlternativeRoutesService.rankSeedCandidates(
-			new ArrayList<>(List.of(kept, excluded)), TARGET,
+			new ArrayList<>(List.of(kept, excluded)), Set.of(TARGET),
 			Set.of(TeleportMethod.fromTransport(excluded)), 10);
 
 		assertEquals("Excluded method must not get an attempt", 1, attempts.size());
 		assertEquals("kept", attempts.get(0).getDisplayInfo());
+	}
+
+	@Test
+	public void multiTargetRankingMeasuresEachLandingAgainstItsNearestTarget()
+	{
+		// "Nearest bank" style query: two targets far apart. A teleport landing beside the DISTANT
+		// target must outrank one landing moderately close to the near target — ranked against only
+		// the near target (the old single-representative behavior) it would have come last.
+		int nearTarget = TARGET;                                             // (3200, 3200)
+		int farTarget = WorldPointUtil.packWorldPoint(2400, 2800, 0);        // far away
+		Transport besideFarTarget = teleport("beside-far-target", 2402, 2800, 0, 0);  // 2 from far target
+		Transport nearishNearTarget = teleport("nearish-near-target", 3220, 3200, 0, 0); // 20 from near target
+
+		List<Transport> attempts = AlternativeRoutesService.rankSeedCandidates(
+			new ArrayList<>(List.of(nearishNearTarget, besideFarTarget)),
+			Set.of(nearTarget, farTarget), Set.of(), 10);
+
+		assertEquals("A landing beside ANY target must rank by its nearest target",
+			"beside-far-target", attempts.get(0).getDisplayInfo());
+		assertEquals("nearish-near-target", attempts.get(1).getDisplayInfo());
 	}
 
 	@Test
@@ -119,7 +139,7 @@ public class SeedCandidateRankingTest
 			candidates.add(teleport("t" + i, 3200 + 5 * i, 3200, 0, 0)); // 5, 10, ... 25 tiles out
 		}
 
-		List<Transport> attempts = AlternativeRoutesService.rankSeedCandidates(candidates, TARGET, Set.of(), 3);
+		List<Transport> attempts = AlternativeRoutesService.rankSeedCandidates(candidates, Set.of(TARGET), Set.of(), 3);
 
 		assertEquals("Cap must bound the attempts", 3, attempts.size());
 		for (int i = 0; i < attempts.size(); i++)
@@ -128,6 +148,6 @@ public class SeedCandidateRankingTest
 				"t" + (i + 1), attempts.get(i).getDisplayInfo());
 		}
 		assertTrue("Zero cap yields no attempts",
-			AlternativeRoutesService.rankSeedCandidates(candidates, TARGET, Set.of(), 0).isEmpty());
+			AlternativeRoutesService.rankSeedCandidates(candidates, Set.of(TARGET), Set.of(), 0).isEmpty());
 	}
 }

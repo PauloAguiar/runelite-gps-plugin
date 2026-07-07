@@ -187,6 +187,17 @@ public class AlternativeRoutesService
 		final List<Transport> seedCandidates = new ArrayList<>(Arrays.asList(
 			planningConfig.getUsableTeleports(mode == AlternativeRoutesMode.OWNED_WITH_BANK)));
 
+		// Walk-only search, run concurrently on the seed pool (its own config copy — the chain
+		// mutates planningConfig per iteration): its cost is a rigorous expansion cap for every
+		// search that starts after it finishes (routes costlier than walking are never shown, so a
+		// node above walk cost is provably useless — this keeps a dead-end seed teleport from
+		// flooding the map), and its path is the last-resort route appended when the chain doesn't
+		// derive it. Polled non-blockingly so route 1's latency is unchanged. Skipped for
+		// primary-only generations (limit 1, panel hidden): one search, a cap can't pay for itself.
+		final Future<WalkResult> walkFuture = limit > 1
+			? seedExecutor.submit(() -> runWalkSearch(gen, start, ends, userExclusions, catalog, timer))
+			: null;
+
 		final List<RouteOption> routes = new ArrayList<>();
 		final Set<String> seenSignatures = new HashSet<>();
 		// Remaining distance to the target of the first route's endpoint; -1 until known. For an
@@ -207,7 +218,7 @@ public class AlternativeRoutesService
 			timer.rebuildNanos += System.nanoTime() - rebuildStart;
 
 			long searchStart = System.nanoTime();
-			Pathfinder pathfinder = new Pathfinder(planningConfig, start, ends);
+			Pathfinder pathfinder = new Pathfinder(planningConfig, start, ends, null, capOf(walkFuture));
 			pathfinder.run();
 			timer.searchNanos += System.nanoTime() - searchStart;
 			timer.searches++;
@@ -269,7 +280,19 @@ public class AlternativeRoutesService
 		if (!hasWalkOnly && routes.size() < limit && !routes.isEmpty())
 		{
 			seedTeleportRoutes(gen, start, ends, userExclusions, mode, limit,
-				seedCandidates, routes, seenSignatures, catalog, unavailable, listener, bestRemaining, timer);
+				seedCandidates, routes, seenSignatures, catalog, unavailable, listener, bestRemaining,
+				capOf(walkFuture), timer);
+		}
+
+		// The walk-only route from the concurrent search is the last resort: append it when the
+		// chain didn't derive it (signature dedup skips it when it did), under the same closeness
+		// guard as every other route. Blocking here is fine — the generation is finishing anyway.
+		WalkResult walk = walkResult(walkFuture);
+		if (walk != null && routes.size() < limit
+			&& (bestRemaining < 0 || walk.remaining <= bestRemaining + CLOSEST_DISTANCE_TOLERANCE)
+			&& seenSignatures.add(signature(walk.route.getMethods())))
+		{
+			routes.add(walk.route);
 		}
 
 		routes.sort(Comparator.comparingInt(RouteOption::getTotalCost));
@@ -334,10 +357,8 @@ public class AlternativeRoutesService
 	private void seedTeleportRoutes(int gen, int start, Set<Integer> ends, Set<TeleportMethod> userExclusions,
 		AlternativeRoutesMode mode, int limit, List<Transport> seedCandidates, List<RouteOption> routes,
 		Set<String> seenSignatures, List<TeleportMethod> catalog, Map<TeleportMethod, MethodAvailability> unavailable,
-		ResultListener listener, int bestRemaining, GenTimer timer)
+		ResultListener listener, int bestRemaining, int costCap, GenTimer timer)
 	{
-		final int target = closestTarget(start, ends);
-
 		// Every global teleport is excluded from each seed search except the seed itself, so the
 		// exclusion universe must span ALL candidates — including ones that don't get an attempt.
 		final Set<TeleportMethod> allSeedMethods = new HashSet<>();
@@ -347,7 +368,7 @@ public class AlternativeRoutesService
 		}
 
 		final int maxAttempts = (limit - routes.size()) * 3;
-		final List<Transport> attempts = rankSeedCandidates(seedCandidates, target, userExclusions, maxAttempts);
+		final List<Transport> attempts = rankSeedCandidates(seedCandidates, ends, userExclusions, maxAttempts);
 		if (attempts.isEmpty())
 		{
 			return;
@@ -368,7 +389,7 @@ public class AlternativeRoutesService
 		for (Transport seed : attempts)
 		{
 			futures.add(completion.submit(() ->
-				runSeedSearch(gen, stop, start, ends, userExclusions, allSeedMethods, seed, bestRemaining, configPool, timer)));
+				runSeedSearch(gen, stop, start, ends, userExclusions, allSeedMethods, seed, bestRemaining, costCap, configPool, timer)));
 		}
 
 		try
@@ -414,8 +435,11 @@ public class AlternativeRoutesService
 	 * Selects and orders the seed-teleport attempt list: user-excluded methods and duplicate landings
 	 * (e.g. tab vs spell to the same tile) are dropped, the rest are ranked by estimated arrival cost
 	 * — the teleport's cast/travel duration (in {@link CostUnits}) plus the straight-line distance
-	 * from its landing to the target (a lower bound of the remaining run, in the same currency) —
-	 * and the list is capped at {@code maxAttempts}.
+	 * from its landing to the NEAREST target (a lower bound of the remaining run, in the same
+	 * currency) — and the list is capped at {@code maxAttempts}. Ranking against the whole target set
+	 * matters for multi-target queries ("nearest bank" has ~150): a teleport landing beside a distant
+	 * bank is an excellent seed, but measured against only the player's local bank it would rank last
+	 * and be cut by the cap.
 	 * <p>
 	 * Candidates landing farther than the start are deliberately KEPT: when an obstacle separates the
 	 * start from the target, the straight-line start distance understates the real walk, and a
@@ -425,14 +449,21 @@ public class AlternativeRoutesService
 	 * a full search afterwards — this pre-selection never decides a shown cost, only which candidates
 	 * get a search.
 	 */
-	static List<Transport> rankSeedCandidates(List<Transport> seedCandidates, int target,
+	static List<Transport> rankSeedCandidates(List<Transport> seedCandidates, Set<Integer> targets,
 		Set<TeleportMethod> userExclusions, int maxAttempts)
 	{
 		final List<Transport> ranked = new ArrayList<>(seedCandidates);
 		// Long arithmetic: a cross-plane landing has straight-line distance Integer.MAX_VALUE, which
 		// must rank last rather than overflow into ranking first.
+		final int[] targetArray = new int[targets.size()];
+		int t = 0;
+		for (int target : targets)
+		{
+			targetArray[t++] = target;
+		}
 		ranked.sort(Comparator.comparingLong(
-			t -> (long) CostUnits.fromTicks(t.getDuration()) + WorldPointUtil.distanceBetween(t.getDestination(), target)));
+			candidate -> (long) CostUnits.fromTicks(candidate.getDuration())
+				+ distanceToNearest(candidate.getDestination(), targetArray)));
 		final Map<Integer, Transport> byDestination = new LinkedHashMap<>();
 		for (Transport transport : ranked)
 		{
@@ -454,13 +485,24 @@ public class AlternativeRoutesService
 		return attempts;
 	}
 
+	/** Straight-line distance from a landing to its nearest target (MAX_VALUE across planes). */
+	private static int distanceToNearest(int packedPoint, int[] targets)
+	{
+		int best = Integer.MAX_VALUE;
+		for (int target : targets)
+		{
+			best = Math.min(best, WorldPointUtil.distanceBetween(packedPoint, target));
+		}
+		return best;
+	}
+
 	/**
 	 * One parallel seed attempt: rebuild availability on a worker-owned config with every other
 	 * global teleport excluded, search, and pre-filter the result. Returns null when rejected.
 	 */
 	private SeedResult runSeedSearch(int gen, AtomicBoolean stop, int start, Set<Integer> ends,
 		Set<TeleportMethod> userExclusions, Set<TeleportMethod> allSeedMethods, Transport seed,
-		int bestRemaining, Queue<PathfinderConfig> configPool, GenTimer timer)
+		int bestRemaining, int costCap, Queue<PathfinderConfig> configPool, GenTimer timer)
 	{
 		if (gen != generation.get() || stop.get())
 		{
@@ -481,7 +523,7 @@ public class AlternativeRoutesService
 			long rebuildStart = System.nanoTime();
 			config.rebuildAvailabilityWithExclusions(seedExclusions);
 			long searchStart = System.nanoTime();
-			Pathfinder pathfinder = new Pathfinder(config, start, ends);
+			Pathfinder pathfinder = new Pathfinder(config, start, ends, null, costCap);
 			pathfinder.run();
 			long searchEnd = System.nanoTime();
 			synchronized (timer)
@@ -518,6 +560,122 @@ public class AlternativeRoutesService
 	}
 
 	/**
+	 * The walk-only search: every method in the catalog excluded (plain connectors — doors, stairs,
+	 * shortcuts — remain, walking uses those). Its reached cost is the universal search cap, and its
+	 * path is the last-resort route. Runs on the seed pool concurrently with the chain's first
+	 * searches, on its own config copy.
+	 */
+	private WalkResult runWalkSearch(int gen, int start, Set<Integer> ends, Set<TeleportMethod> userExclusions,
+		List<TeleportMethod> catalog, GenTimer timer)
+	{
+		if (gen != generation.get())
+		{
+			return null;
+		}
+		PathfinderConfig config = planningConfig.copyForParallelSearch();
+		Set<TeleportMethod> walkExclusions = new HashSet<>(catalog);
+		walkExclusions.addAll(userExclusions);
+		long rebuildStart = System.nanoTime();
+		config.rebuildAvailabilityWithExclusions(walkExclusions);
+		long searchStart = System.nanoTime();
+		Pathfinder pathfinder = new Pathfinder(config, start, ends);
+		pathfinder.run();
+		long searchEnd = System.nanoTime();
+		synchronized (timer)
+		{
+			timer.rebuildNanos += searchStart - rebuildStart;
+			timer.searchNanos += searchEnd - searchStart;
+			timer.searches++;
+		}
+
+		PathfinderResult result = pathfinder.getResult();
+		List<PathStep> path = (result != null) ? result.getPathSteps() : List.of();
+		if (result == null || path.isEmpty())
+		{
+			return null;
+		}
+		MethodScan scan = scanMethods(config, path);
+		if (!scan.methods.isEmpty())
+		{
+			// Defensive: with the whole catalog excluded no method should appear; if one does,
+			// this isn't a pure walk and must not serve as the walk cap or route.
+			return null;
+		}
+		boolean reached = result.isReached();
+		RouteOption route = new RouteOption(path, scan.methods, scan.methodEdges, scan.methodDurations,
+			result.getTotalCost(), scan.rawCost, reached, scan.bankGated, scan.walkBefore, scan.trailingWalk);
+		// Only a walk that actually reaches the target is a valid cost ceiling; a closest-tile
+		// partial walk (island target) must not constrain teleport routes that can truly get there.
+		int cap = reached ? result.getTotalCost() : Integer.MAX_VALUE;
+		return new WalkResult(route, cap, reached ? 0 : remainingDistance(path, ends));
+	}
+
+	/**
+	 * The current search cap from the walk search, polled without blocking: MAX_VALUE (uncapped)
+	 * until the walk finishes — so the chain's first searches never wait on it — then the walk cost.
+	 */
+	private static int capOf(Future<WalkResult> walkFuture)
+	{
+		if (walkFuture == null || !walkFuture.isDone())
+		{
+			return Integer.MAX_VALUE;
+		}
+		try
+		{
+			WalkResult walk = walkFuture.get();
+			return walk == null ? Integer.MAX_VALUE : walk.cap;
+		}
+		catch (InterruptedException e)
+		{
+			Thread.currentThread().interrupt();
+			return Integer.MAX_VALUE;
+		}
+		catch (ExecutionException e)
+		{
+			log.warn("Walk search failed", e);
+			return Integer.MAX_VALUE;
+		}
+	}
+
+	/** The finished walk search's result, waiting for it if needed (used once, at generation end). */
+	private static WalkResult walkResult(Future<WalkResult> walkFuture)
+	{
+		if (walkFuture == null)
+		{
+			return null;
+		}
+		try
+		{
+			return walkFuture.get();
+		}
+		catch (InterruptedException e)
+		{
+			Thread.currentThread().interrupt();
+			return null;
+		}
+		catch (ExecutionException e)
+		{
+			log.warn("Walk search failed", e);
+			return null;
+		}
+	}
+
+	/** The walk-only search's route, its cost cap for other searches, and its closeness to the target. */
+	private static final class WalkResult
+	{
+		private final RouteOption route;
+		private final int cap;
+		private final int remaining;
+
+		WalkResult(RouteOption route, int cap, int remaining)
+		{
+			this.route = route;
+			this.cap = cap;
+			this.remaining = remaining;
+		}
+	}
+
+	/**
 	 * A candidate route produced by one parallel seed search, before signature dedup on the
 	 * generation thread.
 	 */
@@ -544,22 +702,6 @@ public class AlternativeRoutesService
 		for (int target : targets)
 		{
 			best = Math.min(best, WorldPointUtil.distanceBetween(end, target));
-		}
-		return best;
-	}
-
-	private static int closestTarget(int start, Set<Integer> targets)
-	{
-		int best = WorldPointUtil.UNDEFINED;
-		int bestDistance = Integer.MAX_VALUE;
-		for (int target : targets)
-		{
-			int distance = WorldPointUtil.distanceBetween(start, target);
-			if (distance < bestDistance)
-			{
-				bestDistance = distance;
-				best = target;
-			}
 		}
 		return best;
 	}

@@ -986,16 +986,18 @@ public class PathfinderTest
 	 * Without this fix the whistle bypassed the consumable-item threshold and could
 	 * make a bank-detour route appear cheaper than a direct teleportation tab.
 	 * <p>
-	 * Verified via the Aldarin platform cost boundary: from 1 tile away the platform
-	 * compareCost is 7 (1 walk + 6 flight). With costConsumableTeleportationItems=5
-	 * the whistle's actual cost becomes 4+5=9, so the platform wins (path length 3).
-	 * Before the fix the whistle paid no consumable penalty (cost 4) and won (path 2).
+	 * Verified via the Aldarin platform cost boundary, in time-normalized units (2 per tick):
+	 * from 1 tile away the platform compareCost is 13 (1 walk + 6-tick flight = 12). With
+	 * costConsumableTeleportationItems=6 the whistle's actual cost becomes 8+6=14, strictly
+	 * past the platform, so the platform wins (path length 3). (A penalty of 5 would TIE at
+	 * 13, leaving the winner to heap-order luck.) Before the fix the whistle paid no
+	 * consumable penalty (cost 8) and won (path 2).
 	 */
 	@Test
 	public void testConsumableCostPenaltyAppliedToQuetzalWhistle()
 	{
 		when(config.useQuetzals()).thenReturn(true);
-		when(config.costConsumableTeleportationItems()).thenReturn(5);
+		when(config.costConsumableTeleportationItems()).thenReturn(6);
 		when(config.costQuetzalWhistle()).thenReturn(0);
 		setupInventory(new Item(29271, 1)); // Quetzal whistle
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
@@ -1730,6 +1732,47 @@ public class PathfinderTest
 		}
 		fail("No transport of type " + transportType + " found");
 		return null;
+	}
+
+	/**
+	 * The cost cap bounds a search without changing what a within-cap search finds: capped at
+	 * exactly the optimal cost the target is still reached at that cost; capped below it the
+	 * search can't reach — and the closest-tile post-pass (which replaced the per-node tracking)
+	 * still recovers a partial path that makes progress toward the target.
+	 */
+	@Test
+	public void costCapBoundsSearchAndPostPassRecoversPartialPath()
+	{
+		setupInventory(); // empty inventory: pure walking
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+
+		int grandExchange = WorldPointUtil.packWorldPoint(3158, 3509, 0);
+		int varrockWest = WorldPointUtil.packWorldPoint(3185, 3436, 0);
+
+		Pathfinder uncapped = new Pathfinder(pathfinderConfig, grandExchange, Set.of(varrockWest));
+		uncapped.run();
+		assertTrue("Precondition: a walking route exists", uncapped.getResult().isReached());
+		int optimal = uncapped.getResult().getTotalCost();
+
+		Pathfinder cappedAtOptimal = new Pathfinder(
+			pathfinderConfig, grandExchange, Set.of(varrockWest), null, optimal);
+		cappedAtOptimal.run();
+		assertTrue("Capped at the optimal cost, the target must still be reached",
+			cappedAtOptimal.getResult().isReached());
+		assertEquals("The cap must not change the optimal cost",
+			optimal, cappedAtOptimal.getResult().getTotalCost());
+
+		Pathfinder cappedBelow = new Pathfinder(
+			pathfinderConfig, grandExchange, Set.of(varrockWest), null, optimal / 2);
+		cappedBelow.run();
+		assertFalse("Capped below the optimal cost, the target can't be reached",
+			cappedBelow.getResult().isReached());
+		List<PathStep> partial = cappedBelow.getResult().getPathSteps();
+		assertTrue("The post-pass must still produce a partial path", !partial.isEmpty());
+		int partialEnd = partial.get(partial.size() - 1).getPackedPosition();
+		assertTrue("The partial path must end closer to the target than the start",
+			WorldPointUtil.distanceBetween(partialEnd, varrockWest)
+				< WorldPointUtil.distanceBetween(grandExchange, varrockWest));
 	}
 
 	private int calculatePathLength(int origin, int destination)

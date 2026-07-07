@@ -49,6 +49,19 @@ public class Pathfinder implements Runnable
 	private int bestY = Integer.MAX_VALUE;
 	private int reachedTarget = WorldPointUtil.UNDEFINED;
 	private PathTerminationReason terminationReason;
+	// The targets as a plain array: the closest-tile tracking compares every target, and iterating
+	// the boxed set there was measurable with large target sets ("nearest bank" has ~150).
+	private final int[] targetArray;
+	// Hard cost ceiling: nodes above it are never expanded. Used by the alternative-routes engine to
+	// bound every search at the walk-only cost (routes costlier than walking are never shown), which
+	// keeps a useless seed teleport from flooding the map. MAX_VALUE = uncapped.
+	private final int costCap;
+	// Closest-tile tracking is O(targets) per node, so during the search it only runs on every
+	// UNREACHABLE_TRACK_INTERVAL-th tile (enough for the cutoff extension and the progressively
+	// rendered partial path); the exact best tile is recovered in one post-pass when the search
+	// ends without reaching a target.
+	private static final int UNREACHABLE_TRACK_INTERVAL = 16;
+	private int unreachableTrackCounter = 0;
 	/**
 	 * Teleportation transports are updated when this changes.
 	 * Can be either:
@@ -61,16 +74,28 @@ public class Pathfinder implements Runnable
 
 	public Pathfinder(PathfinderConfig config, int start, Set<Integer> targets, Runnable completionCallback)
 	{
+		this(config, start, targets, completionCallback, Integer.MAX_VALUE);
+	}
+
+	public Pathfinder(PathfinderConfig config, int start, Set<Integer> targets, Runnable completionCallback, int costCap)
+	{
 		stats = new PathfinderStats();
 		this.config = config;
 		this.map = config.getMap();
 		this.start = start;
 		this.targets = targets;
 		this.completionCallback = completionCallback;
+		this.costCap = costCap;
 		visited = new VisitedTiles(map);
 		targetInWilderness = WildernessChecker.isInWilderness(targets);
 		targetInBlockedRegion = anyInBlockedRegion(config.getLeagueModeState(), targets);
 		wildernessLevel = 31;
+		targetArray = new int[targets.size()];
+		int i = 0;
+		for (int target : targets)
+		{
+			targetArray[i++] = target;
+		}
 	}
 
 	private static boolean anyInBlockedRegion(LeagueModeState league, Set<Integer> packed)
@@ -228,7 +253,7 @@ public class Pathfinder implements Runnable
 		boolean update = false;
 
 		final int travelledDistance = graph.cost(node);
-		for (int target : targets)
+		for (int target : targetArray)
 		{
 			int remainingDistance = WorldPointUtil.distanceBetween(target, packedPosition, WorldPointUtil.EUCLIDEAN_SQUARED_DISTANCE_METRIC);
 			int x = WorldPointUtil.unpackWorldX(packedPosition);
@@ -316,6 +341,13 @@ public class Pathfinder implements Runnable
 			{
 				continue;
 			}
+			// Cost cap: a node above the ceiling can't be on any path worth returning (edges are
+			// non-negative), so don't expand it. With the cap at the walk-only cost this bounds the
+			// whole search to the area walking could cover anyway.
+			if (graph.cost(node) > costCap)
+			{
+				continue;
+			}
 			// Read the node's tile-ness and position once; every graph.xxx(id) re-indexes a backing
 			// array, and these are used by several of the checks below.
 			final boolean nodeIsTile = graph.isTile(node);
@@ -333,7 +365,12 @@ public class Pathfinder implements Runnable
 					break;
 				}
 
-				if (updateBestPathWhenUnreachable(node, nodePacked))
+				// Sampled: this is O(targets) per call — with a big target set ("nearest bank" has
+				// ~150) running it on every tile dominated the whole search. Every 16th tile is
+				// enough to keep extending the cutoff and to grow the progressively rendered
+				// partial path; the exact closest tile is recovered in the post-pass below.
+				if ((++unreachableTrackCounter & (UNREACHABLE_TRACK_INTERVAL - 1)) == 0
+					&& updateBestPathWhenUnreachable(node, nodePacked))
 				{
 					cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
 				}
@@ -355,6 +392,20 @@ public class Pathfinder implements Runnable
 		else if (terminationReason == null)
 		{
 			terminationReason = PathTerminationReason.SEARCH_EXHAUSTED;
+		}
+
+		// The search ended without reaching a target: recover the exact closest tile (same
+		// tie-breaking as the sampled in-loop tracking) in one pass over the explored nodes —
+		// paying O(nodes × targets) once, instead of on every expansion.
+		if (!cancelled && reachedTarget == WorldPointUtil.UNDEFINED && targetArray.length > 0)
+		{
+			for (int id = 0; id < graph.size(); id++)
+			{
+				if (graph.isTile(id))
+				{
+					updateBestPathWhenUnreachable(id, graph.packedPosition(id));
+				}
+			}
 		}
 
 		// Materialise the final path and closest reached tile on the worker thread, publish them,
