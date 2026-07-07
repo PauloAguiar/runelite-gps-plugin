@@ -757,36 +757,42 @@ public class ShortestPathPanel extends PluginPanel
 		row.setOpaque(false);
 
 		JLabel dot = new JLabel(methodDot(method));
-		dot.setVerticalAlignment(SwingConstants.TOP);
+		dot.setAlignmentY(Component.TOP_ALIGNMENT);
 		dot.setBorder(new EmptyBorder(2, 0, 0, 0));
 		dot.setToolTipText(method.getType() == TransportType.TELEPORTATION_ITEM
 			? (method.isConsumable() ? "Item (charged — consumes a charge or the item)" : "Item (permanent — reusable)")
 			: method.category());
 		MethodAvailability status = cachedUnavailable.get(method);
 		boolean bankGated = bankMethods.contains(method);
-		if (status != null || bankGated)
+		// One structure whether or not glyphs follow, so the dot sits at the exact same spot on
+		// every row: a left-to-right box (dot first, at x=0), top-anchored like the plain rows —
+		// the old FlowLayout wrapper both indented the dot by its leading gap and re-centred it
+		// vertically, so rows with a bank/status glyph looked out of line.
+		JPanel west = new JPanel();
+		west.setLayout(new BoxLayout(west, BoxLayout.X_AXIS));
+		west.setOpaque(false);
+		west.add(dot);
+		if (bankGated)
 		{
-			JPanel west = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
-			west.setOpaque(false);
-			west.add(dot);
-			if (bankGated)
-			{
-				JLabel bankMarker = new JLabel(RouteIcons.IN_BANK);
-				bankMarker.setToolTipText("This method needs an item from your bank — the route walks to a bank to withdraw it first");
-				west.add(bankMarker);
-			}
-			// The availability map now records IN_BANK in every mode; on a route it's already shown by
-			// the bank marker above, so only add the status marker for other, distinct reasons.
-			if (status != null && !bankGated)
-			{
-				west.add(statusLabel(status));
-			}
-			row.add(west, BorderLayout.WEST);
+			JLabel bankMarker = new JLabel(RouteIcons.IN_BANK);
+			bankMarker.setAlignmentY(Component.TOP_ALIGNMENT);
+			bankMarker.setBorder(new EmptyBorder(0, 3, 0, 0));
+			bankMarker.setToolTipText("This method needs an item from your bank — the route walks to a bank to withdraw it first");
+			west.add(bankMarker);
 		}
-		else
+		// The availability map now records IN_BANK in every mode; on a route it's already shown by
+		// the bank marker above, so only add the status marker for other, distinct reasons.
+		if (status != null && !bankGated)
 		{
-			row.add(dot, BorderLayout.WEST);
+			JLabel statusMarker = statusLabel(status);
+			statusMarker.setAlignmentY(Component.TOP_ALIGNMENT);
+			statusMarker.setBorder(new EmptyBorder(0, 3, 0, 0));
+			west.add(statusMarker);
 		}
+		JPanel westWrap = new JPanel(new BorderLayout());
+		westWrap.setOpaque(false);
+		westWrap.add(west, BorderLayout.NORTH);
+		row.add(westWrap, BorderLayout.WEST);
 
 		String prefix = walkBefore > 0 ? "(" + walkBefore + ") " : "";
 		JLabel text = wrappedLabel(prefix + escapeHtml(method.label()));
@@ -1679,9 +1685,36 @@ public class ShortestPathPanel extends PluginPanel
 		return new ImageIcon(image);
 	}
 
+	/**
+	 * Fixed, deliberately-distinct colour per known category (the old hash assignment gave
+	 * "Boats & ships" the exact same teal as the permanent-item dot). Items are teal to match the
+	 * permanent-item dot; charged items get the amber dot via {@link #methodDot}. The hashed
+	 * palette remains only as a fallback for categories added later.
+	 */
 	private static Color categoryColour(String category)
 	{
-		return CATEGORY_PALETTE[Math.floorMod(category.hashCode(), CATEGORY_PALETTE.length)];
+		switch (category)
+		{
+			case "Spells": return new Color(0x5B, 0x9B, 0xD5);          // blue
+			case "Items": return PERMANENT_ITEM_DOT;                     // teal (charged = amber)
+			case "Jewellery box": return new Color(0xB4, 0x6F, 0xD4);   // purple
+			case "Levers": return new Color(0xD1, 0x5B, 0x5B);          // red
+			case "Minigame teleports": return new Color(0xE5, 0x73, 0x99); // pink
+			case "Portals": return new Color(0x9C, 0x7B, 0xE8);         // violet
+			case "Fairy rings": return new Color(0x4C, 0xAF, 0x50);     // green
+			case "Spirit trees": return new Color(0x8B, 0xC3, 0x4A);    // lime
+			case "Gnome gliders": return new Color(0xC9, 0x69, 0xC9);   // magenta
+			case "Hot air balloons": return new Color(0xE9, 0x7D, 0x3B); // orange
+			case "Magic carpets": return new Color(0xB0, 0x3A, 0x5B);   // wine
+			case "Mushtrees": return new Color(0xE0, 0x60, 0x60);       // light red
+			case "Minecarts": return new Color(0x60, 0x7D, 0x8B);       // slate
+			case "Quetzals": return new Color(0x4A, 0xC6, 0xE0);        // cyan
+			case "Obelisks": return new Color(0x9A, 0xA5, 0xB1);        // steel
+			case "Boats & ships": return new Color(0x5C, 0x6B, 0xC0);   // indigo — NOT the item teal
+			case "Canoes": return new Color(0xB5, 0x79, 0x3B);          // wood brown
+			case "Seasonal": return new Color(0x94, 0xB4, 0x4A);        // olive
+			default: return CATEGORY_PALETTE[Math.floorMod(category.hashCode(), CATEGORY_PALETTE.length)];
+		}
 	}
 
 	private static String escapeHtml(String text)
