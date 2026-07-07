@@ -453,6 +453,14 @@ public class ShortestPathPanel extends PluginPanel
 			statusIcon = RouteIcons.BANNER_BUSY;
 			statusAccent = BANNER_INFO_ACCENT;
 		}
+		else if (!cachedRoutes.isEmpty() && cachedRoutes.stream().noneMatch(plugin::routeReachesTarget))
+		{
+			// Routes exist but every one stops short of the target — it can't actually be reached
+			// (e.g. a tile on an island with no connecting path or teleport). Say so, don't imply success.
+			status = "<b>Destination can't be reached.</b><br>Showing the route to the closest reachable point.";
+			statusIcon = RouteIcons.BANNER_WARNING;
+			statusAccent = BANNER_WARN_ACCENT;
+		}
 		else if (!cachedRoutes.isEmpty())
 		{
 			status = cachedRoutes.size() + (cachedRoutes.size() == 1 ? " route found" : " routes found");
@@ -557,14 +565,15 @@ public class ShortestPathPanel extends PluginPanel
 		topRow.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		topRow.setBorder(new EmptyBorder(3, 6, 3, 4));
 
+		boolean reaches = plugin.routeReachesTarget(route);
 		// The route's identity: the GPS pin with its number, in place of a "Route N" title.
 		JLabel name = new JLabel(Integer.toString(index + 1), RouteIcons.ROUTE_PIN, SwingConstants.LEADING);
 		name.setIconTextGap(3);
 		name.setFont(FontManager.getRunescapeBoldFont());
 		name.setForeground(selected ? ColorScheme.BRAND_ORANGE : ColorScheme.LIGHT_GRAY_COLOR);
-		if (!route.isReached())
+		if (!reaches)
 		{
-			name.setToolTipText("The exact target isn't reachable — this ends at the closest reachable tile");
+			name.setToolTipText("The target can't be reached — this ends at the closest reachable tile");
 		}
 		topRow.add(name, BorderLayout.WEST);
 
@@ -589,6 +598,11 @@ public class ShortestPathPanel extends PluginPanel
 		methods.setLayout(new BoxLayout(methods, BoxLayout.Y_AXIS));
 		methods.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		methods.setBorder(new EmptyBorder(2, 6, 4, 4));
+		if (!reaches)
+		{
+			methods.add(noteRow("<font color='#FF981F'>Can't reach the target — ends at the closest point.</font>",
+				"This destination isn't reachable; the route stops at the nearest tile GPS can get to."));
+		}
 		if (route.isViaBank())
 		{
 			// Kept to one line: the method that needs the bank is identified by the bank glyph on its

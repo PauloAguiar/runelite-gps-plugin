@@ -658,6 +658,37 @@ public class ShortestPathPlugin extends Plugin
 		return closestTargetDistance > unreachableTargetDistance;
 	}
 
+	/**
+	 * Whether an alternative route actually gets to the target: the exact tile, or — for object and
+	 * other adjacent destinations that legitimately end beside the goal (a bank booth, an altar) —
+	 * within the unreachable-distance threshold of it. False means the destination can't be reached
+	 * and the route only got to the closest reachable tile. Unlike {@link #isPathUnreachable()} this
+	 * judges the alt-route's own endpoint, so a target reachable only by a teleport isn't misreported.
+	 */
+	public boolean routeReachesTarget(RouteOption route)
+	{
+		if (route == null)
+		{
+			return false;
+		}
+		if (route.isReached())
+		{
+			return true;
+		}
+		List<PathStep> path = route.getPath();
+		if (path == null || path.isEmpty() || pathfinder == null || pathfinder.getTargets().isEmpty())
+		{
+			return true;  // not enough information to declare it unreachable
+		}
+		int endPoint = path.get(path.size() - 1).getPackedPosition();
+		int closest = Integer.MAX_VALUE;
+		for (int target : pathfinder.getTargets())
+		{
+			closest = Math.min(closest, WorldPointUtil.distanceBetween(target, endPoint));
+		}
+		return closest <= unreachableTargetDistance;
+	}
+
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{

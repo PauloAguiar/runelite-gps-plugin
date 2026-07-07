@@ -99,6 +99,9 @@ final class RouteDirections
 		{
 			return steps;
 		}
+		// When the target can't be reached, the route stops at the closest tile — the final leg walks
+		// "as close as possible", not "to the destination", so the overlay doesn't imply arrival.
+		boolean reaches = plugin.routeReachesTarget(route);
 
 		// Edge index -> position in the route's method list.
 		List<Integer> methodEdges = route.getMethodEdgeIndexes();
@@ -179,7 +182,8 @@ final class RouteDirections
 		}
 		if (walk > 0)
 		{
-			steps.add(new Step(walkText("the destination"), legStart, path.size() - 1, walkTicks(walk)));
+			steps.add(new Step(reaches ? walkText("the destination") : "Walk as close as possible (can't reach the target)",
+				legStart, path.size() - 1, walkTicks(walk)));
 		}
 		return steps;
 	}
