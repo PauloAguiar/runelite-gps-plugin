@@ -936,9 +936,14 @@ public class ShortestPathPlugin extends Plugin
 			// Reached the destination (along the path). Show the "Arrived!" panel — including when
 			// the destination was set while already there (e.g. "nearest bank" at a bank), where
 			// the journey time is ~0 — then clear the target.
+			long elapsed = System.currentTimeMillis() - targetSetMillis;
 			if (routeDirectionsOverlay != null)
 			{
-				routeDirectionsOverlay.markArrived(targetSource, System.currentTimeMillis() - targetSetMillis);
+				routeDirectionsOverlay.markArrived(targetSource, elapsed);
+			}
+			if (altPanel != null)
+			{
+				altPanel.markArrived(elapsed);
 			}
 			setTarget(WorldPointUtil.UNDEFINED);
 			return;

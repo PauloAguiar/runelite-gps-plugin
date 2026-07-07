@@ -37,6 +37,7 @@ import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -63,6 +64,7 @@ public class ShortestPathPanel extends PluginPanel
 	private static final int BANNER_TEXT_WIDTH = 158;
 	private static final Color BANNER_INFO_ACCENT = new Color(0x4C, 0x8B, 0xF5);   // GPS blue
 	private static final Color BANNER_WARN_ACCENT = new Color(0xFF, 0x98, 0x1F);   // amber
+	private static final Color BANNER_OK_ACCENT = new Color(0x4C, 0xAF, 0x50);     // green
 	// Tallest the expanded teleport-methods box may grow before it scrolls internally.
 	private static final int CATALOG_MAX_HEIGHT = 240;
 
@@ -86,6 +88,10 @@ public class ShortestPathPanel extends PluginPanel
 	// Message-banner container below the header; repopulated each render with the status banner
 	// (routes found / calculating / none) plus any warnings (bank unknown, stale exclusions).
 	private final JPanel notes = new JPanel();
+	// Set by the plugin the instant it clears the target on arrival, so the status shows an arrival
+	// banner rather than "No destination set". Cleared when a new destination is set.
+	private boolean showingArrival;
+	private boolean arrivalImmediate;
 	// Fixed (non-scrolling) slot below the header holding the teleport-methods catalog.
 	private final JPanel catalogHolder = new JPanel();
 	// Filter box for the catalog; a persistent component so typing keeps focus while only the rows
@@ -424,6 +430,21 @@ public class ShortestPathPanel extends PluginPanel
 	/**
 	 * Stores the latest data and re-renders. Must be called on the Swing EDT.
 	 */
+	/**
+	 * Called by the plugin the moment it reaches (or clears an already-at) destination, so the status
+	 * shows an arrival banner instead of "No destination set". {@code elapsedMillis} is ~0 when the
+	 * destination was set while already there. Marshalled onto the EDT; the flag is consumed by the
+	 * {@link #render()} that the target-clear then triggers.
+	 */
+	public void markArrived(long elapsedMillis)
+	{
+		SwingUtilities.invokeLater(() ->
+		{
+			showingArrival = true;
+			arrivalImmediate = elapsedMillis < 3000;
+		});
+	}
+
 	public void displayRoutes(List<RouteOption> routes, List<TeleportMethod> catalog,
 		Map<TeleportMethod, MethodAvailability> unavailable, Set<TeleportMethod> exclusions,
 		boolean calculating, boolean hasTarget)
@@ -445,6 +466,11 @@ public class ShortestPathPanel extends PluginPanel
 		String status;
 		Icon statusIcon;
 		Color statusAccent;
+		// A live destination (or its routes) supersedes any lingering arrival banner.
+		if (cachedHasTarget)
+		{
+			showingArrival = false;
+		}
 		if (cachedCalculating)
 		{
 			status = cachedRoutes.isEmpty()
@@ -474,6 +500,13 @@ public class ShortestPathPanel extends PluginPanel
 				+ (plugin.getRoutesMode() == AlternativeRoutesMode.ALL_EVERYTHING ? "" : "<br>Try a broader mode (Inv + bank, or All).");
 			statusIcon = RouteIcons.BANNER_WARNING;
 			statusAccent = BANNER_WARN_ACCENT;
+		}
+		else if (showingArrival)
+		{
+			// Reached (or set while already at) the destination — say so rather than "No destination set".
+			status = arrivalImmediate ? "You're already at your destination." : "Arrived at your destination.";
+			statusIcon = RouteIcons.CHECK;
+			statusAccent = BANNER_OK_ACCENT;
 		}
 		else
 		{
