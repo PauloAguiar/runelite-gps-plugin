@@ -20,17 +20,28 @@ public final class TeleportMethod
 	private final TransportType type;
 	private final String displayInfo;
 	private final int destination;
+	// Carried metadata (NOT part of identity/equals): whether using this consumes a charge or the
+	// item itself (teleport tabs, charged jewellery) versus being permanent/unlimited. Only
+	// meaningful for item methods; defaults false for methods built without a transport.
+	private final boolean consumable;
 
 	public TeleportMethod(TransportType type, String displayInfo, int destination)
+	{
+		this(type, displayInfo, destination, false);
+	}
+
+	public TeleportMethod(TransportType type, String displayInfo, int destination, boolean consumable)
 	{
 		this.type = type;
 		this.displayInfo = (displayInfo == null || displayInfo.isEmpty()) ? null : displayInfo;
 		this.destination = destination;
+		this.consumable = consumable;
 	}
 
 	public static TeleportMethod fromTransport(Transport transport)
 	{
-		return new TeleportMethod(transport.getType(), transport.getDisplayInfo(), transport.getDestination());
+		return new TeleportMethod(transport.getType(), transport.getDisplayInfo(),
+			transport.getDestination(), transport.isConsumable());
 	}
 
 	/**

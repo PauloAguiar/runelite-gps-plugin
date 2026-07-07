@@ -111,6 +111,8 @@ public class ShortestPathPanel extends PluginPanel
 	// Whether the whole "Teleport methods" catalog section (shown at the top) is expanded. Collapsed
 	// by default so the routes stay the focus; the user opens it to browse/toggle methods.
 	private boolean catalogExpanded = false;
+	// Filter toggle (funnel next to the search): show only the currently-disabled (excluded) methods.
+	private boolean showOnlyDisabled = false;
 
 	public ShortestPathPanel(ShortestPathPlugin plugin)
 	{
@@ -646,14 +648,25 @@ public class ShortestPathPanel extends PluginPanel
 		titleRow.setAlignmentX(Component.LEFT_ALIGNMENT);
 		titleRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 		// "available" = methods usable right now (not missing an item/level/quest/unlock); the count
-		// the player actually cares about. Included-but-locked methods aren't counted.
+		// the player actually cares about. Broken down into permanent (unlimited use) and charged
+		// (consumes a charge or the item itself — teleport tabs, charged jewellery).
 		int available = 0;
 		int included = 0;
+		int permanent = 0;
+		int charged = 0;
 		for (TeleportMethod method : cachedCatalog)
 		{
 			if (!cachedUnavailable.containsKey(method))
 			{
 				available++;
+				if (method.isConsumable())
+				{
+					charged++;
+				}
+				else
+				{
+					permanent++;
+				}
 			}
 			if (!cachedExclusions.contains(method))
 			{
@@ -683,6 +696,19 @@ public class ShortestPathPanel extends PluginPanel
 		});
 		section.add(titleRow);
 
+		// Usable breakdown — permanent (unlimited) vs charged (consumes a charge/the item).
+		if (available > 0)
+		{
+			JLabel breakdown = new JLabel(permanent + " permanent · " + charged + " charged");
+			breakdown.setFont(FontManager.getRunescapeSmallFont());
+			breakdown.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+			breakdown.setToolTipText("Of the usable methods: " + permanent + " permanent (unlimited use) · "
+				+ charged + " charged (teleport tabs, charged jewellery — consumed or lose a charge)");
+			breakdown.setAlignmentX(Component.LEFT_ALIGNMENT);
+			breakdown.setBorder(new EmptyBorder(0, 0, 4, 0));
+			section.add(breakdown);
+		}
+
 		if (!catalogExpanded)
 		{
 			catalogRowsPanel = null;
@@ -691,15 +717,31 @@ public class ShortestPathPanel extends PluginPanel
 			return section;
 		}
 
-		// Filter box (persistent component, see the field comment) — only mounted while expanded.
+		// Filter box (persistent component, see the field comment) — only mounted while expanded —
+		// with a funnel toggle to show only the currently-disabled methods.
 		catalogSearch.setAlignmentX(Component.LEFT_ALIGNMENT);
 		catalogSearch.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+		IconActionLabel filterToggle = new IconActionLabel(
+			showOnlyDisabled ? RouteIcons.FILTER_ACTIVE : RouteIcons.FILTER,
+			showOnlyDisabled ? RouteIcons.FILTER_ACTIVE_HOVER : RouteIcons.FILTER_HOVER,
+			showOnlyDisabled ? "Showing only disabled methods — click to show all"
+				: "Show only the disabled (excluded) methods",
+			() ->
+			{
+				showOnlyDisabled = !showOnlyDisabled;
+				refreshCatalog();
+			});
+		JPanel filterWrap = new JPanel(new BorderLayout());
+		filterWrap.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		filterWrap.setBorder(new EmptyBorder(0, 4, 0, 2));
+		filterWrap.add(control(filterToggle), BorderLayout.CENTER);
 		JPanel searchWrap = new JPanel(new BorderLayout());
 		searchWrap.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		searchWrap.setBorder(new EmptyBorder(0, 0, 4, 0));
 		searchWrap.setAlignmentX(Component.LEFT_ALIGNMENT);
 		searchWrap.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
 		searchWrap.add(catalogSearch, BorderLayout.CENTER);
+		searchWrap.add(filterWrap, BorderLayout.EAST);
 		section.add(searchWrap);
 
 		// The method rows scroll inside their own bounded box with their own scrollbar, so a long
@@ -745,6 +787,11 @@ public class ShortestPathPanel extends PluginPanel
 		Map<String, List<TeleportMethod>> grouped = new TreeMap<>();
 		for (TeleportMethod method : cachedCatalog)
 		{
+			// The funnel filter narrows to currently-disabled methods.
+			if (showOnlyDisabled && !cachedExclusions.contains(method))
+			{
+				continue;
+			}
 			// A filter hit on the category keeps the whole category; otherwise match the method label.
 			if (!filtering
 				|| method.category().toLowerCase().contains(filter)
@@ -760,7 +807,9 @@ public class ShortestPathPanel extends PluginPanel
 
 		if (grouped.isEmpty())
 		{
-			JLabel none = wrappedLabel("<i>No methods match \"" + escapeHtml(filter) + "\"</i>");
+			String message = showOnlyDisabled ? "No disabled methods"
+				: "No methods match \"" + escapeHtml(filter) + "\"";
+			JLabel none = wrappedLabel("<i>" + message + "</i>");
 			none.setBorder(new EmptyBorder(2, 4, 2, 0));
 			none.setAlignmentX(Component.LEFT_ALIGNMENT);
 			rows.add(none);
@@ -769,7 +818,8 @@ public class ShortestPathPanel extends PluginPanel
 		{
 			String category = entry.getKey();
 			List<TeleportMethod> items = entry.getValue();
-			boolean expanded = filtering || expandedCategories.contains(category);
+			// A filter or the disabled-only funnel force categories open so the matches are visible.
+			boolean expanded = filtering || showOnlyDisabled || expandedCategories.contains(category);
 			rows.add(buildCategoryHeader(category, items, expanded));
 			if (expanded)
 			{

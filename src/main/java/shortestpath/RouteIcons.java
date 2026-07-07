@@ -69,6 +69,11 @@ final class RouteIcons
 	// Capture a debug snapshot of the current routes (camera).
 	static final ImageIcon DEBUG = new ImageIcon(camera(GREY));
 	static final ImageIcon DEBUG_HOVER = new ImageIcon(camera(LIGHT));
+	// Filter the catalog to only the currently-disabled methods (funnel). Orange = active.
+	static final ImageIcon FILTER = new ImageIcon(funnel(GREY));
+	static final ImageIcon FILTER_HOVER = new ImageIcon(funnel(LIGHT));
+	static final ImageIcon FILTER_ACTIVE = new ImageIcon(funnel(ORANGE));
+	static final ImageIcon FILTER_ACTIVE_HOVER = new ImageIcon(funnel(ORANGE_LIGHT));
 
 	// The plugin's identity mark: the navigation-blue location pin, matching the GPS overlay's
 	// title glyph. Used for the sidebar tab (and exportable for the hub listing icon).
@@ -473,6 +478,23 @@ final class RouteIcons
 				g.setColor(colour.darker());
 				g.draw(new Ellipse2D.Double(x, y, w, h));
 			}
+		});
+	}
+
+	private static BufferedImage funnel(Color colour)
+	{
+		return render(g ->
+		{
+			g.setColor(colour);
+			Path2D f = new Path2D.Double();
+			f.moveTo(2.5, 3);
+			f.lineTo(13.5, 3);
+			f.lineTo(9, 8);
+			f.lineTo(9, 13.5);
+			f.lineTo(7, 12);
+			f.lineTo(7, 8);
+			f.closePath();
+			g.fill(f);
 		});
 	}
 
