@@ -2070,6 +2070,58 @@ public class ShortestPathPlugin extends Plugin
 		return stepsJson;
 	}
 
+	// Whether the fixed benchmark suite is currently running (one at a time).
+	private final java.util.concurrent.atomic.AtomicBoolean benchmarkRunning =
+		new java.util.concurrent.atomic.AtomicBoolean(false);
+
+	/**
+	 * Runs the fixed performance-benchmark suite ({@link GpsBenchmark}): prepared alternative-routes
+	 * trips and nearest-X queries with pinned parameters, reported as JSON under
+	 * ~/.runelite/gps-debug/ for comparing profiling data across plugin versions. Triggered by the
+	 * panel's stopwatch button; progress and the report path are announced as game messages. The
+	 * benchmark's generations supersede any in-flight route search, so the user's routes are
+	 * regenerated once it finishes.
+	 */
+	public void runBenchmark()
+	{
+		if (altRoutesService == null || !GameState.LOGGED_IN.equals(client.getGameState()))
+		{
+			log.info("GPS benchmark requires being logged in.");
+			return;
+		}
+		if (!benchmarkRunning.compareAndSet(false, true))
+		{
+			return;
+		}
+		GpsBenchmark.standard(altRoutesService, getTransports(), gson,
+			message -> clientThread.invokeLater(() ->
+			{
+				log.info(message);
+				if (GameState.LOGGED_IN.equals(client.getGameState()))
+				{
+					client.addChatMessage(net.runelite.api.ChatMessageType.GAMEMESSAGE, "", message, null);
+				}
+			}),
+			() ->
+			{
+				benchmarkRunning.set(false);
+				// The benchmark advanced the service's generation counter (cancelling any user
+				// generation mid-flight); regenerate so the panel and flags end up consistent.
+				clientThread.invokeLater(() ->
+				{
+					if (!lastAltTargets.isEmpty())
+					{
+						triggerAlternatives(lastAltStart, new HashSet<>(lastAltTargets));
+					}
+					else
+					{
+						triggerAlternatives(WorldPointUtil.UNDEFINED, new HashSet<>());
+					}
+				});
+			})
+			.start();
+	}
+
 	public void captureDebugSnapshot()
 	{
 		clientThread.invokeLater(() ->

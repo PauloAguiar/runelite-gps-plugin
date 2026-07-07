@@ -311,6 +311,11 @@ public class ShortestPathPanel extends PluginPanel
 
 		JPanel actions = new JPanel(new FlowLayout(FlowLayout.TRAILING, 6, 0));
 		actions.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		actions.add(control(new IconActionLabel(RouteIcons.BENCHMARK, RouteIcons.BENCHMARK_HOVER,
+			"<html>Run the fixed performance benchmark (prepared trips + nearest-X queries)<br>"
+				+ "and save a profiling report for comparing plugin versions.<br>"
+				+ "Takes a minute or two and cancels any in-progress route search.</html>",
+			plugin::runBenchmark)));
 		actions.add(control(new IconActionLabel(RouteIcons.DEBUG, RouteIcons.DEBUG_HOVER,
 			"Save a debug snapshot of the current routes to disk (for reproducing issues)",
 			plugin::captureDebugSnapshot)));

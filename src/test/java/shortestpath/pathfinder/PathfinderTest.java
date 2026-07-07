@@ -1714,24 +1714,42 @@ public class PathfinderTest
 
 	private Transport findSampleTransport(TransportType transportType)
 	{
-		for (int origin : transports.keySet())
+		// Deterministic, known-usable sample. The raw static transport map's HashSet iteration
+		// follows identity hashes, which vary with JVM allocation history — adding an unrelated
+		// test class changed which fairy ring got sampled, and the raw map includes gated variants
+		// the test stubs don't satisfy (a walked 392-tile "ring" path). So: iterate the ACTIVE
+		// (availability-filtered) transports of the already-set-up config, and pick the smallest
+		// (origin, destination) pair so every run tests the same transport.
+		Transport best = null;
+		PrimitiveIntHashMap<Transport[]> active = pathfinderConfig.getTransports();
+		for (int origin : active.keys())
 		{
-			for (Transport transport : transports.get(origin))
+			for (Transport transport : active.get(origin))
 			{
-				if (transportType.equals(transport.getType()))
+				if (!transportType.equals(transport.getType()))
 				{
-					int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
-					int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
-					if (ShortestPathPlugin.isInsidePoh(originX, originY))
-					{
-						continue;
-					}
-					return transport;
+					continue;
+				}
+				int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
+				int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
+				if (ShortestPathPlugin.isInsidePoh(originX, originY))
+				{
+					continue;
+				}
+				if (best == null
+					|| transport.getOrigin() < best.getOrigin()
+					|| (transport.getOrigin() == best.getOrigin()
+						&& transport.getDestination() < best.getDestination()))
+				{
+					best = transport;
 				}
 			}
 		}
-		fail("No transport of type " + transportType + " found");
-		return null;
+		if (best == null)
+		{
+			fail("No transport of type " + transportType + " found");
+		}
+		return best;
 	}
 
 	/**
