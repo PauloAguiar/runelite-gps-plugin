@@ -326,8 +326,8 @@ public class AlternativeRoutesService
 
 	/**
 	 * Seeds additional routes when the exclusion loop ended early: for each candidate global teleport
-	 * (closest landing to the target first), run one search with every OTHER global teleport excluded,
-	 * so the result is "the best route if you use this teleport". Routes with an already-seen method
+	 * (best estimated arrival first), run one search with every OTHER global teleport excluded, so the
+	 * result is "the best route if you use this teleport". Routes with an already-seen method
 	 * signature, walk-only results, or endpoints meaningfully further than the best route are skipped.
 	 */
 	private void seedTeleportRoutes(int gen, int start, Set<Integer> ends, Set<TeleportMethod> userExclusions,
@@ -336,37 +336,17 @@ public class AlternativeRoutesService
 		ResultListener listener, int bestRemaining, GenTimer timer)
 	{
 		final int target = closestTarget(start, ends);
-		final int startDistance = WorldPointUtil.distanceBetween(start, target);
 
-		// Rank candidates by how close they land to the target; drop ones that don't get closer than
-		// the start, user-excluded methods, and duplicate landings (e.g. tab vs spell to the same tile).
-		final Map<Integer, Transport> byDestination = new LinkedHashMap<>();
-		seedCandidates.sort(Comparator.comparingInt(t -> WorldPointUtil.distanceBetween(t.getDestination(), target)));
+		// Every global teleport is excluded from each seed search except the seed itself, so the
+		// exclusion universe must span ALL candidates — including ones that don't get an attempt.
 		final Set<TeleportMethod> allSeedMethods = new HashSet<>();
 		for (Transport transport : seedCandidates)
 		{
 			allSeedMethods.add(TeleportMethod.fromTransport(transport));
 		}
-		for (Transport transport : seedCandidates)
-		{
-			if (WorldPointUtil.distanceBetween(transport.getDestination(), target) >= startDistance
-				|| userExclusions.contains(TeleportMethod.fromTransport(transport)))
-			{
-				continue;
-			}
-			byDestination.putIfAbsent(transport.getDestination(), transport);
-		}
 
 		final int maxAttempts = (limit - routes.size()) * 3;
-		final List<Transport> attempts = new ArrayList<>(Math.min(maxAttempts, byDestination.size()));
-		for (Transport seed : byDestination.values())
-		{
-			if (attempts.size() >= maxAttempts)
-			{
-				break;
-			}
-			attempts.add(seed);
-		}
+		final List<Transport> attempts = rankSeedCandidates(seedCandidates, target, userExclusions, maxAttempts);
 		if (attempts.isEmpty())
 		{
 			return;
@@ -427,6 +407,50 @@ public class AlternativeRoutesService
 				future.cancel(false);
 			}
 		}
+	}
+
+	/**
+	 * Selects and orders the seed-teleport attempt list: user-excluded methods and duplicate landings
+	 * (e.g. tab vs spell to the same tile) are dropped, the rest are ranked by estimated arrival cost
+	 * — the teleport's cast/travel duration plus the straight-line distance from its landing to the
+	 * target (a lower bound of the remaining walk, in the engine's own ticks-and-tiles cost blend) —
+	 * and the list is capped at {@code maxAttempts}.
+	 * <p>
+	 * Candidates landing farther than the start are deliberately KEPT: when an obstacle separates the
+	 * start from the target, the straight-line start distance understates the real walk, and a
+	 * teleport landing "farther" can be much closer by path (it also keeps cross-plane landings,
+	 * where the straight-line distance is unknowable). Ranking tries them last and the attempt cap
+	 * bounds the work, so this costs nothing when closer candidates exist. Each attempt is priced by
+	 * a full search afterwards — this pre-selection never decides a shown cost, only which candidates
+	 * get a search.
+	 */
+	static List<Transport> rankSeedCandidates(List<Transport> seedCandidates, int target,
+		Set<TeleportMethod> userExclusions, int maxAttempts)
+	{
+		final List<Transport> ranked = new ArrayList<>(seedCandidates);
+		// Long arithmetic: a cross-plane landing has straight-line distance Integer.MAX_VALUE, which
+		// must rank last rather than overflow into ranking first.
+		ranked.sort(Comparator.comparingLong(
+			t -> (long) t.getDuration() + WorldPointUtil.distanceBetween(t.getDestination(), target)));
+		final Map<Integer, Transport> byDestination = new LinkedHashMap<>();
+		for (Transport transport : ranked)
+		{
+			if (userExclusions.contains(TeleportMethod.fromTransport(transport)))
+			{
+				continue;
+			}
+			byDestination.putIfAbsent(transport.getDestination(), transport);
+		}
+		final List<Transport> attempts = new ArrayList<>(Math.max(0, Math.min(maxAttempts, byDestination.size())));
+		for (Transport seed : byDestination.values())
+		{
+			if (attempts.size() >= maxAttempts)
+			{
+				break;
+			}
+			attempts.add(seed);
+		}
+		return attempts;
 	}
 
 	/**

@@ -234,6 +234,13 @@ public class ShortestPathPlugin extends Plugin
 	// so they re-run against the same destination. Volatile: read/written from client thread + Swing EDT.
 	private volatile int lastAltStart = WorldPointUtil.UNDEFINED;
 	private volatile Set<Integer> lastAltTargets = Set.of();
+	// The route limit the last generation ran with, so opening the panel can tell a primary-only
+	// generation (panel was hidden) from a full one and catch up.
+	private volatile int lastAltLimit = 0;
+	// Whether the GPS side panel is currently shown (sidebar tab selected). While hidden, auto-compute
+	// only finds the primary route (the overlay needs it); the extra alternatives are searched
+	// automatically when the panel opens. Written from the Swing EDT, read on the client thread.
+	private volatile boolean altPanelVisible = false;
 	// Whether the client knows the bank's contents this session (the bank container is only populated
 	// once the bank has been opened). Used by the panel to explain why Bank mode finds nothing.
 	private volatile boolean bankContentsKnown = false;
@@ -2251,12 +2258,40 @@ public class ShortestPathPlugin extends Plugin
 		}
 		Pathfinder current = pathfinder;
 		Set<Integer> targets = (current != null) ? current.getTargets() : Set.of();
-		if (targets.isEmpty() || targets.equals(lastAltTargets))
+		// With the panel hidden, only the primary route is computed — one search, the same class of
+		// work as the classic pathfinder, and the GPS overlay needs it. The extra alternatives are
+		// searched automatically once the panel is opened (see setAltPanelVisible).
+		int desiredLimit = altPanelVisible ? defaultRouteLimit() : 1;
+		if (!shouldAutoCompute(targets, lastAltTargets, lastAltLimit, desiredLimit))
 		{
 			return;
 		}
-		routeLimit = defaultRouteLimit();
+		routeLimit = desiredLimit;
 		triggerAlternatives(altStart(current), new HashSet<>(targets));
+	}
+
+	/**
+	 * Whether a new alternatives generation is needed: there is a target, and either it changed since
+	 * the last generation or the last generation was allowed fewer routes than wanted now (a
+	 * primary-only run while the panel was hidden, caught up when it opens). Pure decision, unit-tested.
+	 */
+	static boolean shouldAutoCompute(Set<Integer> targets, Set<Integer> lastTargets, int lastLimit, int desiredLimit)
+	{
+		return !targets.isEmpty() && (!targets.equals(lastTargets) || lastLimit < desiredLimit);
+	}
+
+	/**
+	 * Called by the panel when the GPS sidebar tab is shown or hidden. Opening the panel catches up:
+	 * if the current destination only got its primary route while the panel was hidden, the extra
+	 * alternatives are searched now.
+	 */
+	void setAltPanelVisible(boolean visible)
+	{
+		altPanelVisible = visible;
+		if (visible)
+		{
+			clientThread.invokeLater(this::maybeAutoComputeAlternatives);
+		}
 	}
 
 	private void triggerAlternatives(int start, Set<Integer> targets)
@@ -2268,6 +2303,7 @@ public class ShortestPathPlugin extends Plugin
 		Set<Integer> ends = (targets == null) ? new HashSet<>() : new HashSet<>(targets);
 		lastAltStart = start;
 		lastAltTargets = Set.copyOf(ends);
+		lastAltLimit = routeLimit;
 
 		// Clear the previous routes immediately (the catalog stays); the new routes stream in one by
 		// one as they are found. With no target this still streams just the teleport-methods catalog.

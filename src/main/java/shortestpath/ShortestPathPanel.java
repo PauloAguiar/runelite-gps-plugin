@@ -165,6 +165,22 @@ public class ShortestPathPanel extends PluginPanel
 		}
 	}
 
+	/**
+	 * Sidebar visibility drives how much work the route generator does: while this panel is hidden
+	 * only the primary route is computed; opening it searches the extra alternatives automatically.
+	 */
+	@Override
+	public void onActivate()
+	{
+		plugin.setAltPanelVisible(true);
+	}
+
+	@Override
+	public void onDeactivate()
+	{
+		plugin.setAltPanelVisible(false);
+	}
+
 	public ShortestPathPanel(ShortestPathPlugin plugin)
 	{
 		super(false);
