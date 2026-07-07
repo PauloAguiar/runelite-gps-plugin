@@ -861,13 +861,10 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		int currentLocation = WorldPointUtil.fromLocalInstance(client, localPlayer);
-		for (int target : pathfinder.getTargets())
+		if (pathTilesRemaining(currentLocation, config.reachedDistance()) < config.reachedDistance())
 		{
-			if (WorldPointUtil.distanceBetween(currentLocation, target) < config.reachedDistance())
-			{
-				setTarget(WorldPointUtil.UNDEFINED);
-				return;
-			}
+			setTarget(WorldPointUtil.UNDEFINED);
+			return;
 		}
 
 		if (!startPointSet && !isNearPath(currentLocation))
@@ -879,6 +876,61 @@ public class ShortestPathPlugin extends Plugin
 			}
 			restartPathfinding(currentLocation, pathfinder.getTargets());
 		}
+	}
+
+	/**
+	 * Tiles remaining to the goal measured ALONG the calculated path — the straight-line
+	 * finish check used to clear the target through walls (the goal one tile away across a
+	 * fence read as "reached"). Remaining = walk to the nearest path tile plus the summed
+	 * edge lengths from it to the end; transport jumps count their full span, so a pending
+	 * teleport never reads as nearly-there. Returns {@link Integer#MAX_VALUE} when the player
+	 * is too far off the path (the recalculation logic owns that case) or when the path only
+	 * gets close to an unreachable target rather than reaching it. Accumulation stops at
+	 * {@code limit}, the only threshold the caller compares against.
+	 */
+	private int pathTilesRemaining(int currentLocation, int limit)
+	{
+		List<PathStep> path = pathfinder.getPath();
+		if (path == null || path.isEmpty())
+		{
+			return Integer.MAX_VALUE;
+		}
+		int end = path.get(path.size() - 1).getPackedPosition();
+		boolean reachesTarget = false;
+		for (int target : pathfinder.getTargets())
+		{
+			if (target == end)
+			{
+				reachesTarget = true;
+				break;
+			}
+		}
+		if (!reachesTarget)
+		{
+			return Integer.MAX_VALUE;
+		}
+		int best = -1;
+		int bestDistance = Integer.MAX_VALUE;
+		for (int i = 0; i < path.size(); i++)
+		{
+			int distance = WorldPointUtil.distanceBetween(path.get(i).getPackedPosition(), currentLocation);
+			if (distance < bestDistance)
+			{
+				bestDistance = distance;
+				best = i;
+			}
+		}
+		if (best < 0 || bestDistance > 20)
+		{
+			return Integer.MAX_VALUE;
+		}
+		int remaining = bestDistance;
+		for (int i = best + 1; i < path.size() && remaining < limit; i++)
+		{
+			remaining += Math.max(1, WorldPointUtil.distanceBetween2D(
+				path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition()));
+		}
+		return remaining;
 	}
 
 	@Subscribe
