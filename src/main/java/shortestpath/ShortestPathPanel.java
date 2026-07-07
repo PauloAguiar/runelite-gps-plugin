@@ -10,6 +10,7 @@ import java.awt.FlowLayout;
 import java.awt.Graphics2D;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -584,13 +585,13 @@ public class ShortestPathPanel extends PluginPanel
 		for (int i = 0; i < cachedRoutes.size(); i++)
 		{
 			listPanel.add(buildRouteCard(i, cachedRoutes.get(i), cachedRoutes.get(i) == selected));
-			listPanel.add(verticalGap(4));
+			listPanel.add(verticalGap(6));
 		}
 		// Only offer "show more" once this generation has finished.
 		if (!cachedCalculating && !cachedRoutes.isEmpty() && plugin.canLoadMoreRoutes())
 		{
 			listPanel.add(buildShowMoreButton());
-			listPanel.add(verticalGap(4));
+			listPanel.add(verticalGap(6));
 		}
 
 		listPanel.revalidate();
@@ -614,43 +615,56 @@ public class ShortestPathPanel extends PluginPanel
 	private JPanel buildRouteCard(int index, RouteOption route, boolean selected)
 	{
 		JPanel card = new JPanel(new BorderLayout());
-		card.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		card.setBorder(BorderFactory.createLineBorder(
-			selected ? ColorScheme.BRAND_ORANGE : ColorScheme.MEDIUM_GRAY_COLOR));
+		// Selection reads as a filled state: slightly lighter card + a 3px orange edge stripe,
+		// instead of the old full orange outline. Children are non-opaque so one background rules.
+		Color cardBg = selected ? ColorScheme.DARK_GRAY_HOVER_COLOR : ColorScheme.DARKER_GRAY_COLOR;
+		card.setBackground(cardBg);
+		card.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createLineBorder(new Color(0x3A, 0x3A, 0x3A)),
+			BorderFactory.createMatteBorder(0, 3, 0, 0, selected ? ColorScheme.BRAND_ORANGE : cardBg)));
 		card.setAlignmentX(Component.LEFT_ALIGNMENT);
 		card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
 		JPanel topRow = new JPanel(new BorderLayout());
-		topRow.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		topRow.setBorder(new EmptyBorder(3, 6, 3, 4));
+		topRow.setOpaque(false);
+		topRow.setBorder(new EmptyBorder(4, 7, 2, 5));
 
 		boolean reaches = plugin.routeReachesTarget(route);
-		// The route's identity: the GPS pin with its number, in place of a "Route N" title.
-		JLabel name = new JLabel(Integer.toString(index + 1), RouteIcons.ROUTE_PIN, SwingConstants.LEADING);
-		name.setIconTextGap(3);
-		name.setFont(FontManager.getRunescapeBoldFont());
-		name.setForeground(selected ? ColorScheme.BRAND_ORANGE : ColorScheme.LIGHT_GRAY_COLOR);
-		if (!reaches)
-		{
-			name.setToolTipText("The target can't be reached — this ends at the closest reachable tile");
-		}
-		topRow.add(name, BorderLayout.WEST);
-
-		JPanel right = new JPanel(new FlowLayout(FlowLayout.TRAILING, 5, 0));
-		right.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		// The route's estimated travel time (running). Ordering follows this same time-normalized
-		// cost, plus any configured method weights — noted in the tooltip when they changed it.
+		// The ETA is the decision-making number, so it leads the card; the rank is a quiet chip.
+		JPanel left = new JPanel(new FlowLayout(FlowLayout.LEADING, 5, 0));
+		left.setOpaque(false);
+		JLabel rank = new JLabel("#" + (index + 1));
+		rank.setFont(FontManager.getRunescapeSmallFont());
+		rank.setForeground(Color.GRAY);
+		left.add(rank);
 		boolean weighted = route.getRawCost() != route.getTotalCost();
 		JLabel eta = new JLabel(formatDuration(routeEtaSeconds(route)));
-		eta.setFont(FontManager.getRunescapeSmallFont());
-		eta.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		eta.setFont(FontManager.getRunescapeBoldFont());
+		eta.setForeground(selected ? ColorScheme.BRAND_ORANGE : Color.WHITE);
 		eta.setToolTipText("<html>Estimated travel time, assuming you run.<br>"
 			+ (weighted
 				? "Ordering also counts your method weights: adjusted cost " + route.getTotalCost()
 					+ " vs " + route.getRawCost() + " unweighted (run-tiles, 0.3s each)."
 				: "Routes are ordered by this time.")
 			+ "</html>");
-		right.add(eta);
+		if (!reaches)
+		{
+			eta.setToolTipText("The target can't be reached — this ends at the closest reachable tile");
+		}
+		left.add(eta);
+		topRow.add(left, BorderLayout.WEST);
+
+		JPanel right = new JPanel(new FlowLayout(FlowLayout.TRAILING, 5, 0));
+		right.setOpaque(false);
+		if (route.isViaBank())
+		{
+			// The bank detour as a compact header chip; the coin glyph on the method row below
+			// marks WHICH method the detour is for.
+			JLabel bankChip = new JLabel(RouteIcons.IN_BANK);
+			bankChip.setToolTipText("<html>Walks to a bank first — withdraws the item for: <b>"
+				+ escapeHtml(joinLabels(route.getBankMethods())) + "</b></html>");
+			right.add(bankChip);
+		}
 		// Status indicator (orange when shown); the whole card is the click target, see makeSelectable.
 		right.add(control(new JLabel(selected ? RouteIcons.SHOW_ACTIVE : RouteIcons.SHOW)));
 		topRow.add(right, BorderLayout.EAST);
@@ -658,24 +672,20 @@ public class ShortestPathPanel extends PluginPanel
 
 		JPanel methods = new JPanel();
 		methods.setLayout(new BoxLayout(methods, BoxLayout.Y_AXIS));
-		methods.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		methods.setBorder(new EmptyBorder(2, 6, 4, 4));
+		methods.setOpaque(false);
+		methods.setBorder(new EmptyBorder(1, 8, 5, 5));
 		if (!reaches)
 		{
 			methods.add(noteRow("<font color='#FF981F'>Can't reach the target — ends at the closest point.</font>",
 				"This destination isn't reachable; the route stops at the nearest tile GPS can get to."));
 		}
-		if (route.isViaBank())
-		{
-			// Kept to one line: the method that needs the bank is identified by the bank glyph on its
-			// own row below, and this note's tooltip names it too.
-			methods.add(noteRow("<i>Walks to a bank first</i>",
-				"<html>Withdraws the item for: <b>" + escapeHtml(joinLabels(route.getBankMethods()))
-					+ "</b><br>The drawn path includes the walk to a bank before that method is used</html>"));
-		}
+		// The exclude controls only show while the pointer is over the card — always-on they were
+		// the loudest element on every row for the least-used action.
+		List<JComponent> hoverControls = new ArrayList<>();
 		for (int m = 0; m < route.getMethods().size(); m++)
 		{
-			methods.add(buildMethodRow(route.getMethods().get(m), route.getBankMethods(), route.walkBefore(m)));
+			methods.add(buildMethodRow(route.getMethods().get(m), route.getBankMethods(),
+				route.walkBefore(m), hoverControls));
 		}
 		// Trailing walking leg after the last method — the whole route for walk-only ones.
 		if (route.getTrailingWalkSteps() > 0 || route.isWalkOnly())
@@ -687,7 +697,55 @@ public class ShortestPathPanel extends PluginPanel
 		card.setToolTipText(selected ? "Showing on map — click to hide" : "Click to show this route on the map");
 		card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		makeSelectable(card, index);
+		// Attached last so the recursion covers every child added above.
+		addHoverRecursively(card, visible ->
+		{
+			for (JComponent hidden : hoverControls)
+			{
+				hidden.setVisible(visible);
+			}
+		});
 		return card;
+	}
+
+	/**
+	 * Fires the handler with true when the pointer enters the component tree and false when it
+	 * truly leaves it (Swing fires exit when moving onto a CHILD, so exits are checked against the
+	 * root's bounds). Used to reveal a card's exclude controls only while hovering it.
+	 */
+	private static void addHoverRecursively(Component root, java.util.function.Consumer<Boolean> handler)
+	{
+		MouseAdapter hover = new MouseAdapter()
+		{
+			@Override
+			public void mouseEntered(MouseEvent e)
+			{
+				handler.accept(true);
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e)
+			{
+				Point p = SwingUtilities.convertPoint((Component) e.getSource(), e.getPoint(), root);
+				if (!root.contains(p))
+				{
+					handler.accept(false);
+				}
+			}
+		};
+		addHoverListener(root, hover);
+	}
+
+	private static void addHoverListener(Component component, MouseAdapter hover)
+	{
+		component.addMouseListener(hover);
+		if (component instanceof Container)
+		{
+			for (Component child : ((Container) component).getComponents())
+			{
+				addHoverListener(child, hover);
+			}
+		}
 	}
 
 	/**
@@ -743,7 +801,9 @@ public class ShortestPathPanel extends PluginPanel
 		dot.setToolTipText("Walking");
 		row.add(dot, BorderLayout.WEST);
 
-		JLabel text = wrappedLabel("(" + steps + ") Walk");
+		JLabel text = wrappedLabel(steps > 0
+			? "Walk <font color='#9E9E9E'>" + steps + " tiles</font>"
+			: "Walk");
 		text.setToolTipText("Walk " + steps + " tiles to the destination");
 		row.add(text, BorderLayout.CENTER);
 		return row;
@@ -755,7 +815,8 @@ public class ShortestPathPanel extends PluginPanel
 	 * method the route's bank detour is for. {@code walkBefore} tiles of walking to reach the method
 	 * are shown as a "(N)" prefix on the label.
 	 */
-	private JPanel buildMethodRow(TeleportMethod method, Set<TeleportMethod> bankMethods, int walkBefore)
+	private JPanel buildMethodRow(TeleportMethod method, Set<TeleportMethod> bankMethods, int walkBefore,
+		List<JComponent> hoverControls)
 	{
 		JPanel row = new JPanel(new BorderLayout(5, 0));
 		row.setOpaque(false);
@@ -798,7 +859,10 @@ public class ShortestPathPanel extends PluginPanel
 		westWrap.add(west, BorderLayout.NORTH);
 		row.add(westWrap, BorderLayout.WEST);
 
-		String prefix = walkBefore > 0 ? "(" + walkBefore + ") " : "";
+		// The walk leg to reach the method reads as a quiet grey prefix ("12 · Fairy ring") instead
+		// of the old cryptic "(12)"; the tooltip spells it out.
+		String prefix = walkBefore > 0
+			? "<font color='#9E9E9E'>" + walkBefore + " · </font>" : "";
 		JLabel text = wrappedLabel(prefix + escapeHtml(method.label()));
 		text.setToolTipText(walkBefore > 0
 			? "<html>Walk " + walkBefore + " tiles to reach this method.<br>" + methodTooltipBody(method) + "</html>"
@@ -807,8 +871,13 @@ public class ShortestPathPanel extends PluginPanel
 
 		IconActionLabel exclude = new IconActionLabel(RouteIcons.EXCLUDE, RouteIcons.EXCLUDE_HOVER,
 			"Exclude \"" + method.label() + "\" from teleportation methods", () -> plugin.excludeMethod(method));
+		// Hidden until the card is hovered (see buildRouteCard); the wrapper keeps its size so the
+		// text doesn't reflow when the control appears.
+		exclude.setVisible(false);
+		hoverControls.add(exclude);
 		JPanel actionWrap = new JPanel(new BorderLayout());
 		actionWrap.setOpaque(false);
+		actionWrap.setPreferredSize(new Dimension(CONTROL_SIZE, CONTROL_SIZE));
 		actionWrap.add(control(exclude), BorderLayout.NORTH);
 		row.add(actionWrap, BorderLayout.EAST);
 
