@@ -61,8 +61,10 @@ public class ShortestPathPanel extends PluginPanel
 {
 	private static final int CONTROL_SIZE = 18;
 	private static final int METHOD_TEXT_WIDTH = 132;
-	// Wrap width for message-banner text (panel width minus the banner icon and padding).
-	private static final int BANNER_TEXT_WIDTH = 158;
+	// Wrap width for message-banner text: the sidebar content (~192px after the panel's outer
+	// padding and scrollbar) minus the banner's accent bar, paddings, icon and gap (~40px), with
+	// slack for font-metric variance — wrapping a line early is invisible, clipping is not.
+	private static final int BANNER_TEXT_WIDTH = 138;
 	private static final Color BANNER_INFO_ACCENT = new Color(0x4C, 0x8B, 0xF5);   // GPS blue
 	private static final Color BANNER_WARN_ACCENT = new Color(0xFF, 0x98, 0x1F);   // amber
 	private static final Color BANNER_OK_ACCENT = new Color(0x4C, 0xAF, 0x50);     // green
