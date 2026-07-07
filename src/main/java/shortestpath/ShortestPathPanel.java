@@ -8,6 +8,7 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics2D;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
@@ -925,18 +926,19 @@ public class ShortestPathPanel extends PluginPanel
 				"Excluded — click to include", () -> plugin.includeMethod(item))
 			: new IconActionLabel(RouteIcons.CHECK, RouteIcons.CHECK_HOVER,
 				"Included — click to exclude", () -> plugin.excludeMethod(item));
-		JPanel west = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-		west.setOpaque(false);
-		west.add(control(toggle));
+		JPanel icons = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
+		icons.setOpaque(false);
+		icons.add(control(toggle));
 		MethodAvailability status = cachedUnavailable.get(item);
 		if (status != null)
 		{
-			west.add(control(statusLabel(status)));
+			icons.add(control(statusLabel(status)));
 		}
-		JPanel westWrap = new JPanel(new BorderLayout());
-		westWrap.setOpaque(false);
-		westWrap.add(west, BorderLayout.NORTH);
-		row.add(westWrap, BorderLayout.WEST);
+		// GridBag centres the icons vertically against the label instead of top-anchoring them.
+		JPanel west = new JPanel(new GridBagLayout());
+		west.setOpaque(false);
+		west.add(icons);
+		row.add(west, BorderLayout.WEST);
 
 		JLabel text = wrappedLabel(escapeHtml(item.label()));
 		text.setToolTipText(methodTooltip(item));
