@@ -259,10 +259,9 @@ public class ShortestPathPlugin extends Plugin
 	private PathfinderConfig pathfinderConfig;
 	@Getter
 	private boolean startPointSet = false;
-	// Whether the auto-finish (clear the target on arrival) is armed. Disarmed when a destination is
-	// set and only armed once the player is away from it, so setting a destination you're already at
-	// shows its walk route instead of clearing on the next tick.
-	private boolean autoFinishArmed = false;
+	// Wall-clock time the current target was set, used to report the journey duration on arrival
+	// (~0 when the destination was set while already there, e.g. "nearest bank" at a bank).
+	private long targetSetMillis = 0;
 	private final KeyListener clearPathKeylistener = new KeyListener()
 	{
 		@Override
@@ -901,22 +900,17 @@ public class ShortestPathPlugin extends Plugin
 
 		int currentLocation = WorldPointUtil.fromLocalInstance(client, localPlayer);
 		int reachedDistance = config.reachedDistance();
-		int remaining = pathTilesRemaining(currentLocation, reachedDistance);
-		if (remaining != Integer.MAX_VALUE)
+		if (pathTilesRemaining(currentLocation, reachedDistance) < reachedDistance)
 		{
-			// Arm the auto-finish only once the player is genuinely away from the destination. A
-			// destination set while already at it (e.g. "nearest bank" while standing at a bank)
-			// then shows its walk route instead of clearing on the next tick; it clears when the
-			// player later travels away and arrives.
-			if (!autoFinishArmed)
+			// Reached the destination (along the path). Show the "Arrived!" panel — including when
+			// the destination was set while already there (e.g. "nearest bank" at a bank), where
+			// the journey time is ~0 — then clear the target.
+			if (routeDirectionsOverlay != null)
 			{
-				autoFinishArmed = remaining >= reachedDistance;
+				routeDirectionsOverlay.markArrived(targetSource, System.currentTimeMillis() - targetSetMillis);
 			}
-			else if (remaining < reachedDistance)
-			{
-				setTarget(WorldPointUtil.UNDEFINED);
-				return;
-			}
+			setTarget(WorldPointUtil.UNDEFINED);
+			return;
 		}
 
 		if (!startPointSet && !isNearPath(currentLocation))
@@ -1738,9 +1732,8 @@ public class ShortestPathPlugin extends Plugin
 			{
 				destinations.addAll(pathfinder.getTargets());
 			}
-			// Re-arm the auto-finish for the new destination: it stays disarmed until the player is
-			// away from it, so a destination set while already at it isn't cleared immediately.
-			autoFinishArmed = false;
+			// Stamp the journey start so arrival can report the elapsed time.
+			targetSetMillis = System.currentTimeMillis();
 			// Alternatives are computed manually via the panel's "Find routes" button.
 			restartPathfinding(start, destinations, append);
 		}

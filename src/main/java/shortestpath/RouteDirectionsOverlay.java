@@ -518,6 +518,21 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	}
 
 	/**
+	 * Latches the "Arrived!" panel. Called by the plugin the moment it clears the target on arrival,
+	 * so arrival is shown even when the near-end proximity stamp never happened — e.g. a destination
+	 * set while already at it, which the plugin clears on the very next tick before the route renders.
+	 */
+	public void markArrived(String source, long elapsedMillis)
+	{
+		arrivalSource = source;
+		arrivalElapsedMillis = Math.max(0, elapsedMillis);
+		arrivalShowing = true;
+		long now = System.currentTimeMillis();
+		arrivalUntilMillis = plugin.arrivalAutoDismiss
+			? now + plugin.arrivalDismissSeconds * 1000L : Long.MAX_VALUE;
+	}
+
+	/**
 	 * Moves the progress marker to the eligible path tile nearest the player, preferring the one
 	 * closest to the previous position on ties — so standing where the path crosses itself doesn't
 	 * teleport the highlight to the other pass. The ETA is then (walk time to that tile + remaining
