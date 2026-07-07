@@ -924,11 +924,12 @@ public class PathfinderTest
 	}
 
 	/**
-	 * Tests the cost boundary where the whistle differential tips the balance.
-	 * From 1 tile away: platform compareCost = 1 walk + 6 flight = 7.
-	 * Whistle base cost = 4 ticks, compareCost = 4 + differential.
-	 * With differential=4: whistle compareCost=8 > platform=7, platform wins (path=3).
-	 * With differential=2: whistle compareCost=6 < platform=7, whistle wins (path=2).
+	 * Tests the cost boundary where the whistle differential tips the balance. Costs are in
+	 * time-normalized units (1 unit = 1 run-tile, a game tick = 2 units, see CostUnits).
+	 * From 1 tile away: platform compareCost = 1 walk + 6-tick flight (12) = 13.
+	 * Whistle base cost = 4 ticks (8 units), compareCost = 8 + differential.
+	 * With differential=6: whistle compareCost=14 > platform=13, platform wins (path=3).
+	 * With differential=4: whistle compareCost=12 < platform=13, whistle wins (path=2).
 	 */
 	@Test
 	public void testQuetzalWhistleCostBoundary()
@@ -939,15 +940,15 @@ public class PathfinderTest
 		int nearAldarinPlatform = WorldPointUtil.packWorldPoint(1390, 2901, 0); // 1 tile away
 		int hunterGuild = WorldPointUtil.packWorldPoint(1585, 3053, 0);
 
-		// Differential=4: whistle compareCost=8 > platform=7, platform should win
-		when(config.costQuetzalWhistle()).thenReturn(4);
+		// Differential=6: whistle compareCost=14 > platform=13, platform should win
+		when(config.costQuetzalWhistle()).thenReturn(6);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 
 		int pathLength = calculatePathLength(nearAldarinPlatform, hunterGuild);
 		assertEquals("Platform should win when whistle differential makes it more expensive", 3, pathLength);
 
-		// Differential=2: whistle compareCost=6 < platform=7, whistle should win
-		when(config.costQuetzalWhistle()).thenReturn(2);
+		// Differential=4: whistle compareCost=12 < platform=13, whistle should win
+		when(config.costQuetzalWhistle()).thenReturn(4);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 
 		pathLength = calculatePathLength(nearAldarinPlatform, hunterGuild);

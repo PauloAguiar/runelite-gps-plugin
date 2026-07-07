@@ -612,13 +612,14 @@ public interface ShortestPathConfig extends Config
 	String sectionThresholds = "sectionThresholds";
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costAgilityShortcuts",
 		name = "Agility shortcut weight",
-		description = "Extra steps added when the route uses an agility shortcut.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses an agility shortcut.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 43,
 		section = sectionThresholds
 	)
@@ -628,13 +629,14 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costGrappleShortcuts",
 		name = "Grapple shortcut weight",
-		description = "Extra steps added when the route uses a grapple shortcut.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses a grapple shortcut.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 44,
 		section = sectionThresholds
 	)
@@ -644,13 +646,14 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costBoats",
 		name = "Boat weight",
-		description = "Extra steps added when the route uses a small boat.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses a small boat.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 45,
 		section = sectionThresholds
 	)
@@ -660,13 +663,14 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costCanoes",
 		name = "Canoe weight",
-		description = "Extra steps added when the route uses a canoe.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses a canoe.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 46,
 		section = sectionThresholds
 	)
@@ -676,13 +680,14 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costCharterShips",
 		name = "Charter ship weight",
-		description = "Extra steps added when the route uses a charter ship.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses a charter ship.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 47,
 		section = sectionThresholds
 	)
@@ -692,13 +697,14 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costShips",
 		name = "Ship weight",
-		description = "Extra steps added when the route uses a passenger ship.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses a passenger ship.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 48,
 		section = sectionThresholds
 	)
@@ -708,13 +714,14 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costFairyRings",
 		name = "Fairy ring weight",
-		description = "Extra steps added when the route uses a fairy ring.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses a fairy ring.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 49,
 		section = sectionThresholds
 	)
@@ -724,13 +731,14 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costGnomeGliders",
 		name = "Gnome glider weight",
-		description = "Extra steps added when the route uses a gnome glider.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses a gnome glider.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 50,
 		section = sectionThresholds
 	)
@@ -740,13 +748,14 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costHotAirBalloons",
 		name = "Hot air balloon weight",
-		description = "Extra steps added when the route uses a hot air balloon.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses a hot air balloon.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 51,
 		section = sectionThresholds
 	)
@@ -756,13 +765,14 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costMagicCarpets",
 		name = "Magic carpet weight",
-		description = "Extra steps added when the route uses a magic carpet.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses a magic carpet.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 52,
 		section = sectionThresholds
 	)
@@ -772,13 +782,14 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costMagicMushtrees",
 		name = "Magic mushtree weight",
-		description = "Extra steps added when the route uses a magic mushtree.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses a magic mushtree.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 53,
 		section = sectionThresholds
 	)
@@ -788,13 +799,14 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costMinecarts",
 		name = "Minecart weight",
-		description = "Extra steps added when the route uses a minecart.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses a minecart.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 54,
 		section = sectionThresholds
 	)
@@ -804,13 +816,14 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costQuetzals",
 		name = "Quetzal weight",
-		description = "Extra steps added when the route uses a quetzal.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses a quetzal.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 55,
 		section = sectionThresholds
 	)
@@ -820,13 +833,14 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costQuetzalWhistle",
 		name = "Quetzal whistle weight",
-		description = "Extra steps added when the route uses a quetzal whistle teleport.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses a quetzal whistle teleport.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 56,
 		section = sectionThresholds
 	)
@@ -836,13 +850,14 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costSpiritTrees",
 		name = "Spirit tree weight",
-		description = "Extra steps added when the route uses a spirit tree.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses a spirit tree.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 57,
 		section = sectionThresholds
 	)
@@ -852,13 +867,14 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costNonConsumableTeleportationItems",
 		name = "Teleport item (reusable) weight",
-		description = "Extra steps added when the route uses a reusable (permanent) teleport item.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses a reusable (permanent) teleport item.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 58,
 		section = sectionThresholds
 	)
@@ -868,13 +884,14 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costConsumableTeleportationItems",
 		name = "Teleport item (consumable) weight",
-		description = "Extra steps added when the route uses a consumable (one-use) teleport item.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses a consumable (one-use) teleport item.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 59,
 		section = sectionThresholds
 	)
@@ -884,13 +901,14 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costTeleportationBoxes",
 		name = "Jewellery box weight",
-		description = "Extra steps added when the route uses a jewellery box.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses a jewellery box.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 60,
 		section = sectionThresholds
 	)
@@ -900,13 +918,14 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costTeleportationLevers",
 		name = "Teleport lever weight",
-		description = "Extra steps added when the route uses a teleport lever.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses a teleport lever.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 61,
 		section = sectionThresholds
 	)
@@ -916,13 +935,14 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costTeleportationPortals",
 		name = "Teleport portal weight",
-		description = "Extra steps added when the route uses a teleport portal.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses a teleport portal.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 62,
 		section = sectionThresholds
 	)
@@ -932,13 +952,14 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costTeleportationSpells",
 		name = "Teleport spell weight",
-		description = "Extra steps added when the route uses a teleport spell.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses a teleport spell.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 63,
 		section = sectionThresholds
 	)
@@ -948,13 +969,14 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costTeleportationMinigames",
 		name = "Minigame teleport weight",
-		description = "Extra steps added when the route uses a minigame teleport.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses a minigame teleport.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 64,
 		section = sectionThresholds
 	)
@@ -964,13 +986,14 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costWildernessObelisks",
 		name = "Wilderness obelisk weight",
-		description = "Extra steps added when the route uses a wilderness obelisk.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses a wilderness obelisk.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 65,
 		section = sectionThresholds
 	)
@@ -980,13 +1003,14 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costSeasonalTransports",
 		name = "Seasonal transport weight",
-		description = "Extra steps added when the route uses a seasonal (Leagues) transport.<br>" +
-			"The path avoids it unless it saves more than this many tiles of walking.",
+		description = "Weight added to the route's cost when it uses a seasonal (Leagues) transport.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 66,
 		section = sectionThresholds
 	)
@@ -996,14 +1020,15 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@Range(
+		min = -10000,
 		max = 10000
 	)
 	@ConfigItem(
 		keyName = "costBankPickup",
 		name = "Bank pickup weight",
-		description = "Extra steps added when a route detours through a bank to withdraw a<br>" +
-			"teleport item (Owned: inventory + bank mode). The path only banks when it<br>" +
-			"saves more than this many tiles overall.",
+		description = "Weight added to the route's cost when it detours through a bank to withdraw<br>" +
+			"a teleport item (Owned: inventory + bank mode). In run-tiles (2 = 1 game tick,<br>" +
+			"0.6s): positive avoids banking, negative favors it.",
 		position = 67,
 		section = sectionThresholds
 	)

@@ -371,6 +371,62 @@ public class AlternativeRoutesServiceTest
 	}
 
 	@Test
+	public void routesAreOrderedByEtaWhenUnweighted() throws Exception
+	{
+		// With no configured weights (the mock returns 0 for every cost item), the blended cost must
+		// equal the raw time-normalized cost, so the list order IS the ETA order — the bug this
+		// guards against was ticks and tiles blending 1:1, letting a slower route sort first. Each
+		// route's raw cost must also decompose exactly into its walked units plus its transport
+		// travel times at 2 units per tick.
+		PathfinderConfig planning = new TestPathfinderConfig(client, config).copyForPlanning();
+		planning.setPlanningMode(false);
+		planning.setConsiderBank(false);
+		AlternativeRoutesService service = new AlternativeRoutesService(clientThread, planning);
+
+		CountDownLatch done = new CountDownLatch(1);
+		AtomicReference<List<RouteOption>> finalRoutes = new AtomicReference<>(List.of());
+		service.generate(FAR_START, Set.of(TARGET), Set.of(), AlternativeRoutesMode.OWNED_INVENTORY, 10,
+			(routes, catalog, unavailable, isDone) ->
+			{
+				if (isDone)
+				{
+					finalRoutes.set(routes);
+					done.countDown();
+				}
+			});
+		assertTrue("Generation should complete", done.await(120, TimeUnit.SECONDS));
+		service.shutdown();
+
+		List<RouteOption> routes = finalRoutes.get();
+		assertTrue("Expected at least a teleport route and the walk option", routes.size() >= 2);
+		int previousRaw = Integer.MIN_VALUE;
+		for (RouteOption route : routes)
+		{
+			assertTrue("Unweighted: blended cost must equal the raw (ETA) cost, got "
+					+ route.getTotalCost() + " vs " + route.getRawCost(),
+				route.getTotalCost() == route.getRawCost());
+			assertTrue("Routes must be ordered by ETA (raw cost), got " + route.getRawCost()
+					+ " after " + previousRaw,
+				route.getRawCost() >= previousRaw);
+			previousRaw = route.getRawCost();
+
+			int walked = route.getTrailingWalkSteps();
+			int transportUnits = 0;
+			for (int m = 0; m < route.getMethods().size(); m++)
+			{
+				walked += route.walkBefore(m);
+			}
+			for (int duration : route.getMethodDurations())
+			{
+				transportUnits += CostUnits.fromTicks(duration);
+			}
+			assertTrue("Raw cost must decompose into walk units + 2×duration ticks ("
+					+ route.getRawCost() + " != " + walked + " + " + transportUnits + ")",
+				route.getRawCost() == walked + transportUnits);
+		}
+	}
+
+	@Test
 	public void everythingModeSurfacesTeleportsWithoutOwnedItems() throws Exception
 	{
 		// No inventory at all: the Owned modes could only walk, but "Everything" bypasses possession,

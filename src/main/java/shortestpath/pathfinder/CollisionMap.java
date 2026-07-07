@@ -144,7 +144,7 @@ public class CollisionMap
 			neighbors.add(graph.createTransport(
 				transport.getDestination(),
 				node,
-				transport.getDuration(),
+				CostUnits.fromTicks(transport.getDuration()),
 				config.getAdditionalTransportCost(transport) + chainPenalty + bankEntryCost,
 				pathBankVisited,
 				delayedVisit,
@@ -258,7 +258,7 @@ public class CollisionMap
 			neighbors.add(graph.createTransport(
 				transport.getDestination(),
 				node,
-				transport.getDuration(),
+				CostUnits.fromTicks(transport.getDuration()),
 				config.getAdditionalTransportCost(transport),
 				bankVisited,
 				delayedVisit,

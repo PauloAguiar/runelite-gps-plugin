@@ -34,12 +34,13 @@ public final class RouteOption
 	 */
 	private final List<Integer> methodDurations;
 	/**
-	 * Blended search cost (walk distance + transport ticks/penalties); lower is shorter.
+	 * Blended search cost in CostUnits (run-tiles, 0.3s each): time-normalized walk + transport
+	 * travel, plus any configured method weights. Routes are ordered by this; lower is faster.
 	 */
 	private final int totalCost;
 	/**
-	 * The path's cost without any configured weights: walking distance plus transport travel times
-	 * only. Equal to {@link #totalCost} when no weights applied to this route.
+	 * The path's cost without any configured weights, in CostUnits (run-tiles, 0.3s each): its ETA.
+	 * Equal to {@link #totalCost} when no weights applied to this route.
 	 */
 	private final int rawCost;
 	/**

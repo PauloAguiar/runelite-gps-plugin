@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.callback.ClientThread;
+import shortestpath.pathfinder.CostUnits;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderConfig;
@@ -412,8 +413,8 @@ public class AlternativeRoutesService
 	/**
 	 * Selects and orders the seed-teleport attempt list: user-excluded methods and duplicate landings
 	 * (e.g. tab vs spell to the same tile) are dropped, the rest are ranked by estimated arrival cost
-	 * — the teleport's cast/travel duration plus the straight-line distance from its landing to the
-	 * target (a lower bound of the remaining walk, in the engine's own ticks-and-tiles cost blend) —
+	 * — the teleport's cast/travel duration (in {@link CostUnits}) plus the straight-line distance
+	 * from its landing to the target (a lower bound of the remaining run, in the same currency) —
 	 * and the list is capped at {@code maxAttempts}.
 	 * <p>
 	 * Candidates landing farther than the start are deliberately KEPT: when an obstacle separates the
@@ -431,7 +432,7 @@ public class AlternativeRoutesService
 		// Long arithmetic: a cross-plane landing has straight-line distance Integer.MAX_VALUE, which
 		// must rank last rather than overflow into ranking first.
 		ranked.sort(Comparator.comparingLong(
-			t -> (long) t.getDuration() + WorldPointUtil.distanceBetween(t.getDestination(), target)));
+			t -> (long) CostUnits.fromTicks(t.getDuration()) + WorldPointUtil.distanceBetween(t.getDestination(), target)));
 		final Map<Integer, Transport> byDestination = new LinkedHashMap<>();
 		for (Transport transport : ranked)
 		{
@@ -659,14 +660,15 @@ public class AlternativeRoutesService
 					bankGated.add(method);
 				}
 			}
-			// Raw cost: what the edge costs without any configured weights — a transport edge counts
-			// only its travel time, a walking edge its tile distance (mirrors the search's own cost
-			// accumulation minus the additional/weight terms).
+			// Raw cost: what the edge costs without any configured weights, in CostUnits (run-tiles) —
+			// a transport edge counts its travel time normalized to units, a walking edge its tile
+			// distance (mirrors the search's own cost accumulation minus the additional/weight terms).
+			// With no weights the route's rawCost IS its ETA in units, so cost order == ETA order.
 			Transport edgeTransport = chosen != null
 				? chosen
 				: matchAnyTransport(config, from.getPackedPosition(), to.getPackedPosition(), bankVisited);
 			int edgeCost = edgeTransport != null
-				? edgeTransport.getDuration()
+				? CostUnits.fromTicks(edgeTransport.getDuration())
 				: WorldPointUtil.distanceBetween(from.getPackedPosition(), to.getPackedPosition());
 			rawCost += edgeCost;
 			if (chosen == null)
@@ -707,7 +709,8 @@ public class AlternativeRoutesService
 		// Travel time of each method's transport in game ticks (parallel to methods), for ETAs.
 		private final List<Integer> methodDurations;
 		private final Set<TeleportMethod> bankGated;
-		// Path cost without any configured weights: walk distance plus transport travel times only.
+		// Path cost without any configured weights, in CostUnits (run-tiles, 0.3s each): walk
+		// distance plus time-normalized transport travel times. This is the route's ETA.
 		private final int rawCost;
 		// Tiles walked before each method (parallel to methods) and after the last one.
 		private final List<Integer> walkBefore;
@@ -728,26 +731,7 @@ public class AlternativeRoutesService
 
 	private static Transport matchMethodTransport(PathfinderConfig config, int origin, int destination, boolean bankVisited)
 	{
-		// Fixed-origin networks (fairy rings, spirit trees, boats, ...) keyed by their origin tile.
-		Transport[] atOrigin = config.getTransportsPacked(bankVisited)
-			.getOrDefault(origin, TransportAvailability.EMPTY_TRANSPORTS);
-		for (Transport transport : atOrigin)
-		{
-			if (transport.getDestination() == destination && TeleportMethod.isMethodType(transport.getType()))
-			{
-				return transport;
-			}
-		}
-		// Global teleports (spells/items/...): castable from anywhere, so the origin is wherever the
-		// player stood; match purely on destination.
-		for (Transport transport : config.getUsableTeleports(bankVisited))
-		{
-			if (transport.getDestination() == destination && TeleportMethod.isMethodType(transport.getType()))
-			{
-				return transport;
-			}
-		}
-		return null;
+		return cheapestMatch(config, origin, destination, bankVisited, true);
 	}
 
 	/**
@@ -757,23 +741,53 @@ public class AlternativeRoutesService
 	 */
 	private static Transport matchAnyTransport(PathfinderConfig config, int origin, int destination, boolean bankVisited)
 	{
+		return cheapestMatch(config, origin, destination, bankVisited, false);
+	}
+
+	/**
+	 * The matching transport the search would have used for this edge: among the fixed-origin
+	 * transports at {@code origin} (fairy rings, boats, doors, ...) and the global teleports
+	 * (castable from anywhere, matched purely on destination), several can share the destination
+	 * tile — e.g. the Varrock Teleport spell and its tab. The search settles the cheapest edge, so
+	 * the scan must attribute the same one: picking any other misstates the raw (ETA) cost and can
+	 * even name the wrong method on the route card. {@code methodsOnly} restricts the match to
+	 * method-type transports (excluding plain connectors like doors and stairs).
+	 */
+	private static Transport cheapestMatch(PathfinderConfig config, int origin, int destination,
+		boolean bankVisited, boolean methodsOnly)
+	{
+		Transport best = null;
+		long bestCost = Long.MAX_VALUE;
 		Transport[] atOrigin = config.getTransportsPacked(bankVisited)
 			.getOrDefault(origin, TransportAvailability.EMPTY_TRANSPORTS);
 		for (Transport transport : atOrigin)
 		{
-			if (transport.getDestination() == destination)
+			if (transport.getDestination() == destination
+				&& (!methodsOnly || TeleportMethod.isMethodType(transport.getType()))
+				&& searchEdgeCost(config, transport) < bestCost)
 			{
-				return transport;
+				best = transport;
+				bestCost = searchEdgeCost(config, transport);
 			}
 		}
 		for (Transport transport : config.getUsableTeleports(bankVisited))
 		{
-			if (transport.getDestination() == destination)
+			if (transport.getDestination() == destination
+				&& (!methodsOnly || TeleportMethod.isMethodType(transport.getType()))
+				&& searchEdgeCost(config, transport) < bestCost)
 			{
-				return transport;
+				best = transport;
+				bestCost = searchEdgeCost(config, transport);
 			}
 		}
-		return null;
+		return best;
+	}
+
+	/** A transport edge's cost as the search charges it (see NodeGraph.createTransport's clamp). */
+	private static int searchEdgeCost(PathfinderConfig config, Transport transport)
+	{
+		return Math.max(0, CostUnits.fromTicks(transport.getDuration())
+			+ config.getAdditionalTransportCost(transport));
 	}
 
 	private static String signature(List<TeleportMethod> methods)

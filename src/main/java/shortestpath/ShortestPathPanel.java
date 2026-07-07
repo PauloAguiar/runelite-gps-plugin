@@ -628,15 +628,18 @@ public class ShortestPathPanel extends PluginPanel
 
 		JPanel right = new JPanel(new FlowLayout(FlowLayout.TRAILING, 5, 0));
 		right.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		// The route's estimated travel time (running), with the blended/raw cost kept in the tooltip.
+		// The route's estimated travel time (running). Ordering follows this same time-normalized
+		// cost, plus any configured method weights — noted in the tooltip when they changed it.
 		boolean weighted = route.getRawCost() != route.getTotalCost();
 		JLabel eta = new JLabel(formatDuration(routeEtaSeconds(route)));
 		eta.setFont(FontManager.getRunescapeSmallFont());
 		eta.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 		eta.setToolTipText("<html>Estimated travel time, assuming you run.<br>"
-			+ "Blended cost: " + route.getTotalCost()
-			+ (weighted ? " (raw " + route.getRawCost() + ")" : "")
-			+ " — walk distance + travel time (lower is shorter).</html>");
+			+ (weighted
+				? "Ordering also counts your method weights: adjusted cost " + route.getTotalCost()
+					+ " vs " + route.getRawCost() + " unweighted (run-tiles, 0.3s each)."
+				: "Routes are ordered by this time.")
+			+ "</html>");
 		right.add(eta);
 		// Status indicator (orange when shown); the whole card is the click target, see makeSelectable.
 		right.add(control(new JLabel(selected ? RouteIcons.SHOW_ACTIVE : RouteIcons.SHOW)));
@@ -677,15 +680,15 @@ public class ShortestPathPanel extends PluginPanel
 		return card;
 	}
 
-	/** The route's estimated travel time in seconds (assuming running), summed from its steps. */
+	/**
+	 * The route's estimated travel time in seconds: its unweighted cost is time-normalized (one
+	 * cost unit = one run-tile = 0.3s), so the ETA is a direct conversion — and because routes are
+	 * ordered by that same cost (plus any configured preference weights), the displayed ETAs can
+	 * never disagree with the ordering.
+	 */
 	private int routeEtaSeconds(RouteOption route)
 	{
-		int ticks = 0;
-		for (RouteDirections.Step step : plugin.getRouteDirections(route))
-		{
-			ticks += step.getTicks();
-		}
-		return (int) Math.ceil(ticks * RouteDirections.SECONDS_PER_TICK);
+		return (int) Math.ceil(route.getRawCost() * shortestpath.pathfinder.CostUnits.SECONDS_PER_UNIT);
 	}
 
 	private static String formatDuration(int seconds)

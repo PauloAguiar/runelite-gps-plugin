@@ -49,17 +49,20 @@ public class SeedCandidateRankingTest
 	}
 
 	@Test
-	public void teleportDurationIsChargedIntoTheRanking()
+	public void teleportDurationIsChargedIntoTheRankingAtTwoUnitsPerTick()
 	{
-		// A fast teleport landing a bit farther beats a slow one landing nearer: the rank is the
-		// engine's own cost blend (duration ticks + walk tiles), not landing distance alone.
-		Transport fastFarther = teleport("fast", 3220, 3200, 0, 4);  // 4 + 20 = 24
-		Transport slowNearer = teleport("slow", 3210, 3200, 0, 30);  // 30 + 10 = 40
+		// The rank is the engine's time-normalized cost: duration ticks convert at 2 run-tiles per
+		// tick. Chosen so the normalization decides the order: a 10-tick cast landing 15 tiles out
+		// (2*10 + 15 = 35) must LOSE to an instant teleport landing 30 tiles out (30) — with the
+		// old 1-unit-per-tick blend (10 + 15 = 25) it would have won.
+		Transport slowCast = teleport("slow-cast", 3215, 3200, 0, 10);
+		Transport instantFar = teleport("instant-far", 3230, 3200, 0, 0);
 
 		List<Transport> attempts = AlternativeRoutesService.rankSeedCandidates(
-			new ArrayList<>(List.of(slowNearer, fastFarther)), TARGET, Set.of(), 10);
+			new ArrayList<>(List.of(slowCast, instantFar)), TARGET, Set.of(), 10);
 
-		assertEquals("Duration must be part of the estimate", "fast", attempts.get(0).getDisplayInfo());
+		assertEquals("Duration must be charged at 2 units per tick", "instant-far", attempts.get(0).getDisplayInfo());
+		assertEquals("slow-cast", attempts.get(1).getDisplayInfo());
 	}
 
 	@Test
