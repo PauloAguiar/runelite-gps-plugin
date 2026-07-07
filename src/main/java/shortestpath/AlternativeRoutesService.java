@@ -242,14 +242,11 @@ public class AlternativeRoutesService
 
 			long searchStart = System.nanoTime();
 			int chainCap = capOf(walkFuture);
-			// Heuristic rebuilt per iteration (the exclusion set changes the usable transports and
-			// with it the field floor). Field mode is near-exact and always engages; without a
-			// field (map-wide target sets), fall back to the box heuristic gated to the corridor
-			// regime — the previous route's cost is a valid lower bound of this search's cost.
-			int chainCostFloor = routes.isEmpty() ? 0 : routes.get(routes.size() - 1).getTotalCost();
-			SearchHeuristic heuristic = field != null
-				? SearchHeuristic.buildWithField(planningConfig, field)
-				: SearchHeuristic.build(planningConfig, ends, chainCostFloor);
+			// Heuristic rebuilt per iteration: the exclusion set changes the usable teleports and
+			// with them the field floor — excluding the good teleports raises it, so the heuristic
+			// gets stronger exactly when the searches get expensive. Null field (map-wide target
+			// sets) means uninformed, which those cheap searches don't need anyway.
+			SearchHeuristic heuristic = SearchHeuristic.buildWithField(planningConfig, field);
 			Pathfinder pathfinder = new Pathfinder(planningConfig, start, ends, null, chainCap, heuristic);
 			pathfinder.run();
 			long searchNanos = System.nanoTime() - searchStart;
@@ -656,11 +653,9 @@ public class AlternativeRoutesService
 			config.rebuildAvailabilityWithExclusions(seedExclusions);
 			long searchStart = System.nanoTime();
 			// Seed searches exclude every other global teleport, so the floor comes from the seed
-			// itself and the search's own optimal route uses it — the corridor regime by
-			// construction (no cost hint needed), and the walk-cost cap bounds any residue.
-			SearchHeuristic heuristic = field != null
-				? SearchHeuristic.buildWithField(config, field)
-				: SearchHeuristic.build(config, ends, 0);
+			// itself and the search's own optimal route uses it — strongly directed by
+			// construction, and the walk-cost cap bounds any residue.
+			SearchHeuristic heuristic = SearchHeuristic.buildWithField(config, field);
 			Pathfinder pathfinder = new Pathfinder(config, start, ends, null, costCap, heuristic);
 			pathfinder.run();
 			long searchEnd = System.nanoTime();
@@ -720,24 +715,9 @@ public class AlternativeRoutesService
 		long rebuildStart = System.nanoTime();
 		config.rebuildAvailabilityWithExclusions(walkExclusions);
 		long searchStart = System.nanoTime();
-		// Field mode: with every method excluded the floor is effectively unbounded, so h is the
-		// raw field — the walk search (the biggest disc of the generation) collapses to a
-		// corridor. Box fallback: gate on the straight-line distance as the cost lower bound.
-		SearchHeuristic heuristic;
-		if (field != null)
-		{
-			heuristic = SearchHeuristic.buildWithField(config, field);
-		}
-		else
-		{
-			int walkCostFloor = Integer.MAX_VALUE;
-			for (int end : ends)
-			{
-				walkCostFloor = Math.min(walkCostFloor, WorldPointUtil.distanceBetween2D(start, end));
-			}
-			heuristic = SearchHeuristic.build(config, ends,
-				walkCostFloor == Integer.MAX_VALUE ? 0 : walkCostFloor);
-		}
+		// With every method excluded the floor is effectively unbounded, so h is the raw field —
+		// the walk search (the biggest disc of the generation) collapses to a corridor.
+		SearchHeuristic heuristic = SearchHeuristic.buildWithField(config, field);
 		Pathfinder pathfinder = new Pathfinder(config, start, ends, null, Integer.MAX_VALUE, heuristic);
 		pathfinder.run();
 		long searchEnd = System.nanoTime();

@@ -64,32 +64,6 @@ public class AStarEquivalenceTest
 		return pathfinder;
 	}
 
-	/**
-	 * Asserts A* result equivalence for the given prepared config, and returns the pair's node
-	 * counts (dijkstra, astar) so callers can additionally assert the exploration shrank.
-	 */
-	private static int[] assertEquivalent(PathfinderConfig config, int start, Set<Integer> targets)
-	{
-		Pathfinder dijkstra = run(config, start, targets, null);
-		SearchHeuristic heuristic = SearchHeuristic.build(config, targets, 0, Integer.MAX_VALUE);
-		assertNotNull("Heuristic must build (force-engaged for the test)", heuristic);
-		Pathfinder astar = run(config, start, targets, heuristic);
-
-		PathfinderResult dijkstraResult = dijkstra.getResult();
-		PathfinderResult astarResult = astar.getResult();
-		assertEquals("reached must match", dijkstraResult.isReached(), astarResult.isReached());
-		assertEquals("total cost must be identical (A* is exact with a consistent heuristic)",
-			dijkstraResult.getTotalCost(), astarResult.getTotalCost());
-		System.out.println("equivalent: cost " + dijkstraResult.getTotalCost()
-			+ ", nodes dijkstra=" + dijkstra.getStats().getNodesChecked()
-			+ " astar=" + astar.getStats().getNodesChecked()
-			+ ", ms dijkstra=" + dijkstra.getStats().getElapsedTimeNanos() / 1_000_000
-			+ " astar=" + astar.getStats().getElapsedTimeNanos() / 1_000_000);
-		return new int[]{
-			dijkstra.getStats().getNodesChecked(),
-			astar.getStats().getNodesChecked()};
-	}
-
 	/** An Everything-mode planning copy (possession and unlocks bypassed), refreshed. */
 	private PathfinderConfig everythingConfig()
 	{
@@ -104,51 +78,6 @@ public class AStarEquivalenceTest
 		PathfinderConfig planning = everythingConfig();
 		planning.rebuildAvailabilityWithExclusions(planning.getMethodCatalog());
 		return planning;
-	}
-
-	@Test
-	public void longWalkRouteIsIdenticalAndSmaller()
-	{
-		int[] nodes = assertEquivalent(walkOnlyConfig(), LUMBRIDGE, Set.of(VARROCK));
-		assertTrue("A* must explore fewer nodes on a directed walk (" + nodes[0] + " -> " + nodes[1] + ")",
-			nodes[1] < nodes[0]);
-	}
-
-	@Test
-	public void teleportRouteCostsAreIdentical()
-	{
-		// Everything mode: global teleports, networks and shortcuts all participate, so this
-		// exercises transport edges, abstract hub nodes and the saturated floor under A* ordering.
-		assertEquivalent(everythingConfig(), LUMBRIDGE, Set.of(BARROWS));
-	}
-
-	@Test
-	public void bankedRouteCostsAreIdentical()
-	{
-		// The banked-state mechanics (delayed visits, banked-dominates-unbanked marking) must hold
-		// under f-ordering: a banked and unbanked node at the same tile share the same heuristic,
-		// so their relative pop order is still by cost.
-		when(config.useTeleportationItems()).thenReturn(TeleportationItem.NONE);
-		when(config.currencyThreshold()).thenReturn(10000000);
-		doReturn(new Item[]{new Item(COWBELL_AMULET, 1)}).when(bank).getItems();
-		when(client.getItemContainer(InventoryID.INV)).thenReturn(null);
-		TestPathfinderConfig base = new TestPathfinderConfig(client, config);
-		base.bank = bank;
-		PathfinderConfig planning = base.copyForPlanning();
-		planning.setPlanningMode(false);
-		planning.setBypassItemPossession(false);
-		planning.setConsiderBank(true);
-		planning.refresh();
-
-		assertEquivalent(planning, VARROCK, Set.of(COWBELL_DESTINATION));
-	}
-
-	@Test
-	public void multiTargetReachesTheSameCheapestTarget()
-	{
-		// Multi-target: the heuristic is the distance to the targets' bounding box; the first
-		// target settled must still be the globally cheapest one.
-		assertEquivalent(walkOnlyConfig(), LUMBRIDGE, Set.of(VARROCK, FALADOR, DRAYNOR));
 	}
 
 	/** Field-mode equivalence: same contract, with the near-exact distance-field heuristic. */
@@ -273,22 +202,4 @@ public class AStarEquivalenceTest
 			dijkstra.getResult().getTotalCost(), astar.getResult().getTotalCost());
 	}
 
-	@Test
-	public void unreachableTargetYieldsTheSameClosestTile()
-	{
-		// An island target with walking only: both searches exhaust the reachable component (same
-		// explored set, different order), so the tie-broken closest tile must be identical.
-		PathfinderConfig config = walkOnlyConfig();
-		Pathfinder dijkstra = run(config, LUMBRIDGE, Set.of(ENTRANA), null);
-		SearchHeuristic heuristic = SearchHeuristic.build(config, Set.of(ENTRANA), 0, Integer.MAX_VALUE);
-		assertNotNull(heuristic);
-		Pathfinder astar = run(config, LUMBRIDGE, Set.of(ENTRANA), heuristic);
-
-		assertEquals("neither search may reach the island",
-			false, dijkstra.getResult().isReached() || astar.getResult().isReached());
-		assertEquals("both must fall back to the same closest reachable tile",
-			dijkstra.getResult().getClosestReachedPoint(), astar.getResult().getClosestReachedPoint());
-		assertEquals("and at the same cost",
-			dijkstra.getResult().getTotalCost(), astar.getResult().getTotalCost());
-	}
 }
