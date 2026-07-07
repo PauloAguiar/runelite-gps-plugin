@@ -27,6 +27,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.callback.ClientThread;
 import shortestpath.pathfinder.CostUnits;
+import shortestpath.pathfinder.DistanceField;
 import shortestpath.pathfinder.PathStep;
 import shortestpath.pathfinder.Pathfinder;
 import shortestpath.pathfinder.PathfinderConfig;
@@ -188,6 +189,14 @@ public class AlternativeRoutesService
 		final List<Transport> seedCandidates = new ArrayList<>(Arrays.asList(
 			planningConfig.getUsableTeleports(mode == AlternativeRoutesMode.OWNED_WITH_BANK)));
 
+		// Per-generation preprocessing: one multi-source reverse flood from the target set builds a
+		// walking+transport distance field — the near-exact A* heuristic every search of this
+		// generation shares (chain, walk, seeds). Compact target sets only; a map-wide nearest-X
+		// set would flood everything for searches that are already cheap.
+		long fieldStart = System.nanoTime();
+		final DistanceField field = DistanceField.buildIfCompact(planningConfig, ends);
+		timer.fieldNanos = System.nanoTime() - fieldStart;
+
 		// Walk-only search, run concurrently on the seed pool (its own config copy — the chain
 		// mutates planningConfig per iteration): its cost is a rigorous expansion cap for every
 		// search that starts after it finishes (routes costlier than walking are never shown, so a
@@ -196,7 +205,7 @@ public class AlternativeRoutesService
 		// derive it. Polled non-blockingly so route 1's latency is unchanged. Skipped for
 		// primary-only generations (limit 1, panel hidden): one search, a cap can't pay for itself.
 		final Future<WalkResult> walkFuture = limit > 1
-			? seedExecutor.submit(() -> runWalkSearch(gen, start, ends, userExclusions, catalog, timer))
+			? seedExecutor.submit(() -> runWalkSearch(gen, start, ends, userExclusions, catalog, field, timer))
 			: null;
 
 		final List<RouteOption> routes = new ArrayList<>();
@@ -220,11 +229,14 @@ public class AlternativeRoutesService
 
 			long searchStart = System.nanoTime();
 			int chainCap = capOf(walkFuture);
-			// Heuristic rebuilt per iteration (the exclusion set changes the usable transports).
-			// The previous route's cost is a valid lower bound of this search's cost — chain costs
-			// never decrease — and gates A* to the corridor regime where it wins.
+			// Heuristic rebuilt per iteration (the exclusion set changes the usable transports and
+			// with it the field floor). Field mode is near-exact and always engages; without a
+			// field (map-wide target sets), fall back to the box heuristic gated to the corridor
+			// regime — the previous route's cost is a valid lower bound of this search's cost.
 			int chainCostFloor = routes.isEmpty() ? 0 : routes.get(routes.size() - 1).getTotalCost();
-			SearchHeuristic heuristic = SearchHeuristic.build(planningConfig, ends, chainCostFloor);
+			SearchHeuristic heuristic = field != null
+				? SearchHeuristic.buildWithField(planningConfig, field)
+				: SearchHeuristic.build(planningConfig, ends, chainCostFloor);
 			Pathfinder pathfinder = new Pathfinder(planningConfig, start, ends, null, chainCap, heuristic);
 			pathfinder.run();
 			long searchNanos = System.nanoTime() - searchStart;
@@ -290,13 +302,22 @@ public class AlternativeRoutesService
 		{
 			seedTeleportRoutes(gen, start, ends, userExclusions, mode, limit,
 				seedCandidates, routes, seenSignatures, catalog, unavailable, listener, bestRemaining,
-				capOf(walkFuture), timer);
+				capOf(walkFuture), field, timer);
 		}
 
 		// The walk-only route from the concurrent search is the last resort: append it when the
 		// chain didn't derive it (signature dedup skips it when it did), under the same closeness
 		// guard as every other route. Blocking here is fine — the generation is finishing anyway.
 		WalkResult walk = walkResult(walkFuture);
+		// Ties lose to walking: a method route costing the same as (or more than) plain walking
+		// isn't worth a slot. The searches race the concurrent walk search, and now that they're
+		// heuristic-directed they can finish before its cap exists — under f-ordering an
+		// equal-cost method route can then win the tie the FIFO search implicitly gave to walking.
+		if (walk != null && walk.cap != Integer.MAX_VALUE)
+		{
+			final int walkCost = walk.cap;
+			routes.removeIf(r -> !r.isWalkOnly() && r.getTotalCost() >= walkCost);
+		}
 		if (walk != null && routes.size() < limit
 			&& (bestRemaining < 0 || walk.remaining <= bestRemaining + CLOSEST_DISTANCE_TOLERANCE)
 			&& seenSignatures.add(signature(walk.route.getMethods())))
@@ -316,13 +337,15 @@ public class AlternativeRoutesService
 		}
 		synchronized (timer)
 		{
-			// Retained for the GPS debug snapshot: [wallMs, clientMs, rebuildMs, searchCpuMs, searches].
+			// Retained for the GPS debug snapshot:
+			// [wallMs, clientMs, rebuildMs, searchCpuMs, searches, fieldMs].
 			lastTimingSummary = new long[]{
 				(System.nanoTime() - wallStart) / 1_000_000,
 				timer.clientNanos / 1_000_000,
 				timer.rebuildNanos / 1_000_000,
 				timer.searchNanos / 1_000_000,
-				timer.searches};
+				timer.searches,
+				timer.fieldNanos / 1_000_000};
 			List<SearchRecord> records = new ArrayList<>(timer.records);
 			records.sort(Comparator.comparingLong((SearchRecord r) -> r.cpuMs).reversed());
 			lastSearchRecords = Collections.unmodifiableList(records);
@@ -357,6 +380,7 @@ public class AlternativeRoutesService
 		private long clientNanos;
 		private long rebuildNanos;
 		private long searchNanos;
+		private long fieldNanos;
 		private int searches;
 		private final List<SearchRecord> records = new ArrayList<>();
 	}
@@ -437,7 +461,7 @@ public class AlternativeRoutesService
 	private void seedTeleportRoutes(int gen, int start, Set<Integer> ends, Set<TeleportMethod> userExclusions,
 		AlternativeRoutesMode mode, int limit, List<Transport> seedCandidates, List<RouteOption> routes,
 		Set<String> seenSignatures, List<TeleportMethod> catalog, Map<TeleportMethod, MethodAvailability> unavailable,
-		ResultListener listener, int bestRemaining, int costCap, GenTimer timer)
+		ResultListener listener, int bestRemaining, int costCap, DistanceField field, GenTimer timer)
 	{
 		// Every global teleport is excluded from each seed search except the seed itself, so the
 		// exclusion universe must span ALL candidates — including ones that don't get an attempt.
@@ -469,7 +493,8 @@ public class AlternativeRoutesService
 		for (Transport seed : attempts)
 		{
 			futures.add(completion.submit(() ->
-				runSeedSearch(gen, stop, start, ends, userExclusions, allSeedMethods, seed, bestRemaining, costCap, configPool, timer)));
+				runSeedSearch(gen, stop, start, ends, userExclusions, allSeedMethods, seed, bestRemaining, costCap,
+					field, configPool, timer)));
 		}
 
 		try
@@ -582,7 +607,7 @@ public class AlternativeRoutesService
 	 */
 	private SeedResult runSeedSearch(int gen, AtomicBoolean stop, int start, Set<Integer> ends,
 		Set<TeleportMethod> userExclusions, Set<TeleportMethod> allSeedMethods, Transport seed,
-		int bestRemaining, int costCap, Queue<PathfinderConfig> configPool, GenTimer timer)
+		int bestRemaining, int costCap, DistanceField field, Queue<PathfinderConfig> configPool, GenTimer timer)
 	{
 		if (gen != generation.get() || stop.get())
 		{
@@ -606,7 +631,9 @@ public class AlternativeRoutesService
 			// Seed searches exclude every other global teleport, so the floor comes from the seed
 			// itself and the search's own optimal route uses it — the corridor regime by
 			// construction (no cost hint needed), and the walk-cost cap bounds any residue.
-			SearchHeuristic heuristic = SearchHeuristic.build(config, ends, 0);
+			SearchHeuristic heuristic = field != null
+				? SearchHeuristic.buildWithField(config, field)
+				: SearchHeuristic.build(config, ends, 0);
 			Pathfinder pathfinder = new Pathfinder(config, start, ends, null, costCap, heuristic);
 			pathfinder.run();
 			long searchEnd = System.nanoTime();
@@ -654,7 +681,7 @@ public class AlternativeRoutesService
 	 * searches, on its own config copy.
 	 */
 	private WalkResult runWalkSearch(int gen, int start, Set<Integer> ends, Set<TeleportMethod> userExclusions,
-		List<TeleportMethod> catalog, GenTimer timer)
+		List<TeleportMethod> catalog, DistanceField field, GenTimer timer)
 	{
 		if (gen != generation.get())
 		{
@@ -666,17 +693,24 @@ public class AlternativeRoutesService
 		long rebuildStart = System.nanoTime();
 		config.rebuildAvailabilityWithExclusions(walkExclusions);
 		long searchStart = System.nanoTime();
-		// With every method excluded little constrains the heuristic's floor, so the walk search —
-		// the biggest disc of the generation — is the one A* accelerates most. Its cost is at
-		// least the straight-line distance, which gates out the flat-heuristic regime (a remaining
-		// agility shortcut landing near the target on a long trip).
-		int walkCostFloor = Integer.MAX_VALUE;
-		for (int end : ends)
+		// Field mode: with every method excluded the floor is effectively unbounded, so h is the
+		// raw field — the walk search (the biggest disc of the generation) collapses to a
+		// corridor. Box fallback: gate on the straight-line distance as the cost lower bound.
+		SearchHeuristic heuristic;
+		if (field != null)
 		{
-			walkCostFloor = Math.min(walkCostFloor, WorldPointUtil.distanceBetween2D(start, end));
+			heuristic = SearchHeuristic.buildWithField(config, field);
 		}
-		SearchHeuristic heuristic = SearchHeuristic.build(config, ends,
-			walkCostFloor == Integer.MAX_VALUE ? 0 : walkCostFloor);
+		else
+		{
+			int walkCostFloor = Integer.MAX_VALUE;
+			for (int end : ends)
+			{
+				walkCostFloor = Math.min(walkCostFloor, WorldPointUtil.distanceBetween2D(start, end));
+			}
+			heuristic = SearchHeuristic.build(config, ends,
+				walkCostFloor == Integer.MAX_VALUE ? 0 : walkCostFloor);
+		}
 		Pathfinder pathfinder = new Pathfinder(config, start, ends, null, Integer.MAX_VALUE, heuristic);
 		pathfinder.run();
 		long searchEnd = System.nanoTime();

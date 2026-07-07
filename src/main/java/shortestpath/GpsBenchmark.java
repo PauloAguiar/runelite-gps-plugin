@@ -252,6 +252,7 @@ public final class GpsBenchmark
 		run.put("rebuildMs", timing != null ? timing[2] : -1);
 		run.put("searchCpuMs", timing != null ? timing[3] : -1);
 		run.put("searches", timing != null ? timing[4] : -1);
+		run.put("fieldMs", timing != null && timing.length > 5 ? timing[5] : -1);
 		run.put("catalogSize", catalogSize.get());
 		run.put("routeCount", finalRoutes.get().size());
 		// Per-search profiles (slowest first): which searches the time actually went to — the

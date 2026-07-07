@@ -151,6 +151,84 @@ public class AStarEquivalenceTest
 		assertEquivalent(walkOnlyConfig(), LUMBRIDGE, Set.of(VARROCK, FALADOR, DRAYNOR));
 	}
 
+	/** Field-mode equivalence: same contract, with the near-exact distance-field heuristic. */
+	private static int[] assertEquivalentWithField(PathfinderConfig config, int start, Set<Integer> targets)
+	{
+		Pathfinder dijkstra = run(config, start, targets, null);
+		DistanceField distanceField = DistanceField.build(config, targets);
+		SearchHeuristic heuristic = SearchHeuristic.buildWithField(config, distanceField);
+		assertNotNull("Field heuristic must build", heuristic);
+		Pathfinder astar = run(config, start, targets, heuristic);
+
+		assertEquals("reached must match (field mode)",
+			dijkstra.getResult().isReached(), astar.getResult().isReached());
+		assertEquals("total cost must be identical (field mode)",
+			dijkstra.getResult().getTotalCost(), astar.getResult().getTotalCost());
+		System.out.println("field-equivalent: cost " + dijkstra.getResult().getTotalCost()
+			+ ", nodes dijkstra=" + dijkstra.getStats().getNodesChecked()
+			+ " astar=" + astar.getStats().getNodesChecked());
+		return new int[]{
+			dijkstra.getStats().getNodesChecked(),
+			astar.getStats().getNodesChecked()};
+	}
+
+	@Test
+	public void fieldModeWalkRouteIsIdenticalAndCollapses()
+	{
+		int[] nodes = assertEquivalentWithField(walkOnlyConfig(), LUMBRIDGE, Set.of(VARROCK));
+		assertTrue("The field heuristic must collapse a directed walk to a corridor ("
+				+ nodes[0] + " -> " + nodes[1] + ")",
+			nodes[1] < nodes[0] / 20);
+	}
+
+	@Test
+	public void fieldModeTeleportRouteCostsAreIdentical()
+	{
+		assertEquivalentWithField(everythingConfig(), LUMBRIDGE, Set.of(BARROWS));
+	}
+
+	@Test
+	public void fieldModeBankedRouteCostsAreIdentical()
+	{
+		when(config.useTeleportationItems()).thenReturn(TeleportationItem.NONE);
+		when(config.currencyThreshold()).thenReturn(10000000);
+		doReturn(new Item[]{new Item(COWBELL_AMULET, 1)}).when(bank).getItems();
+		when(client.getItemContainer(InventoryID.INV)).thenReturn(null);
+		TestPathfinderConfig base = new TestPathfinderConfig(client, config);
+		base.bank = bank;
+		PathfinderConfig planning = base.copyForPlanning();
+		planning.setPlanningMode(false);
+		planning.setBypassItemPossession(false);
+		planning.setConsiderBank(true);
+		planning.refresh();
+
+		assertEquivalentWithField(planning, VARROCK, Set.of(COWBELL_DESTINATION));
+	}
+
+	@Test
+	public void fieldModeMultiTargetReachesTheSameCheapestTarget()
+	{
+		assertEquivalentWithField(walkOnlyConfig(), LUMBRIDGE, Set.of(VARROCK, FALADOR, DRAYNOR));
+	}
+
+	@Test
+	public void fieldModeUnreachableTargetYieldsTheSameClosestTile()
+	{
+		PathfinderConfig config = walkOnlyConfig();
+		Pathfinder dijkstra = run(config, LUMBRIDGE, Set.of(ENTRANA), null);
+		DistanceField distanceField = DistanceField.build(config, Set.of(ENTRANA));
+		SearchHeuristic heuristic = SearchHeuristic.buildWithField(config, distanceField);
+		assertNotNull(heuristic);
+		Pathfinder astar = run(config, LUMBRIDGE, Set.of(ENTRANA), heuristic);
+
+		assertEquals("neither search may reach the island (field mode)",
+			false, dijkstra.getResult().isReached() || astar.getResult().isReached());
+		assertEquals("both must fall back to the same closest reachable tile (field mode)",
+			dijkstra.getResult().getClosestReachedPoint(), astar.getResult().getClosestReachedPoint());
+		assertEquals("and at the same cost (field mode)",
+			dijkstra.getResult().getTotalCost(), astar.getResult().getTotalCost());
+	}
+
 	@Test
 	public void unreachableTargetYieldsTheSameClosestTile()
 	{

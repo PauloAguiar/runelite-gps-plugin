@@ -59,6 +59,9 @@ public final class SearchHeuristic
 	private final int minY;
 	private final int maxY;
 	private final int floor;
+	// Field-backed mode: h comes from the target-rooted distance field instead of the box
+	// distance — near-exact guidance (true walking + origin-bound-transport distances).
+	private final DistanceField field;
 
 	private SearchHeuristic(int minX, int maxX, int minY, int maxY, int floor)
 	{
@@ -67,18 +70,36 @@ public final class SearchHeuristic
 		this.minY = minY;
 		this.maxY = maxY;
 		this.floor = floor;
+		this.field = null;
+	}
+
+	private SearchHeuristic(DistanceField field, int floor)
+	{
+		this.minX = 0;
+		this.maxX = 0;
+		this.minY = 0;
+		this.maxY = 0;
+		this.floor = floor;
+		this.field = field;
 	}
 
 	/**
 	 * The heuristic value for a node position; {@link WorldPointUtil#UNDEFINED} (abstract
-	 * global-teleport hub nodes) gets the floor. Plane is deliberately ignored: walking never
-	 * changes plane and every plane change is a transport, both covered by the 2D bound.
+	 * global-teleport hub nodes) gets the floor. In box mode plane is deliberately ignored:
+	 * walking never changes plane and every plane change is a transport, both covered by the 2D
+	 * bound. In field mode unflooded (reverse-unreachable) tiles also get the floor — reaching a
+	 * target from them requires a global teleport, which is exactly what the floor bounds.
 	 */
 	public int of(int packedPosition)
 	{
 		if (packedPosition == WorldPointUtil.UNDEFINED)
 		{
 			return floor;
+		}
+		if (field != null)
+		{
+			final int distance = field.distance(packedPosition);
+			return distance >= floor ? floor : distance;
 		}
 		final int x = WorldPointUtil.unpackWorldX(packedPosition);
 		final int y = WorldPointUtil.unpackWorldY(packedPosition);
@@ -90,6 +111,44 @@ public final class SearchHeuristic
 	int floor()
 	{
 		return floor;
+	}
+
+	/**
+	 * Builds the field-backed (near-exact) heuristic for one search: h(n) = min(field(n), floor),
+	 * with the floor computed from THIS search's usable origin-less teleports — per-search
+	 * exclusions raise the floor exactly when the searches get expensive. Origin-bound transports
+	 * are already inside the field (reversed), so no shortcut-vs-walk distinction is needed;
+	 * consistency holds edge-by-edge with the same argument as the box mode, with the field's own
+	 * shortest-path triangle inequality replacing the chebyshev one. Always engages: the field is
+	 * as strong as the truth allows, so a flat h implies a genuinely cheap route (small disc).
+	 */
+	public static SearchHeuristic buildWithField(PathfinderConfig config, DistanceField field)
+	{
+		if (field == null)
+		{
+			return null;
+		}
+		int floor = UNBOUNDED_FLOOR;
+		for (boolean bankVisited : new boolean[]{false, true})
+		{
+			for (Transport teleport : config.getUsableTeleports(bankVisited))
+			{
+				final int destination = teleport.getDestination();
+				if (destination == WorldPointUtil.UNDEFINED)
+				{
+					continue;
+				}
+				final int landingDistance = field.distance(destination);
+				if (landingDistance == DistanceField.UNREACHED)
+				{
+					continue;
+				}
+				final int effectiveCost = Math.max(0,
+					CostUnits.fromTicks(teleport.getDuration()) + config.getAdditionalTransportCost(teleport));
+				floor = Math.min(floor, effectiveCost + landingDistance);
+			}
+		}
+		return new SearchHeuristic(field, floor);
 	}
 
 	/**
