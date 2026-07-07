@@ -208,6 +208,9 @@ public class PathTileOverlay extends Overlay
 			{
 				PathStep currentStep = path.get(i - 1);
 				PathStep nextStep = path.get(i);
+				// A non-adjacent pair is a teleport/transport jump, not a walkable edge.
+				boolean jump = WorldPointUtil.distanceBetween(
+					currentStep.getPackedPosition(), nextStep.getPackedPosition()) > 1;
 				// Arrowheads only where they carry information: at direction changes and the end.
 				boolean head = i == path.size() - 1
 					|| directionChanges(currentStep.getPackedPosition(), nextStep.getPackedPosition(),
@@ -218,9 +221,9 @@ public class PathTileOverlay extends Overlay
 					phase += WAVE_SPACING;
 				}
 				double waveDistance = Math.min(phase, WAVE_SPACING - phase);
-				double glow = Math.max(0, 1 - waveDistance / WAVE_HALF_WIDTH);
+				double glow = jump ? 0 : Math.max(0, 1 - waveDistance / WAVE_HALF_WIDTH);
 				drawLine(graphics, currentStep.getPackedPosition(), nextStep.getPackedPosition(),
-					i >= blockedFrom ? blockedColor : color, 1 + counter++, head, glow);
+					i >= blockedFrom ? blockedColor : color, 1 + counter++, head, glow, jump);
 				drawTransportInfo(graphics, currentStep, nextStep, path, i - 1);
 			}
 
@@ -519,6 +522,12 @@ public class PathTileOverlay extends Overlay
 	private void drawLine(Graphics2D graphics, int startLoc, int endLoc, Color color, int counter, boolean arrowHead,
 		double glow)
 	{
+		drawLine(graphics, startLoc, endLoc, color, counter, arrowHead, glow, false);
+	}
+
+	private void drawLine(Graphics2D graphics, int startLoc, int endLoc, Color color, int counter, boolean arrowHead,
+		double glow, boolean jump)
+	{
 		PrimitiveIntList starts = WorldPointUtil.toLocalInstance(client, startLoc);
 		PrimitiveIntList ends = WorldPointUtil.toLocalInstance(client, endLoc);
 
@@ -558,7 +567,17 @@ public class PathTileOverlay extends Overlay
 		Line2D.Double line = new Line2D.Double(p1.getX(), p1.getY(), p2.getX(), p2.getY());
 
 		graphics.setColor(color);
-		graphics.setStroke(new BasicStroke(5, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+		if (jump)
+		{
+			// Teleport/transport jumps: a thin dashed hint, like the world map draws them —
+			// a full solid beam across the scene reads as a walkable line, which it isn't.
+			graphics.setStroke(new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND,
+				10f, new float[]{8, 8}, 0));
+		}
+		else
+		{
+			graphics.setStroke(new BasicStroke(5, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+		}
 		graphics.draw(line);
 		if (arrowHead)
 		{
