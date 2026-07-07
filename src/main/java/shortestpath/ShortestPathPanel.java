@@ -30,6 +30,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JRadioButtonMenuItem;
@@ -1254,9 +1255,10 @@ public class ShortestPathPanel extends PluginPanel
 		destinationResults.setVisible(false);
 		wrap.add(destinationResults);
 
-		// "Nearest X": routes to the closest of an amenity type using available teleports.
-		wrap.add(fullWidth(sectionLabel("Nearest amenity")));
-		wrap.add(buildNearestGrid());
+		// "Nearest X": a single button opening a menu of amenity types; picking one routes to the
+		// closest of that type using available teleports.
+		wrap.add(fullWidth(sectionLabel("Find nearest")));
+		wrap.add(buildNearestButton());
 		return wrap;
 	}
 
@@ -1276,30 +1278,41 @@ public class ShortestPathPanel extends PluginPanel
 		return component;
 	}
 
-	private JPanel buildNearestGrid()
+	private JButton buildNearestButton()
 	{
-		JPanel grid = new JPanel(new GridLayout(0, 2, 4, 4));
-		grid.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		grid.setAlignmentX(LEFT_ALIGNMENT);
+		JButton button = new JButton("Nearest…");
+		button.setFont(FontManager.getRunescapeSmallFont());
+		button.setForeground(Color.WHITE);
+		button.setFocusPainted(false);
+		button.setHorizontalAlignment(SwingConstants.LEFT);
+		button.setAlignmentX(LEFT_ALIGNMENT);
+		button.setMaximumSize(new Dimension(Integer.MAX_VALUE, button.getPreferredSize().height));
+		button.setToolTipText("Route to the nearest bank / altar / water source / … using available teleports");
+		button.addActionListener(e -> showNearestMenu(button));
+		return button;
+	}
+
+	private void showNearestMenu(JComponent anchor)
+	{
+		JPopupMenu menu = new JPopupMenu();
+		menu.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		menu.setBorder(BorderFactory.createLineBorder(ColorScheme.MEDIUM_GRAY_COLOR));
 		for (Destinations.NearestOption option : Destinations.NEAREST_OPTIONS)
 		{
-			JButton button = new JButton(option.label, RouteIcons.destinationIcon(option.id));
-			button.setFont(FontManager.getRunescapeSmallFont());
-			button.setForeground(Color.WHITE);
-			button.setFocusPainted(false);
-			button.setHorizontalAlignment(SwingConstants.LEFT);
-			button.setIconTextGap(4);
-			button.setToolTipText("Route to the nearest " + option.label.toLowerCase(java.util.Locale.ROOT)
-				+ " using the teleports you have available");
-			button.addActionListener(e ->
+			JMenuItem item = new JMenuItem(option.label, RouteIcons.destinationIcon(option.id));
+			item.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+			item.setForeground(Color.WHITE);
+			item.setFont(FontManager.getRunescapeSmallFont());
+			item.setIconTextGap(6);
+			item.addActionListener(e ->
 			{
 				Set<Integer> tiles = Destinations.tilesForCategory(option.id, plugin.getTransports());
 				plugin.setNearestCategory(tiles, "nearest " + option.label.toLowerCase(java.util.Locale.ROOT));
 				destinationSearch.setText("");
 			});
-			grid.add(button);
+			menu.add(item);
 		}
-		return grid;
+		menu.show(anchor, 0, anchor.getHeight());
 	}
 
 	private void renderCityResults()
