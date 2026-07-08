@@ -189,6 +189,11 @@ public class ShortestPathPlugin extends Plugin
 	private KeyManager keyManager;
 	@Inject
 	private MouseManager mouseManager;
+	@Inject
+	private net.runelite.client.plugins.PluginManager pluginManager;
+	// True while the original Shortest Path plugin is also enabled: both plugins draw paths and
+	// answer the same plugin-message integrations, so the panel warns and recommends disabling it.
+	private volatile boolean shortestPathConflict = false;
 	// Click-to-dismiss for the GPS overlay's lingering "Arrived!" panel.
 	private final MouseAdapter arrivalDismissListener = new MouseAdapter()
 	{
@@ -461,6 +466,8 @@ public class ShortestPathPlugin extends Plugin
 
 		keyManager.registerKeyListener(clearPathKeylistener);
 		mouseManager.registerMouseListener(arrivalDismissListener);
+		// Plugins enabled later are caught by the PluginChanged/ExternalPluginsChanged events.
+		updateShortestPathConflict();
 	}
 
 	@Override
@@ -752,6 +759,54 @@ public class ShortestPathPlugin extends Plugin
 				restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
 			}
 		}
+	}
+
+	/** Whether the original Shortest Path plugin is also enabled — the panel shows a warning. */
+	public boolean isShortestPathConflict()
+	{
+		return shortestPathConflict;
+	}
+
+	/**
+	 * Detects the original Shortest Path plugin running alongside GPS. Both draw paths and answer
+	 * the same {@code shortestpath} plugin-message integrations, so running both doubles the
+	 * rendering — the panel recommends disabling it. Matched by descriptor name (each hub plugin
+	 * has its own classloader, so class identity can't be compared across plugins).
+	 */
+	private void updateShortestPathConflict()
+	{
+		boolean conflict = false;
+		for (Plugin other : pluginManager.getPlugins())
+		{
+			if (other == this)
+			{
+				continue;
+			}
+			PluginDescriptor descriptor = other.getClass().getAnnotation(PluginDescriptor.class);
+			if (descriptor != null && "Shortest Path".equals(descriptor.name())
+				&& pluginManager.isPluginEnabled(other))
+			{
+				conflict = true;
+				break;
+			}
+		}
+		if (conflict != shortestPathConflict)
+		{
+			shortestPathConflict = conflict;
+			refreshPanel(altGenerationInFlight);
+		}
+	}
+
+	@Subscribe
+	public void onPluginChanged(net.runelite.client.events.PluginChanged event)
+	{
+		updateShortestPathConflict();
+	}
+
+	@Subscribe
+	public void onExternalPluginsChanged(net.runelite.client.events.ExternalPluginsChanged event)
+	{
+		updateShortestPathConflict();
 	}
 
 	/**

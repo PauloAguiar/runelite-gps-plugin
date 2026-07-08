@@ -559,6 +559,17 @@ public class ShortestPathPanel extends PluginPanel
 		}
 
 		notes.removeAll();
+		// Running the original Shortest Path plugin alongside GPS doubles the path rendering and
+		// the plugin-message integrations (both answer Quest Helper's destinations).
+		if (plugin.isShortestPathConflict())
+		{
+			notes.add(buildBanner(RouteIcons.BANNER_WARNING,
+				"Shortest Path is also enabled",
+				"Both plugins draw paths and respond to the same integrations. GPS includes its "
+					+ "functionality — disable Shortest Path to avoid doubled rendering.",
+				BANNER_WARN_ACCENT));
+			notes.add(verticalGap(4));
+		}
 		// The bank container is only populated once the bank has been opened this session; without it
 		// Bank mode cannot see banked items (same constraint as Shortest Path itself).
 		if (plugin.getRoutesMode() == AlternativeRoutesMode.OWNED_WITH_BANK && !plugin.isBankContentsKnown())
