@@ -980,8 +980,14 @@ public class ShortestPathPlugin extends Plugin
 
 			boolean useOld = targets.isEmpty() && pathfinder != null;
 			Set<Integer> ends = useOld ? new HashSet<>(pathfinder.getTargets()) : targets;
-			// Alternatives are computed manually (the panel's "Find routes" button reads the current
-			// target), so other-plugin requests like Quest Helper just set the path here.
+			if (!useOld)
+			{
+				// A NEW destination from another plugin: this path bypasses setTargets, so stamp the
+				// journey start here too — otherwise the arrival timer measures from whatever manual
+				// destination was last set (hours ago, or the epoch), showing absurd elapsed times.
+				// Reusing the previous target keeps the running journey's stamp.
+				targetSetMillis = System.currentTimeMillis();
+			}
 			restartPathfinding(start, ends, useOld);
 		}
 		else if (PLUGIN_MESSAGE_CLEAR.equals(action))
@@ -1058,8 +1064,9 @@ public class ShortestPathPlugin extends Plugin
 		{
 			// Reached the destination (along the path). Show the "Arrived!" panel — including when
 			// the destination was set while already there (e.g. "nearest bank" at a bank), where
-			// the journey time is ~0 — then clear the target.
-			long elapsed = System.currentTimeMillis() - targetSetMillis;
+			// the journey time is ~0 — then clear the target. An unstamped journey (belt-and-braces
+			// against any destination-setting path missing the stamp) reports 0 rather than decades.
+			long elapsed = targetSetMillis == 0 ? 0 : System.currentTimeMillis() - targetSetMillis;
 			if (routeDirectionsOverlay != null)
 			{
 				routeDirectionsOverlay.markArrived(targetSource, elapsed);
