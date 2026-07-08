@@ -103,10 +103,14 @@ import gps.transport.TransportType;
 public class ShortestPathPlugin extends Plugin
 {
 	protected static final String CONFIG_GROUP = "gps";
-	// The plugin-message namespace deliberately stays "shortestpath": Quest Helper and other
-	// plugins drive the pathfinder through it (set path/target, config overrides) and listen for
-	// its path broadcasts. GPS supersedes Shortest Path, so it keeps answering on its channel.
-	protected static final String MESSAGE_NAMESPACE = "shortestpath";
+	// GPS's own plugin-message namespace: new integrations should target this one.
+	protected static final String MESSAGE_NAMESPACE = "gps";
+	// Compatibility alias: Quest Helper and other plugins drive the pathfinder through Shortest
+	// Path's namespace (set path/target, config overrides) and listen for its path broadcasts.
+	// GPS supersedes Shortest Path, so it keeps answering on that channel too — inbound messages
+	// are accepted on either, and broadcasts go out on both (no listener subscribes to both today,
+	// so nothing double-processes; drop the legacy channel only if that ever changes).
+	protected static final String MESSAGE_NAMESPACE_LEGACY = "shortestpath";
 
 	// POH (Player Owned House) bounds for detecting when path goes through POH
 	// Note: POH_MIN_X is 1856 to exclude the Daddy's Home miniquest area
@@ -891,7 +895,8 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onPluginMessage(PluginMessage event)
 	{
-		if (!MESSAGE_NAMESPACE.equals(event.getNamespace()))
+		if (!MESSAGE_NAMESPACE.equals(event.getNamespace())
+			&& !MESSAGE_NAMESPACE_LEGACY.equals(event.getNamespace()))
 		{
 			return;
 		}
@@ -1047,6 +1052,7 @@ public class ShortestPathPlugin extends Plugin
 			data.put("objectInfo", transportObjectInfos);
 			data.put("displayInfo", transportDisplayInfos);
 			eventBus.post(new PluginMessage(MESSAGE_NAMESPACE, PLUGIN_MESSAGE_TRANSPORTS, data));
+			eventBus.post(new PluginMessage(MESSAGE_NAMESPACE_LEGACY, PLUGIN_MESSAGE_TRANSPORTS, data));
 		}
 	}
 

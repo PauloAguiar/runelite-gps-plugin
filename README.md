@@ -13,7 +13,7 @@ Built on [Shortest Path](https://github.com/Skretzo/shortest-path): the classic 
 - **Teleport-method catalog** — every method, categorised and searchable, with per-method include/exclude toggles that persist and availability markers (missing item, in your bank, level too low, quest not done). Seasonal (Leagues) methods are listed but disabled by default.
 - **Availability modes** — route with only what you carry, what you carry plus your bank (routes detour to withdraw), everything you've unlocked, or every teleport in the game.
 - **Destination search** — type a place, dungeon or minigame in the panel and pick a result; or use **Find nearest…** for the closest bank, altar, anvil, fairy ring and more — including **Bank (and back)**, a round trip ranked by the combined out-and-back time.
-- **Integration** — picks up destinations set by [Quest Helper](https://github.com/Zoinkwiz/quest-helper) (and any plugin using the `shortestpath` plugin-message API).
+- **Integration** — picks up destinations set by [Quest Helper](https://github.com/Zoinkwiz/quest-helper) and any plugin using the `gps` plugin-message API (the legacy `shortestpath` namespace is accepted too, so existing integrations keep working unchanged).
 
 ![Alternative routes panel](docs/screenshots/panel.png)
 
