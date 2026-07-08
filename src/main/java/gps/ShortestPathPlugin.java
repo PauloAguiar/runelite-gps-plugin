@@ -979,14 +979,27 @@ public class ShortestPathPlugin extends Plugin
 				: "another plugin";
 
 			boolean useOld = targets.isEmpty() && pathfinder != null;
-			Set<Integer> ends = useOld ? new HashSet<>(pathfinder.getTargets()) : targets;
-			if (!useOld)
+			Set<Integer> ends;
+			if (useOld)
+			{
+				ends = new HashSet<>(pathfinder.getTargets());
+			}
+			else
 			{
 				// A NEW destination from another plugin: this path bypasses setTargets, so stamp the
 				// journey start here too — otherwise the arrival timer measures from whatever manual
 				// destination was last set (hours ago, or the epoch), showing absurd elapsed times.
 				// Reusing the previous target keeps the running journey's stamp.
 				targetSetMillis = System.currentTimeMillis();
+				// Quest Helper often targets an NPC's or object's own tile, which isn't walkable — a
+				// search targeting only it exhausts the entire map and ends 'closest tile' (captured:
+				// ~880ms per search). Expand to the nearest walkable ring, like manual pins.
+				ends = new HashSet<>();
+				for (int target : targets)
+				{
+					ends.addAll(Destinations.walkableTargets(
+						pathfinderConfig != null ? pathfinderConfig.getMap() : null, target));
+				}
 			}
 			restartPathfinding(start, ends, useOld);
 		}
