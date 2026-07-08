@@ -468,6 +468,13 @@ public class AlternativeRoutesServiceTest
 			assertTrue("The route must END back at the player (round trip), ended "
 					+ WorldPointUtil.distanceBetween(last, varrockCentre) + " tiles away",
 				last == varrockCentre);
+			// The turnaround (where the outbound leg ends — the bank) must be a real interior
+			// index away from the start: progress/arrival gate the return leg behind it.
+			int turnaround = route.getTurnaroundIndex();
+			assertTrue("Turnaround must be an interior path index, got " + turnaround,
+				turnaround > 0 && turnaround < route.getPath().size() - 1);
+			assertTrue("The turnaround tile must not be the start tile",
+				route.getPath().get(turnaround).getPackedPosition() != varrockCentre);
 			assertTrue("Routes must be ranked by combined cost", route.getTotalCost() >= previousCost);
 			previousCost = route.getTotalCost();
 		}

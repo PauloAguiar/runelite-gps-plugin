@@ -1113,10 +1113,17 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return Integer.MAX_VALUE;
 		}
-		int scanFrom = roundTrip ? Math.max(0, displayedRouteProgress() - 8) : 0;
+		int progress = roundTrip ? displayedRouteProgress() : 0;
+		int scanFrom = roundTrip ? Math.max(0, progress - 8) : 0;
+		// Until the turnaround (the destination) is reached, the return leg is out of bounds for
+		// the scan: it often retraces the outbound street, so its tail matches the player's tile
+		// from the first step out — and matching it would read as being nearly home.
+		int turnaround = roundTrip ? displayed.getTurnaroundIndex() : -1;
+		int scanTo = (turnaround >= 0 && progress < turnaround - 2)
+			? Math.min(path.size(), turnaround + 1) : path.size();
 		int best = -1;
 		int bestDistance = Integer.MAX_VALUE;
-		for (int i = scanFrom; i < path.size(); i++)
+		for (int i = scanFrom; i < scanTo; i++)
 		{
 			int distance = WorldPointUtil.distanceBetween(path.get(i).getPackedPosition(), currentLocation);
 			if (distance < bestDistance)

@@ -812,9 +812,11 @@ public class AlternativeRoutesService
 			{
 				continue;
 			}
+			// The turnaround is the outbound path's last tile (the destination); the return leg's
+			// duplicated first step was dropped, so outbound indexes are unshifted in fullPath.
 			merged.add(new RouteOption(fullPath, scan.methods, scan.methodEdges, scan.methodDurations,
 				oneWay.getTotalCost() + result.getTotalCost(), scan.rawCost, oneWay.isReached(),
-				scan.bankGated, scan.walkBefore, scan.trailingWalk, true));
+				scan.bankGated, scan.walkBefore, scan.trailingWalk, outPath.size() - 1));
 			merged.sort(Comparator.comparingInt(RouteOption::getTotalCost));
 			emit(gen, listener, new ArrayList<>(merged), catalog, unavailable, false);
 		}

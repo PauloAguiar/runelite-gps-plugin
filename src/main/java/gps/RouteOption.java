@@ -64,23 +64,25 @@ public final class RouteOption
 	 */
 	private final int trailingWalkSteps;
 	/**
-	 * Whether this route is a round trip (out to the destination and back to the start): its path
-	 * ends where it began, so progress tracking and the arrival check must anchor on route progress
-	 * instead of the globally nearest path tile — the start and end tiles coincide.
+	 * For round trips (out to the destination and back to the start): the path index of the
+	 * turnaround — the destination tile where the outbound leg ends. -1 for ordinary routes.
+	 * A round trip's path ends where it began, and its return leg often retraces the outbound
+	 * street, so progress tracking and the arrival check gate the return leg behind this index —
+	 * otherwise walking OUT reads as coming back (instant false arrival).
 	 */
-	private final boolean roundTrip;
+	private final int turnaroundIndex;
 
 	public RouteOption(List<PathStep> path, List<TeleportMethod> methods, List<Integer> methodEdgeIndexes,
 		List<Integer> methodDurations, int totalCost, int rawCost, boolean reached, Set<TeleportMethod> bankMethods,
 		List<Integer> walkBeforeSteps, int trailingWalkSteps)
 	{
 		this(path, methods, methodEdgeIndexes, methodDurations, totalCost, rawCost, reached, bankMethods,
-			walkBeforeSteps, trailingWalkSteps, false);
+			walkBeforeSteps, trailingWalkSteps, -1);
 	}
 
 	public RouteOption(List<PathStep> path, List<TeleportMethod> methods, List<Integer> methodEdgeIndexes,
 		List<Integer> methodDurations, int totalCost, int rawCost, boolean reached, Set<TeleportMethod> bankMethods,
-		List<Integer> walkBeforeSteps, int trailingWalkSteps, boolean roundTrip)
+		List<Integer> walkBeforeSteps, int trailingWalkSteps, int turnaroundIndex)
 	{
 		this.path = path;
 		this.methods = methods;
@@ -92,7 +94,13 @@ public final class RouteOption
 		this.bankMethods = bankMethods;
 		this.walkBeforeSteps = walkBeforeSteps;
 		this.trailingWalkSteps = trailingWalkSteps;
-		this.roundTrip = roundTrip;
+		this.turnaroundIndex = turnaroundIndex;
+	}
+
+	/** Whether this route is a round trip — see {@link #turnaroundIndex}. */
+	public boolean isRoundTrip()
+	{
+		return turnaroundIndex >= 0;
 	}
 
 	/**

@@ -619,6 +619,14 @@ public class RouteDirectionsOverlay extends OverlayPanel
 			}
 		}
 
+		// Round trips: the return leg often retraces the outbound street, so its tiles match the
+		// player's position from the very first step OUT. Until the turnaround (the destination)
+		// has been reached, return-leg indexes are ineligible — otherwise walking out reads as
+		// coming back and the route completes instantly.
+		int turnaround = route.getTurnaroundIndex();
+		int returnGate = (turnaround >= 0 && reachedIndex < turnaround - 2)
+			? turnaround : Integer.MAX_VALUE;
+
 		// Progress = the eligible path tile NEAREST the player (ties broken toward the current
 		// position). Scoring by (walk time + remaining) instead had a systematic forward bias —
 		// remaining falls slightly faster per index than distance charges per tile — so the
@@ -630,6 +638,10 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		int bestOffset = Integer.MAX_VALUE;
 		for (int i = 0; i < path.size(); i++)
 		{
+			if (i > returnGate)
+			{
+				break;
+			}
 			int packed = path.get(i).getPackedPosition();
 			if (WorldPointUtil.unpackWorldPlane(packed) != playerPlane)
 			{
