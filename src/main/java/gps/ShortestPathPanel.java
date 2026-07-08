@@ -478,23 +478,19 @@ public class ShortestPathPanel extends PluginPanel
 		updateModeButtons();
 		listPanel.removeAll();
 
-		String status;
-		Icon statusIcon;
-		Color statusAccent;
+		// Banners are for NOTICES only (warnings, arrival, nothing-to-show); routine result state
+		// ("N routes", "calculating…") lives in the results section header instead — a status
+		// banner as the results header read as a warning strip above the cards.
+		String status = null;
+		Icon statusIcon = null;
+		Color statusAccent = null;
 		// A live destination (or its routes) supersedes any lingering arrival banner.
 		if (cachedHasTarget)
 		{
 			showingArrival = false;
 		}
-		if (cachedCalculating)
-		{
-			status = cachedRoutes.isEmpty()
-				? "Calculating routes…"
-				: ("Calculating… (" + cachedRoutes.size() + " so far)");
-			statusIcon = RouteIcons.BANNER_BUSY;
-			statusAccent = BANNER_INFO_ACCENT;
-		}
-		else if (!cachedRoutes.isEmpty() && cachedRoutes.stream().noneMatch(plugin::routeReachesTarget))
+		if (!cachedCalculating && !cachedRoutes.isEmpty()
+			&& cachedRoutes.stream().noneMatch(plugin::routeReachesTarget))
 		{
 			// Routes exist but every one stops short of the target — it can't actually be reached
 			// (e.g. a tile on an island with no connecting path or teleport). Say so, don't imply success.
@@ -502,13 +498,7 @@ public class ShortestPathPanel extends PluginPanel
 			statusIcon = RouteIcons.BANNER_WARNING;
 			statusAccent = BANNER_WARN_ACCENT;
 		}
-		else if (!cachedRoutes.isEmpty())
-		{
-			status = cachedRoutes.size() + (cachedRoutes.size() == 1 ? " route found" : " routes found");
-			statusIcon = RouteIcons.BANNER_INFO;
-			statusAccent = BANNER_INFO_ACCENT;
-		}
-		else if (cachedHasTarget)
+		else if (!cachedCalculating && cachedRoutes.isEmpty() && cachedHasTarget)
 		{
 			// A search ran for the current target but produced nothing — distinct from "no target set".
 			status = "<b>No routes found to the target.</b>"
@@ -516,14 +506,14 @@ public class ShortestPathPanel extends PluginPanel
 			statusIcon = RouteIcons.BANNER_WARNING;
 			statusAccent = BANNER_WARN_ACCENT;
 		}
-		else if (showingArrival)
+		else if (!cachedCalculating && cachedRoutes.isEmpty() && showingArrival)
 		{
 			// Reached (or set while already at) the destination — say so rather than "No destination set".
 			status = arrivalImmediate ? "You're already at your destination." : "Arrived at your destination.";
 			statusIcon = RouteIcons.CHECK;
 			statusAccent = BANNER_OK_ACCENT;
 		}
-		else
+		else if (!cachedCalculating && cachedRoutes.isEmpty())
 		{
 			// GPS has no active target. (Quest Helper draws its own line for some steps and
 			// doesn't hand GPS a destination — set one on the map to find routes.)
@@ -554,7 +544,10 @@ public class ShortestPathPanel extends PluginPanel
 				ColorScheme.PROGRESS_ERROR_COLOR));
 			notes.add(verticalGap(4));
 		}
-		notes.add(buildBanner(statusIcon, status, statusAccent));
+		if (status != null)
+		{
+			notes.add(buildBanner(statusIcon, status, statusAccent));
+		}
 		// Method toggles no longer recalculate; flag a route list generated with different exclusions.
 		if (!cachedCalculating && cachedHasTarget && plugin.isRouteListStale())
 		{
@@ -562,6 +555,9 @@ public class ShortestPathPanel extends PluginPanel
 			notes.add(buildBanner(RouteIcons.BANNER_WARNING,
 				"Exclusions changed — press \"Refresh routes\" to apply.", BANNER_WARN_ACCENT));
 		}
+		// With no notices at all (the common "routes found" case) the strip collapses entirely
+		// instead of leaving its padding as a dead gap.
+		notes.setVisible(notes.getComponentCount() > 0);
 		notes.revalidate();
 		notes.repaint();
 
@@ -578,9 +574,15 @@ public class ShortestPathPanel extends PluginPanel
 			refreshCatalog();
 		}
 
-		// Routes are shown as they stream in (even while still calculating). The previous list was
-		// cleared when this generation started, so only the new routes appear. The highlighted card is
-		// the route actually drawn on the map — the explicitly selected one, or route 1 by default.
+		// The results get a proper section header (like "Teleport methods"): the route count, plus
+		// a quiet busy note while the generation streams. Routes are shown as they stream in; the
+		// previous list was cleared when this generation started, so only the new routes appear.
+		// The highlighted card is the route actually drawn on the map — the explicitly selected
+		// one, or route 1 by default.
+		if (cachedCalculating || !cachedRoutes.isEmpty())
+		{
+			listPanel.add(buildResultsHeader(cachedRoutes.size(), cachedCalculating));
+		}
 		RouteOption selected = plugin.getDisplayedRoute();
 		for (int i = 0; i < cachedRoutes.size(); i++)
 		{
@@ -596,6 +598,35 @@ public class ShortestPathPanel extends PluginPanel
 
 		listPanel.revalidate();
 		listPanel.repaint();
+	}
+
+	/**
+	 * The results section header: bold orange "Routes (N)" like the teleport-methods header, with
+	 * a quiet grey "calculating…" note (busy glyph) on the right while the generation streams —
+	 * routine result state belongs here, not in a notice banner.
+	 */
+	private JPanel buildResultsHeader(int count, boolean calculating)
+	{
+		JPanel row = new JPanel(new BorderLayout(5, 0));
+		row.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		row.setBorder(new EmptyBorder(2, 0, 5, 0));
+		row.setAlignmentX(Component.LEFT_ALIGNMENT);
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+
+		JLabel title = new JLabel(calculating && count == 0 ? "Routes" : "Routes (" + count + ")");
+		title.setFont(FontManager.getRunescapeBoldFont());
+		title.setForeground(ColorScheme.BRAND_ORANGE);
+		row.add(title, BorderLayout.WEST);
+
+		if (calculating)
+		{
+			JLabel busy = new JLabel("calculating…", RouteIcons.BANNER_BUSY, SwingConstants.LEADING);
+			busy.setIconTextGap(4);
+			busy.setFont(FontManager.getRunescapeSmallFont());
+			busy.setForeground(Color.GRAY);
+			row.add(busy, BorderLayout.EAST);
+		}
+		return row;
 	}
 
 	private JPanel buildShowMoreButton()
