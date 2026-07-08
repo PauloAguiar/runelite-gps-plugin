@@ -80,7 +80,9 @@ public class AlternativeRoutesService
 	 * Worker threads for the parallel seed searches (the exclusion loop itself is inherently
 	 * sequential). Small pool: searches are CPU-bound.
 	 */
-	private static final int SEED_POOL_SIZE = Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors() - 2));
+	// Fixed pool size: the plugin hub disallows Runtime::availableProcessors. Four workers is the
+	// measured sweet spot on the benchmark; on smaller machines surplus workers just idle.
+	private static final int SEED_POOL_SIZE = 4;
 
 	private final ClientThread clientThread;
 	private final PathfinderConfig planningConfig;
@@ -548,7 +550,9 @@ public class AlternativeRoutesService
 		}
 		catch (InterruptedException e)
 		{
-			Thread.currentThread().interrupt();
+			// Interruption means shutdown/cancellation: just stop. (The plugin hub disallows
+			// Thread::interrupt, so the flag is not restored; this generation thread is ours and
+			// nothing downstream reads it.)
 		}
 		finally
 		{
@@ -840,7 +844,7 @@ public class AlternativeRoutesService
 		}
 		catch (InterruptedException e)
 		{
-			Thread.currentThread().interrupt();
+			// Shutdown/cancellation: uncapped is always safe. (Hub rule: no Thread::interrupt.)
 			return Integer.MAX_VALUE;
 		}
 		catch (ExecutionException e)
@@ -863,7 +867,7 @@ public class AlternativeRoutesService
 		}
 		catch (InterruptedException e)
 		{
-			Thread.currentThread().interrupt();
+			// Shutdown/cancellation: no walk route to append. (Hub rule: no Thread::interrupt.)
 			return null;
 		}
 		catch (ExecutionException e)
@@ -970,7 +974,8 @@ public class AlternativeRoutesService
 		}
 		catch (InterruptedException e)
 		{
-			Thread.currentThread().interrupt();
+			// Shutdown/cancellation while waiting on the client thread; the generation aborts.
+			// (Hub rule: no Thread::interrupt.)
 			return false;
 		}
 	}

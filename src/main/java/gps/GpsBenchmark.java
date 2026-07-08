@@ -182,7 +182,6 @@ public final class GpsBenchmark
 			report.put("warmupRuns", WARMUP_RUNS);
 			report.put("measuredRuns", MEASURED_RUNS);
 			report.put("javaVersion", System.getProperty("java.version"));
-			report.put("availableProcessors", Runtime.getRuntime().availableProcessors());
 			report.put("scenarios", scenarioReports);
 
 			//noinspection ResultOfMethodCallIgnored
@@ -200,7 +199,8 @@ public final class GpsBenchmark
 		}
 		catch (InterruptedException e)
 		{
-			Thread.currentThread().interrupt();
+			// The benchmark thread is a dedicated daemon; interruption just ends the run.
+			// (Hub rule: no Thread::interrupt.)
 			notify.accept("GPS benchmark interrupted.");
 		}
 		catch (Exception e)
