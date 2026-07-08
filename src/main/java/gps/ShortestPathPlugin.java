@@ -2075,6 +2075,22 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	/**
+	 * The engine's own accessible-bank standing tiles (upstream-curated; the same set that flips
+	 * bank-detour routing). Unioned into "nearest bank" targets so the feature can never disagree
+	 * with what the engine considers a bank — the amenity dump misses oddly-named bank objects
+	 * (Slepe's "Bank Chest-wreck" defeated its name matching).
+	 */
+	public Set<Integer> getEngineBankTiles()
+	{
+		if (pathfinderConfig == null)
+		{
+			return Set.of();
+		}
+		Set<Integer> tiles = pathfinderConfig.getDestinations("bank");
+		return tiles == null ? Set.of() : tiles;
+	}
+
+	/**
 	 * The first time the catalog is delivered, seed every seasonal (Leagues) method into the user
 	 * exclusions so they're disabled by default — the player then enables them individually like any
 	 * other method. A one-shot config marker guards it, so a method the player later re-enables is

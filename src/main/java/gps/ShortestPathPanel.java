@@ -1667,6 +1667,13 @@ public class ShortestPathPanel extends PluginPanel
 	{
 		Set<Integer> tiles = Destinations.tilesForCategory(option.id, plugin.getTransports());
 		boolean roundTrip = "bank_round_trip".equals(option.id);
+		if ("bank".equals(option.id) || roundTrip)
+		{
+			// Union in the engine's accessible-bank tiles: the amenity dump misses oddly-named
+			// bank objects (e.g. Slepe's "Bank Chest-wreck"), and "nearest bank" must never
+			// disagree with where the engine itself can bank.
+			tiles.addAll(plugin.getEngineBankTiles());
+		}
 		plugin.setNearestCategory(tiles,
 			"nearest " + option.label.toLowerCase(java.util.Locale.ROOT), roundTrip);
 		destinationSearch.setText("");
