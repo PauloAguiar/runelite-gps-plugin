@@ -208,6 +208,9 @@ public class ShortestPathPlugin extends Plugin
 	// generated routes, and which one is currently shown on the map.
 	private ShortestPathPanel altPanel;
 	private NavigationButton navButton;
+	// Whether the sidebar button is currently on the toolbar: GPS is only useful in-game, so the
+	// button is shown while logged in and removed on the login screen.
+	private boolean navButtonShown = false;
 	private AlternativeRoutesService altRoutesService;
 	private static final String CONFIG_KEY_EXCLUSIONS = "alternativeRoutesExclusions";
 	private static final String CONFIG_KEY_MODE = "alternativeRoutesMode";
@@ -429,7 +432,8 @@ public class ShortestPathPlugin extends Plugin
 			.priority(70)
 			.panel(altPanel)
 			.build();
-		clientToolbar.addNavigation(navButton);
+		// Only mount the sidebar button in-game — it does nothing useful on the login screen.
+		setNavButtonShown(GameState.LOGGED_IN.equals(client.getGameState()));
 
 		// Populate the teleport-methods catalog so it's visible before any target is set, and check
 		// whether the bank contents are already known this session.
@@ -466,6 +470,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			clientToolbar.removeNavigation(navButton);
 			navButton = null;
+			navButtonShown = false;
 		}
 		if (altRoutesService != null)
 		{
@@ -742,9 +747,50 @@ public class ShortestPathPlugin extends Plugin
 		}
 	}
 
+	/**
+	 * Adds/removes the sidebar button so it only appears in-game. Called on every game-state change
+	 * before the login-detection guard below (which returns early in most cases). LOADING / HOPPING
+	 * / CONNECTION_LOST leave the button as-is, so world hops don't flicker it.
+	 */
+	private void updateNavButtonVisibility(GameState state)
+	{
+		switch (state)
+		{
+			case LOGGED_IN:
+				setNavButtonShown(true);
+				break;
+			case LOGIN_SCREEN:
+			case LOGIN_SCREEN_AUTHENTICATOR:
+			case STARTING:
+				setNavButtonShown(false);
+				break;
+			default:
+				break;
+		}
+	}
+
+	private void setNavButtonShown(boolean show)
+	{
+		if (navButton == null || show == navButtonShown)
+		{
+			return;
+		}
+		navButtonShown = show;
+		if (show)
+		{
+			clientToolbar.addNavigation(navButton);
+		}
+		else
+		{
+			clientToolbar.removeNavigation(navButton);
+		}
+	}
+
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
+		updateNavButtonVisibility(event.getGameState());
+
 		if (pathfinderConfig == null
 			|| !GameState.LOGGING_IN.equals(lastLastGameState)
 			|| !GameState.LOADING.equals(lastLastGameState = lastGameState)
