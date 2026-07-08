@@ -90,7 +90,11 @@ import gps.transport.TransportType;
 
 @Slf4j
 @SuppressWarnings("SameParameterValue")
-@PluginDescriptor(name = "GPS", description = "Turn-by-turn navigation for Gielinor:<br>"
+// configName is REQUIRED here: without it RuneLite keys the on/off state by the class's simple
+// name, and the original Shortest Path plugin's main class has the same one — the two plugins
+// were reading and writing each other's enabled state (a disabled Shortest Path read as enabled
+// while GPS was on, and toggling one toggled the other's stored state).
+@PluginDescriptor(name = "GPS", configName = "GpsPlugin", description = "Turn-by-turn navigation for Gielinor:<br>"
 	+
 	"live directions with ETA, alternative teleport routes and closed-door hints.<br>"
 	+
