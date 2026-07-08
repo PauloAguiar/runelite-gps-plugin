@@ -1085,6 +1085,15 @@ public class ShortestPathPlugin extends Plugin
 		int reachedDistance = config.reachedDistance();
 		if (pathTilesRemaining(currentLocation, reachedDistance) < reachedDistance)
 		{
+			// Round-trip belt-and-braces: while the round-trip route isn't displayed (a
+			// regeneration gap, or still streaming), the measurement above fell back to the
+			// CLASSIC path — whose targets are the outbound bank tiles. Standing at the bank is
+			// the trip's halfway point, not its end; never complete the journey from the fallback.
+			RouteOption displayedRoundTrip = getDisplayedRoute();
+			if (altRoundTrip && (displayedRoundTrip == null || !displayedRoundTrip.isRoundTrip()))
+			{
+				return;
+			}
 			// Reached the destination (along the path). Show the "Arrived!" panel — including when
 			// the destination was set while already there (e.g. "nearest bank" at a bank), where
 			// the journey time is ~0 — then clear the target. An unstamped journey (belt-and-braces
@@ -1280,8 +1289,17 @@ public class ShortestPathPlugin extends Plugin
 		{
 			// First sight of the bank this session: regenerate so the availability map is rebuilt
 			// with the bank contents — banked teleports classify IN_BANK (usable in Inv + bank
-			// mode) and the catalog header count updates. Also clears the panel warning.
-			recomputeAlternatives();
+			// mode) and the catalog header count updates. Also clears the panel warning. NOT
+			// during a round trip: opening the bank is the trip's halfway point, and regenerating
+			// would discard the displayed route (and with it the way back).
+			if (altRoundTrip)
+			{
+				refreshPanel(altGenerationInFlight);
+			}
+			else
+			{
+				recomputeAlternatives();
+			}
 		}
 	}
 
@@ -1318,8 +1336,9 @@ public class ShortestPathPlugin extends Plugin
 		}
 		// Bank closed: one regeneration per bank session, so items withdrawn or deposited are
 		// reflected in the method availability (and the catalog counts) — recomputing on every
-		// in-bank container change would run a generation per deposit.
-		if (event.getGroupId() == InterfaceID.BANKMAIN && bankContentsKnown)
+		// in-bank container change would run a generation per deposit. NOT during a round trip:
+		// banking mid-trip is the whole point, and regenerating would discard the way back.
+		if (event.getGroupId() == InterfaceID.BANKMAIN && bankContentsKnown && !altRoundTrip)
 		{
 			recomputeAlternatives();
 		}

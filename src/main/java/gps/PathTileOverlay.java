@@ -314,6 +314,18 @@ public class PathTileOverlay extends Overlay
 				drawSectionMarker(graphics, packed);
 			}
 		}
+		// A round trip's halfway point (the bank) pulses GOLD while the outbound leg is being
+		// walked — reach it and the beacon vanishes, leaving the green home pulse for the way back.
+		RouteOption displayed = plugin.getDisplayedRoute();
+		if (displayed != null && displayed.isRoundTrip())
+		{
+			int turnaround = displayed.getTurnaroundIndex();
+			if (turnaround > 0 && turnaround < path.size()
+				&& plugin.displayedRouteProgress() < turnaround - 2)
+			{
+				drawDestinationPulse(graphics, path.get(turnaround).getPackedPosition(), PULSE_TURNAROUND);
+			}
+		}
 		drawDestinationPulse(graphics, path.get(destinationIndex).getPackedPosition());
 	}
 
@@ -353,7 +365,18 @@ public class PathTileOverlay extends Overlay
 	 * tile itself (the yaw factor cancels out of a square tile's bounding box, leaving only the
 	 * pitch compression) — so it's a perfect circle seen top-down and flattens as the camera drops.
 	 */
+	// The two pulse colours: green marks the journey's end; gold marks a round trip's turnaround
+	// (the bank) while the outbound leg is being walked — an "arrive here first" beacon that
+	// disappears once the player reaches it and the trip continues home.
+	private static final Color PULSE_DESTINATION = new Color(0, 220, 90);
+	private static final Color PULSE_TURNAROUND = new Color(255, 196, 64);
+
 	private void drawDestinationPulse(Graphics2D graphics, int location)
+	{
+		drawDestinationPulse(graphics, location, PULSE_DESTINATION);
+	}
+
+	private void drawDestinationPulse(Graphics2D graphics, int location, Color colour)
 	{
 		PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
 		for (int i = 0; i < points.size(); i++)
@@ -389,7 +412,7 @@ public class PathTileOverlay extends Overlay
 				{
 					continue;
 				}
-				graphics.setColor(new Color(0, 220, 90, alpha));
+				graphics.setColor(new Color(colour.getRed(), colour.getGreen(), colour.getBlue(), alpha));
 				graphics.draw(new Ellipse2D.Double(
 					cx - radius, cy - radius * flatten, radius * 2, radius * 2 * flatten));
 			}
