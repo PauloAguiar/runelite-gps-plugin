@@ -1029,18 +1029,30 @@ public class ShortestPathPanel extends PluginPanel
 		titleRow.setBorder(new EmptyBorder(0, 0, 4, 0));
 		titleRow.setAlignmentX(Component.LEFT_ALIGNMENT);
 		titleRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
-		// "available" = methods usable right now (not missing an item/level/quest/unlock); the count
-		// the player actually cares about. Broken down into permanent (unlimited use) and charged
-		// (consumes a charge or the item itself — teleport tabs, charged jewellery).
-		int available = 0;
+		// The headline count is the methods a search can ACTUALLY use: usable right now (not
+		// missing an item/level/quest/unlock) AND not excluded — so it responds to the toggles,
+		// including the seasonal set that starts excluded. Broken down into permanent (unlimited
+		// use) and charged (consumes a charge or the item itself — tabs, charged jewellery).
+		int enabled = 0;
+		int usable = 0;
 		int included = 0;
 		int permanent = 0;
 		int charged = 0;
 		for (TeleportMethod method : cachedCatalog)
 		{
-			if (isUsable(method))
+			boolean canUse = isUsable(method);
+			boolean isIncluded = !cachedExclusions.contains(method);
+			if (canUse)
 			{
-				available++;
+				usable++;
+			}
+			if (isIncluded)
+			{
+				included++;
+			}
+			if (canUse && isIncluded)
+			{
+				enabled++;
 				if (method.isConsumable())
 				{
 					charged++;
@@ -1050,16 +1062,12 @@ public class ShortestPathPanel extends PluginPanel
 					permanent++;
 				}
 			}
-			if (!cachedExclusions.contains(method))
-			{
-				included++;
-			}
 		}
-		JLabel title = new JLabel("Teleport methods (" + available + "/" + cachedCatalog.size() + ")");
+		JLabel title = new JLabel("Teleport methods (" + enabled + "/" + cachedCatalog.size() + ")");
 		title.setFont(FontManager.getRunescapeBoldFont());
 		title.setForeground(ColorScheme.BRAND_ORANGE);
-		title.setToolTipText(available + " usable now · " + included + " included in searches · "
-			+ cachedCatalog.size() + " total");
+		title.setToolTipText(enabled + " enabled (usable and included) · " + usable + " usable now · "
+			+ included + " included in searches · " + cachedCatalog.size() + " total");
 		titleRow.add(title, BorderLayout.CENTER);
 		titleRow.add(control(new JLabel(catalogExpanded ? RouteIcons.CHEVRON_DOWN : RouteIcons.CHEVRON_RIGHT)),
 			BorderLayout.EAST);
@@ -1086,14 +1094,14 @@ public class ShortestPathPanel extends PluginPanel
 			return section;
 		}
 
-		// Usable breakdown — permanent (unlimited) vs charged (consumes a charge/the item). Only shown
+		// Enabled breakdown — permanent (unlimited) vs charged (consumes a charge/the item). Only shown
 		// while expanded, where the split matters; the header count already carries the total collapsed.
-		if (available > 0)
+		if (enabled > 0)
 		{
 			JLabel breakdown = new JLabel(permanent + " permanent · " + charged + " charged");
 			breakdown.setFont(FontManager.getRunescapeSmallFont());
 			breakdown.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-			breakdown.setToolTipText("Of the usable methods: " + permanent + " permanent (unlimited use) · "
+			breakdown.setToolTipText("Of the enabled methods: " + permanent + " permanent (unlimited use) · "
 				+ charged + " charged (teleport tabs, charged jewellery — consumed or lose a charge)");
 			breakdown.setAlignmentX(Component.LEFT_ALIGNMENT);
 			breakdown.setBorder(new EmptyBorder(0, 0, 4, 0));
