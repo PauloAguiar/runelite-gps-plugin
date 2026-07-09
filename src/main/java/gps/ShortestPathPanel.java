@@ -703,8 +703,8 @@ public class ShortestPathPanel extends PluginPanel
 		eta.setForeground(selected ? ColorScheme.BRAND_ORANGE : Color.WHITE);
 		eta.setToolTipText("<html>Estimated travel time, assuming you run.<br>"
 			+ (weighted
-				? "Ordering also counts your method weights: adjusted cost " + route.getTotalCost()
-					+ " vs " + route.getRawCost() + " unweighted (run-tiles, 0.3s each)."
+				? "Ordering also counts your method modifiers: adjusted cost " + route.getTotalCost()
+					+ " vs " + route.getRawCost() + " unadjusted (run-tiles, 0.3s each)."
 				: "Routes are ordered by this time.")
 			+ "</html>");
 		if (!reaches)

@@ -603,10 +603,10 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@ConfigSection(
-		name = "Travel method weights",
-		description = "Extra step weight added when a route uses each travel method.<br>" +
-			"Higher = the path avoids it unless it saves more than that many tiles of walking<br>" +
-			"(e.g. a fairy ring weight of 30 is only used when it saves over 30 tiles).",
+		name = "Travel method modifiers",
+		description = "A cost modifier (in run-tiles) added when a route uses each travel method.<br>" +
+			"0 = judged purely on real travel time. Positive avoids the method unless it saves more<br>" +
+			"than that many tiles of walking; negative favours it.",
 		position = 42,
 		closedByDefault = true
 	)
@@ -618,8 +618,8 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costAgilityShortcuts",
-		name = "Agility shortcut weight",
-		description = "Weight added to the route's cost when it uses an agility shortcut.<br>" +
+		name = "Agility shortcut modifier",
+		description = "Modifier added to the route's cost when it uses an agility shortcut.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 43,
 		section = sectionThresholds
@@ -635,8 +635,8 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costGrappleShortcuts",
-		name = "Grapple shortcut weight",
-		description = "Weight added to the route's cost when it uses a grapple shortcut.<br>" +
+		name = "Grapple shortcut modifier",
+		description = "Modifier added to the route's cost when it uses a grapple shortcut.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 44,
 		section = sectionThresholds
@@ -652,8 +652,8 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costBoats",
-		name = "Boat weight",
-		description = "Weight added to the route's cost when it uses a small boat.<br>" +
+		name = "Boat modifier",
+		description = "Modifier added to the route's cost when it uses a small boat.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 45,
 		section = sectionThresholds
@@ -669,15 +669,15 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costCanoes",
-		name = "Canoe weight",
-		description = "Weight added to the route's cost when it uses a canoe.<br>" +
+		name = "Canoe modifier",
+		description = "Modifier added to the route's cost when it uses a canoe.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 46,
 		section = sectionThresholds
 	)
 	default int costCanoes()
 	{
-		return 5;
+		return 0;
 	}
 
 	@Range(
@@ -686,15 +686,15 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costCharterShips",
-		name = "Charter ship weight",
-		description = "Weight added to the route's cost when it uses a charter ship.<br>" +
+		name = "Charter ship modifier",
+		description = "Modifier added to the route's cost when it uses a charter ship.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 47,
 		section = sectionThresholds
 	)
 	default int costCharterShips()
 	{
-		return 20;
+		return 0;
 	}
 
 	@Range(
@@ -703,15 +703,15 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costShips",
-		name = "Ship weight",
-		description = "Weight added to the route's cost when it uses a passenger ship.<br>" +
+		name = "Ship modifier",
+		description = "Modifier added to the route's cost when it uses a passenger ship.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 48,
 		section = sectionThresholds
 	)
 	default int costShips()
 	{
-		return 10;
+		return 0;
 	}
 
 	@Range(
@@ -720,15 +720,15 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costFairyRings",
-		name = "Fairy ring weight",
-		description = "Weight added to the route's cost when it uses a fairy ring.<br>" +
+		name = "Fairy ring modifier",
+		description = "Modifier added to the route's cost when it uses a fairy ring.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 49,
 		section = sectionThresholds
 	)
 	default int costFairyRings()
 	{
-		return 30;
+		return 0;
 	}
 
 	@Range(
@@ -737,15 +737,15 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costGnomeGliders",
-		name = "Gnome glider weight",
-		description = "Weight added to the route's cost when it uses a gnome glider.<br>" +
+		name = "Gnome glider modifier",
+		description = "Modifier added to the route's cost when it uses a gnome glider.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 50,
 		section = sectionThresholds
 	)
 	default int costGnomeGliders()
 	{
-		return 25;
+		return 0;
 	}
 
 	@Range(
@@ -754,15 +754,15 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costHotAirBalloons",
-		name = "Hot air balloon weight",
-		description = "Weight added to the route's cost when it uses a hot air balloon.<br>" +
+		name = "Hot air balloon modifier",
+		description = "Modifier added to the route's cost when it uses a hot air balloon.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 51,
 		section = sectionThresholds
 	)
 	default int costHotAirBalloons()
 	{
-		return 30;
+		return 0;
 	}
 
 	@Range(
@@ -771,15 +771,15 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costMagicCarpets",
-		name = "Magic carpet weight",
-		description = "Weight added to the route's cost when it uses a magic carpet.<br>" +
+		name = "Magic carpet modifier",
+		description = "Modifier added to the route's cost when it uses a magic carpet.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 52,
 		section = sectionThresholds
 	)
 	default int costMagicCarpets()
 	{
-		return 20;
+		return 0;
 	}
 
 	@Range(
@@ -788,15 +788,15 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costMagicMushtrees",
-		name = "Magic mushtree weight",
-		description = "Weight added to the route's cost when it uses a magic mushtree.<br>" +
+		name = "Magic mushtree modifier",
+		description = "Modifier added to the route's cost when it uses a magic mushtree.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 53,
 		section = sectionThresholds
 	)
 	default int costMagicMushtrees()
 	{
-		return 20;
+		return 0;
 	}
 
 	@Range(
@@ -805,15 +805,15 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costMinecarts",
-		name = "Minecart weight",
-		description = "Weight added to the route's cost when it uses a minecart.<br>" +
+		name = "Minecart modifier",
+		description = "Modifier added to the route's cost when it uses a minecart.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 54,
 		section = sectionThresholds
 	)
 	default int costMinecarts()
 	{
-		return 15;
+		return 0;
 	}
 
 	@Range(
@@ -822,15 +822,15 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costQuetzals",
-		name = "Quetzal weight",
-		description = "Weight added to the route's cost when it uses a quetzal.<br>" +
+		name = "Quetzal modifier",
+		description = "Modifier added to the route's cost when it uses a quetzal.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 55,
 		section = sectionThresholds
 	)
 	default int costQuetzals()
 	{
-		return 20;
+		return 0;
 	}
 
 	@Range(
@@ -839,15 +839,15 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costQuetzalWhistle",
-		name = "Quetzal whistle weight",
-		description = "Weight added to the route's cost when it uses a quetzal whistle teleport.<br>" +
+		name = "Quetzal whistle modifier",
+		description = "Modifier added to the route's cost when it uses a quetzal whistle teleport.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 56,
 		section = sectionThresholds
 	)
 	default int costQuetzalWhistle()
 	{
-		return 20;
+		return 0;
 	}
 
 	@Range(
@@ -856,15 +856,15 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costSpiritTrees",
-		name = "Spirit tree weight",
-		description = "Weight added to the route's cost when it uses a spirit tree.<br>" +
+		name = "Spirit tree modifier",
+		description = "Modifier added to the route's cost when it uses a spirit tree.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 57,
 		section = sectionThresholds
 	)
 	default int costSpiritTrees()
 	{
-		return 20;
+		return 0;
 	}
 
 	@Range(
@@ -873,15 +873,15 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costNonConsumableTeleportationItems",
-		name = "Teleport item (reusable) weight",
-		description = "Weight added to the route's cost when it uses a reusable (permanent) teleport item.<br>" +
+		name = "Teleport item (reusable) modifier",
+		description = "Modifier added to the route's cost when it uses a reusable (permanent) teleport item.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 58,
 		section = sectionThresholds
 	)
 	default int costNonConsumableTeleportationItems()
 	{
-		return 20;
+		return 0;
 	}
 
 	@Range(
@@ -890,15 +890,15 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costConsumableTeleportationItems",
-		name = "Teleport item (consumable) weight",
-		description = "Weight added to the route's cost when it uses a consumable (one-use) teleport item.<br>" +
+		name = "Teleport item (consumable) modifier",
+		description = "Modifier added to the route's cost when it uses a consumable (one-use) teleport item.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 59,
 		section = sectionThresholds
 	)
 	default int costConsumableTeleportationItems()
 	{
-		return 25;
+		return 0;
 	}
 
 	@Range(
@@ -907,15 +907,15 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costTeleportationBoxes",
-		name = "Jewellery box weight",
-		description = "Weight added to the route's cost when it uses a jewellery box.<br>" +
+		name = "Jewellery box modifier",
+		description = "Modifier added to the route's cost when it uses a jewellery box.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 60,
 		section = sectionThresholds
 	)
 	default int costTeleportationBoxes()
 	{
-		return 15;
+		return 0;
 	}
 
 	@Range(
@@ -924,15 +924,15 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costTeleportationLevers",
-		name = "Teleport lever weight",
-		description = "Weight added to the route's cost when it uses a teleport lever.<br>" +
+		name = "Teleport lever modifier",
+		description = "Modifier added to the route's cost when it uses a teleport lever.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 61,
 		section = sectionThresholds
 	)
 	default int costTeleportationLevers()
 	{
-		return 15;
+		return 0;
 	}
 
 	@Range(
@@ -941,8 +941,8 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costTeleportationPortals",
-		name = "Teleport portal weight",
-		description = "Weight added to the route's cost when it uses a teleport portal.<br>" +
+		name = "Teleport portal modifier",
+		description = "Modifier added to the route's cost when it uses a teleport portal.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 62,
 		section = sectionThresholds
@@ -958,15 +958,15 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costTeleportationSpells",
-		name = "Teleport spell weight",
-		description = "Weight added to the route's cost when it uses a teleport spell.<br>" +
+		name = "Teleport spell modifier",
+		description = "Modifier added to the route's cost when it uses a teleport spell.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 63,
 		section = sectionThresholds
 	)
 	default int costTeleportationSpells()
 	{
-		return 15;
+		return 0;
 	}
 
 	@Range(
@@ -975,15 +975,15 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costTeleportationMinigames",
-		name = "Minigame teleport weight",
-		description = "Weight added to the route's cost when it uses a minigame teleport.<br>" +
+		name = "Minigame teleport modifier",
+		description = "Modifier added to the route's cost when it uses a minigame teleport.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 64,
 		section = sectionThresholds
 	)
 	default int costTeleportationMinigames()
 	{
-		return 20;
+		return 0;
 	}
 
 	@Range(
@@ -992,15 +992,15 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costWildernessObelisks",
-		name = "Wilderness obelisk weight",
-		description = "Weight added to the route's cost when it uses a wilderness obelisk.<br>" +
+		name = "Wilderness obelisk modifier",
+		description = "Modifier added to the route's cost when it uses a wilderness obelisk.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 65,
 		section = sectionThresholds
 	)
 	default int costWildernessObelisks()
 	{
-		return 20;
+		return 0;
 	}
 
 	@Range(
@@ -1009,8 +1009,8 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costSeasonalTransports",
-		name = "Seasonal transport weight",
-		description = "Weight added to the route's cost when it uses a seasonal (Leagues) transport.<br>" +
+		name = "Seasonal transport modifier",
+		description = "Modifier added to the route's cost when it uses a seasonal (Leagues) transport.<br>" +
 			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
 		position = 66,
 		section = sectionThresholds
@@ -1026,8 +1026,8 @@ public interface ShortestPathConfig extends Config
 	)
 	@ConfigItem(
 		keyName = "costBankPickup",
-		name = "Bank pickup weight",
-		description = "Weight added to the route's cost when it detours through a bank to withdraw<br>" +
+		name = "Bank pickup modifier",
+		description = "Modifier added to the route's cost when it detours through a bank to withdraw<br>" +
 			"a teleport item (Owned: inventory + bank mode). In run-tiles (2 = 1 game tick,<br>" +
 			"0.6s): positive avoids banking, negative favors it.",
 		position = 67,
@@ -1035,7 +1035,7 @@ public interface ShortestPathConfig extends Config
 	)
 	default int costBankPickup()
 	{
-		return 50;
+		return 0;
 	}
 
 	@ConfigSection(
