@@ -244,7 +244,16 @@ public class ShortestPathPlugin extends Plugin
 	// How many alternative routes to generate; grows when the user asks for more.
 	// Initialised from config in startUp (config is not injected at field-init time).
 	private int routeLimit = AlternativeRoutesService.MAX_ROUTES;
-	// Whether the last generation hit the limit (so more routes may exist).
+	// The cost cap for a generation, as a multiple of the best route's cost: only routes up to this
+	// many times the cheapest are computed (a cheap teleport otherwise floods the map searching for
+	// far-worse alternatives). "Show more" raises it; reset to the default on a new destination.
+	private static final int DEFAULT_COST_MULTIPLE = 3;
+	private static final int COST_MULTIPLE_STEP = 3;
+	// Ceiling on the cost band: at this multiple the cap is effectively off (far past any walk
+	// cost), so "show more" stops — a backstop against endless widening on an unreachable target.
+	private static final int MAX_COST_MULTIPLE = 30;
+	private int routeCostMultiple = DEFAULT_COST_MULTIPLE;
+	// Whether the last generation's cost cap held routes back (raising the multiple could reveal more).
 	private volatile boolean moreRoutesLikely = false;
 	private volatile List<RouteOption> alternativeRoutes = new ArrayList<>();
 	private volatile List<TeleportMethod> teleportCatalog = new ArrayList<>();
@@ -1987,6 +1996,9 @@ public class ShortestPathPlugin extends Plugin
 	{
 		// Ordinary destinations are one-way; the round-trip entry point re-sets this after.
 		altRoundTrip = false;
+		// A fresh destination starts at the default cost band; "show more" widens it from there.
+		// (loadMoreRoutes bumps the multiple and regenerates without going through setTargets.)
+		routeCostMultiple = DEFAULT_COST_MULTIPLE;
 		if (targets == null || targets.isEmpty())
 		{
 			synchronized (pathfinderMutex)
@@ -2332,8 +2344,9 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return;
 		}
-		int step = Math.max(1, Math.min(override("routeCountStep", config.routeCountStep()), 25));
-		routeLimit += step;
+		// Widen the cost band rather than the route count: reveal routes up to a higher multiple of
+		// the best route's cost (the ones the previous cap held back).
+		routeCostMultiple = Math.min(routeCostMultiple + COST_MULTIPLE_STEP, MAX_COST_MULTIPLE);
 		triggerAlternatives(lastAltStart, new HashSet<>(lastAltTargets));
 	}
 
@@ -2451,6 +2464,7 @@ public class ShortestPathPlugin extends Plugin
 				snapshot.put("player", local != null ? packedPointJson(WorldPointUtil.packWorldPoint(local.getWorldLocation())) : null);
 				snapshot.put("routesMode", String.valueOf(routesMode));
 				snapshot.put("routeLimit", routeLimit);
+			snapshot.put("routeCostMultiple", routeCostMultiple);
 				snapshot.put("targetSource", targetSource);
 				snapshot.put("altStart", packedPointJson(lastAltStart));
 				List<Object> targets = new ArrayList<>();
@@ -2712,8 +2726,8 @@ public class ShortestPathPlugin extends Plugin
 			SwingUtilities.invokeLater(() ->
 				altPanel.displayRoutes(List.of(), catalog, unavailable, getUserExclusions(), true, hasTarget));
 		}
-		altRoutesService.generate(start, ends, userExclusions, routesMode, routeLimit, altRoundTrip,
-			this::onAlternativeRoutesUpdate);
+		altRoutesService.generate(start, ends, userExclusions, routesMode, routeLimit, routeCostMultiple,
+			altRoundTrip, this::onAlternativeRoutesUpdate);
 	}
 
 	private void onAlternativeRoutesUpdate(List<RouteOption> routes, List<TeleportMethod> catalog,
@@ -2725,10 +2739,10 @@ public class ShortestPathPlugin extends Plugin
 		applySeasonalDefaultExclusions(catalog);
 		if (done)
 		{
-			// If walking there is already on the list we've stopped at it, so there's nothing more to
-			// find; otherwise "more likely" when the generation filled every requested slot.
-			boolean stoppedAtWalk = routes.stream().anyMatch(RouteOption::isWalkOnly);
-			moreRoutesLikely = !stoppedAtWalk && !routes.isEmpty() && routes.size() >= routeLimit;
+			// "More" is available when the cost cap held routes back — raising the multiple can
+			// surface them. Once walking is the ceiling, there's nothing cheaper-than-walk left.
+			moreRoutesLikely = !routes.isEmpty() && altRoutesService.wasMoreLikely()
+				&& routeCostMultiple < MAX_COST_MULTIPLE;
 			// Generation finished; if it produced nothing the classic path may draw again as fallback.
 			altGenerationInFlight = false;
 		}

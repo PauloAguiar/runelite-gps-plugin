@@ -110,7 +110,7 @@ public class AlternativeRoutesService
 	public void generate(int start, Set<Integer> targets, Set<TeleportMethod> userExclusions,
 		AlternativeRoutesMode mode, int maxRoutes, ResultListener listener)
 	{
-		generate(start, targets, userExclusions, mode, maxRoutes, false, listener);
+		generate(start, targets, userExclusions, mode, maxRoutes, 0, false, listener);
 	}
 
 	/**
@@ -118,9 +118,16 @@ public class AlternativeRoutesService
 	 * by the combined cost — the best round-trip destination is not necessarily the nearest one-way
 	 * one (a marginally farther bank with a cheap way home, or bank-unlocked teleports for the
 	 * return, can win).
+	 * <p>
+	 * {@code costMultiple} caps each search at {@code best route cost * costMultiple} (in addition
+	 * to the walk-cost ceiling), so only routes up to that many times the cheapest are computed —
+	 * a cheap global teleport otherwise makes the A* heuristic flat and a search for a far-worse
+	 * alternative floods the map. 0 disables the cap (used by tests). The "show more" action raises
+	 * the multiple and regenerates; {@link #wasMoreLikely()} reports whether raising it further
+	 * could surface routes the cap held back.
 	 */
 	public void generate(int start, Set<Integer> targets, Set<TeleportMethod> userExclusions,
-		AlternativeRoutesMode mode, int maxRoutes, boolean roundTrip, ResultListener listener)
+		AlternativeRoutesMode mode, int maxRoutes, int costMultiple, boolean roundTrip, ResultListener listener)
 	{
 		final int gen = generation.incrementAndGet();
 		final Set<Integer> targetsCopy = new HashSet<>(targets);
@@ -129,7 +136,8 @@ public class AlternativeRoutesService
 		{
 			try
 			{
-				computeRoutes(gen, start, targetsCopy, userExclusionsCopy, mode, maxRoutes, roundTrip, listener);
+				computeRoutes(gen, start, targetsCopy, userExclusionsCopy, mode, maxRoutes, costMultiple,
+					roundTrip, listener);
 			}
 			catch (Exception e)
 			{
@@ -150,8 +158,8 @@ public class AlternativeRoutesService
 	}
 
 	private void computeRoutes(int gen, int start, Set<Integer> targets,
-		Set<TeleportMethod> userExclusions, AlternativeRoutesMode mode, int maxRoutes, boolean roundTrip,
-		ResultListener listener)
+		Set<TeleportMethod> userExclusions, AlternativeRoutesMode mode, int maxRoutes, int costMultiple,
+		boolean roundTrip, ResultListener listener)
 	{
 		final int limit = Math.max(1, Math.min(maxRoutes, MAX_ROUTES_CAP));
 		final Set<Integer> ends = new HashSet<>(targets);
@@ -230,6 +238,10 @@ public class AlternativeRoutesService
 		// unreachable exact target (e.g. an NPC tile) every route ends at the closest reachable area,
 		// so later routes are only accepted while they get equally close (small tolerance).
 		int bestRemaining = -1;
+		// Whether the cost cap (best * costMultiple, below the walk ceiling) held a route back — a
+		// search couldn't reach within the band. If so, "show more" (a higher multiple) can surface
+		// it. Set only for cost-cap truncations, not method exhaustion or the walk ceiling.
+		boolean cappedByCost = false;
 
 		for (int i = 0; i < limit; i++)
 		{
@@ -244,7 +256,11 @@ public class AlternativeRoutesService
 			timer.rebuildNanos += System.nanoTime() - rebuildStart;
 
 			long searchStart = System.nanoTime();
-			int chainCap = capOf(walkFuture);
+			int walkCap = capOf(walkFuture);
+			int chainCap = cappedByBestCost(walkCap, routes, costMultiple);
+			// The cost cap is the binding one (tighter than the walk ceiling) — a search failing now
+			// was held back by the cost band, not by walking being cheaper or methods running out.
+			boolean costLimited = chainCap < walkCap;
 			// Heuristic rebuilt per iteration: the exclusion set changes the usable teleports and
 			// with them the field floor — excluding the good teleports raises it, so the heuristic
 			// gets stronger exactly when the searches get expensive. Null field (map-wide target
@@ -263,6 +279,7 @@ public class AlternativeRoutesService
 				log.debug("[alt-routes] search #{} produced no path: result={}, reason={}",
 					i, result == null ? "null" : "empty",
 					result == null ? "n/a" : result.getTerminationReason());
+				cappedByCost |= costLimited;
 				break;
 			}
 
@@ -279,6 +296,8 @@ public class AlternativeRoutesService
 			{
 				log.debug("[alt-routes] search #{} ends {} tiles from target (best {}); stopping with {} route(s)",
 					i, remaining, bestRemaining, routes.size());
+				// The search couldn't reach within the cost band — that route is beyond the cap.
+				cappedByCost |= costLimited;
 				break;
 			}
 
@@ -319,8 +338,12 @@ public class AlternativeRoutesService
 		{
 			seedTeleportRoutes(gen, start, ends, userExclusions, mode, limit,
 				seedCandidates, routes, seenSignatures, catalog, unavailable, roundTrip ? null : listener,
-				bestRemaining, capOf(walkFuture), field, timer);
+				bestRemaining, cappedByBestCost(capOf(walkFuture), routes, costMultiple), field, timer);
 		}
+		// The cost cap held routes back (they exist beyond it, below walking) only when it sat below
+		// the walk ceiling; once it reaches walking there's nothing more to reveal.
+		lastGenerationMoreLikely = cappedByCost
+			&& cappedByBestCost(capOf(walkFuture), routes, costMultiple) < capOf(walkFuture);
 
 		// The walk-only route from the concurrent search is the last resort: append it when the
 		// chain didn't derive it (signature dedup skips it when it did), under the same closeness
@@ -416,6 +439,16 @@ public class AlternativeRoutesService
 	{
 		long[] summary = lastTimingSummary;
 		return summary == null ? null : summary.clone();
+	}
+
+	// Whether the last generation's cost cap held routes back — a higher cost multiple ("show more")
+	// could surface them. False when walking is the binding ceiling (nothing cheaper-than-walk left).
+	private volatile boolean lastGenerationMoreLikely = false;
+
+	/** Whether raising the cost multiple and regenerating could surface more routes. */
+	public boolean wasMoreLikely()
+	{
+		return lastGenerationMoreLikely;
 	}
 
 	/**
@@ -854,6 +887,22 @@ public class AlternativeRoutesService
 	 * The current search cap from the walk search, polled without blocking: MAX_VALUE (uncapped)
 	 * until the walk finishes — so the chain's first searches never wait on it — then the walk cost.
 	 */
+	/**
+	 * Tightens a search's cost cap to {@code best route cost * multiple} once a route is found, so
+	 * searches for far-worse alternatives don't flood the map. Routes are added in non-decreasing
+	 * cost order, so the first is the cheapest. No effect before the first route, when
+	 * {@code multiple <= 0} (uncapped), or when the product exceeds {@code cap}.
+	 */
+	private static int cappedByBestCost(int cap, List<RouteOption> routes, int multiple)
+	{
+		if (routes.isEmpty() || multiple <= 0)
+		{
+			return cap;
+		}
+		long byBest = (long) routes.get(0).getTotalCost() * multiple;
+		return byBest < cap ? (int) byBest : cap;
+	}
+
 	private static int capOf(Future<WalkResult> walkFuture)
 	{
 		if (walkFuture == null || !walkFuture.isDone())

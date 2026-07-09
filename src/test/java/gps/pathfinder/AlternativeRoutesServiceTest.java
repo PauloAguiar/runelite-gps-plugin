@@ -443,7 +443,7 @@ public class AlternativeRoutesServiceTest
 
 		CountDownLatch done = new CountDownLatch(1);
 		AtomicReference<List<RouteOption>> finalRoutes = new AtomicReference<>(List.of());
-		service.generate(varrockCentre, bankTiles, Set.of(), AlternativeRoutesMode.OWNED_INVENTORY, 5, true,
+		service.generate(varrockCentre, bankTiles, Set.of(), AlternativeRoutesMode.OWNED_INVENTORY, 5, 0, true,
 			(routes, catalog, unavailable, isDone) ->
 			{
 				if (isDone)

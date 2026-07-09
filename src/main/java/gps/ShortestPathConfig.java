@@ -36,9 +36,9 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigItem(
 		keyName = "defaultRouteCount",
-		name = "Routes to find",
-		description = "How many alternative routes to search for by default<br>" +
-			"(the panel's \"Show more\" button can extend this per query)",
+		name = "Max routes",
+		description = "The most alternative routes the panel will list.<br>" +
+			"Routes are found cheapest-first up to a cost band; the panel's \"+\" widens that band.",
 		position = 1,
 		section = sectionSettings
 	)
@@ -46,19 +46,6 @@ public interface ShortestPathConfig extends Config
 	default int defaultRouteCount()
 	{
 		return 10;
-	}
-
-	@ConfigItem(
-		keyName = "routeCountStep",
-		name = "Show more increment",
-		description = "How many extra routes the panel's \"Show more\" button fetches each time",
-		position = 2,
-		section = sectionSettings
-	)
-	@Range(min = 1, max = 25)
-	default int routeCountStep()
-	{
-		return 5;
 	}
 
 	@ConfigItem(
