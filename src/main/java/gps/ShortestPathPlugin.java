@@ -580,11 +580,14 @@ public class ShortestPathPlugin extends Plugin
 		return Math.max(0, Math.min(config.offRouteWarnDistance(), Math.max(0, config.recalculateDistance())));
 	}
 
-	/** Chebyshev distance from {@code location} to the nearest tile of the current path, or -1. */
+	/** Chebyshev distance from {@code location} to the nearest tile of the displayed path, or -1. */
 	public int distanceFromPath(int location)
 	{
-		List<PathStep> path;
-		if (pathfinder == null || (path = pathfinder.getPath()) == null || path.isEmpty())
+		// Measured against the DISPLAYED route (the line the player is actually following), not the
+		// classic pathfinder path: when a search picked an alternative route those two diverge, and
+		// measuring off the invisible classic path made off-route/recalc misfire.
+		List<PathStep> path = getDisplayPath();
+		if (path == null || path.isEmpty())
 		{
 			return -1;
 		}
@@ -1164,7 +1167,7 @@ public class ShortestPathPlugin extends Plugin
 					setTarget(WorldPointUtil.UNDEFINED);
 					return;
 				}
-				restartPathfinding(currentLocation, pathfinder.getTargets());
+				recalculateFrom(currentLocation, pathfinder.getTargets());
 				return;
 			}
 			else
@@ -1177,6 +1180,23 @@ public class ShortestPathPlugin extends Plugin
 		{
 			offRouteWarning = false;
 		}
+	}
+
+	/**
+	 * Recompute the route from a new start (the player's current, off-route position) to the same
+	 * targets. Both the classic path and the alternative routes must restart: the displayed line is
+	 * usually an alternative route, and the tick-level auto-compute is keyed on the target SET — which
+	 * hasn't changed here — so it would not refire on its own. The stale selection is dropped so the
+	 * fresh generation's route takes over rather than the overlay clinging to the old line.
+	 */
+	private void recalculateFrom(int start, Set<Integer> targets)
+	{
+		selectedRoute = null;
+		routeCostMultiple = DEFAULT_COST_MULTIPLE;
+		routeLimit = altPanelVisible ? defaultRouteLimit() : 1;
+		Set<Integer> ends = new HashSet<>(targets);
+		restartPathfinding(start, ends);
+		triggerAlternatives(start, ends);
 	}
 
 	/**
