@@ -388,7 +388,7 @@ public interface ShortestPathConfig extends Config
 	)
 	default int recalculateDistance()
 	{
-		return 15;
+		return 18;
 	}
 
 	@Range(
@@ -406,7 +406,7 @@ public interface ShortestPathConfig extends Config
 	)
 	default int offRouteWarnDistance()
 	{
-		return 7;
+		return 10;
 	}
 
 	@Range(
@@ -423,7 +423,7 @@ public interface ShortestPathConfig extends Config
 	)
 	default int reachedDistance()
 	{
-		return 5;
+		return 3;
 	}
 
 	@Range(

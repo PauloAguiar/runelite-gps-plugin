@@ -2388,6 +2388,15 @@ public class ShortestPathPlugin extends Plugin
 		if (!userExclusions.isEmpty())
 		{
 			userExclusions.clear();
+			// Resetting returns to the DEFAULT state, and the default has seasonal (Leagues) methods
+			// disabled — re-seed them so a reset doesn't quietly re-enable a whole league's teleports.
+			for (TeleportMethod method : teleportCatalog)
+			{
+				if (method.getType() == gps.transport.TransportType.SEASONAL_TRANSPORTS)
+				{
+					userExclusions.add(method);
+				}
+			}
 			saveExclusions();
 			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
 			// other recompute); this just refreshes the panel so the catalog icons and counts update.
