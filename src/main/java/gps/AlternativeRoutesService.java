@@ -62,19 +62,6 @@ public class AlternativeRoutesService
 	 */
 	private static final int CLOSEST_DISTANCE_TOLERANCE = 10;
 
-	/**
-	 * Alternatives more than this many times the best route's cost aren't computed. When a cheap
-	 * global teleport is available the A* field heuristic goes flat (h saturates at the low
-	 * teleport "floor"), so a search for a much pricier alternative floods the whole map — measured
-	 * at 1.7M nodes / ~900ms each for fairy-ring routes 5-7x the cost of an Ectophial. Capping each
-	 * chain/seed search at {@code best * this} bounds that flood and drops routes far worse than the
-	 * best (which the player wouldn't take anyway). Combined with the walk-cost cap as
-	 * {@code min(walk cost, best * this)}: walking is the true ceiling, and this only bites when
-	 * walking is more than this many times the best route (the far-teleport case). Inert when the
-	 * best route is itself expensive — a costly best means few cheap teleports, so the field
-	 * heuristic is already strong.
-	 */
-	private static final int MAX_ROUTE_COST_MULTIPLE = 7;
 
 	/**
 	 * Receives progressive updates for one generation: the catalog as soon as it's known, then the
@@ -257,7 +244,7 @@ public class AlternativeRoutesService
 			timer.rebuildNanos += System.nanoTime() - rebuildStart;
 
 			long searchStart = System.nanoTime();
-			int chainCap = cappedByBestCost(capOf(walkFuture), routes);
+			int chainCap = capOf(walkFuture);
 			// Heuristic rebuilt per iteration: the exclusion set changes the usable teleports and
 			// with them the field floor — excluding the good teleports raises it, so the heuristic
 			// gets stronger exactly when the searches get expensive. Null field (map-wide target
@@ -332,7 +319,7 @@ public class AlternativeRoutesService
 		{
 			seedTeleportRoutes(gen, start, ends, userExclusions, mode, limit,
 				seedCandidates, routes, seenSignatures, catalog, unavailable, roundTrip ? null : listener,
-				bestRemaining, cappedByBestCost(capOf(walkFuture), routes), field, timer);
+				bestRemaining, capOf(walkFuture), field, timer);
 		}
 
 		// The walk-only route from the concurrent search is the last resort: append it when the
@@ -861,22 +848,6 @@ public class AlternativeRoutesService
 			emit(gen, listener, new ArrayList<>(merged), catalog, unavailable, false);
 		}
 		return merged;
-	}
-
-	/**
-	 * Tightens a search's cost cap to {@code best route cost * MAX_ROUTE_COST_MULTIPLE} once at
-	 * least one route is found — so searches for far-worse alternatives don't flood the map (see
-	 * {@link #MAX_ROUTE_COST_MULTIPLE}). Routes are added in non-decreasing cost order, so the first
-	 * is the cheapest. No effect before the first route, or when the multiple exceeds {@code cap}.
-	 */
-	private static int cappedByBestCost(int cap, List<RouteOption> routes)
-	{
-		if (routes.isEmpty())
-		{
-			return cap;
-		}
-		long byBest = (long) routes.get(0).getTotalCost() * MAX_ROUTE_COST_MULTIPLE;
-		return byBest < cap ? (int) byBest : cap;
 	}
 
 	/**

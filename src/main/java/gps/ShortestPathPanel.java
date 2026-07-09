@@ -597,6 +597,27 @@ public class ShortestPathPanel extends PluginPanel
 	 * the generation streams) over a centred control panel — bordered, coloured icon buttons for
 	 * more routes (green +), refresh (blue) and clear (red). Tooltips explain each.
 	 */
+	// The found routes now span more than this multiple of the cheapest — the good options are in,
+	// the search is grinding out longer alternatives.
+	private static final int LONG_ROUTE_MULTIPLE = 3;
+
+	private static boolean searchingLongerRoutes(List<RouteOption> routes)
+	{
+		if (routes.isEmpty())
+		{
+			return false;
+		}
+		int min = Integer.MAX_VALUE;
+		int max = 0;
+		for (RouteOption route : routes)
+		{
+			int cost = route.getTotalCost();
+			min = Math.min(min, cost);
+			max = Math.max(max, cost);
+		}
+		return max > (long) min * LONG_ROUTE_MULTIPLE;
+	}
+
 	private JPanel buildResultsHeader(int count, boolean calculating)
 	{
 		JPanel section = new JPanel();
@@ -617,10 +638,18 @@ public class ShortestPathPanel extends PluginPanel
 		titleRow.add(title, BorderLayout.WEST);
 		if (calculating)
 		{
-			JLabel busy = new JLabel("calculating…", RouteIcons.BANNER_BUSY, SwingConstants.LEADING);
+			// Once the found routes span more than LONG_ROUTE_MULTIPLE x the cheapest, the good ones
+			// are all in (and fully usable) — the search is now grinding out longer alternatives, so
+			// say so instead of a bare "calculating".
+			boolean longer = searchingLongerRoutes(cachedRoutes);
+			JLabel busy = new JLabel(longer ? "longer routes…" : "calculating…",
+				RouteIcons.BANNER_BUSY, SwingConstants.LEADING);
 			busy.setIconTextGap(4);
 			busy.setFont(FontManager.getRunescapeSmallFont());
 			busy.setForeground(Color.GRAY);
+			busy.setToolTipText(longer
+				? "Your best routes are ready to use — still searching for longer alternatives"
+				: "Calculating routes…");
 			titleRow.add(busy, BorderLayout.EAST);
 		}
 		section.add(titleRow);
