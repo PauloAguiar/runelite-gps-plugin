@@ -1549,7 +1549,12 @@ public class ShortestPathPanel extends PluginPanel
 		destinationSearch.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		destinationSearch.setHoverBackgroundColor(ColorScheme.DARK_GRAY_HOVER_COLOR);
 		destinationSearch.setToolTipText("Search places, dungeons and minigames by name");
-		destinationSearch.setMaximumSize(new Dimension(Integer.MAX_VALUE, destinationSearch.getPreferredSize().height));
+		// Taller than the default field height for an easier click target and more presence — it's
+		// the section's primary control.
+		final int searchHeight = 32;
+		destinationSearch.setPreferredSize(new Dimension(destinationSearch.getPreferredSize().width, searchHeight));
+		destinationSearch.setMinimumSize(new Dimension(0, searchHeight));
+		destinationSearch.setMaximumSize(new Dimension(Integer.MAX_VALUE, searchHeight));
 		destinationSearch.setAlignmentX(LEFT_ALIGNMENT);
 		destinationSearch.getDocument().addDocumentListener(new DocumentListener()
 		{
