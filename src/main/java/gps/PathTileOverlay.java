@@ -919,6 +919,23 @@ public class PathTileOverlay extends Overlay
 
 			playerTileLabelOffset = drawLabelAtPackedLocation(graphics, location, text, playerTileLabelOffset);
 		}
+
+		// Fallback: the displayed route teleports here (e.g. a charged tablet/jewellery) but the
+		// config-derived lookup above found no matching transport — its teleport-item setting
+		// ("Inventory (perm)") excludes consumables. Label it straight from the route's method so
+		// the world cue matches the pulse and the panel step.
+		if (shownTexts.isEmpty())
+		{
+			TeleportMethod routeMethod = plugin.displayedRouteMethodAt(pathIndex);
+			if (routeMethod != null && routeMethod.getType() != null && routeMethod.getType().isTeleport())
+			{
+				String label = routeMethod.label();
+				if (label != null && !label.isEmpty())
+				{
+					playerTileLabelOffset = drawLabelAtPackedLocation(graphics, location, label, playerTileLabelOffset);
+				}
+			}
+		}
 	}
 
 }

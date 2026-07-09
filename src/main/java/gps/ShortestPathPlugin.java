@@ -1572,10 +1572,22 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	public boolean displayedRouteTeleportsAt(int fromIndex)
 	{
+		TeleportMethod method = displayedRouteMethodAt(fromIndex);
+		return method != null && method.getType() != null && method.getType().isTeleport();
+	}
+
+	/**
+	 * The method the DISPLAYED route uses to reach the tile after {@code fromIndex}, or null when
+	 * that edge is plain walking. Lets the world overlay label a leg (e.g. "Varrock tablet") that
+	 * {@link #transportsForEdge} can't re-derive because the classic config's teleport-item setting
+	 * excludes it (charged/consumable items under a perm-only setting).
+	 */
+	public TeleportMethod displayedRouteMethodAt(int fromIndex)
+	{
 		RouteOption route = getDisplayedRoute();
 		if (route == null)
 		{
-			return false;
+			return null;
 		}
 		int arriveIndex = fromIndex + 1;
 		List<Integer> edges = route.getMethodEdgeIndexes();
@@ -1584,11 +1596,10 @@ public class ShortestPathPlugin extends Plugin
 		{
 			if (edges.get(m) == arriveIndex)
 			{
-				TeleportMethod method = methods.get(m);
-				return method.getType() != null && method.getType().isTeleport();
+				return methods.get(m);
 			}
 		}
-		return false;
+		return null;
 	}
 
 	public Set<Transport> transportsForEdge(PathStep currentStep, PathStep nextStep)
