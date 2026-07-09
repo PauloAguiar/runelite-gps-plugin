@@ -92,6 +92,9 @@ public class ShortestPathPanel extends PluginPanel
 	// Message-banner container below the header; repopulated each render with the status banner
 	// (routes found / calculating / none) plus any warnings (bank unknown, stale exclusions).
 	private final JPanel notes = new JPanel();
+	// The "bank contents unknown" warning, sitting directly under the mode buttons (it's about the
+	// "+ Bank" mode) rather than down in the general notes strip. Repopulated each render.
+	private final JPanel modeBankWarning = new JPanel();
 	// Set by the plugin the instant it clears the target on arrival, so the status shows an arrival
 	// banner rather than "No destination set". Cleared when a new destination is set.
 	private boolean showingArrival;
@@ -369,6 +372,12 @@ public class ShortestPathPanel extends PluginPanel
 		// Refresh + clear moved under the route list (see buildRouteActions).
 		bottom.add(modeRow, BorderLayout.NORTH);
 
+		// The bank-contents warning belongs with the mode buttons it explains (+ Bank mode).
+		modeBankWarning.setLayout(new BoxLayout(modeBankWarning, BoxLayout.Y_AXIS));
+		modeBankWarning.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		modeBankWarning.setBorder(new EmptyBorder(6, 0, 0, 0));
+		bottom.add(modeBankWarning, BorderLayout.SOUTH);
+
 		header.add(bottom, BorderLayout.SOUTH);
 
 		updateModeButtons();
@@ -520,15 +529,19 @@ public class ShortestPathPanel extends PluginPanel
 			notes.add(verticalGap(4));
 		}
 		// The bank container is only populated once the bank has been opened this session; without it
-		// Bank mode cannot see banked items (same constraint as Shortest Path itself).
+		// Bank mode cannot see banked items (same constraint as Shortest Path itself). This warning
+		// lives directly under the mode buttons (it's about "+ Bank" mode), not in the notes strip.
+		modeBankWarning.removeAll();
 		if (plugin.getRoutesMode() == AlternativeRoutesMode.OWNED_WITH_BANK && !plugin.isBankContentsKnown())
 		{
-			notes.add(buildBanner(RouteIcons.BANNER_WARNING,
+			modeBankWarning.add(buildBanner(RouteIcons.BANNER_WARNING,
 				"Bank contents unknown",
 				"Open your bank once so banked items can be found.",
 				ColorScheme.PROGRESS_ERROR_COLOR));
-			notes.add(verticalGap(4));
 		}
+		modeBankWarning.setVisible(modeBankWarning.getComponentCount() > 0);
+		modeBankWarning.revalidate();
+		modeBankWarning.repaint();
 		if (status != null)
 		{
 			notes.add(buildBanner(statusIcon, status, statusAccent));
