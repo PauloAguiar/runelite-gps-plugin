@@ -2527,6 +2527,28 @@ public class ShortestPathPlugin extends Plugin
 					timingJson.put("rebuildMs", genTiming[2]);
 					timingJson.put("searchCpuMs", genTiming[3]);
 					timingJson.put("searches", genTiming[4]);
+					if (genTiming.length > 5)
+					{
+						timingJson.put("fieldMs", genTiming[5]);
+					}
+					// Per-search profiles, slowest first: which searches the time went to and how much
+					// each explored (a flat A* heuristic shows up as a huge node count).
+					List<Object> searchDetails = new ArrayList<>();
+					for (AlternativeRoutesService.SearchRecord r : altRoutesService.getLastSearchRecords())
+					{
+						Map<String, Object> detail = new LinkedHashMap<>();
+						detail.put("label", r.label);
+						detail.put("cpuMs", r.cpuMs);
+						detail.put("cost", r.resultCost);
+						detail.put("reached", r.reached);
+						detail.put("termination", r.termination);
+						detail.put("nodes", r.nodesChecked);
+						detail.put("transports", r.transportsChecked);
+						detail.put("capped", r.capped);
+						detail.put("astar", r.astar);
+						searchDetails.add(detail);
+					}
+					timingJson.put("searchDetails", searchDetails);
 					snapshot.put("altGenTiming", timingJson);
 				}
 
