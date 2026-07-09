@@ -435,10 +435,10 @@ public class PathTileOverlay extends Overlay
 	}
 
 	/**
-	 * Mark the finish stretch with green dots: the tiles at the end of the displayed path from which
-	 * arrival fires, i.e. those within the finish distance of the end measured along the path (the
-	 * same accumulated {@code distanceBetween2D} metric the arrival check uses). Standing on any of
-	 * these while on the path counts as reaching the destination.
+	 * Draw the arrival zone as a green circle of the finish radius around the destination tile (the end
+	 * of the displayed path — the return point for a round trip). The finish check is along-path rather
+	 * than a strict radius, but the final approach is normally a short straight walk, so a circle of the
+	 * finish distance around the end is a faithful picture of where arrival fires.
 	 */
 	private void drawArrivalTiles(Graphics2D graphics)
 	{
@@ -448,22 +448,16 @@ public class PathTileOverlay extends Overlay
 		{
 			return;
 		}
-		final Color dot = new Color(0x3C, 0xC8, 0x6A);
-		// Walk backwards from the end: a tile's remaining is the summed edge length from it to the
-		// end, so once that reaches the finish distance no earlier tile can trigger arrival.
-		int remaining = 0;
-		for (int i = path.size() - 1; i >= 0 && remaining < reached; i--)
-		{
-			drawTileDot(graphics, path.get(i).getPackedPosition(), dot);
-			if (i > 0)
-			{
-				remaining += Math.max(1, WorldPointUtil.distanceBetween2D(
-					path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition()));
-			}
-		}
+		drawGroundCircle(graphics, path.get(path.size() - 1).getPackedPosition(), reached,
+			new Color(0x3C, 0xC8, 0x6A));
 	}
 
-	private void drawTileDot(Graphics2D graphics, int location, Color colour)
+	/**
+	 * Draw a ground-plane circle of {@code radiusTiles} tiles centred on {@code location}, flattened to
+	 * the ground using the centre tile's own projection (the same trick the destination pulse uses:
+	 * a top-down circle projects to an ellipse whose height/width ratio matches the tile's).
+	 */
+	private void drawGroundCircle(Graphics2D graphics, int location, int radiusTiles, Color colour)
 	{
 		PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
 		for (int i = 0; i < points.size(); i++)
@@ -480,8 +474,21 @@ public class PathTileOverlay extends Overlay
 			}
 			final double cx = poly.getBounds().getCenterX();
 			final double cy = poly.getBounds().getCenterY();
-			graphics.setColor(colour);
-			graphics.fill(new Ellipse2D.Double(cx - 3, cy - 3, 6, 6));
+			final double tileWidth = Math.max(8, poly.getBounds().getWidth());
+			final double flatten = Math.min(1.0, Math.max(0.1,
+				poly.getBounds().getHeight() / Math.max(1.0, poly.getBounds().getWidth())));
+			// The circle edge reaches the far side of the tiles at the finish distance (radius + half a
+			// tile out from the centre tile's middle).
+			final double radius = tileWidth * (radiusTiles + 0.5);
+			final Ellipse2D.Double circle = new Ellipse2D.Double(
+				cx - radius, cy - radius * flatten, radius * 2, radius * 2 * flatten);
+			final Stroke previousStroke = graphics.getStroke();
+			graphics.setStroke(new BasicStroke(2f));
+			graphics.setColor(new Color(colour.getRed(), colour.getGreen(), colour.getBlue(), 40));
+			graphics.fill(circle);
+			graphics.setColor(new Color(colour.getRed(), colour.getGreen(), colour.getBlue(), 200));
+			graphics.draw(circle);
+			graphics.setStroke(previousStroke);
 		}
 	}
 
