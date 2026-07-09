@@ -63,6 +63,8 @@ final class RouteIcons
 	static final ImageIcon DASH = new ImageIcon(dash(ORANGE));
 	static final ImageIcon DASH_HOVER = new ImageIcon(dash(ORANGE_LIGHT));
 	// Expand/collapse a category.
+	static final ImageIcon SHOW_MORE = new ImageIcon(moreChevron(GREY));
+	static final ImageIcon SHOW_MORE_HOVER = new ImageIcon(moreChevron(LIGHT));
 	static final ImageIcon CHEVRON_RIGHT = new ImageIcon(chevron(GREY, false));
 	static final ImageIcon CHEVRON_RIGHT_HOVER = new ImageIcon(chevron(LIGHT, false));
 	static final ImageIcon CHEVRON_DOWN = new ImageIcon(chevron(GREY, true));
@@ -699,6 +701,24 @@ final class RouteIcons
 			}
 			triangle.closePath();
 			g.fill(triangle);
+		});
+	}
+
+	// A stacked double-down chevron: "show more" — distinct from the single expand/collapse chevron.
+	private static BufferedImage moreChevron(Color colour)
+	{
+		return render(g ->
+		{
+			g.setColor(colour);
+			g.setStroke(new BasicStroke(1.6f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+			for (double y : new double[]{5.0, 8.6})
+			{
+				Path2D v = new Path2D.Double();
+				v.moveTo(4.5, y);
+				v.lineTo(8.0, y + 3.0);
+				v.lineTo(11.5, y);
+				g.draw(v);
+			}
 		});
 	}
 

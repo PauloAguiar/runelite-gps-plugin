@@ -112,8 +112,6 @@ public class ShortestPathPanel extends PluginPanel
 	private Map<TeleportMethod, MethodAvailability> renderedUnavailable;
 	private boolean renderedCatalogExpanded;
 	private final JPanel listPanel = new JPanel();
-	// Refresh + clear actions, pinned below the route list; shown only while a destination is set.
-	private final JPanel routeActions = new JPanel();
 	// "Go to" destination search: type a place or amenity ("Falador bank", "nearest altar")
 	// and pick a result to set it as the GPS destination.
 	private final IconTextField destinationSearch = new IconTextField();
@@ -255,35 +253,7 @@ public class ShortestPathPanel extends PluginPanel
 		scroll.getVerticalScrollBar().setUnitIncrement(16);
 		add(scroll, BorderLayout.CENTER);
 
-		buildRouteActions();
-		add(routeActions, BorderLayout.SOUTH);
-
 		render();
-	}
-
-	/**
-	 * The action strip pinned below the route list: recompute the current destination's routes, or
-	 * clear the destination entirely. Icon buttons, half-width each; hidden when nothing is set.
-	 */
-	private void buildRouteActions()
-	{
-		routeActions.setLayout(new GridLayout(1, 2, 4, 0));
-		routeActions.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		routeActions.setBorder(new EmptyBorder(6, 0, 0, 0));
-
-		JButton refresh = subtleButton(new JButton("Refresh", RouteIcons.REFRESH));
-		refresh.setIconTextGap(4);
-		refresh.setHorizontalAlignment(SwingConstants.CENTER);
-		refresh.setToolTipText("Recalculate the alternative routes to the current destination");
-		refresh.addActionListener(e -> plugin.recomputeAlternatives());
-		routeActions.add(refresh);
-
-		JButton clear = subtleButton(new JButton("Clear", RouteIcons.CROSS));
-		clear.setIconTextGap(4);
-		clear.setHorizontalAlignment(SwingConstants.CENTER);
-		clear.setToolTipText("Clear the current destination and its route");
-		clear.addActionListener(e -> plugin.clearTarget());
-		routeActions.add(clear);
 	}
 
 	/**
@@ -594,7 +564,7 @@ public class ShortestPathPanel extends PluginPanel
 		// previous list was cleared when this generation started, so only the new routes appear.
 		// The highlighted card is the route actually drawn on the map — the explicitly selected
 		// one, or route 1 by default.
-		if (cachedCalculating || !cachedRoutes.isEmpty())
+		if (cachedHasTarget || cachedCalculating || !cachedRoutes.isEmpty())
 		{
 			listPanel.add(buildResultsHeader(cachedRoutes.size(), cachedCalculating));
 		}
@@ -604,15 +574,6 @@ public class ShortestPathPanel extends PluginPanel
 			listPanel.add(buildRouteCard(i, cachedRoutes.get(i), cachedRoutes.get(i) == selected));
 			listPanel.add(verticalGap(6));
 		}
-		// Only offer "show more" once this generation has finished.
-		if (!cachedCalculating && !cachedRoutes.isEmpty() && plugin.canLoadMoreRoutes())
-		{
-			listPanel.add(buildShowMoreButton());
-			listPanel.add(verticalGap(6));
-		}
-
-		// Refresh/clear are only meaningful with an active destination.
-		routeActions.setVisible(cachedHasTarget || !cachedRoutes.isEmpty());
 
 		listPanel.revalidate();
 		listPanel.repaint();
@@ -636,29 +597,30 @@ public class ShortestPathPanel extends PluginPanel
 		title.setForeground(ColorScheme.BRAND_ORANGE);
 		row.add(title, BorderLayout.WEST);
 
+		// Icon actions beside the title: show-more, refresh, clear — icon-only, tooltips explain.
+		// A quiet busy glyph replaces them while the generation is still streaming.
+		JPanel actions = new JPanel(new FlowLayout(FlowLayout.TRAILING, 4, 0));
+		actions.setOpaque(false);
 		if (calculating)
 		{
-			JLabel busy = new JLabel("calculating…", RouteIcons.BANNER_BUSY, SwingConstants.LEADING);
-			busy.setIconTextGap(4);
-			busy.setFont(FontManager.getRunescapeSmallFont());
-			busy.setForeground(Color.GRAY);
-			row.add(busy, BorderLayout.EAST);
+			JLabel busy = new JLabel(RouteIcons.BANNER_BUSY);
+			busy.setToolTipText("Calculating routes…");
+			actions.add(busy);
 		}
+		else
+		{
+			if (!cachedRoutes.isEmpty() && plugin.canLoadMoreRoutes())
+			{
+				actions.add(control(new IconActionLabel(RouteIcons.SHOW_MORE, RouteIcons.SHOW_MORE_HOVER,
+					"Search for more alternative routes", plugin::loadMoreRoutes)));
+			}
+			actions.add(control(new IconActionLabel(RouteIcons.REFRESH, RouteIcons.REFRESH_HOVER,
+				"Recalculate the routes to the current destination", plugin::recomputeAlternatives)));
+		}
+		actions.add(control(new IconActionLabel(RouteIcons.CROSS, RouteIcons.CROSS_HOVER,
+			"Clear the current destination and its route", plugin::clearTarget)));
+		row.add(actions, BorderLayout.EAST);
 		return row;
-	}
-
-	private JPanel buildShowMoreButton()
-	{
-		JPanel wrap = new JPanel(new BorderLayout());
-		wrap.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		wrap.setAlignmentX(Component.LEFT_ALIGNMENT);
-		wrap.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
-		JButton more = new JButton("Show more routes");
-		more.setFocusPainted(false);
-		more.setToolTipText("Search for more alternative routes");
-		more.addActionListener(e -> plugin.loadMoreRoutes());
-		wrap.add(more, BorderLayout.CENTER);
-		return wrap;
 	}
 
 	private JPanel buildRouteCard(int index, RouteOption route, boolean selected)
