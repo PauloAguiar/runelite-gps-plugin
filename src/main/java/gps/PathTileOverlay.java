@@ -373,10 +373,10 @@ public class PathTileOverlay extends Overlay
 	 * pitch compression) — so it's a perfect circle seen top-down and flattens as the camera drops.
 	 */
 	/**
-	 * Debug view of the off-route bands: the amber square is the warning distance and the red
-	 * square the recalculate distance, both as Chebyshev-distance boundaries around the player (the
-	 * same metric the recalc check uses). A label reports the live distance from the path. The four
-	 * corners suffice — a straight world edge projects to a straight canvas line.
+	 * Debug view of the off-route bands: the tiles on the warning boundary are tinted yellow and
+	 * those on the recalculate boundary red — each is the ring of tiles exactly that Chebyshev
+	 * distance from the player (the metric the recalc check uses), so the thresholds sit on real
+	 * tiles the player can count. A label reports the live distance from the path.
 	 */
 	private void drawRecalculationRanges(Graphics2D graphics)
 	{
@@ -386,16 +386,14 @@ public class PathTileOverlay extends Overlay
 		{
 			return;
 		}
-		final int plane = client.getTopLevelWorldView().getPlane();
-		final Stroke previousStroke = graphics.getStroke();
-		graphics.setStroke(new BasicStroke(1.5f));
-		drawChebyshevSquare(graphics, player.getLocalLocation(), plane,
-			plugin.getOffRouteWarnDistance(), new Color(0xFF, 0xC0, 0x40));
-		drawChebyshevSquare(graphics, player.getLocalLocation(), plane, recalc, new Color(0xFF, 0x40, 0x40));
-		graphics.setStroke(previousStroke);
+		final LocalPoint centre = player.getLocalLocation();
+		drawChebyshevRing(graphics, centre, plugin.getOffRouteWarnDistance(),
+			new Color(0xFF, 0xE0, 0x00, 60), new Color(0xFF, 0xE0, 0x00, 190));
+		drawChebyshevRing(graphics, centre, recalc,
+			new Color(0xFF, 0x3C, 0x3C, 60), new Color(0xFF, 0x3C, 0x3C, 190));
 
 		final int d = plugin.getPathDistance();
-		final Point anchor = Perspective.localToCanvas(client, player.getLocalLocation(), plane);
+		final Point anchor = Perspective.localToCanvas(client, centre, client.getTopLevelWorldView().getPlane());
 		if (anchor != null)
 		{
 			final String label = "off-route: " + (d < 0 ? "?" : d)
@@ -406,10 +404,41 @@ public class PathTileOverlay extends Overlay
 	}
 
 	/**
-	 * Highlight the finish stretch: the tiles at the end of the displayed path from which arrival
-	 * fires, i.e. those within the finish distance of the end measured along the path (the same
-	 * accumulated {@code distanceBetween2D} metric the arrival check uses). Standing on any of these
-	 * while on the path counts as reaching the destination.
+	 * Tint the ring of tiles at exactly Chebyshev {@code radius} from the player — the boundary of the
+	 * off-route square. Works in local space (player local ± radius tiles) so it needs no world/instance
+	 * conversion. A zero radius degenerates to the player's own tile.
+	 */
+	private void drawChebyshevRing(Graphics2D graphics, LocalPoint centre, int radius, Color fill, Color outline)
+	{
+		final int size = Perspective.LOCAL_TILE_SIZE;
+		for (int dx = -radius; dx <= radius; dx++)
+		{
+			for (int dy = -radius; dy <= radius; dy++)
+			{
+				// Perimeter only: interior tiles are inside the band, not on its boundary.
+				if (Math.max(Math.abs(dx), Math.abs(dy)) != radius)
+				{
+					continue;
+				}
+				final LocalPoint lp = new LocalPoint(centre.getX() + dx * size, centre.getY() + dy * size);
+				final Polygon poly = Perspective.getCanvasTilePoly(client, lp);
+				if (poly == null)
+				{
+					continue;
+				}
+				graphics.setColor(fill);
+				graphics.fill(poly);
+				graphics.setColor(outline);
+				graphics.draw(poly);
+			}
+		}
+	}
+
+	/**
+	 * Mark the finish stretch with green dots: the tiles at the end of the displayed path from which
+	 * arrival fires, i.e. those within the finish distance of the end measured along the path (the
+	 * same accumulated {@code distanceBetween2D} metric the arrival check uses). Standing on any of
+	 * these while on the path counts as reaching the destination.
 	 */
 	private void drawArrivalTiles(Graphics2D graphics)
 	{
@@ -419,14 +448,13 @@ public class PathTileOverlay extends Overlay
 		{
 			return;
 		}
-		final Color fill = new Color(0x3C, 0xC8, 0x6A, 70);
-		final Color outline = new Color(0x3C, 0xC8, 0x6A, 160);
+		final Color dot = new Color(0x3C, 0xC8, 0x6A);
 		// Walk backwards from the end: a tile's remaining is the summed edge length from it to the
 		// end, so once that reaches the finish distance no earlier tile can trigger arrival.
 		int remaining = 0;
 		for (int i = path.size() - 1; i >= 0 && remaining < reached; i--)
 		{
-			highlightTile(graphics, path.get(i).getPackedPosition(), fill, outline);
+			drawTileDot(graphics, path.get(i).getPackedPosition(), dot);
 			if (i > 0)
 			{
 				remaining += Math.max(1, WorldPointUtil.distanceBetween2D(
@@ -435,7 +463,7 @@ public class PathTileOverlay extends Overlay
 		}
 	}
 
-	private void highlightTile(Graphics2D graphics, int location, Color fill, Color outline)
+	private void drawTileDot(Graphics2D graphics, int location, Color colour)
 	{
 		PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
 		for (int i = 0; i < points.size(); i++)
@@ -450,30 +478,11 @@ public class PathTileOverlay extends Overlay
 			{
 				continue;
 			}
-			graphics.setColor(fill);
-			graphics.fill(poly);
-			graphics.setColor(outline);
-			graphics.draw(poly);
+			final double cx = poly.getBounds().getCenterX();
+			final double cy = poly.getBounds().getCenterY();
+			graphics.setColor(colour);
+			graphics.fill(new Ellipse2D.Double(cx - 3, cy - 3, 6, 6));
 		}
-	}
-
-	private void drawChebyshevSquare(Graphics2D graphics, LocalPoint centre, int plane, int radius, Color colour)
-	{
-		final int r = radius * Perspective.LOCAL_TILE_SIZE;
-		final int[][] offsets = {{-r, -r}, {r, -r}, {r, r}, {-r, r}};
-		final Polygon poly = new Polygon();
-		for (int[] offset : offsets)
-		{
-			final LocalPoint corner = new LocalPoint(centre.getX() + offset[0], centre.getY() + offset[1]);
-			final Point canvas = Perspective.localToCanvas(client, corner, plane);
-			if (canvas == null)
-			{
-				return; // a corner off-scene — skip this ring rather than draw a broken one
-			}
-			poly.addPoint(canvas.getX(), canvas.getY());
-		}
-		graphics.setColor(colour);
-		graphics.draw(poly);
 	}
 
 	// The two pulse colours: green marks the journey's end; gold marks a round trip's turnaround
