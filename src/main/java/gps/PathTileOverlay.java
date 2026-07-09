@@ -188,6 +188,7 @@ public class PathTileOverlay extends Overlay
 
 		if (plugin.drawRecalculationRanges)
 		{
+			drawArrivalTiles(graphics);
 			drawRecalculationRanges(graphics);
 		}
 
@@ -401,6 +402,58 @@ public class PathTileOverlay extends Overlay
 				+ " (warn " + plugin.getOffRouteWarnDistance() + " / recalc " + recalc + ")";
 			graphics.setColor(plugin.isOffRouteWarning() ? new Color(0xFF, 0x4C, 0x4C) : Color.WHITE);
 			graphics.drawString(label, anchor.getX() + 6, anchor.getY());
+		}
+	}
+
+	/**
+	 * Highlight the finish stretch: the tiles at the end of the displayed path from which arrival
+	 * fires, i.e. those within the finish distance of the end measured along the path (the same
+	 * accumulated {@code distanceBetween2D} metric the arrival check uses). Standing on any of these
+	 * while on the path counts as reaching the destination.
+	 */
+	private void drawArrivalTiles(Graphics2D graphics)
+	{
+		final int reached = plugin.getReachedDistance();
+		final List<PathStep> path = plugin.getDisplayPath();
+		if (reached <= 0 || path == null || path.isEmpty())
+		{
+			return;
+		}
+		final Color fill = new Color(0x3C, 0xC8, 0x6A, 70);
+		final Color outline = new Color(0x3C, 0xC8, 0x6A, 160);
+		// Walk backwards from the end: a tile's remaining is the summed edge length from it to the
+		// end, so once that reaches the finish distance no earlier tile can trigger arrival.
+		int remaining = 0;
+		for (int i = path.size() - 1; i >= 0 && remaining < reached; i--)
+		{
+			highlightTile(graphics, path.get(i).getPackedPosition(), fill, outline);
+			if (i > 0)
+			{
+				remaining += Math.max(1, WorldPointUtil.distanceBetween2D(
+					path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition()));
+			}
+		}
+	}
+
+	private void highlightTile(Graphics2D graphics, int location, Color fill, Color outline)
+	{
+		PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
+		for (int i = 0; i < points.size(); i++)
+		{
+			LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
+			if (lp == null)
+			{
+				continue;
+			}
+			Polygon poly = Perspective.getCanvasTilePoly(client, lp);
+			if (poly == null)
+			{
+				continue;
+			}
+			graphics.setColor(fill);
+			graphics.fill(poly);
+			graphics.setColor(outline);
+			graphics.draw(poly);
 		}
 	}
 

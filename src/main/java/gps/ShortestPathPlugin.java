@@ -564,6 +564,12 @@ public class ShortestPathPlugin extends Plugin
 		restartPathfinding(start, ends, true);
 	}
 
+	/** The finish distance: within this many path-tiles of the end counts as arrived. */
+	public int getReachedDistance()
+	{
+		return config.reachedDistance();
+	}
+
 	/** The recalculate distance (outer off-route band), or -1 when recalculation is disabled. */
 	public int getRecalculateDistance()
 	{
