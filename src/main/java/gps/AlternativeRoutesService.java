@@ -68,11 +68,13 @@ public class AlternativeRoutesService
 	 * teleport "floor"), so a search for a much pricier alternative floods the whole map — measured
 	 * at 1.7M nodes / ~900ms each for fairy-ring routes 5-7x the cost of an Ectophial. Capping each
 	 * chain/seed search at {@code best * this} bounds that flood and drops routes far worse than the
-	 * best (which the player wouldn't take anyway). Inert when the best route is itself expensive:
-	 * the cap then exceeds the walk-cost cap, and a costly best means few cheap teleports, so the
-	 * field heuristic is already strong.
+	 * best (which the player wouldn't take anyway). Combined with the walk-cost cap as
+	 * {@code min(walk cost, best * this)}: walking is the true ceiling, and this only bites when
+	 * walking is more than this many times the best route (the far-teleport case). Inert when the
+	 * best route is itself expensive — a costly best means few cheap teleports, so the field
+	 * heuristic is already strong.
 	 */
-	private static final int MAX_ROUTE_COST_MULTIPLE = 5;
+	private static final int MAX_ROUTE_COST_MULTIPLE = 7;
 
 	/**
 	 * Receives progressive updates for one generation: the catalog as soon as it's known, then the
