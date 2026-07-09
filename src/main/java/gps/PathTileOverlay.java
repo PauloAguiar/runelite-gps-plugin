@@ -43,6 +43,9 @@ public class PathTileOverlay extends Overlay
 	private static final double WAVE_TILES_PER_SECOND = 20;
 	private static final double WAVE_SPACING = 60;
 	private static final double WAVE_HALF_WIDTH = 4;
+	// Half-size of the window the debug off-route bands are computed over, in tiles. Bounds the cost and
+	// keeps the render on-screen even when the configured recalculate distance is very large.
+	private static final int BAND_WINDOW = 32;
 	private final Client client;
 	private final ShortestPathPlugin plugin;
 	private int playerTileLabelOffset = 0;
@@ -373,64 +376,108 @@ public class PathTileOverlay extends Overlay
 	 * pitch compression) — so it's a perfect circle seen top-down and flattens as the camera drops.
 	 */
 	/**
-	 * Debug view of the off-route bands: the tiles on the warning boundary are tinted yellow and
-	 * those on the recalculate boundary red — each is the ring of tiles exactly that Chebyshev
-	 * distance from the player (the metric the recalc check uses), so the thresholds sit on real
-	 * tiles the player can count. A label reports the live distance from the path.
+	 * Debug view of the off-route bands, drawn as contours hugging the PATH (not the player): tiles
+	 * exactly the warning distance from the nearest path tile are tinted yellow and those exactly the
+	 * recalculate distance red — the same Chebyshev metric the recalc check uses, so the two thresholds
+	 * trace the corridor the player must stay inside. Computed over a bounded window around the player
+	 * (the on-screen stretch) so a large configured distance can't blow up the render. A label reports
+	 * the live distance from the path.
 	 */
 	private void drawRecalculationRanges(Graphics2D graphics)
 	{
 		final Player player = client.getLocalPlayer();
 		final int recalc = plugin.getRecalculateDistance();
-		if (player == null || recalc < 0)
+		final List<PathStep> path = plugin.getDisplayPath();
+		if (player == null || recalc < 0 || path == null || path.isEmpty())
 		{
 			return;
 		}
-		final LocalPoint centre = player.getLocalLocation();
-		drawChebyshevRing(graphics, centre, plugin.getOffRouteWarnDistance(),
-			new Color(0xFF, 0xE0, 0x00, 60), new Color(0xFF, 0xE0, 0x00, 190));
-		drawChebyshevRing(graphics, centre, recalc,
-			new Color(0xFF, 0x3C, 0x3C, 60), new Color(0xFF, 0x3C, 0x3C, 190));
+		final int warn = plugin.getOffRouteWarnDistance();
+		final int centre = WorldPointUtil.fromLocalInstance(client, player);
+		final int cx = WorldPointUtil.unpackWorldX(centre);
+		final int cy = WorldPointUtil.unpackWorldY(centre);
+		final int plane = WorldPointUtil.unpackWorldPlane(centre);
+		final int window = Math.min(recalc + 1, BAND_WINDOW);
+
+		// Path tiles near enough to be some window tile's nearest (within window of a tile within window).
+		final int[] near = new int[path.size()];
+		int nearCount = 0;
+		for (PathStep step : path)
+		{
+			final int p = step.getPackedPosition();
+			if (WorldPointUtil.unpackWorldPlane(p) == plane
+				&& WorldPointUtil.distanceBetween(centre, p) <= 2 * window)
+			{
+				near[nearCount++] = p;
+			}
+		}
+		if (nearCount > 0)
+		{
+			final Color warnFill = new Color(0xFF, 0xE0, 0x00, 70);
+			final Color warnLine = new Color(0xFF, 0xE0, 0x00, 200);
+			final Color recalcFill = new Color(0xFF, 0x3C, 0x3C, 70);
+			final Color recalcLine = new Color(0xFF, 0x3C, 0x3C, 200);
+			for (int dx = -window; dx <= window; dx++)
+			{
+				for (int dy = -window; dy <= window; dy++)
+				{
+					final int tile = WorldPointUtil.packWorldPoint(cx + dx, cy + dy, plane);
+					int dmin = Integer.MAX_VALUE;
+					for (int k = 0; k < nearCount; k++)
+					{
+						final int dist = WorldPointUtil.distanceBetween(tile, near[k]);
+						if (dist < dmin)
+						{
+							dmin = dist;
+						}
+						if (dmin < warn)
+						{
+							break; // interior to the warning band — not a boundary tile
+						}
+					}
+					// Only the two contour lines; the recalc boundary wins a tie with the warn boundary.
+					if (dmin == recalc)
+					{
+						highlightWorldTile(graphics, tile, recalcFill, recalcLine);
+					}
+					else if (dmin == warn)
+					{
+						highlightWorldTile(graphics, tile, warnFill, warnLine);
+					}
+				}
+			}
+		}
 
 		final int d = plugin.getPathDistance();
-		final Point anchor = Perspective.localToCanvas(client, centre, client.getTopLevelWorldView().getPlane());
+		final Point anchor = Perspective.localToCanvas(client, player.getLocalLocation(), plane);
 		if (anchor != null)
 		{
 			final String label = "off-route: " + (d < 0 ? "?" : d)
-				+ " (warn " + plugin.getOffRouteWarnDistance() + " / recalc " + recalc + ")";
+				+ " (warn " + warn + " / recalc " + recalc + ")";
 			graphics.setColor(plugin.isOffRouteWarning() ? new Color(0xFF, 0x4C, 0x4C) : Color.WHITE);
 			graphics.drawString(label, anchor.getX() + 6, anchor.getY());
 		}
 	}
 
-	/**
-	 * Tint the ring of tiles at exactly Chebyshev {@code radius} from the player — the boundary of the
-	 * off-route square. Works in local space (player local ± radius tiles) so it needs no world/instance
-	 * conversion. A zero radius degenerates to the player's own tile.
-	 */
-	private void drawChebyshevRing(Graphics2D graphics, LocalPoint centre, int radius, Color fill, Color outline)
+	private void highlightWorldTile(Graphics2D graphics, int location, Color fill, Color outline)
 	{
-		final int size = Perspective.LOCAL_TILE_SIZE;
-		for (int dx = -radius; dx <= radius; dx++)
+		final PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
+		for (int i = 0; i < points.size(); i++)
 		{
-			for (int dy = -radius; dy <= radius; dy++)
+			final LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
+			if (lp == null)
 			{
-				// Perimeter only: interior tiles are inside the band, not on its boundary.
-				if (Math.max(Math.abs(dx), Math.abs(dy)) != radius)
-				{
-					continue;
-				}
-				final LocalPoint lp = new LocalPoint(centre.getX() + dx * size, centre.getY() + dy * size);
-				final Polygon poly = Perspective.getCanvasTilePoly(client, lp);
-				if (poly == null)
-				{
-					continue;
-				}
-				graphics.setColor(fill);
-				graphics.fill(poly);
-				graphics.setColor(outline);
-				graphics.draw(poly);
+				continue;
 			}
+			final Polygon poly = Perspective.getCanvasTilePoly(client, lp);
+			if (poly == null)
+			{
+				continue;
+			}
+			graphics.setColor(fill);
+			graphics.fill(poly);
+			graphics.setColor(outline);
+			graphics.draw(poly);
 		}
 	}
 
