@@ -44,9 +44,6 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	private static final Color NEXT = Color.WHITE;
 	private static final Color UPCOMING = new Color(0xB4, 0xB4, 0xB4);
 	private static final Color OFF_ROUTE = new Color(0xFF, 0x4C, 0x4C);
-	// Alpha-zero background for the transparent-overlay option (null would not override the base
-	// panel's colour handling; an invisible fill does).
-	private static final Color TRANSPARENT_BACKGROUND = new Color(0, 0, 0, 0);
 
 	// Magnifying-glass effect via the fonts' NATIVE sizes only: the RuneScape fonts are bitmap-style
 	// and deform when scaled with deriveFont. Bold (16) > regular (16, lighter) > small.
@@ -117,13 +114,15 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		{
 			return null;
 		}
-		// Fully transparent background on request, independent of RuneLite's overlay colour: the
-		// base OverlayPanel only substitutes the user's preferred colour when the panel still has
-		// the STANDARD background, so setting our own (and restoring STANDARD when the option is
-		// off) overrides or yields cleanly. Every text row already draws with a shadow, so the
-		// panel stays readable on bare game background.
+		// Transparent background on request, independent of RuneLite's overlay colour: the base
+		// OverlayPanel only substitutes the user's preferred colour when the panel still has the
+		// STANDARD background, so setting our own (and restoring STANDARD when the option is off)
+		// overrides or yields cleanly. The opacity slider picks how see-through: the standard
+		// colour's tone with alpha scaled from 0% (invisible) to 100% (solid). Every text row
+		// already draws with a shadow, so the panel stays readable on bare game background.
 		panelComponent.setBackgroundColor(plugin.transparentDirectionsBackground
-			? TRANSPARENT_BACKGROUND : ComponentConstants.STANDARD_BACKGROUND_COLOR);
+			? overriddenBackground(plugin.overlayBackgroundOpacity)
+			: ComponentConstants.STANDARD_BACKGROUND_COLOR);
 		accent = plugin.colourOverlayAccent;
 		accentEnding = lighten(accent, 0.35f);
 		long now = System.currentTimeMillis();
@@ -333,6 +332,18 @@ public class RouteDirectionsOverlay extends OverlayPanel
 			layout.draw(graphics, x, baseline);
 			bottom -= bounds.getHeight() + 5;
 		}
+	}
+
+	/**
+	 * The overridden overlay background: the standard background's tone with the slider's opacity
+	 * (0% = invisible, 100% = solid), so the override still matches RuneLite's palette when
+	 * partially visible. Never null — a null would re-enable the base panel's colour handling.
+	 */
+	private static Color overriddenBackground(int opacityPercent)
+	{
+		final int alpha = Math.max(0, Math.min(255, Math.round(255 * opacityPercent / 100f)));
+		final Color standard = ComponentConstants.STANDARD_BACKGROUND_COLOR;
+		return new Color(standard.getRed(), standard.getGreen(), standard.getBlue(), alpha);
 	}
 
 	/** Blends a colour toward white — the derived "about to end" shade of the accent. */

@@ -1126,12 +1126,27 @@ public interface ShortestPathConfig extends Config
 		return false;
 	}
 
+	@Range(min = 0, max = 100)
+	@Units(Units.PERCENT)
+	@ConfigItem(
+		keyName = "overlayBackgroundOpacity",
+		name = "Overlay background opacity",
+		description = "How opaque the overridden overlay background is (when \"Transparent overlay background\"<br>" +
+			"is on): 0% = fully transparent, 100% = solid. RuneLite's default look is roughly 60%",
+		position = 77,
+		section = sectionDisplay
+	)
+	default int overlayBackgroundOpacity()
+	{
+		return 0;
+	}
+
 	@ConfigItem(
 		keyName = "arrivalAutoDismiss",
 		name = "Auto-dismiss arrival",
 		description = "Automatically hide the \"Arrived!\" panel after a delay.<br>" +
 			"When off it stays until clicked",
-		position = 77,
+		position = 78,
 		section = sectionDisplay
 	)
 	default boolean arrivalAutoDismiss()
@@ -1145,7 +1160,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "arrivalDismissSeconds",
 		name = "Arrival dismiss delay",
 		description = "How long the \"Arrived!\" panel lingers before auto-dismissing (when enabled)",
-		position = 78,
+		position = 79,
 		section = sectionDisplay
 	)
 	default int arrivalDismissSeconds()

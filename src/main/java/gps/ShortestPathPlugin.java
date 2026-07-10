@@ -159,6 +159,7 @@ public class ShortestPathPlugin extends Plugin
 	boolean showTeleportPulse;
 	boolean showDirections;
 	boolean transparentDirectionsBackground;
+	int overlayBackgroundOpacity;
 	boolean arrivalAutoDismiss;
 	int arrivalDismissSeconds;
 	int tileCounterStep;
@@ -1971,6 +1972,7 @@ public class ShortestPathPlugin extends Plugin
 		showTeleportPulse = override("showTeleportPulse", config.showTeleportPulse());
 		showDirections = override("showDirections", config.showDirections());
 		transparentDirectionsBackground = override("transparentDirectionsBackground", config.transparentDirectionsBackground());
+		overlayBackgroundOpacity = override("overlayBackgroundOpacity", config.overlayBackgroundOpacity());
 		arrivalAutoDismiss = override("arrivalAutoDismiss", config.arrivalAutoDismiss());
 		arrivalDismissSeconds = override("arrivalDismissSeconds", config.arrivalDismissSeconds());
 	}
