@@ -1,4 +1,4 @@
-category	name	x	y	plane
+category	name	x	y	plane	verified_source	verified_date
 training	Gnome Stronghold Agility Course	2474	3436	0
 training	Draynor Village Rooftop Course	3103	3279	0
 training	Al Kharid Rooftop Course	3273	3195	0
@@ -15,11 +15,11 @@ training	Wilderness Agility Course	3004	3937	0
 training	Colossal Wyrm Agility Course	1640	2921	0
 training	Brimhaven Agility Arena	2815	3193	0
 training	Agility Pyramid	3364	2830	0
-training	Gemstone Crab	1274	3159	0
-training	Sand crabs (Hosidius shore)	1749	3468	0
-training	Ammonite crabs (Fossil Island)	3714	3881	0
-training	Rock crabs (Rellekka)	2673	3716	0
+training	Gemstone Crab	1274	3159	0	osrs-wiki-locline	2026-07-09
+training	Sand crabs (Hosidius shore)	1749	3468	0	osrs-wiki-locline	2026-07-09
+training	Ammonite crabs (Fossil Island)	3714	3881	0	osrs-wiki-locline	2026-07-09
+training	Rock crabs (Rellekka)	2673	3716	0	osrs-wiki-locline	2026-07-09
 training	Wintertodt (Doors of Dinh)	1630	3948	0
 training	Tempoross (Ruins of Unkah)	3146	2842	0
 training	Otto's Grotto (barbarian training)	2500	3506	0
-training	Sulliusceps (Tar Swamp)	3683	3757	0
+training	Sulliusceps (Tar Swamp)	3683	3757	0	osrs-wiki-locline	2026-07-09

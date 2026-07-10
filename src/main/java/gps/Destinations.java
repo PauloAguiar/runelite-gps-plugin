@@ -313,7 +313,8 @@ public final class Destinations
 			{
 				continue;
 			}
-			// category, name, x, y, plane
+			// category, name, x, y, plane [, verified_source, verified_date] — the trailing
+			// verification columns are metadata for maintenance and are ignored at load time.
 			String[] fields = line.split("\t");
 			if (fields.length < 5)
 			{
