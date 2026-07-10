@@ -293,6 +293,18 @@ public class AlternativeRoutesService
 			}
 
 			boolean reached = result.isReached();
+			// The best route reached the target, so an unreached result is NOT "the closest
+			// reachable area" — it is a search truncated by the cost cap a few tiles short of the
+			// goal. Accepting it through the closeness tolerance below showed a phantom
+			// "unreachable" route (user capture: the quetzal whistle at cost 28 under a 27 band,
+			// rendered unreachable while perfectly reachable). Stop instead: the truncation is
+			// exactly what "more routes" reveals by widening the band.
+			if (!reached && bestRemaining == 0)
+			{
+				cappedByCost |= costLimited;
+				chainExhausted = true;
+				break;
+			}
 			// Unreachable exact targets (e.g. NPC tiles) still have meaningful alternatives: different
 			// methods all ending at the closest reachable area. Keep enumerating while routes get
 			// equally close; stop once exclusions make the search end up meaningfully further away.
@@ -795,6 +807,12 @@ public class AlternativeRoutesService
 				return null;
 			}
 			boolean reached = result.isReached();
+			// The best route reached the target: an unreached seed is a cost-cap truncation a few
+			// tiles short, not a route — dropping it keeps phantom "unreachable" entries out.
+			if (!reached && bestRemaining == 0)
+			{
+				return null;
+			}
 			int remaining = reached ? 0 : remainingDistance(path, ends);
 			if (bestRemaining >= 0 && remaining > bestRemaining + CLOSEST_DISTANCE_TOLERANCE)
 			{
@@ -951,13 +969,19 @@ public class AlternativeRoutesService
 	 * cost order, so the first is the cheapest. No effect before the first route, when
 	 * {@code multiple <= 0} (uncapped), or when the product exceeds {@code cap}.
 	 */
+	// A super-cheap best route must not strangle the cost band: with the best route at cost 9 (a
+	// direct teleport), best x 3 = 27 hid every teleport+short-walk combination (a 28-cost quetzal
+	// whistle route) behind "more". The band prices off max(best, this), so the default band is
+	// never tighter than ~100 units (~30s of travel) and still grows with every "more" press.
+	private static final int MIN_BEST_FOR_BAND = 35;
+
 	private static int cappedByBestCost(int cap, List<RouteOption> routes, int multiple)
 	{
 		if (routes.isEmpty() || multiple <= 0)
 		{
 			return cap;
 		}
-		long byBest = (long) routes.get(0).getTotalCost() * multiple;
+		long byBest = (long) Math.max(routes.get(0).getTotalCost(), MIN_BEST_FOR_BAND) * multiple;
 		return byBest < cap ? (int) byBest : cap;
 	}
 

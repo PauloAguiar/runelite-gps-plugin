@@ -121,6 +121,49 @@ public class AlternativeRoutesServiceTest
 			routes.stream().allMatch(RouteOption::isReached));
 	}
 
+	/**
+	 * Regression for a user capture (gps-capture-20260709-175143): with the best route a 9-cost
+	 * direct teleport, the cost band (best x 3 = 27) truncated the 28-cost quetzal-whistle route a
+	 * few tiles short of the target, and the truncated path was accepted through the unreachable-
+	 * target closeness tolerance — showing a phantom "unreachable" route for a perfectly reachable
+	 * target. Now: when the best route reached the target, unreached (cap-truncated) results are
+	 * never accepted as routes, and the band's floor keeps short teleport+walk combos visible.
+	 */
+	@Test
+	public void cappedSearchesProduceNoPhantomUnreachableRoutes() throws Exception
+	{
+		PathfinderConfig planning = new TestPathfinderConfig(client, config).copyForPlanning();
+		AlternativeRoutesService service = new AlternativeRoutesService(clientThread, planning);
+
+		// The capture's query: east of Fenkenstrain's castle to the Hunter Guild entrance tiles.
+		int start = WorldPointUtil.packWorldPoint(3601, 3528, 0);
+		Set<Integer> targets = Set.of(
+			WorldPointUtil.packWorldPoint(1558, 3047, 0),
+			WorldPointUtil.packWorldPoint(1559, 3047, 0),
+			WorldPointUtil.packWorldPoint(1558, 3048, 0),
+			WorldPointUtil.packWorldPoint(1557, 3047, 0));
+
+		CountDownLatch done = new CountDownLatch(1);
+		AtomicReference<List<RouteOption>> finalRoutes = new AtomicReference<>(List.of());
+		service.generate(start, targets, Set.of(), AlternativeRoutesMode.ALL_EVERYTHING, 10,
+			(routes, catalog, unavailable, isDone) ->
+			{
+				if (isDone)
+				{
+					finalRoutes.set(routes);
+					done.countDown();
+				}
+			});
+		assertTrue("Generation should complete", done.await(120, TimeUnit.SECONDS));
+		service.shutdown();
+
+		List<RouteOption> routes = finalRoutes.get();
+		assertTrue("Expected several routes, got " + routes.size(), routes.size() >= 4);
+		assertTrue("The target is walkable, so every listed route must actually reach it "
+				+ "(a cap-truncated search must not become a phantom unreachable route)",
+			routes.stream().allMatch(RouteOption::isReached));
+	}
+
 	@Test
 	public void teleportWeightIsChargedIntoRouteCost() throws Exception
 	{
