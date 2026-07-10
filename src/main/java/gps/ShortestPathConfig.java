@@ -1340,10 +1340,22 @@ public interface ShortestPathConfig extends Config
 		return Keybind.NOT_SET;
 	}
 
+	@ConfigItem(
+		keyName = "focusSearchHotkey",
+		name = "Focus search box",
+		description = "Hotkey to open the GPS panel (if it isn't already) and focus the destination search",
+		position = 82,
+		section = sectionHotkeys
+	)
+	default Keybind focusSearchHotkey()
+	{
+		return Keybind.NOT_SET;
+	}
+
 	@ConfigSection(
 		name = "Debug Options",
 		description = "Various options for debugging",
-		position = 82,
+		position = 83,
 		closedByDefault = true
 	)
 	String sectionDebug = "sectionDebug";
@@ -1352,7 +1364,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "drawTransports",
 		name = "Draw transports",
 		description = "Whether transports should be drawn",
-		position = 83,
+		position = 84,
 		section = sectionDebug
 	)
 	default boolean drawTransports()
@@ -1364,7 +1376,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "drawCollisionMap",
 		name = "Draw collision map",
 		description = "Whether the collision map should be drawn",
-		position = 84,
+		position = 85,
 		section = sectionDebug
 	)
 	default boolean drawCollisionMap()
@@ -1376,7 +1388,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "drawDebugPanel",
 		name = "Show debug panel",
 		description = "Toggles displaying the pathfinding debug stats panel",
-		position = 85,
+		position = 86,
 		section = sectionDebug
 	)
 	default boolean drawDebugPanel()
@@ -1389,7 +1401,7 @@ public interface ShortestPathConfig extends Config
 		name = "Draw off-route ranges",
 		description = "Draw the off-route warning (amber) and recalculate (red) distance boundaries<br>" +
 			"around the player, to visualise when GPS warns and when it recomputes the route",
-		position = 85,
+		position = 87,
 		section = sectionDebug
 	)
 	default boolean drawRecalculationRanges()
@@ -1401,7 +1413,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "postTransports",
 		name = "Post transports",
 		description = "Whether to post the transports used in the current path as a PluginMessage event",
-		position = 86,
+		position = 88,
 		section = sectionDebug
 	)
 	default boolean postTransports()

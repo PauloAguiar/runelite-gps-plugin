@@ -1585,6 +1585,27 @@ public class ShortestPathPanel extends PluginPanel
 		return label;
 	}
 
+	/**
+	 * Focuses the destination search box and selects any existing text, so the focus-search hotkey
+	 * lands the caret ready to type. Marshalled to the EDT and deferred so the panel (just opened by
+	 * the hotkey) is laid out and focusable first.
+	 */
+	public void focusSearch()
+	{
+		SwingUtilities.invokeLater(() ->
+		{
+			destinationSearch.requestFocusInWindow();
+			javax.swing.JTextField inner = innerTextField(destinationSearch);
+			if (inner != null)
+			{
+				inner.selectAll();
+			}
+			// Surface the recent-searches list (the focus listener does this too, but requesting
+			// focus on an already-focused field won't re-fire it).
+			renderDestinationResults();
+		});
+	}
+
 	/** The first JTextField inside a composite component (IconTextField hides its own). */
 	private static javax.swing.JTextField innerTextField(Container root)
 	{

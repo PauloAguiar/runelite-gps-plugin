@@ -334,6 +334,35 @@ public class ShortestPathPlugin extends Plugin
 		{
 		}
 	};
+
+	// Opens the GPS side panel (if it isn't already) and focuses its destination search box, so a
+	// place can be searched without first opening the panel by hand.
+	private final KeyListener focusSearchKeyListener = new KeyListener()
+	{
+		@Override
+		public void keyTyped(KeyEvent e)
+		{
+		}
+
+		@Override
+		public void keyPressed(KeyEvent e)
+		{
+			if (!config.focusSearchHotkey().matches(e) || altPanel == null || navButton == null)
+			{
+				return;
+			}
+			SwingUtilities.invokeLater(() ->
+			{
+				clientToolbar.openPanel(navButton);
+				altPanel.focusSearch();
+			});
+		}
+
+		@Override
+		public void keyReleased(KeyEvent e)
+		{
+		}
+	};
 	private boolean fairyRingPanelOpen = false;
 
 	/**
@@ -490,6 +519,7 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		keyManager.registerKeyListener(clearPathKeylistener);
+		keyManager.registerKeyListener(focusSearchKeyListener);
 		mouseManager.registerMouseListener(arrivalDismissListener);
 		// Plugins enabled later are caught by the PluginChanged/ExternalPluginsChanged events.
 		updateShortestPathConflict();
@@ -524,6 +554,7 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		keyManager.unregisterKeyListener(clearPathKeylistener);
+		keyManager.unregisterKeyListener(focusSearchKeyListener);
 		mouseManager.unregisterMouseListener(arrivalDismissListener);
 	}
 
