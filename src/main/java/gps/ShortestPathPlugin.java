@@ -293,6 +293,14 @@ public class ShortestPathPlugin extends Plugin
 	private Point lastMenuOpenedPoint;
 	private WorldMapPoint marker;
 	private int lastLocation = WorldPointUtil.packWorldPoint(0, 0, 0);
+	// A single-tick displacement larger than running (2 tiles) means a transport is carrying the
+	// player — a boat cutscene, a teleport landing — not that they walked off route. While that
+	// resolves, off-route detection is suppressed (the player is legitimately far from the path).
+	private static final int TRANSPORT_STEP_TILES = 3;
+	// Ticks to keep suppressing after such a displacement (long enough to cover a boat cutscene);
+	// refreshed while the transport keeps moving the player, cleared once they settle near the path.
+	private static final int TRANSPORT_GRACE_TICKS = 20;
+	private int transportGraceTicks = 0;
 	private Shape minimapClipFixed;
 	private Shape minimapClipResizeable;
 	private BufferedImage minimapSpriteFixed;
@@ -1334,11 +1342,26 @@ public class ShortestPathPlugin extends Plugin
 		int recalc = config.recalculateDistance();
 		if (!startPointSet && recalc >= 0)
 		{
+			int step = WorldPointUtil.distanceBetween(lastLocation, currentLocation);
 			boolean moved = lastLocation != currentLocation;
 			lastLocation = currentLocation;
 			int d = distanceFromPath(currentLocation);
 			pathDistance = d;
-			if (d < 0)
+			int warn = Math.max(0, Math.min(config.offRouteWarnDistance(), recalc));
+			// A boat cutscene / teleport landing carries the player far from the path in one leap;
+			// that isn't drifting off route. A jump bigger than running arms a grace window that
+			// refreshes while the transport keeps moving them, and clears once they're back within
+			// the warning band (landed on/near the path).
+			if (step > TRANSPORT_STEP_TILES)
+			{
+				transportGraceTicks = TRANSPORT_GRACE_TICKS;
+			}
+			else if (transportGraceTicks > 0)
+			{
+				transportGraceTicks = (d >= 0 && d < warn) ? 0 : transportGraceTicks - 1;
+			}
+
+			if (d < 0 || transportGraceTicks > 0)
 			{
 				offRouteWarning = false;
 			}
@@ -1355,7 +1378,6 @@ public class ShortestPathPlugin extends Plugin
 			}
 			else
 			{
-				int warn = Math.max(0, Math.min(config.offRouteWarnDistance(), recalc));
 				offRouteWarning = d >= warn;
 			}
 		}
