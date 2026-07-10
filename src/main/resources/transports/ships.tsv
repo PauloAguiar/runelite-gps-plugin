@@ -12,12 +12,12 @@
 3064 3003 0	2956 3146 0	Musa Point Seaman Morris 8631		COINS=30	Pandemonium	10	Musa Point
 							
 # Ardougne, Brimhaven, Rimmington							
-2683 3271 0	2772 3234 0	Brimhaven Captain Barnaby 9250		COINS=30		6	Brimhaven
-2683 3271 0	2915 3225 0	Rimmington Captain Barnaby 9250		COINS=30		6	Rimmington
-2772 3234 0	2683 3271 0	Ardougne Captain Barnaby 8764		COINS=30		6	Ardougne
-2772 3234 0	2915 3225 0	Rimmington Captain Barnaby 8764		COINS=30		6	Rimmington
-2915 3225 0	2683 3271 0	Ardougne Captain Barnaby 8763		COINS=30		6	Ardougne
-2915 3225 0	2772 3234 0	Brimhaven Captain Barnaby 8763		COINS=30		6	Brimhaven
+2683 3271 0	2775 3234 1	Brimhaven Captain Barnaby 9250		COINS=30		6	Brimhaven
+2683 3271 0	2915 3222 1	Rimmington Captain Barnaby 9250		COINS=30		6	Rimmington
+2772 3234 0	2683 3268 1	Ardougne Captain Barnaby 8764		COINS=30		6	Ardougne
+2772 3234 0	2915 3222 1	Rimmington Captain Barnaby 8764		COINS=30		6	Rimmington
+2915 3225 0	2683 3268 1	Ardougne Captain Barnaby 8763		COINS=30		6	Ardougne
+2915 3225 0	2775 3234 1	Brimhaven Captain Barnaby 8763		COINS=30		6	Brimhaven
 							
 # Rimmington, Corsair Cove							
 2909 3226 0	2578 2840 0	Travel Cabin Boy Colin 7967			The Corsair Curse	6	
