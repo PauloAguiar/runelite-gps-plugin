@@ -27,3 +27,7 @@
 	1670 2933 0		Twilight's Promise	6	Colossal Wyrm Remains	4182&64
 	1446 3108 0		Twilight's Promise	6	Cam Torum	4182&32
 	1613 3300 0		Twilight's Promise	6	Salvager Overlook	4182&2048
+# Primio quetzal between Varrock and Civitas illa Fortis (a true quetzal flight: method-typed so it
+# is toggleable, priced, labelled on routes, and excluded from walk-only searches)
+3280 3412 0	1700 3141 0	Travel Primio 12888	Children of the Sun	6	Primio: Civitas illa Fortis	
+1703 3140 0	3280 3412 0	Travel Primio 12889	Children of the Sun	6	Primio: Varrock	

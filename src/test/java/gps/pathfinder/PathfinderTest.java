@@ -796,12 +796,16 @@ public class PathfinderTest
 	}
 
 	/**
-	 * Tests that the Primio quetzal (Varrock ↔ Civitas) works correctly.
-	 * This is a fixed route in transports.tsv, NOT part of the quetzal platform system.
+	 * Primio (the Varrock <-> Civitas illa Fortis quetzal) regression: it used to be data-typed as
+	 * a plain TRANSPORT connector, so it was absent from the method catalog — "walk"-labelled
+	 * routes silently flew to Varlamore, it could not be excluded, and the quetzal toggle did not
+	 * govern it. As a QUETZAL-typed method the flight works (both directions) when quetzals are
+	 * enabled, and is gone when they are disabled.
 	 */
 	@Test
 	public void testPrimioQuetzal()
 	{
+		when(config.useQuetzals()).thenReturn(true);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
 		// Varrock Primio platform to Civitas
@@ -815,6 +819,13 @@ public class PathfinderTest
 		int varrockPrimioDest = WorldPointUtil.packWorldPoint(3280, 3412, 0);
 
 		assertEquals(2, calculatePathLength(civitasPrimioOrigin, varrockPrimioDest));
+
+		// The quetzal toggle now governs Primio: disabled means no flight (the on-foot route to
+		// Varlamore is over a thousand tiles).
+		when(config.useQuetzals()).thenReturn(false);
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		assertTrue("With quetzals disabled the Primio flight must not be available",
+			calculatePathLength(varrockPrimio, civitasPrimio) != 2);
 	}
 
 	/**
