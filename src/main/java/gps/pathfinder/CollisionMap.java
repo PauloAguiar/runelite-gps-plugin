@@ -85,9 +85,19 @@ public class CollisionMap
 
 	public PrimitiveIntList getNeighbors(int node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel, boolean targetInWilderness, NodeGraph graph)
 	{
+		return getNeighbors(node, visited, config, wildernessLevel, targetInWilderness, graph, null);
+	}
+
+	/**
+	 * {@code tentative} (nullable) is the duplicate-enqueue pruner for settle-dedup searches: a
+	 * neighbour whose candidate cost does not improve on an already-queued arrival at the same
+	 * (tile, bank) state is skipped before its node is even created.
+	 */
+	public PrimitiveIntList getNeighbors(int node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel, boolean targetInWilderness, NodeGraph graph, TentativeCosts tentative)
+	{
 		if (graph.isTile(node))
 		{
-			return getTileNeighbors(node, visited, config, wildernessLevel, graph);
+			return getTileNeighbors(node, visited, config, wildernessLevel, graph, tentative);
 		}
 		else
 		{
@@ -99,7 +109,7 @@ public class CollisionMap
 	//      * Neighbouring tiles we can walk to
 	//      * A transition into banked state, if the current tile is a bank.
 	//      * Transition into abstract global teleport nodes, if we haven't tried that yet.
-	private PrimitiveIntList getTileNeighbors(int node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel, NodeGraph graph)
+	private PrimitiveIntList getTileNeighbors(int node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel, NodeGraph graph, TentativeCosts tentative)
 	{
 		final int packedPosition = graph.packedPosition(node);
 		final int x = WorldPointUtil.unpackWorldX(packedPosition);
@@ -133,11 +143,18 @@ public class CollisionMap
 			// The whistle differential is REAL cost inside getAdditionalTransportCost, so a chain
 			// (whistle -> landing site A -> fly to B) prices itself above the direct whistle-to-B
 			// teleport with no special inheritance.
+			final int transportTravelTime = CostUnits.fromTicks(transport.getDuration());
+			final int transportAdditionalCost = config.getAdditionalTransportCost(transport) + bankEntryCost;
+			if (tentative != null && tentative.shouldPrune(transport.getDestination(), pathBankVisited,
+				graph.cost(node) + Math.max(0, transportTravelTime + transportAdditionalCost)))
+			{
+				continue;
+			}
 			neighbors.add(graph.createTransport(
 				transport.getDestination(),
 				node,
-				CostUnits.fromTicks(transport.getDuration()),
-				config.getAdditionalTransportCost(transport) + bankEntryCost,
+				transportTravelTime,
+				transportAdditionalCost,
 				pathBankVisited,
 				delayedVisit));
 		}
@@ -182,6 +199,8 @@ public class CollisionMap
 			traversable[7] = ne(x, y, z);
 		}
 
+		// One walking step costs 1 (Chebyshev-adjacent) plus the one-off bank-entry surcharge.
+		final int walkStepCost = graph.cost(node) + Math.max(0, 1 + bankEntryCost);
 		for (int i = 0; i < traversable.length; i++)
 		{
 			OrdinalDirection d = ORDINAL_VALUES[i];
@@ -193,6 +212,10 @@ public class CollisionMap
 
 			if (traversable[i])
 			{
+				if (tentative != null && tentative.shouldPrune(neighborPacked, pathBankVisited, walkStepCost))
+				{
+					continue;
+				}
 				neighbors.add(graph.createTile(neighborPacked, node, pathBankVisited, bankEntryCost));
 			}
 			else if (Math.abs(d.x + d.y) == 1 && isBlocked(x + d.x, y + d.y, z))
@@ -207,6 +230,11 @@ public class CollisionMap
 					if (transport.getOrigin() == Transport.UNDEFINED_ORIGIN
 						|| !(transport.isUsableAtWildernessLevel(wildernessLevel))
 						|| visited.get(transport.getOrigin(), pathBankVisited))
+					{
+						continue;
+					}
+					if (tentative != null && tentative.shouldPrune(transport.getOrigin(), pathBankVisited,
+						graph.cost(node) + Math.max(0, WorldPointUtil.distanceBetween(packedPosition, transport.getOrigin()) + bankEntryCost)))
 					{
 						continue;
 					}

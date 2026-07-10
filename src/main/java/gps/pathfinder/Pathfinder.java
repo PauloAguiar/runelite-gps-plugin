@@ -29,7 +29,7 @@ public class Pathfinder implements Runnable
 	private final IntMinHeap pending;
 	// A* mode (heuristic attached): the ordering key is g + a consistent heuristic instead of g.
 	private final boolean astar;
-	// Heap mode: every node goes through the ordered pending heap and visited-marking moves from
+	// Heap mode: every node goes through a cost-ordered queue and visited-marking moves from
 	// enqueue to dequeue (the first DEQUEUE of a state is via its cheapest parent; the first
 	// ENQUEUE isn't necessarily). Engaged whenever the ordering can be non-uniform: a heuristic is
 	// attached (A*), or ANY transport/teleport is usable — a popped transport feeds tiles back
@@ -38,6 +38,16 @@ public class Pathfinder implements Runnable
 	// non-minimal routes). The FIFO fast-path remains only for genuinely uniform-cost searches,
 	// where its layer assumption actually holds.
 	private final boolean heapMode;
+	// The ordered queue for UNINFORMED heap-mode searches: a Dial's bucket queue keyed by g, whose
+	// O(1) push/pop keeps the map-wide floods (nearest-X) at FIFO-era speed — the binary heap's
+	// log n per node doubled their cpu. A* searches keep the heap: their key (g + h) can jump by
+	// the heuristic delta, and the field heuristic already keeps them small.
+	private final IntBucketQueue buckets;
+	// Duplicate-enqueue pruner for the same searches: settle-dedup re-enqueues each tile from
+	// every settled neighbour (~3-4x node volume); recording the best tentative cost per state
+	// skips non-improving duplicates before their nodes are created. Improving duplicates still
+	// go through, so costs stay exact.
+	private final TentativeCosts tentative;
 	private final VisitedTiles visited;
 	@Getter
 	private volatile boolean done = false;
@@ -111,8 +121,10 @@ public class Pathfinder implements Runnable
 		this.costCap = costCap;
 		this.astar = heuristic != null;
 		this.heapMode = astar || anyTransportsUsable(config);
+		this.buckets = (heapMode && !astar) ? new IntBucketQueue() : null;
+		this.tentative = buckets != null ? new TentativeCosts(map) : null;
 		this.graph = new NodeGraph(1 << 14, heuristic);
-		this.pending = new IntMinHeap(graph, heapMode ? 4096 : 256);
+		this.pending = new IntMinHeap(graph, astar ? 4096 : 256);
 		visited = new VisitedTiles(map);
 		targetInWilderness = WildernessChecker.isInWilderness(targets);
 		targetInBlockedRegion = anyInBlockedRegion(config.getLeagueModeState(), targets);
@@ -238,7 +250,7 @@ public class Pathfinder implements Runnable
 
 	private void addNeighbors(int node, boolean nodeIsTile, int nodePacked)
 	{
-		PrimitiveIntList nodes = map.getNeighbors(node, visited, config, wildernessLevel, targetInWilderness, graph);
+		PrimitiveIntList nodes = map.getNeighbors(node, visited, config, wildernessLevel, targetInWilderness, graph, tentative);
 		final int count = nodes.size();
 		for (int i = 0; i < count; i++)
 		{
@@ -262,12 +274,20 @@ public class Pathfinder implements Runnable
 
 			final boolean neighborIsTransport = graph.isTransport(neighbor);
 			// Heap mode: nothing is marked at enqueue (the pop dedups instead — see the run loop)
-			// and every node is ordered through the pending heap. Stats are counted at settle
+			// and every node is ordered through the cost-ordered queue — the g-keyed bucket queue
+			// for uninformed searches, the (g+h)-keyed heap for A*. Stats are counted at settle
 			// (pop) rather than here: enqueues include duplicates, so counting them would make the
 			// explored-size numbers incomparable with the FIFO search.
 			if (heapMode)
 			{
-				pending.add(neighbor);
+				if (buckets != null)
+				{
+					buckets.add(neighbor, graph.cost(neighbor));
+				}
+				else
+				{
+					pending.add(neighbor);
+				}
 				continue;
 			}
 			// For delayed-visit nodes (shared destinations), don't mark as visited on enqueue.
@@ -360,17 +380,29 @@ public class Pathfinder implements Runnable
 		long cutoffDurationMillis = config.getCalculationCutoffMillis();
 		long cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
 
-		while (!cancelled && (!boundary.isEmpty() || !pending.isEmpty()))
+		while (!cancelled && (!boundary.isEmpty() || !pending.isEmpty()
+			|| (buckets != null && !buckets.isEmpty())))
 		{
 			int boundaryHead = boundary.peekFirst();
-			int pendingHead = pending.peek();
 
 			int node;
-			if (pendingHead != NodeGraph.NO_NODE
-				&& (boundaryHead == NodeGraph.NO_NODE || graph.cost(pendingHead) < graph.cost(boundaryHead)))
+			boolean ordered;
+			if (buckets != null)
 			{
-				node = pending.poll();
-
+				// Uninformed heap mode: the boundary only ever holds the start; everything else
+				// comes cost-ordered from the bucket queue.
+				ordered = boundaryHead == NodeGraph.NO_NODE;
+				node = ordered ? buckets.poll() : boundary.pollFirst();
+			}
+			else
+			{
+				int pendingHead = pending.peek();
+				ordered = pendingHead != NodeGraph.NO_NODE
+					&& (boundaryHead == NodeGraph.NO_NODE || graph.cost(pendingHead) < graph.cost(boundaryHead));
+				node = ordered ? pending.poll() : boundary.pollFirst();
+			}
+			if (ordered)
+			{
 				// For delayed-visit nodes, check if the destination was already reached by a
 				// cheaper path while this node was queued. In heap mode EVERY node dedups here:
 				// nothing is marked at enqueue, and cost ordering (plus a consistent heuristic in
@@ -407,10 +439,6 @@ public class Pathfinder implements Runnable
 						++stats.nodesChecked;
 					}
 				}
-			}
-			else
-			{
-				node = boundary.pollFirst();
 			}
 			if (node == NodeGraph.NO_NODE)
 			{
@@ -505,6 +533,14 @@ public class Pathfinder implements Runnable
 		boundary.clear();
 		visited.clear();
 		pending.clear();
+		if (buckets != null)
+		{
+			buckets.clear();
+		}
+		if (tentative != null)
+		{
+			tentative.clear();
+		}
 		graph.release();
 
 		stats.end(); // Include cleanup in stats to get the total cost of pathfinding
