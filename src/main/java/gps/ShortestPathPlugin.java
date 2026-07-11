@@ -158,10 +158,8 @@ public class ShortestPathPlugin extends Plugin
 	OverlayFontSize overlayFontSize = OverlayFontSize.NORMAL;
 	boolean arrivalAutoDismiss;
 	int arrivalDismissSeconds;
-	int tileCounterStep;
 	int unreachableTargetDistance;
 	String unreachableText;
-	TileCounter showTileCounter;
 	@Inject
 	private Client client;
 	@Getter
@@ -1964,22 +1962,6 @@ public class ShortestPathPlugin extends Plugin
 		return defaultValue;
 	}
 
-	private TileCounter override(String configOverrideKey, TileCounter defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof String)
-			{
-				TileCounter tileCounter = TileCounter.fromType((String) value);
-				if (tileCounter != null)
-				{
-					return tileCounter;
-				}
-			}
-		}
-		return defaultValue;
-	}
 
 	private void cacheConfigValues()
 	{
@@ -1998,11 +1980,9 @@ public class ShortestPathPlugin extends Plugin
 		colourTeleportPulse = override("colourTeleportPulse", config.colourTeleportPulse());
 		colourOverlayAccent = override("colourOverlayAccent", config.colourOverlayAccent());
 
-		tileCounterStep = override("tileCounterStep", config.tileCounterStep());
 		unreachableTargetDistance = override("unreachableTargetDistanceThreshold", config.unreachableTargetDistance());
 		unreachableText = config.unreachableText();
 
-		showTileCounter = override("showTileCounter", config.showTileCounter());
 		showTeleportPulse = override("showTeleportPulse", config.showTeleportPulse());
 		showDirections = override("showDirections", config.showDirections());
 		overrideOverlayTransparency = override("overrideOverlayTransparency", config.overrideOverlayTransparency());

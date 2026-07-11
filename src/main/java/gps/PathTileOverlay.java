@@ -94,7 +94,6 @@ public class PathTileOverlay extends Overlay
 			int blockedFrom = plugin.blockedFromIndex(path);
 			// Progress along the displayed route: edges up to here are done (greyed).
 			int progress = plugin.displayedRouteProgress();
-			int counter = 0;
 			// Repeating ripples flow along the line towards the destination: each edge's glow is
 			// its proximity to the nearest ripple centre in a train spaced WAVE_SPACING apart.
 			double waveOffset = ((System.currentTimeMillis() % 600_000L) / 1000.0 * WAVE_TILES_PER_SECOND)
@@ -121,7 +120,7 @@ public class PathTileOverlay extends Overlay
 				double glow = jump || done ? 0 : Math.max(0, 1 - waveDistance / WAVE_HALF_WIDTH);
 				Color edgeColor = done ? doneColor : (i >= blockedFrom ? blockedColor : color);
 				drawLine(graphics, currentStep.getPackedPosition(), nextStep.getPackedPosition(),
-					edgeColor, 1 + counter++, head, glow, jump);
+					edgeColor, head, glow, jump);
 				drawTransportInfo(graphics, currentStep, nextStep, path, i - 1);
 			}
 
@@ -457,44 +456,6 @@ public class PathTileOverlay extends Overlay
 		return new Point(cx, cy);
 	}
 
-	private void drawTile(Graphics2D graphics, int location, Color color, int counter, boolean draw)
-	{
-		if (client == null)
-		{
-			return;
-		}
-
-		PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
-		for (int i = 0; i < points.size(); i++)
-		{
-			int point = points.get(i);
-			if (point == WorldPointUtil.UNDEFINED)
-			{
-				continue;
-			}
-
-			LocalPoint lp = WorldPointUtil.toLocalPoint(client, point);
-			if (lp == null)
-			{
-				continue;
-			}
-
-			Polygon poly = Perspective.getCanvasTilePoly(client, lp);
-			if (poly == null)
-			{
-				continue;
-			}
-
-			if (draw)
-			{
-				graphics.setColor(color);
-				graphics.fill(poly);
-			}
-
-			drawCounter(graphics, poly.getBounds().getCenterX(), poly.getBounds().getCenterY(), counter);
-		}
-	}
-
 	private static boolean directionChanges(int previous, int current, int next)
 	{
 		int dx1 = WorldPointUtil.unpackWorldX(current) - WorldPointUtil.unpackWorldX(previous);
@@ -504,18 +465,7 @@ public class PathTileOverlay extends Overlay
 		return dx1 != dx2 || dy1 != dy2;
 	}
 
-	private void drawLine(Graphics2D graphics, int startLoc, int endLoc, Color color, int counter, boolean arrowHead)
-	{
-		drawLine(graphics, startLoc, endLoc, color, counter, arrowHead, 0);
-	}
-
-	private void drawLine(Graphics2D graphics, int startLoc, int endLoc, Color color, int counter, boolean arrowHead,
-		double glow)
-	{
-		drawLine(graphics, startLoc, endLoc, color, counter, arrowHead, glow, false);
-	}
-
-	private void drawLine(Graphics2D graphics, int startLoc, int endLoc, Color color, int counter, boolean arrowHead,
+	private void drawLine(Graphics2D graphics, int startLoc, int endLoc, Color color, boolean arrowHead,
 		double glow, boolean jump)
 	{
 		PrimitiveIntList starts = WorldPointUtil.toLocalInstance(client, startLoc);
@@ -584,38 +534,6 @@ public class PathTileOverlay extends Overlay
 				color.getAlpha()));
 			graphics.setStroke(new BasicStroke(3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 			graphics.draw(line);
-		}
-
-		if (counter == 1)
-		{
-			drawCounter(graphics, p1.getX(), p1.getY(), 0);
-		}
-		drawCounter(graphics, p2.getX(), p2.getY(), counter);
-	}
-
-	private void drawCounter(Graphics2D graphics, double x, double y, int counter)
-	{
-		if (counter >= 0 && !TileCounter.DISABLED.equals(plugin.showTileCounter))
-		{
-			int n = plugin.tileCounterStep > 0 ? plugin.tileCounterStep : 1;
-			int s = plugin.getDisplayPath().size();
-			if ((counter % n != 0) && (s != (counter + 1)))
-			{
-				return;
-			}
-			if (TileCounter.REMAINING.equals(plugin.showTileCounter))
-			{
-				counter = s - counter - 1;
-			}
-			if (n > 1 && counter == 0)
-			{
-				return;
-			}
-			String counterText = Integer.toString(counter);
-			graphics.setColor(plugin.colourText);
-			graphics.drawString(
-				counterText,
-				(int) (x - graphics.getFontMetrics().getStringBounds(counterText, graphics).getWidth() / 2), (int) y);
 		}
 	}
 

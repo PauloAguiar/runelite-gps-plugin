@@ -470,29 +470,7 @@ public interface ShortestPathConfig extends Config
 		return 2;
 	}
 
-	@ConfigItem(
-		keyName = "showTileCounter",
-		name = "Show tile counter",
-		description = "Whether to display the number of tiles travelled, number of tiles remaining or disable counting",
-		position = 31,
-		section = sectionSettings
-	)
-	default TileCounter showTileCounter()
-	{
-		return TileCounter.DISABLED;
-	}
 
-	@ConfigItem(
-		keyName = "tileCounterStep",
-		name = "Tile counter step",
-		description = "The number of tiles between the displayed tile counter numbers",
-		position = 32,
-		section = sectionSettings
-	)
-	default int tileCounterStep()
-	{
-		return 1;
-	}
 
 	@Units(
 		value = Units.TICKS
