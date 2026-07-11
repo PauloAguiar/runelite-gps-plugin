@@ -32,7 +32,6 @@ import gps.pathfinder.PathStep;
 import gps.pathfinder.Pathfinder;
 import gps.pathfinder.PathfinderConfig;
 import gps.pathfinder.PathfinderResult;
-import gps.pathfinder.ReferenceDijkstra;
 import gps.pathfinder.SearchHeuristic;
 import gps.pathfinder.TransportAvailability;
 import gps.transport.Transport;
@@ -471,23 +470,6 @@ public class AlternativeRoutesService
 		return summary == null ? null : summary.clone();
 	}
 
-	/**
-	 * Runs the reference (oracle) search — textbook Dijkstra over the identical edge expansion —
-	 * for one query, on a fresh client-thread refresh with the given exclusions applied. The
-	 * benchmark's optimality audit: the best route a generation found must cost exactly this.
-	 * Untimed and never in the client hot path. Returns null when the refresh fails.
-	 */
-	public ReferenceDijkstra.Result auditOptimality(int start, Set<Integer> targets,
-		Set<TeleportMethod> userExclusions, AlternativeRoutesMode mode)
-	{
-		final Set<Integer> ends = new HashSet<>(targets);
-		if (!refreshOnClientThread(Collections.emptySet(), ends, mode))
-		{
-			return null;
-		}
-		planningConfig.rebuildAvailabilityWithExclusions(new HashSet<>(userExclusions));
-		return ReferenceDijkstra.search(planningConfig, start, ends);
-	}
 
 	// Whether the last generation's cost cap held routes back — a higher cost multiple ("show more")
 	// could surface them. False when walking is the binding ceiling (nothing cheaper-than-walk left).

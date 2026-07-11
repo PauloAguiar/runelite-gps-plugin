@@ -86,15 +86,12 @@ final class RouteIcons
 	// Capture a debug snapshot of the current routes (camera).
 	static final ImageIcon DEBUG = new ImageIcon(camera(GREY));
 	static final ImageIcon DEBUG_HOVER = new ImageIcon(camera(LIGHT));
-	// Run the fixed performance-benchmark suite (stopwatch).
-	static final ImageIcon BENCHMARK = new ImageIcon(stopwatch(GREY));
-	static final ImageIcon BENCHMARK_HOVER = new ImageIcon(stopwatch(LIGHT));
 	// Filter the catalog to only the currently-disabled methods (funnel). Orange = active.
 	static final ImageIcon FILTER = new ImageIcon(funnel(GREY));
 	static final ImageIcon FILTER_HOVER = new ImageIcon(funnel(LIGHT));
 	static final ImageIcon FILTER_ACTIVE = new ImageIcon(funnel(ORANGE));
 	static final ImageIcon FILTER_ACTIVE_HOVER = new ImageIcon(funnel(ORANGE_LIGHT));
-	// Header burger menu holding the secondary actions (benchmark, debug snapshot, reset exclusions).
+	// Header burger menu holding the secondary actions (debug snapshot, reset exclusions).
 	static final ImageIcon MENU = new ImageIcon(hamburger(GREY));
 	static final ImageIcon MENU_HOVER = new ImageIcon(hamburger(LIGHT));
 	// GitHub mark linking to the plugin's repository (report issues / contribute).
@@ -723,19 +720,6 @@ final class RouteIcons
 		});
 	}
 
-	private static BufferedImage stopwatch(Color colour)
-	{
-		return render(g ->
-		{
-			g.setColor(colour);
-			// Round body with a crown on top and two hands frozen mid-measurement.
-			g.draw(new Ellipse2D.Double(3.0, 4.5, 10.0, 10.0));
-			g.draw(new Line2D.Double(8.0, 2.2, 8.0, 3.6));   // crown stem
-			g.draw(new Line2D.Double(6.6, 2.2, 9.4, 2.2));   // crown cap
-			g.draw(new Line2D.Double(8.0, 9.5, 8.0, 6.6));   // minute hand
-			g.draw(new Line2D.Double(8.0, 9.5, 10.2, 10.9)); // second hand
-		});
-	}
 
 	private static BufferedImage chevron(Color colour, boolean down)
 	{

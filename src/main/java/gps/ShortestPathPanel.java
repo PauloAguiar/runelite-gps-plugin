@@ -336,12 +336,6 @@ public class ShortestPathPanel extends PluginPanel
 			"Report issues or contribute on GitHub",
 			() -> LinkBrowser.browse(GITHUB_ISSUES_URL))));
 		JPopupMenu actionsMenu = new JPopupMenu();
-		JMenuItem benchmarkItem = new JMenuItem("Run benchmark", RouteIcons.BENCHMARK);
-		benchmarkItem.setToolTipText("<html>Run the fixed performance benchmark (prepared trips + nearest-X queries)<br>"
-			+ "and save a profiling report for comparing plugin versions.<br>"
-			+ "Takes a minute or two and cancels any in-progress route search.</html>");
-		benchmarkItem.addActionListener(e -> plugin.runBenchmark());
-		actionsMenu.add(benchmarkItem);
 		JMenuItem debugItem = new JMenuItem("Save debug snapshot", RouteIcons.DEBUG);
 		debugItem.setToolTipText("Save a debug snapshot of the current routes to disk (for reproducing issues)");
 		debugItem.addActionListener(e -> plugin.captureDebugSnapshot());
