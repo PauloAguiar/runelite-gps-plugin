@@ -214,6 +214,20 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigItem(
 		hidden = true,
+		keyName = "useMountainGuides",
+		name = "Use mountain guides",
+		description = "Whether to include mountain guides in the path<br>" +
+			"(the Quidamortem trail and the Auburn Valley pass)",
+		position = 13,
+		section = sectionSettings
+	)
+	default boolean useMountainGuides()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		hidden = true,
 		keyName = "useQuetzals",
 		name = "Use quetzals",
 		description = "Whether to include quetzals in the path",
@@ -831,6 +845,23 @@ public interface ShortestPathConfig extends Config
 		section = sectionThresholds
 	)
 	default int costMinecarts()
+	{
+		return 0;
+	}
+
+	@Range(
+		min = -10000,
+		max = 10000
+	)
+	@ConfigItem(
+		keyName = "costMountainGuides",
+		name = "Mountain guide modifier",
+		description = "Modifier added to the route's cost when it uses a mountain guide.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
+		position = 54,
+		section = sectionThresholds
+	)
+	default int costMountainGuides()
 	{
 		return 0;
 	}

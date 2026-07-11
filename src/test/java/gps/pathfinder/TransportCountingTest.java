@@ -127,6 +127,29 @@ public class TransportCountingTest
 	}
 
 	@Test
+	public void testNumberOfMountainGuides()
+	{
+		int actualCount = 0;
+		for (int origin : transports.keySet())
+		{
+			for (Transport transport : transports.get(origin))
+			{
+				if (TransportType.MOUNTAIN_GUIDE.equals(transport.getType()))
+				{
+					actualCount++;
+				}
+			}
+		}
+		/*
+		 * Info:
+		 * 6 // Quidamortem triangle (3 stops, all directed pairs)
+		 * + 2 // Auburn Valley <-> Quetzacalli Gorge
+		 * = 8
+		 */
+		assertEquals(8, actualCount);
+	}
+
+	@Test
 	public void testNumberOfQuetzals()
 	{
 		// All but 2 permutations of quetzal transports are resolved from origins and destinations

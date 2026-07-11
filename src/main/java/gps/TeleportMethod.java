@@ -114,6 +114,8 @@ public final class TeleportMethod
 				return "Mushtrees";
 			case MINECART:
 				return "Minecarts";
+			case MOUNTAIN_GUIDE:
+				return "Mountain guides";
 			case QUETZAL:
 			case QUETZAL_WHISTLE:
 				return "Quetzals";
