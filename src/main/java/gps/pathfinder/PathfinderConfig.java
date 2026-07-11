@@ -367,11 +367,6 @@ public class PathfinderConfig
 		this.considerBank = considerBank;
 	}
 
-	public boolean isPlanningMode()
-	{
-		return planningMode;
-	}
-
 	/**
 	 * Toggles whether this (planning) config bypasses character unlocks as well ({@code true} = the
 	 * "Everything" variant) or respects them. Takes effect on the next {@link #refresh()}.

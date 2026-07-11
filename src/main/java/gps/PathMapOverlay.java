@@ -199,30 +199,4 @@ public class PathMapOverlay extends Overlay
 
 		return clipArea;
 	}
-
-	private int getWorldMapExtentWidth(Rectangle baseRectangle)
-	{
-		return (WorldPointUtil.unpackWorldX(
-			plugin.calculateMapPoint(
-				baseRectangle.x + baseRectangle.width,
-				baseRectangle.y + baseRectangle.height))
-			-
-			WorldPointUtil.unpackWorldX(
-				plugin.calculateMapPoint(
-					baseRectangle.x,
-					baseRectangle.y)));
-	}
-
-	private int getWorldMapExtentHeight(Rectangle baseRectangle)
-	{
-		return (WorldPointUtil.unpackWorldY(
-			plugin.calculateMapPoint(
-				baseRectangle.x,
-				baseRectangle.y))
-			-
-			WorldPointUtil.unpackWorldY(
-				plugin.calculateMapPoint(
-					baseRectangle.x + baseRectangle.width,
-					baseRectangle.y + baseRectangle.height)));
-	}
 }

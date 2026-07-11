@@ -48,14 +48,4 @@ public class TestShortestPathConfig implements ShortestPathConfig
 		return calculationCutoff;
 	}
 
-	@Override
-	public void setBuiltTeleportationBoxes(String content)
-	{
-	}
-
-	@Override
-	public void setBuiltTeleportationPortalsPoh(String content)
-	{
-	}
-
 }

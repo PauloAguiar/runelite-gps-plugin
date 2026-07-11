@@ -597,12 +597,6 @@ public class ShortestPathPlugin extends Plugin
 		restartPathfinding(start, ends, true);
 	}
 
-	/** The finish distance: within this many path-tiles of the end counts as arrived. */
-	public int getReachedDistance()
-	{
-		return config.reachedDistance();
-	}
-
 	/** The recalculate distance (outer off-route band), or -1 when recalculation is disabled. */
 	public int getRecalculateDistance()
 	{
@@ -2187,11 +2181,6 @@ public class ShortestPathPlugin extends Plugin
 
 	// --- Alternative-routes feature (driven by ShortestPathPanel) ---
 
-	public RouteOption getSelectedRoute()
-	{
-		return selectedRoute;
-	}
-
 	/**
 	 * The route currently being displayed: the explicitly selected one, or — when the alternatives
 	 * were computed for the pathfinder's current destination — the first (best) route of the list
@@ -2270,11 +2259,6 @@ public class ShortestPathPlugin extends Plugin
 			return List.of();
 		}
 		return current.getPath();
-	}
-
-	public List<RouteOption> getAlternativeRoutes()
-	{
-		return alternativeRoutes;
 	}
 
 	public Set<TeleportMethod> getUserExclusions()

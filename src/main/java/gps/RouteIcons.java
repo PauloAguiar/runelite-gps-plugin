@@ -40,11 +40,8 @@ final class RouteIcons
 
 	// Show / hide a route on the map (map pin). Active = currently shown.
 	static final ImageIcon SHOW = new ImageIcon(pin(GREY));
-	static final ImageIcon SHOW_HOVER = new ImageIcon(pin(LIGHT));
 	static final ImageIcon SHOW_ACTIVE = new ImageIcon(pin(ORANGE));
-	static final ImageIcon SHOW_ACTIVE_HOVER = new ImageIcon(pin(ORANGE_LIGHT));
 	// Exclude a method from the next search (no-entry).
-	static final ImageIcon EXCLUDE = new ImageIcon(ban(GREY));
 	static final ImageIcon EXCLUDE_HOVER = new ImageIcon(ban(RED));
 	// Resting state on route cards: present but nearly invisible, coloured up while the card is
 	// hovered — toggling visibility instead shifted the row height.
@@ -52,14 +49,9 @@ final class RouteIcons
 	// Marks the route card's ETA.
 	static final ImageIcon CLOCK = new ImageIcon(clock(GREY));
 	// Re-include an excluded method (plus).
-	static final ImageIcon INCLUDE = new ImageIcon(plus(GREY));
-	static final ImageIcon INCLUDE_HOVER = new ImageIcon(plus(GREEN));
 	// Recompute routes (circular refresh arrow).
-	static final ImageIcon REFRESH = new ImageIcon(refresh(GREY));
-	static final ImageIcon REFRESH_HOVER = new ImageIcon(refresh(LIGHT));
 	// Clear all exclusions (trash can).
 	static final ImageIcon CLEAR = new ImageIcon(trash(GREY));
-	static final ImageIcon CLEAR_HOVER = new ImageIcon(trash(RED));
 	// Catalog toggles: included (check), excluded (cross), partially-included category (dash).
 	static final ImageIcon CHECK = new ImageIcon(check(GREEN));
 	static final ImageIcon CHECK_HOVER = new ImageIcon(check(GREEN_LIGHT));
@@ -76,16 +68,13 @@ final class RouteIcons
 	static final ImageIcon CTRL_CLEAR = new ImageIcon(cross(RED));
 	static final ImageIcon CTRL_CLEAR_HOVER = new ImageIcon(cross(RED_LIGHT));
 	static final ImageIcon CHEVRON_RIGHT = new ImageIcon(chevron(GREY, false));
-	static final ImageIcon CHEVRON_RIGHT_HOVER = new ImageIcon(chevron(LIGHT, false));
 	static final ImageIcon CHEVRON_DOWN = new ImageIcon(chevron(GREY, true));
-	static final ImageIcon CHEVRON_DOWN_HOVER = new ImageIcon(chevron(LIGHT, true));
 	// Method the player can't use right now (missing item/level/quest/unlock).
 	static final ImageIcon LOCKED = new ImageIcon(lock(ORANGE));
 	// Method whose required item is owned but sitting in the bank (route through a bank to grab it).
 	static final ImageIcon IN_BANK = new ImageIcon(coins(GOLD));
 	// Capture a debug snapshot of the current routes (camera).
 	static final ImageIcon DEBUG = new ImageIcon(camera(GREY));
-	static final ImageIcon DEBUG_HOVER = new ImageIcon(camera(LIGHT));
 	// Filter the catalog to only the currently-disabled methods (funnel). Orange = active.
 	static final ImageIcon FILTER = new ImageIcon(funnel(GREY));
 	static final ImageIcon FILTER_HOVER = new ImageIcon(funnel(LIGHT));
@@ -137,7 +126,6 @@ final class RouteIcons
 	private static final ImageIcon DEST_PIN = new ImageIcon(pin(GPS_BLUE));
 
 	// Route-card marker: the GPS pin the route number sits beside.
-	static final ImageIcon ROUTE_PIN = new ImageIcon(pin(GPS_BLUE));
 	// Panel message-banner glyphs: a warning triangle, an info circle, and a busy spinner.
 	static final ImageIcon BANNER_WARNING = new ImageIcon(warningTriangle(ORANGE));
 	static final ImageIcon BANNER_INFO = new ImageIcon(infoCircle(GPS_BLUE));

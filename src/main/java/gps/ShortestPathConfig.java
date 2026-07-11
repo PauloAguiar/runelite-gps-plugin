@@ -1384,46 +1384,4 @@ public interface ShortestPathConfig extends Config
 		return "Destination could not be reached";
 	}
 
-	@ConfigItem(
-		keyName = "builtTeleportationBoxes",
-		name = "",
-		description = "ID=X Y Z;ID=X Y Z;ID=X Y Z",
-		hidden = true
-	)
-	@SuppressWarnings("unused")
-	default String builtTeleportationBoxes()
-	{
-		return "";
-	}
-
-	@ConfigItem(
-		keyName = "builtTeleportationBoxes",
-		name = "",
-		description = "",
-		hidden = true
-	)
-	@SuppressWarnings("unused")
-	void setBuiltTeleportationBoxes(String content);
-
-	@ConfigItem(
-		keyName = "builtTeleportationPortalsPoh",
-		name = "",
-		description = "ID=X Y Z;ID=X Y Z;ID=X Y Z",
-		hidden = true
-	)
-	@SuppressWarnings("unused")
-	default String builtTeleportationPortalsPoh()
-	{
-		return "";
-	}
-
-	@ConfigItem(
-		keyName = "builtTeleportationPortalsPoh",
-		name = "",
-		description = "",
-		hidden = true
-	)
-	@SuppressWarnings("unused")
-	void setBuiltTeleportationPortalsPoh(String content);
-
 }

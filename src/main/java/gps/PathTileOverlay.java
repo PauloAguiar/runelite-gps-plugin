@@ -427,35 +427,6 @@ public class PathTileOverlay extends Overlay
 		}
 	}
 
-	private Point tileCenter(int b)
-	{
-		if (b == WorldPointUtil.UNDEFINED || client == null)
-		{
-			return null;
-		}
-
-		if (WorldPointUtil.unpackWorldPlane(b) != client.getTopLevelWorldView().getPlane())
-		{
-			return null;
-		}
-
-		LocalPoint lp = WorldPointUtil.toLocalPoint(client, b);
-		if (lp == null)
-		{
-			return null;
-		}
-
-		Polygon poly = Perspective.getCanvasTilePoly(client, lp);
-		if (poly == null)
-		{
-			return null;
-		}
-
-		int cx = poly.getBounds().x + poly.getBounds().width / 2;
-		int cy = poly.getBounds().y + poly.getBounds().height / 2;
-		return new Point(cx, cy);
-	}
-
 	private static boolean directionChanges(int previous, int current, int next)
 	{
 		int dx1 = WorldPointUtil.unpackWorldX(current) - WorldPointUtil.unpackWorldX(previous);

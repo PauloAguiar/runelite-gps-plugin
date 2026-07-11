@@ -119,14 +119,6 @@ public final class RouteOption
 		return !bankMethods.isEmpty();
 	}
 
-	/**
-	 * The method the route leans on first; the one the panel offers to exclude. Null for walk-only.
-	 */
-	public TeleportMethod primaryMethod()
-	{
-		return methods.isEmpty() ? null : methods.get(0);
-	}
-
 	public boolean isWalkOnly()
 	{
 		return methods.isEmpty();

@@ -277,17 +277,6 @@ final class RouteDirections
 	}
 
 	/**
-	 * The hint text for a climb transport (stairs, ladders, trapdoor climbs): its menu text with the
-	 * trailing object id stripped, e.g. "Climb-up Staircase 16671" -> "Climb-up Staircase". Null for
-	 * transports that aren't climbs.
-	 */
-	static String climbText(Transport transport)
-	{
-		String text = objectText(transport);
-		return text != null && text.startsWith("Climb") ? text : null;
-	}
-
-	/**
 	 * The menu-style instruction carried by an object transport's data ("Climb-up Staircase",
 	 * "Walk-across Log balance", "Open Door"), with the trailing object id stripped. Null when
 	 * the transport carries no object info.
