@@ -138,21 +138,17 @@ public class ShortestPathPlugin extends Plugin
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
 	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
 	private final Object pathfinderMutex = new Object();
-	boolean drawCollisionMap;
 	boolean drawMap;
 	boolean drawMinimap;
 	boolean drawTiles;
-	boolean drawTransports;
 	boolean drawRecalculationRanges;
 	boolean showTransportInfo;
 	boolean showBankPickupInfo;
-	Color colourCollisionMap;
 	Color colourPath;
 	Color colourPathBlocked;
 	Color colourPathCalculating;
 	Color colourPathUnreachable;
 	Color colourText;
-	Color colourTransports;
 	Color colourTeleportPulse;
 	Color colourOverlayAccent;
 	boolean showTeleportPulse;
@@ -189,8 +185,6 @@ public class ShortestPathPlugin extends Plugin
 	private PathMapOverlay pathMapOverlay;
 	@Inject
 	private PathMapTooltipOverlay pathMapTooltipOverlay;
-	@Inject
-	private DebugOverlayPanel debugOverlayPanel;
 	@Inject
 	private RouteDirectionsOverlay routeDirectionsOverlay;
 	@Inject
@@ -488,10 +482,6 @@ public class ShortestPathPlugin extends Plugin
 		overlayManager.add(pathMapTooltipOverlay);
 		overlayManager.add(routeDirectionsOverlay);
 
-		if (config.drawDebugPanel())
-		{
-			overlayManager.add(debugOverlayPanel);
-		}
 
 		loadExclusions();
 		searchHistory = SearchHistory.deserialize(
@@ -541,7 +531,6 @@ public class ShortestPathPlugin extends Plugin
 		overlayManager.remove(pathMapOverlay);
 		overlayManager.remove(pathMapTooltipOverlay);
 		overlayManager.remove(routeDirectionsOverlay);
-		overlayManager.remove(debugOverlayPanel);
 
 		if (navButton != null)
 		{
@@ -951,18 +940,6 @@ public class ShortestPathPlugin extends Plugin
 
 		cacheConfigValues();
 
-		if ("drawDebugPanel".equals(event.getKey()))
-		{
-			if (config.drawDebugPanel())
-			{
-				overlayManager.add(debugOverlayPanel);
-			}
-			else
-			{
-				overlayManager.remove(debugOverlayPanel);
-			}
-			return;
-		}
 
 		// Transport option changed; rerun pathfinding
 		if ("defaultRouteCount".equals(event.getKey()))
@@ -2006,22 +1983,18 @@ public class ShortestPathPlugin extends Plugin
 
 	private void cacheConfigValues()
 	{
-		drawCollisionMap = override("drawCollisionMap", config.drawCollisionMap());
 		drawMap = override("drawMap", config.drawMap());
 		drawMinimap = override("drawMinimap", config.drawMinimap());
 		drawTiles = override("drawTiles", config.drawTiles());
-		drawTransports = override("drawTransports", config.drawTransports());
 		drawRecalculationRanges = override("drawRecalculationRanges", config.drawRecalculationRanges());
 		showTransportInfo = override("showTransportInfo", config.showTransportInfo());
 		showBankPickupInfo = override("showBankPickupInfo", config.showBankPickupInfo());
 
-		colourCollisionMap = override("colourCollisionMap", config.colourCollisionMap());
 		colourPath = override("colourPath", config.colourPath());
 		colourPathBlocked = override("colourPathBlocked", config.colourPathBlocked());
 		colourPathCalculating = override("colourPathCalculating", config.colourPathCalculating());
 		colourPathUnreachable = override("colourPathUnreachable", config.colourPathUnreachable());
 		colourText = override("colourText", config.colourText());
-		colourTransports = override("colourTransports", config.colourTransports());
 		colourTeleportPulse = override("colourTeleportPulse", config.colourTeleportPulse());
 		colourOverlayAccent = override("colourOverlayAccent", config.colourOverlayAccent());
 

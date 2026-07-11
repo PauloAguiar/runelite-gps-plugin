@@ -23,14 +23,11 @@ import net.runelite.api.Client;
 import net.runelite.api.Perspective;
 import net.runelite.api.Player;
 import net.runelite.api.Point;
-import net.runelite.api.Tile;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
-import gps.pathfinder.CollisionMap;
 import gps.pathfinder.PathStep;
-import gps.pathfinder.TransportAvailability;
 import gps.transport.BankPickupRequirements;
 import gps.transport.Transport;
 
@@ -63,131 +60,11 @@ public class PathTileOverlay extends Overlay
 		setLayer(OverlayLayer.ABOVE_SCENE);
 	}
 
-	private void renderTransports(Graphics2D graphics)
-	{
-		for (int a : plugin.getTransports().keys())
-		{
-			if (a == Transport.UNDEFINED_ORIGIN)
-			{
-				continue; // skip teleports
-			}
-
-			boolean drawStart = false;
-
-			Point ca = tileCenter(a);
-
-			if (ca == null)
-			{
-				continue;
-			}
-
-			StringBuilder s = new StringBuilder();
-			for (Transport b : plugin.getTransports().getOrDefault(a, TransportAvailability.EMPTY_TRANSPORTS))
-			{
-				if (b == null || (b.getType() != null && b.getType().isTeleport()))
-				{
-					continue; // skip teleports
-				}
-				PrimitiveIntList destinations = WorldPointUtil.toLocalInstance(client, b.getDestination());
-				for (int i = 0; i < destinations.size(); i++)
-				{
-					int destination = destinations.get(i);
-					if (destination == Transport.UNDEFINED_DESTINATION)
-					{
-						continue;
-					}
-					Point cb = tileCenter(destination);
-					if (cb != null)
-					{
-						graphics.drawLine(ca.getX(), ca.getY(), cb.getX(), cb.getY());
-						drawStart = true;
-					}
-					if (WorldPointUtil.unpackWorldPlane(destination) > WorldPointUtil.unpackWorldPlane(a))
-					{
-						s.append("+");
-					}
-					else if (WorldPointUtil.unpackWorldPlane(destination) < WorldPointUtil.unpackWorldPlane(a))
-					{
-						s.append("-");
-					}
-					else
-					{
-						s.append("=");
-					}
-				}
-			}
-
-			if (drawStart)
-			{
-				drawTile(graphics, a, plugin.colourTransports, -1, true);
-			}
-
-			graphics.setColor(Color.WHITE);
-			graphics.drawString(s.toString(), ca.getX(), ca.getY());
-		}
-	}
-
-	private void renderCollisionMap(Graphics2D graphics)
-	{
-		CollisionMap map = plugin.getMap();
-		for (Tile[] row : client.getTopLevelWorldView().getScene().getTiles()[client.getTopLevelWorldView().getPlane()])
-		{
-			for (Tile tile : row)
-			{
-				if (tile == null)
-				{
-					continue;
-				}
-
-				Polygon tilePolygon = Perspective.getCanvasTilePoly(client, tile.getLocalLocation());
-
-				if (tilePolygon == null)
-				{
-					continue;
-				}
-
-				int location = WorldPointUtil.fromLocalInstance(client, tile.getLocalLocation());
-				int x = WorldPointUtil.unpackWorldX(location);
-				int y = WorldPointUtil.unpackWorldY(location);
-				int z = WorldPointUtil.unpackWorldPlane(location);
-
-				String s = (!map.n(x, y, z) ? "n" : "") +
-					(!map.s(x, y, z) ? "s" : "") +
-					(!map.e(x, y, z) ? "e" : "") +
-					(!map.w(x, y, z) ? "w" : "");
-
-				if (map.isBlocked(x, y, z))
-				{
-					graphics.setColor(plugin.colourCollisionMap);
-					graphics.fill(tilePolygon);
-				}
-				if (!s.isEmpty() && !s.equals("nsew"))
-				{
-					graphics.setColor(Color.WHITE);
-					int stringX = (int) (tilePolygon.getBounds().getCenterX()
-						- graphics.getFontMetrics().getStringBounds(s, graphics).getWidth() / 2);
-					int stringY = (int) tilePolygon.getBounds().getCenterY();
-					graphics.drawString(s, stringX, stringY);
-				}
-			}
-		}
-	}
-
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
 		playerTileLabelOffset = 0;
 		hintedDoorTiles.clear();
-
-		if (plugin.drawTransports)
-		{
-			renderTransports(graphics);
-		}
-
-		if (plugin.drawCollisionMap)
-		{
-			renderCollisionMap(graphics);
-		}
 
 		if (plugin.drawRecalculationRanges)
 		{

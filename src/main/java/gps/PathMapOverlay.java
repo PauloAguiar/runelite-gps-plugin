@@ -15,10 +15,7 @@ import net.runelite.api.widgets.Widget;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
-import gps.pathfinder.CollisionMap;
 import gps.pathfinder.PathStep;
-import gps.pathfinder.TransportAvailability;
-import gps.transport.Transport;
 
 public class PathMapOverlay extends Overlay
 {
@@ -53,63 +50,7 @@ public class PathMapOverlay extends Overlay
 		Area worldMapClipArea = getWorldMapClipArea(worldMapRectangle);
 		graphics.setClip(worldMapClipArea);
 
-		if (plugin.drawCollisionMap)
-		{
-			graphics.setColor(plugin.colourCollisionMap);
-			int mapWorldPoint = plugin.calculateMapPoint(worldMapRectangle.x, worldMapRectangle.y);
-			int extentX = WorldPointUtil.unpackWorldX(mapWorldPoint);
-			int extentY = WorldPointUtil.unpackWorldY(mapWorldPoint);
-			int extentWidth = getWorldMapExtentWidth(worldMapRectangle);
-			int extentHeight = getWorldMapExtentHeight(worldMapRectangle);
-			final CollisionMap map = plugin.getMap();
-			final int z = client.getTopLevelWorldView().getPlane();
-			for (int x = extentX; x < (extentX + extentWidth + 1); x++)
-			{
-				for (int y = extentY - extentHeight; y < (extentY + 1); y++)
-				{
-					if (map.isBlocked(x, y, z))
-					{
-						drawOnMap(graphics, WorldPointUtil.packWorldPoint(x, y, z), false, null);
-					}
-				}
-			}
-		}
 
-		if (plugin.drawTransports)
-		{
-			graphics.setColor(Color.WHITE);
-			for (int a : plugin.getTransports().keys())
-			{
-				if (a == Transport.UNDEFINED_ORIGIN)
-				{
-					continue; // skip teleports
-				}
-
-				int mapAX = plugin.mapWorldPointToGraphicsPointX(a);
-				int mapAY = plugin.mapWorldPointToGraphicsPointY(a);
-				if (!worldMapClipArea.contains(mapAX, mapAY))
-				{
-					continue;
-				}
-
-				for (Transport b : plugin.getTransports().getOrDefault(a, TransportAvailability.EMPTY_TRANSPORTS))
-				{
-					if (b == null || (b.getType() != null && b.getType().isTeleport()))
-					{
-						continue; // skip teleports
-					}
-
-					int mapBX = plugin.mapWorldPointToGraphicsPointX(b.getDestination());
-					int mapBY = plugin.mapWorldPointToGraphicsPointY(b.getDestination());
-					if (!worldMapClipArea.contains(mapBX, mapBY))
-					{
-						continue;
-					}
-
-					graphics.drawLine(mapAX, mapAY, mapBX, mapBY);
-				}
-			}
-		}
 
 		if (plugin.getPathfinder() != null)
 		{

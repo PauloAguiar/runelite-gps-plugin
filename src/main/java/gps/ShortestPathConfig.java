@@ -1288,31 +1288,7 @@ public interface ShortestPathConfig extends Config
 		return new Color(200, 40, 240);
 	}
 
-	@Alpha
-	@ConfigItem(
-		keyName = "colourTransports",
-		name = "Transports",
-		description = "Colour of the transport tiles",
-		position = 76,
-		section = sectionColours
-	)
-	default Color colourTransports()
-	{
-		return new Color(0, 255, 0, 128);
-	}
 
-	@Alpha
-	@ConfigItem(
-		keyName = "colourCollisionMap",
-		name = "Collision map",
-		description = "Colour of the collision map tiles",
-		position = 77,
-		section = sectionColours
-	)
-	default Color colourCollisionMap()
-	{
-		return new Color(0, 128, 255, 128);
-	}
 
 	@Alpha
 	@ConfigItem(
@@ -1391,41 +1367,8 @@ public interface ShortestPathConfig extends Config
 	)
 	String sectionDebug = "sectionDebug";
 
-	@ConfigItem(
-		keyName = "drawTransports",
-		name = "Draw transports",
-		description = "Whether transports should be drawn",
-		position = 84,
-		section = sectionDebug
-	)
-	default boolean drawTransports()
-	{
-		return false;
-	}
 
-	@ConfigItem(
-		keyName = "drawCollisionMap",
-		name = "Draw collision map",
-		description = "Whether the collision map should be drawn",
-		position = 85,
-		section = sectionDebug
-	)
-	default boolean drawCollisionMap()
-	{
-		return false;
-	}
 
-	@ConfigItem(
-		keyName = "drawDebugPanel",
-		name = "Show debug panel",
-		description = "Toggles displaying the pathfinding debug stats panel",
-		position = 86,
-		section = sectionDebug
-	)
-	default boolean drawDebugPanel()
-	{
-		return false;
-	}
 
 	@ConfigItem(
 		keyName = "drawRecalculationRanges",
