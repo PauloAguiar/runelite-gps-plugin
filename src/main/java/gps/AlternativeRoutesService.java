@@ -231,8 +231,12 @@ public class AlternativeRoutesService
 		// flooding the map), and its path is the last-resort route appended when the chain doesn't
 		// derive it. Polled non-blockingly so route 1's latency is unchanged. Skipped for
 		// primary-only generations (limit 1, panel hidden): one search, a cap can't pay for itself.
+		// Live ceiling for the walk search: unbounded until the chain finds its (cheapest) route, then
+		// dropped to that route's cost band so the walk stops flooding the map when walking is
+		// uncompetitive — which is most queries, since a teleport route usually wins.
+		final AtomicInteger walkCeiling = new AtomicInteger(Integer.MAX_VALUE);
 		final Future<WalkResult> walkFuture = limit > 1
-			? seedExecutor.submit(() -> runWalkSearch(gen, start, ends, userExclusions, catalog, field, timer))
+			? seedExecutor.submit(() -> runWalkSearch(gen, start, ends, userExclusions, catalog, field, timer, walkCeiling))
 			: null;
 
 		final List<RouteOption> routes = new ArrayList<>();
@@ -334,6 +338,14 @@ public class AlternativeRoutesService
 			}
 			routes.add(new RouteOption(path, methods, scan.methodEdges, scan.methodDurations,
 				result.getTotalCost(), scan.rawCost, reached, scan.bankGated, scan.walkBefore, scan.trailingWalk));
+			// The chain's first route is the cheapest; drop the concurrent walk search's ceiling to its
+			// cost band. A walk costlier than best*multiple is never shown anyway, so a walk to an
+			// unreachable/far target now stops instead of flooding the map. Only when route 0 actually
+			// reached — an unreachable-target run keeps the walk uncapped so it can be the last resort.
+			if (routes.size() == 1 && reached && costMultiple > 0)
+			{
+				walkCeiling.set((int) Math.min(Integer.MAX_VALUE, (long) result.getTotalCost() * costMultiple));
+			}
 			// Stream the route we just found so the panel shows it immediately. Round-trip mode
 			// streams only the merged results — one-way costs would reorder once returns are added.
 			if (!roundTrip)
@@ -821,7 +833,7 @@ public class AlternativeRoutesService
 	 * searches, on its own config copy.
 	 */
 	private WalkResult runWalkSearch(int gen, int start, Set<Integer> ends, Set<TeleportMethod> userExclusions,
-		List<TeleportMethod> catalog, DistanceField field, GenTimer timer)
+		List<TeleportMethod> catalog, DistanceField field, GenTimer timer, AtomicInteger walkCeiling)
 	{
 		if (gen != generation.get())
 		{
@@ -837,6 +849,7 @@ public class AlternativeRoutesService
 		// the walk search (the biggest disc of the generation) collapses to a corridor.
 		SearchHeuristic heuristic = SearchHeuristic.buildWithField(config, field);
 		Pathfinder pathfinder = new Pathfinder(config, start, ends, null, Integer.MAX_VALUE, heuristic);
+		pathfinder.setDynamicCostCap(walkCeiling::get);
 		pathfinder.run();
 		long searchEnd = System.nanoTime();
 		synchronized (timer)

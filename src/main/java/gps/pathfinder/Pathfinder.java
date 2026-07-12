@@ -77,6 +77,10 @@ public class Pathfinder implements Runnable
 	// bound every search at the walk-only cost (routes costlier than walking are never shown), which
 	// keeps a useless seed teleport from flooding the map. MAX_VALUE = uncapped.
 	private final int costCap;
+	// Optional live ceiling polled on every pop, lowered mid-search from another thread. The walk-only
+	// search uses it: it starts unbounded but drops to the best route's cost as soon as the chain finds
+	// one, so a walk to an unreachable/far target stops flooding the map instead of exploring it whole.
+	private java.util.function.IntSupplier dynamicCostCap;
 	// Closest-tile tracking is O(targets) per node, so during the search it only runs on every
 	// UNREACHABLE_TRACK_INTERVAL-th tile (enough for the cutoff extension and the progressively
 	// rendered partial path); the exact best tile is recovered in one post-pass when the search
@@ -176,6 +180,15 @@ public class Pathfinder implements Runnable
 	public void cancel()
 	{
 		cancelled = true;
+	}
+
+	/**
+	 * Installs a live cost ceiling polled on every pop (in addition to the fixed {@code costCap}).
+	 * Set before {@link #run()}; the supplier may be lowered from another thread during the search.
+	 */
+	public void setDynamicCostCap(java.util.function.IntSupplier dynamicCostCap)
+	{
+		this.dynamicCostCap = dynamicCostCap;
 	}
 
 	public PathfinderStats getStats()
@@ -439,8 +452,18 @@ public class Pathfinder implements Runnable
 			}
 			// Cost cap: a node above the ceiling can't be on any path worth returning (edges are
 			// non-negative), so don't expand it. With the cap at the walk-only cost this bounds the
-			// whole search to the area walking could cover anyway.
-			if (graph.cost(node) > costCap)
+			// whole search to the area walking could cover anyway. The optional dynamic ceiling can
+			// tighten it mid-search (the walk search drops it once the chain finds a cheaper route).
+			int effectiveCap = costCap;
+			if (dynamicCostCap != null)
+			{
+				int dynamic = dynamicCostCap.getAsInt();
+				if (dynamic < effectiveCap)
+				{
+					effectiveCap = dynamic;
+				}
+			}
+			if (graph.cost(node) > effectiveCap)
 			{
 				continue;
 			}
