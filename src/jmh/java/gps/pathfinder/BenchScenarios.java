@@ -1,18 +1,17 @@
 package gps.pathfinder;
 
+import java.lang.reflect.Proxy;
 import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
-import net.runelite.api.Skill;
-import static org.mockito.ArgumentMatchers.any;
 import org.mockito.Mockito;
 import gps.ShortestPathConfig;
 import gps.WorldPointUtil;
 
 /**
- * Shared setup for the search-pipeline benchmarks (heuristic build, search). Builds an
- * everything-mode planning config off the real collision map + transport data, and resolves a few
- * representative start/target queries of increasing difficulty.
+ * Shared setup for the search-pipeline benchmarks (heuristic build, search, availability, generate).
+ * Builds an everything-mode planning config off the real collision map + transport data, and resolves
+ * a few representative start/target queries of increasing difficulty.
  */
 final class BenchScenarios
 {
@@ -36,16 +35,68 @@ final class BenchScenarios
 
 	static PathfinderConfig everythingConfig()
 	{
-		Client client = Mockito.mock(Client.class);
-		ShortestPathConfig cfg = Mockito.mock(ShortestPathConfig.class);
+		// ShortestPathConfig is read only a handful of times per refresh, so a mock is fine here.
+		ShortestPathConfig cfg = Mockito.mock(ShortestPathConfig.class, Mockito.withSettings().stubOnly());
 		Mockito.when(cfg.calculationCutoff()).thenReturn(120);
-		Mockito.when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
-		Mockito.when(client.getClientThread()).thenReturn(Thread.currentThread());
-		Mockito.when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
-
-		PathfinderConfig config = new TestPathfinderConfig(client, cfg).copyForPlanning();
+		PathfinderConfig config = new TestPathfinderConfig(realisticClient(), cfg).copyForPlanning();
 		config.refresh();
 		return config;
+	}
+
+	/**
+	 * A real (non-Mockito) Client. refresh() makes thousands of getVarbitValue calls, and even a
+	 * stubOnly Mockito mock allocates a transient invocation on every one — that alone made refresh
+	 * measure ~15x slower and ~70x heavier than it is with a real client. A reflective Proxy returning
+	 * game-state defaults is a far more representative (and still conservative) stand-in.
+	 */
+	private static Client realisticClient()
+	{
+		final Thread clientThread = Thread.currentThread();
+		return (Client) Proxy.newProxyInstance(
+			Client.class.getClassLoader(), new Class<?>[]{Client.class},
+			(proxy, method, args) ->
+			{
+				switch (method.getName())
+				{
+					case "getGameState":
+						return GameState.LOGGED_IN;
+					case "getClientThread":
+						return clientThread;
+					case "getBoostedSkillLevel":
+						return 99;
+					default:
+						return defaultValue(method.getReturnType());
+				}
+			});
+	}
+
+	private static Object defaultValue(Class<?> type)
+	{
+		if (type == int.class || type == short.class || type == byte.class)
+		{
+			return 0;
+		}
+		if (type == long.class)
+		{
+			return 0L;
+		}
+		if (type == boolean.class)
+		{
+			return false;
+		}
+		if (type == double.class)
+		{
+			return 0.0;
+		}
+		if (type == float.class)
+		{
+			return 0f;
+		}
+		if (type == char.class)
+		{
+			return (char) 0;
+		}
+		return null;
 	}
 
 	static int start(String scenario)
