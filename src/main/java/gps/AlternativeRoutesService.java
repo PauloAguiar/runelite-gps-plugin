@@ -221,7 +221,9 @@ public class AlternativeRoutesService
 		// generation shares (chain, walk, seeds). Compact target sets only; a map-wide nearest-X
 		// set would flood everything for searches that are already cheap.
 		long fieldStart = System.nanoTime();
-		final DistanceField field = DistanceField.buildIfCompact(planningConfig, ends, costMultiple);
+		// The horizon matches the searches' sanity ceiling (2x the display band), so the fill region
+		// past the band edge still gets exact heuristic guidance.
+		final DistanceField field = DistanceField.buildIfCompact(planningConfig, ends, 2 * costMultiple);
 		timer.fieldNanos = System.nanoTime() - fieldStart;
 
 		// Walk-only search, run concurrently on the seed pool (its own config copy — the chain
@@ -268,9 +270,13 @@ public class AlternativeRoutesService
 
 			long searchStart = System.nanoTime();
 			int walkCap = capOf(walkFuture);
-			int chainCap = cappedByBestCost(walkCap, routes, costMultiple);
-			// The cost cap is the binding one (tighter than the walk ceiling) — a search failing now
-			// was held back by the cost band, not by walking being cheaper or methods running out.
+			// Searches run under the hard sanity ceiling (twice the display band): the band itself is
+			// no longer a hard cut — past it the page keeps FILLING while each next route stays within
+			// a modest gap of the acceptance region (see the accept check below), so the first page
+			// never stops mid-cluster (e.g. 105 shown, 107 hidden) the way a bare best*multiple cut did.
+			int chainCap = cappedByBestCost(walkCap, routes, 2 * costMultiple);
+			// The cost ceiling is the binding one (tighter than the walk ceiling) — a search failing now
+			// was held back by cost, not by walking being cheaper or methods running out.
 			boolean costLimited = chainCap < walkCap;
 			// Heuristic rebuilt per iteration: the exclusion set changes the usable teleports and
 			// with them the field floor — excluding the good teleports raises it, so the heuristic
@@ -326,6 +332,25 @@ public class AlternativeRoutesService
 				break;
 			}
 
+			// Hybrid band edge: routes inside the display band are always accepted; past it the page
+			// keeps filling while the next cost stays within a modest gap of max(band, costliest
+			// accepted) — so a cost cluster straddling the band edge is shown whole, but a genuine
+			// cliff (the next route being far pricier than everything shown) still ends the page.
+			final int totalCost = result.getTotalCost();
+			if (costMultiple > 0 && !routes.isEmpty())
+			{
+				long band = (long) Math.max(routes.get(0).getTotalCost(), MIN_BEST_FOR_BAND) * costMultiple;
+				if (totalCost > band
+					&& (routes.size() >= limit
+					|| totalCost > pageFillCeiling(routes.get(0).getTotalCost(), maxAcceptedCost(routes), costMultiple)))
+				{
+					// A route exists beyond what this page shows — "+" (a wider band) can reveal it.
+					cappedByCost = true;
+					chainExhausted = true;
+					break;
+				}
+			}
+
 			MethodScan scan = scanMethods(planningConfig, path);
 			List<TeleportMethod> methods = scan.methods;
 
@@ -337,14 +362,15 @@ public class AlternativeRoutesService
 				break;
 			}
 			routes.add(new RouteOption(path, methods, scan.methodEdges, scan.methodDurations,
-				result.getTotalCost(), scan.rawCost, reached, scan.bankGated, scan.walkBefore, scan.trailingWalk));
-			// The chain's first route is the cheapest; drop the concurrent walk search's ceiling to its
-			// cost band. A walk costlier than best*multiple is never shown anyway, so a walk to an
-			// unreachable/far target now stops instead of flooding the map. Only when route 0 actually
-			// reached — an unreachable-target run keeps the walk uncapped so it can be the last resort.
+				totalCost, scan.rawCost, reached, scan.bankGated, scan.walkBefore, scan.trailingWalk));
+			// The chain's first route is the cheapest; drop the concurrent walk search's ceiling to the
+			// search sanity ceiling (twice the display band). A walk costlier than that can never be
+			// shown, so a walk to an unreachable/far target stops instead of flooding the map. Only when
+			// route 0 actually reached — an unreachable-target run keeps the walk uncapped so it can be
+			// the last resort.
 			if (routes.size() == 1 && reached && costMultiple > 0)
 			{
-				walkCeiling.set((int) Math.min(Integer.MAX_VALUE, (long) result.getTotalCost() * costMultiple));
+				walkCeiling.set((int) Math.min(Integer.MAX_VALUE, (long) totalCost * 2 * costMultiple));
 			}
 			// Stream the route we just found so the panel shows it immediately. Round-trip mode
 			// streams only the merged results — one-way costs would reorder once returns are added.
@@ -373,9 +399,9 @@ public class AlternativeRoutesService
 		boolean hasWalkOnly = routes.stream().anyMatch(RouteOption::isWalkOnly);
 		if (!hasWalkOnly && !routes.isEmpty())
 		{
-			seedTeleportRoutes(gen, start, ends, userExclusions, mode, limit,
+			seedTeleportRoutes(gen, start, ends, userExclusions, mode, limit, costMultiple,
 				seedCandidates, routes, seenSignatures, catalog, unavailable, roundTrip ? null : listener,
-				bestRemaining, cappedByBestCost(capOf(walkFuture), routes, costMultiple), field, timer);
+				bestRemaining, cappedByBestCost(capOf(walkFuture), routes, 2 * costMultiple), field, timer);
 		}
 		// More routes are worth polling for when the count budget was the binding limit (the chain kept
 		// finding distinct routes and simply ran out of slots), or the cost cap held routes back — the
@@ -583,7 +609,7 @@ public class AlternativeRoutesService
 	 * signature, walk-only results, or endpoints meaningfully further than the best route are skipped.
 	 */
 	private void seedTeleportRoutes(int gen, int start, Set<Integer> ends, Set<TeleportMethod> userExclusions,
-		AlternativeRoutesMode mode, int limit, List<Transport> seedCandidates, List<RouteOption> routes,
+		AlternativeRoutesMode mode, int limit, int costMultiple, List<Transport> seedCandidates, List<RouteOption> routes,
 		Set<String> seenSignatures, List<TeleportMethod> catalog, Map<TeleportMethod, MethodAvailability> unavailable,
 		ResultListener listener, int bestRemaining, int costCap, DistanceField field, GenTimer timer)
 	{
@@ -638,6 +664,14 @@ public class AlternativeRoutesService
 					continue;
 				}
 				if (seedResult == null || !seenSignatures.add(signature(seedResult.scan.methods)))
+				{
+					continue;
+				}
+				// Same hybrid acceptance as the chain: a seed beyond the page-fill ceiling isn't shown
+				// (skip, not stop — seeds complete in parallel, a later one can be cheaper).
+				if (costMultiple > 0 && !routes.isEmpty()
+					&& seedResult.totalCost > (long) Math.max(routes.get(0).getTotalCost(), MIN_BEST_FOR_BAND) * costMultiple
+					&& seedResult.totalCost > pageFillCeiling(routes.get(0).getTotalCost(), maxAcceptedCost(routes), costMultiple))
 				{
 					continue;
 				}
@@ -971,6 +1005,10 @@ public class AlternativeRoutesService
 	// whistle route) behind "more". The band prices off max(best, this), so the default band is
 	// never tighter than ~100 units (~30s of travel) and still grows with every "more" press.
 	private static final int MIN_BEST_FOR_BAND = 35;
+	// Page filling past the band accepts the next route while it is within this gap of the
+	// acceptance region (absolute floor; grows to ref/8 for pricier regions) — wide enough to keep a
+	// dense cluster together, small enough that a genuine cost cliff still ends the page.
+	private static final int PAGE_FILL_MIN_GAP = 10;
 
 	private static int cappedByBestCost(int cap, List<RouteOption> routes, int multiple)
 	{
@@ -980,6 +1018,31 @@ public class AlternativeRoutesService
 		}
 		long byBest = (long) Math.max(routes.get(0).getTotalCost(), MIN_BEST_FOR_BAND) * multiple;
 		return byBest < cap ? (int) byBest : cap;
+	}
+
+	/**
+	 * The page-fill acceptance ceiling: past the display band a route is still shown while its cost
+	 * stays within a modest gap of {@code max(band, costliest accepted route)}. Referencing the band
+	 * (not just the last route) matters when a cluster STARTS just past the band edge — e.g. routes
+	 * at 32/86 with a 105 band and the next cluster at 106: measured from 86 the gap is 20 (a stop),
+	 * measured from the band it is 1 (the cluster the band edge landed in). The ceiling ratchets as
+	 * fill routes are accepted, so it follows a dense cluster and stops at the first real cliff.
+	 */
+	static long pageFillCeiling(int bestCost, int maxAcceptedCost, int multiple)
+	{
+		long ref = Math.max((long) Math.max(bestCost, MIN_BEST_FOR_BAND) * multiple, maxAcceptedCost);
+		return ref + Math.max(PAGE_FILL_MIN_GAP, ref / 8);
+	}
+
+	/** The costliest accepted route's cost (walk-only entries included — they bound the page too). */
+	private static int maxAcceptedCost(List<RouteOption> routes)
+	{
+		int max = 0;
+		for (RouteOption route : routes)
+		{
+			max = Math.max(max, route.getTotalCost());
+		}
+		return max;
 	}
 
 	private static int capOf(Future<WalkResult> walkFuture)
