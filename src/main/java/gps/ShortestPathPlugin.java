@@ -1,6 +1,5 @@
 package gps;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
@@ -24,10 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.SwingUtilities;
@@ -82,7 +77,6 @@ import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
 import gps.pathfinder.CollisionMap;
 import gps.pathfinder.PathStep;
-import gps.pathfinder.Pathfinder;
 import gps.pathfinder.PathfinderConfig;
 import gps.pathfinder.TransportAvailability;
 import gps.transport.Transport;
@@ -137,7 +131,6 @@ public class ShortestPathPlugin extends Plugin
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
 	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
-	private final Object pathfinderMutex = new Object();
 	boolean drawMap;
 	boolean drawMinimap;
 	boolean drawTiles;
@@ -294,10 +287,12 @@ public class ShortestPathPlugin extends Plugin
 	private Rectangle minimapRectangle = new Rectangle();
 	private GameState lastGameState = null;
 	private GameState lastLastGameState = null;
-	private ExecutorService pathfindingExecutor = Executors.newSingleThreadExecutor();
-	private Future<?> pathfinderFuture;
-	@Getter
-	private Pathfinder pathfinder;
+	// The current destination — the single source of truth the retired classic background search
+	// used to hold. Written on the client thread (setDestination); read from ticks and overlays.
+	// All route computation happens in the alternative-routes generation, whose heuristic-guided
+	// searches replaced the classic uninformed one (which cost 40-160 ms per target change).
+	private volatile int pathStart = WorldPointUtil.UNDEFINED;
+	private volatile Set<Integer> pathTargets = Set.of();
 	@Getter
 	private PathfinderConfig pathfinderConfig;
 	@Getter
@@ -542,59 +537,53 @@ public class ShortestPathPlugin extends Plugin
 			altRoutesService = null;
 		}
 
-		if (pathfindingExecutor != null)
-		{
-			pathfindingExecutor.shutdownNow();
-			pathfindingExecutor = null;
-		}
-
 		keyManager.unregisterKeyListener(clearPathKeylistener);
 		keyManager.unregisterKeyListener(focusSearchKeyListener);
 		mouseManager.unregisterMouseListener(arrivalDismissListener);
 	}
 
-	public void restartPathfinding(int start, Set<Integer> ends, boolean canReviveFiltered)
+	/**
+	 * Records the current destination (after the wilderness filter) and refreshes the live config
+	 * so display lookups (transport labels, POH exits) see current availability. Route computation
+	 * itself happens in the alternative-routes generation, auto-triggered on the next game tick by
+	 * the target-set change — the classic background search this used to start is retired.
+	 */
+	public void setDestination(int start, Set<Integer> ends, boolean canReviveFiltered)
 	{
-		synchronized (pathfinderMutex)
-		{
-			if (pathfinder != null)
-			{
-				pathfinder.cancel();
-				pathfinderFuture.cancel(true);
-			}
-
-			if (pathfindingExecutor == null)
-			{
-				ThreadFactory shortestPathNaming = new ThreadFactoryBuilder().setNameFormat("shortest-path-%d").build();
-				pathfindingExecutor = Executors.newSingleThreadExecutor(shortestPathNaming);
-			}
-		}
-
 		getClientThread().invokeLater(() ->
 		{
 			// The panel's method catalog is the single customization surface: methods the user has
-			// excluded there are also excluded from the classic path.
+			// excluded there are also excluded here.
 			pathfinderConfig.setExcludedMethods(getUserExclusions());
 			pathfinderConfig.refresh();
 			pathfinderConfig.filterLocations(ends, canReviveFiltered);
-			synchronized (pathfinderMutex)
+			if (ends.isEmpty())
 			{
-				if (ends.isEmpty())
-				{
-					setTarget(WorldPointUtil.UNDEFINED);
-				}
-				else
-				{
-					pathfinder = new Pathfinder(pathfinderConfig, start, ends, this::postPluginMessages);
-					pathfinderFuture = pathfindingExecutor.submit(pathfinder);
-				}
+				setTarget(WorldPointUtil.UNDEFINED);
+			}
+			else
+			{
+				pathStart = start;
+				pathTargets = Set.copyOf(ends);
 			}
 		});
 	}
 
-	public void restartPathfinding(int start, Set<Integer> ends)
+	public void setDestination(int start, Set<Integer> ends)
 	{
-		restartPathfinding(start, ends, true);
+		setDestination(start, ends, true);
+	}
+
+	/** Whether a destination is currently set (what {@code pathfinder != null} used to mean). */
+	public boolean hasPathTargets()
+	{
+		return !pathTargets.isEmpty();
+	}
+
+	/** The current destination tiles (empty when no destination is set). */
+	public Set<Integer> getPathTargets()
+	{
+		return pathTargets;
 	}
 
 	/** The recalculate distance (outer off-route band), or -1 when recalculation is disabled. */
@@ -813,32 +802,13 @@ public class ShortestPathPlugin extends Plugin
 
 	public Color getPathColor()
 	{
-		// A displayed alternative route is a static snapshot: colour it from its own endpoint,
-		// never by the classic pathfinder's background re-anchoring (which would otherwise flash the drawn
-		// route blue every time you walk far enough to trigger a recalculation).
+		// The displayed route is a static snapshot: colour it from its own endpoint.
 		RouteOption displayed = getDisplayedRoute();
 		if (displayed != null)
 		{
 			return isRouteEndTooFar(displayed) ? colourPathUnreachable : colourPath;
 		}
-
-		if (pathfinder == null || !pathfinder.isDone())
-		{
-			return colourPathCalculating;
-		}
-
-		List<PathStep> path = pathfinder.getPath();
-		if (path == null || path.isEmpty() || pathfinder.getTargets().isEmpty())
-		{
-			return colourPath;
-		}
-
-		if (isPathUnreachable())
-		{
-			return colourPathUnreachable;
-		}
-
-		return colourPath;
+		return altGenerationInFlight ? colourPathCalculating : colourPath;
 	}
 
 	/**
@@ -870,25 +840,8 @@ public class ShortestPathPlugin extends Plugin
 
 	public boolean isPathUnreachable()
 	{
-		if (pathfinder == null || !pathfinder.isDone())
-		{
-			return false;
-		}
-
-		List<PathStep> path = pathfinder.getPath();
-		if (path == null || path.isEmpty() || pathfinder.getTargets().isEmpty())
-		{
-			return false;
-		}
-
-		int endPoint = path.get(path.size() - 1).getPackedPosition();
-		int closestTargetDistance = Integer.MAX_VALUE;
-		for (int target : pathfinder.getTargets())
-		{
-			closestTargetDistance = Math.min(closestTargetDistance, WorldPointUtil.distanceBetween(target, endPoint));
-		}
-
-		return closestTargetDistance > unreachableTargetDistance;
+		RouteOption displayed = getDisplayedRoute();
+		return displayed != null && isRouteEndTooFar(displayed);
 	}
 
 	/**
@@ -909,13 +862,14 @@ public class ShortestPathPlugin extends Plugin
 			return true;
 		}
 		List<PathStep> path = route.getPath();
-		if (path == null || path.isEmpty() || pathfinder == null || pathfinder.getTargets().isEmpty())
+		Set<Integer> targets = pathTargets;
+		if (path == null || path.isEmpty() || targets.isEmpty())
 		{
 			return true;  // not enough information to declare it unreachable
 		}
 		int endPoint = path.get(path.size() - 1).getPackedPosition();
 		int closest = Integer.MAX_VALUE;
-		for (int target : pathfinder.getTargets())
+		for (int target : targets)
 		{
 			closest = Math.min(closest, WorldPointUtil.distanceBetween(target, endPoint));
 		}
@@ -941,9 +895,12 @@ public class ShortestPathPlugin extends Plugin
 
 		if (TRANSPORT_OPTIONS_REGEX.matcher(event.getKey()).find())
 		{
-			if (pathfinder != null)
+			if (hasPathTargets())
 			{
-				restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
+				// Refresh the live config's availability and regenerate the routes with it — the
+				// classic restart this used to do left the displayed (alternative) route stale.
+				setDestination(pathStart, new HashSet<>(pathTargets));
+				recomputeAlternatives();
 			}
 		}
 	}
@@ -1166,11 +1123,11 @@ public class ShortestPathPlugin extends Plugin
 				? (String) objSource
 				: "another plugin";
 
-			boolean useOld = targets.isEmpty() && pathfinder != null;
+			boolean useOld = targets.isEmpty() && hasPathTargets();
 			Set<Integer> ends;
 			if (useOld)
 			{
-				ends = new HashSet<>(pathfinder.getTargets());
+				ends = new HashSet<>(pathTargets);
 			}
 			else
 			{
@@ -1188,7 +1145,7 @@ public class ShortestPathPlugin extends Plugin
 						pathfinderConfig != null ? pathfinderConfig.getMap() : null, target));
 				}
 			}
-			restartPathfinding(start, ends, useOld);
+			setDestination(start, ends, useOld);
 		}
 		else if (PLUGIN_MESSAGE_CLEAR.equals(action))
 		{
@@ -1199,20 +1156,29 @@ public class ShortestPathPlugin extends Plugin
 		}
 	}
 
+	/**
+	 * Publishes the displayed route's transports to other plugins (the {@code postTransports}
+	 * integration). Called when the displayed route settles or changes — it used to stream the
+	 * classic search's path; the displayed route is what the player actually follows.
+	 */
 	public void postPluginMessages()
 	{
-		if (pathfinder == null)
+		if (!hasPathTargets())
 		{
 			return;
 		}
 		if (override("postTransports", config.postTransports()))
 		{
+			List<PathStep> currentPath = getDisplayPath();
+			if (currentPath.isEmpty())
+			{
+				return;
+			}
 			Map<String, Object> data = new HashMap<>();
 			List<WorldPoint> transportOrigins = new ArrayList<>();
 			List<WorldPoint> transportDestinations = new ArrayList<>();
 			List<String> transportObjectInfos = new ArrayList<>();
 			List<String> transportDisplayInfos = new ArrayList<>();
-			List<PathStep> currentPath = pathfinder.getPath();
 			for (int i = 1; i < currentPath.size(); i++)
 			{
 				PathStep currentStep = currentPath.get(i - 1);
@@ -1254,7 +1220,7 @@ public class ShortestPathPlugin extends Plugin
 		maybeAutoComputeAlternatives();
 
 		Player localPlayer = client.getLocalPlayer();
-		if (localPlayer == null || pathfinder == null)
+		if (localPlayer == null || !hasPathTargets())
 		{
 			return;
 		}
@@ -1264,17 +1230,14 @@ public class ShortestPathPlugin extends Plugin
 		// path) was set — moving, OR performing an animation (casting/using a teleport). The animation
 		// catch matters for long teleport channels (e.g. Lumbridge Home): the player stays put for the
 		// whole cast, so a move-only trigger would only start the clock after landing, losing that time.
-		if (!pathfinder.getTargets().isEmpty())
+		boolean journeyMoved = journeyLastLocation != WorldPointUtil.UNDEFINED
+			&& currentLocation != journeyLastLocation;
+		boolean acting = localPlayer.getAnimation() != -1;
+		if (journeyStartMillis == 0 && (journeyMoved || acting))
 		{
-			boolean moved = journeyLastLocation != WorldPointUtil.UNDEFINED
-				&& currentLocation != journeyLastLocation;
-			boolean acting = localPlayer.getAnimation() != -1;
-			if (journeyStartMillis == 0 && (moved || acting))
-			{
-				journeyStartMillis = System.currentTimeMillis();
-			}
-			journeyLastLocation = currentLocation;
+			journeyStartMillis = System.currentTimeMillis();
 		}
+		journeyLastLocation = currentLocation;
 		if (hasArrived(currentLocation))
 		{
 			// Reached the destination (inside the arrival zone). Show the "Arrived!" panel — including when
@@ -1333,7 +1296,7 @@ public class ShortestPathPlugin extends Plugin
 					setTarget(WorldPointUtil.UNDEFINED);
 					return;
 				}
-				recalculateFrom(currentLocation, pathfinder.getTargets());
+				recalculateFrom(currentLocation, pathTargets);
 				return;
 			}
 			else
@@ -1349,10 +1312,9 @@ public class ShortestPathPlugin extends Plugin
 
 	/**
 	 * Recompute the route from a new start (the player's current, off-route position) to the same
-	 * targets. Both the classic path and the alternative routes must restart: the displayed line is
-	 * usually an alternative route, and the tick-level auto-compute is keyed on the target SET — which
-	 * hasn't changed here — so it would not refire on its own. The stale selection is dropped so the
-	 * fresh generation's route takes over rather than the overlay clinging to the old line.
+	 * targets. Triggered explicitly because the tick-level auto-compute is keyed on the target SET —
+	 * which hasn't changed here — so it would not refire on its own. The stale selection is dropped
+	 * so the fresh generation's route takes over rather than the overlay clinging to the old line.
 	 */
 	private void recalculateFrom(int start, Set<Integer> targets)
 	{
@@ -1360,7 +1322,7 @@ public class ShortestPathPlugin extends Plugin
 		routeCostMultiple = DEFAULT_COST_MULTIPLE;
 		routeLimit = altPanelVisible ? defaultRouteLimit() : 1;
 		Set<Integer> ends = new HashSet<>(targets);
-		restartPathfinding(start, ends);
+		pathStart = start;
 		triggerAlternatives(start, ends);
 	}
 
@@ -1371,19 +1333,15 @@ public class ShortestPathPlugin extends Plugin
 			&& event.getType() == MenuAction.WALK.getId())
 		{
 			addMenuEntry(event, SET, TARGET, 1);
-			if (pathfinder != null)
+			if (hasPathTargets())
 			{
 				int selectedTile = getSelectedWorldPoint();
-				List<PathStep> path;
-				if ((path = pathfinder.getPath()) != null)
+				for (PathStep pathStep : getDisplayPath())
 				{
-					for (PathStep pathStep : path)
+					if (pathStep.getPackedPosition() == selectedTile)
 					{
-						if (pathStep.getPackedPosition() == selectedTile)
-						{
-							addMenuEntry(event, CLEAR, PATH, 1);
-							break;
-						}
+						addMenuEntry(event, CLEAR, PATH, 1);
+						break;
 					}
 				}
 			}
@@ -1398,14 +1356,11 @@ public class ShortestPathPlugin extends Plugin
 				client.getMouseCanvasPosition().getY()))
 			{
 				addMenuEntry(event, SET, TARGET, 0);
-				if (pathfinder != null)
+				for (int target : pathTargets)
 				{
-					for (int target : pathfinder.getTargets())
+					if (target != WorldPointUtil.UNDEFINED)
 					{
-						if (target != WorldPointUtil.UNDEFINED)
-						{
-							addMenuEntry(event, CLEAR, PATH, 0);
-						}
+						addMenuEntry(event, CLEAR, PATH, 0);
 					}
 				}
 			}
@@ -1417,7 +1372,7 @@ public class ShortestPathPlugin extends Plugin
 
 		final Shape minimap = getMinimapClipArea();
 
-		if (minimap != null && pathfinder != null
+		if (minimap != null && hasPathTargets()
 			&& minimap.contains(
 			client.getMouseCanvasPosition().getX(),
 			client.getMouseCanvasPosition().getY()))
@@ -1425,7 +1380,7 @@ public class ShortestPathPlugin extends Plugin
 			addMenuEntry(event, CLEAR, PATH, 0);
 		}
 
-		if (minimap != null && pathfinder != null
+		if (minimap != null && hasPathTargets()
 			&& ("Floating World Map".equals(Text.removeTags(event.getOption()))
 			|| "Close Floating panel".equals(Text.removeTags(event.getOption()))))
 		{
@@ -1467,7 +1422,7 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onWidgetLoaded(WidgetLoaded event)
 	{
-		if (pathfinder != null && event.getGroupId() == InterfaceID.FAIRYRINGS_LOG)
+		if (hasPathTargets() && event.getGroupId() == InterfaceID.FAIRYRINGS_LOG)
 		{
 			fairyRingPanelOpen = true;
 		}
@@ -1508,7 +1463,7 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onPostClientTick(PostClientTick event)
 	{
-		if (fairyRingPanelOpen && pathfinder != null)
+		if (fairyRingPanelOpen && hasPathTargets())
 		{
 			scrollFairyRingPanel();
 		}
@@ -1574,18 +1529,19 @@ public class ShortestPathPlugin extends Plugin
 
 		pathfinderConfig.availableSpiritTrees = available;
 
-		if (pathfinder != null)
+		if (hasPathTargets())
 		{
-			restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
+			// Spirit-tree availability just became known: refresh the live config and regenerate
+			// so the displayed route can use (or drop) spirit trees accordingly.
+			setDestination(pathStart, new HashSet<>(pathTargets));
+			recomputeAlternatives();
 		}
 	}
 
 	private void scrollFairyRingPanel()
 	{
-		List<PathStep> path;
-
-		if (pathfinder == null
-			|| (path = pathfinder.getPath()) == null)
+		List<PathStep> path = getDisplayPath();
+		if (path.isEmpty())
 		{
 			return;
 		}
@@ -2122,14 +2078,8 @@ public class ShortestPathPlugin extends Plugin
 		routeCostMultiple = DEFAULT_COST_MULTIPLE;
 		if (targets == null || targets.isEmpty())
 		{
-			synchronized (pathfinderMutex)
-			{
-				if (pathfinder != null)
-				{
-					pathfinder.cancel();
-				}
-				pathfinder = null;
-			}
+			pathStart = WorldPointUtil.UNDEFINED;
+			pathTargets = Set.of();
 
 			worldMapPointManager.removeIf(x -> x == marker);
 			marker = null;
@@ -2163,14 +2113,15 @@ public class ShortestPathPlugin extends Plugin
 			int start = WorldPointUtil.fromLocalInstance(client, localPlayer);
 			lastLocation = start;
 			Set<Integer> destinations = new HashSet<>(targets);
-			if (pathfinder != null && append)
+			if (append)
 			{
-				destinations.addAll(pathfinder.getTargets());
+				destinations.addAll(pathTargets);
 			}
 			// Arm the journey timer: it starts counting from the player's first movement.
 			armJourney();
-			// Alternatives are computed manually via the panel's "Find routes" button.
-			restartPathfinding(start, destinations, append);
+			// The routes themselves are generated by the tick-level auto-compute (keyed on the
+			// target-set change) or the panel's "Find routes" button.
+			setDestination(start, destinations, append);
 		}
 	}
 
@@ -2215,9 +2166,9 @@ public class ShortestPathPlugin extends Plugin
 			return null;
 		}
 		// Only substitute the first alternative when it was computed for the current destination;
-		// a stale list (target changed since "Find routes") must not override the live path.
-		Pathfinder current = pathfinder;
-		if (current == null || !lastAltTargets.equals(current.getTargets()))
+		// a stale list (target changed since "Find routes") must not be displayed.
+		Set<Integer> targets = pathTargets;
+		if (targets.isEmpty() || !lastAltTargets.equals(targets))
 		{
 			return null;
 		}
@@ -2225,35 +2176,14 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	/**
-	 * The path the overlays should draw: the displayed alternative route if any (the selected one,
-	 * or by default the first route of the current alternatives list, so the drawn path reflects the
-	 * chosen mode/exclusions), otherwise the classic live pathfinder path.
+	 * The path the overlays should draw: the displayed route's (the selected one, or by default the
+	 * first route of the current alternatives list, so the drawn path reflects the chosen
+	 * mode/exclusions). Empty when no route is displayed.
 	 */
 	public List<PathStep> getDisplayPath()
 	{
 		RouteOption route = getDisplayedRoute();
-		if (route != null)
-		{
-			return route.getPath();
-		}
-		Pathfinder current = pathfinder;
-		if (current == null)
-		{
-			return List.of();
-		}
-		// The classic path is only a fallback here: route 1 replaces it as soon as the alternatives
-		// stream in. Drawing it in the meantime made the world path visibly jump around after setting
-		// a target — the progressive search frontier first, then its final shape, then blank, then
-		// route 1. Keep the world empty instead while the classic search is still running, while the
-		// alternatives are computing, or while their auto-trigger for this target is still pending
-		// (it fires on the next game tick). The classic path still draws when a generation finishes
-		// without producing any routes.
-		if (!current.getTargets().isEmpty()
-			&& (!current.isDone() || altGenerationInFlight || !lastAltTargets.equals(current.getTargets())))
-		{
-			return List.of();
-		}
-		return current.getPath();
+		return route != null ? route.getPath() : List.of();
 	}
 
 	public Set<TeleportMethod> getUserExclusions()
@@ -2291,6 +2221,8 @@ public class ShortestPathPlugin extends Plugin
 				// Picking a different path starts a new journey — time it from here, not from the
 				// original destination (re-arm; the timer restarts on the next movement).
 				armJourney();
+				// The displayed path changed: republish it to other plugins (postTransports).
+				postPluginMessages();
 			}
 			refreshPanel(false);
 		}
@@ -2398,21 +2330,19 @@ public class ShortestPathPlugin extends Plugin
 	{
 		getClientThread().invokeLater(() ->
 		{
-			Pathfinder current = pathfinder;
-			if (current != null && !current.getTargets().isEmpty())
+			Set<Integer> targets = pathTargets;
+			if (!targets.isEmpty())
 			{
-				int start = altStart(current);
-				log.debug("[alt-routes] Find routes: SP target set, spStart={}, searchStart={}, target={}",
-					WorldPointUtil.unpackWorldPoint(current.getStart()),
+				int start = altStart();
+				log.debug("[alt-routes] Find routes: target set, searchStart={}, target={}",
 					WorldPointUtil.unpackWorldPoint(start),
-					WorldPointUtil.unpackWorldPoint(current.getTargets().iterator().next()));
+					WorldPointUtil.unpackWorldPoint(targets.iterator().next()));
 				routeLimit = defaultRouteLimit();
-				triggerAlternatives(start, new HashSet<>(current.getTargets()));
+				triggerAlternatives(start, new HashSet<>(targets));
 			}
 			else
 			{
-				log.debug("[alt-routes] Find routes: no SP target (pathfinder={})",
-					current == null ? "null" : "targets-empty");
+				log.debug("[alt-routes] Find routes: no target set");
 				triggerAlternatives(WorldPointUtil.UNDEFINED, new HashSet<>());
 			}
 		});
@@ -2420,17 +2350,17 @@ public class ShortestPathPlugin extends Plugin
 
 	/**
 	 * The start tile to search alternatives from: the player's current (instance-correct) location,
-	 * matching what GPS itself uses for recalculation, falling back to the pathfinder's own
+	 * matching what GPS itself uses for recalculation, falling back to the destination's recorded
 	 * start. Must be called on the client thread.
 	 */
-	private int altStart(Pathfinder current)
+	private int altStart()
 	{
 		Player localPlayer = client.getLocalPlayer();
 		if (localPlayer != null)
 		{
 			return WorldPointUtil.fromLocalInstance(client, localPlayer);
 		}
-		return current.getStart();
+		return pathStart;
 	}
 
 	/**
@@ -2721,18 +2651,17 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return;
 		}
-		Pathfinder current = pathfinder;
-		Set<Integer> targets = (current != null) ? current.getTargets() : Set.of();
-		// With the panel hidden, only the primary route is computed — one search, the same class of
-		// work as the classic pathfinder, and the GPS overlay needs it. The extra alternatives are
-		// searched automatically once the panel is opened (see setAltPanelVisible).
+		Set<Integer> targets = pathTargets;
+		// With the panel hidden, only the primary route is computed — one search; the GPS overlay
+		// needs it. The extra alternatives are searched automatically once the panel is opened
+		// (see setAltPanelVisible).
 		int desiredLimit = altPanelVisible ? defaultRouteLimit() : 1;
 		if (!shouldAutoCompute(targets, lastAltTargets, lastAltLimit, desiredLimit))
 		{
 			return;
 		}
 		routeLimit = desiredLimit;
-		triggerAlternatives(altStart(current), new HashSet<>(targets));
+		triggerAlternatives(altStart(), new HashSet<>(targets));
 	}
 
 	/**
@@ -2812,8 +2741,10 @@ public class ShortestPathPlugin extends Plugin
 			// Settle the overlay's route to the final top result BEFORE clearing the in-flight flag,
 			// so the overlay adopts the settled route in one step instead of the streaming front-runner.
 			committedDisplayRoute = routes.isEmpty() ? null : routes.get(0);
-			// Generation finished; if it produced nothing the classic path may draw again as fallback.
 			altGenerationInFlight = false;
+			// The displayed route just settled: publish it to other plugins (postTransports) — this
+			// replaces the classic search's completion callback.
+			postPluginMessages();
 		}
 		final boolean hasTarget = !lastAltTargets.isEmpty();
 		SwingUtilities.invokeLater(() ->

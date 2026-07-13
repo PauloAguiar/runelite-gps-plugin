@@ -49,7 +49,7 @@ public class PathMinimapOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!plugin.drawMinimap || plugin.getPathfinder() == null)
+		if (!plugin.drawMinimap || !plugin.hasPathTargets())
 		{
 			return null;
 		}
@@ -84,7 +84,7 @@ public class PathMinimapOverlay extends Overlay
 				: (i >= blockedFrom ? plugin.colourPathBlocked : pathColor);
 			drawOnMinimap(graphics, pathPoint, color);
 		}
-		for (int target : plugin.getPathfinder().getTargets())
+		for (int target : plugin.getPathTargets())
 		{
 			if (!pathPoints.isEmpty() && target != pathPoints.get(pathPoints.size() - 1).getPackedPosition())
 			{

@@ -72,7 +72,7 @@ public class PathTileOverlay extends Overlay
 			drawRecalculationRanges(graphics);
 		}
 
-		if (plugin.drawTiles && plugin.getPathfinder() != null && !plugin.getDisplayPath().isEmpty())
+		if (plugin.drawTiles && !plugin.getDisplayPath().isEmpty())
 		{
 			Color pathColor = plugin.getPathColor();
 			Color color = new Color(
@@ -641,14 +641,14 @@ public class PathTileOverlay extends Overlay
 		// Sailing: teleports are suppressed while aboard a boat. When the path is
 		// unreachable as a result, show a one-time hint on the player tile.
 		if (pathIndex == 0 && plugin.getPathfinderConfig().isOnSailingBoat()
-			&& plugin.getPathfinder().isDone() && plugin.isPathUnreachable())
+			&& plugin.isPathUnreachable())
 		{
 			playerTileLabelOffset = drawLabelOnPlayerTile(graphics,
 				"Disembark the boat to resume pathfinding", playerTileLabelOffset);
 			return;
 		}
 
-		if (plugin.isPathUnreachable() || !plugin.getPathfinder().isDone())
+		if (plugin.isPathUnreachable())
 		{
 			return;
 		}

@@ -52,14 +52,14 @@ public class PathMapOverlay extends Overlay
 
 
 
-		if (plugin.getPathfinder() != null)
+		if (plugin.hasPathTargets())
 		{
 			Color colour = plugin.getPathColor();
 			java.util.List<PathStep> path = plugin.getDisplayPath();
 			Point cursorPos = client.getMouseCanvasPosition();
 			graphics.setColor(colour);
 			drawArrowPath(graphics, path);
-			for (int target : plugin.getPathfinder().getTargets())
+			for (int target : plugin.getPathTargets())
 			{
 				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
 				{

@@ -50,7 +50,7 @@ public class PathMapTooltipOverlay extends Overlay
 			return null;
 		}
 
-		if (plugin.getPathfinder() != null)
+		if (plugin.hasPathTargets())
 		{
 			List<PathStep> path = plugin.getDisplayPath();
 			Point cursorPos = client.getMouseCanvasPosition();
@@ -66,7 +66,7 @@ public class PathMapTooltipOverlay extends Overlay
 					return null;
 				}
 			}
-			for (int target : plugin.getPathfinder().getTargets())
+			for (int target : plugin.getPathTargets())
 			{
 				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
 				{
