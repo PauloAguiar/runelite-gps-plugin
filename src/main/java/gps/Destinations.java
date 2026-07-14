@@ -216,7 +216,16 @@ public final class Destinations
 			return entries;
 		}
 		PrimitiveIntList seen = new PrimitiveIntList();
+		// Seed with the bundled minigame entries (curated rows), so a transport-derived duplicate
+		// of the same minigame isn't added twice.
 		Set<String> seenMinigames = new HashSet<>();
+		for (Entry entry : entries)
+		{
+			if ("minigame".equals(entry.category))
+			{
+				seenMinigames.add(entry.name.toLowerCase(java.util.Locale.ROOT));
+			}
+		}
 		for (int key : transports.keys())
 		{
 			Transport[] set = transports.get(key);
