@@ -3,11 +3,27 @@ package gps.transport;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import net.runelite.api.Client;
+import net.runelite.api.GameState;
+import net.runelite.api.Item;
+import net.runelite.api.ItemContainer;
+import net.runelite.api.Skill;
+import net.runelite.api.gameval.InventoryID;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import gps.ShortestPathConfig;
+import gps.TeleportationItem;
 import gps.WorldPointUtil;
+import gps.pathfinder.PathfinderConfig;
+import gps.pathfinder.TestPathfinderConfig;
 import gps.transport.parser.VarRequirement;
+import gps.transport.requirement.ItemRequirement;
 
 /**
  * Balloon flights are destination-keyed (wiki: the log type and Firemaking level belong to the
@@ -15,13 +31,14 @@ import gps.transport.parser.VarRequirement;
  * merges the destination-role row's requirements into every generated edge, so a flight from any
  * station to Varrock must require 40 Firemaking, a willow log, and the Varrock unlock (2872=1) —
  * verified against live varbit values (a player with 2872=1 can fly there; 2869=0 cannot fly to
- * Castle Wars).
+ * Castle Wars). The log can be paid from the inventory or from the balloon storage crates
+ * (chat-parsed counts; see {@link gps.BalloonLogStorage}).
  */
 public class BalloonRouteTest
 {
 	private static final int WILLOW_LOGS = 1519;
-	private static final int VARROCK_LANDING = gps.WorldPointUtil.packWorldPoint(3299, 3482, 0);
-	private static final int ENTRANA_LANDING = gps.WorldPointUtil.packWorldPoint(2808, 3354, 0);
+	private static final int VARROCK_LANDING = WorldPointUtil.packWorldPoint(3299, 3482, 0);
+	private static final int ENTRANA_LANDING = WorldPointUtil.packWorldPoint(2808, 3354, 0);
 
 	@Test
 	public void flightsCarryTheDestinationsRequirements()
@@ -34,7 +51,7 @@ public class BalloonRouteTest
 			for (Transport transport : transports)
 			{
 				if (TransportType.HOT_AIR_BALLOON.equals(transport.getType())
-					&& transport.getDestination() == WorldPointUtil.packWorldPoint(3299, 3482, 0))
+					&& transport.getDestination() == VARROCK_LANDING)
 				{
 					flight = transport;
 					break;
@@ -65,7 +82,7 @@ public class BalloonRouteTest
 		boolean willow = false;
 		if (flight.getItemRequirements() != null)
 		{
-			for (gps.transport.requirement.ItemRequirement req : flight.getItemRequirements().getRequirements())
+			for (ItemRequirement req : flight.getItemRequirements().getRequirements())
 			{
 				if (req.getItemIds() != null)
 				{
@@ -116,25 +133,57 @@ public class BalloonRouteTest
 	 * possession-checked config (not a planning copy) with the balloon type enabled and varbit
 	 * checks bypassed, so the log requirement is the only difference between the two flights.
 	 */
-	@org.junit.Test
+	@Test
 	public void logPossessionGatesFlightsInOwnedModes()
 	{
-		net.runelite.api.Client client = org.mockito.Mockito.mock(net.runelite.api.Client.class);
-		gps.ShortestPathConfig config = org.mockito.Mockito.mock(gps.ShortestPathConfig.class);
-		org.mockito.Mockito.when(config.calculationCutoff()).thenReturn(30);
-		org.mockito.Mockito.when(config.useHotAirBalloons()).thenReturn(true);
-		org.mockito.Mockito.when(config.useTeleportationItems()).thenReturn(gps.TeleportationItem.NONE);
-		org.mockito.Mockito.when(client.getGameState()).thenReturn(net.runelite.api.GameState.LOGGED_IN);
-		org.mockito.Mockito.when(client.getClientThread()).thenReturn(Thread.currentThread());
-		org.mockito.Mockito.when(client.getBoostedSkillLevel(org.mockito.ArgumentMatchers.any(net.runelite.api.Skill.class)))
-			.thenReturn(99);
-		net.runelite.api.ItemContainer inventory = org.mockito.Mockito.mock(net.runelite.api.ItemContainer.class);
-		org.mockito.Mockito.doReturn(new net.runelite.api.Item[]{new net.runelite.api.Item(WILLOW_LOGS, 1)})
-			.when(inventory).getItems();
-		org.mockito.Mockito.when(client.getItemContainer(net.runelite.api.gameval.InventoryID.INV))
-			.thenReturn(inventory);
+		Client client = loggedInClient();
+		ItemContainer inventory = mock(ItemContainer.class);
+		doReturn(new Item[]{new Item(WILLOW_LOGS, 1)}).when(inventory).getItems();
+		when(client.getItemContainer(InventoryID.INV)).thenReturn(inventory);
 
-		gps.pathfinder.PathfinderConfig cfg = new gps.pathfinder.TestPathfinderConfig(client, config);
+		boolean[] usable = flightUsability(client, balloonConfig());
+		assertTrue("holding a willow log, the Varrock flight must be usable", usable[0]);
+		assertFalse("without a normal log, the Entrana flight must not be usable", usable[1]);
+	}
+
+	/**
+	 * The balloon log storage pays for flights without carrying logs: an empty inventory plus a
+	 * chat-parsed stored willow count makes the Varrock flight usable, while Entrana (normal logs;
+	 * that type's storage is empty) stays gated.
+	 */
+	@Test
+	public void storedLogsCoverFlightsWithoutCarrying()
+	{
+		ShortestPathConfig config = balloonConfig();
+		when(config.balloonStoredWillowLogs()).thenReturn(5);
+
+		boolean[] usable = flightUsability(loggedInClient(), config);
+		assertTrue("with willow logs in storage, the Varrock flight must be usable", usable[0]);
+		assertFalse("with no normal log stored or carried, the Entrana flight must not be usable", usable[1]);
+	}
+
+	private static ShortestPathConfig balloonConfig()
+	{
+		ShortestPathConfig config = mock(ShortestPathConfig.class);
+		when(config.calculationCutoff()).thenReturn(30);
+		when(config.useHotAirBalloons()).thenReturn(true);
+		when(config.useTeleportationItems()).thenReturn(TeleportationItem.NONE);
+		return config;
+	}
+
+	private static Client loggedInClient()
+	{
+		Client client = mock(Client.class);
+		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
+		when(client.getClientThread()).thenReturn(Thread.currentThread());
+		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
+		return client;
+	}
+
+	/** Whether the Varrock ([0]) and Entrana ([1]) flights are usable under the given mocks. */
+	private static boolean[] flightUsability(Client client, ShortestPathConfig config)
+	{
+		PathfinderConfig cfg = new TestPathfinderConfig(client, config);
 		cfg.refresh();
 
 		boolean varrock = false;
@@ -147,17 +196,10 @@ public class BalloonRouteTest
 				{
 					continue;
 				}
-				if (transport.getDestination() == VARROCK_LANDING)
-				{
-					varrock = true;
-				}
-				if (transport.getDestination() == ENTRANA_LANDING)
-				{
-					entrana = true;
-				}
+				varrock |= transport.getDestination() == VARROCK_LANDING;
+				entrana |= transport.getDestination() == ENTRANA_LANDING;
 			}
 		}
-		assertTrue("holding a willow log, the Varrock flight must be usable", varrock);
-		org.junit.Assert.assertFalse("without a normal log, the Entrana flight must not be usable", entrana);
+		return new boolean[]{varrock, entrana};
 	}
 }

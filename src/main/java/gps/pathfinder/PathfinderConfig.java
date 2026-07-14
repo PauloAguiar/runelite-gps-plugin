@@ -156,6 +156,9 @@ public class PathfinderConfig
 	private JewelleryBoxTier pohJewelleryBoxTier;
 	private int costConsumableTeleportationItems;
 	private int currencyThreshold;
+	// Balloon log storage (chat-parsed, config-persisted): item id -> stored count. A balloon
+	// flight's log requirement is satisfiable from this storage as well as from the inventory.
+	private final Map<Integer, Integer> balloonStoredLogs = new HashMap<>();
 	/**
 	 * Extra search cost (in tiles) charged once when a path first detours through a bank to withdraw a
 	 * teleport item, so the pathfinder only banks when it saves more than this many tiles overall.
@@ -517,6 +520,13 @@ public class PathfinderConfig
 		costConsumableTeleportationItems = ShortestPathPlugin.override("costConsumableTeleportationItems", config.costConsumableTeleportationItems());
 		bankPickupCost = ShortestPathPlugin.override("costBankPickup", config.costBankPickup());
 
+		// Balloon log storage counts (chat-parsed by the plugin; see BalloonLogStorage).
+		balloonStoredLogs.put(ItemID.LOGS, config.balloonStoredLogs());
+		balloonStoredLogs.put(ItemID.OAK_LOGS, config.balloonStoredOakLogs());
+		balloonStoredLogs.put(ItemID.WILLOW_LOGS, config.balloonStoredWillowLogs());
+		balloonStoredLogs.put(ItemID.YEW_LOGS, config.balloonStoredYewLogs());
+		balloonStoredLogs.put(ItemID.MAGIC_LOGS, config.balloonStoredMagicLogs());
+
 		// Alternative-routes "Owned" family: restrict teleport items to what the player possesses —
 		// inventory + equipment only, or additionally the bank (routing through a bank to pick items
 		// up). The "All" family bypasses possession via bypassItemPossession/planningMode instead.
@@ -865,7 +875,45 @@ public class PathfinderConfig
 		{
 			return classifyItems(DRAMEN_STAFF);
 		}
+		// Balloon flights payable from the log storage are available without carrying logs.
+		if (TransportType.HOT_AIR_BALLOON.equals(type)
+			&& balloonStorageCovers(transport.getItemRequirements()))
+		{
+			return MethodAvailability.AVAILABLE;
+		}
 		return classifyItems(transport.getItemRequirements());
+	}
+
+	/**
+	 * Whether every item requirement of a balloon flight is covered by the balloon log storage
+	 * (chat-parsed counts; conservative zero until the game confirms contents).
+	 */
+	private boolean balloonStorageCovers(TransportItems items)
+	{
+		if (items == null)
+		{
+			return true;
+		}
+		for (ItemRequirement requirement : items.getRequirements())
+		{
+			boolean covered = false;
+			if (requirement.getItemIds() != null)
+			{
+				for (int itemId : requirement.getItemIds())
+				{
+					if (balloonStoredLogs.getOrDefault(itemId, 0) > 0)
+					{
+						covered = true;
+						break;
+					}
+				}
+			}
+			if (!covered)
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**
@@ -1368,6 +1416,13 @@ public class PathfinderConfig
 		boolean checkBank,
 		boolean checkRunePouch)
 	{
+		// Balloon flights may pay from the balloon log storage instead of carried logs.
+		if (TransportType.HOT_AIR_BALLOON.equals(transport.getType())
+			&& balloonStorageCovers(transport.getItemRequirements()))
+		{
+			return true;
+		}
+
 		if (TransportType.TELEPORTATION_ITEM.equals(transport.getType()) ||
 			TransportType.SEASONAL_TRANSPORTS.equals(transport.getType()) ||
 			TransportType.QUETZAL_WHISTLE.equals(transport.getType()))

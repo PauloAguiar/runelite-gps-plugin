@@ -365,6 +365,71 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigItem(
 		hidden = true,
+		keyName = "balloonStoredLogs",
+		name = "Balloon stored logs",
+		description = "Chat-parsed count of normal logs in the balloon storage (auto-maintained)",
+		position = 96,
+		section = sectionSettings
+	)
+	default int balloonStoredLogs()
+	{
+		return 0;
+	}
+
+	@ConfigItem(
+		hidden = true,
+		keyName = "balloonStoredOakLogs",
+		name = "Balloon stored oak logs",
+		description = "Chat-parsed count of oak logs in the balloon storage (auto-maintained)",
+		position = 97,
+		section = sectionSettings
+	)
+	default int balloonStoredOakLogs()
+	{
+		return 0;
+	}
+
+	@ConfigItem(
+		hidden = true,
+		keyName = "balloonStoredWillowLogs",
+		name = "Balloon stored willow logs",
+		description = "Chat-parsed count of willow logs in the balloon storage (auto-maintained)",
+		position = 98,
+		section = sectionSettings
+	)
+	default int balloonStoredWillowLogs()
+	{
+		return 0;
+	}
+
+	@ConfigItem(
+		hidden = true,
+		keyName = "balloonStoredYewLogs",
+		name = "Balloon stored yew logs",
+		description = "Chat-parsed count of yew logs in the balloon storage (auto-maintained)",
+		position = 99,
+		section = sectionSettings
+	)
+	default int balloonStoredYewLogs()
+	{
+		return 0;
+	}
+
+	@ConfigItem(
+		hidden = true,
+		keyName = "balloonStoredMagicLogs",
+		name = "Balloon stored magic logs",
+		description = "Chat-parsed count of magic logs in the balloon storage (auto-maintained)",
+		position = 100,
+		section = sectionSettings
+	)
+	default int balloonStoredMagicLogs()
+	{
+		return 0;
+	}
+
+	@ConfigItem(
+		hidden = true,
 		keyName = "currencyThreshold",
 		name = "Currency threshold",
 		description = "The maximum amount of currency to use on a single transportation method." +
