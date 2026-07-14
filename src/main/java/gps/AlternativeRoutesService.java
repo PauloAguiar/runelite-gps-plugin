@@ -396,8 +396,10 @@ public class AlternativeRoutesService
 			// keeps filling while the next cost stays within a modest gap of max(band, costliest
 			// accepted) — so a cost cluster straddling the band edge is shown whole, but a genuine
 			// cliff (the next route being far pricier than everything shown) still ends the page.
+			// A minimum page overrides the cliff: one super-cheap route (a direct minigame teleport)
+			// otherwise produced a single-entry page with no alternatives at all (user capture).
 			final int totalCost = result.getTotalCost();
-			if (costMultiple > 0 && !routes.isEmpty())
+			if (costMultiple > 0 && routes.size() >= MIN_PAGE_ROUTES)
 			{
 				long band = (long) Math.max(routes.get(0).getTotalCost(), MIN_BEST_FOR_BAND) * costMultiple;
 				if (totalCost > band
@@ -790,7 +792,7 @@ public class AlternativeRoutesService
 				// (skip, not stop — seeds complete in parallel, a later one can be cheaper). Checked
 				// BEFORE the signature is consumed: a cost-rejected seed must stay eligible for a
 				// widened re-run ("+"), which resumes with this generation's seenSignatures.
-				if (costMultiple > 0 && !routes.isEmpty()
+				if (costMultiple > 0 && routes.size() >= MIN_PAGE_ROUTES
 					&& seedResult.totalCost > (long) Math.max(routes.get(0).getTotalCost(), MIN_BEST_FOR_BAND) * costMultiple
 					&& seedResult.totalCost > pageFillCeiling(routes.get(0).getTotalCost(), maxAcceptedCost(routes), costMultiple))
 				{
@@ -1130,6 +1132,10 @@ public class AlternativeRoutesService
 	// whistle route) behind "more". The band prices off max(best, this), so the default band is
 	// never tighter than ~100 units (~30s of travel) and still grows with every "more" press.
 	private static final int MIN_BEST_FOR_BAND = 35;
+	// The band/cliff gates don't apply until this many routes are on the page: one direct teleport
+	// far cheaper than everything else otherwise made a one-entry page with no alternatives. The
+	// chain search's own sanity cap (2x the band) still bounds how far these fill routes may cost.
+	private static final int MIN_PAGE_ROUTES = 4;
 	// Page filling past the band accepts the next route while it is within this gap of the
 	// acceptance region (absolute floor; grows to ref/8 for pricier regions) — wide enough to keep a
 	// dense cluster together, small enough that a genuine cost cliff still ends the page.

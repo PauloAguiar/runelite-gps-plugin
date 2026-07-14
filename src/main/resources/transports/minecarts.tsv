@@ -4,20 +4,20 @@
 3140 3503 0	2909 10174 0	Travel Trapdoor 16168			The Giant Dwarf		21	Keldagrim
 3139 3504 0	2909 10174 0	Travel Trapdoor 16168			The Giant Dwarf		21	Keldagrim
 3140 3505 0	2909 10174 0	Travel Trapdoor 16168			The Giant Dwarf		21	Keldagrim
-2923 10172 0	3141 3504 0	Ride Train cart 7028			The Giant Dwarf			Grand Exchange
-2923 10170 0	3141 3504 0	Ride Train cart 7028			The Giant Dwarf			Grand Exchange
+2923 10172 0	3141 3504 0	Ride Train cart 7028			The Giant Dwarf		21	Grand Exchange
+2923 10170 0	3141 3504 0	Ride Train cart 7028			The Giant Dwarf		21	Grand Exchange
 								
 # Keldagrim, Ice Mountain								
-2923 10176 0	2995 9835 0	Ride Train cart 7028		COINS=150	The Giant Dwarf			Ice Mountain
-2923 10174 0	2995 9835 0	Ride Train cart 7028		COINS=150	The Giant Dwarf			Ice Mountain
-2995 9835 0	2909 10174 0	Ride Train cart 7029		COINS=150	The Giant Dwarf			Keldagrim
-2995 9837 0	2909 10174 0	Ride Train cart 7029		COINS=150	The Giant Dwarf			Keldagrim
+2923 10176 0	2995 9835 0	Ride Train cart 7028		COINS=150	The Giant Dwarf		21	Ice Mountain (buy ticket first)
+2923 10174 0	2995 9835 0	Ride Train cart 7028		COINS=150	The Giant Dwarf		21	Ice Mountain (buy ticket first)
+2995 9835 0	2909 10174 0	Ride Train cart 7029		COINS=150	The Giant Dwarf		21	Keldagrim (buy ticket first)
+2995 9837 0	2909 10174 0	Ride Train cart 7029		COINS=150	The Giant Dwarf		21	Keldagrim (buy ticket first)
 								
 # Keldagrim, White Wolf Mountain								
-2919 10170 0	2876 9868 0	Ride Train cart 7028		COINS=100	The Giant Dwarf;Fishing Contest			White Wolf Mountain
-2919 10168 0	2876 9868 0	Ride Train cart 7028		COINS=100	The Giant Dwarf;Fishing Contest			White Wolf Mountain
-2876 9868 0	2909 10174 0	Ride Train cart 7030		COINS=100	The Giant Dwarf;Fishing Contest			Keldagrim
-2874 9868 0	2909 10174 0	Ride Train cart 7030		COINS=100	The Giant Dwarf;Fishing Contest			Keldagrim
+2919 10170 0	2876 9868 0	Ride Train cart 7028		COINS=100	The Giant Dwarf;Fishing Contest		21	White Wolf Mountain (buy ticket first)
+2919 10168 0	2876 9868 0	Ride Train cart 7028		COINS=100	The Giant Dwarf;Fishing Contest		21	White Wolf Mountain (buy ticket first)
+2876 9868 0	2909 10174 0	Ride Train cart 7030		COINS=100	The Giant Dwarf;Fishing Contest		21	Keldagrim (buy ticket first)
+2874 9868 0	2909 10174 0	Ride Train cart 7030		COINS=100	The Giant Dwarf;Fishing Contest		21	Keldagrim (buy ticket first)
 								
 # Lovakengj Minecart Network (20 Coins before The Forsaken Tower varbit 7796=11)								
 # Arceuus								

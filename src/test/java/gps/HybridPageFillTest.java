@@ -122,6 +122,45 @@ public class HybridPageFillTest
 	}
 
 	/**
+	 * Keldagrim station -> Giants' Foundry (user capture): the minigame teleport (46) is far cheaper
+	 * than every alternative (157+), so the band/cliff gates alone produced a ONE-route page. The
+	 * minimum page size must surface alternatives anyway, and none of them may ride the Keldagrim
+	 * train to White Wolf Mountain and back as a "free" shortcut (the rides had no duration, so the
+	 * search priced them at zero).
+	 */
+	@Test
+	public void minimumPageSurvivesACheapBestRoute() throws Exception
+	{
+		CountDownLatch latch = new CountDownLatch(1);
+		AtomicReference<List<RouteOption>> out = new AtomicReference<>();
+		service.generate(WorldPointUtil.packWorldPoint(2927, 10165, 0),
+			Set.of(WorldPointUtil.packWorldPoint(3361, 3149, 0)), Set.of(),
+			AlternativeRoutesMode.ALL_EVERYTHING, 10, 3, false,
+			(routes, catalog, unavailable, done) ->
+			{
+				if (done)
+				{
+					out.set(routes);
+					latch.countDown();
+				}
+			});
+		assertTrue("generation must finish", latch.await(60, TimeUnit.SECONDS));
+		List<RouteOption> routes = out.get();
+		assertNotNull(routes);
+		assertTrue("a cheap best route must not collapse the page to one entry (got "
+			+ routes.size() + ")", routes.size() >= 4);
+		for (RouteOption route : routes)
+		{
+			long trainRides = route.getMethods().stream()
+				.filter(m -> gps.transport.TransportType.MINECART.equals(m.getType())
+					&& m.label().contains("White Wolf Mountain"))
+				.count();
+			assertTrue("no route may detour via the White Wolf Mountain train from Keldagrim",
+				trainRides == 0);
+		}
+	}
+
+	/**
 	 * Lumbridge -> Barrows in everything mode: four routes sit under the bare 105 band (32/32/86/86)
 	 * and a straggler cluster sits just past its edge (118, 122) before a genuine cliff (the next
 	 * route costs 176). The bare band cut mid-cluster and showed 4; the hybrid must show the whole
