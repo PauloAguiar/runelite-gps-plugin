@@ -155,6 +155,9 @@ public class PathfinderConfig
 	private long calculationCutoffMillis;
 	@Getter
 	private boolean avoidWilderness;
+	// When off, farmable spirit trees are never routed (only the permanent ones); when on, the
+	// travel-menu-detected planted set gates them (see isPlantedSpiritTreeBlocked).
+	private boolean spiritTreeSmartMode;
 	// POH-specific settings (not tied to a single TransportType)
 	private boolean usePohFairyRing,
 		usePohSpiritTree,
@@ -314,6 +317,7 @@ public class PathfinderConfig
 		// Search-time state derived by the last refresh() of this config.
 		copy.calculationCutoffMillis = calculationCutoffMillis;
 		copy.avoidWilderness = avoidWilderness;
+		copy.spiritTreeSmartMode = spiritTreeSmartMode;
 		copy.includeBankPath = includeBankPath;
 		copy.accessibleBankTiles = accessibleBankTiles;
 		copy.destinations = destinations;
@@ -410,6 +414,10 @@ public class PathfinderConfig
 		double mage = (13 * (3 * Math.floorDiv(magic, 2))) / 40.0;
 		return (int) Math.floor(base + Math.max(Math.max(melee, range), Math.max(melee, mage)));
 	}
+
+	/** The farmable spirit-tree patch locations, in menu order (see {@link #getPlantedSpiritTreeName}). */
+	public static final List<String> FARMABLE_SPIRIT_TREES = List.of(
+		"Port Sarim", "Etceteria", "Brimhaven", "Hosidius", "Farming Guild");
 
 	static String getPlantedSpiritTreeName(int x, int y)
 	{
@@ -511,6 +519,9 @@ public class PathfinderConfig
 		calculationCutoffMillis = (long) config.calculationCutoff() * Constants.GAME_TICK_LENGTH;
 		avoidWilderness = ShortestPathPlugin.override("avoidWilderness", config.avoidWilderness());
 		usePoh = ShortestPathPlugin.override("usePoh", config.usePoh());
+		// Read before refreshTransports() below — passesStructuralGates() gates farmable spirit
+		// trees on it.
+		spiritTreeSmartMode = ShortestPathPlugin.override("spiritTreeSmartMode", config.spiritTreeSmartMode());
 		leagueModeState.refresh(client);
 
 		// Refresh transport type enabled states
@@ -1808,10 +1819,19 @@ public class PathfinderConfig
 		{
 			return false; // not a farmable spirit-tree location: nothing to block
 		}
-		if (availableSpiritTrees == null)
+		// Smart tracking off: farmable trees are never assumed — only the permanent ones route.
+		if (!spiritTreeSmartMode)
 		{
 			return true;
 		}
-		return !availableSpiritTrees.contains(treeName);
+		// The travel-menu-parsed set lives on the main config; planning copies read it through
+		// their source (mirrors resolveBankItems), so widget updates reach the search engine.
+		Set<String> available = (planningSource != null)
+			? planningSource.availableSpiritTrees : availableSpiritTrees;
+		if (available == null)
+		{
+			return true;
+		}
+		return !available.contains(treeName);
 	}
 }

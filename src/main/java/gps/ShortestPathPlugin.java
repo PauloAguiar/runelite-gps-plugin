@@ -126,7 +126,7 @@ public class ShortestPathPlugin extends Plugin
 	private static final String FLASH_ICONS = "Flash icons";
 	private static final String TARGET = ColorUtil.wrapWithColorTag("GPS Target", JagexColors.MENU_TARGET);
 	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
-	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|pohJewelleryBoxTier|balloonSmartMode|balloonStored\\w+|use\\w+|cost\\w+)$");
+	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|pohJewelleryBoxTier|balloonSmartMode|balloonStored\\w+|spiritTreeSmartMode|use\\w+|cost\\w+)$");
 	private static final Map<String, Object> configOverride = new HashMap<>(50);
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
@@ -1580,6 +1580,12 @@ public class ShortestPathPlugin extends Plugin
 
 		pathfinderConfig.availableSpiritTrees = available;
 
+		// The panel's Spirit trees section shows the detected planted trees / sync state.
+		if (altPanel != null)
+		{
+			SwingUtilities.invokeLater(altPanel::refreshConfigSections);
+		}
+
 		if (hasPathTargets())
 		{
 			// Spirit-tree availability just became known: refresh the live config and regenerate
@@ -2305,6 +2311,36 @@ public class ShortestPathPlugin extends Plugin
 	public ShortestPathConfig getGpsConfig()
 	{
 		return config;
+	}
+
+	/**
+	 * Whether the spirit-tree travel menu has been seen this session, so the planted-tree set is
+	 * known. Until then the panel shows a sync hint and farmable trees are treated conservatively.
+	 */
+	public boolean isSpiritTreeSynced()
+	{
+		return pathfinderConfig != null && pathfinderConfig.availableSpiritTrees != null;
+	}
+
+	/**
+	 * The farmable spirit trees currently detected as planted-and-grown (menu order), or empty when
+	 * not synced. For the panel's Spirit trees section.
+	 */
+	public List<String> getAvailablePlantedSpiritTrees()
+	{
+		if (pathfinderConfig == null || pathfinderConfig.availableSpiritTrees == null)
+		{
+			return List.of();
+		}
+		List<String> planted = new ArrayList<>();
+		for (String name : gps.pathfinder.PathfinderConfig.FARMABLE_SPIRIT_TREES)
+		{
+			if (pathfinderConfig.availableSpiritTrees.contains(name))
+			{
+				planted.add(name);
+			}
+		}
+		return planted;
 	}
 
 	/**

@@ -255,6 +255,20 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigItem(
 		hidden = true,
+		keyName = "spiritTreeSmartMode",
+		name = "Spirit tree smart planted tracking",
+		description = "Detect which farmable spirit trees you have planted (read from the travel menu),<br>" +
+			"so routes can use them. When off, only the permanent spirit trees are routed.",
+		position = 154,
+		section = sectionSettings
+	)
+	default boolean spiritTreeSmartMode()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		hidden = true,
 		keyName = "useTeleportationItems",
 		name = "Use teleportation items",
 		description = "Whether to include teleportation items from the player's inventory and equipment.<br>" +

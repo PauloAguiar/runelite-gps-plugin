@@ -163,6 +163,7 @@ public class ShortestPathPanel extends PluginPanel
 	private boolean pohSectionExpanded = false;
 	private boolean wildernessSectionExpanded = false;
 	private boolean balloonSectionExpanded = false;
+	private boolean spiritTreeSectionExpanded = false;
 	// Funnel filter next to the catalog search: narrow the list to disabled methods or to a single
 	// kind of unavailability (missing item/level/quest, in bank, not unlocked).
 	private CatalogFilter catalogFilter = CatalogFilter.ALL;
@@ -1251,6 +1252,7 @@ public class ShortestPathPanel extends PluginPanel
 		body.add(buildPohSection());
 		body.add(buildWildernessSection());
 		body.add(buildBalloonSection());
+		body.add(buildSpiritTreeSection());
 		if (!cachedCatalog.isEmpty())
 		{
 			body.add(buildCatalogSection());
@@ -1469,6 +1471,77 @@ public class ShortestPathPanel extends PluginPanel
 				}
 				storageRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, storageRow.getPreferredSize().height));
 				body.add(storageRow);
+			}
+		}
+
+		section.add(body);
+		return section;
+	}
+
+	/**
+	 * Spirit trees: the master toggle plus smart planted-tracking, which reads the travel menu to
+	 * learn which farmable spirit trees you have grown — with the detected list (or a sync hint,
+	 * since GPS can't see a farming patch until the travel menu has been opened once).
+	 */
+	private JPanel buildSpiritTreeSection()
+	{
+		final ShortestPathConfig config = plugin.getGpsConfig();
+		final boolean treesOn = config.useSpiritTrees();
+		final boolean smart = config.spiritTreeSmartMode();
+
+		String stateText = treesOn ? "on" : "off";
+		Color stateColor = treesOn ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.LIGHT_GRAY_COLOR;
+		JPanel section = configSectionShell("Spirit trees",
+			"Spirit tree travel and smart detection of your planted trees",
+			spiritTreeSectionExpanded, () -> spiritTreeSectionExpanded = !spiritTreeSectionExpanded,
+			stateText, stateColor);
+		if (!spiritTreeSectionExpanded)
+		{
+			return section;
+		}
+
+		JPanel body = configSectionBody();
+
+		JCheckBox master = configCheckBox("Use spirit tree routes", treesOn,
+			"<html><body style='width:220px'>Master switch: include spirit tree travel in routes"
+				+ " (requires Tree Gnome Village).</body></html>",
+			v -> plugin.setPanelConfig("useSpiritTrees", v));
+		body.add(iconRow("spirit_tree", 0, master));
+
+		JCheckBox smartBox = configCheckBox("Smart planted tracking", smart,
+			"<html><body style='width:220px'>Detect which farmable spirit trees you have planted and"
+				+ " grown (read from the travel menu), so routes can use them.<br><br>When off, only the"
+				+ " permanent spirit trees are routed.</body></html>",
+			v -> plugin.setPanelConfig("spiritTreeSmartMode", v));
+		smartBox.setEnabled(treesOn);
+		smartBox.setBorder(new EmptyBorder(2, 18, 2, 0));
+		body.add(smartBox);
+
+		if (treesOn && smart)
+		{
+			if (!plugin.isSpiritTreeSynced())
+			{
+				body.add(configNote("Not synced yet — open a spirit tree travel menu once to detect"
+					+ " your planted trees.", ColorScheme.PROGRESS_INPROGRESS_COLOR));
+			}
+			else
+			{
+				List<String> planted = plugin.getAvailablePlantedSpiritTrees();
+				if (planted.isEmpty())
+				{
+					body.add(configNote("No planted spirit trees detected.", ColorScheme.MEDIUM_GRAY_COLOR));
+				}
+				else
+				{
+					body.add(configNote("Planted trees:", ColorScheme.LIGHT_GRAY_COLOR));
+					for (String name : planted)
+					{
+						JLabel label = new JLabel(name);
+						label.setForeground(ColorScheme.PROGRESS_COMPLETE_COLOR);
+						label.setFont(FontManager.getRunescapeSmallFont());
+						body.add(iconRow("spirit_tree", 18, label));
+					}
+				}
 			}
 		}
 
