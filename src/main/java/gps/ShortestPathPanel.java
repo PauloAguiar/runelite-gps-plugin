@@ -1310,7 +1310,7 @@ public class ShortestPathPanel extends PluginPanel
 		Color stateColor = !balloonsOn ? ColorScheme.LIGHT_GRAY_COLOR
 			: (lowTypes.isEmpty() ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.PROGRESS_INPROGRESS_COLOR);
 		JPanel section = configSectionShell("Hot air balloons",
-			"Balloon travel and smart tracking of the stations' log storage",
+			"Balloon travel and smart tracking of the stations' Log storage",
 			balloonSectionExpanded, () -> balloonSectionExpanded = !balloonSectionExpanded,
 			stateText, stateColor);
 		if (!balloonSectionExpanded)
@@ -1325,8 +1325,8 @@ public class ShortestPathPanel extends PluginPanel
 			v -> plugin.setPanelConfig("useHotAirBalloons", v));
 		body.add(master);
 
-		JCheckBox smartBox = configCheckBox("Smart log tracking", smart,
-			"Detect and keep track of the logs stored at balloon stations (read from chat messages);"
+		JCheckBox smartBox = configCheckBox("Track Log storage", smart,
+			"Detect and keep track of the logs in the stations' Log storage (read from chat messages);"
 				+ " flights can then be paid from storage without carrying logs",
 			v -> plugin.setPanelConfig("balloonSmartMode", v));
 		smartBox.setEnabled(balloonsOn);
@@ -1344,7 +1344,7 @@ public class ShortestPathPanel extends PluginPanel
 		JSpinner warnSpinner = new JSpinner(
 			new SpinnerNumberModel(config.balloonLogWarningThreshold(), 0, 100, 1));
 		warnSpinner.setEnabled(balloonsOn && smart);
-		warnSpinner.setToolTipText("Warn when an unlocked route's stored logs fall below this many (0 = never warn)");
+		warnSpinner.setToolTipText("Warn when an unlocked route's Log storage count falls below this (0 = never warn)");
 		warnSpinner.addChangeListener(e -> plugin.setPanelConfig("balloonLogWarningThreshold", warnSpinner.getValue()));
 		warnRow.add(warnSpinner, BorderLayout.EAST);
 		body.add(warnRow);
@@ -1353,13 +1353,13 @@ public class ShortestPathPanel extends PluginPanel
 		{
 			if (!config.balloonStorageSynced())
 			{
-				body.add(configNote("Not synced yet — check a balloon storage crate once to import"
-					+ " your stored log counts.", ColorScheme.PROGRESS_INPROGRESS_COLOR));
+				body.add(configNote("Not synced yet — check the Log storage at a balloon station once"
+					+ " to import your stored log counts.", ColorScheme.PROGRESS_INPROGRESS_COLOR));
 			}
 			else
 			{
 				int[] counts = plugin.getBalloonStoredCounts();
-				StringBuilder stored = new StringBuilder("Stored:");
+				StringBuilder stored = new StringBuilder("Log storage:");
 				for (int i = 0; i < counts.length; i++)
 				{
 					stored.append(i == 0 ? " " : ", ").append(counts[i]).append(' ')
@@ -1368,7 +1368,7 @@ public class ShortestPathPanel extends PluginPanel
 				body.add(configNote(stored.toString(), ColorScheme.LIGHT_GRAY_COLOR));
 				if (!lowTypes.isEmpty())
 				{
-					body.add(configNote("Low storage: " + String.join(", ", lowTypes),
+					body.add(configNote("Log storage low: " + String.join(", ", lowTypes),
 						ColorScheme.PROGRESS_INPROGRESS_COLOR));
 				}
 			}

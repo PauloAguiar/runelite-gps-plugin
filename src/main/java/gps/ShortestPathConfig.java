@@ -430,9 +430,9 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigItem(
 		keyName = "balloonSmartMode",
-		name = "Balloon smart log tracking",
-		description = "Detect and keep track of the logs stored at balloon stations (from chat messages),<br>" +
-			"so flights can be paid from storage without carrying logs. Check a storage crate to sync.",
+		name = "Balloon Log storage tracking",
+		description = "Detect and keep track of the logs in the balloon stations' Log storage (from chat messages),<br>" +
+			"so flights can be paid from storage without carrying logs. Check the Log storage to sync.",
 		position = 101,
 		section = sectionSettings
 	)
@@ -445,8 +445,8 @@ public interface ShortestPathConfig extends Config
 	@ConfigItem(
 		keyName = "balloonLogWarningThreshold",
 		name = "Balloon low-log warning",
-		description = "Warn in the GPS panel when an unlocked balloon route's stored logs fall below this many<br>" +
-			"(0 = never warn). Only applies in smart log tracking mode.",
+		description = "Warn in the GPS panel when an unlocked balloon route's Log storage count falls below this<br>" +
+			"many (0 = never warn). Only applies while Log storage tracking is on.",
 		position = 102,
 		section = sectionSettings
 	)
