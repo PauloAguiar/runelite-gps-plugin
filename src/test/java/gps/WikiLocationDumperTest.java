@@ -94,10 +94,10 @@ public class WikiLocationDumperTest
 		// tile nearby in the plugin's collision map and would produce nonsense routes.
 		CollisionMap collisionMap = new CollisionMap(SplitFlagMap.fromResources());
 
-		Map<String, Integer> pins = new TreeMap<>();
-		harvest("Template:Infobox Location", false, emitted, rows, pins, scanned, today, collisionMap);
-		harvest("Template:Infobox Activity", true, emitted, rows, pins, scanned, today, collisionMap);
-		dropUnreachable(rows, pins, collisionMap);
+		Map<String, List<int[]>> candidates = new TreeMap<>();
+		harvest("Template:Infobox Location", false, emitted, candidates, scanned);
+		harvest("Template:Infobox Activity", true, emitted, candidates, scanned);
+		resolvePins(rows, candidates, collisionMap, today);
 
 		Files.createDirectories(output.getParent());
 		try (BufferedWriter writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8))
@@ -113,8 +113,8 @@ public class WikiLocationDumperTest
 		System.out.println("output: " + output.toAbsolutePath());
 	}
 
-	private void harvest(String template, boolean activity, Set<String> emitted, Map<String, String> rows,
-		Map<String, Integer> pins, int[] scanned, String today, CollisionMap collisionMap) throws Exception
+	private void harvest(String template, boolean activity, Set<String> emitted, Map<String, List<int[]>> candidates,
+		int[] scanned) throws Exception
 	{
 		List<String> titles = transcludingTitles(template);
 		System.out.println(template + ": " + titles.size() + " pages");
@@ -133,30 +133,26 @@ public class WikiLocationDumperTest
 				{
 					continue;
 				}
-				int[] pin = mapPin(page.getValue());
-				if (pin == null)
+				List<int[]> pins = mapPins(page.getValue());
+				if (pins.isEmpty() || !emitted.add(normalize(title)))
 				{
 					continue;
 				}
-				int packed = WorldPointUtil.packWorldPoint(pin[0], pin[1], pin[2]);
-				if (Destinations.walkableTargets(collisionMap, packed).isEmpty() || !emitted.add(normalize(title)))
-				{
-					continue;
-				}
-				rows.put(category + "|" + title, category + "\t" + title + "\t" + pin[0] + "\t" + pin[1]
-					+ "\t" + pin[2] + "\tosrs-wiki-infobox-map\t" + today);
-				pins.put(category + "|" + title, packed);
+				candidates.put(category + "|" + title, pins);
 			}
 		}
 	}
 
 	/**
-	 * Drops entries GPS cannot actually route to: instanced and cutscene zones are walkable in the
-	 * collision map but disconnected from the world graph, so a search from Lumbridge with every
-	 * transport enabled (everything-mode planning config) is the oracle. Slow (minutes — the
-	 * unreachable candidates each flood the map) but this only runs when regenerating the data.
+	 * Resolves each candidate to its first REACHABLE pin, or drops it: instanced and cutscene zones
+	 * are walkable in the collision map but disconnected from the world graph, so a search from
+	 * Lumbridge with every transport enabled (everything-mode planning config) is the oracle. Pages
+	 * often pin an interior first and the entrance later (dungeons, altars), so every pin gets a
+	 * chance. Slow (minutes — unreachable pins each flood the map) but this only runs when
+	 * regenerating the data.
 	 */
-	private static void dropUnreachable(Map<String, String> rows, Map<String, Integer> pins, CollisionMap collisionMap)
+	private static void resolvePins(Map<String, String> rows, Map<String, List<int[]>> candidates,
+		CollisionMap collisionMap, String today)
 	{
 		final Thread clientThread = Thread.currentThread();
 		net.runelite.api.Client client = (net.runelite.api.Client) java.lang.reflect.Proxy.newProxyInstance(
@@ -204,24 +200,52 @@ public class WikiLocationDumperTest
 
 		final int lumbridge = WorldPointUtil.packWorldPoint(3221, 3218, 0);
 		List<String> dropped = new ArrayList<>();
-		for (Map.Entry<String, Integer> pin : pins.entrySet())
+		int salvagedByLaterPin = 0;
+		for (Map.Entry<String, List<int[]>> candidate : candidates.entrySet())
 		{
-			Set<Integer> ring = Destinations.walkableTargets(collisionMap, pin.getValue());
-			gps.pathfinder.Pathfinder pathfinder = new gps.pathfinder.Pathfinder(planning, lumbridge, ring);
-			pathfinder.run();
-			if (!pathfinder.getResult().isReached())
+			int[] chosen = null;
+			List<int[]> pins = candidate.getValue();
+			for (int i = 0; i < pins.size() && chosen == null; i++)
 			{
-				rows.remove(pin.getKey());
-				dropped.add(pin.getKey());
+				int[] pin = pins.get(i);
+				Set<Integer> ring = Destinations.walkableTargets(collisionMap,
+					WorldPointUtil.packWorldPoint(pin[0], pin[1], pin[2]));
+				if (ring.isEmpty())
+				{
+					continue;
+				}
+				gps.pathfinder.Pathfinder pathfinder = new gps.pathfinder.Pathfinder(planning, lumbridge, ring);
+				pathfinder.run();
+				if (pathfinder.getResult().isReached())
+				{
+					chosen = pin;
+					if (i > 0)
+					{
+						salvagedByLaterPin++;
+					}
+				}
 			}
+			if (chosen == null)
+			{
+				dropped.add(candidate.getKey());
+				continue;
+			}
+			String key = candidate.getKey();
+			String category = key.substring(0, key.indexOf('|'));
+			String title = key.substring(key.indexOf('|') + 1);
+			rows.put(key, category + "\t" + title + "\t" + chosen[0] + "\t" + chosen[1] + "\t" + chosen[2]
+				+ "\tosrs-wiki-infobox-map\t" + today);
 		}
+		System.out.println("salvaged by a later pin: " + salvagedByLaterPin);
 		System.out.println("unreachable entries dropped: " + dropped.size() + " " + dropped);
 	}
 
 	/**
-	 * The search category for a page, from its infobox type: activities must be minigames; locations
-	 * map city/town/village/island to "place", dungeons and caves to "dungeon", everything else
-	 * (mountains, ruins, guilds, buildings, ...) to "landmark". Null skips the page.
+	 * The search category for a page, from its infobox type: activities count when they are
+	 * minigames or raids ("minigame") or fixed-location bosses/activities like Barrows and the
+	 * Blast mine ("landmark") — but not random events, forestry events, or roaming distractions.
+	 * Locations map city/town/village/island to "place", dungeons and caves to "dungeon",
+	 * everything else (mountains, ruins, guilds, buildings, ...) to "landmark". Null skips the page.
 	 */
 	private static String categorize(String wikitext, boolean activity)
 	{
@@ -230,7 +254,11 @@ public class WikiLocationDumperTest
 			? typeMatcher.group(1).replaceAll("\\[\\[|]]", "").trim().toLowerCase(Locale.ROOT) : "";
 		if (activity)
 		{
-			return type.contains("minigame") ? "minigame" : null;
+			if (type.contains("minigame") || type.contains("raid"))
+			{
+				return "minigame";
+			}
+			return type.equals("boss") || type.equals("activity") ? "landmark" : null;
 		}
 		if (type.contains("city") || type.contains("town") || type.contains("village") || type.contains("island"))
 		{
@@ -243,9 +271,14 @@ public class WikiLocationDumperTest
 		return "landmark";
 	}
 
-	/** The first plausible in-world {@code {{Map}}} pin: [x, y, plane], or null when the page has none. */
-	private static int[] mapPin(String wikitext)
+	/**
+	 * Every plausible in-world {@code {{Map}}} pin on the page, in order: [x, y, plane] each. Many
+	 * pages pin an interior first and the entrance later, so the reachability pass tries them all.
+	 * Handles both named ({@code x=..|y=..}) and positional ({@code {{Map|2984,3291|...}}}) pins.
+	 */
+	private static List<int[]> mapPins(String wikitext)
 	{
+		List<int[]> pins = new ArrayList<>();
 		Matcher matcher = MAP_TEMPLATE.matcher(wikitext);
 		while (matcher.find())
 		{
@@ -257,6 +290,13 @@ public class WikiLocationDumperTest
 				String[] pair = param.split("=", 2);
 				if (pair.length != 2)
 				{
+					// Positional coordinate pair: {{Map|2984,3291|mtype=pin}}.
+					Matcher pos = Pattern.compile("^\\s*(\\d{4}),\\s*(\\d{4,5})\\s*$").matcher(param);
+					if (pos.matches())
+					{
+						x = Integer.parseInt(pos.group(1));
+						y = Integer.parseInt(pos.group(2));
+					}
 					continue;
 				}
 				String key = pair[0].trim().toLowerCase(Locale.ROOT);
@@ -282,10 +322,10 @@ public class WikiLocationDumperTest
 			}
 			if (x != null && y != null && x >= 1000 && x <= 4600 && y >= 2000 && y <= 13000 && plane >= 0 && plane <= 3)
 			{
-				return new int[]{x, y, plane};
+				pins.add(new int[]{x, y, plane});
 			}
 		}
-		return null;
+		return pins;
 	}
 
 	/** Every mainspace title transcluding the template, via the paginated embeddedin API. */
