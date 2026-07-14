@@ -120,6 +120,38 @@ public class AlternativeRoutesBankModeTest
 		assertEquals("Route should match the bank-pickup path length", 36, pathfinder.getPath().size());
 	}
 
+	/**
+	 * The "Bank pickup modifier" (costBankPickup) must actually price banking: it adds exactly its
+	 * value to a banking route's cost, and once it exceeds what banking saves the search abandons
+	 * the bank detour for the plain walk. Same banked-Cowbell scenario as above.
+	 */
+	@Test
+	public void bankPickupModifierPricesTheDetour()
+	{
+		Pathfinder free = runWithBankCost(0);
+		assertTrue("with no modifier the cheapest route banks",
+			free.getPath().stream().anyMatch(PathStep::isBankVisited));
+		int freeCost = free.getResult().getTotalCost();
+
+		Pathfinder charged = runWithBankCost(50);
+		assertTrue("a modest modifier still banks", charged.getPath().stream().anyMatch(PathStep::isBankVisited));
+		assertEquals("the modifier must add exactly its value to the banking route's cost",
+			freeCost + 50, charged.getResult().getTotalCost());
+
+		Pathfinder prohibitive = runWithBankCost(100000);
+		assertFalse("a modifier larger than banking saves must suppress the bank detour",
+			prohibitive.getPath().stream().anyMatch(PathStep::isBankVisited));
+	}
+
+	private Pathfinder runWithBankCost(int bankCost)
+	{
+		when(config.costBankPickup()).thenReturn(bankCost);
+		doReturn(new Item[]{new Item(COWBELL_AMULET, 1)}).when(bank).getItems();
+		PathfinderConfig base = new TestPathfinderConfig(client, config);
+		base.bank = bank;
+		return run(planningCopy(true, base));
+	}
+
 	@Test
 	public void inventoryModeDoesNotUseBankedItems()
 	{
