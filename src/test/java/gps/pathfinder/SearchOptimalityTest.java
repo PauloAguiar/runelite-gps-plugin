@@ -244,21 +244,31 @@ public class SearchOptimalityTest
 		}
 		assertEquals("walking-edge consistency violations", 0, violations);
 
-		// Origin-bound transports: h(origin) <= edge cost + h(destination).
+		assertTransportEdgesConsistent(cfg, heuristic);
+	}
+
+	/**
+	 * Transport-edge and teleport-hub consistency: h never overestimates across a ride or a cast.
+	 * The origin is the availability MAP KEY — the tile the search actually uses the transport
+	 * from — not transport.getOrigin(): the POH remap re-homes interior transports onto the
+	 * landing by key only, and checking the stale interior origin is exactly how this sampler
+	 * missed the inadmissible-heuristic-at-the-landing bug (capture pair 20260713-232224/232231).
+	 */
+	private static void assertTransportEdgesConsistent(PathfinderConfig cfg, SearchHeuristic heuristic)
+	{
 		for (boolean bankVisited : new boolean[]{false, true})
 		{
 			for (int origin : cfg.getTransportsPacked(bankVisited).keys())
 			{
 				for (Transport transport : cfg.getTransportsPacked(bankVisited).get(origin))
 				{
-					if (transport.getOrigin() == WorldPointUtil.UNDEFINED
-						|| transport.getDestination() == WorldPointUtil.UNDEFINED)
+					if (transport.getDestination() == WorldPointUtil.UNDEFINED)
 					{
 						continue;
 					}
 					final int edge = Math.max(0, CostUnits.fromTicks(transport.getDuration())
 						+ cfg.getAdditionalTransportCost(transport));
-					final int ha = heuristic.of(transport.getOrigin());
+					final int ha = heuristic.of(origin);
 					final int hb = heuristic.of(transport.getDestination());
 					assertTrue("transport edge " + transport + ": h(origin)=" + ha
 						+ " > " + edge + " + h(dest)=" + hb, ha <= edge + hb);
@@ -278,5 +288,49 @@ public class SearchOptimalityTest
 					+ " > " + edge + " + h(landing)=" + hb, heuristic.floor() <= edge + hb);
 			}
 		}
+	}
+
+	// Keldagrim train station to the Ice Mountain -area target (capture pair
+	// 20260713-232224/232231): the scenario whose optimum crosses the POH once the direct
+	// teleports are excluded.
+	private static final int KELDAGRIM_STATION = WorldPointUtil.packWorldPoint(2907, 10172, 0);
+	private static final int ICE_MOUNTAIN_TARGET = WorldPointUtil.packWorldPoint(3009, 3487, 0);
+
+	/** With the POH enabled, the heuristic must stay consistent across the remapped landing hub. */
+	@Test
+	public void heuristicIsConsistentWithThePohEnabled()
+	{
+		when(config.usePoh()).thenReturn(true);
+		when(config.useTeleportationPortalsPoh()).thenReturn(true);
+		PathfinderConfig cfg = everythingConfig();
+		DistanceField field = DistanceField.build(cfg, Set.of(ICE_MOUNTAIN_TARGET));
+		SearchHeuristic heuristic = SearchHeuristic.buildWithField(cfg, field);
+		assertNotNull(heuristic);
+		assertTransportEdgesConsistent(cfg, heuristic);
+	}
+
+	/**
+	 * The optimum must survive crossing the POH: with the direct Lassar teleports excluded, the
+	 * cheapest route enters the house and takes the Lassar Portal — the oracle and both production
+	 * searches must agree. Pre-fix, A* returned the 67-cost Mind Altar route here.
+	 */
+	@Test
+	public void pohMediatedOptimumIsOptimal()
+	{
+		when(config.usePoh()).thenReturn(true);
+		when(config.useTeleportationPortalsPoh()).thenReturn(true);
+		PathfinderConfig cfg = everythingConfig();
+		Set<gps.TeleportMethod> excluded = new java.util.HashSet<>();
+		for (gps.TeleportMethod method : cfg.getMethodCatalog())
+		{
+			if (method.label().equals("Lassar tablet") || method.label().equals("Lassar Teleport"))
+			{
+				excluded.add(method);
+			}
+		}
+		assertTrue("the direct Lassar methods must exist in the catalog", excluded.size() == 2);
+		cfg.setExcludedMethods(excluded);
+		cfg.rebuildAvailabilityWithExclusions(excluded);
+		assertOptimal(cfg, KELDAGRIM_STATION, Set.of(ICE_MOUNTAIN_TARGET));
 	}
 }

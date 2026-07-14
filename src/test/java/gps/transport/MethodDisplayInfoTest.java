@@ -40,4 +40,31 @@ public class MethodDisplayInfoTest
 		assertTrue("method transports without display info (would label as coordinates): " + unnamed,
 			unnamed.isEmpty());
 	}
+
+	/**
+	 * Every network RIDE must cost at least a tick: a missing Duration cell prices the ride at
+	 * zero, and the search then uses it as a free shortcut (the Keldagrim train rode to White Wolf
+	 * Mountain and back to cross 18 tiles — user capture 20260713-233919).
+	 */
+	@Test
+	public void everyNetworkRideHasADuration()
+	{
+		Set<TransportType> rides = java.util.EnumSet.of(
+			TransportType.BOAT, TransportType.CANOE, TransportType.CHARTER_SHIP, TransportType.SHIP,
+			TransportType.GNOME_GLIDER, TransportType.HOT_AIR_BALLOON, TransportType.MAGIC_CARPET,
+			TransportType.MAGIC_MUSHTREE, TransportType.MINECART, TransportType.MOUNTAIN_GUIDE,
+			TransportType.QUETZAL, TransportType.SPIRIT_TREE, TransportType.WILDERNESS_OBELISK);
+		List<String> free = new ArrayList<>();
+		for (Set<Transport> transports : TransportLoader.loadAllFromResources().values())
+		{
+			for (Transport transport : transports)
+			{
+				if (rides.contains(transport.getType()) && transport.getDuration() < 1)
+				{
+					free.add(transport.getType() + " -> " + transport.getDisplayInfo());
+				}
+			}
+		}
+		assertTrue("rides with no duration (searched as free shortcuts): " + free, free.isEmpty());
+	}
 }
