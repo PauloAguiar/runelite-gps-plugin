@@ -2553,13 +2553,24 @@ public class ShortestPathPanel extends PluginPanel
 		applySelectionHighlight();
 	}
 
+	// Selected search-result row: a blue-tinted background plus a GPS-blue accent bar — the two
+	// near-identical dark greys the highlight used before were invisible when arrowing through.
+	private static final Color RESULT_SELECTED_BG = new Color(0x2E, 0x3E, 0x5E);
+
 	/** Highlights the selected row (shared by keyboard and mouse) and resets the rest. */
 	private void applySelectionHighlight()
 	{
 		for (int i = 0; i < resultRows.size(); i++)
 		{
-			resultRows.get(i).setBackground(i == selectedResult
-				? ColorScheme.DARK_GRAY_HOVER_COLOR : ColorScheme.DARKER_GRAY_COLOR);
+			boolean selected = i == selectedResult;
+			JPanel row = resultRows.get(i);
+			row.setBackground(selected ? RESULT_SELECTED_BG : ColorScheme.DARKER_GRAY_COLOR);
+			// The accent bar replaces 3px of the left padding, so the row text doesn't shift.
+			row.setBorder(selected
+				? BorderFactory.createCompoundBorder(
+					BorderFactory.createMatteBorder(0, 3, 0, 0, BANNER_INFO_ACCENT),
+					new EmptyBorder(3, 1, 3, 4))
+				: new EmptyBorder(3, 4, 3, 4));
 		}
 	}
 
