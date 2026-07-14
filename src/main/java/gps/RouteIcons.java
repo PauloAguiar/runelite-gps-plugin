@@ -59,6 +59,15 @@ final class RouteIcons
 	static final ImageIcon CROSS_HOVER = new ImageIcon(cross(RED));
 	static final ImageIcon DASH = new ImageIcon(dash(ORANGE));
 	static final ImageIcon DASH_HOVER = new ImageIcon(dash(ORANGE_LIGHT));
+	// Configuration-section checkboxes: the look-and-feel's default box is nearly invisible on the
+	// dark panel, so draw an explicit outlined box with a green check. Dimmed variants for disabled.
+	static final ImageIcon CHECKBOX = new ImageIcon(checkbox(GREY, null));
+	static final ImageIcon CHECKBOX_HOVER = new ImageIcon(checkbox(LIGHT, null));
+	static final ImageIcon CHECKBOX_SELECTED = new ImageIcon(checkbox(GREY, GREEN));
+	static final ImageIcon CHECKBOX_SELECTED_HOVER = new ImageIcon(checkbox(LIGHT, GREEN_LIGHT));
+	static final ImageIcon CHECKBOX_DISABLED = new ImageIcon(checkbox(new Color(0x60, 0x60, 0x60), null));
+	static final ImageIcon CHECKBOX_SELECTED_DISABLED =
+		new ImageIcon(checkbox(new Color(0x60, 0x60, 0x60), new Color(0x3F, 0x6E, 0x42)));
 	// Expand/collapse a category.
 	// Route control panel: a green "+" for more routes, blue refresh, red clear.
 	static final ImageIcon SHOW_MORE = new ImageIcon(plus(GREEN));
@@ -469,6 +478,29 @@ final class RouteIcons
 	private interface Drawer
 	{
 		void draw(Graphics2D g);
+	}
+
+	/** An outlined checkbox: recessed fill, {@code border} outline, optional check mark. */
+	private static BufferedImage checkbox(Color border, Color checkColor)
+	{
+		return render(g ->
+		{
+			g.setColor(new Color(0x25, 0x25, 0x25));
+			g.fill(new RoundRectangle2D.Double(1.5, 1.5, 13, 13, 4, 4));
+			g.setColor(border);
+			g.setStroke(new BasicStroke(1.4f));
+			g.draw(new RoundRectangle2D.Double(1.5, 1.5, 13, 13, 4, 4));
+			if (checkColor != null)
+			{
+				g.setColor(checkColor);
+				g.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+				Path2D check = new Path2D.Double();
+				check.moveTo(4.4, 8.4);
+				check.lineTo(7.0, 11.0);
+				check.lineTo(11.8, 5.0);
+				g.draw(check);
+			}
+		});
 	}
 
 	private static BufferedImage render(Drawer drawer)
