@@ -2482,6 +2482,27 @@ public class ShortestPathPlugin extends Plugin
 			{
 				Map<String, Object> snapshot = new LinkedHashMap<>();
 				snapshot.put("capturedAt", new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date()));
+				// Every non-zero varbit, for identifying state-dependent transport gates (mushtree
+				// discovery, balloon route unlocks): capture before and after the in-game action and
+				// diff the two files — the flipped id is the gate. Runs on the client thread; a few
+				// thousand entries, debug-file-sized only.
+				Map<String, Integer> varbitSnapshot = new LinkedHashMap<>();
+				for (int id = 0; id <= 20000; id++)
+				{
+					try
+					{
+						int value = client.getVarbitValue(id);
+						if (value != 0)
+						{
+							varbitSnapshot.put(Integer.toString(id), value);
+						}
+					}
+					catch (Exception ignored)
+					{
+						// Unknown varbit ids past the cache's definitions: skip.
+					}
+				}
+				snapshot.put("varbitSnapshot", varbitSnapshot);
 				Player local = client.getLocalPlayer();
 				snapshot.put("player", local != null ? packedPointJson(WorldPointUtil.packWorldPoint(local.getWorldLocation())) : null);
 				snapshot.put("routesMode", String.valueOf(routesMode));
