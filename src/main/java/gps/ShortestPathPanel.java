@@ -1473,13 +1473,14 @@ public class ShortestPathPanel extends PluginPanel
 		box.setToolTipText(tooltip);
 		box.setAlignmentX(Component.LEFT_ALIGNMENT);
 		box.setFocusPainted(false);
-		// The look-and-feel's box is nearly invisible on the dark background — use explicit icons.
-		box.setIcon(RouteIcons.CHECKBOX);
-		box.setRolloverIcon(RouteIcons.CHECKBOX_HOVER);
-		box.setSelectedIcon(RouteIcons.CHECKBOX_SELECTED);
-		box.setRolloverSelectedIcon(RouteIcons.CHECKBOX_SELECTED_HOVER);
-		box.setDisabledIcon(RouteIcons.CHECKBOX_DISABLED);
-		box.setDisabledSelectedIcon(RouteIcons.CHECKBOX_SELECTED_DISABLED);
+		// The look-and-feel's box is nearly invisible on the dark background — use the catalog's
+		// toggle glyphs instead (green check = on, red cross = off), dimmed while disabled.
+		box.setIcon(RouteIcons.CROSS_RED);
+		box.setRolloverIcon(RouteIcons.CROSS_RED_HOVER);
+		box.setSelectedIcon(RouteIcons.CHECK);
+		box.setRolloverSelectedIcon(RouteIcons.CHECK_HOVER);
+		box.setDisabledIcon(RouteIcons.CROSS_DIM);
+		box.setDisabledSelectedIcon(RouteIcons.CHECK_DIM);
 		box.addActionListener(e -> onChange.accept(box.isSelected()));
 		return box;
 	}
