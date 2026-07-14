@@ -1819,13 +1819,15 @@ public class PathfinderConfig
 		{
 			return false; // not a farmable spirit-tree location: nothing to block
 		}
-		// Smart tracking off: farmable trees are never assumed — only the permanent ones route.
+		// Smart tracking off: assume every farmable tree is grown; the Spirit trees catalog toggle
+		// is then the only gate (mirrors how the All modes assume balloon flights are available).
 		if (!spiritTreeSmartMode)
 		{
-			return true;
+			return false;
 		}
-		// The travel-menu-parsed set lives on the main config; planning copies read it through
-		// their source (mirrors resolveBankItems), so widget updates reach the search engine.
+		// Smart on: only the trees the travel menu confirmed are grown. The parsed set lives on the
+		// main config; planning copies read it through their source (mirrors resolveBankItems), so
+		// widget updates reach the search engine. Until the menu is seen (null), stay conservative.
 		Set<String> available = (planningSource != null)
 			? planningSource.availableSpiritTrees : availableSpiritTrees;
 		if (available == null)

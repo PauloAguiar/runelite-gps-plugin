@@ -20,10 +20,11 @@ import gps.transport.Transport;
 import gps.transport.TransportType;
 
 /**
- * Farmable spirit trees (Port Sarim, Etceteria, Brimhaven, Hosidius, Farming Guild) only route
- * when smart tracking is on AND the travel menu has confirmed they are planted. The set lives on
- * the main config; planning copies (the search engine) must read it through their source, or
- * planted trees would never route at all (the bug this feature also fixed).
+ * Farmable spirit trees (Port Sarim, Etceteria, Brimhaven, Hosidius, Farming Guild). Smart off:
+ * all are assumed available (catalog is the only gate). Smart on: only the trees the travel menu
+ * confirmed are planted route, and until the menu is seen none do. The confirmed set lives on the
+ * main config; planning copies (the search engine) must read it through their source, or planted
+ * trees would never route at all (the bug this feature also fixed).
  */
 @RunWith(MockitoJUnitRunner.class)
 public class SpiritTreeSmartModeTest
@@ -77,10 +78,11 @@ public class SpiritTreeSmartModeTest
 	}
 
 	@Test
-	public void smartOffNeverRoutesFarmableTrees()
+	public void smartOffAssumesAllFarmableTrees()
 	{
-		assertFalse("with smart tracking off, a planted tree must not route even when grown",
-			portSarimTreeRoutes(search(false, new HashSet<>(Set.of("Port Sarim")))));
+		// Off = assume every farmable tree is grown; routing doesn't depend on the detected set.
+		assertTrue("with smart tracking off, farmable trees are assumed available",
+			portSarimTreeRoutes(search(false, null)));
 	}
 
 	@Test

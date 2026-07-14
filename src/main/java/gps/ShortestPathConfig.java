@@ -258,7 +258,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "spiritTreeSmartMode",
 		name = "Spirit tree smart planted tracking",
 		description = "Detect which farmable spirit trees you have planted (read from the travel menu),<br>" +
-			"so routes can use them. When off, only the permanent spirit trees are routed.",
+			"and route only through those. When off, all farmable spirit trees are assumed available.",
 		position = 154,
 		section = sectionSettings
 	)
