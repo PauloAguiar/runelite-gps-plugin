@@ -24,6 +24,9 @@ public final class Destinations
 	// Hand-curated additions (agility courses, skilling spots) kept OUT of the machine-dumped
 	// resource above, so regenerating the dump never erases them.
 	private static final String CURATED_PATH = "/destinations-curated.tsv";
+	// Locations imported from the OSRS wiki's infobox map pins (see WikiLocationDumperTest):
+	// searchable places that have no in-game world-map label, deduplicated against the above.
+	private static final String WIKI_PATH = "/destinations-wiki.tsv";
 
 	/** One searchable destination: a category, a display name, and a packed world tile. */
 	public static final class Entry
@@ -286,6 +289,7 @@ public final class Destinations
 	{
 		List<Entry> entries = loadResource(RESOURCE_PATH);
 		entries.addAll(loadResource(CURATED_PATH));
+		entries.addAll(loadResource(WIKI_PATH));
 		return entries;
 	}
 
