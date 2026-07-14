@@ -452,7 +452,7 @@ public interface ShortestPathConfig extends Config
 	)
 	default int balloonLogWarningThreshold()
 	{
-		return 1;
+		return 10;
 	}
 
 	@ConfigItem(
