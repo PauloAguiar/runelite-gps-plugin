@@ -59,13 +59,10 @@ final class RouteIcons
 	static final ImageIcon CROSS_HOVER = new ImageIcon(cross(RED));
 	static final ImageIcon DASH = new ImageIcon(dash(ORANGE));
 	static final ImageIcon DASH_HOVER = new ImageIcon(dash(ORANGE_LIGHT));
-	// Configuration-section checkboxes reuse the catalog's toggle glyphs — green check = on, red
-	// cross = off (red at rest: an off feature should read as off without hovering) — plus dimmed
-	// variants for disabled rows, which the catalog never needs.
-	static final ImageIcon CROSS_RED = new ImageIcon(cross(RED));
-	static final ImageIcon CROSS_RED_HOVER = new ImageIcon(cross(RED_LIGHT));
+	// Dimmed variants of the catalog toggle glyphs for the configuration sections' checkboxes,
+	// whose rows (unlike the catalog's) can be disabled.
 	static final ImageIcon CHECK_DIM = new ImageIcon(check(new Color(0x3F, 0x6E, 0x42)));
-	static final ImageIcon CROSS_DIM = new ImageIcon(cross(new Color(0x74, 0x3B, 0x3B)));
+	static final ImageIcon CROSS_DIM = new ImageIcon(cross(new Color(0x55, 0x55, 0x55)));
 	// Expand/collapse a category.
 	// Route control panel: a green "+" for more routes, blue refresh, red clear.
 	static final ImageIcon SHOW_MORE = new ImageIcon(plus(GREEN));
