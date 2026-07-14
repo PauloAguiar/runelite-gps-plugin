@@ -1807,7 +1807,11 @@ public class ShortestPathPanel extends PluginPanel
 			tip = (items.size() - excludedCount) + " of " + items.size() + " included — click to include all";
 			action = () -> plugin.includeMethods(items);
 		}
-		row.add(control(new IconActionLabel(icon, hover, tip, action)), BorderLayout.WEST);
+		// Chevron on the left (matching the section headers above), the include/exclude toggle at
+		// the row's right edge — with the toggle up front it sat exactly where users click to
+		// expand, so category toggles kept getting flipped by accident.
+		row.add(control(new JLabel(expanded ? RouteIcons.CHEVRON_DOWN : RouteIcons.CHEVRON_RIGHT)),
+			BorderLayout.WEST);
 
 		String count = allIncluded
 			? " (" + items.size() + ")"
@@ -1816,7 +1820,7 @@ public class ShortestPathPanel extends PluginPanel
 		name.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 		row.add(name, BorderLayout.CENTER);
 
-		row.add(control(new JLabel(expanded ? RouteIcons.CHEVRON_DOWN : RouteIcons.CHEVRON_RIGHT)), BorderLayout.EAST);
+		row.add(control(new IconActionLabel(icon, hover, tip, action)), BorderLayout.EAST);
 
 		row.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		row.setToolTipText(expanded ? "Collapse" : "Expand to toggle individual methods");
@@ -1846,23 +1850,15 @@ public class ShortestPathPanel extends PluginPanel
 				"Excluded — click to include", () -> plugin.includeMethod(item))
 			: new IconActionLabel(RouteIcons.CHECK, RouteIcons.CHECK_HOVER,
 				"Included — click to exclude", () -> plugin.excludeMethod(item));
-		// Same structure as the route cards' west markers: natural-size icons, each centred on the
-		// row axis, the whole strip vertically centred against the (possibly wrapped) label.
-		JPanel west = new JPanel();
-		west.setLayout(new BoxLayout(west, BoxLayout.X_AXIS));
-		west.setOpaque(false);
-		JLabel toggleControl = control(toggle);
-		toggleControl.setAlignmentY(Component.CENTER_ALIGNMENT);
-		west.add(toggleControl);
+		// The status marker (lock/bank) stays by the name; the toggle sits at the row's right edge,
+		// aligned with the category toggles, away from where users click to expand.
 		MethodAvailability status = cachedUnavailable.get(item);
 		if (status != null)
 		{
 			JLabel statusMarker = statusLabel(status, item);
-			statusMarker.setAlignmentY(Component.CENTER_ALIGNMENT);
-			statusMarker.setBorder(new EmptyBorder(0, 3, 0, 0));
-			west.add(statusMarker);
+			statusMarker.setBorder(new EmptyBorder(0, 0, 0, 3));
+			row.add(verticallyCentered(statusMarker), BorderLayout.WEST);
 		}
-		row.add(verticallyCentered(west), BorderLayout.WEST);
 
 		JLabel text = wrappedLabel(escapeHtml(item.label()));
 		text.setToolTipText(methodTooltip(item));
@@ -1874,6 +1870,8 @@ public class ShortestPathPanel extends PluginPanel
 		// stretched html JLabel top-anchors its text (the html view claims the full height), which
 		// left the text floating high beside the vertically-centred icons.
 		row.add(verticallyCentered(text), BorderLayout.CENTER);
+
+		row.add(verticallyCentered(control(toggle)), BorderLayout.EAST);
 
 		return row;
 	}
