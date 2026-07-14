@@ -1479,20 +1479,23 @@ public class ShortestPathPanel extends PluginPanel
 	}
 
 	/**
-	 * Spirit trees: the master toggle plus smart planted-tracking, which reads the travel menu to
-	 * learn which farmable spirit trees you have grown — with the detected list (or a sync hint,
-	 * since GPS can't see a farming patch until the travel menu has been opened once).
+	 * Planted spirit trees: ONLY the five farmable patches — the permanent spirit trees are always
+	 * available and toggled in the Travel methods catalog like every other method. Smart tracking
+	 * reads the travel menu to learn which farmable trees you have grown; the detected list shows
+	 * here (or a sync hint, since GPS can't see a farming patch until the menu has been opened).
 	 */
 	private JPanel buildSpiritTreeSection()
 	{
-		final ShortestPathConfig config = plugin.getGpsConfig();
-		final boolean treesOn = config.useSpiritTrees();
-		final boolean smart = config.spiritTreeSmartMode();
+		final boolean smart = plugin.getGpsConfig().spiritTreeSmartMode();
+		List<String> planted = smart && plugin.isSpiritTreeSynced()
+			? plugin.getAvailablePlantedSpiritTrees() : List.of();
 
-		String stateText = treesOn ? "on" : "off";
-		Color stateColor = treesOn ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.LIGHT_GRAY_COLOR;
-		JPanel section = configSectionShell("Spirit trees",
-			"Spirit tree travel and smart detection of your planted trees",
+		String stateText = !smart ? "off" : (plugin.isSpiritTreeSynced()
+			? (planted.isEmpty() ? "none" : planted.size() + " planted") : "on");
+		Color stateColor = !smart ? ColorScheme.LIGHT_GRAY_COLOR
+			: (planted.isEmpty() ? ColorScheme.LIGHT_GRAY_COLOR : ColorScheme.PROGRESS_COMPLETE_COLOR);
+		JPanel section = configSectionShell("Planted spirit trees",
+			"Smart detection of the farmable spirit trees you have grown (permanent trees are in Travel methods)",
 			spiritTreeSectionExpanded, () -> spiritTreeSectionExpanded = !spiritTreeSectionExpanded,
 			stateText, stateColor);
 		if (!spiritTreeSectionExpanded)
@@ -1502,45 +1505,33 @@ public class ShortestPathPanel extends PluginPanel
 
 		JPanel body = configSectionBody();
 
-		JCheckBox master = configCheckBox("Use spirit tree routes", treesOn,
-			"<html><body style='width:220px'>Master switch: include spirit tree travel in routes"
-				+ " (requires Tree Gnome Village).</body></html>",
-			v -> plugin.setPanelConfig("useSpiritTrees", v));
-		body.add(iconRow("spirit_tree", 0, master));
-
-		JCheckBox smartBox = configCheckBox("Smart planted tracking", smart,
+		JCheckBox smartBox = configCheckBox("Use my planted trees", smart,
 			"<html><body style='width:220px'>Detect which farmable spirit trees you have planted and"
 				+ " grown (read from the travel menu), so routes can use them.<br><br>When off, only the"
-				+ " permanent spirit trees are routed.</body></html>",
+				+ " permanent spirit trees route — those are toggled in Travel methods.</body></html>",
 			v -> plugin.setPanelConfig("spiritTreeSmartMode", v));
-		smartBox.setEnabled(treesOn);
-		smartBox.setBorder(new EmptyBorder(2, 18, 2, 0));
-		body.add(smartBox);
+		body.add(iconRow("spirit_tree", 0, smartBox));
 
-		if (treesOn && smart)
+		if (smart)
 		{
 			if (!plugin.isSpiritTreeSynced())
 			{
 				body.add(configNote("Not synced yet — open a spirit tree travel menu once to detect"
 					+ " your planted trees.", ColorScheme.PROGRESS_INPROGRESS_COLOR));
 			}
+			else if (planted.isEmpty())
+			{
+				body.add(configNote("No planted spirit trees detected.", ColorScheme.MEDIUM_GRAY_COLOR));
+			}
 			else
 			{
-				List<String> planted = plugin.getAvailablePlantedSpiritTrees();
-				if (planted.isEmpty())
+				body.add(configNote("Detected:", ColorScheme.LIGHT_GRAY_COLOR));
+				for (String name : planted)
 				{
-					body.add(configNote("No planted spirit trees detected.", ColorScheme.MEDIUM_GRAY_COLOR));
-				}
-				else
-				{
-					body.add(configNote("Planted trees:", ColorScheme.LIGHT_GRAY_COLOR));
-					for (String name : planted)
-					{
-						JLabel label = new JLabel(name);
-						label.setForeground(ColorScheme.PROGRESS_COMPLETE_COLOR);
-						label.setFont(FontManager.getRunescapeSmallFont());
-						body.add(iconRow("spirit_tree", 18, label));
-					}
+					JLabel label = new JLabel(name);
+					label.setForeground(ColorScheme.PROGRESS_COMPLETE_COLOR);
+					label.setFont(FontManager.getRunescapeSmallFont());
+					body.add(iconRow("spirit_tree", 18, label));
 				}
 			}
 		}
