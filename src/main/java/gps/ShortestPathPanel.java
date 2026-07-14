@@ -156,7 +156,7 @@ public class ShortestPathPanel extends PluginPanel
 	private boolean cachedCalculating = false;
 	private boolean cachedHasTarget = false;
 	private final Set<String> expandedCategories = new HashSet<>();
-	// Whether the whole "Teleport methods" catalog section (shown at the top) is expanded. Collapsed
+	// Whether the whole "Travel methods" catalog section (shown at the top) is expanded. Collapsed
 	// by default so the routes stay the focus; the user opens it to browse/toggle methods.
 	private boolean catalogExpanded = false;
 	private boolean travelSectionExpanded = false;
@@ -622,7 +622,7 @@ public class ShortestPathPanel extends PluginPanel
 			refreshCatalog();
 		}
 
-		// The results get a proper section header (like "Teleport methods"): the route count, plus
+		// The results get a proper section header (like "Travel methods"): the route count, plus
 		// a quiet busy note while the generation streams. It lives in its fixed slot above the
 		// scroll area so the count and controls stay visible while the cards scroll. Routes are
 		// shown as they stream in; the previous list was cleared when this generation started, so
@@ -1042,7 +1042,7 @@ public class ShortestPathPanel extends PluginPanel
 		// Nearly invisible at rest (always present, so the row never resizes), it reveals in red
 		// while the pointer is over THIS row — and redder still directly over the icon.
 		IconActionLabel exclude = new IconActionLabel(RouteIcons.EXCLUDE_DIM, RouteIcons.EXCLUDE_HOVER,
-			"Exclude \"" + method.routeLabel() + "\" from teleportation methods", () -> plugin.excludeMethod(method));
+			"Exclude \"" + method.routeLabel() + "\" from travel methods", () -> plugin.excludeMethod(method));
 		JPanel actionWrap = new JPanel(new GridBagLayout());
 		actionWrap.setOpaque(false);
 		actionWrap.setPreferredSize(new Dimension(CONTROL_SIZE, CONTROL_SIZE));
@@ -1232,7 +1232,7 @@ public class ShortestPathPanel extends PluginPanel
 			}
 		}
 		JPanel section = configSectionShell("Travel options",
-			"Everything routing may use: your house, wilderness policy, balloons and the teleport methods",
+			"Everything routing may use: your house, wilderness policy, balloons and the travel methods",
 			travelSectionExpanded, () -> travelSectionExpanded = !travelSectionExpanded,
 			cachedCatalog.isEmpty() ? "" : enabled + "/" + cachedCatalog.size(),
 			ColorScheme.LIGHT_GRAY_COLOR, true);
@@ -1602,7 +1602,7 @@ public class ShortestPathPanel extends PluginPanel
 		}
 		// Same collapsible shell as the other Travel options sub-sections; the enabled count is
 		// the state text.
-		JPanel section = configSectionShell("Teleport methods",
+		JPanel section = configSectionShell("Travel methods",
 			enabled + " enabled (usable and included) · " + usable + " usable now · "
 				+ included + " included in searches · " + cachedCatalog.size() + " total",
 			catalogExpanded, () -> catalogExpanded = !catalogExpanded,
