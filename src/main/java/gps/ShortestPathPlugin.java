@@ -3186,7 +3186,51 @@ public class ShortestPathPlugin extends Plugin
 			return null;
 		}
 		int frontier = closest.getPath().get(closest.getPath().size() - 1).getPackedPosition();
-		return pathfinderConfig.describeTargetBlocker(frontier, new HashSet<>(lastAltTargets));
+		Set<Integer> targets = new HashSet<>(lastAltTargets);
+		// Refine the quick radius guess with a precise path trace: walk from the frontier to the
+		// target with gates bypassed and teleports off, then name every requirement on that path.
+		// Runs on the client thread (refresh() needs it) since it can't run on this worker thread.
+		clientThread.invokeLater(() -> refineUnreachableBlocker(frontier, targets));
+		return pathfinderConfig.describeTargetBlocker(frontier, targets);
+	}
+
+	/**
+	 * Precise blocker analysis: from the closest-reached frontier, find the walking route to the
+	 * target with gates opened and teleports excluded, then report the requirements it crosses that
+	 * the player lacks ("Open Colony gate — requires quest: Swan Song; Fairy ring — requires Dramen
+	 * staff"). If even a gates-open walk can't reach, the target is genuinely walled (island) and
+	 * the hint is cleared to the plain "closest point" wording.
+	 */
+	private void refineUnreachableBlocker(int frontier, Set<Integer> targets)
+	{
+		if (pathfinderConfig == null || frontier == WorldPointUtil.UNDEFINED || targets.isEmpty())
+		{
+			return;
+		}
+		gps.pathfinder.PathfinderConfig bypass = pathfinderConfig.copyForPlanning();
+		bypass.refresh(); // planning copy: builds its own method catalog + full availability
+		// Walk + gates/doors/shortcuts only — exclude every teleport method so the trace follows the
+		// physical route the player would walk, whose gates are the real obstacles.
+		Set<TeleportMethod> methods = bypass.getMethodCatalog();
+		bypass.setExcludedMethods(methods);
+		bypass.rebuildAvailabilityWithExclusions(methods);
+		gps.pathfinder.Pathfinder pathfinder = new gps.pathfinder.Pathfinder(bypass, frontier, targets);
+		pathfinder.run();
+		String refined;
+		if (pathfinder.getResult().isReached())
+		{
+			List<String> blockers = pathfinderConfig.blockersAlongPath(pathfinder.getPath());
+			refined = blockers.isEmpty() ? unreachableBlockerHint : String.join("; ", blockers);
+		}
+		else
+		{
+			refined = null; // no gates-open walking route either — genuinely walled off
+		}
+		if (!java.util.Objects.equals(refined, unreachableBlockerHint))
+		{
+			unreachableBlockerHint = refined;
+			refreshPanel(altGenerationInFlight);
+		}
 	}
 
 	private void refreshPanel(boolean calculating)

@@ -1,5 +1,6 @@
 package gps.pathfinder;
 
+import java.util.List;
 import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -29,8 +30,8 @@ public class TargetBlockerTest
 {
 	// Just south of the Colony gate — the tile a route would reach before the locked gate.
 	private static final int SOUTH_OF_GATE = WorldPointUtil.packWorldPoint(2343, 3660, 0);
-	// Inside the colony, north of the gate.
-	private static final Set<Integer> COLONY_TARGET = Set.of(WorldPointUtil.packWorldPoint(2340, 3688, 0));
+	// Inside the colony, north of the gate (a walkable tile — 2340,3688 is blocked).
+	private static final Set<Integer> COLONY_TARGET = Set.of(WorldPointUtil.packWorldPoint(2340, 3687, 0));
 
 	@Mock
 	Client client;
@@ -70,5 +71,26 @@ public class TargetBlockerTest
 	{
 		assertNull("with Swan Song complete the gate opens — no blocker to report",
 			configWithSwanSong(QuestState.FINISHED).describeTargetBlocker(SOUTH_OF_GATE, COLONY_TARGET));
+	}
+
+	/**
+	 * The precise path trace: a walk-through-gate route found with the gate open (Swan Song
+	 * "done"), then diffed against a no-quest config, must name the exact gate on the path.
+	 */
+	@Test
+	public void blockersAlongPathNamesGatesOnTheWalkedRoute()
+	{
+		// Bypass config: gate open, teleports excluded, so the search follows the physical walk.
+		PathfinderConfig bypass = configWithSwanSong(QuestState.FINISHED);
+		Set<gps.TeleportMethod> methods = bypass.getMethodCatalog();
+		bypass.setExcludedMethods(methods);
+		bypass.rebuildAvailabilityWithExclusions(methods);
+		Pathfinder pf = new Pathfinder(bypass, SOUTH_OF_GATE, COLONY_TARGET);
+		pf.run();
+		assertTrue("the gates-open walk must reach the colony interior", pf.getResult().isReached());
+
+		List<String> blockers = configWithSwanSong(QuestState.NOT_STARTED).blockersAlongPath(pf.getPath());
+		assertTrue("the walked route must name the Swan Song colony gate: " + blockers,
+			blockers.stream().anyMatch(b -> b.contains("Colony gate") && b.contains("Swan Song")));
 	}
 }

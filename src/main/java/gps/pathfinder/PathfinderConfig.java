@@ -1100,6 +1100,76 @@ public class PathfinderConfig
 		return null;
 	}
 
+	// Lazily-built (origin,destination) -> transports index over the full structural set, for
+	// tracing which transports a hypothetical path crosses. Built once, on demand (blocker analysis).
+	private Map<Long, List<Transport>> edgeIndex;
+
+	private Map<Long, List<Transport>> edgeIndex()
+	{
+		if (edgeIndex == null)
+		{
+			Map<Long, List<Transport>> index = new HashMap<>();
+			for (Transport transport : allTransports)
+			{
+				if (transport.getOrigin() == WorldPointUtil.UNDEFINED
+					|| transport.getDestination() == WorldPointUtil.UNDEFINED)
+				{
+					continue;
+				}
+				long key = edgeKey(transport.getOrigin(), transport.getDestination());
+				index.computeIfAbsent(key, k -> new ArrayList<>()).add(transport);
+			}
+			edgeIndex = index;
+		}
+		return edgeIndex;
+	}
+
+	private static long edgeKey(int origin, int destination)
+	{
+		return ((long) origin << 32) | (destination & 0xFFFFFFFFL);
+	}
+
+	/**
+	 * The requirements blocking a hypothetical reaching path: for each transport edge the path
+	 * crosses (gates, doors, teleports, ...), if the player can't actually use it, its missing
+	 * requirement ("Open Colony gate — requires quest: Swan Song"). Distinct, in path order. Empty
+	 * when every edge on the path is already usable. Checked against THIS config's live state, so
+	 * pass the real (not the bypass) config the path was found on.
+	 */
+	public List<String> blockersAlongPath(List<PathStep> path)
+	{
+		List<String> blockers = new ArrayList<>();
+		if (path == null)
+		{
+			return blockers;
+		}
+		Set<String> seen = new HashSet<>();
+		for (int i = 1; i < path.size(); i++)
+		{
+			List<Transport> edges = edgeIndex().get(
+				edgeKey(path.get(i - 1).getPackedPosition(), path.get(i).getPackedPosition()));
+			if (edges == null)
+			{
+				continue;
+			}
+			for (Transport transport : edges)
+			{
+				String reason = blockingRequirement(transport);
+				if (reason != null)
+				{
+					String name = blockerName(transport);
+					String label = name != null ? name + " — " + reason : reason;
+					if (seen.add(label))
+					{
+						blockers.add(label);
+					}
+					break; // one blocker per edge is enough
+				}
+			}
+		}
+		return blockers;
+	}
+
 	/** A blocking transport's menu-style name with the trailing object id stripped ("Open Colony gate"). */
 	private static String blockerName(Transport transport)
 	{
