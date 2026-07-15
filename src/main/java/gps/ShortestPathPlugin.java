@@ -3109,6 +3109,10 @@ public class ShortestPathPlugin extends Plugin
 		unavailableMethods = unavailable;
 		if (done)
 		{
+			// If nothing reached the target, work out what stopped the closest route (a locked gate)
+			// so the "can't reach" banner can name it. Computed once here (not per render), on the
+			// live config whose quest/item state reflects reality.
+			unreachableBlockerHint = computeUnreachableBlocker(routes);
 			// "More" is available while the last generation left routes unshown (cost cap or count
 			// budget), until the route-count budget reaches the service's runaway backstop.
 			moreRoutesLikely = !routes.isEmpty() && altRoutesService.wasMoreLikely()
@@ -3135,6 +3139,55 @@ public class ShortestPathPlugin extends Plugin
 		});
 	}
 
+
+	// The locked gate that stopped the closest route from reaching the target, for the panel's
+	// "can't reach" banner. Null when routes reached, or nothing near the frontier explains the gap.
+	private volatile String unreachableBlockerHint;
+
+	/** The panel's blocker hint (see {@link #unreachableBlockerHint}). */
+	public String getUnreachableBlockerHint()
+	{
+		return unreachableBlockerHint;
+	}
+
+	/**
+	 * If no route reached the target, the requirement blocking the route that got closest ("Open
+	 * Colony gate — requires quest: Swan Song"). Uses the closest-reached tile of that route as the
+	 * frontier the search stopped at.
+	 */
+	private String computeUnreachableBlocker(List<RouteOption> routes)
+	{
+		if (pathfinderConfig == null || routes.isEmpty() || lastAltTargets.isEmpty())
+		{
+			return null;
+		}
+		RouteOption closest = null;
+		int closestDist = Integer.MAX_VALUE;
+		for (RouteOption route : routes)
+		{
+			if (routeReachesTarget(route) || route.getPath() == null || route.getPath().isEmpty())
+			{
+				return null; // something reached — no blocker to report (or nothing to measure)
+			}
+			int end = route.getPath().get(route.getPath().size() - 1).getPackedPosition();
+			int d = Integer.MAX_VALUE;
+			for (int target : lastAltTargets)
+			{
+				d = Math.min(d, WorldPointUtil.distanceBetween(end, target));
+			}
+			if (d < closestDist)
+			{
+				closestDist = d;
+				closest = route;
+			}
+		}
+		if (closest == null)
+		{
+			return null;
+		}
+		int frontier = closest.getPath().get(closest.getPath().size() - 1).getPackedPosition();
+		return pathfinderConfig.describeTargetBlocker(frontier, new HashSet<>(lastAltTargets));
+	}
 
 	private void refreshPanel(boolean calculating)
 	{

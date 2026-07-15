@@ -1000,6 +1000,122 @@ public class PathfinderConfig
 		}
 	}
 
+	// How far from the closest-reached tile a blocking gate may sit and still be reported as "the
+	// thing that stopped you" — the search walks right up to a locked door before giving up.
+	private static final int BLOCKER_SEARCH_RADIUS = 12;
+
+	/**
+	 * When a search stops short of the target, the obstacle it bumped into: a structurally-present
+	 * transport (a door, gate, hole, ...) near the closest-reached tile whose far side is closer to
+	 * the target, but which the player can't use — with the missing requirement ("Open Colony gate
+	 * — requires quest: Swan Song"). Null when nothing near the frontier explains the gap (the
+	 * target is walled off for other reasons, or the blocker's gate has no player-facing name).
+	 */
+	public String describeTargetBlocker(int closestTile, Set<Integer> targets)
+	{
+		if (closestTile == WorldPointUtil.UNDEFINED || targets == null || targets.isEmpty())
+		{
+			return null;
+		}
+		int nearestTarget = WorldPointUtil.UNDEFINED;
+		int nearestTargetDist = Integer.MAX_VALUE;
+		for (int target : targets)
+		{
+			int d = WorldPointUtil.distanceBetween(closestTile, target);
+			if (d < nearestTargetDist)
+			{
+				nearestTargetDist = d;
+				nearestTarget = target;
+			}
+		}
+		if (nearestTarget == WorldPointUtil.UNDEFINED)
+		{
+			return null;
+		}
+
+		Transport best = null;
+		String bestReason = null;
+		int bestOriginDist = Integer.MAX_VALUE;
+		for (Transport transport : allTransports)
+		{
+			int origin = transport.getOrigin();
+			int destination = transport.getDestination();
+			if (origin == WorldPointUtil.UNDEFINED || destination == WorldPointUtil.UNDEFINED)
+			{
+				continue;
+			}
+			int originDist = WorldPointUtil.distanceBetween(closestTile, origin);
+			// Must sit at the frontier the search reached, and lead toward the target.
+			if (originDist > BLOCKER_SEARCH_RADIUS || originDist >= bestOriginDist
+				|| WorldPointUtil.distanceBetween(destination, nearestTarget) >= nearestTargetDist)
+			{
+				continue;
+			}
+			String reason = blockingRequirement(transport);
+			if (reason != null)
+			{
+				best = transport;
+				bestReason = reason;
+				bestOriginDist = originDist;
+			}
+		}
+		if (best == null)
+		{
+			return null;
+		}
+		String name = blockerName(best);
+		return name == null ? bestReason : name + " — " + bestReason;
+	}
+
+	/**
+	 * The missing requirement that makes a structurally-present transport unusable right now
+	 * ("requires quest: Swan Song", "requires 60 Mining", "requires Dramen staff"), or null when it
+	 * is usable, structurally absent, or gated only by an unnamed varbit. Mirrors the checks in
+	 * {@link #classifyAvailability} but for any transport type, not just travel methods.
+	 */
+	private String blockingRequirement(Transport transport)
+	{
+		if (!passesStructuralGates(transport))
+		{
+			return null; // not a gate the player can open (POH off, region locked, planted tree, ...)
+		}
+		if (!hasRequiredLevels(transport))
+		{
+			return missingLevelsDetail(transport);
+		}
+		if (transport.isQuestLocked() && !completedQuests(transport))
+		{
+			return missingQuestsDetail(transport);
+		}
+		if (varbitChecks(transport) || varPlayerChecks(transport))
+		{
+			return null; // varbit/varplayer gates carry no player-facing name
+		}
+		TransportItems items = transport.getItemRequirements();
+		if (items != null && !hasRequiredItems(transport, true, true, considerBank, true))
+		{
+			String names = itemRequirementNames(items);
+			return names == null ? null : "requires " + names;
+		}
+		return null;
+	}
+
+	/** A blocking transport's menu-style name with the trailing object id stripped ("Open Colony gate"). */
+	private static String blockerName(Transport transport)
+	{
+		String objectInfo = transport.getObjectInfo();
+		if (objectInfo == null || objectInfo.isEmpty())
+		{
+			return null;
+		}
+		int lastSpace = objectInfo.lastIndexOf(' ');
+		if (lastSpace > 0 && objectInfo.substring(lastSpace + 1).chars().allMatch(Character::isDigit))
+		{
+			return objectInfo.substring(0, lastSpace);
+		}
+		return objectInfo;
+	}
+
 	/**
 	 * Classifies why the player can or cannot use this transport right now, independent of the mode's
 	 * possession/unlock bypasses and of the (hidden) teleportation-item config setting. Checks the
