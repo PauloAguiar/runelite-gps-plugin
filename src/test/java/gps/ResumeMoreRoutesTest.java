@@ -195,4 +195,44 @@ public class ResumeMoreRoutesTest
 			fresh.shutdown();
 		}
 	}
+
+	/**
+	 * Resuming from a TINY prior generation must not silently drop routes. A panel-hidden generation
+	 * computes only the primary route (limit 1), and its seed pass records signatures for routes it
+	 * can't fit; the full generation that follows (panel opens / Quest Helper sets a target) resumes
+	 * from it. If those burned signatures carried over, the wide run rejected cheap routes it found
+	 * — the user capture where a Quest-Helper target showed 6 routes (missing the 2nd-cheapest) while
+	 * a plain refresh showed 10. It must match a from-scratch wide run.
+	 */
+	@Test
+	public void resumingFromATinyGenerationLosesNoRoutes() throws Exception
+	{
+		List<RouteOption> tiny = generate(service, 1, 3, null);
+		assertNotNull(tiny);
+		assertEquals("the panel-hidden run shows only the primary route", 1, tiny.size());
+
+		List<RouteOption> resumed = generate(service, 10, 3, null);
+		assertNotNull(resumed);
+
+		AlternativeRoutesService fresh = new AlternativeRoutesService(clientThread, config);
+		try
+		{
+			List<RouteOption> scratch = generate(fresh, 10, 3, null);
+			List<Integer> a = costs(resumed);
+			List<Integer> b = costs(scratch);
+			a.sort(Integer::compareTo);
+			b.sort(Integer::compareTo);
+			assertEquals("resuming from a limit-1 generation must find as many routes as from scratch"
+				+ " (resumed " + a + " vs scratch " + b + ")", b.size(), a.size());
+			for (int i = 0; i < a.size(); i++)
+			{
+				assertTrue("resumed run must never be worse than from-scratch at slot " + i
+					+ " (" + a.get(i) + " vs " + b.get(i) + ")", a.get(i) <= b.get(i));
+			}
+		}
+		finally
+		{
+			fresh.shutdown();
+		}
+	}
 }

@@ -560,8 +560,18 @@ public class AlternativeRoutesService
 		// which the one-way chain state can't be rebuilt from — they always regenerate.
 		if (gen == generation.get() && !roundTrip)
 		{
+			// Carry ONLY the shown routes' signatures forward — not the full seenSignatures, which
+			// also holds combos the seed pass tried but couldn't fit (cost/slot). A resume that
+			// inherited those burned signatures would reject them again when the wider limit COULD
+			// show them: a panel-hidden limit-1 generation would poison the full limit-10 resume,
+			// silently dropping cheap routes (user capture: Quest-Helper target lost the 164 route).
+			Set<String> shownSignatures = new HashSet<>();
+			for (RouteOption route : routes)
+			{
+				shownSignatures.add(signature(route.getMethods()));
+			}
 			resumeState = new ResumeState(start, rawTargets, Set.copyOf(ends), Set.copyOf(userExclusions),
-				mode, limit, costMultiple, Set.copyOf(excluded), Set.copyOf(seenSignatures),
+				mode, limit, costMultiple, Set.copyOf(excluded), shownSignatures,
 				List.copyOf(routes), bestRemaining, catalog, unavailable, seedCandidates);
 		}
 		// A superseded run leaves the previous state alone: the newer generation overwrites it when it
