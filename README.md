@@ -24,19 +24,9 @@ Built on [Shortest Path](https://github.com/Skretzo/shortest-path): the classic 
 2. Follow the directions overlay; drag it wherever you like.
 3. For alternatives, open the side panel (blue pin icon) and click a route to travel it instead.
 
-## Availability modes
-
-| Family | Variant | What it considers |
-|:--|:--|:--|
-| **Owned** | Inventory | Only methods whose items you carry (inventory + equipment) |
-| **Owned** | Inv + bank | Also items in your bank — routes walk to a bank to withdraw them |
-| **All** | Available | Ignores item possession, but only methods your character has unlocked |
-| **All** | Everything | Every teleport in the game, including ones you can't use yet |
-
 ## Feedback & community
 
-- **[Discord](https://discord.gg/7VAbrPsUzT)** — questions, suggestions, or just to say a route surprised you. Also linked from the panel header.
-- **Report an issue** — the red button in the panel header opens a GitHub issue pre-filled with your current routes, mode and settings. Calculate the misbehaving route first so the report captures it; for a full reproduction, attach a debug snapshot (⋯ menu → *Save debug snapshot*, saved to `.runelite/gps-debug/`).
+Join the **[Discord](https://discord.gg/7VAbrPsUzT)**, or use the **Report an issue** button in the panel header — it opens a GitHub issue pre-filled with your current routes and settings.
 
 ## Credits
 
