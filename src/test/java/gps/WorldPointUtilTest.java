@@ -332,4 +332,62 @@ public class WorldPointUtilTest
 		assertEquals(-1, WorldPointUtil.packWorldPoint(-1, -1, -1));
 		assertEquals(Integer.MAX_VALUE, WorldPointUtil.packWorldPoint(-1, -1, 1));
 	}
+
+	/**
+	 * Packs an instance template chunk entry the way the client does: rotation in bits 1-2,
+	 * template chunk Y (world y / 8) in bits 3-13, template chunk X (world x / 8) in bits 14-23,
+	 * template plane in bits 24-25.
+	 */
+	private static int templateChunk(int worldX, int worldY, int plane, int rotation)
+	{
+		return (rotation << 1) | ((worldY / CHUNK_SIZE) << 3) | ((worldX / CHUNK_SIZE) << 14) | (plane << 24);
+	}
+
+	private static WorldView instanceOf(int... chunkData)
+	{
+		WorldView worldView = Mockito.mock(WorldView.class);
+		Mockito.when(worldView.isInstance()).thenReturn(true);
+		int[][][] chunks = new int[1][1][chunkData.length];
+		chunks[0][0] = chunkData;
+		Mockito.when(worldView.getInstanceTemplateChunks()).thenReturn(chunks);
+		return worldView;
+	}
+
+	// The POH template area used by the plugin's house detection (ShortestPathPlugin's bounds).
+	private static final int POH_MIN_X = 1856, POH_MIN_Y = 5696, POH_MAX_X = 2047, POH_MAX_Y = 5767;
+
+	private static boolean overlapsPoh(WorldView worldView)
+	{
+		return WorldPointUtil.instanceOverlapsArea(worldView, POH_MIN_X, POH_MIN_Y, POH_MAX_X, POH_MAX_Y);
+	}
+
+	@Test
+	public void instanceBuiltFromPohChunksIsDetected()
+	{
+		// A single house room chunk anywhere in the instance is enough, at any plane or rotation.
+		assertTrue(overlapsPoh(instanceOf(templateChunk(1920, 5704, 0, 0))));
+		assertTrue(overlapsPoh(instanceOf(templateChunk(1976, 5760, 1, 3))));
+		// Chunks at the area's lower edge count; one chunk-width below it does not.
+		assertTrue(overlapsPoh(instanceOf(templateChunk(POH_MIN_X, POH_MIN_Y, 0, 0))));
+		assertFalse(overlapsPoh(instanceOf(templateChunk(POH_MIN_X - CHUNK_SIZE, POH_MIN_Y, 0, 0))));
+	}
+
+	@Test
+	public void nonPohInstancesAndEmptyChunksAreNotDetected()
+	{
+		// An instance assembled from overworld chunks (e.g. a raid or cutscene) is not a house.
+		assertFalse(overlapsPoh(instanceOf(templateChunk(3216, 3216, 0, 0))));
+		// Unfilled chunk slots (-1) are skipped, and alone mean "not a house".
+		assertFalse(overlapsPoh(instanceOf(-1, -1)));
+		assertTrue(overlapsPoh(instanceOf(-1, templateChunk(1920, 5704, 0, 0))));
+	}
+
+	@Test
+	public void nonInstanceWorldsAreNeverAHouse()
+	{
+		assertFalse(overlapsPoh(null));
+		WorldView worldView = Mockito.mock(WorldView.class);
+		Mockito.when(worldView.isInstance()).thenReturn(false);
+		assertFalse(overlapsPoh(worldView));
+	}
 }

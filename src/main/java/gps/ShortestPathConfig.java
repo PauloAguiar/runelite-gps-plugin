@@ -283,6 +283,19 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigItem(
 		hidden = true,
+		keyName = "hideWarningBanners",
+		name = "Hide panel warning banners",
+		description = "Collapse the side panel's warning banners behind the compact \"N warnings\" row.",
+		position = 157,
+		section = sectionSettings
+	)
+	default boolean hideWarningBanners()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		hidden = true,
 		keyName = "rememberBank",
 		name = "Remember bank between sessions",
 		description = "Save a snapshot of your bank when you close it and reload it at login,<br>" +

@@ -227,6 +227,10 @@ public class ShortestPathPlugin extends Plugin
 	private static final String CONFIG_KEY_SEARCH_HISTORY = "searchHistory";
 	// RSProfile-scoped (per character, per world type): the bank snapshot persisted across sessions.
 	private static final String CONFIG_KEY_BANK_SNAPSHOT = "bankSnapshot";
+	// RSProfile-scoped: the planted spirit trees detected from the travel menu, comma-separated.
+	private static final String CONFIG_KEY_SPIRIT_TREES = "plantedSpiritTrees";
+	// RSProfile-scoped: the last house scan's furniture (see PohScanner.encode); present = scanned.
+	private static final String CONFIG_KEY_POH_FURNITURE = "pohFurniture";
 	private static final String CONFIG_KEY_FAVORITES = "favoriteDestinations";
 	private static final int FAVORITES_LIMIT = 100;
 	private volatile List<Destinations.Entry> favoriteDestinations = new ArrayList<>();
@@ -381,6 +385,10 @@ public class ShortestPathPlugin extends Plugin
 		}
 	};
 	private boolean fairyRingPanelOpen = false;
+	// Whether the spirit tree travel menu has been parsed THIS session. Distinct from the cache
+	// being non-null: a restored previous-session snapshot fills the cache but must not block the
+	// fresher live read when the menu opens.
+	private boolean spiritTreesParsedLive = false;
 
 	/**
 	 * Checks if the given coordinates are inside the POH (Player Owned House) area.
@@ -527,12 +535,9 @@ public class ShortestPathPlugin extends Plugin
 					pathfinderConfig.setBankSnapshot(liveBank.getItems());
 					bankContentsKnown = true;
 				}
-				else
-				{
-					// Bank not seen this session (plugin enabled mid-session or right after login):
-					// fall back to the previous session's saved snapshot.
-					restoreBankFromConfig();
-				}
+				// Anything not visible live right now (bank, spirit trees, house furniture) falls
+				// back to the previous session's saved detections.
+				restoreDetectionsFromConfig();
 			});
 			triggerAlternatives(WorldPointUtil.UNDEFINED, new HashSet<>());
 		}
@@ -1066,14 +1071,21 @@ public class ShortestPathPlugin extends Plugin
 		updateNavButtonVisibility(event.getGameState());
 
 		// Logout: save any unsaved bank snapshot (with the profile key captured while logged in) and
-		// forget the session's bank knowledge, so a different character logging in next doesn't
-		// inherit this one's bank. The right character's snapshot is restored at the next login.
+		// forget everything this session detected about the character — bank, planted spirit trees,
+		// house scan — so a different character logging in next doesn't inherit it. The right
+		// character's snapshots are restored at the next login.
 		if (GameState.LOGIN_SCREEN.equals(event.getGameState()) && pathfinderConfig != null)
 		{
 			persistBankSnapshot();
 			bankContentsKnown = false;
 			bankRestored = false;
 			pathfinderConfig.clearBank();
+			pathfinderConfig.availableSpiritTrees = null;
+			spiritTreesParsedLive = false;
+			pohScanned = false;
+			detectedPohFurniture = null;
+			pohFurnitureFoundThisVisit = false;
+			pohScanAttempts = 0;
 		}
 
 		if (pathfinderConfig == null
@@ -1086,8 +1098,9 @@ public class ShortestPathPlugin extends Plugin
 			return;
 		}
 
-		// Restored before the catalog refresh below, so in-bank availability is right first time.
-		pendingTasks.add(new PendingTask(client.getTickCount() + 1, this::restoreBankFromConfig));
+		// Restored before the catalog refresh below, so in-bank availability, planted spirit trees
+		// and the house scan state are right first time.
+		pendingTasks.add(new PendingTask(client.getTickCount() + 1, this::restoreDetectionsFromConfig));
 		pendingTasks.add(new PendingTask(client.getTickCount() + 1, pathfinderConfig::refresh));
 		// Refresh the teleport-methods catalog (and any current routes) now that game state is available.
 		pendingTasks.add(new PendingTask(client.getTickCount() + 1, this::recomputeAlternatives));
@@ -1341,7 +1354,7 @@ public class ShortestPathPlugin extends Plugin
 			return;
 		}
 
-		maybeScanPoh(localPlayer);
+		maybeScanPoh();
 
 		if (!hasPathTargets())
 		{
@@ -1558,9 +1571,10 @@ public class ShortestPathPlugin extends Plugin
 			fairyRingPanelOpen = true;
 		}
 
-		// Populate spirit tree cache, but only once.
-		// The values here almost never change, we only need to load it once.
-		if (pathfinderConfig.availableSpiritTrees == null)
+		// Populate spirit tree cache, but only once per session. Gated on a live parse having
+		// happened (not on the cache being non-null): a snapshot restored from the previous session
+		// must not block the fresher live read — a newly planted tree only shows up in the menu.
+		if (!spiritTreesParsedLive)
 		{
 			switch (event.getGroupId())
 			{
@@ -1640,6 +1654,41 @@ public class ShortestPathPlugin extends Plugin
 		pathfinderConfig.setBankSnapshot(items);
 		bankContentsKnown = true;
 		bankRestored = true;
+	}
+
+	/**
+	 * Restores everything this character's previous sessions detected — bank contents, planted
+	 * spirit trees, house furniture — so routing starts from the known state instead of asking for
+	 * a fresh sync of each. Every piece is superseded by its live source the moment that source is
+	 * seen (bank opened, travel menu read, house entered).
+	 */
+	private void restoreDetectionsFromConfig()
+	{
+		restoreBankFromConfig();
+		if (pathfinderConfig.availableSpiritTrees == null)
+		{
+			String raw = configManager.getRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_SPIRIT_TREES);
+			if (raw != null)
+			{
+				pathfinderConfig.availableSpiritTrees = raw.isEmpty()
+					? new HashSet<>() : new HashSet<>(Arrays.asList(raw.split(",")));
+			}
+		}
+		if (!pohScanned)
+		{
+			PohScanner.Detected detected = PohScanner.decode(
+				configManager.getRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_POH_FURNITURE));
+			if (detected != null)
+			{
+				detectedPohFurniture = detected;
+				pohScanned = true;
+			}
+		}
+		// The panel's sections label their sync state — reflect what was just restored.
+		if (altPanel != null)
+		{
+			SwingUtilities.invokeLater(altPanel::refreshConfigSections);
+		}
 	}
 
 	/**
@@ -1766,6 +1815,11 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		pathfinderConfig.availableSpiritTrees = available;
+		spiritTreesParsedLive = true;
+		// Persist per character, so next session starts synced instead of asking for a travel-menu
+		// visit again. (Comma-safe: no spirit tree location name contains a comma.)
+		configManager.setRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_SPIRIT_TREES,
+			String.join(",", available));
 
 		// The panel's Spirit trees section shows the detected planted trees / sync state.
 		if (altPanel != null)
@@ -2448,8 +2502,6 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	// Smart house furniture detection: scan the scene while the player is inside their POH.
-	// VARBIT_IN_HOUSE (4744) is 1 inside, 0 outside — the game's own flag (see the house teleport
-	// data), more reliable than mapping the instanced player tile back to the template bounds.
 	private volatile boolean pohScanned = false;
 	private volatile PohScanner.Detected detectedPohFurniture;
 	// Reset when the player leaves the house, so the next visit re-scans (catching new furniture).
@@ -2468,15 +2520,16 @@ public class ShortestPathPlugin extends Plugin
 	 * nexus, mounted items) bundle furniture GPS cannot verify and stay manual. Re-scans each tick
 	 * until something is found (the scene can still be populating on the entry tick), then stops.
 	 */
-	private void maybeScanPoh(Player localPlayer)
+	private void maybeScanPoh()
 	{
-		// Inside-the-house detection maps the instanced player tile back to the house TEMPLATE
-		// region — the same mapping every POH tile check uses. (NOT varbit 4744: that is the house
-		// teleport's inside/outside SETTING, which an earlier fix misread as a presence flag — the
-		// scan then never fired for players who teleport inside, i.e. almost everyone.)
-		int templateLocation = WorldPointUtil.fromLocalInstance(client, localPlayer);
-		boolean inside = templateLocation != WorldPointUtil.UNDEFINED
-			&& isInsidePoh(WorldPointUtil.unpackWorldX(templateLocation), WorldPointUtil.unpackWorldY(templateLocation));
+		// In-the-house detection asks whether the loaded instance is BUILT FROM the house template
+		// region — houses are instances assembled from chunks of that static map area. This checks
+		// the scene's own template chunk table, not the player's tile, so it can't be broken by the
+		// player's plane, chunk rotation, or position. (Two prior attempts failed in the field:
+		// varbit 4744 is the house teleport's inside/outside SETTING, not a presence flag; and
+		// mapping the player's instanced tile back to the template proved unreliable in practice.)
+		boolean inside = WorldPointUtil.instanceOverlapsArea(client.getTopLevelWorldView(),
+			POH_MIN_X, POH_MIN_Y, POH_MAX_X, POH_MAX_Y);
 		if (!inside)
 		{
 			pohFurnitureFoundThisVisit = false; // reset so the next visit re-scans
@@ -2546,6 +2599,10 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return; // nothing new this scan — don't churn the config or the panel
 		}
+		// Persist per character, so next session's panel starts in the "scanned" state instead of
+		// asking for a house visit again.
+		configManager.setRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_POH_FURNITURE,
+			PohScanner.encode(detected));
 
 		// Only ever raise declarations (turn a feature on / raise the jewellery tier). A partial
 		// scene load that missed a piece therefore can never wipe an existing declaration.
@@ -3096,6 +3153,15 @@ public class ShortestPathPlugin extends Plugin
 		body.append("- Inventory: ").append(issueItemNames(net.runelite.api.gameval.InventoryID.INV)).append('\n');
 		body.append("- Bank contents known: ").append(bankContentsKnown)
 			.append(bankRestored ? " (restored from previous session)" : "").append('\n');
+		body.append("- House scanned: ").append(pohScanned);
+		String pohEncoded = PohScanner.encode(detectedPohFurniture);
+		if (pohEncoded != null)
+		{
+			body.append(" (").append(pohEncoded).append(')');
+		}
+		body.append('\n');
+		body.append("- Spirit trees synced: ").append(pathfinderConfig.availableSpiritTrees != null)
+			.append(spiritTreesParsedLive ? " (live)" : "").append('\n');
 
 		List<RouteOption> routes = alternativeRoutes;
 		body.append("- Routes (").append(routes.size()).append("):\n");
@@ -3248,7 +3314,14 @@ public class ShortestPathPlugin extends Plugin
 				}
 				snapshot.put("userExclusions", exclusions);
 				snapshot.put("bankContentsKnown", bankContentsKnown);
-			snapshot.put("bankRestored", bankRestored);
+				snapshot.put("bankRestored", bankRestored);
+				// Smart-detection state, for diagnosing "GPS didn't notice my house/trees" reports.
+				snapshot.put("pohSceneLoaded", WorldPointUtil.instanceOverlapsArea(
+					client.getTopLevelWorldView(), POH_MIN_X, POH_MIN_Y, POH_MAX_X, POH_MAX_Y));
+				snapshot.put("pohScanned", pohScanned);
+				snapshot.put("pohDetectedFurniture", PohScanner.encode(detectedPohFurniture));
+				snapshot.put("spiritTreesSynced", pathfinderConfig.availableSpiritTrees != null);
+				snapshot.put("spiritTreesParsedLive", spiritTreesParsedLive);
 
 				// includeBankPath and useTeleportationItems are omitted: the Owned/All mode forces them
 				// (see PathfinderConfig.refresh), so their config value is overridden and misleading —

@@ -569,17 +569,6 @@ public class ShortestPathPanel extends PluginPanel
 		}
 
 		notes.removeAll();
-		// Running the original Shortest Path plugin alongside GPS doubles the path rendering and
-		// the plugin-message integrations (both answer Quest Helper's destinations).
-		if (plugin.isShortestPathConflict())
-		{
-			notes.add(buildBanner(RouteIcons.BANNER_WARNING,
-				"Shortest Path is also enabled",
-				"Both plugins draw paths and respond to the same integrations. GPS includes its "
-					+ "functionality — disable Shortest Path to avoid doubled rendering.",
-				BANNER_WARN_ACCENT));
-			notes.add(verticalGap(4));
-		}
 		// The bank container is only populated once the bank has been opened this session; without it
 		// Bank mode cannot see banked items (same constraint as Shortest Path itself). This warning
 		// lives directly under the mode buttons (it's about "+ Bank" mode), not in the notes strip.
@@ -600,23 +589,71 @@ public class ShortestPathPanel extends PluginPanel
 		{
 			notes.add(buildBanner(statusIcon, status, statusAccent));
 		}
+		// Warning banners are grouped behind a compact "N warnings" row that toggles them, so a
+		// stack of notices doesn't permanently crowd the panel. The sync hints (house, spirit
+		// trees, balloon logs) live here at the top — inside their (collapsed) sections they were
+		// easy to miss.
+		List<JPanel> warnings = new ArrayList<>();
+		// Running the original Shortest Path plugin alongside GPS doubles the path rendering and
+		// the plugin-message integrations (both answer Quest Helper's destinations).
+		if (plugin.isShortestPathConflict())
+		{
+			warnings.add(buildBanner(RouteIcons.BANNER_WARNING,
+				"Shortest Path is also enabled",
+				"Both plugins draw paths and respond to the same integrations. GPS includes its "
+					+ "functionality — disable Shortest Path to avoid doubled rendering.",
+				BANNER_WARN_ACCENT));
+		}
 		// Method toggles no longer recalculate; flag a route list generated with different exclusions.
 		if (!cachedCalculating && cachedHasTarget && plugin.isRouteListStale())
 		{
-			notes.add(verticalGap(4));
-			notes.add(buildBanner(RouteIcons.BANNER_WARNING,
+			warnings.add(buildBanner(RouteIcons.BANNER_WARNING,
 				"Exclusions changed — press \"Refresh routes\" to apply.", BANNER_WARN_ACCENT));
 		}
-		// Log storage running low at the balloon stations (smart mode, synced, unlocked routes
-		// only). Lives here — not just inside the balloon section — so it shows while collapsed.
+		// Log storage running low at the balloon stations (smart mode, synced, unlocked routes only).
 		List<String> lowLogs = plugin.getBalloonLowLogTypes();
 		if (!lowLogs.isEmpty())
 		{
+			warnings.add(buildBalloonLowBanner(lowLogs));
+		}
+		ShortestPathConfig cfg = plugin.getGpsConfig();
+		if (cfg.usePoh() && cfg.pohSmartDetect() && !plugin.isPohScanned())
+		{
+			warnings.add(buildBanner(RouteIcons.BANNER_WARNING,
+				"House furniture not detected",
+				"Enter your house once to auto-detect its teleport furniture.",
+				BANNER_WARN_ACCENT));
+		}
+		if (cfg.useSpiritTrees() && cfg.spiritTreeSmartMode() && !plugin.isSpiritTreeSynced())
+		{
+			warnings.add(buildBanner(RouteIcons.BANNER_WARNING,
+				"Planted spirit trees not synced",
+				"Open a spirit tree's travel menu once to detect which trees you have planted.",
+				BANNER_WARN_ACCENT));
+		}
+		if (cfg.useHotAirBalloons() && cfg.balloonSmartMode() && !cfg.balloonStorageSynced())
+		{
+			warnings.add(buildBanner(RouteIcons.BANNER_WARNING,
+				"Balloon log storage not synced",
+				"Check the Log storage at a balloon station once so flights can be paid from it.",
+				BANNER_WARN_ACCENT));
+		}
+		if (!warnings.isEmpty())
+		{
+			boolean hidden = cfg.hideWarningBanners();
 			if (notes.getComponentCount() > 0)
 			{
 				notes.add(verticalGap(4));
 			}
-			notes.add(buildBalloonLowBanner(lowLogs));
+			notes.add(buildWarningToggleRow(warnings.size(), hidden));
+			if (!hidden)
+			{
+				for (JPanel warning : warnings)
+				{
+					notes.add(verticalGap(4));
+					notes.add(warning);
+				}
+			}
 		}
 		// With no notices at all (the common "routes found" case) the strip collapses entirely
 		// instead of leaving its padding as a dead gap.
@@ -1302,6 +1339,19 @@ public class ShortestPathPanel extends PluginPanel
 		return body;
 	}
 
+	/**
+	 * A status line at the top of a configuration section body ("Your house: …", "Bank contents:
+	 * …"). HTML-wrapped so text longer than the narrow panel wraps instead of clipping to "…".
+	 */
+	private static JLabel configStatusLabel(String text, Color color)
+	{
+		JLabel label = new JLabel("<html>" + text + "</html>");
+		label.setForeground(color);
+		label.setAlignmentX(Component.LEFT_ALIGNMENT);
+		label.setBorder(new EmptyBorder(0, 0, 4, 0));
+		return label;
+	}
+
 	/** A small wrapped note line inside a configuration section body. */
 	private static JLabel configNote(String text, Color color)
 	{
@@ -1311,6 +1361,38 @@ public class ShortestPathPanel extends PluginPanel
 		note.setAlignmentX(Component.LEFT_ALIGNMENT);
 		note.setBorder(new EmptyBorder(2, 18, 2, 0));
 		return note;
+	}
+
+	/**
+	 * The compact row heading the notes strip's warning group: a warning glyph, the count, and a
+	 * chevron. Clicking it hides the banners below (leaving just this row as the reminder that
+	 * warnings exist) or shows them again; the choice persists in config.
+	 */
+	private JPanel buildWarningToggleRow(int count, boolean hidden)
+	{
+		JPanel row = new JPanel(new BorderLayout(6, 0));
+		row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		row.setBorder(new EmptyBorder(3, 8, 3, 8));
+		row.setAlignmentX(Component.LEFT_ALIGNMENT);
+		JLabel label = new JLabel(count + (count == 1 ? " warning" : " warnings") + (hidden ? " hidden" : ""),
+			RouteIcons.BANNER_WARNING, JLabel.LEFT);
+		label.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		label.setFont(FontManager.getRunescapeSmallFont());
+		row.add(label, BorderLayout.WEST);
+		row.add(new JLabel(hidden ? RouteIcons.CHEVRON_RIGHT : RouteIcons.CHEVRON_DOWN), BorderLayout.EAST);
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
+		row.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		row.setToolTipText(hidden ? "Show the warnings" : "Hide the warnings (the count stays visible)");
+		row.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mousePressed(MouseEvent e)
+			{
+				plugin.setPanelConfig("hideWarningBanners", !hidden);
+				render();
+			}
+		});
+		return row;
 	}
 
 	/**
@@ -1354,13 +1436,10 @@ public class ShortestPathPanel extends PluginPanel
 		// What GPS detected on its own: the house location (varbit) — a confidence hint that the
 		// location-gated entries/exits will resolve correctly.
 		String house = plugin.getHouseLocationName();
-		JLabel houseLabel = new JLabel(house != null
-			? "Your house: " + house
-			: "No house detected (log in, or you don't own one)");
-		houseLabel.setForeground(house != null ? ColorScheme.LIGHT_GRAY_COLOR : ColorScheme.MEDIUM_GRAY_COLOR);
-		houseLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		houseLabel.setBorder(new EmptyBorder(0, 0, 4, 0));
-		body.add(houseLabel);
+		body.add(configStatusLabel(house != null
+				? "Your house: " + house
+				: "No house detected (log in, or you don't own one)",
+			house != null ? ColorScheme.LIGHT_GRAY_COLOR : ColorScheme.MEDIUM_GRAY_COLOR));
 
 		JCheckBox master = configCheckBox("Use my house for routes", pohOn,
 			"Master switch: with this off, no POH teleport is ever routed",
@@ -1499,13 +1578,9 @@ public class ShortestPathPanel extends PluginPanel
 			state = "Bank contents: seen this session";
 			stateColor = ColorScheme.LIGHT_GRAY_COLOR;
 		}
-		JLabel stateLabel = new JLabel(state);
-		stateLabel.setForeground(stateColor);
-		stateLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		stateLabel.setBorder(new EmptyBorder(0, 0, 4, 0));
-		body.add(stateLabel);
+		body.add(configStatusLabel(state, stateColor));
 
-		body.add(configCheckBox("Remember bank between sessions", remember,
+		body.add(configCheckBox("Remember between sessions", remember,
 			"<html><body style='width:220px'>Save a snapshot of your bank each time you close it, and"
 				+ " load it back at login — so \"+ Bank\" routes can see banked items without opening"
 				+ " the bank first. Saved per character in your RuneLite profile.</body></html>",

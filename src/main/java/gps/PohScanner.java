@@ -1,5 +1,7 @@
 package gps;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 import net.runelite.api.gameval.ObjectID;
 
@@ -49,6 +51,54 @@ public final class PohScanner
 				&& obelisk == other.obelisk
 				&& jewelleryBox == other.jewelleryBox;
 		}
+	}
+
+	/**
+	 * Serializes a scan result for cross-session storage: the jewellery-box tier followed by the
+	 * present feature flags, comma-separated (e.g. {@code "ORNATE,fairyRing,obelisk"}).
+	 */
+	public static String encode(Detected detected)
+	{
+		if (detected == null)
+		{
+			return null;
+		}
+		StringBuilder sb = new StringBuilder(detected.jewelleryBox.name());
+		if (detected.fairyRing)
+		{
+			sb.append(",fairyRing");
+		}
+		if (detected.spiritTree)
+		{
+			sb.append(",spiritTree");
+		}
+		if (detected.obelisk)
+		{
+			sb.append(",obelisk");
+		}
+		return sb.toString();
+	}
+
+	/** Parses {@link #encode}'s format. Null on missing or malformed data (treated as "never scanned"). */
+	public static Detected decode(String encoded)
+	{
+		if (encoded == null || encoded.isEmpty())
+		{
+			return null;
+		}
+		String[] parts = encoded.split(",");
+		JewelleryBoxTier tier;
+		try
+		{
+			tier = JewelleryBoxTier.valueOf(parts[0]);
+		}
+		catch (IllegalArgumentException e)
+		{
+			return null;
+		}
+		Set<String> flags = new HashSet<>(Arrays.asList(parts));
+		return new Detected(flags.contains("fairyRing"), flags.contains("spiritTree"),
+			flags.contains("obelisk"), tier);
 	}
 
 	public static Detected detect(Set<Integer> objectIds)
