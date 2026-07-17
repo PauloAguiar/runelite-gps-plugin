@@ -8,7 +8,7 @@ Built on [Shortest Path](https://github.com/Skretzo/shortest-path): the classic 
 
 ## Features
 
-- **Turn-by-turn directions** — a movable overlay lists the route as steps: walking legs, doors to open, and the transports to use (teleports, boats, minecarts, balloons, gnome gliders, and more), with bank detours spelling out what to withdraw. Live progress with a per-step ETA, including mid-ride on carpets, canoes and gliders.
+- **Turn-by-turn directions** — a movable overlay lists the route as steps: walking legs, doors to open, and the transports to use (teleports, boats, minecarts, balloons, gnome gliders, and more), with bank detours spelling out what to withdraw and counted in the ETA. Live progress with a per-step ETA, including mid-ride on carpets, canoes and gliders.
 - **Alternative routes** — the side panel (blue pin icon) lists routes to the destination, each using a *different* travel method, ranked by travel time. Press **+** for more (the header and controls stay pinned as the cards scroll). Click a card to draw that route everywhere.
 - **Travel methods catalog** — every method, categorised and searchable, with per-method include/exclude toggles that persist and availability markers that say exactly what's missing ("Requires 40 Firemaking", "Missing item: Willow logs", in your bank, quest not done). Seasonal (Leagues) methods are listed but disabled by default.
 - **Travel options** — one panel section for the facts GPS can't read off the map, so routes match what you can actually use: your **house** contents (auto-detected while you're inside, and editable by hand), a **wilderness** avoid/allow toggle, balloon **Log storage** (tracked from chat so flights can be paid from storage), and which farmable **spirit trees** you've grown (read from the travel menu).
@@ -32,6 +32,11 @@ Built on [Shortest Path](https://github.com/Skretzo/shortest-path): the classic 
 | **Owned** | Inv + bank | Also items in your bank — routes walk to a bank to withdraw them |
 | **All** | Available | Ignores item possession, but only methods your character has unlocked |
 | **All** | Everything | Every teleport in the game, including ones you can't use yet |
+
+## Feedback & community
+
+- **[Discord](https://discord.gg/7VAbrPsUzT)** — questions, suggestions, or just to say a route surprised you. Also linked from the panel header.
+- **Report an issue** — the red button in the panel header opens a GitHub issue pre-filled with your current routes, mode and settings. Calculate the misbehaving route first so the report captures it; for a full reproduction, attach a debug snapshot (⋯ menu → *Save debug snapshot*, saved to `.runelite/gps-debug/`).
 
 ## Credits
 
