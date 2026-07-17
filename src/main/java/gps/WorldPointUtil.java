@@ -382,6 +382,53 @@ public class WorldPointUtil
 		return false;
 	}
 
+	/**
+	 * A compact human-readable summary of an instance's template chunk origins, for debug logging:
+	 * the distinct template chunk world coordinates, deduplicated, capped at 40 entries. "not an
+	 * instance" when the world view isn't one.
+	 */
+	public static String describeInstanceChunks(WorldView worldView)
+	{
+		if (worldView == null || !worldView.isInstance())
+		{
+			return "not an instance";
+		}
+		int[][][] chunks = worldView.getInstanceTemplateChunks();
+		if (chunks == null)
+		{
+			return "no chunk data";
+		}
+		java.util.LinkedHashSet<String> seen = new java.util.LinkedHashSet<>();
+		for (int[][] planeChunks : chunks)
+		{
+			if (planeChunks == null)
+			{
+				continue;
+			}
+			for (int[] column : planeChunks)
+			{
+				if (column == null)
+				{
+					continue;
+				}
+				for (int chunkData : column)
+				{
+					if (chunkData == -1)
+					{
+						continue;
+					}
+					seen.add("(" + unpackChunkTemplateX(chunkData) + "," + unpackChunkTemplateY(chunkData)
+						+ ",p" + unpackChunkTemplatePlane(chunkData) + ")");
+					if (seen.size() >= 40)
+					{
+						return String.join(" ", seen) + " …";
+					}
+				}
+			}
+		}
+		return seen.isEmpty() ? "all chunks empty" : String.join(" ", seen);
+	}
+
 	public static int fromLocalInstance(Client client, Player localPlayer)
 	{
 		WorldView worldView = localPlayer.getWorldView();

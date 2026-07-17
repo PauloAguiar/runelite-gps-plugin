@@ -42,6 +42,7 @@ import net.runelite.api.Point;
 import net.runelite.api.Tile;
 import net.runelite.api.ScriptID;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
@@ -1070,6 +1071,14 @@ public class ShortestPathPlugin extends Plugin
 	{
 		updateNavButtonVisibility(event.getGameState());
 
+		// Scene rebuild: the spawn-evidence set belongs to the old scene (LOADING fires before the
+		// new scene's object spawns), and the once-per-scene chunk-dump log re-arms.
+		if (GameState.LOADING.equals(event.getGameState()))
+		{
+			pohSpawnedFurniture.clear();
+			pohChunksLogged = false;
+		}
+
 		// Logout: save any unsaved bank snapshot (with the profile key captured while logged in) and
 		// forget everything this session detected about the character — bank, planted spirit trees,
 		// house scan — so a different character logging in next doesn't inherit it. The right
@@ -1086,6 +1095,7 @@ public class ShortestPathPlugin extends Plugin
 			detectedPohFurniture = null;
 			pohFurnitureFoundThisVisit = false;
 			pohScanAttempts = 0;
+			pohSpawnedFurniture.clear();
 		}
 
 		if (pathfinderConfig == null
@@ -2509,6 +2519,13 @@ public class ShortestPathPlugin extends Plugin
 	// Bounds the "scene still loading" retries so a bare house doesn't rescan every tick forever.
 	private int pohScanAttempts = 0;
 	private static final int POH_SCAN_MAX_ATTEMPTS = 6;
+	// Recognised POH furniture ids seen spawning in the current scene (cleared on every scene
+	// load). A second, independent in-house signal: these object ids only exist inside player-owned
+	// houses, so a spawn is proof of being in one even if the template-chunk check somehow isn't.
+	private final Set<Integer> pohSpawnedFurniture = new HashSet<>();
+	// One decoded chunk dump per scene when an instance is judged NOT a house — the data needed to
+	// diagnose a missed house from the client log.
+	private boolean pohChunksLogged = false;
 	// Tracks building mode so leaving it re-arms the scan: furniture built mid-visit is then
 	// detected without having to exit and re-enter the house.
 	private boolean pohBuildingMode = false;
@@ -2522,16 +2539,28 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	private void maybeScanPoh()
 	{
-		// In-the-house detection asks whether the loaded instance is BUILT FROM the house template
-		// region — houses are instances assembled from chunks of that static map area. This checks
-		// the scene's own template chunk table, not the player's tile, so it can't be broken by the
-		// player's plane, chunk rotation, or position. (Two prior attempts failed in the field:
-		// varbit 4744 is the house teleport's inside/outside SETTING, not a presence flag; and
-		// mapping the player's instanced tile back to the template proved unreliable in practice.)
-		boolean inside = WorldPointUtil.instanceOverlapsArea(client.getTopLevelWorldView(),
+		// In-the-house detection, two independent signals (three prior single-signal attempts each
+		// failed in the field — varbit 4744, player-tile template mapping, and the chunk check has
+		// now missed at least one real house too):
+		// 1. The loaded instance is BUILT FROM the house template region — houses are instances
+		//    assembled from chunks of that static map area, read from the scene's template table.
+		// 2. Recognised POH furniture spawned in this scene — those object ids only exist inside
+		//    player-owned houses (the official POH plugin's approach).
+		boolean sceneIsHouse = WorldPointUtil.instanceOverlapsArea(client.getTopLevelWorldView(),
 			POH_MIN_X, POH_MIN_Y, POH_MAX_X, POH_MAX_Y);
+		boolean inside = sceneIsHouse || !pohSpawnedFurniture.isEmpty();
 		if (!inside)
 		{
+			// Diagnosability: when an instance is judged not-a-house, log its decoded template
+			// chunks once per scene — if a real house is ever missed, the client log shows exactly
+			// what its chunks mapped to.
+			if (!pohChunksLogged && log.isDebugEnabled()
+				&& client.getTopLevelWorldView() != null && client.getTopLevelWorldView().isInstance())
+			{
+				pohChunksLogged = true;
+				log.debug("[poh] instance not judged a house; template chunks: {}",
+					WorldPointUtil.describeInstanceChunks(client.getTopLevelWorldView()));
+			}
 			pohFurnitureFoundThisVisit = false; // reset so the next visit re-scans
 			pohScanAttempts = 0;
 			return;
@@ -2553,8 +2582,25 @@ public class ShortestPathPlugin extends Plugin
 			return;
 		}
 		pohScanAttempts++;
+		log.debug("[poh] scan attempt {} (sceneIsHouse={}, spawned={})",
+			pohScanAttempts, sceneIsHouse, pohSpawnedFurniture);
 		scanPohFurniture();
 		pohFurnitureFoundThisVisit = detectedPohFurniture != null && detectedPohFurniture.any();
+	}
+
+	/**
+	 * A recognised piece of POH furniture spawning is unambiguous "we're inside a house" evidence
+	 * (see {@link PohScanner#isRecognised}), independent of any coordinate math — collected here,
+	 * cleared on every scene load, and consumed by the next tick's {@link #maybeScanPoh()}.
+	 */
+	@Subscribe
+	public void onGameObjectSpawned(GameObjectSpawned event)
+	{
+		int id = event.getGameObject().getId();
+		if (PohScanner.isRecognised(id) && pohSpawnedFurniture.add(id))
+		{
+			log.debug("[poh] recognised furniture spawned: {}", id);
+		}
 	}
 
 	private void scanPohFurniture()
@@ -2590,7 +2636,10 @@ public class ShortestPathPlugin extends Plugin
 			}
 		}
 
+		// Spawn-event evidence joins the tile scan: authoritative even if the tile walk missed it.
+		ids.addAll(pohSpawnedFurniture);
 		PohScanner.Detected detected = PohScanner.detect(ids);
+		log.debug("[poh] scanned {} object ids, detected: {}", ids.size(), PohScanner.encode(detected));
 		boolean firstScan = !pohScanned;
 		boolean changed = firstScan || !detected.sameAs(detectedPohFurniture);
 		pohScanned = true;

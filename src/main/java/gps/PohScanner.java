@@ -101,6 +101,21 @@ public final class PohScanner
 			flags.contains("obelisk"), tier);
 	}
 
+	/** Every furniture object id the scanner recognises — the spawn-event fast path filters on this. */
+	private static final Set<Integer> RECOGNISED_IDS = Set.of(
+		ObjectID.POH_FAIRY_RING, ObjectID.POH_FAIRY_HOUSE, ObjectID.POH_FAIRY_HOUSE_OPEN,
+		ObjectID.POH_SPIRIT_TREE, ObjectID.POH_WILDERNESS_OBELISK,
+		ObjectID.POH_JEWELLERY_BOX_1, ObjectID.POH_JEWELLERY_BOX_2, ObjectID.POH_JEWELLERY_BOX_3);
+
+	/**
+	 * Whether this object id is POH furniture the scanner recognises. These ids only exist inside
+	 * player-owned houses, so one spawning is also proof the loaded scene is a house.
+	 */
+	public static boolean isRecognised(int objectId)
+	{
+		return RECOGNISED_IDS.contains(objectId);
+	}
+
 	public static Detected detect(Set<Integer> objectIds)
 	{
 		boolean fairyRing = objectIds.contains(ObjectID.POH_FAIRY_RING)

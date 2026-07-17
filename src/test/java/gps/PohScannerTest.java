@@ -31,6 +31,22 @@ public class PohScannerTest
 	}
 
 	@Test
+	public void spawnRelevanceMatchesWhatDetectRecognises()
+	{
+		// Every id detect() reacts to must be flagged, so the spawn-event fast path never misses
+		// furniture the tile scan would have found.
+		for (int id : new int[]{
+			ObjectID.POH_FAIRY_RING, ObjectID.POH_FAIRY_HOUSE, ObjectID.POH_FAIRY_HOUSE_OPEN,
+			ObjectID.POH_SPIRIT_TREE, ObjectID.POH_WILDERNESS_OBELISK,
+			ObjectID.POH_JEWELLERY_BOX_1, ObjectID.POH_JEWELLERY_BOX_2, ObjectID.POH_JEWELLERY_BOX_3})
+		{
+			assertTrue(String.valueOf(id), PohScanner.isRecognised(id));
+			assertTrue(PohScanner.detect(Set.of(id)).any());
+		}
+		assertFalse(PohScanner.isRecognised(1));
+	}
+
+	@Test
 	public void encodeDecodeRoundTripsEveryCombination()
 	{
 		for (JewelleryBoxTier tier : JewelleryBoxTier.values())
