@@ -35,7 +35,7 @@ public class Transport
 	 */
 	public static final int LOCATION_PERMUTATION = WorldPointUtil.packWorldPoint(-1, -1, 1);
 	/** Minimum ticks for an object transport (stairs/door/gate/portal) that carries no explicit duration. */
-	private static final int OBJECT_TRANSPORT_MIN_DURATION = 2;
+	private static final int OBJECT_TRANSPORT_MIN_DURATION = 1;
 	/**
 	 * Shared, never-mutated all-zero skill array. Most transports require no skills, so they point
 	 * at this singleton instead of each allocating their own {@code int[]} (issue #491).
