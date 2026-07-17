@@ -353,8 +353,10 @@ public class WorldPointUtilTest
 		return worldView;
 	}
 
-	// The POH template area used by the plugin's house detection (ShortestPathPlugin's bounds).
-	private static final int POH_MIN_X = 1856, POH_MIN_Y = 5696, POH_MAX_X = 2047, POH_MAX_Y = 5767;
+	// The map area LIVE house instances are assembled from (ShortestPathPlugin's presence bounds).
+	// NOT the y 5696 band the transport data models POH interiors in — checking that band was why
+	// house detection failed in the field (see the 2026-07-17 chunk-dump investigation).
+	private static final int POH_MIN_X = 1856, POH_MIN_Y = 7040, POH_MAX_X = 2047, POH_MAX_Y = 7167;
 
 	private static boolean overlapsPoh(WorldView worldView)
 	{
@@ -365,11 +367,23 @@ public class WorldPointUtilTest
 	public void instanceBuiltFromPohChunksIsDetected()
 	{
 		// A single house room chunk anywhere in the instance is enough, at any plane or rotation.
-		assertTrue(overlapsPoh(instanceOf(templateChunk(1920, 5704, 0, 0))));
-		assertTrue(overlapsPoh(instanceOf(templateChunk(1976, 5760, 1, 3))));
+		assertTrue(overlapsPoh(instanceOf(templateChunk(1920, 7048, 0, 0))));
+		assertTrue(overlapsPoh(instanceOf(templateChunk(1912, 7096, 1, 3))));
 		// Chunks at the area's lower edge count; one chunk-width below it does not.
 		assertTrue(overlapsPoh(instanceOf(templateChunk(POH_MIN_X, POH_MIN_Y, 0, 0))));
 		assertFalse(overlapsPoh(instanceOf(templateChunk(POH_MIN_X - CHUNK_SIZE, POH_MIN_Y, 0, 0))));
+	}
+
+	@Test
+	public void realHouseChunkDumpIsDetected()
+	{
+		// The exact template chunks logged from a real house (client log, 2026-07-17) — the case
+		// every earlier presence check missed.
+		assertTrue(overlapsPoh(instanceOf(
+			templateChunk(1864, 7040, 0, 0), templateChunk(1856, 7080, 0, 0),
+			templateChunk(1856, 7048, 0, 0), templateChunk(1856, 7096, 0, 0),
+			templateChunk(1888, 7096, 0, 0), templateChunk(1888, 7048, 0, 0),
+			templateChunk(1864, 7056, 0, 0))));
 	}
 
 	@Test
@@ -377,9 +391,11 @@ public class WorldPointUtilTest
 	{
 		// An instance assembled from overworld chunks (e.g. a raid or cutscene) is not a house.
 		assertFalse(overlapsPoh(instanceOf(templateChunk(3216, 3216, 0, 0))));
+		// The transport data's POH model band (y 5696) is not what live houses are built from.
+		assertFalse(overlapsPoh(instanceOf(templateChunk(1920, 5704, 0, 0))));
 		// Unfilled chunk slots (-1) are skipped, and alone mean "not a house".
 		assertFalse(overlapsPoh(instanceOf(-1, -1)));
-		assertTrue(overlapsPoh(instanceOf(-1, templateChunk(1920, 5704, 0, 0))));
+		assertTrue(overlapsPoh(instanceOf(-1, templateChunk(1920, 7048, 0, 0))));
 	}
 
 	@Test

@@ -117,6 +117,15 @@ public class ShortestPathPlugin extends Plugin
 	private static final int POH_MAX_X = 2047;
 	private static final int POH_MIN_Y = 5696;
 	private static final int POH_MAX_Y = 5767;
+	// The map area LIVE house instances are assembled from — distinct from the transport data's POH
+	// model area above (y 5696 band), which is what route tiles use. Observed from a real house's
+	// instance template chunks (x 1856-1888, y 7040-7096, plane 0; chunk-dump log, 2026-07-17);
+	// sized to the full two map-square rows for margin. Checking the wrong band here is why house
+	// presence detection failed repeatedly.
+	private static final int POH_TEMPLATE_MIN_X = 1856;
+	private static final int POH_TEMPLATE_MAX_X = 2047;
+	private static final int POH_TEMPLATE_MIN_Y = 7040;
+	private static final int POH_TEMPLATE_MAX_Y = 7167;
 	private static final String PLUGIN_MESSAGE_PATH = "path";
 	private static final String PLUGIN_MESSAGE_CLEAR = "clear";
 	private static final String PLUGIN_MESSAGE_START = "start";
@@ -2547,7 +2556,7 @@ public class ShortestPathPlugin extends Plugin
 		// 2. Recognised POH furniture spawned in this scene — those object ids only exist inside
 		//    player-owned houses (the official POH plugin's approach).
 		boolean sceneIsHouse = WorldPointUtil.instanceOverlapsArea(client.getTopLevelWorldView(),
-			POH_MIN_X, POH_MIN_Y, POH_MAX_X, POH_MAX_Y);
+			POH_TEMPLATE_MIN_X, POH_TEMPLATE_MIN_Y, POH_TEMPLATE_MAX_X, POH_TEMPLATE_MAX_Y);
 		boolean inside = sceneIsHouse || !pohSpawnedFurniture.isEmpty();
 		if (!inside)
 		{
@@ -3366,7 +3375,8 @@ public class ShortestPathPlugin extends Plugin
 				snapshot.put("bankRestored", bankRestored);
 				// Smart-detection state, for diagnosing "GPS didn't notice my house/trees" reports.
 				snapshot.put("pohSceneLoaded", WorldPointUtil.instanceOverlapsArea(
-					client.getTopLevelWorldView(), POH_MIN_X, POH_MIN_Y, POH_MAX_X, POH_MAX_Y));
+					client.getTopLevelWorldView(),
+					POH_TEMPLATE_MIN_X, POH_TEMPLATE_MIN_Y, POH_TEMPLATE_MAX_X, POH_TEMPLATE_MAX_Y));
 				snapshot.put("pohScanned", pohScanned);
 				snapshot.put("pohDetectedFurniture", PohScanner.encode(detectedPohFurniture));
 				snapshot.put("spiritTreesSynced", pathfinderConfig.availableSpiritTrees != null);
