@@ -79,8 +79,9 @@ public class ShortestPathPanel extends PluginPanel
 	private static final Color BANNER_OK_ACCENT = new Color(0x4C, 0xAF, 0x50);     // green
 	// Tallest the expanded teleport-methods box may grow before it scrolls internally.
 	private static final int CATALOG_MAX_HEIGHT = 240;
-	// Where the header's GitHub mark points: straight at the issue tracker.
-	private static final String GITHUB_ISSUES_URL = "https://github.com/PauloAguiar/runelite-gps-plugin/issues";
+	// The header's GitHub mark points at the project home; the Discord mark at the community invite.
+	private static final String GITHUB_REPO_URL = "https://github.com/PauloAguiar/runelite-gps-plugin";
+	private static final String DISCORD_URL = "https://discord.gg/7VAbrPsUzT";
 
 	// Stable, distinct-ish palette; categories hash into it so the same category always gets the
 	// same dot colour.
@@ -351,24 +352,24 @@ public class ShortestPathPanel extends PluginPanel
 		title.setForeground(Color.WHITE);
 		titleRow.add(title, BorderLayout.WEST);
 
-		JPanel actions = new JPanel(new FlowLayout(FlowLayout.TRAILING, 6, 0));
+		JPanel actions = new JPanel(new FlowLayout(FlowLayout.TRAILING, 4, 0));
 		actions.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		// A labelled red button opens a NEW issue pre-filled with the current routing context. The
-		// GitHub icon beside it links to the issues page; occasional actions tuck into the burger.
-		JButton reportButton = new JButton("Report an issue", RouteIcons.REPORT);
+		// A compact red button opens a NEW issue pre-filled with the current routing context, next to
+		// the GitHub (project home) and Discord (community) links; occasional actions tuck into the burger.
+		JButton reportButton = new JButton("Report an issue");
 		reportButton.setFont(FontManager.getRunescapeSmallFont());
 		reportButton.setForeground(ColorScheme.PROGRESS_ERROR_COLOR);
-		reportButton.setIconTextGap(4);
+		reportButton.setMargin(new java.awt.Insets(2, 6, 2, 6));
 		reportButton.setFocusPainted(false);
 		reportButton.setToolTipText("<html>Opens GitHub pre-filled with the current routes and settings.<br>"
 			+ "First calculate the route that's misbehaving, so the report captures it.</html>");
 		reportButton.addActionListener(e -> plugin.reportIssue());
 		actions.add(reportButton);
+		actions.add(control(new IconActionLabel(RouteIcons.GITHUB, RouteIcons.GITHUB,
+			"View the project on GitHub", () -> LinkBrowser.browse(GITHUB_REPO_URL))));
+		actions.add(control(new IconActionLabel(RouteIcons.DISCORD, RouteIcons.DISCORD,
+			"Join the GPS Discord", () -> LinkBrowser.browse(DISCORD_URL))));
 		JPopupMenu actionsMenu = new JPopupMenu();
-		JMenuItem githubItem = new JMenuItem("View on GitHub", RouteIcons.GITHUB);
-		githubItem.setToolTipText("Browse existing issues or contribute on GitHub");
-		githubItem.addActionListener(e -> LinkBrowser.browse(GITHUB_ISSUES_URL));
-		actionsMenu.add(githubItem);
 		JMenuItem debugItem = new JMenuItem("Save debug snapshot", RouteIcons.DEBUG);
 		debugItem.setToolTipText("Save a debug snapshot of the current routes to disk (for reproducing issues)");
 		debugItem.addActionListener(e -> plugin.captureDebugSnapshot());

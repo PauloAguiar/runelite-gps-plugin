@@ -94,6 +94,9 @@ final class RouteIcons
 	static final ImageIcon MENU_HOVER = new ImageIcon(hamburger(LIGHT));
 	// GitHub mark linking to the plugin's repository (report issues / contribute).
 	static final ImageIcon GITHUB = new ImageIcon(github(false));
+	// Discord invite: the bundled Discord mark (from Quest Helper's resources).
+	static final ImageIcon DISCORD = new ImageIcon(
+		ImageUtil.resizeImage(ImageUtil.loadImageResource(RouteIcons.class, "/discord.png"), SIZE, SIZE));
 	// Report an issue: a red warning triangle on the report button (opens a pre-filled GitHub issue).
 	static final ImageIcon REPORT = new ImageIcon(warningTriangle(RED));
 
