@@ -350,6 +350,22 @@ public class PathfinderConfig
 		}
 	}
 
+	/** The captured bank snapshot, for persisting it across sessions. Null if never seen. */
+	public Item[] getBankSnapshot()
+	{
+		return bankSnapshot;
+	}
+
+	/**
+	 * Forgets everything known about the bank — the live container reference and the snapshot.
+	 * Called at logout so a different character logging in doesn't inherit this one's bank.
+	 */
+	public void clearBank()
+	{
+		bank = null;
+		bankSnapshot = null;
+	}
+
 	/**
 	 * The bank items to use for bank-aware checks: the live container while it has contents, else the
 	 * snapshot captured while the bank was open (this config's own, or the main config's for planning

@@ -283,6 +283,20 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigItem(
 		hidden = true,
+		keyName = "rememberBank",
+		name = "Remember bank between sessions",
+		description = "Save a snapshot of your bank when you close it and reload it at login,<br>" +
+			"so \"+ Bank\" routes can see banked items without opening the bank first.",
+		position = 156,
+		section = sectionSettings
+	)
+	default boolean rememberBank()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		hidden = true,
 		keyName = "useTeleportationItems",
 		name = "Use teleportation items",
 		description = "Whether to include teleportation items from the player's inventory and equipment.<br>" +

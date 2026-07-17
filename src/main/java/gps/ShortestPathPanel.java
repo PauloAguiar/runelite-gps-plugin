@@ -163,6 +163,7 @@ public class ShortestPathPanel extends PluginPanel
 	private boolean travelSectionExpanded = false;
 	private boolean pohSectionExpanded = false;
 	private boolean wildernessSectionExpanded = false;
+	private boolean bankSectionExpanded = false;
 	private boolean balloonSectionExpanded = false;
 	private boolean spiritTreeSectionExpanded = false;
 	// Funnel filter next to the catalog search: narrow the list to disabled methods or to a single
@@ -587,7 +588,9 @@ public class ShortestPathPanel extends PluginPanel
 		{
 			modeBankWarning.add(buildBanner(RouteIcons.BANNER_WARNING,
 				"Bank contents unknown",
-				"Open your bank once so banked items can be found.",
+				plugin.getGpsConfig().rememberBank()
+					? "Open your bank once so banked items can be found. GPS will remember it for future sessions."
+					: "Open your bank once so banked items can be found.",
 				ColorScheme.PROGRESS_ERROR_COLOR));
 		}
 		modeBankWarning.setVisible(modeBankWarning.getComponentCount() > 0);
@@ -1259,7 +1262,7 @@ public class ShortestPathPanel extends PluginPanel
 			}
 		}
 		JPanel section = configSectionShell("Travel options",
-			"Everything routing may use: your house, wilderness policy, balloons and the travel methods",
+			"Everything routing may use: your house, wilderness policy, bank, balloons and the travel methods",
 			travelSectionExpanded, () -> travelSectionExpanded = !travelSectionExpanded,
 			cachedCatalog.isEmpty() ? "" : enabled + "/" + cachedCatalog.size(),
 			ColorScheme.LIGHT_GRAY_COLOR, true);
@@ -1277,6 +1280,7 @@ public class ShortestPathPanel extends PluginPanel
 		body.setBorder(new EmptyBorder(0, 8, 0, 0));
 		body.add(buildPohSection());
 		body.add(buildWildernessSection());
+		body.add(buildBankSection());
 		body.add(buildBalloonSection());
 		body.add(buildSpiritTreeSection());
 		if (!cachedCatalog.isEmpty())
@@ -1451,6 +1455,62 @@ public class ShortestPathPanel extends PluginPanel
 			"Route around the wilderness whenever possible (e.g. skip the Edgeville lever to Ardougne)",
 			v -> plugin.setPanelConfig("avoidWilderness", v)));
 		body.add(configNote("Routes still enter the wilderness when the destination itself is inside it.",
+			ColorScheme.MEDIUM_GRAY_COLOR));
+		section.add(body);
+		return section;
+	}
+
+	/**
+	 * Bank memory: whether GPS saves the bank's contents when the bank closes and restores them at
+	 * login, so "+ Bank" routes and in-bank availability work without opening the bank first. GPS
+	 * only ever sees the bank while it's open — this fills the gap between sessions.
+	 */
+	private JPanel buildBankSection()
+	{
+		final boolean remember = plugin.getGpsConfig().rememberBank();
+		JPanel section = configSectionShell("Bank",
+			"Remember your bank between sessions so \"+ Bank\" routes work before you open it",
+			bankSectionExpanded, () -> bankSectionExpanded = !bankSectionExpanded,
+			remember ? "remembered" : "this session",
+			remember ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.LIGHT_GRAY_COLOR);
+		if (!bankSectionExpanded)
+		{
+			return section;
+		}
+
+		JPanel body = configSectionBody();
+
+		// What GPS currently knows, and where that knowledge came from — a restored snapshot can be
+		// stale if the bank changed on another client since it was saved.
+		String state;
+		Color stateColor;
+		if (!plugin.isBankContentsKnown())
+		{
+			state = "Bank contents: unknown — open your bank once";
+			stateColor = ColorScheme.MEDIUM_GRAY_COLOR;
+		}
+		else if (plugin.isBankRestored())
+		{
+			state = "Bank contents: restored from your last session";
+			stateColor = ColorScheme.LIGHT_GRAY_COLOR;
+		}
+		else
+		{
+			state = "Bank contents: seen this session";
+			stateColor = ColorScheme.LIGHT_GRAY_COLOR;
+		}
+		JLabel stateLabel = new JLabel(state);
+		stateLabel.setForeground(stateColor);
+		stateLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		stateLabel.setBorder(new EmptyBorder(0, 0, 4, 0));
+		body.add(stateLabel);
+
+		body.add(configCheckBox("Remember bank between sessions", remember,
+			"<html><body style='width:220px'>Save a snapshot of your bank each time you close it, and"
+				+ " load it back at login — so \"+ Bank\" routes can see banked items without opening"
+				+ " the bank first. Saved per character in your RuneLite profile.</body></html>",
+			v -> plugin.setPanelConfig("rememberBank", v)));
+		body.add(configNote("Opening the bank always refreshes the snapshot; turning this off deletes it.",
 			ColorScheme.MEDIUM_GRAY_COLOR));
 		section.add(body);
 		return section;
