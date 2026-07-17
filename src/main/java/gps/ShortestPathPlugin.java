@@ -2282,6 +2282,9 @@ public class ShortestPathPlugin extends Plugin
 	// Bounds the "scene still loading" retries so a bare house doesn't rescan every tick forever.
 	private int pohScanAttempts = 0;
 	private static final int POH_SCAN_MAX_ATTEMPTS = 6;
+	// Tracks building mode so leaving it re-arms the scan: furniture built mid-visit is then
+	// detected without having to exit and re-enter the house.
+	private boolean pohBuildingMode = false;
 
 	/**
 	 * While inside the POH, scan the loaded scene for the furniture GPS can recognise (jewellery
@@ -2305,6 +2308,15 @@ public class ShortestPathPlugin extends Plugin
 			pohScanAttempts = 0;
 			return;
 		}
+		// Leaving building mode re-arms the scan: furniture built this visit gets detected without
+		// exiting the house. (Named API constant — POH_BUILDING_MODE is 1 while building.)
+		boolean building = client.getVarbitValue(net.runelite.api.gameval.VarbitID.POH_BUILDING_MODE) == 1;
+		if (pohBuildingMode && !building)
+		{
+			pohFurnitureFoundThisVisit = false;
+			pohScanAttempts = 0;
+		}
+		pohBuildingMode = building;
 		// Scan each tick until furniture is found (the scene can still be populating on the entry
 		// tick), then stop for this visit — the furniture doesn't change while standing here. The
 		// attempt cap stops a bare house (or undetectable-only furniture) rescanning forever.
