@@ -107,7 +107,8 @@ public class CollisionMap
 
 	// Get neighbours for a walkable tile:
 	//      * Neighbouring tiles we can walk to
-	//      * A transition into banked state, if the current tile is a bank.
+	//      * An OPTIONAL same-tile transition into the banked state, if the current tile is a bank
+	//        (priced at the bank-pickup cost — the un-banked path continues in parallel).
 	//      * Transition into abstract global teleport nodes, if we haven't tried that yet.
 	private PrimitiveIntList getTileNeighbors(int node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel, NodeGraph graph, TentativeCosts tentative)
 	{
@@ -118,22 +119,28 @@ public class CollisionMap
 
 		neighbors.clear();
 
-		// Either we have already visited a bank, if the current tile is a bank switch into the bankVisited state for the
-		// rest of the path.
-		boolean alreadyBanked = graph.bankVisited(node);
-		boolean pathBankVisited = alreadyBanked
-			|| (config.isBankPathEnabled() && config.bankAccessible(packedPosition));
-		// Charge the bank-pickup penalty once, on every edge leaving the tile where the path first
-		// enters the banked state, so banking only wins when it saves more than that many tiles overall.
-		int bankEntryCost = (!alreadyBanked && pathBankVisited) ? config.getBankPickupCost() : 0;
+		// Banking is a CHOICE, not a consequence of standing near a booth: from an un-banked node
+		// on a bank-accessible tile, offer a same-tile transition into the banked state priced at
+		// the pickup cost — every other edge continues un-banked, free of the surcharge. (The flip
+		// used to be FORCED on every path touching a bank tile, which charged routes that never
+		// withdraw anything — e.g. every route starting at the GE — cancelling the surcharge out
+		// of the route ranking, and made plain walking detour around bank plazas to dodge it.)
+		final boolean bankVisited = graph.bankVisited(node);
+		if (!bankVisited && config.isBankPathEnabled() && config.bankAccessible(packedPosition)
+			&& !visited.get(packedPosition, true)
+			&& (tentative == null || !tentative.shouldPrune(packedPosition, true,
+				graph.cost(node) + config.getBankPickupCost())))
+		{
+			neighbors.add(graph.createTile(packedPosition, node, true, config.getBankPickupCost()));
+		}
 
 		// Firstly check if there are any transports or teleports which are applicable from the current tile.
-		Transport[] transports = config.getTransportsPacked(pathBankVisited).getOrDefault(packedPosition, TransportAvailability.EMPTY_TRANSPORTS);
+		Transport[] transports = config.getTransportsPacked(bankVisited).getOrDefault(packedPosition, TransportAvailability.EMPTY_TRANSPORTS);
 		for (Transport transport : transports)
 		{
 			// A transport to an already-SETTLED destination is pointless (settled = final under
 			// cost-ordered settling); same-destination competitors race in the queue otherwise.
-			if (visited.get(transport.getDestination(), pathBankVisited))
+			if (visited.get(transport.getDestination(), bankVisited))
 			{
 				continue;
 			}
@@ -142,8 +149,8 @@ public class CollisionMap
 			// (whistle -> landing site A -> fly to B) prices itself above the direct whistle-to-B
 			// teleport with no special inheritance.
 			final int transportTravelTime = CostUnits.fromTicks(transport.getDuration());
-			final int transportAdditionalCost = config.getAdditionalTransportCost(transport) + bankEntryCost;
-			if (tentative != null && tentative.shouldPrune(transport.getDestination(), pathBankVisited,
+			final int transportAdditionalCost = config.getAdditionalTransportCost(transport);
+			if (tentative != null && tentative.shouldPrune(transport.getDestination(), bankVisited,
 				graph.cost(node) + Math.max(0, transportTravelTime + transportAdditionalCost)))
 			{
 				continue;
@@ -153,15 +160,15 @@ public class CollisionMap
 				node,
 				transportTravelTime,
 				transportAdditionalCost,
-				pathBankVisited));
+				bankVisited));
 		}
 
 		// Global teleports are only considered from an abstract node, so each
 		// wilderness/bank state expands them once.
 		AbstractNodeKind abstractKind = AbstractNodeKind.fromWildernessLevel(wildernessLevel);
-		if (!visited.getAbstract(abstractKind, pathBankVisited))
+		if (!visited.getAbstract(abstractKind, bankVisited))
 		{
-			neighbors.add(graph.createAbstract(abstractKind, node, pathBankVisited, bankEntryCost));
+			neighbors.add(graph.createAbstract(abstractKind, node, bankVisited, 0));
 		}
 
 		// Then add tiles which we can walk to, which go into the FIFO boundary queue.
@@ -196,31 +203,31 @@ public class CollisionMap
 			traversable[7] = ne(x, y, z);
 		}
 
-		// One walking step costs 1 (Chebyshev-adjacent) plus the one-off bank-entry surcharge.
-		final int walkStepCost = graph.cost(node) + Math.max(0, 1 + bankEntryCost);
+		// One walking step costs 1 (Chebyshev-adjacent).
+		final int walkStepCost = graph.cost(node) + 1;
 		for (int i = 0; i < traversable.length; i++)
 		{
 			OrdinalDirection d = ORDINAL_VALUES[i];
 			int neighborPacked = packedPointFromOrdinal(packedPosition, d);
-			if (visited.get(neighborPacked, pathBankVisited))
+			if (visited.get(neighborPacked, bankVisited))
 			{
 				continue;
 			}
 
 			if (traversable[i])
 			{
-				if (tentative != null && tentative.shouldPrune(neighborPacked, pathBankVisited, walkStepCost))
+				if (tentative != null && tentative.shouldPrune(neighborPacked, bankVisited, walkStepCost))
 				{
 					continue;
 				}
-				neighbors.add(graph.createTile(neighborPacked, node, pathBankVisited, bankEntryCost));
+				neighbors.add(graph.createTile(neighborPacked, node, bankVisited, 0));
 			}
 			else if (Math.abs(d.x + d.y) == 1 && isBlocked(x + d.x, y + d.y, z))
 			{
 				// The transport starts from a blocked adjacent tile, e.g. fairy ring
 				// Only checks non-teleport transports (includes portals and levers, but not
 				// items and spells)
-				Transport[] neighborTransports = config.getTransportsPacked(pathBankVisited).getOrDefault(neighborPacked,
+				Transport[] neighborTransports = config.getTransportsPacked(bankVisited).getOrDefault(neighborPacked,
 					TransportAvailability.EMPTY_TRANSPORTS);
 				for (Transport transport : neighborTransports)
 				{
@@ -230,16 +237,16 @@ public class CollisionMap
 					// e.g. fairy rings) may be entered this way.
 					if (transport.getOrigin() != neighborPacked
 						|| !(transport.isUsableAtWildernessLevel(wildernessLevel))
-						|| visited.get(transport.getOrigin(), pathBankVisited))
+						|| visited.get(transport.getOrigin(), bankVisited))
 					{
 						continue;
 					}
-					if (tentative != null && tentative.shouldPrune(transport.getOrigin(), pathBankVisited,
-						graph.cost(node) + Math.max(0, WorldPointUtil.distanceBetween(packedPosition, transport.getOrigin()) + bankEntryCost)))
+					if (tentative != null && tentative.shouldPrune(transport.getOrigin(), bankVisited,
+						graph.cost(node) + WorldPointUtil.distanceBetween(packedPosition, transport.getOrigin())))
 					{
 						continue;
 					}
-					neighbors.add(graph.createTile(transport.getOrigin(), node, pathBankVisited, bankEntryCost));
+					neighbors.add(graph.createTile(transport.getOrigin(), node, bankVisited, 0));
 				}
 			}
 		}

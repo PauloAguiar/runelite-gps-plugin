@@ -98,7 +98,7 @@ public class AlternativeRoutesBankModeTest
 			pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
 		// Parity with PathfinderTest.testCowbellAmuletInBankUsedAfterBankVisit (main plugin behaviour).
 		assertEquals("Bank-mode route should match the main plugin's bank-pickup path length",
-			36, pathfinder.getPath().size());
+			37, pathfinder.getPath().size());
 	}
 
 	@Test
@@ -117,7 +117,7 @@ public class AlternativeRoutesBankModeTest
 		assertTrue("Bank mode should reach the target using the bank snapshot", pathfinder.getResult().isReached());
 		assertTrue("Route should pass through a bank (bankVisited state)",
 			pathfinder.getPath().stream().anyMatch(PathStep::isBankVisited));
-		assertEquals("Route should match the bank-pickup path length", 36, pathfinder.getPath().size());
+		assertEquals("Route should match the bank-pickup path length", 37, pathfinder.getPath().size());
 	}
 
 	/**
@@ -141,6 +141,38 @@ public class AlternativeRoutesBankModeTest
 		Pathfinder prohibitive = runWithBankCost(100000);
 		assertFalse("a modifier larger than banking saves must suppress the bank detour",
 			prohibitive.getPath().stream().anyMatch(PathStep::isBankVisited));
+	}
+
+	/**
+	 * Banking is a choice, not a toll gate: a route that merely CROSSES a bank zone without
+	 * withdrawing anything must not be charged the pickup modifier. (Regression: the bank-state
+	 * flip used to be forced on any path touching a bank-accessible tile — every route from a
+	 * start near a bank, e.g. the Grand Exchange, paid the surcharge, which cancelled it out of
+	 * the route ranking and let a slower banking route outrank faster non-banking ones.)
+	 */
+	@Test
+	public void merelyPassingABankIsFree()
+	{
+		// The prohibitive-modifier walk from bankPickupModifierPricesTheDetour: it declines to
+		// bank, so its cost must be identical to the same walk with no modifier configured at all.
+		Pathfinder freeWalk = runWithBankCost(0);
+		int bankedCost = freeWalk.getResult().getTotalCost();
+
+		Pathfinder walkNoModifier = runInventoryOnly();
+		Pathfinder walkProhibitive = runWithBankCost(100000);
+		assertFalse(walkProhibitive.getPath().stream().anyMatch(PathStep::isBankVisited));
+		assertEquals("declining to bank must cost the same as bank routing not existing at all",
+			walkNoModifier.getResult().getTotalCost(), walkProhibitive.getResult().getTotalCost());
+		assertTrue("sanity: the banking route is genuinely cheaper than the walk in this scenario",
+			bankedCost < walkProhibitive.getResult().getTotalCost());
+	}
+
+	private Pathfinder runInventoryOnly()
+	{
+		doReturn(new Item[]{new Item(COWBELL_AMULET, 1)}).when(bank).getItems();
+		PathfinderConfig base = new TestPathfinderConfig(client, config);
+		base.bank = bank;
+		return run(planningCopy(false, base));
 	}
 
 	private Pathfinder runWithBankCost(int bankCost)

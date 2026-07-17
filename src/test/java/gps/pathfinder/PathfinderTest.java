@@ -101,7 +101,7 @@ public class PathfinderTest
 
 		assertScenarioPathLength(
 			"Banked mith grapple should not leak to non-bank grapple branch",
-			66,
+			67,
 			WorldPointUtil.packWorldPoint(3025, 3365, 0),
 			WorldPointUtil.packWorldPoint(3026, 3393, 0));
 	}
@@ -148,7 +148,7 @@ public class PathfinderTest
 
 		assertScenarioPathLength(
 			"Catherby charter tile reuse -> bank -> Musa Point with banked coins",
-			78, // Fill in the precise length after running locally.
+			79,
 			catherbyCharter,
 			musaPointCharter);
 	}
@@ -167,7 +167,7 @@ public class PathfinderTest
 
 		assertScenarioPathLength(
 			"Catherby bank branch should not leak coins to charter branch",
-			46, // Fill in the precise length after running locally.
+			47,
 			WorldPointUtil.packWorldPoint(2807, 3435, 0),
 			WorldPointUtil.packWorldPoint(2954, 3158, 0));
 	}
@@ -553,7 +553,7 @@ public class PathfinderTest
 
 		assertScenarioPathLengthWithBank(
 			"Great Conch -> McGrubor's Wood with banked staff and bracelet",
-			49,
+			50,
 			WorldPointUtil.packWorldPoint(3180, 2419, 0),
 			WorldPointUtil.packWorldPoint(2652, 3485, 0),
 			TeleportationItem.INVENTORY_AND_BANK,
@@ -574,7 +574,7 @@ public class PathfinderTest
 
 		assertScenarioPathLengthWithBank(
 			"Great Conch tile reuse -> McGrubor's Wood with banked Dramen staff",
-			70,
+			71,
 			WorldPointUtil.packWorldPoint(3181, 2437, 0),
 			WorldPointUtil.packWorldPoint(2652, 3485, 0),
 			TeleportationItem.INVENTORY_AND_BANK,
@@ -616,7 +616,7 @@ public class PathfinderTest
 
 		assertScenarioPathLength(
 			"Banked Dramen staff should not leak to non-bank fairy-ring branch",
-			127,
+			128,
 			WorldPointUtil.packWorldPoint(3134, 3503, 0),
 			WorldPointUtil.packWorldPoint(2652, 3485, 0));
 	}
@@ -634,7 +634,7 @@ public class PathfinderTest
 
 		Pathfinder pathfinder = assertScenarioPathLengthAndGet(
 			"Varrock centre -> Cowbell amulet destination with amulet in bank",
-			36,
+			37,
 			WorldPointUtil.packWorldPoint(3213, 3424, 0),
 			WorldPointUtil.packWorldPoint(3259, 3277, 0));
 
@@ -668,7 +668,7 @@ public class PathfinderTest
 
 		Pathfinder pathfinder = assertScenarioPathLengthAndGet(
 			"Civitas approach -> Catherby briefcase with briefcase in bank",
-			60,
+			61,
 			civitasEastApproach,
 			catherbyBriefcase);
 
