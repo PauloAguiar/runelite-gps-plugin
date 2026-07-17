@@ -353,16 +353,21 @@ public class ShortestPathPanel extends PluginPanel
 
 		JPanel actions = new JPanel(new FlowLayout(FlowLayout.TRAILING, 6, 0));
 		actions.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		// The GitHub link sits in the open (like Quest Helper's): the shortest path to reporting an
-		// issue. Everything else — the occasional-use actions — tucks into the burger menu beside it.
-		// The red flag beside it opens a NEW issue pre-filled with the current routing context.
-		actions.add(control(new IconActionLabel(RouteIcons.REPORT, RouteIcons.REPORT_HOVER,
-			"Report an issue — opens GitHub pre-filled with the current routes and settings",
-			plugin::reportIssue)));
-		actions.add(control(new IconActionLabel(RouteIcons.GITHUB, RouteIcons.GITHUB_HOVER,
-			"Report issues or contribute on GitHub",
-			() -> LinkBrowser.browse(GITHUB_ISSUES_URL))));
+		// A labelled red button opens a NEW issue pre-filled with the current routing context. The
+		// GitHub icon beside it links to the issues page; occasional actions tuck into the burger.
+		JButton reportButton = new JButton("Report an issue", RouteIcons.REPORT);
+		reportButton.setFont(FontManager.getRunescapeSmallFont());
+		reportButton.setForeground(ColorScheme.PROGRESS_ERROR_COLOR);
+		reportButton.setIconTextGap(4);
+		reportButton.setFocusPainted(false);
+		reportButton.setToolTipText("Report an issue — opens GitHub pre-filled with the current routes and settings");
+		reportButton.addActionListener(e -> plugin.reportIssue());
+		actions.add(reportButton);
 		JPopupMenu actionsMenu = new JPopupMenu();
+		JMenuItem githubItem = new JMenuItem("View on GitHub", RouteIcons.GITHUB);
+		githubItem.setToolTipText("Browse existing issues or contribute on GitHub");
+		githubItem.addActionListener(e -> LinkBrowser.browse(GITHUB_ISSUES_URL));
+		actionsMenu.add(githubItem);
 		JMenuItem debugItem = new JMenuItem("Save debug snapshot", RouteIcons.DEBUG);
 		debugItem.setToolTipText("Save a debug snapshot of the current routes to disk (for reproducing issues)");
 		debugItem.addActionListener(e -> plugin.captureDebugSnapshot());
