@@ -41,6 +41,7 @@ import net.runelite.api.Player;
 import net.runelite.api.Point;
 import net.runelite.api.Tile;
 import net.runelite.api.ScriptID;
+import net.runelite.api.WorldView;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameStateChanged;
@@ -117,15 +118,40 @@ public class ShortestPathPlugin extends Plugin
 	private static final int POH_MAX_X = 2047;
 	private static final int POH_MIN_Y = 5696;
 	private static final int POH_MAX_Y = 5767;
-	// The map area LIVE house instances are assembled from — distinct from the transport data's POH
-	// model area above (y 5696 band), which is what route tiles use. Observed from a real house's
-	// instance template chunks (x 1856-1888, y 7040-7096, plane 0; chunk-dump log, 2026-07-17);
-	// sized to the full two map-square rows for margin. Checking the wrong band here is why house
-	// presence detection failed repeatedly.
-	private static final int POH_TEMPLATE_MIN_X = 1856;
-	private static final int POH_TEMPLATE_MAX_X = 2047;
-	private static final int POH_TEMPLATE_MIN_Y = 7040;
-	private static final int POH_TEMPLATE_MAX_Y = 7167;
+	// The map regions LIVE house instances are assembled from (rx 29-32, ry 110-111) — distinct
+	// from the transport data's POH model area above (y 5696 band), which is what route tiles use.
+	// Confirmed three ways (2026-07-17): a real house's chunk-dump log, a cache scan
+	// (PohTemplateScanTest in shortest-path-tooling; ~13 copies of every room hotspot, one per
+	// house STYLE), and the same region set hardcoded by other POH-aware plugins. Every style and
+	// house location resolves to these regions. Checking the wrong band here is why presence
+	// detection failed repeatedly.
+	private static final Set<Integer> POH_TEMPLATE_REGIONS =
+		Set.of(7534, 7535, 7790, 7791, 8046, 8047, 8302, 8303);
+
+	/**
+	 * Whether the given world view is a player-owned house: an instance whose loaded map regions
+	 * (which for instances are the TEMPLATE regions the scene is assembled from) include a POH
+	 * template region. Static and world-view-based for testability.
+	 */
+	static boolean isPohScene(WorldView worldView)
+	{
+		if (worldView == null || !worldView.isInstance())
+		{
+			return false;
+		}
+		int[] regions = worldView.getMapRegions();
+		if (regions != null)
+		{
+			for (int region : regions)
+			{
+				if (POH_TEMPLATE_REGIONS.contains(region))
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 	private static final String PLUGIN_MESSAGE_PATH = "path";
 	private static final String PLUGIN_MESSAGE_CLEAR = "clear";
 	private static final String PLUGIN_MESSAGE_START = "start";
@@ -2548,15 +2574,13 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	private void maybeScanPoh()
 	{
-		// In-the-house detection, two independent signals (three prior single-signal attempts each
-		// failed in the field — varbit 4744, player-tile template mapping, and the chunk check has
-		// now missed at least one real house too):
-		// 1. The loaded instance is BUILT FROM the house template region — houses are instances
-		//    assembled from chunks of that static map area, read from the scene's template table.
+		// In-the-house detection, two independent signals (prior single-signal attempts failed in
+		// the field — varbit 4744 and player-tile template mapping against the wrong band):
+		// 1. The loaded instance's map regions are POH template regions — houses are instances
+		//    assembled from that dedicated template area (see POH_TEMPLATE_REGIONS).
 		// 2. Recognised POH furniture spawned in this scene — those object ids only exist inside
 		//    player-owned houses (the official POH plugin's approach).
-		boolean sceneIsHouse = WorldPointUtil.instanceOverlapsArea(client.getTopLevelWorldView(),
-			POH_TEMPLATE_MIN_X, POH_TEMPLATE_MIN_Y, POH_TEMPLATE_MAX_X, POH_TEMPLATE_MAX_Y);
+		boolean sceneIsHouse = isPohScene(client.getTopLevelWorldView());
 		boolean inside = sceneIsHouse || !pohSpawnedFurniture.isEmpty();
 		if (!inside)
 		{
@@ -3374,9 +3398,7 @@ public class ShortestPathPlugin extends Plugin
 				snapshot.put("bankContentsKnown", bankContentsKnown);
 				snapshot.put("bankRestored", bankRestored);
 				// Smart-detection state, for diagnosing "GPS didn't notice my house/trees" reports.
-				snapshot.put("pohSceneLoaded", WorldPointUtil.instanceOverlapsArea(
-					client.getTopLevelWorldView(),
-					POH_TEMPLATE_MIN_X, POH_TEMPLATE_MIN_Y, POH_TEMPLATE_MAX_X, POH_TEMPLATE_MAX_Y));
+				snapshot.put("pohSceneLoaded", isPohScene(client.getTopLevelWorldView()));
 				snapshot.put("pohScanned", pohScanned);
 				snapshot.put("pohDetectedFurniture", PohScanner.encode(detectedPohFurniture));
 				snapshot.put("spiritTreesSynced", pathfinderConfig.availableSpiritTrees != null);

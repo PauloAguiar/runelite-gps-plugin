@@ -336,53 +336,6 @@ public class WorldPointUtil
 	}
 
 	/**
-	 * Whether any template chunk of the given world view's instance maps into the given
-	 * world-coordinate rectangle (inclusive). Answers "is (part of) that static map area loaded as
-	 * this instance" — e.g. whether the current scene is a player-owned house — without mapping any
-	 * particular entity's tile, so it is immune to the player's plane, chunk rotation, or position.
-	 */
-	public static boolean instanceOverlapsArea(WorldView worldView, int minX, int minY, int maxX, int maxY)
-	{
-		if (worldView == null || !worldView.isInstance())
-		{
-			return false;
-		}
-		int[][][] chunks = worldView.getInstanceTemplateChunks();
-		if (chunks == null)
-		{
-			return false;
-		}
-		for (int[][] planeChunks : chunks)
-		{
-			if (planeChunks == null)
-			{
-				continue;
-			}
-			for (int[] column : planeChunks)
-			{
-				if (column == null)
-				{
-					continue;
-				}
-				for (int chunkData : column)
-				{
-					if (chunkData == -1)
-					{
-						continue;
-					}
-					int x = unpackChunkTemplateX(chunkData);
-					int y = unpackChunkTemplateY(chunkData);
-					if (x + CHUNK_SIZE - 1 >= minX && x <= maxX && y + CHUNK_SIZE - 1 >= minY && y <= maxY)
-					{
-						return true;
-					}
-				}
-			}
-		}
-		return false;
-	}
-
-	/**
 	 * A compact human-readable summary of an instance's template chunk origins, for debug logging:
 	 * the distinct template chunk world coordinates, deduplicated, capped at 40 entries. "not an
 	 * instance" when the world view isn't one.
