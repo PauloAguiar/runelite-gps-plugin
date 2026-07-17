@@ -2275,7 +2275,6 @@ public class ShortestPathPlugin extends Plugin
 	// Smart house furniture detection: scan the scene while the player is inside their POH.
 	// VARBIT_IN_HOUSE (4744) is 1 inside, 0 outside — the game's own flag (see the house teleport
 	// data), more reliable than mapping the instanced player tile back to the template bounds.
-	private static final int VARBIT_IN_HOUSE = 4744;
 	private volatile boolean pohScanned = false;
 	private volatile PohScanner.Detected detectedPohFurniture;
 	// Reset when the player leaves the house, so the next visit re-scans (catching new furniture).
@@ -2293,7 +2292,13 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	private void maybeScanPoh(Player localPlayer)
 	{
-		boolean inside = client.getVarbitValue(VARBIT_IN_HOUSE) == 1;
+		// Inside-the-house detection maps the instanced player tile back to the house TEMPLATE
+		// region — the same mapping every POH tile check uses. (NOT varbit 4744: that is the house
+		// teleport's inside/outside SETTING, which an earlier fix misread as a presence flag — the
+		// scan then never fired for players who teleport inside, i.e. almost everyone.)
+		int templateLocation = WorldPointUtil.fromLocalInstance(client, localPlayer);
+		boolean inside = templateLocation != WorldPointUtil.UNDEFINED
+			&& isInsidePoh(WorldPointUtil.unpackWorldX(templateLocation), WorldPointUtil.unpackWorldY(templateLocation));
 		if (!inside)
 		{
 			pohFurnitureFoundThisVisit = false; // reset so the next visit re-scans
