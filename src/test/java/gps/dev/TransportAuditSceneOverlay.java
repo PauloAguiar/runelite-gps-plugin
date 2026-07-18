@@ -52,7 +52,7 @@ class TransportAuditSceneOverlay extends Overlay
 			{
 				continue;
 			}
-			Color color = finding.door ? UNMAPPED_DOOR : UNMAPPED;
+			Color color = TransportAuditPanel.stateColor(plugin.stateOf(finding));
 			Polygon poly = Perspective.getCanvasTilePoly(client, location);
 			if (poly != null)
 			{

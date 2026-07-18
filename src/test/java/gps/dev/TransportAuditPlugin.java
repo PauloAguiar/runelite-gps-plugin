@@ -131,6 +131,31 @@ public class TransportAuditPlugin extends Plugin
 		}
 	}
 
+	/** Curation state of one finding, driving the panel row and scene outline colors. */
+	enum FindingState
+	{
+		MISSING,
+		ARMED,
+		DOOR,
+		CAPTURED_SESSION,
+		CAPTURED_PRIOR
+	}
+
+	/** One immutable panel row: a finding, its state, and its distance from the player. */
+	static final class Row
+	{
+		final Finding finding;
+		final FindingState state;
+		final int distance;
+
+		Row(Finding finding, FindingState state, int distance)
+		{
+			this.finding = finding;
+			this.state = state;
+			this.distance = distance;
+		}
+	}
+
 	@Inject
 	private Client client;
 	@Inject
@@ -140,7 +165,10 @@ public class TransportAuditPlugin extends Plugin
 	@Inject
 	private TransportAuditSceneOverlay sceneOverlay;
 	@Inject
-	private TransportAuditPanelOverlay panelOverlay;
+	private net.runelite.client.ui.ClientToolbar clientToolbar;
+
+	private TransportAuditPanel panel;
+	private net.runelite.client.ui.NavigationButton navButton;
 
 	// Keyed by packed template tile + id so re-spawns don't duplicate; cleared per scene load.
 	private final Map<Long, Finding> findings = new ConcurrentHashMap<>();
@@ -161,6 +189,11 @@ public class TransportAuditPlugin extends Plugin
 	// origin|dest|id triples already written, seeded from the captures file, so repeated
 	// traversals (and each direction) record once.
 	private final Set<String> capturedKeys = new HashSet<>();
+	// Parsed captured edges {origin, dest, id} for per-finding state: a finding counts as
+	// captured when an edge with its object id starts or ends near its tile.
+	private final java.util.List<int[]> capturedEdges = new java.util.ArrayList<>();
+	// Finding keys captured THIS session (vs. edges seeded from the file = earlier sessions).
+	private final Set<Long> capturedThisSession = new HashSet<>();
 	private String lastCaptureText;
 	private int lastCaptureTick = -1;
 
@@ -225,7 +258,17 @@ public class TransportAuditPlugin extends Plugin
 			seedCapturedFromFile();
 		}
 		overlayManager.add(sceneOverlay);
-		overlayManager.add(panelOverlay);
+		if (panel == null)
+		{
+			panel = new TransportAuditPanel(this);
+			navButton = net.runelite.client.ui.NavigationButton.builder()
+				.tooltip("GPS transport audit (dev)")
+				.icon(navIcon())
+				.priority(71)
+				.panel(panel)
+				.build();
+		}
+		clientToolbar.addNavigation(navButton);
 		// Plugin toggled on with a scene already loaded: sweep it once (spawn events only cover
 		// objects loaded after this point).
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
@@ -238,8 +281,57 @@ public class TransportAuditPlugin extends Plugin
 	protected void shutDown()
 	{
 		overlayManager.remove(sceneOverlay);
-		overlayManager.remove(panelOverlay);
+		if (navButton != null)
+		{
+			clientToolbar.removeNavigation(navButton);
+		}
 		findings.clear();
+	}
+
+	/** A 16px warning-triangle sidebar icon, drawn here so the dev plugin needs no resources. */
+	private static java.awt.image.BufferedImage navIcon()
+	{
+		java.awt.image.BufferedImage image =
+			new java.awt.image.BufferedImage(16, 16, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+		java.awt.Graphics2D g = image.createGraphics();
+		g.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,
+			java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+		g.setColor(TransportAuditSceneOverlay.UNMAPPED);
+		g.fillPolygon(new int[]{8, 15, 1}, new int[]{1, 14, 14}, 3);
+		g.setColor(java.awt.Color.WHITE);
+		g.fillRect(7, 5, 2, 5);
+		g.fillRect(7, 11, 2, 2);
+		g.dispose();
+		return image;
+	}
+
+	/** The curation state coloring a finding everywhere (panel rows and scene outlines). */
+	FindingState stateOf(Finding finding)
+	{
+		PendingCapture current = pending;
+		if (current != null && current.finding == finding)
+		{
+			return FindingState.ARMED;
+		}
+		if (finding.door)
+		{
+			return FindingState.DOOR;
+		}
+		long key = ((long) finding.packedTemplateTile << 20) | finding.object.getId();
+		if (capturedThisSession.contains(key))
+		{
+			return FindingState.CAPTURED_SESSION;
+		}
+		for (int[] edge : capturedEdges)
+		{
+			if (edge[2] == finding.object.getId()
+				&& (WorldPointUtil.distanceBetween(edge[0], finding.packedTemplateTile) <= 4
+				|| WorldPointUtil.distanceBetween(edge[1], finding.packedTemplateTile) <= 4))
+			{
+				return FindingState.CAPTURED_PRIOR;
+			}
+		}
+		return FindingState.MISSING;
 	}
 
 	Iterable<Finding> findings()
@@ -317,7 +409,7 @@ public class TransportAuditPlugin extends Plugin
 			&& Math.max(Math.abs(location.getSceneX() - sceneX), Math.abs(location.getSceneY() - sceneY)) <= 2;
 	}
 
-	private void copyDossier(Finding finding)
+	void copyDossier(Finding finding)
 	{
 		String text = finding.dossier();
 		try
@@ -368,7 +460,12 @@ public class TransportAuditPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(net.runelite.api.events.GameTick event)
 	{
-		if (pending == null || client.getLocalPlayer() == null)
+		if (client.getLocalPlayer() == null)
+		{
+			return;
+		}
+		pushPanelSnapshot();
+		if (pending == null)
 		{
 			return;
 		}
@@ -428,11 +525,14 @@ public class TransportAuditPlugin extends Plugin
 		lastCaptureText = capture.finding.name + " " + tileText(capture.originTile)
 			+ " -> " + tileText(destTile) + " (" + duration + "t)";
 		lastCaptureTick = now;
+		capturedThisSession.add(((long) capture.finding.packedTemplateTile << 20)
+			| capture.finding.object.getId());
 		if (!capturedKeys.add(key))
 		{
 			log.info("[audit] captured (already recorded): {}", lastCaptureText);
 			return;
 		}
+		capturedEdges.add(new int[]{capture.originTile, destTile, capture.finding.object.getId()});
 		log.info("[audit] captured — review then paste into transports.tsv:\n{}", row);
 		try
 		{
@@ -462,6 +562,25 @@ public class TransportAuditPlugin extends Plugin
 			+ " " + WorldPointUtil.unpackWorldPlane(packedTile);
 	}
 
+	/** Parses "x y plane" back into a packed tile, or UNDEFINED. */
+	private static int parseTile(String text)
+	{
+		String[] parts = text.trim().split(" ");
+		if (parts.length < 3)
+		{
+			return WorldPointUtil.UNDEFINED;
+		}
+		try
+		{
+			return WorldPointUtil.packWorldPoint(Integer.parseInt(parts[0]),
+				Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+		}
+		catch (NumberFormatException e)
+		{
+			return WorldPointUtil.UNDEFINED;
+		}
+	}
+
 	/** Seeds the dedupe set so repeated traversals across sessions don't duplicate rows. */
 	private void seedCapturedFromFile()
 	{
@@ -483,6 +602,20 @@ public class TransportAuditPlugin extends Plugin
 				{
 					String[] menu = fields[2].split(" ");
 					capturedKeys.add(fields[0] + "|" + fields[1] + "|" + menu[menu.length - 1]);
+					int origin = parseTile(fields[0]);
+					int dest = parseTile(fields[1]);
+					try
+					{
+						if (origin != WorldPointUtil.UNDEFINED && dest != WorldPointUtil.UNDEFINED)
+						{
+							capturedEdges.add(new int[]{origin, dest,
+								Integer.parseInt(menu[menu.length - 1])});
+						}
+					}
+					catch (NumberFormatException ignored)
+					{
+						// malformed row — dedupe key still recorded above
+					}
 				}
 			}
 			log.info("[audit] captures file: {} previously captured edges ({})",
@@ -494,17 +627,56 @@ public class TransportAuditPlugin extends Plugin
 		}
 	}
 
-	/** Panel status: the armed capture, if any. */
-	String pendingCaptureText()
+	/** Client thread. Builds an immutable snapshot for the sidebar panel and hands it to the EDT. */
+	private void pushPanelSnapshot()
 	{
-		return pending == null ? null : "Capture armed: " + pending.finding.name + " — traverse it now";
+		if (panel == null)
+		{
+			return;
+		}
+		int playerTile = WorldPointUtil.fromLocalInstance(client, client.getLocalPlayer());
+		java.util.List<Row> rows = new java.util.ArrayList<>();
+		for (Finding finding : findings.values())
+		{
+			rows.add(new Row(finding, stateOf(finding),
+				WorldPointUtil.distanceBetween(playerTile, finding.packedTemplateTile)));
+		}
+		rows.sort(java.util.Comparator
+			.comparingInt((Row row) -> statePriority(row.state))
+			.thenComparingInt(row -> row.distance));
+
+		String captureLine = null;
+		java.awt.Color captureColor = null;
+		if (pending != null)
+		{
+			captureLine = "Capture armed: " + pending.finding.name + " — traverse it now";
+			captureColor = java.awt.Color.YELLOW;
+		}
+		else if (lastCaptureText != null && client.getTickCount() - lastCaptureTick < 25)
+		{
+			captureLine = "Captured: " + lastCaptureText;
+			captureColor = TransportAuditPanel.stateColor(FindingState.CAPTURED_SESSION);
+		}
+		final String line = captureLine;
+		final java.awt.Color color = captureColor;
+		javax.swing.SwingUtilities.invokeLater(() -> panel.update(rows, line, color));
 	}
 
-	/** Panel status: the most recent capture, shown briefly. */
-	String lastCaptureText()
+	private static int statePriority(FindingState state)
 	{
-		return (lastCaptureText != null && client.getTickCount() - lastCaptureTick < 25)
-			? "Captured: " + lastCaptureText : null;
+		switch (state)
+		{
+			case ARMED:
+				return 0;
+			case MISSING:
+				return 1;
+			case DOOR:
+				return 2;
+			case CAPTURED_SESSION:
+				return 3;
+			default:
+				return 4;
+		}
 	}
 
 	@Subscribe
