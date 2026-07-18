@@ -82,13 +82,17 @@ public class TransportAuditPlugin extends Plugin
 		final String action;
 		final String[] actions;
 		final boolean door;
+		// The multiloc controlling varbit (-1 when none): quest doors/caves swap impostors on
+		// the quest's progress varbit, so this is a strong gating hint for the dossier.
+		final int gatingVarbit;
 		// "Standing at it" distance from the object's CENTER tile: 2 for single-tile objects,
 		// plus the footprint half-span for large ones (a 5x7 object's edge is 3 tiles out).
 		final int interactRadius;
 
 		Finding(TileObject object, int packedTemplateTile, String name, String action,
-			String[] actions, boolean door)
+			String[] actions, boolean door, int gatingVarbit)
 		{
+			this.gatingVarbit = gatingVarbit;
 			this.object = object;
 			this.packedTemplateTile = packedTemplateTile;
 			this.name = name;
@@ -128,13 +132,13 @@ public class TransportAuditPlugin extends Plugin
 		/** Everything the operator needs to register this object, clipboard-ready. */
 		String dossier()
 		{
-			return dossierText(name, object.getId(), packedTemplateTile, action, actions, door);
+			return dossierText(name, object.getId(), packedTemplateTile, action, actions, door, gatingVarbit);
 		}
 	}
 
 	/** The clipboard dossier, buildable from plain fields (live findings and recorded entries). */
 	static String dossierText(String name, int id, int packedTile, String action,
-		String[] actions, boolean door)
+		String[] actions, boolean door, int gatingVarbit)
 	{
 		int x = WorldPointUtil.unpackWorldX(packedTile);
 		int y = WorldPointUtil.unpackWorldY(packedTile);
@@ -981,6 +985,63 @@ public class TransportAuditPlugin extends Plugin
 			+ " " + WorldPointUtil.unpackWorldPlane(packedTile);
 	}
 
+	/**
+	 * Requirement harvesting: while a capture is armed, a "You need…" / "You must…" game message
+	 * means the traversal was refused — the one moment the game states the requirement outright.
+	 * The armed capture transfers into the builder (origin + object pre-filled), the message is
+	 * parsed into Skills ("72 Agility") / Quests where possible, and the raw text goes to the log.
+	 */
+	@Subscribe
+	public void onChatMessage(net.runelite.api.events.ChatMessage event)
+	{
+		if (pending == null
+			|| (event.getType() != net.runelite.api.ChatMessageType.GAMEMESSAGE
+			&& event.getType() != net.runelite.api.ChatMessageType.MESBOX))
+		{
+			return;
+		}
+		String message = net.runelite.client.util.Text.removeTags(event.getMessage());
+		String lower = message.toLowerCase(Locale.ROOT);
+		if (!lower.contains("you need") && !lower.contains("you must") && !lower.contains("level of"))
+		{
+			return;
+		}
+		PendingCapture refused = pending;
+		pending = null;
+		log.info("[audit] requirement refusal on {}: \"{}\"", refused.finding.describe(), message);
+		builderOrigin = refused.originTile != WorldPointUtil.UNDEFINED
+			? refused.originTile
+			: WorldPointUtil.fromLocalInstance(client, client.getLocalPlayer());
+		builderMenu = refused.finding.action + " " + refused.finding.name + " "
+			+ refused.finding.object.getId();
+		final String skill = parseSkillRequirement(message);
+		final String quest = parseQuestRequirement(message);
+		javax.swing.SwingUtilities.invokeLater(() -> panel.suggestRequirements(skill, quest, message));
+	}
+
+	/** "You need an Agility level of 72 …" → "72 Agility" (the transports.tsv Skills format). */
+	static String parseSkillRequirement(String message)
+	{
+		java.util.regex.Matcher matcher = java.util.regex.Pattern
+			.compile("(?i)([a-z]+) level of (\\d+)").matcher(message);
+		if (!matcher.find())
+		{
+			return null;
+		}
+		String skill = matcher.group(1);
+		return matcher.group(2) + " " + Character.toUpperCase(skill.charAt(0))
+			+ skill.substring(1).toLowerCase(Locale.ROOT);
+	}
+
+	/** "You must have completed (the) X (quest) to …" → "X" (the transports.tsv Quests format). */
+	static String parseQuestRequirement(String message)
+	{
+		java.util.regex.Matcher matcher = java.util.regex.Pattern
+			.compile("(?i)(?:completed|finished) (?:the )?(.+?)(?: quest)?(?: to | before |\\.|$)")
+			.matcher(message);
+		return matcher.find() ? matcher.group(1).trim() : null;
+	}
+
 	/** Parses "x y plane" back into a packed tile, or UNDEFINED. */
 	private static int parseTile(String text)
 	{
@@ -1076,7 +1137,7 @@ public class TransportAuditPlugin extends Plugin
 				stateOfRecorded(entry),
 				WorldPointUtil.distanceBetween2D(playerTile, entry.packedTile), false,
 				dossierText(entry.name, entry.id, entry.packedTile, entry.action,
-					entry.actions, entry.door)));
+					entry.actions, entry.door, -1)));
 		}
 		rows.sort(java.util.Comparator
 			.comparingInt((Row row) -> row.live ? 0 : 1)
@@ -1250,6 +1311,17 @@ public class TransportAuditPlugin extends Plugin
 		{
 			return;
 		}
+		// A multiloc's controlling varbit is a strong quest-gating hint (quest doors/caves swap
+		// their impostor on the quest's progress varbit) — surfaced in the dossier.
+		int gatingVarbit = -1;
+		try
+		{
+			gatingVarbit = client.getObjectDefinition(object.getId()).getVarbitId();
+		}
+		catch (Exception ignored)
+		{
+			// definition lookup already succeeded once; defensive only
+		}
 
 		// NB: the object's OWN plane, not the render plane — WorldPointUtil's Client+LocalPoint
 		// overload stamps worldView.getPlane(), which mis-tiled upstairs objects seen from the
@@ -1274,7 +1346,7 @@ public class TransportAuditPlugin extends Plugin
 		{
 			return; // operator declared it a false positive
 		}
-		Finding finding = new Finding(object, templateTile, composition.getName(), action, actions, door);
+		Finding finding = new Finding(object, templateTile, composition.getName(), action, actions, door, gatingVarbit);
 		boolean firstEver = findings.put(key, finding) == null && logged.add(key);
 		if (firstEver)
 		{

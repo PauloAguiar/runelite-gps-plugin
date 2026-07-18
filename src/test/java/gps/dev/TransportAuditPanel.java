@@ -292,6 +292,24 @@ class TransportAuditPanel extends PluginPanel
 		builderStatus.setText("added item: " + itemName + " (" + itemId + ")");
 	}
 
+	/**
+	 * EDT (from a refusal message while a capture was armed). Fills empty requirement fields
+	 * with what the game just said; never overwrites operator-typed values.
+	 */
+	void suggestRequirements(String skill, String quest, String rawMessage)
+	{
+		if (skill != null && builderSkills.getText().trim().isEmpty())
+		{
+			builderSkills.setText(skill);
+		}
+		if (quest != null && builderQuests.getText().trim().isEmpty())
+		{
+			builderQuests.setText(quest);
+		}
+		String text = rawMessage.length() > 60 ? rawMessage.substring(0, 57) + "…" : rawMessage;
+		builderStatus.setText("<html>requirement: " + text + "</html>");
+	}
+
 	static Color stateColor(TransportAuditPlugin.FindingState state)
 	{
 		switch (state)
