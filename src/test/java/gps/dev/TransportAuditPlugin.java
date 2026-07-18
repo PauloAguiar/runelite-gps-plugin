@@ -74,14 +74,17 @@ public class TransportAuditPlugin extends Plugin
 		final int packedTemplateTile; // template coords in instances — what the data files use
 		final String name;
 		final String action;
+		final String[] actions;
 		final boolean door;
 
-		Finding(TileObject object, int packedTemplateTile, String name, String action, boolean door)
+		Finding(TileObject object, int packedTemplateTile, String name, String action,
+			String[] actions, boolean door)
 		{
 			this.object = object;
 			this.packedTemplateTile = packedTemplateTile;
 			this.name = name;
 			this.action = action;
+			this.actions = actions;
 			this.door = door;
 		}
 
@@ -99,6 +102,32 @@ public class TransportAuditPlugin extends Plugin
 			return door
 				? "door not in registry — re-run doorDump"
 				: "add transports.tsv row (template in log)";
+		}
+
+		/** Everything the operator needs to register this object, clipboard-ready. */
+		String dossier()
+		{
+			int x = WorldPointUtil.unpackWorldX(packedTemplateTile);
+			int y = WorldPointUtil.unpackWorldY(packedTemplateTile);
+			int plane = WorldPointUtil.unpackWorldPlane(packedTemplateTile);
+			StringBuilder sb = new StringBuilder();
+			sb.append(name).append(" id=").append(object.getId())
+				.append(" tile=").append(x).append(',').append(y).append(',').append(plane).append('\n');
+			sb.append("actions: ").append(String.join(", ", actions)).append('\n');
+			if (door)
+			{
+				sb.append("door missing from doors.tsv — re-run doorDump in shortest-path-tooling");
+			}
+			else
+			{
+				sb.append("transports.tsv template — fill DEST after traversing; ORIGIN is the ")
+					.append("object's tile, correct it to the tile you STAND on; Duration in ticks:\n");
+				sb.append(x).append(' ').append(y).append(' ').append(plane).append('\t')
+					.append("DESTX DESTY PLANE").append('\t')
+					.append(action).append(' ').append(name).append(' ').append(object.getId())
+					.append("\t\t\t\t\t\t1\t");
+			}
+			return sb.toString();
 		}
 	}
 
@@ -188,6 +217,71 @@ public class TransportAuditPlugin extends Plugin
 		if (GameState.LOADING.equals(event.getGameState()))
 		{
 			findings.clear(); // scene rebuild: stale TileObject references must not be drawn
+		}
+	}
+
+	private static final String COPY_OPTION = "Copy GPS audit";
+
+	/**
+	 * Right-clicking a marked object offers "Copy GPS audit": the finding's dossier — tile,
+	 * name, id, every menu action, and the ready-to-fill transports.tsv template — goes to the
+	 * system clipboard (and the log, as a fallback).
+	 */
+	@Subscribe
+	public void onMenuEntryAdded(net.runelite.api.events.MenuEntryAdded event)
+	{
+		if (findings.isEmpty())
+		{
+			return;
+		}
+		Finding match = null;
+		for (Finding finding : findings.values())
+		{
+			if (finding.object.getId() == event.getIdentifier()
+				&& sceneClose(finding.object, event.getActionParam0(), event.getActionParam1()))
+			{
+				match = finding;
+				break;
+			}
+		}
+		if (match == null)
+		{
+			return;
+		}
+		for (net.runelite.api.MenuEntry entry : client.getMenu().getMenuEntries())
+		{
+			if (COPY_OPTION.equals(entry.getOption()))
+			{
+				return; // one copy entry per menu is plenty, however many rows the object adds
+			}
+		}
+		final Finding finding = match;
+		client.getMenu().createMenuEntry(-1)
+			.setOption(COPY_OPTION)
+			.setTarget(finding.name)
+			.setType(net.runelite.api.MenuAction.RUNELITE)
+			.onClick(e -> copyDossier(finding));
+	}
+
+	private static boolean sceneClose(TileObject object, int sceneX, int sceneY)
+	{
+		net.runelite.api.coords.LocalPoint location = object.getLocalLocation();
+		return location != null
+			&& Math.max(Math.abs(location.getSceneX() - sceneX), Math.abs(location.getSceneY() - sceneY)) <= 2;
+	}
+
+	private void copyDossier(Finding finding)
+	{
+		String text = finding.dossier();
+		try
+		{
+			java.awt.Toolkit.getDefaultToolkit().getSystemClipboard()
+				.setContents(new java.awt.datatransfer.StringSelection(text), null);
+			log.info("[audit] copied to clipboard:\n{}", text);
+		}
+		catch (Exception e)
+		{
+			log.warn("[audit] clipboard unavailable — dossier:\n{}", text, e);
 		}
 	}
 
@@ -299,8 +393,14 @@ public class TransportAuditPlugin extends Plugin
 			return;
 		}
 
+		String[] actions = new String[0];
+		if (composition.getActions() != null)
+		{
+			actions = java.util.Arrays.stream(composition.getActions())
+				.filter(java.util.Objects::nonNull).toArray(String[]::new);
+		}
 		long key = ((long) templateTile << 20) | object.getId();
-		Finding finding = new Finding(object, templateTile, composition.getName(), action, door);
+		Finding finding = new Finding(object, templateTile, composition.getName(), action, actions, door);
 		if (findings.put(key, finding) == null && logged.add(key) && !door)
 		{
 			int x = WorldPointUtil.unpackWorldX(templateTile);

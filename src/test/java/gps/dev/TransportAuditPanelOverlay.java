@@ -47,6 +47,13 @@ class TransportAuditPanelOverlay extends OverlayPanel
 		panelComponent.getChildren().add(LineComponent.builder()
 			.left(count == 0 ? "Scene fully mapped" : count + " unmapped object(s) in scene")
 			.build());
+		if (count > 0)
+		{
+			panelComponent.getChildren().add(LineComponent.builder()
+				.left("Right-click one → \"Copy GPS audit\"")
+				.leftColor(Color.LIGHT_GRAY)
+				.build());
+		}
 
 		// Nearest first: the operator maps what's in front of them.
 		List<TransportAuditPlugin.Finding> sorted = new ArrayList<>();
