@@ -9,11 +9,18 @@ public class CollisionMap
 	// Enum.values() makes copies every time which hurts performance in the hotpath
 	private static final OrdinalDirection[] ORDINAL_VALUES = OrdinalDirection.values();
 
+	// Walking through a door costs real time: the collision data bakes doors open, so the walk
+	// edge is passable, but the player still stops, clicks, and waits ~a tick for the swing —
+	// priced here so the search prefers pure walking around a doorway when it's close. One mask
+	// lookup per expanded tile (same profile as the transports lookup above it in the hot path).
+	private static final int DOOR_COST_UNITS = CostUnits.fromTicks(gps.ClosedDoors.COST_TICKS);
+
 	private final SplitFlagMap collisionData;
 	// This is only safe if pathfinding is single-threaded. Holds the ids of the neighbour nodes
 	// appended to the NodeGraph during the most recent getNeighbors call.
 	private final PrimitiveIntList neighbors = new PrimitiveIntList(16);
 	private final boolean[] traversable = new boolean[8];
+	private final java.util.Map<Integer, Integer> doorMasks = gps.ClosedDoors.edgeMasks();
 
 	public CollisionMap(SplitFlagMap collisionData)
 	{
@@ -203,8 +210,10 @@ public class CollisionMap
 			traversable[7] = ne(x, y, z);
 		}
 
-		// One walking step costs 1 (Chebyshev-adjacent).
+		// One walking step costs 1 (Chebyshev-adjacent); stepping through a doorway adds the
+		// door's opening + reaction time on top.
 		final int walkStepCost = graph.cost(node) + 1;
+		final int doorMask = doorMasks.getOrDefault(packedPosition, 0);
 		for (int i = 0; i < traversable.length; i++)
 		{
 			OrdinalDirection d = ORDINAL_VALUES[i];
@@ -216,11 +225,12 @@ public class CollisionMap
 
 			if (traversable[i])
 			{
-				if (tentative != null && tentative.shouldPrune(neighborPacked, bankVisited, walkStepCost))
+				final int doorCost = (doorMask & (1 << i)) != 0 ? DOOR_COST_UNITS : 0;
+				if (tentative != null && tentative.shouldPrune(neighborPacked, bankVisited, walkStepCost + doorCost))
 				{
 					continue;
 				}
-				neighbors.add(graph.createTile(neighborPacked, node, bankVisited, 0));
+				neighbors.add(graph.createTile(neighborPacked, node, bankVisited, doorCost));
 			}
 			else if (Math.abs(d.x + d.y) == 1 && isBlocked(x + d.x, y + d.y, z))
 			{

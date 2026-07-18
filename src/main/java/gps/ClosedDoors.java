@@ -35,6 +35,22 @@ public class ClosedDoors
 
 	private static final int TYPE_WALL_STRAIGHT = 0;
 
+	/**
+	 * Game ticks a route is charged per door it walks through: ~1 tick for the door to swing open
+	 * plus the stop-and-click reaction overhead. Deliberately priced so that walking a handful of
+	 * tiles around a doorway beats going through it. The search charges this on the crossing edge
+	 * (see CollisionMap) and the directions bill the same on the "Open X" step, so the route card
+	 * ETA and the overlay agree.
+	 */
+	public static final int COST_TICKS = 3;
+
+	// Edge-mask bits, matching gps.pathfinder.OrdinalDirection's ordinal order (the search tests
+	// masks by direction index): W, E, S, N, SW, SE, NW, NE.
+	private static final int BIT_WEST = 1;
+	private static final int BIT_EAST = 1 << 1;
+	private static final int BIT_SOUTH = 1 << 2;
+	private static final int BIT_NORTH = 1 << 3;
+
 	public static final class Door
 	{
 		public final int id;
@@ -81,9 +97,150 @@ public class ClosedDoors
 	}
 
 	private static volatile Map<Integer, List<Door>> doorsByTile;
+	private static volatile Map<Integer, Integer> edgeMasks;
 
 	private ClosedDoors()
 	{
+	}
+
+	/**
+	 * Packed tile -> bitmask of walk directions (bit i = {@code OrdinalDirection} ordinal i) that
+	 * cross a door when leaving that tile. Both sides of every doorway carry a bit, so the search
+	 * only ever looks up the tile it is expanding. Diagonal bits follow {@link #doorBetween}'s
+	 * semantics: a diagonal step is gated when any of its component cardinal boundaries is.
+	 * Doors placed open in the map data are skipped here exactly as in {@link #doorAt}.
+	 */
+	public static Map<Integer, Integer> edgeMasks()
+	{
+		get();
+		return edgeMasks;
+	}
+
+	private static Map<Integer, Integer> buildEdgeMasks(Map<Integer, List<Door>> byTile)
+	{
+		// Pass 1: cardinal bits, projected onto both tiles of each gated boundary.
+		Map<Integer, Integer> cardinal = new HashMap<>();
+		for (List<Door> doors : byTile.values())
+		{
+			for (Door door : doors)
+			{
+				if (door.placedOpen)
+				{
+					continue;
+				}
+				if (door.type == TYPE_WALL_STRAIGHT)
+				{
+					setEdgeBits(cardinal, door.packedPosition, door.orientation);
+				}
+				else
+				{
+					// Diagonal walls and corner pieces gate the whole tile: every boundary.
+					for (int orientation = 0; orientation < 4; orientation++)
+					{
+						setEdgeBits(cardinal, door.packedPosition, orientation);
+					}
+				}
+			}
+		}
+
+		// Pass 2: diagonal bits, derived from the cardinal bits of the tile and its neighbours —
+		// candidates are every masked tile plus its 8 neighbours (a tile with no cardinal bits of
+		// its own can still have a gated diagonal past a neighbouring door corner).
+		Map<Integer, Integer> masks = new HashMap<>(cardinal);
+		for (Map.Entry<Integer, Integer> entry : cardinal.entrySet())
+		{
+			int tile = entry.getKey();
+			for (int dx = -1; dx <= 1; dx++)
+			{
+				for (int dy = -1; dy <= 1; dy++)
+				{
+					int candidate = WorldPointUtil.packWorldPoint(
+						WorldPointUtil.unpackWorldX(tile) + dx,
+						WorldPointUtil.unpackWorldY(tile) + dy,
+						WorldPointUtil.unpackWorldPlane(tile));
+					int diagonals = diagonalBits(cardinal, candidate);
+					if (diagonals != 0)
+					{
+						masks.merge(candidate, diagonals, (a, b) -> a | b);
+					}
+				}
+			}
+		}
+		return masks;
+	}
+
+	/** Marks the boundary on the door's edge: one bit on its own tile, the opposite on the neighbour. */
+	private static void setEdgeBits(Map<Integer, Integer> masks, int tile, int orientation)
+	{
+		int x = WorldPointUtil.unpackWorldX(tile);
+		int y = WorldPointUtil.unpackWorldY(tile);
+		int plane = WorldPointUtil.unpackWorldPlane(tile);
+		int bit;
+		int neighborBit;
+		int nx = x;
+		int ny = y;
+		switch (orientation)
+		{
+			case ORIENTATION_WEST:
+				bit = BIT_WEST;
+				neighborBit = BIT_EAST;
+				nx--;
+				break;
+			case ORIENTATION_NORTH:
+				bit = BIT_NORTH;
+				neighborBit = BIT_SOUTH;
+				ny++;
+				break;
+			case ORIENTATION_EAST:
+				bit = BIT_EAST;
+				neighborBit = BIT_WEST;
+				nx++;
+				break;
+			default:
+				bit = BIT_SOUTH;
+				neighborBit = BIT_NORTH;
+				ny--;
+				break;
+		}
+		masks.merge(tile, bit, (a, b) -> a | b);
+		masks.merge(WorldPointUtil.packWorldPoint(nx, ny, plane), neighborBit, (a, b) -> a | b);
+	}
+
+	/**
+	 * The four diagonal-direction bits for a tile: a diagonal crossing is gated when either of its
+	 * component cardinal boundaries is — from this tile, or around the corner via a neighbour
+	 * (mirroring {@link #doorBetween}'s four component checks).
+	 */
+	private static int diagonalBits(Map<Integer, Integer> cardinal, int tile)
+	{
+		int x = WorldPointUtil.unpackWorldX(tile);
+		int y = WorldPointUtil.unpackWorldY(tile);
+		int plane = WorldPointUtil.unpackWorldPlane(tile);
+		int own = cardinal.getOrDefault(tile, 0);
+		int west = cardinal.getOrDefault(WorldPointUtil.packWorldPoint(x - 1, y, plane), 0);
+		int east = cardinal.getOrDefault(WorldPointUtil.packWorldPoint(x + 1, y, plane), 0);
+		int south = cardinal.getOrDefault(WorldPointUtil.packWorldPoint(x, y - 1, plane), 0);
+		int north = cardinal.getOrDefault(WorldPointUtil.packWorldPoint(x, y + 1, plane), 0);
+
+		int bits = 0;
+		// Bit order: SW=4, SE=5, NW=6, NE=7 (OrdinalDirection ordinals).
+		if (((own | south) & BIT_WEST) != 0 || ((own | west) & BIT_SOUTH) != 0)
+		{
+			bits |= 1 << 4;
+		}
+		if (((own | south) & BIT_EAST) != 0 || ((own | east) & BIT_SOUTH) != 0)
+		{
+			bits |= 1 << 5;
+		}
+		if (((own | north) & BIT_WEST) != 0 || ((own | west) & BIT_NORTH) != 0)
+		{
+			bits |= 1 << 6;
+		}
+		if (((own | north) & BIT_EAST) != 0 || ((own | east) & BIT_NORTH) != 0)
+		{
+			bits |= 1 << 7;
+		}
+		return bits;
 	}
 
 	/**
@@ -185,6 +342,9 @@ public class ClosedDoors
 				if (snapshot == null)
 				{
 					snapshot = loadFromResource();
+					// Masks are published before doorsByTile so edgeMasks() (which calls get()
+					// first) can never observe the registry without them.
+					edgeMasks = buildEdgeMasks(snapshot);
 					doorsByTile = snapshot;
 				}
 			}

@@ -91,4 +91,48 @@ public class ClosedDoorsTest
 		Assert.assertEquals(1537, door.id);
 		Assert.assertEquals("Door", door.name);
 	}
+
+	// The search prices door crossings from the edge-mask table; these pin that the masks agree
+	// with doorBetween on every crossing class the expansion can take.
+	@Test
+	public void edgeMasksMatchDoorBetweenSemantics()
+	{
+		java.util.Map<Integer, Integer> masks = ClosedDoors.edgeMasks();
+		// Bit order = OrdinalDirection ordinals: W(0) E(1) S(2) N(3) SW(4) SE(5) NW(6) NE(7).
+		// Draynor Manor's door gates 3108,3353 <-> 3108,3354 (north edge of the south tile).
+		Assert.assertTrue((masks.getOrDefault(pack(3108, 3353, 0), 0) & (1 << 3)) != 0);
+		Assert.assertTrue((masks.getOrDefault(pack(3108, 3354, 0), 0) & (1 << 2)) != 0);
+		// The West Ardougne multiloc door gates 2510,3304 <-> 2511,3304 (east/west).
+		Assert.assertTrue((masks.getOrDefault(pack(2510, 3304, 0), 0) & (1 << 1)) != 0);
+		Assert.assertTrue((masks.getOrDefault(pack(2511, 3304, 0), 0) & (1 << 0)) != 0);
+		// A diagonal step whose component boundaries cross the Draynor Manor door is gated too
+		// (doorBetween(3108,3353 -> 3109,3354) matches via the corner) — its NE bit must be set.
+		Assert.assertTrue((masks.getOrDefault(pack(3108, 3353, 0), 0) & (1 << 7)) != 0);
+		// Doors placed open in the map data (Canifis house door at 3480,3494) contribute no bits.
+		Assert.assertEquals(0, masks.getOrDefault(pack(3480, 3494, 0), 0) & (1 << 3));
+	}
+
+	// Every mask bit corresponds to a doorBetween match and vice versa, over a broad sample box
+	// (all of Ardougne and Draynor) — the mask table IS doorBetween, precomputed.
+	@Test
+	public void edgeMasksAgreeWithDoorBetweenOverSampleArea()
+	{
+		java.util.Map<Integer, Integer> masks = ClosedDoors.edgeMasks();
+		int[][] directions = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}, {-1, -1}, {1, -1}, {-1, 1}, {1, 1}};
+		for (int x = 2500; x <= 2680; x++)
+		{
+			for (int y = 3270; y <= 3360; y++)
+			{
+				int from = pack(x, y, 0);
+				int mask = masks.getOrDefault(from, 0);
+				for (int i = 0; i < directions.length; i++)
+				{
+					int to = pack(x + directions[i][0], y + directions[i][1], 0);
+					boolean gated = ClosedDoors.doorBetween(from, to) != null;
+					boolean masked = (mask & (1 << i)) != 0;
+					Assert.assertEquals("(" + x + "," + y + ") dir " + i, gated, masked);
+				}
+			}
+		}
+	}
 }

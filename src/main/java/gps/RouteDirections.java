@@ -164,10 +164,11 @@ final class RouteDirections
 			{
 				// A doorway splits the walking leg: walk up to the door, open it, walk on. Whether
 				// it will actually be closed is live scene state the world overlay handles; as a
-				// step it is a stable landmark either way.
+				// step it is a stable landmark either way. Billed at the same cost the search
+				// charged for the crossing, so the step total and the card ETA agree.
 				flushWalk(steps, walk, legStart, i - 1);
 				walk = 0;
-				steps.add(new Step("Open " + door.name, i - 1, i, 1, false, true));
+				steps.add(new Step("Open " + door.name, i - 1, i, ClosedDoors.COST_TICKS, false, true));
 				legStart = i;
 			}
 			else
