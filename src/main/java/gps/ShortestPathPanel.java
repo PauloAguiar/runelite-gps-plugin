@@ -11,6 +11,7 @@ import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
@@ -2382,9 +2383,52 @@ public class ShortestPathPanel extends PluginPanel
 		header.add(sectionLabel("Go to a place"), BorderLayout.CENTER);
 		IconActionLabel saveFavorite = new IconActionLabel(RouteIcons.FAVORITE, RouteIcons.FAVORITE_HOVER,
 			"Save a favourite position with a label (your current tile, or any coordinates)",
-			this::saveFavoriteDialog);
+			this::toggleFavoriteEditor);
 		header.add(verticallyCentered(control(saveFavorite)), BorderLayout.EAST);
 		wrap.add(fullWidth(header));
+
+		// Inline favourite editor (replaces the old modal dialog): one line — an optional leading
+		// coordinate in any of the search bar's formats ("3221 3218", "3221,3218,1", "3221, 3218 0")
+		// followed by the label; no coordinate means "my current tile". Enter saves, Esc closes.
+		favoriteInput.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		favoriteInput.setForeground(Color.WHITE);
+		favoriteInput.setCaretColor(Color.WHITE);
+		favoriteInput.setFont(FontManager.getRunescapeSmallFont());
+		favoriteInput.setToolTipText("<html>Type a label to save your current tile, or lead with"
+			+ " coordinates:<br>\"3221 3218 Lumbridge\", \"3221,3218,1 upstairs\", \"3221, 3218 0 spot\"</html>");
+		favoriteInput.addActionListener(e -> attemptSaveFavorite());
+		favoriteInput.addKeyListener(new java.awt.event.KeyAdapter()
+		{
+			@Override
+			public void keyPressed(java.awt.event.KeyEvent e)
+			{
+				if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ESCAPE)
+				{
+					favoriteEditor.setVisible(false);
+				}
+			}
+		});
+		JButton favoriteSave = new JButton("Save");
+		favoriteSave.setMargin(new Insets(2, 8, 2, 8));
+		favoriteSave.setFont(FontManager.getRunescapeSmallFont());
+		favoriteSave.addActionListener(e -> attemptSaveFavorite());
+		JPanel favoriteRow = new JPanel(new BorderLayout(4, 0));
+		favoriteRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		favoriteRow.add(favoriteInput, BorderLayout.CENTER);
+		favoriteRow.add(favoriteSave, BorderLayout.EAST);
+		favoriteError.setForeground(ColorScheme.PROGRESS_ERROR_COLOR);
+		favoriteError.setFont(FontManager.getRunescapeSmallFont());
+		favoriteError.setVisible(false);
+		favoriteEditor.setLayout(new BoxLayout(favoriteEditor, BoxLayout.Y_AXIS));
+		favoriteEditor.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		favoriteEditor.setBorder(new EmptyBorder(4, 0, 2, 0));
+		favoriteEditor.setAlignmentX(LEFT_ALIGNMENT);
+		favoriteRow.setAlignmentX(LEFT_ALIGNMENT);
+		favoriteError.setAlignmentX(LEFT_ALIGNMENT);
+		favoriteEditor.add(favoriteRow);
+		favoriteEditor.add(favoriteError);
+		favoriteEditor.setVisible(false);
+		wrap.add(fullWidth(favoriteEditor));
 
 		destinationSearch.setIcon(IconTextField.Icon.SEARCH);
 		destinationSearch.setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -2783,43 +2827,107 @@ public class ShortestPathPanel extends PluginPanel
 		return header;
 	}
 
-	/** The heart button: saves a labelled favourite position, prefilled with the current tile. */
-	private void saveFavoriteDialog()
+	// Inline favourite editor components (built in buildDestinationSearch).
+	private final JPanel favoriteEditor = new JPanel();
+	private final JTextField favoriteInput = new JTextField();
+	private final JLabel favoriteError = new JLabel();
+
+	// A LEADING coordinate in the favourite input: same formats as the search bar ("3221 3218",
+	// "3221,3218,1", "3221, 3218 0"), followed by the label. The plane token must be a whole
+	// token — "3221 3218 12 barrels" is a label starting with "12", not plane 1.
+	private static final java.util.regex.Pattern FAVORITE_COORD_PREFIX =
+		java.util.regex.Pattern.compile("(\\d{4})[,;\\s]+(\\d{4,5})(?:[,;\\s]+([0-3])(?!\\d))?[,;\\s]+(\\S.*)");
+
+	/** The heart button: shows (or hides) the inline favourite editor, prefilled with the current tile. */
+	private void toggleFavoriteEditor()
 	{
-		JTextField labelField = new JTextField();
+		if (favoriteEditor.isVisible())
+		{
+			favoriteEditor.setVisible(false);
+			return;
+		}
 		int player = plugin.getPlayerLocation();
 		String prefill = "";
 		if (player != WorldPointUtil.UNDEFINED)
 		{
 			int plane = WorldPointUtil.unpackWorldPlane(player);
-			prefill = WorldPointUtil.unpackWorldX(player) + ", " + WorldPointUtil.unpackWorldY(player)
-				+ (plane > 0 ? ", " + plane : "");
+			prefill = WorldPointUtil.unpackWorldX(player) + " " + WorldPointUtil.unpackWorldY(player)
+				+ (plane > 0 ? " " + plane : "") + " ";
 		}
-		JTextField positionField = new JTextField(prefill);
-		JPanel form = new JPanel(new GridLayout(0, 1, 0, 4));
-		form.add(new JLabel("Label:"));
-		form.add(labelField);
-		form.add(new JLabel("Position — x, y with an optional plane (prefilled with your tile):"));
-		form.add(positionField);
-		if (JOptionPane.showConfirmDialog(this, form, "Save favourite position",
-			JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION)
+		favoriteInput.setText(prefill);
+		favoriteError.setVisible(false);
+		favoriteEditor.setVisible(true);
+		favoriteEditor.revalidate();
+		favoriteInput.requestFocusInWindow();
+		favoriteInput.setCaretPosition(favoriteInput.getText().length());
+	}
+
+	/** One parsed favourite-editor input: the position (coords or the fallback) and the label. */
+	static final class ParsedFavorite
+	{
+		final int position;
+		final String label;
+
+		ParsedFavorite(int position, String label)
 		{
+			this.position = position;
+			this.label = label;
+		}
+	}
+
+	/**
+	 * Parses "[x y [plane]] label" (separators: spaces, commas or semicolons — "3221 3218 spot",
+	 * "3221,3218,1 spot", "3221, 3218 0 spot"). Without a valid leading coordinate the whole text
+	 * is the label and the position is {@code fallbackPosition} (the player's tile).
+	 */
+	static ParsedFavorite parseFavoriteInput(String text, int fallbackPosition)
+	{
+		java.util.regex.Matcher matcher = FAVORITE_COORD_PREFIX.matcher(text);
+		if (matcher.matches())
+		{
+			int parsed = parseCoordinateQuery(matcher.group(1) + " " + matcher.group(2)
+				+ (matcher.group(3) != null ? " " + matcher.group(3) : ""));
+			if (parsed != WorldPointUtil.UNDEFINED)
+			{
+				return new ParsedFavorite(parsed, matcher.group(4).trim());
+			}
+		}
+		return new ParsedFavorite(fallbackPosition, text);
+	}
+
+	/** Enter/Save in the inline editor: parse "[x y [plane]] label", save, close. */
+	private void attemptSaveFavorite()
+	{
+		String text = favoriteInput.getText().trim();
+		if (!text.isEmpty() && parseCoordinateQuery(text) != WorldPointUtil.UNDEFINED)
+		{
+			favoriteInputError("Add a label after the coordinates — e.g. \"" + text + " my spot\".");
 			return;
 		}
-		String label = labelField.getText().trim();
-		int position = parseCoordinateQuery(positionField.getText().trim());
-		if (label.isEmpty() || position == WorldPointUtil.UNDEFINED)
+		ParsedFavorite parsed = parseFavoriteInput(text, plugin.getPlayerLocation());
+		if (parsed.label.isEmpty())
 		{
-			JOptionPane.showMessageDialog(this,
-				"A favourite needs a label and a valid position (x, y — e.g. 3221, 3218).",
-				"Favourite not saved", JOptionPane.WARNING_MESSAGE);
+			favoriteInputError("Type a label — optionally led by coordinates (\"3221 3218 my spot\").");
 			return;
 		}
-		plugin.addFavoriteDestination(label, position);
+		if (parsed.position == WorldPointUtil.UNDEFINED)
+		{
+			favoriteInputError("No position: log in, or lead with coordinates (\"3221 3218 my spot\").");
+			return;
+		}
+		plugin.addFavoriteDestination(parsed.label, parsed.position);
+		favoriteEditor.setVisible(false);
 		if (destinationPopup.isVisible())
 		{
 			renderDestinationResults();
 		}
+	}
+
+	private void favoriteInputError(String message)
+	{
+		favoriteError.setText(message);
+		favoriteError.setVisible(true);
+		favoriteEditor.revalidate();
 	}
 
 	/** Preselects the top result so Enter works immediately; -1 when there are none. */

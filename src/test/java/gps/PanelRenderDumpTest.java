@@ -54,6 +54,10 @@ public class PanelRenderDumpTest
 		}
 		panel.refreshConfigSections();
 		panel.displayRoutes(List.of(), List.of(), Map.of(), Set.of(), false, false);
+		// Show the inline favourite editor so its layout is part of the dump.
+		java.lang.reflect.Method toggle = ShortestPathPanel.class.getDeclaredMethod("toggleFavoriteEditor");
+		toggle.setAccessible(true);
+		toggle.invoke(panel);
 
 		JPanel root = panel;
 		root.setSize(242, 1400);
