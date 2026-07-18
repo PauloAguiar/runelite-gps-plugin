@@ -5,54 +5,37 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Pins the inline favourite editor's input grammar: an optional LEADING coordinate in any of the
- * search bar's formats, then the label; no coordinate means "use the fallback position" (the
- * player's tile).
+ * Pins the coordinate grammar shared by the destination search bar and the favourite editor's
+ * "At" field: x and y (4-5 digits) with an optional plane, separated by spaces, commas or
+ * semicolons in any mix.
  */
 public class FavoriteInputTest
 {
-	private static final int FALLBACK = WorldPointUtil.packWorldPoint(3200, 3200, 0);
-
-	private static void assertParsed(String text, int x, int y, int plane, String label)
+	private static void assertCoordinate(String text, int x, int y, int plane)
 	{
-		ShortestPathPanel.ParsedFavorite parsed = ShortestPathPanel.parseFavoriteInput(text, FALLBACK);
-		assertEquals(text, WorldPointUtil.packWorldPoint(x, y, plane), parsed.position);
-		assertEquals(text, label, parsed.label);
+		assertEquals(text, WorldPointUtil.packWorldPoint(x, y, plane),
+			ShortestPathPanel.parseCoordinateQuery(text));
 	}
 
 	@Test
 	public void acceptsEverySeparatorStyle()
 	{
-		assertParsed("3221 3218 Lumbridge", 3221, 3218, 0, "Lumbridge");
-		assertParsed("3221 3218 1 upstairs", 3221, 3218, 1, "upstairs");
-		assertParsed("3221,3218 Lumbridge", 3221, 3218, 0, "Lumbridge");
-		assertParsed("3221,3218,1 upstairs", 3221, 3218, 1, "upstairs");
-		assertParsed("3221, 3218 Lumbridge", 3221, 3218, 0, "Lumbridge");
-		assertParsed("3221, 3218, 0 ground floor", 3221, 3218, 0, "ground floor");
+		assertCoordinate("3221 3218", 3221, 3218, 0);
+		assertCoordinate("3221 3218 1", 3221, 3218, 1);
+		assertCoordinate("3221,3218", 3221, 3218, 0);
+		assertCoordinate("3221,3218,1", 3221, 3218, 1);
+		assertCoordinate("3221, 3218", 3221, 3218, 0);
+		assertCoordinate("3221, 3218, 0", 3221, 3218, 0);
+		assertCoordinate("3221;3218;2", 3221, 3218, 2);
+		assertCoordinate("3221 10891", 3221, 10891, 0); // 5-digit y: the underground bands
 	}
 
 	@Test
-	public void planeTokenMustBeAWholeToken()
+	public void rejectsNonCoordinates()
 	{
-		// "12" is the label's first word, not plane 1.
-		assertParsed("3221 3218 12 barrels", 3221, 3218, 0, "12 barrels");
-	}
-
-	@Test
-	public void plainLabelsUseTheFallbackPosition()
-	{
-		ShortestPathPanel.ParsedFavorite parsed = ShortestPathPanel.parseFavoriteInput("my house", FALLBACK);
-		assertEquals(FALLBACK, parsed.position);
-		assertEquals("my house", parsed.label);
-	}
-
-	@Test
-	public void implausibleCoordinatesAreJustALabel()
-	{
-		// x beyond the map: not a coordinate prefix, the whole text is the label.
-		ShortestPathPanel.ParsedFavorite parsed =
-			ShortestPathPanel.parseFavoriteInput("9999 99999 nowhere", FALLBACK);
-		assertEquals(FALLBACK, parsed.position);
-		assertEquals("9999 99999 nowhere", parsed.label);
+		assertEquals(WorldPointUtil.UNDEFINED, ShortestPathPanel.parseCoordinateQuery("my house"));
+		assertEquals(WorldPointUtil.UNDEFINED, ShortestPathPanel.parseCoordinateQuery("3221"));
+		assertEquals(WorldPointUtil.UNDEFINED, ShortestPathPanel.parseCoordinateQuery("3221 3218 Lumbridge"));
+		assertEquals(WorldPointUtil.UNDEFINED, ShortestPathPanel.parseCoordinateQuery("9999 99999"));
 	}
 }
