@@ -82,6 +82,9 @@ public class TransportAuditPlugin extends Plugin
 		final String action;
 		final String[] actions;
 		final boolean door;
+		// "Standing at it" distance from the object's CENTER tile: 2 for single-tile objects,
+		// plus the footprint half-span for large ones (a 5x7 object's edge is 3 tiles out).
+		final int interactRadius;
 
 		Finding(TileObject object, int packedTemplateTile, String name, String action,
 			String[] actions, boolean door)
@@ -92,6 +95,18 @@ public class TransportAuditPlugin extends Plugin
 			this.action = action;
 			this.actions = actions;
 			this.door = door;
+			int halfSpan = 0;
+			if (object instanceof net.runelite.api.GameObject)
+			{
+				net.runelite.api.Point min = ((net.runelite.api.GameObject) object).getSceneMinLocation();
+				net.runelite.api.coords.LocalPoint center = object.getLocalLocation();
+				if (min != null && center != null)
+				{
+					halfSpan = Math.max(0, Math.max(center.getSceneX() - min.getX(),
+						center.getSceneY() - min.getY()));
+				}
+			}
+			this.interactRadius = 2 + halfSpan;
 		}
 
 		String describe()
@@ -654,8 +669,22 @@ public class TransportAuditPlugin extends Plugin
 		}
 	}
 
+	/**
+	 * Whether a menu entry's scene params refer to this object. Menu params carry the object's
+	 * SOUTH-WEST corner, but a GameObject's local location is its CENTER — for a large object
+	 * (e.g. the 5x7 Underground Pass cave exit) they differ by several tiles, so compare against
+	 * the game object's own scene-min location when available.
+	 */
 	private static boolean sceneClose(TileObject object, int sceneX, int sceneY)
 	{
+		if (object instanceof net.runelite.api.GameObject)
+		{
+			net.runelite.api.Point min = ((net.runelite.api.GameObject) object).getSceneMinLocation();
+			if (min != null)
+			{
+				return Math.max(Math.abs(min.getX() - sceneX), Math.abs(min.getY() - sceneY)) <= 1;
+			}
+		}
 		net.runelite.api.coords.LocalPoint location = object.getLocalLocation();
 		return location != null
 			&& Math.max(Math.abs(location.getSceneX() - sceneX), Math.abs(location.getSceneY() - sceneY)) <= 2;
@@ -760,8 +789,10 @@ public class TransportAuditPlugin extends Plugin
 		}
 		int tile = WorldPointUtil.fromLocalInstance(client, client.getLocalPlayer());
 		int animation = client.getLocalPlayer().getAnimation();
-		// distanceBetween returns MAX_VALUE across planes, so range implies same plane.
-		boolean inRange = WorldPointUtil.distanceBetween(tile, pending.finding.packedTemplateTile) <= 2;
+		// distanceBetween returns MAX_VALUE across planes, so range implies same plane. The radius
+		// accounts for the object's footprint — its center can be several tiles from its edge.
+		boolean inRange = WorldPointUtil.distanceBetween(tile, pending.finding.packedTemplateTile)
+			<= pending.finding.interactRadius;
 		if (pending.departTick < 0)
 		{
 			// Two departure triggers: an ACTION animation while adjacent (forced moves play one,
