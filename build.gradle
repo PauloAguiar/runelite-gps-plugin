@@ -102,6 +102,15 @@ tasks.register('run', JavaExec) {
     args "--developer-mode", "--debug"
 }
 
+// Dev client WITH the transport audit tooling (scene flags, capture, builder panel).
+// Off by default in `run` so normal play-testing isn't crowded by audit highlights.
+tasks.register('runAudit', JavaExec) {
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = pluginMainClass
+    jvmArgs "-ea", "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED", "-Dgps.audit=true"
+    args "--developer-mode", "--debug"
+}
+
 tasks.register('shadowJar', Jar) {
     dependsOn configurations.testRuntimeClasspath
     manifest {

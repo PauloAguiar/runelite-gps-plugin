@@ -27,8 +27,16 @@ public class ShortestPathPluginTest
 				+ "the plugin may load twice: " + e);
 		}
 		// The transport audit is a dev-only companion (test sources, never packaged for the hub):
-		// it highlights traversal objects the transport/door data doesn't know about.
-		ExternalPluginManager.loadBuiltin(ShortestPathPlugin.class, gps.dev.TransportAuditPlugin.class);
+		// it highlights traversal objects the transport/door data doesn't know about. Opt-in via
+		// `gradlew runAudit` (sets -Dgps.audit=true) — a plain `gradlew run` loads GPS alone.
+		if (Boolean.getBoolean("gps.audit"))
+		{
+			ExternalPluginManager.loadBuiltin(ShortestPathPlugin.class, gps.dev.TransportAuditPlugin.class);
+		}
+		else
+		{
+			ExternalPluginManager.loadBuiltin(ShortestPathPlugin.class);
+		}
 		RuneLite.main(args);
 	}
 }
