@@ -60,11 +60,17 @@ public class TransportAuditPlugin extends Plugin
 	/** How far (Chebyshev tiles) a transport origin/destination may sit from an object and still count as covering it. */
 	static final int COVERAGE_RADIUS = 3;
 
-	// Menu-action prefixes that mean "using this object moves the player somewhere".
+	// Menu-action prefixes that mean "using this object moves the player somewhere". Derived
+	// from a full cache scan of object action verbs (ActionVerbScanTest in the tooling repo) —
+	// notable inclusions: plain "pass" (Pass Sticks), "leave"/"escape" (arena and dungeon
+	// exits), "pull"/"push" (levers, hidden walls), "dock"/"navigate" (Sailing). Deliberately
+	// excluded as too generic for an audit that flags red: open/close (door path handles walls),
+	// use, operate, touch, activate, search, dig.
 	private static final String[] TRAVERSAL_VERBS = {
-		"climb", "cross", "enter", "exit", "descend", "ascend", "jump", "swing", "squeeze",
-		"crawl", "balance", "vault", "leap", "scale", "grapple", "board", "travel", "ride",
-		"walk-across", "walk-over", "go-through", "pass-through", "teleport",
+		"climb", "cross", "enter", "exit", "leave", "escape", "descend", "ascend", "jump",
+		"swing", "squeeze", "crawl", "balance", "vault", "leap", "scale", "grapple", "board",
+		"travel", "ride", "pass", "pull", "push", "step", "dock", "navigate",
+		"walk-", "go-", "teleport",
 	};
 
 	/** A traversal object the data doesn't cover, plus what the operator should do about it. */
