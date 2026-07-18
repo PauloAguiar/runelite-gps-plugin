@@ -523,7 +523,8 @@ public class TransportAuditPlugin extends Plugin
 			{
 				if (++pending.stableTicks >= 2)
 				{
-					completeCapture(tile, now);
+					completeCapture(tile, now); // nulls pending — nothing left to track this tick
+					return;
 				}
 			}
 			else
