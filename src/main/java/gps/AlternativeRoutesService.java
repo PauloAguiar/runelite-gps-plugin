@@ -443,9 +443,9 @@ public class AlternativeRoutesService
 
 			// Unreached target: every extra route is another escape toward the same closest area,
 			// and with the heuristic degenerate (sealed pocket) each iteration is an uninformed
-			// sweep — enumerating a triple-digit limit would burn minutes of background CPU for a
-			// list nobody scrolls. A handful is the menu; "+" resumes for more.
-			if (!reached && routes.size() >= UNREACHED_PAGE_ROUTES)
+			// sweep. Time-boxed rather than counted: the page holds whatever the search budget
+			// affords, and "+" resumes with a fresh budget.
+			if (!reached && searchBudgetExhausted(timer))
 			{
 				cappedByCost = true;
 				chainExhausted = true;
@@ -943,6 +943,12 @@ public class AlternativeRoutesService
 		{
 			return null;
 		}
+		// Unreached-target seeds are uninformed sweeps too — same budget as the chain, checked as
+		// each queued seed comes up so a long tail of pending seeds drains cheaply.
+		if (bestRemaining > 0 && searchBudgetExhausted(timer))
+		{
+			return null;
+		}
 		PathfinderConfig config = configPool.poll();
 		if (config == null)
 		{
@@ -1158,15 +1164,25 @@ public class AlternativeRoutesService
 	// chain search's own sanity cap (2x the band) still bounds how far these fill routes may cost.
 	private static final int MIN_PAGE_ROUTES = 4;
 	/**
-	 * Page size for UNREACHED targets (sealed cells, through-the-bars NPC tiles): enough escape
-	 * alternatives to choose from without enumerating the whole teleport catalog at uninformed-
-	 * sweep cost per route. "+" resumes the chain for more.
+	 * Search-CPU budget for UNREACHED targets (sealed cells, through-the-bars NPC tiles): with
+	 * the heuristic degenerate, every chain route and seed costs an uninformed sweep — the page
+	 * fills with whatever the budget affords (fast machines get more escapes, slow ones fewer)
+	 * instead of enumerating the whole teleport catalog. "+" resumes with a fresh budget.
 	 */
-	private static final int UNREACHED_PAGE_ROUTES = 8;
+	private static final long UNREACHED_SEARCH_BUDGET_NANOS = 4_000_000_000L;
 	// Page filling past the band accepts the next route while it is within this gap of the
 	// acceptance region (absolute floor; grows to ref/8 for pricier regions) — wide enough to keep a
 	// dense cluster together, small enough that a genuine cost cliff still ends the page.
 	private static final int PAGE_FILL_MIN_GAP = 10;
+
+	/** Cumulative search CPU spent this generation vs the unreached-target budget. */
+	private static boolean searchBudgetExhausted(GenTimer timer)
+	{
+		synchronized (timer)
+		{
+			return timer.searchNanos >= UNREACHED_SEARCH_BUDGET_NANOS;
+		}
+	}
 
 	private static int cappedByBestCost(int cap, List<RouteOption> routes, int multiple)
 	{
