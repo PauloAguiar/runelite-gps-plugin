@@ -13,6 +13,8 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 1561	Gate	1249	3690	0	0	2	1	1	closed
 34464	Door	1249	3723	0	0	3	1	1	closed
 8695	Door	1255	3689	0	0	2	1	1	closed
+40427	Gate	1257	3686	0	0	1	1	1	closed
+40428	Gate	1258	3686	0	0	1	1	1	closed
 15056	Door	1284	3758	0	0	1	1	1	closed
 13001	Door	1298	3720	0	0	3	1	1	closed
 13001	Door	1299	3724	0	0	0	1	1	closed
@@ -813,23 +815,32 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 7317	Door	2463	4963	0	0	2	1	1	closed
 12047	Magic door	2465	4434	0	0	3	1	1	closed
 12045	Magic door	2466	4434	0	0	3	1	1	closed
+1537	Door	2467	3295	0	0	0	1	1	closed
 1535	Door	2467	3301	0	0	0	1	1	closed
+1537	Door	2467	3307	0	0	0	1	1	closed
 12047	Magic door	2469	4437	0	0	2	1	1	closed
 12045	Magic door	2469	4438	0	0	2	1	1	closed
 1535	Door	2470	3285	0	0	0	1	1	closed
+1537	Door	2470	3317	0	0	1	1	1	closed
 1535	Door	2470	3322	0	0	1	1	1	closed
+1537	Door	2471	3295	0	0	2	1	1	closed
+1537	Door	2471	3301	0	0	2	1	1	closed
 1535	Door	2471	3307	0	0	2	1	1	closed
 7274	Door	2472	4972	0	0	0	1	1	closed
 8810	Gate	2474	3364	0	0	1	1	1	closed
 8811	Gate	2475	3364	0	0	1	1	1	closed
 1535	Door	2476	3317	0	0	1	1	1	closed
+1537	Door	2477	3287	0	0	3	1	1	closed
 7326	Door	2478	4940	0	0	2	1	1	closed
 7320	Door	2480	4956	0	0	2	1	1	closed
 1535	Door	2482	3287	0	0	3	1	1	closed
+1537	Door	2482	3317	0	0	1	1	1	closed
+1537	Door	2482	3322	0	0	1	1	1	closed
 1535	Door	2483	3295	0	0	0	1	1	closed
 1535	Door	2483	3307	0	0	0	1	1	closed
 1535	Door	2487	3295	0	0	2	1	1	closed
 1535	Door	2487	3301	0	0	2	1	1	closed
+1537	Door	2488	3317	0	0	1	1	1	closed
 1535	Door	2488	3322	0	0	1	1	1	closed
 74	Large door	2495	5435	0	0	2	1	1	closed
 73	Large door	2495	5436	0	0	2	1	1	closed
@@ -838,7 +849,9 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 1517	Large door	2500	3871	0	0	1	1	1	closed
 2184	Door	2502	3250	0	0	1	1	1	closed
 1535	Door	2502	3309	0	0	2	1	1	closed
+1537	Door	2502	3314	0	0	2	1	1	closed
 1535	Door	2502	3319	0	0	2	1	1	closed
+1537	Door	2502	3323	0	0	1	1	1	closed
 2788	City gate	2504	3062	0	0	0	1	1	closed
 2789	City gate	2504	3063	0	0	0	1	1	closed
 1517	Large door	2504	3853	0	0	2	1	1	closed
@@ -848,9 +861,12 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 1517	Large door	2506	3851	0	0	1	1	1	closed
 1517	Large door	2506	3869	0	0	3	1	1	closed
 1535	Door	2508	3323	0	0	1	1	1	closed
+1537	Door	2510	3304	0	0	2	1	1	closed
 1535	Door	2510	3380	0	0	1	1	1	closed
 1517	Large door	2510	3860	0	0	2	1	1	closed
 1535	Door	2511	3309	0	0	0	1	1	closed
+1537	Door	2511	3314	0	0	0	1	1	closed
+1537	Door	2511	3319	0	0	0	1	1	closed
 15204	Door	2511	10258	0	0	0	1	1	closed
 1535	Door	2512	3328	0	0	1	1	1	closed
 4696	Door	2512	3850	0	0	3	1	1	closed
@@ -858,6 +874,7 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 1558	Gate	2513	3494	0	0	0	1	1	closed
 1560	Gate	2513	3495	0	0	0	1	1	closed
 4696	Door	2513	3868	0	0	1	1	1	closed
+1537	Door	2514	3323	0	0	1	1	1	closed
 1991	Door	2515	9575	0	0	1	1	1	closed
 15204	Door	2516	10251	0	0	2	1	1	closed
 2039	Gate	2517	3356	0	0	1	1	1	closed
@@ -869,9 +886,11 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 1543	Door	2520	3432	0	0	2	1	1	closed
 1535	Door	2521	3314	0	0	2	1	1	closed
 1535	Door	2521	3381	0	0	1	1	1	closed
+1537	Door	2523	3274	0	0	1	1	1	closed
 1535	Door	2524	3254	0	0	1	1	1	closed
 1535	Door	2524	3435	0	0	3	1	1	closed
 1540	Door	2524	3495	0	0	2	1	1	closed
+1537	Door	2525	3272	0	0	3	1	1	closed
 2546	Door	2525	3311	0	0	1	1	1	closed
 15204	Door	2525	10256	0	0	2	1	1	closed
 15204	Door	2525	10261	0	0	1	1	1	closed
@@ -884,9 +903,11 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 2537	Door	2531	3328	0	0	1	1	1	closed
 17093	Large door	2532	3091	0	0	2	1	1	closed
 17091	Large door	2532	3092	0	0	2	1	1	closed
+37321	Door	2533	3272	0	0	3	1	1	closed
 4247	Door	2534	3898	0	0	3	1	1	closed
 17089	Large door	2536	3083	0	0	2	1	1	closed
 17089	Large door	2536	3100	0	0	2	1	1	closed
+1537	Door	2536	3280	0	0	3	1	1	closed
 17089	Large door	2537	3089	0	0	1	1	1	closed
 17089	Large door	2537	3094	0	0	3	1	1	closed
 4247	Door	2537	3894	0	0	0	1	1	closed
@@ -894,6 +915,7 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 17093	Large door	2539	3092	0	0	0	1	1	closed
 4247	Door	2539	3899	0	0	2	1	1	closed
 2526	Door	2539	9672	0	0	2	1	1	closed
+37321	Door	2540	3273	0	0	3	1	1	closed
 2002	Door	2540	9900	0	0	1	1	1	closed
 1535	Door	2541	3280	0	0	3	1	1	closed
 4247	Door	2542	3895	0	0	1	1	1	closed
@@ -901,8 +923,10 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 2116	Gate	2545	3569	0	0	2	1	1	closed
 2115	Gate	2545	3570	0	0	2	1	1	closed
 1535	Door	2546	3325	0	0	2	1	1	closed
+1537	Door	2547	3280	0	0	3	1	1	closed
 4247	Door	2547	3895	0	0	2	1	1	closed
 2787	City gate	2549	3028	0	0	3	1	1	closed
+1537	Door	2549	3274	0	0	3	1	1	closed
 2786	City gate	2550	3028	0	0	3	1	1	closed
 1540	Door	2551	3082	0	0	1	1	1	closed
 1535	Door	2551	3098	0	0	3	1	1	closed
@@ -2001,6 +2025,8 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 24565	Door	3265	3441	0	0	1	1	1	closed
 54695	Door	3266	3456	0	0	3	1	1	closed
 11780	Door	3267	3382	0	0	2	1	1	closed
+44598	Gate	3268	3227	0	0	0	1	1	closed
+44599	Gate	3268	3228	0	0	0	1	1	closed
 11778	Door	3268	3387	0	0	0	1	1	open
 36253	Door	3269	6111	0	0	1	1	1	closed
 36253	Door	3269	6123	0	0	1	1	1	closed
@@ -2201,8 +2227,36 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 41210	Solid gold door	3513	9677	0	0	0	1	1	closed
 24051	Door	3515	4755	0	0	3	1	1	open
 4107	Solid steel door	3515	9710	0	0	1	1	1	closed
+20682	Door	3528	9677	0	0	2	1	1	closed
+20701	Door	3528	9678	0	0	2	1	1	closed
+20682	Door	3528	9711	0	0	2	1	1	closed
+20701	Door	3528	9712	0	0	2	1	1	closed
+20715	Door	3534	9671	0	0	1	1	1	closed
+20691	Door	3534	9684	0	0	3	1	1	closed
+20710	Door	3534	9688	0	0	1	1	1	closed
+20683	Door	3534	9701	0	0	3	1	1	closed
+20702	Door	3534	9705	0	0	1	1	1	closed
+20681	Door	3534	9718	0	0	3	1	1	closed
+20696	Door	3535	9671	0	0	1	1	1	closed
+20710	Door	3535	9684	0	0	3	1	1	closed
+20691	Door	3535	9688	0	0	1	1	1	closed
+20702	Door	3535	9701	0	0	3	1	1	closed
+20683	Door	3535	9705	0	0	1	1	1	closed
+20700	Door	3535	9718	0	0	3	1	1	closed
 1535	Door	3540	3555	0	0	0	1	1	closed
+20713	Door	3541	9677	0	0	0	1	1	closed
+20694	Door	3541	9678	0	0	0	1	1	closed
+20708	Door	3541	9694	0	0	0	1	1	closed
+20689	Door	3541	9695	0	0	0	1	1	closed
+20703	Door	3541	9711	0	0	0	1	1	closed
+20684	Door	3541	9712	0	0	0	1	1	closed
 1535	Door	3545	3555	0	0	0	1	1	closed
+20694	Door	3545	9677	0	0	2	1	1	closed
+20713	Door	3545	9678	0	0	2	1	1	closed
+20689	Door	3545	9694	0	0	2	1	1	closed
+20708	Door	3545	9695	0	0	2	1	1	closed
+20684	Door	3545	9711	0	0	2	1	1	closed
+20703	Door	3545	9712	0	0	2	1	1	closed
 5183	Door	3548	3535	0	0	1	1	1	closed
 5183	Door	3548	3543	0	0	1	1	1	closed
 5183	Door	3548	3551	0	0	1	1	1	closed
@@ -2212,9 +2266,45 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 5186	Door	3549	3543	0	0	1	1	1	closed
 5186	Door	3549	3551	0	0	1	1	1	closed
 5183	Door	3549	3558	0	0	3	1	1	closed
+20692	Door	3551	9684	0	0	3	1	1	closed
+20711	Door	3551	9688	0	0	1	1	1	closed
+20685	Door	3551	9701	0	0	3	1	1	closed
+20704	Door	3551	9705	0	0	1	1	1	closed
 1535	Door	3552	3555	0	0	2	1	1	closed
+20711	Door	3552	9684	0	0	3	1	1	closed
+20692	Door	3552	9688	0	0	1	1	1	closed
+20704	Door	3552	9701	0	0	3	1	1	closed
+20685	Door	3552	9705	0	0	1	1	1	closed
 1535	Door	3557	3555	0	0	2	1	1	closed
+20714	Door	3558	9677	0	0	0	1	1	closed
+20695	Door	3558	9678	0	0	0	1	1	closed
+20709	Door	3558	9694	0	0	0	1	1	closed
+20690	Door	3558	9695	0	0	0	1	1	closed
+20705	Door	3558	9711	0	0	0	1	1	closed
+20686	Door	3558	9712	0	0	0	1	1	closed
+20695	Door	3562	9677	0	0	2	1	1	closed
+20714	Door	3562	9678	0	0	2	1	1	closed
+20690	Door	3562	9694	0	0	2	1	1	closed
+20709	Door	3562	9695	0	0	2	1	1	closed
+20686	Door	3562	9711	0	0	2	1	1	closed
+20705	Door	3562	9712	0	0	2	1	1	closed
+20715	Door	3568	9671	0	0	1	1	1	closed
+20693	Door	3568	9684	0	0	3	1	1	closed
+20712	Door	3568	9688	0	0	1	1	1	closed
+20687	Door	3568	9701	0	0	3	1	1	closed
+20706	Door	3568	9705	0	0	1	1	1	closed
+20681	Door	3568	9718	0	0	3	1	1	closed
+20696	Door	3569	9671	0	0	1	1	1	closed
+20712	Door	3569	9684	0	0	3	1	1	closed
+20693	Door	3569	9688	0	0	1	1	1	closed
+20706	Door	3569	9701	0	0	3	1	1	closed
+20687	Door	3569	9705	0	0	1	1	1	closed
+20700	Door	3569	9718	0	0	3	1	1	closed
 5245	Door	3574	3311	0	0	3	1	1	open
+20707	Door	3575	9677	0	0	0	1	1	closed
+20688	Door	3575	9678	0	0	0	1	1	closed
+20707	Door	3575	9711	0	0	0	1	1	closed
+20688	Door	3575	9712	0	0	0	1	1	closed
 18054	Barricade	3589	3215	0	0	3	1	1	closed
 17601	Door	3593	3227	0	0	0	1	1	closed
 18057	Door	3594	3219	0	0	3	1	1	closed
@@ -2338,6 +2428,7 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 5244	Door	3674	3472	0	0	3	1	1	closed
 5244	Door	3676	3476	0	0	1	1	1	closed
 42529	Gate	3680	9635	0	0	1	1	1	closed
+39519	Mausoleum door	3704	3190	0	0	3	1	1	closed
 11763	Door	3722	3816	0	0	0	1	1	closed
 43087	Door	3744	4304	0	0	1	1	1	closed
 39507	Door	3750	3292	0	0	1	1	1	closed
@@ -2433,6 +2524,7 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 53893	Door	4128	4939	0	0	3	1	1	closed
 53893	Door	4139	4944	0	0	0	1	1	closed
 53893	Door	4145	4955	0	0	2	1	1	closed
+54108	Gate	4181	4953	0	0	3	1	1	closed
 24369	Door	1240	3681	1	0	0	1	1	closed
 24369	Door	1243	3681	1	0	3	1	1	closed
 24369	Door	1243	3682	1	0	1	1	1	closed
@@ -2444,6 +2536,7 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 18489	Door	1312	3621	1	0	1	1	1	closed
 18489	Door	1313	3619	1	0	2	1	1	closed
 18489	Door	1313	3620	1	0	2	1	1	closed
+42459	Door	1323	10080	1	0	3	1	1	closed
 49742	Metal gate	1357	4383	1	0	0	1	1	closed
 49742	Metal gate	1360	4383	1	0	2	1	1	closed
 49742	Metal gate	1367	4373	1	0	3	1	1	closed
@@ -2457,6 +2550,7 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 33556	Door	1380	3826	1	0	1	1	1	closed
 33556	Door	1384	3826	1	0	1	1	1	closed
 52600	Door	1385	2866	1	0	3	1	1	closed
+49909	Heavy door	1393	4383	1	0	0	1	1	closed
 42116	Door	1474	3556	1	0	3	1	1	closed
 42116	Door	1474	3559	1	0	1	1	1	closed
 49742	Metal gate	1484	4272	1	0	3	1	1	closed
@@ -2484,6 +2578,7 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 42116	Door	1508	3590	1	0	3	1	1	closed
 52600	Door	1517	3230	1	0	0	1	1	closed
 42116	Door	1519	3590	1	0	3	1	1	closed
+49909	Heavy door	1521	4319	1	0	0	1	1	closed
 42118	Door	1530	3546	1	0	0	1	1	closed
 42116	Door	1537	3582	1	0	0	1	1	closed
 42124	Door	1540	3545	1	0	3	1	1	closed
@@ -2519,6 +2614,7 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 7452	Door	1640	3620	1	0	0	1	1	closed
 7452	Door	1640	3633	1	0	0	1	1	closed
 7452	Door	1641	3572	1	0	2	1	1	closed
+55354	Gate	1644	3220	1	0	3	1	1	closed
 7452	Door	1645	3573	1	0	3	1	1	closed
 7452	Door	1646	3621	1	0	1	1	1	closed
 7452	Door	1646	3632	1	0	3	1	1	closed
@@ -2555,6 +2651,7 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 7452	Door	1783	3575	1	0	0	1	1	closed
 7454	Locked door	1784	3571	1	0	0	1	1	closed
 7452	Door	1798	3609	1	0	1	1	1	closed
+58095	Cell door	1885	3273	1	0	2	1	1	closed
 6114	Door	1986	4494	1	0	2	1	1	closed
 6114	Door	1986	4529	1	0	2	1	1	closed
 6114	Door	2003	4494	1	0	0	1	1	closed

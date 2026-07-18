@@ -78,4 +78,17 @@ public class ClosedDoorsTest
 		ClosedDoors.Door door = ClosedDoors.doorBetween(pack(3108, 3353, 0), pack(3109, 3354, 0));
 		Assert.assertNotNull(door);
 	}
+
+	// West Ardougne house door (id 1537 at 2510,3304, east edge): a MULTILOC — its base
+	// definition is nameless and actionless (the openable "Door" appearance is a varbit-swapped
+	// impostor, Song of the Elves progress), so the original dump missed it and every door like
+	// it. The dumper now resolves impostors; this pins the class staying in the registry.
+	@Test
+	public void multilocDoorIsRegistered()
+	{
+		ClosedDoors.Door door = ClosedDoors.doorBetween(pack(2510, 3304, 0), pack(2511, 3304, 0));
+		Assert.assertNotNull(door);
+		Assert.assertEquals(1537, door.id);
+		Assert.assertEquals("Door", door.name);
+	}
 }
