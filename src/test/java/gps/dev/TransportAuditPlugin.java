@@ -436,6 +436,13 @@ public class TransportAuditPlugin extends Plugin
 		{
 			return; // our own "Copy GPS audit" click — not a movement intent
 		}
+		// A click after DEPARTURE means the traversal is over (nothing is clickable mid-flight):
+		// complete the in-flight capture with the last observed tile as the landing, instead of
+		// silently dropping it — e.g. clicking the upstairs ladder right after climbing.
+		if (pending != null && pending.departTick >= 0 && pending.lastTile != WorldPointUtil.UNDEFINED)
+		{
+			completeCapture(pending.lastTile, client.getTickCount());
+		}
 		net.runelite.api.MenuEntry entry = event.getMenuEntry();
 		for (Finding finding : findings.values())
 		{
@@ -448,7 +455,11 @@ public class TransportAuditPlugin extends Plugin
 				return;
 			}
 		}
-		pending = null;
+		if (pending != null)
+		{
+			log.info("[audit] capture cancelled (clicked something else): {}", pending.finding.describe());
+			pending = null;
+		}
 	}
 
 	/**
@@ -780,7 +791,12 @@ public class TransportAuditPlugin extends Plugin
 			return;
 		}
 
-		int templateTile = WorldPointUtil.fromLocalInstance(client, object.getLocalLocation());
+		// NB: the object's OWN plane, not the render plane — WorldPointUtil's Client+LocalPoint
+		// overload stamps worldView.getPlane(), which mis-tiled upstairs objects seen from the
+		// ground floor (e.g. the top half of a ladder pair logged as plane 0).
+		net.runelite.api.coords.WorldPoint worldPoint = net.runelite.api.coords.WorldPoint
+			.fromLocalInstance(client, object.getLocalLocation(), object.getPlane());
+		int templateTile = WorldPointUtil.packWorldPoint(worldPoint);
 		boolean door = wall && (action.equalsIgnoreCase("Open") || action.equalsIgnoreCase("Close"));
 		if (door ? doorCovered(templateTile) : transportCovered(templateTile))
 		{
