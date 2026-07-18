@@ -448,6 +448,7 @@ public class TransportAuditPlugin extends Plugin
 	private static final String BUILDER_ORIGIN_OPTION = "Builder: set origin";
 	private static final String BUILDER_DEST_OPTION = "Builder: set destination";
 	private static final String BUILDER_OBJECT_OPTION = "Builder: use object";
+	private static final String BUILDER_ITEM_OPTION = "Builder: add item req";
 
 	/**
 	 * Menu additions. Plain right-click on a marked object: "Copy GPS audit". With SHIFT held:
@@ -500,6 +501,24 @@ public class TransportAuditPlugin extends Plugin
 					.setType(net.runelite.api.MenuAction.RUNELITE)
 					.onClick(e -> ignoreFinding(finding));
 			}
+		}
+
+		// Builder item requirement: shift on an inventory item appends "id=1" to the Items field
+		// (the transports.tsv format — & joins ANDs, | joins ORs; quantity editable in the panel).
+		if (shift && event.getMenuEntry().getItemId() > 0 && !hasOption(BUILDER_ITEM_OPTION))
+		{
+			final int itemId = event.getMenuEntry().getItemId();
+			net.runelite.api.ItemComposition item = client.getItemDefinition(itemId);
+			final String itemName = item != null ? item.getName() : String.valueOf(itemId);
+			client.getMenu().createMenuEntry(-1)
+				.setOption(BUILDER_ITEM_OPTION)
+				.setTarget(itemName)
+				.setType(net.runelite.api.MenuAction.RUNELITE)
+				.onClick(e -> {
+					log.info("[audit] builder item requirement: {} ({})", itemName, itemId);
+					javax.swing.SwingUtilities.invokeLater(() ->
+						panel.appendBuilderItem(itemId, itemName));
+				});
 		}
 
 		// Builder pickers on ANY object (not just findings): origin/dest at the object's tile,

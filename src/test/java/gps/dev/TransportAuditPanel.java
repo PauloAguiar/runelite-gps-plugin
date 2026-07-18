@@ -280,6 +280,18 @@ class TransportAuditPanel extends PluginPanel
 			.setContents(new java.awt.datatransfer.StringSelection(text), null);
 	}
 
+	/**
+	 * EDT (from the shift right-click "Builder: add item req" menu entry). Appends an item
+	 * requirement in the transports.tsv Items format; & = AND (edit to | for alternatives, and
+	 * adjust the quantity as needed).
+	 */
+	void appendBuilderItem(int itemId, String itemName)
+	{
+		String current = builderItems.getText().trim();
+		builderItems.setText(current.isEmpty() ? itemId + "=1" : current + "&" + itemId + "=1");
+		builderStatus.setText("added item: " + itemName + " (" + itemId + ")");
+	}
+
 	static Color stateColor(TransportAuditPlugin.FindingState state)
 	{
 		switch (state)
