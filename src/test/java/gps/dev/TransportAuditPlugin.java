@@ -154,6 +154,32 @@ public class TransportAuditPlugin extends Plugin
 	// The cross-session collection file: every unmapped object ever seen, one row each, for
 	// later comparison against the curated data (scripts/audit_diff.py in the tooling repo).
 	private java.io.File auditFile;
+	// Automatic origin/destination capture: armed when the operator clicks a traversal action on
+	// a flagged object, resolved by watching the player's tile until they come to rest.
+	private PendingCapture pending;
+	private java.io.File capturesFile;
+	// origin|dest|id triples already written, seeded from the captures file, so repeated
+	// traversals (and each direction) record once.
+	private final Set<String> capturedKeys = new HashSet<>();
+	private String lastCaptureText;
+	private int lastCaptureTick = -1;
+
+	/** One in-flight traversal capture: click → stand in range → depart → come to rest. */
+	private static final class PendingCapture
+	{
+		final Finding finding;
+		final int armedTick;
+		int originTile = WorldPointUtil.UNDEFINED; // last in-range tile before departure
+		int departTick = -1;
+		int lastTile = WorldPointUtil.UNDEFINED;
+		int stableTicks;
+
+		PendingCapture(Finding finding, int armedTick)
+		{
+			this.finding = finding;
+			this.armedTick = armedTick;
+		}
+	}
 	// (id, tile) pairs already logged this session, so the template prints once, not per scene.
 	private final Set<Long> logged = new HashSet<>();
 
@@ -193,6 +219,11 @@ public class TransportAuditPlugin extends Plugin
 				"transport-audit.tsv");
 			seedLoggedFromFile();
 		}
+		if (capturesFile == null)
+		{
+			capturesFile = new java.io.File(auditFile.getParentFile(), "transport-captures.tsv");
+			seedCapturedFromFile();
+		}
 		overlayManager.add(sceneOverlay);
 		overlayManager.add(panelOverlay);
 		// Plugin toggled on with a scene already loaded: sweep it once (spawn events only cover
@@ -227,6 +258,12 @@ public class TransportAuditPlugin extends Plugin
 		if (GameState.LOADING.equals(event.getGameState()))
 		{
 			findings.clear(); // scene rebuild: stale TileObject references must not be drawn
+			// NB: an armed capture survives LOADING on purpose — dungeon entrances land in a new
+			// scene, and the tile tracking uses template coordinates throughout.
+		}
+		if (GameState.LOGIN_SCREEN.equals(event.getGameState()))
+		{
+			pending = null;
 		}
 	}
 
@@ -293,6 +330,181 @@ public class TransportAuditPlugin extends Plugin
 		{
 			log.warn("[audit] clipboard unavailable — dossier:\n{}", text, e);
 		}
+	}
+
+	/**
+	 * Arms a capture when the operator clicks a traversal action on a flagged object; any other
+	 * real click cancels (the player changed their mind), so a later stop can't be mistaken for
+	 * a landing. Doors are skipped — they have no destination to record.
+	 */
+	@Subscribe
+	public void onMenuOptionClicked(net.runelite.api.events.MenuOptionClicked event)
+	{
+		if (event.getMenuAction() == net.runelite.api.MenuAction.RUNELITE)
+		{
+			return; // our own "Copy GPS audit" click — not a movement intent
+		}
+		net.runelite.api.MenuEntry entry = event.getMenuEntry();
+		for (Finding finding : findings.values())
+		{
+			if (!finding.door && finding.object.getId() == entry.getIdentifier()
+				&& sceneClose(finding.object, entry.getParam0(), entry.getParam1())
+				&& event.getMenuOption() != null && event.getMenuOption().equalsIgnoreCase(finding.action))
+			{
+				pending = new PendingCapture(finding, client.getTickCount());
+				log.info("[audit] capture armed: {} — traverse it and come to rest", finding.describe());
+				return;
+			}
+		}
+		pending = null;
+	}
+
+	/**
+	 * Drives an armed capture: while the player stands within interaction range (2 tiles, same
+	 * plane) of the object, their tile is the origin candidate; the first tick outside that
+	 * range starts the traversal; two stationary ticks end it. The rest position is the
+	 * destination, and the tick span is the transport's duration.
+	 */
+	@Subscribe
+	public void onGameTick(net.runelite.api.events.GameTick event)
+	{
+		if (pending == null || client.getLocalPlayer() == null)
+		{
+			return;
+		}
+		int now = client.getTickCount();
+		if (now - pending.armedTick > 100)
+		{
+			log.info("[audit] capture timed out: {}", pending.finding.describe());
+			pending = null;
+			return;
+		}
+		int tile = WorldPointUtil.fromLocalInstance(client, client.getLocalPlayer());
+		// distanceBetween returns MAX_VALUE across planes, so range implies same plane.
+		boolean inRange = WorldPointUtil.distanceBetween(tile, pending.finding.packedTemplateTile) <= 2;
+		if (pending.departTick < 0)
+		{
+			if (inRange)
+			{
+				pending.originTile = tile;
+			}
+			else if (pending.originTile != WorldPointUtil.UNDEFINED && tile != pending.originTile)
+			{
+				pending.departTick = now; // left the object's side — traversal has begun
+			}
+		}
+		if (pending.departTick >= 0)
+		{
+			if (tile == pending.lastTile)
+			{
+				if (++pending.stableTicks >= 2)
+				{
+					completeCapture(tile, now);
+				}
+			}
+			else
+			{
+				pending.stableTicks = 0;
+			}
+		}
+		pending.lastTile = tile;
+	}
+
+	private void completeCapture(int destTile, int now)
+	{
+		PendingCapture capture = pending;
+		pending = null;
+		if (destTile == capture.originTile || capture.originTile == WorldPointUtil.UNDEFINED)
+		{
+			return;
+		}
+		int arrivalTick = now - capture.stableTicks + 1;
+		int duration = Math.max(1, arrivalTick - capture.departTick);
+		String row = tileText(capture.originTile) + "\t" + tileText(destTile) + "\t"
+			+ capture.finding.action + " " + capture.finding.name + " " + capture.finding.object.getId()
+			+ "\t\t\t\t\t\t" + duration + "\t";
+		String key = tileText(capture.originTile) + "|" + tileText(destTile) + "|"
+			+ capture.finding.object.getId();
+		lastCaptureText = capture.finding.name + " " + tileText(capture.originTile)
+			+ " -> " + tileText(destTile) + " (" + duration + "t)";
+		lastCaptureTick = now;
+		if (!capturedKeys.add(key))
+		{
+			log.info("[audit] captured (already recorded): {}", lastCaptureText);
+			return;
+		}
+		log.info("[audit] captured — review then paste into transports.tsv:\n{}", row);
+		try
+		{
+			boolean fresh = !capturesFile.exists();
+			try (java.io.FileWriter writer = new java.io.FileWriter(capturesFile, true))
+			{
+				if (fresh)
+				{
+					writer.write("# Auto-captured by the GPS dev transport audit — REVIEW before "
+						+ "pasting into transports.tsv (origin/dest observed live; requirements "
+						+ "and one-way-ness are yours to verify)\n");
+					writer.write("# Origin\tDestination\tmenuOption menuTarget objectID\tSkills\t"
+						+ "Items\tQuests\tVarbits\tVarPlayers\tDuration\tDisplay info\n");
+				}
+				writer.write(row + "\n");
+			}
+		}
+		catch (Exception e)
+		{
+			log.warn("[audit] could not append to {}", capturesFile, e);
+		}
+	}
+
+	private static String tileText(int packedTile)
+	{
+		return WorldPointUtil.unpackWorldX(packedTile) + " " + WorldPointUtil.unpackWorldY(packedTile)
+			+ " " + WorldPointUtil.unpackWorldPlane(packedTile);
+	}
+
+	/** Seeds the dedupe set so repeated traversals across sessions don't duplicate rows. */
+	private void seedCapturedFromFile()
+	{
+		if (!capturesFile.exists())
+		{
+			return;
+		}
+		try (java.util.Scanner scanner = new java.util.Scanner(capturesFile, "UTF-8"))
+		{
+			while (scanner.hasNextLine())
+			{
+				String line = scanner.nextLine();
+				if (line.startsWith("#"))
+				{
+					continue;
+				}
+				String[] fields = line.split("\t");
+				if (fields.length >= 3)
+				{
+					String[] menu = fields[2].split(" ");
+					capturedKeys.add(fields[0] + "|" + fields[1] + "|" + menu[menu.length - 1]);
+				}
+			}
+			log.info("[audit] captures file: {} previously captured edges ({})",
+				capturedKeys.size(), capturesFile);
+		}
+		catch (Exception e)
+		{
+			log.warn("[audit] could not read {}", capturesFile, e);
+		}
+	}
+
+	/** Panel status: the armed capture, if any. */
+	String pendingCaptureText()
+	{
+		return pending == null ? null : "Capture armed: " + pending.finding.name + " — traverse it now";
+	}
+
+	/** Panel status: the most recent capture, shown briefly. */
+	String lastCaptureText()
+	{
+		return (lastCaptureText != null && client.getTickCount() - lastCaptureTick < 25)
+			? "Captured: " + lastCaptureText : null;
 	}
 
 	@Subscribe

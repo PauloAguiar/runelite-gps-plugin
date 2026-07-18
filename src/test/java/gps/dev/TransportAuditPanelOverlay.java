@@ -53,6 +53,22 @@ class TransportAuditPanelOverlay extends OverlayPanel
 				.left("Right-click one → \"Copy GPS audit\"")
 				.leftColor(Color.LIGHT_GRAY)
 				.build());
+			panelComponent.getChildren().add(LineComponent.builder()
+				.left("Use one → origin/dest auto-captured")
+				.leftColor(Color.LIGHT_GRAY)
+				.build());
+		}
+		String pendingText = plugin.pendingCaptureText();
+		if (pendingText != null)
+		{
+			panelComponent.getChildren().add(LineComponent.builder()
+				.left(pendingText).leftColor(Color.YELLOW).build());
+		}
+		String captured = plugin.lastCaptureText();
+		if (captured != null)
+		{
+			panelComponent.getChildren().add(LineComponent.builder()
+				.left(captured).leftColor(Color.GREEN).build());
 		}
 
 		// Nearest first: the operator maps what's in front of them.
