@@ -38,8 +38,15 @@ class TransportAuditSceneOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
+		final int currentPlane = client.getTopLevelWorldView().getPlane();
 		for (TransportAuditPlugin.Finding finding : plugin.findings())
 		{
+			// Only the rendered plane: other-plane findings would project onto this plane's
+			// terrain at the same x,y (they stay listed in the panel, tagged with their plane).
+			if (finding.object.getPlane() != currentPlane)
+			{
+				continue;
+			}
 			LocalPoint location = finding.object.getLocalLocation();
 			if (location == null)
 			{

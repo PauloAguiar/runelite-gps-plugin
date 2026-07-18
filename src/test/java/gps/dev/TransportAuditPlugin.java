@@ -117,6 +117,11 @@ public class TransportAuditPlugin extends Plugin
 	private final Map<Long, Finding> findings = new ConcurrentHashMap<>();
 	// Packed tiles that any transport row's origin or destination touches.
 	private Set<Integer> transportTiles;
+	// Packed tiles of EVERY door registry row — including doors the map places open (excluded
+	// from ClosedDoors' pricing masks on purpose, but still registered and handled). The scene's
+	// open-door variant also anchors its swung leaf on a neighbouring tile, so coverage checks a
+	// small radius rather than the exact tile.
+	private Set<Integer> doorTiles;
 	// (id, tile) pairs already logged this session, so the template prints once, not per scene.
 	private final Set<Long> logged = new HashSet<>();
 
@@ -143,6 +148,11 @@ public class TransportAuditPlugin extends Plugin
 				}
 			}
 			log.info("[audit] transport coverage set: {} tiles", transportTiles.size());
+		}
+		if (doorTiles == null)
+		{
+			doorTiles = loadDoorTiles();
+			log.info("[audit] door registry set: {} tiles", doorTiles.size());
 		}
 		overlayManager.add(sceneOverlay);
 		overlayManager.add(panelOverlay);
@@ -335,21 +345,66 @@ public class TransportAuditPlugin extends Plugin
 		return null;
 	}
 
+	/**
+	 * Every doors.tsv row's tile, straight from the resource. NOT ClosedDoors.edgeMasks(): the
+	 * masks intentionally drop doors the map places open (unpriced, unhinted — but registered),
+	 * which must not show as audit findings.
+	 */
+	private static Set<Integer> loadDoorTiles()
+	{
+		Set<Integer> tiles = new HashSet<>();
+		try (java.io.InputStream in = ClosedDoors.class.getResourceAsStream("/doors.tsv");
+			java.util.Scanner scanner = new java.util.Scanner(in, "UTF-8"))
+		{
+			boolean header = true;
+			while (scanner.hasNextLine())
+			{
+				String[] fields = scanner.nextLine().split("\t");
+				if (header || fields.length < 5)
+				{
+					header = false;
+					continue;
+				}
+				try
+				{
+					tiles.add(WorldPointUtil.packWorldPoint(Integer.parseInt(fields[2]),
+						Integer.parseInt(fields[3]), Integer.parseInt(fields[4])));
+				}
+				catch (NumberFormatException ignored)
+				{
+					// comment or malformed row
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			log.warn("[audit] could not load doors.tsv", e);
+		}
+		return tiles;
+	}
+
 	private boolean doorCovered(int packedTile)
 	{
-		return ClosedDoors.edgeMasks().containsKey(packedTile);
+		// Radius 2: an OPEN door in the scene is a different object whose swung leaf anchors on
+		// a tile next to the registered (closed) placement.
+		return near(doorTiles, packedTile, 2);
 	}
 
 	private boolean transportCovered(int packedTile)
 	{
+		return near(transportTiles, packedTile, COVERAGE_RADIUS);
+	}
+
+	private static boolean near(Set<Integer> tiles, int packedTile, int radius)
+	{
 		int x = WorldPointUtil.unpackWorldX(packedTile);
 		int y = WorldPointUtil.unpackWorldY(packedTile);
 		int plane = WorldPointUtil.unpackWorldPlane(packedTile);
-		for (int dx = -COVERAGE_RADIUS; dx <= COVERAGE_RADIUS; dx++)
+		for (int dx = -radius; dx <= radius; dx++)
 		{
-			for (int dy = -COVERAGE_RADIUS; dy <= COVERAGE_RADIUS; dy++)
+			for (int dy = -radius; dy <= radius; dy++)
 			{
-				if (transportTiles.contains(WorldPointUtil.packWorldPoint(x + dx, y + dy, plane)))
+				if (tiles.contains(WorldPointUtil.packWorldPoint(x + dx, y + dy, plane)))
 				{
 					return true;
 				}
