@@ -450,6 +450,11 @@ public class TransportAuditPlugin extends Plugin
 				&& sceneClose(finding.object, entry.getParam0(), entry.getParam1())
 				&& event.getMenuOption() != null && event.getMenuOption().equalsIgnoreCase(finding.action))
 			{
+				if (pending != null)
+				{
+					log.info("[audit] re-armed before departure — previous capture dropped: {}",
+						pending.finding.describe());
+				}
 				pending = new PendingCapture(finding, client.getTickCount());
 				log.info("[audit] capture armed: {} — traverse it and come to rest", finding.describe());
 				return;
@@ -488,22 +493,33 @@ public class TransportAuditPlugin extends Plugin
 			return;
 		}
 		int tile = WorldPointUtil.fromLocalInstance(client, client.getLocalPlayer());
+		int animation = client.getLocalPlayer().getAnimation();
 		// distanceBetween returns MAX_VALUE across planes, so range implies same plane.
 		boolean inRange = WorldPointUtil.distanceBetween(tile, pending.finding.packedTemplateTile) <= 2;
 		if (pending.departTick < 0)
 		{
-			if (inRange)
+			// Two departure triggers: an ACTION animation while adjacent (forced moves play one,
+			// walking doesn't — catches short same-plane hops like rockslides whose landing is
+			// still within range), or leaving the object's range (teleports, ladders, long
+			// bridges). Either way the origin locks at the last calm in-range tile.
+			if (inRange && animation != -1 && pending.originTile != WorldPointUtil.UNDEFINED)
+			{
+				pending.departTick = now;
+			}
+			else if (inRange)
 			{
 				pending.originTile = tile;
 			}
 			else if (pending.originTile != WorldPointUtil.UNDEFINED && tile != pending.originTile)
 			{
-				pending.departTick = now; // left the object's side — traversal has begun
+				pending.departTick = now;
 			}
 		}
 		if (pending.departTick >= 0)
 		{
-			if (tile == pending.lastTile)
+			// Rest = stationary AND the traversal animation is over (multi-stage obstacles pause
+			// the player mid-animation; that must not count as arrival).
+			if (tile == pending.lastTile && animation == -1)
 			{
 				if (++pending.stableTicks >= 2)
 				{
