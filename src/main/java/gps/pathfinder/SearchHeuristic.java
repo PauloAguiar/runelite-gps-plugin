@@ -82,6 +82,29 @@ public final class SearchHeuristic
 	 * availability, or null when there is no field (map-wide target sets — the caller falls back
 	 * to the uninformed search).
 	 */
+	/**
+	 * Like {@link #buildWithField(PathfinderConfig, DistanceField)}, but degeneracy-checked for
+	 * the search's start: when the reverse flood ran to exhaustion (full-flood horizon) without
+	 * reaching the start AND no usable teleport lands inside the flooded pocket (unbounded
+	 * floor), h is effectively infinite everywhere the search can go — a finite-capped search
+	 * then prunes its own start at the gate and finds nothing, collapsing the alternatives chain
+	 * to a single route (user capture: locked in a sealed quest cell, one escape teleport shown
+	 * instead of the menu). The target is unreachable either way, so closest-point routing wants
+	 * an UNINFORMED search: return null.
+	 */
+	public static SearchHeuristic buildWithField(PathfinderConfig config, DistanceField field, int searchStart)
+	{
+		SearchHeuristic heuristic = buildWithField(config, field);
+		if (heuristic != null
+			&& heuristic.horizon == Integer.MAX_VALUE
+			&& heuristic.floor >= UNBOUNDED_FLOOR
+			&& field.distance(searchStart) == DistanceField.UNREACHED)
+		{
+			return null;
+		}
+		return heuristic;
+	}
+
 	public static SearchHeuristic buildWithField(PathfinderConfig config, DistanceField field)
 	{
 		if (field == null)

@@ -342,7 +342,7 @@ public class AlternativeRoutesService
 			// with them the field floor — excluding the good teleports raises it, so the heuristic
 			// gets stronger exactly when the searches get expensive. Null field (map-wide target
 			// sets) means uninformed, which those cheap searches don't need anyway.
-			SearchHeuristic heuristic = SearchHeuristic.buildWithField(planningConfig, field);
+			SearchHeuristic heuristic = SearchHeuristic.buildWithField(planningConfig, field, start);
 			Pathfinder pathfinder = new Pathfinder(planningConfig, start, ends, chainCap, heuristic);
 			pathfinder.run();
 			long searchNanos = System.nanoTime() - searchStart;
@@ -439,6 +439,17 @@ public class AlternativeRoutesService
 			if (!roundTrip)
 			{
 				emit(gen, listener, new ArrayList<>(routes), catalog, unavailable, false);
+			}
+
+			// Unreached target: every extra route is another escape toward the same closest area,
+			// and with the heuristic degenerate (sealed pocket) each iteration is an uninformed
+			// sweep — enumerating a triple-digit limit would burn minutes of background CPU for a
+			// list nobody scrolls. A handful is the menu; "+" resumes for more.
+			if (!reached && routes.size() >= UNREACHED_PAGE_ROUTES)
+			{
+				cappedByCost = true;
+				chainExhausted = true;
+				break;
 			}
 
 			TeleportMethod primary = methods.isEmpty() ? null : methods.get(0);
@@ -950,7 +961,7 @@ public class AlternativeRoutesService
 			// Seed searches exclude every other global teleport, so the floor comes from the seed
 			// itself and the search's own optimal route uses it — strongly directed by
 			// construction, and the walk-cost cap bounds any residue.
-			SearchHeuristic heuristic = SearchHeuristic.buildWithField(config, field);
+			SearchHeuristic heuristic = SearchHeuristic.buildWithField(config, field, start);
 			Pathfinder pathfinder = new Pathfinder(config, start, ends, costCap, heuristic);
 			pathfinder.run();
 			long searchEnd = System.nanoTime();
@@ -1018,7 +1029,7 @@ public class AlternativeRoutesService
 		long searchStart = System.nanoTime();
 		// With every method excluded the floor is effectively unbounded, so h is the raw field —
 		// the walk search (the biggest disc of the generation) collapses to a corridor.
-		SearchHeuristic heuristic = SearchHeuristic.buildWithField(config, field);
+		SearchHeuristic heuristic = SearchHeuristic.buildWithField(config, field, start);
 		Pathfinder pathfinder = new Pathfinder(config, start, ends, Integer.MAX_VALUE, heuristic);
 		pathfinder.setDynamicCostCap(walkCeiling::get);
 		pathfinder.run();
@@ -1146,6 +1157,12 @@ public class AlternativeRoutesService
 	// far cheaper than everything else otherwise made a one-entry page with no alternatives. The
 	// chain search's own sanity cap (2x the band) still bounds how far these fill routes may cost.
 	private static final int MIN_PAGE_ROUTES = 4;
+	/**
+	 * Page size for UNREACHED targets (sealed cells, through-the-bars NPC tiles): enough escape
+	 * alternatives to choose from without enumerating the whole teleport catalog at uninformed-
+	 * sweep cost per route. "+" resumes the chain for more.
+	 */
+	private static final int UNREACHED_PAGE_ROUTES = 8;
 	// Page filling past the band accepts the next route while it is within this gap of the
 	// acceptance region (absolute floor; grows to ref/8 for pricier regions) — wide enough to keep a
 	// dense cluster together, small enough that a genuine cost cliff still ends the page.

@@ -161,6 +161,50 @@ public class HybridPageFillTest
 	}
 
 	/**
+	 * Locked in a sealed quest cell (user capture: start 3054,9841 is a ~76-tile pocket with no
+	 * transports out) targeting a through-the-bars tile in the Port Sarim jail (3014,3194 — also
+	 * sealed). The goal-rooted field floods only the target's pocket, so every finite-capped
+	 * chain/seed search used to gate-prune its own start (h effectively infinite) and the page
+	 * collapsed to ONE escape route. The degenerate-heuristic fallback must keep the chain alive:
+	 * several closest-point routes with distinct escape methods, none of them "reached".
+	 */
+	@Test
+	public void sealedTargetStillEnumeratesEscapeAlternatives() throws Exception
+	{
+		CountDownLatch latch = new CountDownLatch(1);
+		AtomicReference<List<RouteOption>> out = new AtomicReference<>();
+		service.generate(WorldPointUtil.packWorldPoint(3054, 9841, 0),
+			Set.of(WorldPointUtil.packWorldPoint(3014, 3194, 0),
+				WorldPointUtil.packWorldPoint(3014, 3195, 0),
+				WorldPointUtil.packWorldPoint(3015, 3195, 0)),
+			Set.of(), AlternativeRoutesMode.ALL_EVERYTHING, 10, 3, false,
+			(routes, catalog, unavailable, done) ->
+			{
+				if (done)
+				{
+					out.set(routes);
+					latch.countDown();
+				}
+			});
+		assertTrue("generation must finish", latch.await(120, TimeUnit.SECONDS));
+		List<RouteOption> routes = out.get();
+		assertNotNull(routes);
+		assertTrue("a sealed target must still get a menu of escape routes (got "
+			+ routes.size() + ")", routes.size() >= 2);
+		java.util.Set<String> firstMethods = new java.util.HashSet<>();
+		for (RouteOption route : routes)
+		{
+			assertTrue("no route can actually reach a sealed target", !route.isReached());
+			if (!route.getMethods().isEmpty())
+			{
+				firstMethods.add(route.getMethods().get(0).label());
+			}
+		}
+		assertTrue("the escape routes must use distinct methods (got " + firstMethods + ")",
+			firstMethods.size() >= 2);
+	}
+
+	/**
 	 * Lumbridge -> Barrows in everything mode: four routes sit under the bare 105 band (32/32/86/86)
 	 * and a straggler cluster sits just past its edge (118, 122) before a genuine cliff (the next
 	 * route costs 176). The bare band cut mid-cluster and showed 4; the hybrid must show the whole
