@@ -41,6 +41,7 @@ class TransportAuditPanel extends PluginPanel
 	private final javax.swing.JTextField builderQuests = new javax.swing.JTextField();
 	private final javax.swing.JTextField builderDuration = new javax.swing.JTextField("1");
 	private final javax.swing.JTextField builderDisplay = new javax.swing.JTextField();
+	private final javax.swing.JTextField builderNote = new javax.swing.JTextField();
 	private final javax.swing.JCheckBox builderBothWays = new javax.swing.JCheckBox("also save reverse row", true);
 	private final JLabel builderStatus = new JLabel(" ");
 
@@ -116,6 +117,8 @@ class TransportAuditPanel extends PluginPanel
 		section.add(fieldRow("Quests", builderQuests, "e.g. \"Underground Pass\""));
 		section.add(fieldRow("Ticks", builderDuration, "traversal duration in game ticks"));
 		section.add(fieldRow("Info", builderDisplay, "Display info (route/card label)"));
+		section.add(fieldRow("Note", builderNote,
+			"Advisory shown on the route step (\"fire arrow needed\", \"can fail\") — does NOT gate the route"));
 		builderBothWays.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		builderBothWays.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 		builderBothWays.setFont(FontManager.getRunescapeSmallFont());
@@ -132,7 +135,8 @@ class TransportAuditPanel extends PluginPanel
 		save.addActionListener(e -> builderStatus.setText(plugin.saveBuilderRow(
 			builderSkills.getText().trim(), builderItems.getText().trim(),
 			builderQuests.getText().trim(), builderDuration.getText().trim(),
-			builderDisplay.getText().trim(), builderBothWays.isSelected())));
+			builderDisplay.getText().trim(), builderNote.getText().trim(),
+			builderBothWays.isSelected())));
 		JButton clear = new JButton("Clear");
 		clear.setFont(FontManager.getRunescapeSmallFont());
 		clear.addActionListener(e -> {

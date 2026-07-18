@@ -153,6 +153,12 @@ final class RouteDirections
 				walk = 0;
 				String text = objectText(object);
 				boolean isDoor = text.startsWith("Open ");
+				// Advisory note from the transport data ("fire arrow needed", "can fail") — the
+				// route is offered regardless; the player just gets told what to expect.
+				if (object.getNote() != null)
+				{
+					text += " — " + object.getNote();
+				}
 				// Doors carry the door flag (closed-state gated); every other object transport
 				// (climbs, agility shortcuts, tunnels) is an obstacle the player must click to
 				// cross, so the path beyond it is blocked until used.

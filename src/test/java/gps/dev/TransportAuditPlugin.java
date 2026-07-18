@@ -924,7 +924,7 @@ public class TransportAuditPlugin extends Plugin
 	 * also why auto-capture records each direction separately as it is actually traversed).
 	 */
 	String saveBuilderRow(String skills, String items, String quests, String duration,
-		String displayInfo, boolean bothWays)
+		String displayInfo, String note, boolean bothWays)
 	{
 		int origin = builderOrigin;
 		int dest = builderDest;

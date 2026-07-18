@@ -153,6 +153,14 @@ public class TransportRecord
 	}
 
 	/**
+	 * Gets the advisory note field value.
+	 */
+	public String getNote()
+	{
+		return get(Fields.NOTE);
+	}
+
+	/**
 	 * Standard field names used across TSV files
 	 */
 	public static final class Fields
@@ -170,6 +178,9 @@ public class TransportRecord
 		public static final String VARBITS = "Varbits";
 		public static final String VAR_PLAYERS = "VarPlayers";
 		public static final String REGION_OVERRIDE = "Region override";
+		// Advisory only — shown to the player on the route step, never gates the transport.
+		// For soft requirements ("bring a shovel", "fire arrow needed") and fail chances.
+		public static final String NOTE = "Note";
 
 		private Fields()
 		{

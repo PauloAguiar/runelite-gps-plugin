@@ -112,6 +112,12 @@ public class Transport
 	@Getter
 	private String objectInfo = null;
 	/**
+	 * Advisory note shown to the player on the route step ("fire arrow needed", "can fail").
+	 * Purely informational — never gates the transport out of routing.
+	 */
+	@Getter
+	private String note = null;
+	/**
 	 * Per-transport seasonal-league region override. When set, the league-mode
 	 * region gate ({@code PathfinderConfig#isTransportRegionAllowed}) uses
 	 * this region for the destination chunk instead of the result of
@@ -143,6 +149,7 @@ public class Transport
 			.isConsumable(origin.isConsumable || destination.isConsumable)
 			.maxWildernessLevel(Math.max(origin.maxWildernessLevel, destination.maxWildernessLevel))
 			.objectInfo(origin.objectInfo)
+			.note(destination.note != null ? destination.note : origin.note)
 			.varRequirements(origin.varRequirements)
 			.varRequirements(destination.varRequirements)
 			.regionOverride(destination.regionOverride != null ? destination.regionOverride : origin.regionOverride);
@@ -160,6 +167,7 @@ public class Transport
 		this.isConsumable = builtTransport.isConsumable;
 		this.maxWildernessLevel = builtTransport.maxWildernessLevel;
 		this.objectInfo = builtTransport.objectInfo;
+		this.note = builtTransport.note;
 		this.varRequirements = builtTransport.varRequirements;
 	}
 
@@ -218,6 +226,10 @@ public class Transport
 		{
 			builder.objectInfo(record.getObjectInfo());
 		}
+		if (record.has(TransportRecord.Fields.NOTE))
+		{
+			builder.note(record.getNote());
+		}
 		if (record.has(TransportRecord.Fields.VARBITS))
 		{
 			builder.varbits(record.getVarbits());
@@ -243,6 +255,7 @@ public class Transport
 		this.isConsumable = builtTransport.isConsumable;
 		this.maxWildernessLevel = builtTransport.maxWildernessLevel;
 		this.objectInfo = builtTransport.objectInfo;
+		this.note = builtTransport.note;
 		this.varRequirements = builtTransport.varRequirements;
 		this.regionOverride = builtTransport.regionOverride;
 	}
@@ -431,6 +444,7 @@ public class Transport
 		private boolean isConsumable = false;
 		private int maxWildernessLevel = -1;
 		private String objectInfo = null;
+		private String note = null;
 		private LeagueRegion regionOverride = null;
 
 		public TransportBuilder origin(int origin)
@@ -537,6 +551,12 @@ public class Transport
 			return this;
 		}
 
+		public TransportBuilder note(String note)
+		{
+			this.note = (note == null || note.isEmpty()) ? null : note;
+			return this;
+		}
+
 		public TransportBuilder isConsumable(boolean isConsumable)
 		{
 			this.isConsumable |= isConsumable;
@@ -634,6 +654,7 @@ public class Transport
 			transport.isConsumable = this.isConsumable;
 			transport.maxWildernessLevel = this.maxWildernessLevel;
 			transport.objectInfo = this.objectInfo;
+			transport.note = this.note;
 			transport.varRequirements = compact(this.varRequirements);
 			transport.regionOverride = this.regionOverride;
 
