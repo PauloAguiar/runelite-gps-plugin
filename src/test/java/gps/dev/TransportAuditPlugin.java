@@ -151,6 +151,9 @@ public class TransportAuditPlugin extends Plugin
 	// open-door variant also anchors its swung leaf on a neighbouring tile, so coverage checks a
 	// small radius rather than the exact tile.
 	private Set<Integer> doorTiles;
+	// The cross-session collection file: every unmapped object ever seen, one row each, for
+	// later comparison against the curated data (scripts/audit_diff.py in the tooling repo).
+	private java.io.File auditFile;
 	// (id, tile) pairs already logged this session, so the template prints once, not per scene.
 	private final Set<Long> logged = new HashSet<>();
 
@@ -182,6 +185,13 @@ public class TransportAuditPlugin extends Plugin
 		{
 			doorTiles = loadDoorTiles();
 			log.info("[audit] door registry set: {} tiles", doorTiles.size());
+		}
+		if (auditFile == null)
+		{
+			auditFile = new java.io.File(
+				new java.io.File(net.runelite.client.RuneLite.RUNELITE_DIR, "gps-debug"),
+				"transport-audit.tsv");
+			seedLoggedFromFile();
 		}
 		overlayManager.add(sceneOverlay);
 		overlayManager.add(panelOverlay);
@@ -401,7 +411,12 @@ public class TransportAuditPlugin extends Plugin
 		}
 		long key = ((long) templateTile << 20) | object.getId();
 		Finding finding = new Finding(object, templateTile, composition.getName(), action, actions, door);
-		if (findings.put(key, finding) == null && logged.add(key) && !door)
+		boolean firstEver = findings.put(key, finding) == null && logged.add(key);
+		if (firstEver)
+		{
+			record(finding);
+		}
+		if (firstEver && !door)
 		{
 			int x = WorldPointUtil.unpackWorldX(templateTile);
 			int y = WorldPointUtil.unpackWorldY(templateTile);
@@ -443,6 +458,81 @@ public class TransportAuditPlugin extends Plugin
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Reads the collection file so objects recorded in earlier sessions aren't appended again —
+	 * the file grows only by genuinely new (id, tile) pairs.
+	 */
+	private void seedLoggedFromFile()
+	{
+		if (!auditFile.exists())
+		{
+			return;
+		}
+		try (java.util.Scanner scanner = new java.util.Scanner(auditFile, "UTF-8"))
+		{
+			while (scanner.hasNextLine())
+			{
+				// firstSeen kind id name action allActions x y plane
+				String[] fields = scanner.nextLine().split("\t");
+				if (fields.length < 9)
+				{
+					continue;
+				}
+				try
+				{
+					int packed = WorldPointUtil.packWorldPoint(Integer.parseInt(fields[6]),
+						Integer.parseInt(fields[7]), Integer.parseInt(fields[8]));
+					logged.add(((long) packed << 20) | Integer.parseInt(fields[2]));
+				}
+				catch (NumberFormatException ignored)
+				{
+					// header
+				}
+			}
+			log.info("[audit] collection file: {} previously recorded objects ({})",
+				logged.size(), auditFile);
+		}
+		catch (Exception e)
+		{
+			log.warn("[audit] could not read {}", auditFile, e);
+		}
+	}
+
+	/** Appends one collection-file row per newly discovered unmapped object. */
+	private void record(Finding finding)
+	{
+		try
+		{
+			java.io.File dir = auditFile.getParentFile();
+			boolean fresh = !auditFile.exists();
+			if (fresh && !dir.exists() && !dir.mkdirs())
+			{
+				log.warn("[audit] could not create {}", dir);
+				return;
+			}
+			try (java.io.FileWriter writer = new java.io.FileWriter(auditFile, true))
+			{
+				if (fresh)
+				{
+					writer.write("firstSeen\tkind\tid\tname\taction\tallActions\tx\ty\tplane\n");
+				}
+				writer.write(java.time.LocalDate.now() + "\t"
+					+ (finding.door ? "door" : "transport") + "\t"
+					+ finding.object.getId() + "\t"
+					+ finding.name + "\t"
+					+ finding.action + "\t"
+					+ String.join("|", finding.actions) + "\t"
+					+ WorldPointUtil.unpackWorldX(finding.packedTemplateTile) + "\t"
+					+ WorldPointUtil.unpackWorldY(finding.packedTemplateTile) + "\t"
+					+ WorldPointUtil.unpackWorldPlane(finding.packedTemplateTile) + "\n");
+			}
+		}
+		catch (Exception e)
+		{
+			log.warn("[audit] could not append to {}", auditFile, e);
+		}
 	}
 
 	/**
