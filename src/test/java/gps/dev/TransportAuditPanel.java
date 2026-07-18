@@ -264,18 +264,34 @@ class TransportAuditPanel extends PluginPanel
 		text.setFont(FontManager.getRunescapeSmallFont());
 		panel.add(text, BorderLayout.CENTER);
 
-		JButton copy = new JButton("Copy");
-		copy.setMargin(new Insets(2, 6, 2, 6));
-		copy.setFont(FontManager.getRunescapeSmallFont());
-		copy.setToolTipText("Copy the dossier (tile, actions, transports.tsv template) to the clipboard");
-		copy.addActionListener(e -> copyText(row.dossier));
-		JPanel east = new JPanel(new BorderLayout());
+		JPanel east = new JPanel();
+		east.setLayout(new BoxLayout(east, BoxLayout.Y_AXIS));
 		east.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		east.add(copy, BorderLayout.NORTH);
+		east.add(rowButton("Copy",
+			"Copy the dossier (tile, actions, transports.tsv template) to the clipboard",
+			() -> copyText(row.dossier)));
+		east.add(rowButton("Ignore", "Not a transport — never flag this object again",
+			() -> plugin.ignoreEntry(row.id, row.packedTile, row.name)));
+		if (row.state == TransportAuditPlugin.FindingState.CAPTURED_ONE_WAY)
+		{
+			east.add(rowButton("1-way", "No reverse exists in-game — mark the captured edge(s) complete",
+				() -> builderStatus.setText(plugin.markNoReverse(row.id, row.packedTile))));
+		}
 		panel.add(east, BorderLayout.EAST);
 
 		panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, panel.getPreferredSize().height));
 		return panel;
+	}
+
+	private JButton rowButton(String label, String tooltip, Runnable action)
+	{
+		JButton button = new JButton(label);
+		button.setMargin(new Insets(2, 6, 2, 6));
+		button.setFont(FontManager.getRunescapeSmallFont());
+		button.setToolTipText(tooltip);
+		button.setAlignmentX(Component.RIGHT_ALIGNMENT);
+		button.addActionListener(e -> action.run());
+		return button;
 	}
 
 	private static void copyText(String text)

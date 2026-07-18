@@ -277,8 +277,12 @@ public class TransportAuditPlugin extends Plugin
 	private final java.util.List<RecordedEntry> recorded = new java.util.ArrayList<>();
 	// Operator-declared false positives (shift right-click -> "Not a transport"): (tile,id)
 	// keys never flagged again, persisted to transport-ignore.tsv.
-	private final Set<Long> ignoredKeys = new HashSet<>();
+	private final Set<Long> ignoredKeys = ConcurrentHashMap.newKeySet();
 	private java.io.File ignoreFile;
+	// Operator-declared genuine one-ways ("no reverse exists"): edge keys treated as paired so
+	// the row completes instead of asking for a return trip forever. transport-oneway.tsv.
+	private final Set<String> noReverseKeys = ConcurrentHashMap.newKeySet();
+	private java.io.File oneWayFile;
 	// Manual transport builder (shift right-click sets the pieces; the panel edits and saves).
 	private volatile int builderOrigin = WorldPointUtil.UNDEFINED;
 	private volatile int builderDest = WorldPointUtil.UNDEFINED;
@@ -351,6 +355,27 @@ public class TransportAuditPlugin extends Plugin
 			ignoreFile = new java.io.File(auditFile.getParentFile(), "transport-ignore.tsv");
 			seedIgnoredFromFile();
 		}
+		if (oneWayFile == null)
+		{
+			oneWayFile = new java.io.File(auditFile.getParentFile(), "transport-oneway.tsv");
+			try (java.util.Scanner scanner = oneWayFile.exists()
+				? new java.util.Scanner(oneWayFile, "UTF-8") : null)
+			{
+				while (scanner != null && scanner.hasNextLine())
+				{
+					String line = scanner.nextLine().trim();
+					if (!line.isEmpty() && !line.startsWith("#"))
+					{
+						noReverseKeys.add(line);
+					}
+				}
+			}
+			catch (Exception e)
+			{
+				log.warn("[audit] could not read {}", oneWayFile, e);
+			}
+			recomputeEdgePairs();
+		}
 		overlayManager.add(sceneOverlay);
 		if (panel == null)
 		{
@@ -404,12 +429,22 @@ public class TransportAuditPlugin extends Plugin
 	 * origin is within 5 tiles of B and destination within 5 tiles of A (plane-aware distances).
 	 * Coordinate-based on purpose: return trips often go through a DIFFERENT object.
 	 */
+	private static String edgeKey(int[] edge)
+	{
+		return tileText(edge[0]) + "|" + tileText(edge[1]) + "|" + edge[2];
+	}
+
 	private void recomputeEdgePairs()
 	{
 		boolean[] paired = new boolean[capturedEdges.size()];
 		for (int i = 0; i < capturedEdges.size(); i++)
 		{
 			int[] edge = capturedEdges.get(i);
+			if (noReverseKeys.contains(edgeKey(edge)))
+			{
+				paired[i] = true; // operator declared: no reverse exists, edge is complete as-is
+				continue;
+			}
 			for (int[] other : capturedEdges)
 			{
 				if (WorldPointUtil.distanceBetween(other[0], edge[1]) <= 5
@@ -677,10 +712,45 @@ public class TransportAuditPlugin extends Plugin
 		return (action == null ? "" : action + " ") + composition.getName() + " " + objectId;
 	}
 
-	/** Persists a false positive and stops flagging it everywhere, this session and future ones. */
-	private void ignoreFinding(Finding finding)
+	/** Panel "1-way": declares every unpaired captured edge at this object a genuine one-way. */
+	String markNoReverse(int objectId, int packedTile)
 	{
-		long key = ((long) finding.packedTemplateTile << 20) | finding.object.getId();
+		int marked = 0;
+		StringBuilder lines = new StringBuilder();
+		for (int i = 0; i < capturedEdges.size(); i++)
+		{
+			int[] edge = capturedEdges.get(i);
+			if (edge[2] == objectId
+				&& (WorldPointUtil.distanceBetween(edge[0], packedTile) <= 4
+				|| WorldPointUtil.distanceBetween(edge[1], packedTile) <= 4)
+				&& (i >= edgePaired.length || !edgePaired[i])
+				&& noReverseKeys.add(edgeKey(edge)))
+			{
+				lines.append(edgeKey(edge)).append('\n');
+				marked++;
+			}
+		}
+		if (marked == 0)
+		{
+			return "No unpaired edges here";
+		}
+		try (java.io.FileWriter writer = new java.io.FileWriter(oneWayFile, true))
+		{
+			writer.write(lines.toString());
+		}
+		catch (Exception e)
+		{
+			log.warn("[audit] could not append to {}", oneWayFile, e);
+		}
+		recomputeEdgePairs();
+		log.info("[audit] marked {} edge(s) as no-reverse at object {}", marked, objectId);
+		return "Marked " + marked + " edge(s) one-way (no reverse)";
+	}
+
+	/** Panel "Ignore" (and the in-world shift entry): persists a false positive by plain fields. */
+	void ignoreEntry(int objectId, int packedTile, String name)
+	{
+		long key = ((long) packedTile << 20) | objectId;
 		if (!ignoredKeys.add(key))
 		{
 			return;
@@ -695,18 +765,24 @@ public class TransportAuditPlugin extends Plugin
 				{
 					writer.write("id\tx\ty\tplane\tname\tdate\n");
 				}
-				writer.write(finding.object.getId() + "\t"
-					+ WorldPointUtil.unpackWorldX(finding.packedTemplateTile) + "\t"
-					+ WorldPointUtil.unpackWorldY(finding.packedTemplateTile) + "\t"
-					+ WorldPointUtil.unpackWorldPlane(finding.packedTemplateTile) + "\t"
-					+ finding.name + "\t" + java.time.LocalDate.now() + "\n");
+				writer.write(objectId + "\t"
+					+ WorldPointUtil.unpackWorldX(packedTile) + "\t"
+					+ WorldPointUtil.unpackWorldY(packedTile) + "\t"
+					+ WorldPointUtil.unpackWorldPlane(packedTile) + "\t"
+					+ name + "\t" + java.time.LocalDate.now() + "\n");
 			}
 		}
 		catch (Exception e)
 		{
 			log.warn("[audit] could not append to {}", ignoreFile, e);
 		}
-		log.info("[audit] marked not-a-transport: {}", finding.describe());
+		log.info("[audit] marked not-a-transport: {} id={}", name, objectId);
+	}
+
+	/** Persists a false positive and stops flagging it everywhere, this session and future ones. */
+	private void ignoreFinding(Finding finding)
+	{
+		ignoreEntry(finding.object.getId(), finding.packedTemplateTile, finding.name);
 	}
 
 	private void seedIgnoredFromFile()
