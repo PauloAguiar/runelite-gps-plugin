@@ -169,6 +169,8 @@ public class TransportAuditPlugin extends Plugin
 		MISSING,
 		ARMED,
 		DOOR,
+		/** Captured, but no reverse edge exists anywhere — walk the return trip to complete it. */
+		CAPTURED_ONE_WAY,
 		CAPTURED_SESSION,
 		CAPTURED_PRIOR,
 		/** The curated data now covers it (row added since it was recorded) — prunable. */
@@ -264,6 +266,10 @@ public class TransportAuditPlugin extends Plugin
 	// Parsed captured edges {origin, dest, id} for per-finding state: a finding counts as
 	// captured when an edge with its object id starts or ends near its tile.
 	private final java.util.List<int[]> capturedEdges = new java.util.ArrayList<>();
+	// edgePaired[i]: capturedEdges[i] has a reverse edge SOMEWHERE (matched by coordinates, not
+	// object id — a cave entrance's reverse is the separate cave-EXIT object's edge). Recomputed
+	// whenever capturedEdges changes.
+	private boolean[] edgePaired = new boolean[0];
 	// Finding keys captured THIS session (vs. edges seeded from the file = earlier sessions).
 	private final Set<Long> capturedThisSession = new HashSet<>();
 	// The parsed collection file: recorded unmapped objects from all sessions, shown in the
@@ -393,6 +399,30 @@ public class TransportAuditPlugin extends Plugin
 		return image;
 	}
 
+	/**
+	 * Recomputes reverse-pairing for every captured edge: edge A->B is paired when any edge's
+	 * origin is within 5 tiles of B and destination within 5 tiles of A (plane-aware distances).
+	 * Coordinate-based on purpose: return trips often go through a DIFFERENT object.
+	 */
+	private void recomputeEdgePairs()
+	{
+		boolean[] paired = new boolean[capturedEdges.size()];
+		for (int i = 0; i < capturedEdges.size(); i++)
+		{
+			int[] edge = capturedEdges.get(i);
+			for (int[] other : capturedEdges)
+			{
+				if (WorldPointUtil.distanceBetween(other[0], edge[1]) <= 5
+					&& WorldPointUtil.distanceBetween(other[1], edge[0]) <= 5)
+				{
+					paired[i] = true;
+					break;
+				}
+			}
+		}
+		edgePaired = paired;
+	}
+
 	/** The curation state coloring a finding everywhere (panel rows and scene outlines). */
 	FindingState stateOf(Finding finding)
 	{
@@ -406,20 +436,41 @@ public class TransportAuditPlugin extends Plugin
 			return FindingState.DOOR;
 		}
 		long key = ((long) finding.packedTemplateTile << 20) | finding.object.getId();
-		if (capturedThisSession.contains(key))
+		return capturedState(finding.object.getId(), finding.packedTemplateTile,
+			capturedThisSession.contains(key));
+	}
+
+	/**
+	 * Captured/missing state for an object: fully paired edges keep the session/prior color;
+	 * any unpaired edge demotes to CAPTURED_ONE_WAY ("walk the reverse"). No edges = MISSING.
+	 */
+	private FindingState capturedState(int objectId, int packedTile, boolean thisSession)
+	{
+		boolean any = false;
+		boolean allPaired = true;
+		for (int i = 0; i < capturedEdges.size(); i++)
 		{
-			return FindingState.CAPTURED_SESSION;
-		}
-		for (int[] edge : capturedEdges)
-		{
-			if (edge[2] == finding.object.getId()
-				&& (WorldPointUtil.distanceBetween(edge[0], finding.packedTemplateTile) <= 4
-				|| WorldPointUtil.distanceBetween(edge[1], finding.packedTemplateTile) <= 4))
+			int[] edge = capturedEdges.get(i);
+			if (edge[2] == objectId
+				&& (WorldPointUtil.distanceBetween(edge[0], packedTile) <= 4
+				|| WorldPointUtil.distanceBetween(edge[1], packedTile) <= 4))
 			{
-				return FindingState.CAPTURED_PRIOR;
+				any = true;
+				if (i >= edgePaired.length || !edgePaired[i])
+				{
+					allPaired = false;
+				}
 			}
 		}
-		return FindingState.MISSING;
+		if (!any)
+		{
+			return thisSession ? FindingState.CAPTURED_SESSION : FindingState.MISSING;
+		}
+		if (!allPaired)
+		{
+			return FindingState.CAPTURED_ONE_WAY;
+		}
+		return thisSession ? FindingState.CAPTURED_SESSION : FindingState.CAPTURED_PRIOR;
 	}
 
 	Iterable<Finding> findings()
@@ -953,6 +1004,7 @@ public class TransportAuditPlugin extends Plugin
 				capturedEdges.add(new int[]{dest, origin, id});
 			}
 		}
+		recomputeEdgePairs();
 		builderOrigin = WorldPointUtil.UNDEFINED;
 		builderDest = WorldPointUtil.UNDEFINED;
 		builderMenu = "";
@@ -1174,12 +1226,14 @@ public class TransportAuditPlugin extends Plugin
 				return 1;
 			case DOOR:
 				return 2;
+			case CAPTURED_ONE_WAY:
+				return 3; // actionable: the return trip is still missing
 			case CAPTURED_SESSION:
-				return 3;
-			case CAPTURED_PRIOR:
 				return 4;
+			case CAPTURED_PRIOR:
+				return 5;
 			default:
-				return 5; // RESOLVED — prunable tail
+				return 6; // RESOLVED — prunable tail
 		}
 	}
 
@@ -1195,20 +1249,7 @@ public class TransportAuditPlugin extends Plugin
 			return FindingState.DOOR;
 		}
 		long key = ((long) entry.packedTile << 20) | entry.id;
-		if (capturedThisSession.contains(key))
-		{
-			return FindingState.CAPTURED_SESSION;
-		}
-		for (int[] edge : capturedEdges)
-		{
-			if (edge[2] == entry.id
-				&& (WorldPointUtil.distanceBetween(edge[0], entry.packedTile) <= 4
-				|| WorldPointUtil.distanceBetween(edge[1], entry.packedTile) <= 4))
-			{
-				return FindingState.CAPTURED_PRIOR;
-			}
-		}
-		return FindingState.MISSING;
+		return capturedState(entry.id, entry.packedTile, capturedThisSession.contains(key));
 	}
 
 	@Subscribe
