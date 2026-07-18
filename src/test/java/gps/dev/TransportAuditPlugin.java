@@ -1094,6 +1094,19 @@ public class TransportAuditPlugin extends Plugin
 		builderMenu = "";
 	}
 
+	/**
+	 * Panel row selection: loads the entry into the builder for manual authoring — the menu
+	 * column from the entry, and the object's tile as a STARTING origin (correct it to the tile
+	 * you stand on via shift right-click before saving). Destination and typed fields are left
+	 * alone.
+	 */
+	String loadIntoBuilder(Row row)
+	{
+		builderMenu = row.action + " " + row.name + " " + row.id;
+		builderOrigin = row.packedTile;
+		return "Loaded into builder — correct origin to your stand tile, set dest, then Save";
+	}
+
 	private static int menuObjectId(String menu)
 	{
 		String[] parts = menu.trim().split(" ");

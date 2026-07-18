@@ -27,6 +27,8 @@ import net.runelite.client.ui.PluginPanel;
 class TransportAuditPanel extends PluginPanel
 {
 	private final TransportAuditPlugin plugin;
+	// Selected row key (packedTile<<20|id), or 0: highlighted and loaded into the builder.
+	private long selectedKey;
 	private final JLabel summary = new JLabel();
 	private final JLabel capture = new JLabel();
 	private final JPanel list = new JPanel();
@@ -197,6 +199,7 @@ class TransportAuditPanel extends PluginPanel
 				.append(row.state).append(':').append(row.live).append(':')
 				.append(row.distance / 16).append(';');
 		}
+		signature.append("sel=").append(selectedKey);
 		if (signature.toString().equals(lastSignature))
 		{
 			return;
@@ -245,10 +248,35 @@ class TransportAuditPanel extends PluginPanel
 
 	private JPanel buildRow(TransportAuditPlugin.Row row)
 	{
+		final long key = ((long) row.packedTile << 20) | row.id;
+		final boolean selected = key == selectedKey;
 		JPanel panel = new JPanel(new BorderLayout(6, 0));
-		panel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		panel.setBorder(new EmptyBorder(4, 6, 4, 6));
+		panel.setBackground(selected ? SELECTED_BG : ColorScheme.DARKER_GRAY_COLOR);
+		panel.setBorder(selected
+			? javax.swing.BorderFactory.createCompoundBorder(
+				javax.swing.BorderFactory.createMatteBorder(0, 3, 0, 0, stateColor(row.state)),
+				new EmptyBorder(4, 3, 4, 6))
+			: new EmptyBorder(4, 6, 4, 6));
 		panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		panel.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
+		java.awt.event.MouseAdapter selector = new java.awt.event.MouseAdapter()
+		{
+			@Override
+			public void mousePressed(java.awt.event.MouseEvent e)
+			{
+				if (selectedKey == key)
+				{
+					selectedKey = 0; // click again to deselect
+				}
+				else
+				{
+					selectedKey = key;
+					builderStatus.setText(plugin.loadIntoBuilder(row));
+				}
+				lastSignature = ""; // force restyle on the next snapshot
+			}
+		};
+		panel.addMouseListener(selector);
 
 		Color color = stateColor(row.state);
 		String distance = row.distance == Integer.MAX_VALUE
@@ -262,11 +290,12 @@ class TransportAuditPanel extends PluginPanel
 			+ "<br><font color='" + hex(color) + "'>" + stateText(row.state) + "</font></html>");
 		text.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 		text.setFont(FontManager.getRunescapeSmallFont());
+		text.addMouseListener(selector);
 		panel.add(text, BorderLayout.CENTER);
 
 		JPanel east = new JPanel();
 		east.setLayout(new BoxLayout(east, BoxLayout.Y_AXIS));
-		east.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		east.setBackground(selected ? SELECTED_BG : ColorScheme.DARKER_GRAY_COLOR);
 		east.add(rowButton("Copy",
 			"Copy the dossier (tile, actions, transports.tsv template) to the clipboard",
 			() -> copyText(row.dossier)));
@@ -282,6 +311,9 @@ class TransportAuditPanel extends PluginPanel
 		panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, panel.getPreferredSize().height));
 		return panel;
 	}
+
+	/** GPS's route-card selection blue. */
+	private static final Color SELECTED_BG = new Color(0x2E, 0x3E, 0x5E);
 
 	private JButton rowButton(String label, String tooltip, Runnable action)
 	{
