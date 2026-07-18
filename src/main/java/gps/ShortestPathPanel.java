@@ -2385,12 +2385,11 @@ public class ShortestPathPanel extends PluginPanel
 			"Save a favourite position with a label (your current tile, or any coordinates)",
 			this::toggleFavoriteEditor);
 		header.add(verticallyCentered(control(saveFavorite)), BorderLayout.EAST);
-		wrap.add(fullWidth(header));
 
-		// Inline favourite editor (replaces the old modal dialog): two labelled fields — Name and
-		// At (coordinates, prefilled with the current tile; "3221 3218", "3221,3218,1" and
-		// "3221, 3218 0" all parse; empty = current tile). Tab moves between them, Enter saves
-		// from either, Esc closes.
+		// Inline favourite editor, its own titled section ABOVE the "Go to a place" header: two
+		// labelled fields — Name and At (coordinates, prefilled with the current tile;
+		// "3221 3218", "3221,3218,1" and "3221, 3218 0" all parse; empty = current tile). Tab
+		// moves between them, Enter saves from either, Esc closes.
 		java.awt.event.KeyAdapter escapeCloses = new java.awt.event.KeyAdapter()
 		{
 			@Override
@@ -2427,15 +2426,21 @@ public class ShortestPathPanel extends PluginPanel
 		favoriteError.setVisible(false);
 		favoriteEditor.setLayout(new BoxLayout(favoriteEditor, BoxLayout.Y_AXIS));
 		favoriteEditor.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		favoriteEditor.setBorder(new EmptyBorder(4, 0, 2, 0));
+		favoriteEditor.setBorder(new EmptyBorder(0, 0, 6, 0));
 		favoriteEditor.setAlignmentX(LEFT_ALIGNMENT);
 		favoriteError.setAlignmentX(LEFT_ALIGNMENT);
+		JLabel favoriteTitle = sectionLabel("Save a favourite");
+		favoriteTitle.setAlignmentX(LEFT_ALIGNMENT);
+		favoriteEditor.add(favoriteTitle);
 		favoriteEditor.add(favoriteFieldRow("Name", favoriteLabelInput));
 		favoriteEditor.add(javax.swing.Box.createVerticalStrut(3));
 		favoriteEditor.add(favoriteFieldRow("At", positionRow));
 		favoriteEditor.add(favoriteError);
 		favoriteEditor.setVisible(false);
+		// Above the "Go to a place" header — saving a favourite is its own little task, not part
+		// of the search flow below it.
 		wrap.add(fullWidth(favoriteEditor));
+		wrap.add(fullWidth(header));
 
 		destinationSearch.setIcon(IconTextField.Icon.SEARCH);
 		destinationSearch.setBackground(ColorScheme.DARKER_GRAY_COLOR);
