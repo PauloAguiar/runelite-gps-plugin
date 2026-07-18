@@ -688,12 +688,26 @@ public class TransportAuditPlugin extends Plugin
 		{
 			return; // our own "Copy GPS audit" click — not a movement intent
 		}
-		// A click after DEPARTURE means the traversal is over (nothing is clickable mid-flight):
-		// complete the in-flight capture with the last observed tile as the landing, instead of
-		// silently dropping it — e.g. clicking the upstairs ladder right after climbing.
+		// A click after DEPARTURE usually means the traversal is over — but only complete the
+		// in-flight capture if the player is genuinely AT REST: menu clicks can also happen
+		// mid-crossing (impatient re-click on the next rockslide), and the last observed tile is
+		// then somewhere on the obstacle's footprint — captured rows with non-walkable
+		// destinations came from exactly this. At rest = action animation over and the current
+		// tile unchanged since the last game tick.
 		if (pending != null && pending.departTick >= 0 && pending.lastTile != WorldPointUtil.UNDEFINED)
 		{
-			completeCapture(pending.lastTile, client.getTickCount());
+			int tile = client.getLocalPlayer() != null
+				? WorldPointUtil.fromLocalInstance(client, client.getLocalPlayer()) : WorldPointUtil.UNDEFINED;
+			if (client.getLocalPlayer() != null && client.getLocalPlayer().getAnimation() == -1
+				&& tile == pending.lastTile)
+			{
+				completeCapture(tile, client.getTickCount());
+			}
+			else
+			{
+				log.info("[audit] capture dropped (clicked mid-traversal): {}", pending.finding.describe());
+				pending = null;
+			}
 		}
 		net.runelite.api.MenuEntry entry = event.getMenuEntry();
 		for (Finding finding : findings.values())
