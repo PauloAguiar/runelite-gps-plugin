@@ -32,6 +32,18 @@ class TransportAuditPanel extends PluginPanel
 	private final JPanel list = new JPanel();
 	private String lastSignature = "";
 
+	// Transport builder controls (values are the operator's; only the labels track the plugin).
+	private final JLabel builderOrigin = new JLabel("origin: — (shift right-click)");
+	private final JLabel builderDest = new JLabel("dest: —");
+	private final JLabel builderObject = new JLabel("object: —");
+	private final javax.swing.JTextField builderSkills = new javax.swing.JTextField();
+	private final javax.swing.JTextField builderItems = new javax.swing.JTextField();
+	private final javax.swing.JTextField builderQuests = new javax.swing.JTextField();
+	private final javax.swing.JTextField builderDuration = new javax.swing.JTextField("1");
+	private final javax.swing.JTextField builderDisplay = new javax.swing.JTextField();
+	private final javax.swing.JCheckBox builderBothWays = new javax.swing.JCheckBox("also save reverse row", true);
+	private final JLabel builderStatus = new JLabel(" ");
+
 	TransportAuditPanel(TransportAuditPlugin plugin)
 	{
 		super(false);
@@ -55,6 +67,7 @@ class TransportAuditPanel extends PluginPanel
 		capture.setFont(FontManager.getRunescapeSmallFont());
 		capture.setAlignmentX(Component.LEFT_ALIGNMENT);
 		top.add(capture);
+		top.add(buildBuilderSection());
 		add(top, BorderLayout.NORTH);
 
 		list.setLayout(new BoxLayout(list, BoxLayout.Y_AXIS));
@@ -74,11 +87,95 @@ class TransportAuditPanel extends PluginPanel
 	/** How many backlog (not-in-scene) rows to show before truncating. */
 	private static final int MAX_BACKLOG_ROWS = 30;
 
+	/**
+	 * The manual transport builder: origin/destination/object come from shift right-clicks in
+	 * the world; requirements, duration and display info are typed here; Save appends a
+	 * review-ready transports.tsv row (plus the reverse when two-way) to transport-captures.tsv.
+	 */
+	private JPanel buildBuilderSection()
+	{
+		JPanel section = new JPanel();
+		section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
+		section.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		section.setBorder(new EmptyBorder(6, 6, 6, 6));
+		section.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		JLabel title = new JLabel("Transport builder");
+		title.setForeground(Color.WHITE);
+		title.setFont(FontManager.getRunescapeSmallFont());
+		section.add(title);
+		for (JLabel label : new JLabel[]{builderOrigin, builderDest, builderObject})
+		{
+			label.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+			label.setFont(FontManager.getRunescapeSmallFont());
+			label.setAlignmentX(Component.LEFT_ALIGNMENT);
+			section.add(label);
+		}
+		section.add(fieldRow("Skills", builderSkills, "e.g. \"72 Agility\""));
+		section.add(fieldRow("Items", builderItems, "e.g. \"Rope\" or \"Coins>=10\""));
+		section.add(fieldRow("Quests", builderQuests, "e.g. \"Underground Pass\""));
+		section.add(fieldRow("Ticks", builderDuration, "traversal duration in game ticks"));
+		section.add(fieldRow("Info", builderDisplay, "Display info (route/card label)"));
+		builderBothWays.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		builderBothWays.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		builderBothWays.setFont(FontManager.getRunescapeSmallFont());
+		builderBothWays.setAlignmentX(Component.LEFT_ALIGNMENT);
+		builderBothWays.setToolTipText("Rows are directional: a one-way transport is one row; "
+			+ "two-way transports need the reverse row too");
+		section.add(builderBothWays);
+
+		JPanel buttons = new JPanel(new java.awt.GridLayout(1, 2, 6, 0));
+		buttons.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		buttons.setAlignmentX(Component.LEFT_ALIGNMENT);
+		JButton save = new JButton("Save row");
+		save.setFont(FontManager.getRunescapeSmallFont());
+		save.addActionListener(e -> builderStatus.setText(plugin.saveBuilderRow(
+			builderSkills.getText().trim(), builderItems.getText().trim(),
+			builderQuests.getText().trim(), builderDuration.getText().trim(),
+			builderDisplay.getText().trim(), builderBothWays.isSelected())));
+		JButton clear = new JButton("Clear");
+		clear.setFont(FontManager.getRunescapeSmallFont());
+		clear.addActionListener(e -> {
+			plugin.clearBuilder();
+			builderStatus.setText(" ");
+		});
+		buttons.add(save);
+		buttons.add(clear);
+		buttons.setMaximumSize(new Dimension(Integer.MAX_VALUE, save.getPreferredSize().height + 4));
+		section.add(buttons);
+		builderStatus.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		builderStatus.setFont(FontManager.getRunescapeSmallFont());
+		builderStatus.setAlignmentX(Component.LEFT_ALIGNMENT);
+		section.add(builderStatus);
+		return section;
+	}
+
+	private JPanel fieldRow(String caption, javax.swing.JTextField field, String tooltip)
+	{
+		JPanel row = new JPanel(new BorderLayout(6, 0));
+		row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		row.setAlignmentX(Component.LEFT_ALIGNMENT);
+		JLabel label = new JLabel(caption);
+		label.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		label.setFont(FontManager.getRunescapeSmallFont());
+		label.setPreferredSize(new Dimension(40, label.getPreferredSize().height));
+		row.add(label, BorderLayout.WEST);
+		field.setFont(FontManager.getRunescapeSmallFont());
+		field.setToolTipText(tooltip);
+		row.add(field, BorderLayout.CENTER);
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, field.getPreferredSize().height + 4));
+		return row;
+	}
+
 	/** EDT. Rebuilds only when the content signature changed, so scrolling isn't reset per tick. */
-	void update(List<TransportAuditPlugin.Row> rows, String captureLine, Color captureColor)
+	void update(List<TransportAuditPlugin.Row> rows, String captureLine, Color captureColor,
+		String builderOriginText, String builderDestText, String builderMenuText)
 	{
 		capture.setText(captureLine == null ? " " : captureLine);
 		capture.setForeground(captureColor == null ? ColorScheme.LIGHT_GRAY_COLOR : captureColor);
+		builderOrigin.setText("origin: " + (builderOriginText == null ? "— (shift right-click)" : builderOriginText));
+		builderDest.setText("dest: " + (builderDestText == null ? "—" : builderDestText));
+		builderObject.setText("object: " + (builderMenuText == null ? "—" : builderMenuText));
 
 		long missing = rows.stream().filter(r -> r.state == TransportAuditPlugin.FindingState.MISSING
 			|| r.state == TransportAuditPlugin.FindingState.ARMED).count();

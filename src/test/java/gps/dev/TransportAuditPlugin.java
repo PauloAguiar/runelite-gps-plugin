@@ -250,6 +250,14 @@ public class TransportAuditPlugin extends Plugin
 	// The parsed collection file: recorded unmapped objects from all sessions, shown in the
 	// panel even when their area isn't loaded.
 	private final java.util.List<RecordedEntry> recorded = new java.util.ArrayList<>();
+	// Operator-declared false positives (shift right-click -> "Not a transport"): (tile,id)
+	// keys never flagged again, persisted to transport-ignore.tsv.
+	private final Set<Long> ignoredKeys = new HashSet<>();
+	private java.io.File ignoreFile;
+	// Manual transport builder (shift right-click sets the pieces; the panel edits and saves).
+	private volatile int builderOrigin = WorldPointUtil.UNDEFINED;
+	private volatile int builderDest = WorldPointUtil.UNDEFINED;
+	private volatile String builderMenu = "";
 	private String lastCaptureText;
 	private int lastCaptureTick = -1;
 
@@ -312,6 +320,11 @@ public class TransportAuditPlugin extends Plugin
 		{
 			capturesFile = new java.io.File(auditFile.getParentFile(), "transport-captures.tsv");
 			seedCapturedFromFile();
+		}
+		if (ignoreFile == null)
+		{
+			ignoreFile = new java.io.File(auditFile.getParentFile(), "transport-ignore.tsv");
+			seedIgnoredFromFile();
 		}
 		overlayManager.add(sceneOverlay);
 		if (panel == null)
@@ -416,46 +429,229 @@ public class TransportAuditPlugin extends Plugin
 	}
 
 	private static final String COPY_OPTION = "Copy GPS audit";
+	private static final String IGNORE_OPTION = "Audit: not a transport";
+	private static final String BUILDER_ORIGIN_OPTION = "Builder: set origin";
+	private static final String BUILDER_DEST_OPTION = "Builder: set destination";
+	private static final String BUILDER_OBJECT_OPTION = "Builder: use object";
 
 	/**
-	 * Right-clicking a marked object offers "Copy GPS audit": the finding's dossier — tile,
-	 * name, id, every menu action, and the ready-to-fill transports.tsv template — goes to the
-	 * system clipboard (and the log, as a fallback).
+	 * Menu additions. Plain right-click on a marked object: "Copy GPS audit". With SHIFT held:
+	 * "Audit: not a transport" on marked objects (persists a false-positive), and the transport
+	 * builder's origin/destination/object pickers on any object or walkable tile.
 	 */
 	@Subscribe
 	public void onMenuEntryAdded(net.runelite.api.events.MenuEntryAdded event)
 	{
-		if (findings.isEmpty())
+		boolean shift = client.isKeyPressed(net.runelite.api.KeyCode.KC_SHIFT);
+
+		if (shift && "Walk here".equals(event.getOption()) && !hasOption(BUILDER_ORIGIN_OPTION))
 		{
+			net.runelite.api.Tile selected = client.getTopLevelWorldView().getSelectedSceneTile();
+			if (selected != null)
+			{
+				int tile = templateTileAt(selected.getLocalLocation());
+				addBuilderEntry(BUILDER_ORIGIN_OPTION, tileText(tile), () -> builderOrigin = tile);
+				addBuilderEntry(BUILDER_DEST_OPTION, tileText(tile), () -> builderDest = tile);
+			}
 			return;
 		}
+
 		Finding match = null;
-		for (Finding finding : findings.values())
+		if (!findings.isEmpty())
 		{
-			if (finding.object.getId() == event.getIdentifier()
-				&& sceneClose(finding.object, event.getActionParam0(), event.getActionParam1()))
+			for (Finding finding : findings.values())
 			{
-				match = finding;
-				break;
+				if (finding.object.getId() == event.getIdentifier()
+					&& sceneClose(finding.object, event.getActionParam0(), event.getActionParam1()))
+				{
+					match = finding;
+					break;
+				}
 			}
 		}
-		if (match == null)
+		if (match != null && !hasOption(COPY_OPTION))
 		{
-			return;
+			final Finding finding = match;
+			client.getMenu().createMenuEntry(-1)
+				.setOption(COPY_OPTION)
+				.setTarget(finding.name)
+				.setType(net.runelite.api.MenuAction.RUNELITE)
+				.onClick(e -> copyDossier(finding));
+			if (shift)
+			{
+				client.getMenu().createMenuEntry(-1)
+					.setOption(IGNORE_OPTION)
+					.setTarget(finding.name)
+					.setType(net.runelite.api.MenuAction.RUNELITE)
+					.onClick(e -> ignoreFinding(finding));
+			}
 		}
+
+		// Builder pickers on ANY object (not just findings): origin/dest at the object's tile,
+		// plus "use object" to fill the row's menu column from its definition.
+		if (shift && isObjectAction(event.getMenuEntry().getType()) && !hasOption(BUILDER_OBJECT_OPTION))
+		{
+			final int objectId = event.getIdentifier();
+			net.runelite.api.coords.LocalPoint location = net.runelite.api.coords.LocalPoint.fromScene(
+				event.getActionParam0(), event.getActionParam1(), client.getTopLevelWorldView());
+			final int tile = templateTileAt(location);
+			addBuilderEntry(BUILDER_ORIGIN_OPTION, tileText(tile), () -> builderOrigin = tile);
+			addBuilderEntry(BUILDER_DEST_OPTION, tileText(tile), () -> builderDest = tile);
+			addBuilderEntry(BUILDER_OBJECT_OPTION, String.valueOf(objectId),
+				() -> builderMenu = builderMenuFor(objectId));
+		}
+	}
+
+	private boolean hasOption(String option)
+	{
 		for (net.runelite.api.MenuEntry entry : client.getMenu().getMenuEntries())
 		{
-			if (COPY_OPTION.equals(entry.getOption()))
+			if (option.equals(entry.getOption()))
 			{
-				return; // one copy entry per menu is plenty, however many rows the object adds
+				return true;
 			}
 		}
-		final Finding finding = match;
+		return false;
+	}
+
+	private void addBuilderEntry(String option, String target, Runnable action)
+	{
 		client.getMenu().createMenuEntry(-1)
-			.setOption(COPY_OPTION)
-			.setTarget(finding.name)
+			.setOption(option)
+			.setTarget(target)
 			.setType(net.runelite.api.MenuAction.RUNELITE)
-			.onClick(e -> copyDossier(finding));
+			.onClick(e -> {
+				action.run();
+				log.info("[audit] {} {}", option, target);
+			});
+	}
+
+	private static boolean isObjectAction(net.runelite.api.MenuAction type)
+	{
+		switch (type)
+		{
+			case GAME_OBJECT_FIRST_OPTION:
+			case GAME_OBJECT_SECOND_OPTION:
+			case GAME_OBJECT_THIRD_OPTION:
+			case GAME_OBJECT_FOURTH_OPTION:
+			case GAME_OBJECT_FIFTH_OPTION:
+			case EXAMINE_OBJECT:
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	/** The template tile for a local point, honouring the current render plane. */
+	private int templateTileAt(net.runelite.api.coords.LocalPoint location)
+	{
+		net.runelite.api.coords.WorldPoint worldPoint = net.runelite.api.coords.WorldPoint
+			.fromLocalInstance(client, location, client.getTopLevelWorldView().getPlane());
+		return WorldPointUtil.packWorldPoint(worldPoint);
+	}
+
+	/** "action Name id" for the transports.tsv menu column, preferring a traversal action. */
+	private String builderMenuFor(int objectId)
+	{
+		ObjectComposition composition = client.getObjectDefinition(objectId);
+		if (composition == null)
+		{
+			return String.valueOf(objectId);
+		}
+		if (composition.getImpostorIds() != null)
+		{
+			try
+			{
+				ObjectComposition impostor = composition.getImpostor();
+				if (impostor != null)
+				{
+					composition = impostor;
+				}
+			}
+			catch (Exception ignored)
+			{
+				// varbit not loaded; base def is fine for naming
+			}
+		}
+		String action = traversalAction(composition, true);
+		if (action == null && composition.getActions() != null)
+		{
+			for (String candidate : composition.getActions())
+			{
+				if (candidate != null)
+				{
+					action = candidate;
+					break;
+				}
+			}
+		}
+		return (action == null ? "" : action + " ") + composition.getName() + " " + objectId;
+	}
+
+	/** Persists a false positive and stops flagging it everywhere, this session and future ones. */
+	private void ignoreFinding(Finding finding)
+	{
+		long key = ((long) finding.packedTemplateTile << 20) | finding.object.getId();
+		if (!ignoredKeys.add(key))
+		{
+			return;
+		}
+		findings.remove(key);
+		try
+		{
+			boolean fresh = !ignoreFile.exists();
+			try (java.io.FileWriter writer = new java.io.FileWriter(ignoreFile, true))
+			{
+				if (fresh)
+				{
+					writer.write("id\tx\ty\tplane\tname\tdate\n");
+				}
+				writer.write(finding.object.getId() + "\t"
+					+ WorldPointUtil.unpackWorldX(finding.packedTemplateTile) + "\t"
+					+ WorldPointUtil.unpackWorldY(finding.packedTemplateTile) + "\t"
+					+ WorldPointUtil.unpackWorldPlane(finding.packedTemplateTile) + "\t"
+					+ finding.name + "\t" + java.time.LocalDate.now() + "\n");
+			}
+		}
+		catch (Exception e)
+		{
+			log.warn("[audit] could not append to {}", ignoreFile, e);
+		}
+		log.info("[audit] marked not-a-transport: {}", finding.describe());
+	}
+
+	private void seedIgnoredFromFile()
+	{
+		if (!ignoreFile.exists())
+		{
+			return;
+		}
+		try (java.util.Scanner scanner = new java.util.Scanner(ignoreFile, "UTF-8"))
+		{
+			while (scanner.hasNextLine())
+			{
+				String[] fields = scanner.nextLine().split("\t");
+				if (fields.length < 4)
+				{
+					continue;
+				}
+				try
+				{
+					int packed = WorldPointUtil.packWorldPoint(Integer.parseInt(fields[1]),
+						Integer.parseInt(fields[2]), Integer.parseInt(fields[3]));
+					ignoredKeys.add(((long) packed << 20) | Integer.parseInt(fields[0]));
+				}
+				catch (NumberFormatException ignored)
+				{
+					// header
+				}
+			}
+			log.info("[audit] ignore file: {} false positives ({})", ignoredKeys.size(), ignoreFile);
+		}
+		catch (Exception e)
+		{
+			log.warn("[audit] could not read {}", ignoreFile, e);
+		}
 	}
 
 	private static boolean sceneClose(TileObject object, int sceneX, int sceneY)
@@ -616,8 +812,21 @@ public class TransportAuditPlugin extends Plugin
 			log.info("[audit] captured (already recorded): {}", lastCaptureText);
 			return;
 		}
-		capturedEdges.add(new int[]{capture.originTile, destTile, capture.finding.object.getId()});
-		log.info("[audit] captured — review then paste into transports.tsv:\n{}", row);
+		capturedKeys.remove(key); // appendCaptureRow re-adds; keep the dedupe in one place
+		if (appendCaptureRow(row, key))
+		{
+			capturedEdges.add(new int[]{capture.originTile, destTile, capture.finding.object.getId()});
+			log.info("[audit] captured — review then paste into transports.tsv:\n{}", row);
+		}
+	}
+
+	/** Appends one review-ready transports.tsv row to the captures file. False when a duplicate. */
+	private boolean appendCaptureRow(String row, String key)
+	{
+		if (!capturedKeys.add(key))
+		{
+			return false;
+		}
 		try
 		{
 			boolean fresh = !capturesFile.exists();
@@ -637,6 +846,68 @@ public class TransportAuditPlugin extends Plugin
 		catch (Exception e)
 		{
 			log.warn("[audit] could not append to {}", capturesFile, e);
+		}
+		return true;
+	}
+
+	/**
+	 * Panel "Save row": writes the builder's transports.tsv row — and, for two-way transports,
+	 * its reverse (rows are DIRECTIONAL: one-way transports are simply a single row, which is
+	 * also why auto-capture records each direction separately as it is actually traversed).
+	 */
+	String saveBuilderRow(String skills, String items, String quests, String duration,
+		String displayInfo, boolean bothWays)
+	{
+		int origin = builderOrigin;
+		int dest = builderDest;
+		if (origin == WorldPointUtil.UNDEFINED || dest == WorldPointUtil.UNDEFINED)
+		{
+			return "Set origin and destination first (shift right-click)";
+		}
+		String menu = builderMenu == null ? "" : builderMenu;
+		String tail = "\t" + skills + "\t" + items + "\t" + quests + "\t\t\t" + duration + "\t" + displayInfo;
+		String row = tileText(origin) + "\t" + tileText(dest) + "\t" + menu + tail;
+		int id = menuObjectId(menu);
+		boolean wrote = appendCaptureRow(row, tileText(origin) + "|" + tileText(dest) + "|" + id);
+		if (wrote)
+		{
+			log.info("[audit] builder row saved:\n{}", row);
+			if (id > 0)
+			{
+				capturedEdges.add(new int[]{origin, dest, id});
+			}
+		}
+		if (bothWays)
+		{
+			String reverse = tileText(dest) + "\t" + tileText(origin) + "\t" + menu + tail;
+			if (appendCaptureRow(reverse, tileText(dest) + "|" + tileText(origin) + "|" + id) && id > 0)
+			{
+				capturedEdges.add(new int[]{dest, origin, id});
+			}
+		}
+		builderOrigin = WorldPointUtil.UNDEFINED;
+		builderDest = WorldPointUtil.UNDEFINED;
+		builderMenu = "";
+		return wrote ? "Saved to transport-captures.tsv" : "Already recorded — nothing written";
+	}
+
+	void clearBuilder()
+	{
+		builderOrigin = WorldPointUtil.UNDEFINED;
+		builderDest = WorldPointUtil.UNDEFINED;
+		builderMenu = "";
+	}
+
+	private static int menuObjectId(String menu)
+	{
+		String[] parts = menu.trim().split(" ");
+		try
+		{
+			return parts.length > 0 ? Integer.parseInt(parts[parts.length - 1]) : -1;
+		}
+		catch (NumberFormatException e)
+		{
+			return -1;
 		}
 	}
 
@@ -732,7 +1003,8 @@ public class TransportAuditPlugin extends Plugin
 		// Everything recorded across sessions whose area isn't loaded right now — the backlog.
 		for (RecordedEntry entry : recorded)
 		{
-			if (liveKeys.contains(((long) entry.packedTile << 20) | entry.id))
+			long key = ((long) entry.packedTile << 20) | entry.id;
+			if (liveKeys.contains(key) || ignoredKeys.contains(key))
 			{
 				continue;
 			}
@@ -761,7 +1033,10 @@ public class TransportAuditPlugin extends Plugin
 		}
 		final String line = captureLine;
 		final java.awt.Color color = captureColor;
-		javax.swing.SwingUtilities.invokeLater(() -> panel.update(rows, line, color));
+		final String origin = builderOrigin == WorldPointUtil.UNDEFINED ? null : tileText(builderOrigin);
+		final String dest = builderDest == WorldPointUtil.UNDEFINED ? null : tileText(builderDest);
+		final String menu = builderMenu == null || builderMenu.isEmpty() ? null : builderMenu;
+		javax.swing.SwingUtilities.invokeLater(() -> panel.update(rows, line, color, origin, dest, menu));
 	}
 
 	private static int statePriority(FindingState state)
@@ -931,6 +1206,10 @@ public class TransportAuditPlugin extends Plugin
 				.filter(java.util.Objects::nonNull).toArray(String[]::new);
 		}
 		long key = ((long) templateTile << 20) | object.getId();
+		if (ignoredKeys.contains(key))
+		{
+			return; // operator declared it a false positive
+		}
 		Finding finding = new Finding(object, templateTile, composition.getName(), action, actions, door);
 		boolean firstEver = findings.put(key, finding) == null && logged.add(key);
 		if (firstEver)
