@@ -107,28 +107,35 @@ public class TransportAuditPlugin extends Plugin
 		/** Everything the operator needs to register this object, clipboard-ready. */
 		String dossier()
 		{
-			int x = WorldPointUtil.unpackWorldX(packedTemplateTile);
-			int y = WorldPointUtil.unpackWorldY(packedTemplateTile);
-			int plane = WorldPointUtil.unpackWorldPlane(packedTemplateTile);
-			StringBuilder sb = new StringBuilder();
-			sb.append(name).append(" id=").append(object.getId())
-				.append(" tile=").append(x).append(',').append(y).append(',').append(plane).append('\n');
-			sb.append("actions: ").append(String.join(", ", actions)).append('\n');
-			if (door)
-			{
-				sb.append("door missing from doors.tsv — re-run doorDump in shortest-path-tooling");
-			}
-			else
-			{
-				sb.append("transports.tsv template — fill DEST after traversing; ORIGIN is the ")
-					.append("object's tile, correct it to the tile you STAND on; Duration in ticks:\n");
-				sb.append(x).append(' ').append(y).append(' ').append(plane).append('\t')
-					.append("DESTX DESTY PLANE").append('\t')
-					.append(action).append(' ').append(name).append(' ').append(object.getId())
-					.append("\t\t\t\t\t\t1\t");
-			}
-			return sb.toString();
+			return dossierText(name, object.getId(), packedTemplateTile, action, actions, door);
 		}
+	}
+
+	/** The clipboard dossier, buildable from plain fields (live findings and recorded entries). */
+	static String dossierText(String name, int id, int packedTile, String action,
+		String[] actions, boolean door)
+	{
+		int x = WorldPointUtil.unpackWorldX(packedTile);
+		int y = WorldPointUtil.unpackWorldY(packedTile);
+		int plane = WorldPointUtil.unpackWorldPlane(packedTile);
+		StringBuilder sb = new StringBuilder();
+		sb.append(name).append(" id=").append(id)
+			.append(" tile=").append(x).append(',').append(y).append(',').append(plane).append('\n');
+		sb.append("actions: ").append(String.join(", ", actions)).append('\n');
+		if (door)
+		{
+			sb.append("door missing from doors.tsv — re-run doorDump in shortest-path-tooling");
+		}
+		else
+		{
+			sb.append("transports.tsv template — fill DEST after traversing; ORIGIN is the ")
+				.append("object's tile, correct it to the tile you STAND on; Duration in ticks:\n");
+			sb.append(x).append(' ').append(y).append(' ').append(plane).append('\t')
+				.append("DESTX DESTY PLANE").append('\t')
+				.append(action).append(' ').append(name).append(' ').append(id)
+				.append("\t\t\t\t\t\t1\t");
+		}
+		return sb.toString();
 	}
 
 	/** Curation state of one finding, driving the panel row and scene outline colors. */
@@ -138,21 +145,61 @@ public class TransportAuditPlugin extends Plugin
 		ARMED,
 		DOOR,
 		CAPTURED_SESSION,
-		CAPTURED_PRIOR
+		CAPTURED_PRIOR,
+		/** The curated data now covers it (row added since it was recorded) — prunable. */
+		RESOLVED
 	}
 
-	/** One immutable panel row: a finding, its state, and its distance from the player. */
+	/**
+	 * One immutable panel row — plain fields only, so rows can come from live scene findings or
+	 * from collection-file entries recorded in other areas/sessions.
+	 */
 	static final class Row
 	{
-		final Finding finding;
+		final String name;
+		final String action;
+		final int id;
+		final int packedTile;
 		final FindingState state;
 		final int distance;
+		final boolean live;
+		final String dossier;
 
-		Row(Finding finding, FindingState state, int distance)
+		Row(String name, String action, int id, int packedTile, FindingState state,
+			int distance, boolean live, String dossier)
 		{
-			this.finding = finding;
+			this.name = name;
+			this.action = action;
+			this.id = id;
+			this.packedTile = packedTile;
 			this.state = state;
 			this.distance = distance;
+			this.live = live;
+			this.dossier = dossier;
+		}
+	}
+
+	/** One collection-file row: an unmapped object recorded in this or an earlier session. */
+	private static final class RecordedEntry
+	{
+		final boolean door;
+		final int id;
+		final String name;
+		final String action;
+		final String[] actions;
+		final int packedTile;
+		final boolean coverageResolved; // curated data now covers it (checked once at load)
+
+		RecordedEntry(boolean door, int id, String name, String action, String[] actions,
+			int packedTile, boolean coverageResolved)
+		{
+			this.door = door;
+			this.id = id;
+			this.name = name;
+			this.action = action;
+			this.actions = actions;
+			this.packedTile = packedTile;
+			this.coverageResolved = coverageResolved;
 		}
 	}
 
@@ -194,6 +241,9 @@ public class TransportAuditPlugin extends Plugin
 	private final java.util.List<int[]> capturedEdges = new java.util.ArrayList<>();
 	// Finding keys captured THIS session (vs. edges seeded from the file = earlier sessions).
 	private final Set<Long> capturedThisSession = new HashSet<>();
+	// The parsed collection file: recorded unmapped objects from all sessions, shown in the
+	// panel even when their area isn't loaded.
+	private final java.util.List<RecordedEntry> recorded = new java.util.ArrayList<>();
 	private String lastCaptureText;
 	private int lastCaptureTick = -1;
 
@@ -664,13 +714,31 @@ public class TransportAuditPlugin extends Plugin
 		}
 		int playerTile = WorldPointUtil.fromLocalInstance(client, client.getLocalPlayer());
 		java.util.List<Row> rows = new java.util.ArrayList<>();
+		Set<Long> liveKeys = new HashSet<>();
 		for (Finding finding : findings.values())
 		{
-			rows.add(new Row(finding, stateOf(finding),
-				WorldPointUtil.distanceBetween(playerTile, finding.packedTemplateTile)));
+			liveKeys.add(((long) finding.packedTemplateTile << 20) | finding.object.getId());
+			rows.add(new Row(finding.name, finding.action, finding.object.getId(),
+				finding.packedTemplateTile, stateOf(finding),
+				WorldPointUtil.distanceBetween(playerTile, finding.packedTemplateTile), true,
+				finding.dossier()));
+		}
+		// Everything recorded across sessions whose area isn't loaded right now — the backlog.
+		for (RecordedEntry entry : recorded)
+		{
+			if (liveKeys.contains(((long) entry.packedTile << 20) | entry.id))
+			{
+				continue;
+			}
+			rows.add(new Row(entry.name, entry.action, entry.id, entry.packedTile,
+				stateOfRecorded(entry),
+				WorldPointUtil.distanceBetween2D(playerTile, entry.packedTile), false,
+				dossierText(entry.name, entry.id, entry.packedTile, entry.action,
+					entry.actions, entry.door)));
 		}
 		rows.sort(java.util.Comparator
-			.comparingInt((Row row) -> statePriority(row.state))
+			.comparingInt((Row row) -> row.live ? 0 : 1)
+			.thenComparingInt(row -> statePriority(row.state))
 			.thenComparingInt(row -> row.distance));
 
 		String captureLine = null;
@@ -702,9 +770,39 @@ public class TransportAuditPlugin extends Plugin
 				return 2;
 			case CAPTURED_SESSION:
 				return 3;
-			default:
+			case CAPTURED_PRIOR:
 				return 4;
+			default:
+				return 5; // RESOLVED — prunable tail
 		}
+	}
+
+	/** State of a collection-file entry whose object isn't in the loaded scene. */
+	private FindingState stateOfRecorded(RecordedEntry entry)
+	{
+		if (entry.coverageResolved)
+		{
+			return FindingState.RESOLVED;
+		}
+		if (entry.door)
+		{
+			return FindingState.DOOR;
+		}
+		long key = ((long) entry.packedTile << 20) | entry.id;
+		if (capturedThisSession.contains(key))
+		{
+			return FindingState.CAPTURED_SESSION;
+		}
+		for (int[] edge : capturedEdges)
+		{
+			if (edge[2] == entry.id
+				&& (WorldPointUtil.distanceBetween(edge[0], entry.packedTile) <= 4
+				|| WorldPointUtil.distanceBetween(edge[1], entry.packedTile) <= 4))
+			{
+				return FindingState.CAPTURED_PRIOR;
+			}
+		}
+		return FindingState.MISSING;
 	}
 
 	@Subscribe
@@ -901,7 +999,12 @@ public class TransportAuditPlugin extends Plugin
 				{
 					int packed = WorldPointUtil.packWorldPoint(Integer.parseInt(fields[6]),
 						Integer.parseInt(fields[7]), Integer.parseInt(fields[8]));
-					logged.add(((long) packed << 20) | Integer.parseInt(fields[2]));
+					int id = Integer.parseInt(fields[2]);
+					logged.add(((long) packed << 20) | id);
+					boolean door = "door".equals(fields[1]);
+					recorded.add(new RecordedEntry(door, id, fields[3], fields[4],
+						fields[5].isEmpty() ? new String[0] : fields[5].split("\\|"), packed,
+						door ? doorCovered(packed) : transportCovered(packed)));
 				}
 				catch (NumberFormatException ignored)
 				{
@@ -920,6 +1023,8 @@ public class TransportAuditPlugin extends Plugin
 	/** Appends one collection-file row per newly discovered unmapped object. */
 	private void record(Finding finding)
 	{
+		recorded.add(new RecordedEntry(finding.door, finding.object.getId(), finding.name,
+			finding.action, finding.actions, finding.packedTemplateTile, false));
 		try
 		{
 			java.io.File dir = auditFile.getParentFile();

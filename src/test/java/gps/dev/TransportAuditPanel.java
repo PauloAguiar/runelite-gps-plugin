@@ -71,6 +71,9 @@ class TransportAuditPanel extends PluginPanel
 		add(scroll, BorderLayout.CENTER);
 	}
 
+	/** How many backlog (not-in-scene) rows to show before truncating. */
+	private static final int MAX_BACKLOG_ROWS = 30;
+
 	/** EDT. Rebuilds only when the content signature changed, so scrolling isn't reset per tick. */
 	void update(List<TransportAuditPlugin.Row> rows, String captureLine, Color captureColor)
 	{
@@ -80,17 +83,18 @@ class TransportAuditPanel extends PluginPanel
 		long missing = rows.stream().filter(r -> r.state == TransportAuditPlugin.FindingState.MISSING
 			|| r.state == TransportAuditPlugin.FindingState.ARMED).count();
 		long doors = rows.stream().filter(r -> r.state == TransportAuditPlugin.FindingState.DOOR).count();
-		long captured = rows.size() - missing - doors;
+		long resolved = rows.stream().filter(r -> r.state == TransportAuditPlugin.FindingState.RESOLVED).count();
+		long captured = rows.size() - missing - doors - resolved;
 		summary.setText(rows.isEmpty()
-			? "Scene fully mapped"
-			: missing + " missing, " + doors + " door(s), " + captured + " captured");
+			? "Nothing recorded yet"
+			: missing + " missing, " + doors + " door(s), " + captured + " captured, " + resolved + " resolved");
 
 		StringBuilder signature = new StringBuilder();
 		for (TransportAuditPlugin.Row row : rows)
 		{
-			signature.append(row.finding.object.getId()).append(':')
-				.append(row.finding.packedTemplateTile).append(':')
-				.append(row.state).append(':').append(row.distance / 16).append(';');
+			signature.append(row.id).append(':').append(row.packedTile).append(':')
+				.append(row.state).append(':').append(row.live).append(':')
+				.append(row.distance / 16).append(';');
 		}
 		if (signature.toString().equals(lastSignature))
 		{
@@ -99,13 +103,43 @@ class TransportAuditPanel extends PluginPanel
 		lastSignature = signature.toString();
 
 		list.removeAll();
+		boolean liveHeaderAdded = false;
+		boolean backlogHeaderAdded = false;
+		int backlogShown = 0;
 		for (TransportAuditPlugin.Row row : rows)
 		{
+			if (row.live && !liveHeaderAdded)
+			{
+				list.add(groupLabel("In this scene"));
+				liveHeaderAdded = true;
+			}
+			if (!row.live && !backlogHeaderAdded)
+			{
+				list.add(groupLabel("Recorded elsewhere"));
+				backlogHeaderAdded = true;
+			}
+			if (!row.live && ++backlogShown > MAX_BACKLOG_ROWS)
+			{
+				JLabel more = groupLabel("… more in transport-audit.tsv (see audit_diff.py)");
+				more.setForeground(ColorScheme.MEDIUM_GRAY_COLOR);
+				list.add(more);
+				break;
+			}
 			list.add(buildRow(row));
 			list.add(javax.swing.Box.createVerticalStrut(4));
 		}
 		list.revalidate();
 		list.repaint();
+	}
+
+	private static JLabel groupLabel(String text)
+	{
+		JLabel label = new JLabel(text);
+		label.setForeground(Color.WHITE);
+		label.setFont(FontManager.getRunescapeSmallFont());
+		label.setBorder(new EmptyBorder(6, 0, 3, 0));
+		label.setAlignmentX(Component.LEFT_ALIGNMENT);
+		return label;
 	}
 
 	private JPanel buildRow(TransportAuditPlugin.Row row)
@@ -117,12 +151,12 @@ class TransportAuditPanel extends PluginPanel
 
 		Color color = stateColor(row.state);
 		String distance = row.distance == Integer.MAX_VALUE
-			? "another floor" : row.distance + " tiles away";
-		JLabel text = new JLabel("<html><b>" + row.finding.name + "</b> (" + row.finding.action
-			+ ") id=" + row.finding.object.getId()
-			+ "<br>@" + gps.WorldPointUtil.unpackWorldX(row.finding.packedTemplateTile)
-			+ "," + gps.WorldPointUtil.unpackWorldY(row.finding.packedTemplateTile)
-			+ "," + gps.WorldPointUtil.unpackWorldPlane(row.finding.packedTemplateTile)
+			? "another floor" : (row.live ? row.distance + " tiles away" : "~" + row.distance + " tiles");
+		JLabel text = new JLabel("<html><b>" + row.name + "</b> (" + row.action
+			+ ") id=" + row.id
+			+ "<br>@" + gps.WorldPointUtil.unpackWorldX(row.packedTile)
+			+ "," + gps.WorldPointUtil.unpackWorldY(row.packedTile)
+			+ "," + gps.WorldPointUtil.unpackWorldPlane(row.packedTile)
 			+ " — " + distance
 			+ "<br><font color='" + hex(color) + "'>" + stateText(row.state) + "</font></html>");
 		text.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
@@ -133,7 +167,7 @@ class TransportAuditPanel extends PluginPanel
 		copy.setMargin(new Insets(2, 6, 2, 6));
 		copy.setFont(FontManager.getRunescapeSmallFont());
 		copy.setToolTipText("Copy the dossier (tile, actions, transports.tsv template) to the clipboard");
-		copy.addActionListener(e -> plugin.copyDossier(row.finding));
+		copy.addActionListener(e -> copyText(row.dossier));
 		JPanel east = new JPanel(new BorderLayout());
 		east.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		east.add(copy, BorderLayout.NORTH);
@@ -141,6 +175,12 @@ class TransportAuditPanel extends PluginPanel
 
 		panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, panel.getPreferredSize().height));
 		return panel;
+	}
+
+	private static void copyText(String text)
+	{
+		java.awt.Toolkit.getDefaultToolkit().getSystemClipboard()
+			.setContents(new java.awt.datatransfer.StringSelection(text), null);
 	}
 
 	static Color stateColor(TransportAuditPlugin.FindingState state)
@@ -155,6 +195,8 @@ class TransportAuditPanel extends PluginPanel
 				return new Color(70, 220, 90);
 			case CAPTURED_PRIOR:
 				return new Color(0, 190, 170);
+			case RESOLVED:
+				return ColorScheme.MEDIUM_GRAY_COLOR;
 			default:
 				return TransportAuditSceneOverlay.UNMAPPED;
 		}
@@ -172,6 +214,8 @@ class TransportAuditPanel extends PluginPanel
 				return "captured this session ✓ (in transport-captures.tsv)";
 			case CAPTURED_PRIOR:
 				return "captured in an earlier session ✓";
+			case RESOLVED:
+				return "covered by current data ✓ (prunable)";
 			default:
 				return "missing — use it to auto-capture, or Copy";
 		}
