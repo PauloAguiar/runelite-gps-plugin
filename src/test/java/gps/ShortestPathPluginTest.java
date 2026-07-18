@@ -26,7 +26,9 @@ public class ShortestPathPluginTest
 			System.err.println("Could not remove sideloaded gps.jar (another client running?) — "
 				+ "the plugin may load twice: " + e);
 		}
-		ExternalPluginManager.loadBuiltin(ShortestPathPlugin.class);
+		// The transport audit is a dev-only companion (test sources, never packaged for the hub):
+		// it highlights traversal objects the transport/door data doesn't know about.
+		ExternalPluginManager.loadBuiltin(ShortestPathPlugin.class, gps.dev.TransportAuditPlugin.class);
 		RuneLite.main(args);
 	}
 }
