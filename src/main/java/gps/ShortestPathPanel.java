@@ -2429,9 +2429,17 @@ public class ShortestPathPanel extends PluginPanel
 		favoriteEditor.setBorder(new EmptyBorder(0, 0, 6, 0));
 		favoriteEditor.setAlignmentX(LEFT_ALIGNMENT);
 		favoriteError.setAlignmentX(LEFT_ALIGNMENT);
-		JLabel favoriteTitle = sectionLabel("Save a favourite");
-		favoriteTitle.setAlignmentX(LEFT_ALIGNMENT);
-		favoriteEditor.add(favoriteTitle);
+		// Title row: the section label plus a red ✕ to close (the heart also toggles, Esc too).
+		JPanel favoriteTitleRow = new JPanel(new BorderLayout());
+		favoriteTitleRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		favoriteTitleRow.setAlignmentX(LEFT_ALIGNMENT);
+		favoriteTitleRow.add(sectionLabel("Save a favourite"), BorderLayout.CENTER);
+		IconActionLabel favoriteClose = new IconActionLabel(RouteIcons.CROSS_RED, RouteIcons.CROSS_RED_HOVER,
+			"Close without saving", () -> favoriteEditor.setVisible(false));
+		favoriteTitleRow.add(verticallyCentered(control(favoriteClose)), BorderLayout.EAST);
+		favoriteTitleRow.setMaximumSize(new Dimension(Integer.MAX_VALUE,
+			favoriteTitleRow.getPreferredSize().height));
+		favoriteEditor.add(favoriteTitleRow);
 		favoriteEditor.add(favoriteFieldRow("Name", favoriteLabelInput));
 		favoriteEditor.add(javax.swing.Box.createVerticalStrut(3));
 		favoriteEditor.add(favoriteFieldRow("At", positionRow));

@@ -57,6 +57,9 @@ final class RouteIcons
 	static final ImageIcon CHECK_HOVER = new ImageIcon(check(GREEN_LIGHT));
 	static final ImageIcon CROSS = new ImageIcon(cross(GREY));
 	static final ImageIcon CROSS_HOVER = new ImageIcon(cross(RED));
+	// Red at REST (brighter red on hover): close controls that should read as red without hovering.
+	static final ImageIcon CROSS_RED = new ImageIcon(cross(RED));
+	static final ImageIcon CROSS_RED_HOVER = new ImageIcon(cross(new Color(0xFF, 0x6A, 0x6A)));
 	static final ImageIcon DASH = new ImageIcon(dash(ORANGE));
 	static final ImageIcon DASH_HOVER = new ImageIcon(dash(ORANGE_LIGHT));
 	// Dimmed variants of the catalog toggle glyphs for the configuration sections' checkboxes,
