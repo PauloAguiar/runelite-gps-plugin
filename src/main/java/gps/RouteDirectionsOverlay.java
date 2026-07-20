@@ -78,6 +78,9 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	// Progress-selection thresholds live in RouteProgress (the unit-testable tracker); this alias
 	// remains for the vehicle-speed heuristic below.
 	private static final int NEAR_DISTANCE = RouteProgress.NEAR_DISTANCE;
+	// Walk-distance flood memo (see updateProgress): recomputed only when the player's tile changes.
+	private java.util.Map<Integer, Integer> walkCache;
+	private int walkCacheTile = WorldPointUtil.UNDEFINED;
 	private static final double VEHICLE_TILES_PER_SECOND = 4.5;
 	private static final long SPEED_SAMPLE_MILLIS = 400;
 	private long speedSampleAt;
@@ -733,10 +736,16 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		// toward the current position) — see RouteProgress for the wall-aware maze rules; the
 		// selection logic lives there so it is unit-testable. The ETA is derived from the selected
 		// tile afterwards, keeping its walk-back charge without steering the selection.
-		java.util.Map<Integer, Integer> walk = RouteProgress.walkDistances(
-			plugin.getCollisionMap(), playerPacked, RouteProgress.REACH_RADIUS);
+		// The BFS is memoized by player tile: render runs per FRAME, but the flood only changes
+		// when the player's tile does (game movement is tick-paced) — ~2 floods/s instead of ~100.
+		if (playerPacked != walkCacheTile)
+		{
+			walkCache = RouteProgress.walkDistances(
+				plugin.getCollisionMap(), playerPacked, RouteProgress.REACH_RADIUS);
+			walkCacheTile = playerPacked;
+		}
 		RouteProgress.Result selection = RouteProgress.select(
-			path, reachedIndex, doorGate, returnGate, playerPacked, walk);
+			path, reachedIndex, doorGate, returnGate, playerPacked, walkCache);
 		if (selection == null)
 		{
 			// Nowhere near the route (long off-path detour): hold the last honest estimate.
