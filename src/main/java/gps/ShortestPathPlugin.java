@@ -3681,26 +3681,62 @@ public class ShortestPathPlugin extends Plugin
 			// budget), until the route-count budget reaches the service's runaway backstop.
 			moreRoutesLikely = !routes.isEmpty() && altRoutesService.wasMoreLikely()
 				&& routeLimit < AlternativeRoutesService.MAX_ROUTES_CAP;
-			// Settle the overlay's route to the final top result BEFORE clearing the in-flight flag,
-			// so the overlay adopts the settled route in one step instead of the streaming front-runner.
-			committedDisplayRoute = routes.isEmpty() ? null : routes.get(0);
+			// A recalculation must not yank the player off the route they PICKED: when the fresh
+			// list contains an equivalent route (same method sequence, same bank-detour-ness), it
+			// stays selected — even if its rank moved. Only when the picked route genuinely no
+			// longer exists does the overlay fall back to the new best.
+			RouteOption rematched = matchByMethods(selectedRoute, routes);
+			if (rematched != null)
+			{
+				selectedRoute = rematched;
+				committedDisplayRoute = rematched;
+			}
+			else
+			{
+				selectedRoute = null;
+				// Settle the overlay's route to the final top result BEFORE clearing the in-flight
+				// flag, so the overlay adopts the settled route in one step instead of the
+				// streaming front-runner.
+				committedDisplayRoute = routes.isEmpty() ? null : routes.get(0);
+			}
 			altGenerationInFlight = false;
 			// The displayed route just settled: publish it to other plugins (postTransports) — this
 			// replaces the classic search's completion callback.
 			postPluginMessages();
 		}
+		// NB: mid-stream updates deliberately do NOT clear a stale selection — the overlay keeps
+		// drawing the picked route steadily while the new list streams in; the done-branch above
+		// then re-matches or falls back in a single step.
 		final boolean hasTarget = !lastAltTargets.isEmpty();
 		SwingUtilities.invokeLater(() ->
 		{
-			if (selectedRoute != null && !routes.contains(selectedRoute))
-			{
-				selectedRoute = null;
-			}
 			if (altPanel != null)
 			{
 				altPanel.displayRoutes(routes, catalog, unavailable, getUserExclusions(), !done, hasTarget);
 			}
 		});
+	}
+
+	/**
+	 * The route in the fresh list equivalent to the previously selected one: the same method
+	 * sequence (TeleportMethod identity: type, destination, display info) and the same
+	 * via-the-bank-ness — rank and exact tile path may differ. Null when no equivalent exists.
+	 */
+	private static RouteOption matchByMethods(RouteOption previous, List<RouteOption> routes)
+	{
+		if (previous == null)
+		{
+			return null;
+		}
+		for (RouteOption route : routes)
+		{
+			if (route.isViaBank() == previous.isViaBank()
+				&& route.getMethods().equals(previous.getMethods()))
+			{
+				return route;
+			}
+		}
+		return null;
 	}
 
 
