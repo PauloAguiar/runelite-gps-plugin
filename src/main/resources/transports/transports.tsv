@@ -83,6 +83,12 @@
 3205 3209 1	3205 3209 2	Climb-up Staircase 16672						1	
 3205 3209 2	3206 3208 1	Climb-down Staircase 16673						1	
 3206 3208 1	3205 3209 2	Climb-up Staircase 16672						1	
+3205 3228 0	3206 3229 2	Top-floor Staircase 56230						1	
+3206 3229 0	3206 3229 2	Top-floor Staircase 56230						1	
+3206 3229 2	3205 3228 0	Bottom-floor Staircase 56231						1	
+3206 3208 0	3205 3209 2	Top-floor Staircase 56230						1	
+3205 3209 0	3205 3209 2	Top-floor Staircase 56230						1	
+3205 3209 2	3206 3208 0	Bottom-floor Staircase 56231						1	
 3210 3216 0	3210 9616 0	Climb-down Trapdoor 14880							
 3210 9616 0	3210 3216 0	Climb-up Ladder 17385						2	
 3209 9617 0	3209 3217 0	Climb-up Ladder 17385						2	
@@ -1870,6 +1876,22 @@
 2465 3495 3	2465 3495 2	Climb-down Ladder 16679							
 2466 3496 2	2466 3496 3	Climb-up Ladder 2884							
 2466 3496 3	2466 3496 2	Climb-down Ladder 16679							
+2466 3494 0	2466 3494 3	Top-Floor Ladder 4458						2	
+2466 3494 1	2466 3494 3	Top-Floor Ladder 56233						1	
+2466 3494 3	2466 3494 0	Bottom-Floor Ladder 56229						2	
+2466 3494 2	2466 3494 0	Bottom-Floor Ladder 56232						1	
+2465 3495 0	2465 3495 3	Top-Floor Ladder 4458						2	
+2465 3495 1	2465 3495 3	Top-Floor Ladder 56233						1	
+2465 3495 3	2465 3495 0	Bottom-Floor Ladder 56229						2	
+2465 3495 2	2465 3495 0	Bottom-Floor Ladder 56232						1	
+2466 3496 0	2466 3496 3	Top-Floor Ladder 4458						2	
+2466 3496 1	2466 3496 3	Top-Floor Ladder 56233						1	
+2466 3496 3	2466 3496 0	Bottom-Floor Ladder 56229						2	
+2466 3496 2	2466 3496 0	Bottom-Floor Ladder 56232						1	
+2467 3495 0	2467 3495 3	Top-Floor Ladder 4458						2	
+2467 3495 1	2467 3495 3	Top-Floor Ladder 56233						1	
+2467 3495 3	2467 3495 0	Bottom-Floor Ladder 56229						2	
+2467 3495 2	2467 3495 0	Bottom-Floor Ladder 56232						1	
 2464 3497 0	2464 9897 0	Open Trapdoor 2446							
 2464 9897 0	2464 3497 0	Climb-up Ladder 17385							
 2467 9903 0	2467 9905 0	Push Roots 2451							
