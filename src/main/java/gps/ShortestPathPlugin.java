@@ -3682,10 +3682,10 @@ public class ShortestPathPlugin extends Plugin
 			moreRoutesLikely = !routes.isEmpty() && altRoutesService.wasMoreLikely()
 				&& routeLimit < AlternativeRoutesService.MAX_ROUTES_CAP;
 			// A recalculation must not yank the player off the route they PICKED: when the fresh
-			// list contains an equivalent route (same method sequence, same bank-detour-ness), it
-			// stays selected — even if its rank moved. Only when the picked route genuinely no
-			// longer exists does the overlay fall back to the new best.
-			RouteOption rematched = matchByMethods(selectedRoute, routes);
+			// list contains an equivalent route, it stays selected — even if its rank moved. Only
+			// when the picked route genuinely no longer exists does the overlay fall back to the
+			// new best.
+			RouteOption rematched = rematchSelected(routes);
 			if (rematched != null)
 			{
 				selectedRoute = rematched;
@@ -3718,20 +3718,37 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	/**
-	 * The route in the fresh list equivalent to the previously selected one: the same method
-	 * sequence (TeleportMethod identity: type, destination, display info) and the same
-	 * via-the-bank-ness — rank and exact tile path may differ. Null when no equivalent exists.
+	 * The route in the fresh list equivalent to the selected one — matching what is LEFT of the
+	 * plan, not its full history: methods whose edges the player has already crossed (per the
+	 * directions tracker) are consumed, so after riding the minecart the equivalent route is the
+	 * one continuing with the remaining methods (and once every method is behind, the plain-walk
+	 * remainder). TeleportMethod value identity; rank and exact tile path may differ. Bank-ness
+	 * only distinguishes routes while nothing is consumed yet — mid-journey, the remainder's
+	 * detour state is ambiguous. Null when no equivalent exists.
 	 */
-	private static RouteOption matchByMethods(RouteOption previous, List<RouteOption> routes)
+	private RouteOption rematchSelected(List<RouteOption> routes)
 	{
+		RouteOption previous = selectedRoute;
 		if (previous == null)
 		{
 			return null;
 		}
+		// Selected == displayed, so the tracker's progress is this route's progress (0 if the
+		// tracker isn't following it, degrading to a full-sequence match).
+		int progress = displayedRouteProgress();
+		List<TeleportMethod> methods = previous.getMethods();
+		List<Integer> edges = previous.getMethodEdgeIndexes();
+		int consumed = 0;
+		while (consumed < methods.size() && consumed < edges.size() && edges.get(consumed) <= progress)
+		{
+			consumed++;
+		}
+		List<TeleportMethod> remaining = methods.subList(consumed, methods.size());
+		boolean checkBank = consumed == 0;
 		for (RouteOption route : routes)
 		{
-			if (route.isViaBank() == previous.isViaBank()
-				&& route.getMethods().equals(previous.getMethods()))
+			if ((!checkBank || route.isViaBank() == previous.isViaBank())
+				&& route.getMethods().equals(remaining))
 			{
 				return route;
 			}
