@@ -86,4 +86,42 @@ public class FloorJumpTest
 		assertEquals(gps.pathfinder.CostUnits.fromTicks(1), pathfinder.getResult().getTotalCost());
 		assertEquals(2, pathfinder.getResult().getPathSteps().size());
 	}
+
+	@Test
+	public void fairytaleHideoutTowerJumpsAndMidFloorBothWork()
+	{
+		// Cache-derived rows (the Lighthouse's identical twin staircase): ground -> top in one
+		// 1-tick step, and the middle floor stays reachable via the per-floor rows.
+		int base = WorldPointUtil.packWorldPoint(2444, 4600, 0);
+		int top = WorldPointUtil.packWorldPoint(2441, 4601, 2);
+		int mid = WorldPointUtil.packWorldPoint(2441, 4601, 1);
+		Pathfinder jump = new Pathfinder(everythingConfig(), base, Set.of(top));
+		jump.run();
+		assertTrue(jump.getResult().isReached());
+		assertEquals(gps.pathfinder.CostUnits.fromTicks(1), jump.getResult().getTotalCost());
+		assertEquals(2, jump.getResult().getPathSteps().size());
+		Pathfinder toMid = new Pathfinder(everythingConfig(), base, Set.of(mid));
+		toMid.run();
+		assertTrue("middle floor must stay reachable via per-floor rows", toMid.getResult().isReached());
+	}
+
+	@Test
+	public void aldarinTowerJumpsAndMidFloorBothWork()
+	{
+		int base = WorldPointUtil.packWorldPoint(1649, 3091, 0);
+		int top = WorldPointUtil.packWorldPoint(1649, 3091, 2);
+		int mid = WorldPointUtil.packWorldPoint(1649, 3091, 1);
+		Pathfinder jump = new Pathfinder(everythingConfig(), base, Set.of(top));
+		jump.run();
+		assertTrue(jump.getResult().isReached());
+		assertEquals(gps.pathfinder.CostUnits.fromTicks(1), jump.getResult().getTotalCost());
+		assertEquals(2, jump.getResult().getPathSteps().size());
+		Pathfinder down = new Pathfinder(everythingConfig(), top, Set.of(base));
+		down.run();
+		assertTrue(down.getResult().isReached());
+		assertEquals(gps.pathfinder.CostUnits.fromTicks(1), down.getResult().getTotalCost());
+		Pathfinder toMid = new Pathfinder(everythingConfig(), base, Set.of(mid));
+		toMid.run();
+		assertTrue(toMid.getResult().isReached());
+	}
 }

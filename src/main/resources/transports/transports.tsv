@@ -1336,6 +1336,18 @@
 2505 3641 1	2505 3641 2	Climb-up Staircase 4569							
 2505 3641 2	2506 3584 1	Climb-down Staircase 4570							
 2505 3641 2	2506 3642 0	Bottom-floor Staircase 4570							
+2444 4600 0	2441 4601 1	Climb-up Staircase 4568							
+2444 4600 0	2441 4601 2	Top-floor Staircase 4568						1	
+2441 4601 1	2442 4602 0	Climb-down Staircase 4569							
+2441 4601 1	2441 4601 2	Climb-up Staircase 4569							
+2441 4601 2	2441 4601 1	Climb-down Staircase 4570							
+2441 4601 2	2442 4602 0	Bottom-floor Staircase 4570						1	
+1649 3091 0	1649 3091 1	Climb-up Staircase 52630							
+1649 3091 0	1649 3091 2	Top-floor Staircase 52630						1	
+1649 3091 1	1649 3091 0	Climb-down Staircase 52631							
+1649 3091 1	1649 3091 2	Climb-up Staircase 52631							
+1649 3091 2	1649 3091 1	Climb-down Staircase 52632							
+1649 3091 2	1649 3091 0	Bottom-floor Staircase 52632						1	
 2510 3644 0	2518 9994 0	Climb Iron ladder 4383							
 2518 9994 0	2510 3644 0	Climb Iron ladder 4384							
 2515 10005 0	2515 10008 0	Climb Iron ladder 4384							
