@@ -65,6 +65,58 @@ public class CollisionMap
 		return e(x - 1, y, z);
 	}
 
+	/**
+	 * Whether a single walking step between two ADJACENT tiles is traversable, using the same
+	 * edge rules as the neighbour expansion (walls block even between two walkable tiles). False
+	 * for non-adjacent or cross-plane pairs. Used by the route progress tracker so straight-line
+	 * proximity can't see through walls.
+	 */
+	public boolean canStep(int fromPacked, int toPacked)
+	{
+		int x = WorldPointUtil.unpackWorldX(fromPacked);
+		int y = WorldPointUtil.unpackWorldY(fromPacked);
+		int z = WorldPointUtil.unpackWorldPlane(fromPacked);
+		if (z != WorldPointUtil.unpackWorldPlane(toPacked))
+		{
+			return false;
+		}
+		int dx = WorldPointUtil.unpackWorldX(toPacked) - x;
+		int dy = WorldPointUtil.unpackWorldY(toPacked) - y;
+		if (dx == 0 && dy == 1)
+		{
+			return n(x, y, z);
+		}
+		if (dx == 0 && dy == -1)
+		{
+			return s(x, y, z);
+		}
+		if (dx == 1 && dy == 0)
+		{
+			return e(x, y, z);
+		}
+		if (dx == -1 && dy == 0)
+		{
+			return w(x, y, z);
+		}
+		if (dx == 1 && dy == 1)
+		{
+			return ne(x, y, z);
+		}
+		if (dx == -1 && dy == 1)
+		{
+			return nw(x, y, z);
+		}
+		if (dx == 1 && dy == -1)
+		{
+			return se(x, y, z);
+		}
+		if (dx == -1 && dy == -1)
+		{
+			return sw(x, y, z);
+		}
+		return false;
+	}
+
 	private boolean ne(int x, int y, int z)
 	{
 		return n(x, y, z) && e(x, y + 1, z) && e(x, y, z) && n(x + 1, y, z);

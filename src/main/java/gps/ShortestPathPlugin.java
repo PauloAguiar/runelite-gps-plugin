@@ -2488,6 +2488,13 @@ public class ShortestPathPlugin extends Plugin
 		journeyLastLocation = WorldPointUtil.UNDEFINED;
 	}
 
+	/** The live collision map, for the progress tracker's wall-aware checks. Null until loaded. */
+	gps.pathfinder.CollisionMap getCollisionMap()
+	{
+		PathfinderConfig config = pathfinderConfig;
+		return config != null ? config.getMap() : null;
+	}
+
 	public RouteOption getDisplayedRoute()
 	{
 		RouteOption route = selectedRoute;

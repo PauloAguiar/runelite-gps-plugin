@@ -75,8 +75,9 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	// because you can't walk there. Progress therefore moves INCREMENTALLY — a few indexes per
 	// update, and only while genuinely near the line — with two jump exceptions: standing exactly ON
 	// a path tile at walking speed (teleport/transport landings), and ride interpolation.
-	private static final int STEP_WINDOW = 8;
-	private static final int NEAR_DISTANCE = 10;
+	// Progress-selection thresholds live in RouteProgress (the unit-testable tracker); this alias
+	// remains for the vehicle-speed heuristic below.
+	private static final int NEAR_DISTANCE = RouteProgress.NEAR_DISTANCE;
 	private static final double VEHICLE_TILES_PER_SECOND = 4.5;
 	private static final long SPEED_SAMPLE_MILLIS = 400;
 	private long speedSampleAt;
@@ -728,53 +729,22 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		int returnGate = (turnaround >= 0 && reachedIndex < turnaround - 2)
 			? turnaround : Integer.MAX_VALUE;
 
-		// Progress = the eligible path tile NEAREST the player (ties broken toward the current
-		// position). Scoring by (walk time + remaining) instead had a systematic forward bias —
-		// remaining falls slightly faster per index than distance charges per tile — so the
-		// marker rode the eligibility cap ~10 tiles ahead of the player, ending walk legs and
-		// announcing "Open Door" while still crossing the room. The ETA is derived from the
-		// selected tile afterwards, keeping its walk-back charge without steering the selection.
-		int best = -1;
-		int bestDistance = Integer.MAX_VALUE;
-		int bestOffset = Integer.MAX_VALUE;
-		for (int i = 0; i < path.size(); i++)
-		{
-			if (i > returnGate)
-			{
-				break;
-			}
-			int packed = path.get(i).getPackedPosition();
-			if (WorldPointUtil.unpackWorldPlane(packed) != playerPlane)
-			{
-				continue;
-			}
-			int distance = WorldPointUtil.distanceBetween(packed, playerPacked);
-			// Eligible: an incremental move near the line (honest travel), or standing right on the
-			// path (a teleport/transport landing anywhere along the route). Past an uncrossed door,
-			// only exact on-path presence counts.
-			boolean beyondDoor = i >= doorGate;
-			boolean incremental = !beyondDoor && Math.abs(i - reachedIndex) <= STEP_WINDOW && distance <= NEAR_DISTANCE;
-			boolean onPath = distance <= (beyondDoor ? 0 : 1);
-			if (!incremental && !onPath)
-			{
-				continue;
-			}
-			int offset = Math.abs(i - reachedIndex);
-			if (distance < bestDistance || (distance == bestDistance && offset < bestOffset))
-			{
-				best = i;
-				bestDistance = distance;
-				bestOffset = offset;
-			}
-		}
-		if (best < 0)
+		// Progress = the eligible path tile NEAREST the player by WALKING distance (ties broken
+		// toward the current position) — see RouteProgress for the wall-aware maze rules; the
+		// selection logic lives there so it is unit-testable. The ETA is derived from the selected
+		// tile afterwards, keeping its walk-back charge without steering the selection.
+		java.util.Map<Integer, Integer> walk = RouteProgress.walkDistances(
+			plugin.getCollisionMap(), playerPacked, RouteProgress.REACH_RADIUS);
+		RouteProgress.Result selection = RouteProgress.select(
+			path, reachedIndex, doorGate, returnGate, playerPacked, walk);
+		if (selection == null)
 		{
 			// Nowhere near the route (long off-path detour): hold the last honest estimate.
 			return;
 		}
-		reachedIndex = best;
-		liveRemainingTicks = bestDistance / 2.0 + remainingTicksAt[best];
-		lastSelectionDistance = bestDistance;
+		reachedIndex = selection.index;
+		liveRemainingTicks = selection.distance / 2.0 + remainingTicksAt[selection.index];
+		lastSelectionDistance = selection.distance;
 	}
 
 	/**
