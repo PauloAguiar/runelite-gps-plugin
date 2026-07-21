@@ -1481,7 +1481,15 @@ public class ShortestPathPlugin extends Plugin
 					setTarget(WorldPointUtil.UNDEFINED);
 					return;
 				}
-				recalculateFrom(currentLocation, pathTargets);
+				// One drift recalc at a time: distance is measured against the OLD path until the
+				// new routes land, so a player who keeps walking would otherwise re-trigger (and
+				// restart) the generation every moved tick and it would never finish. While one is
+				// computing, keep walking; once the fresh path lands the band check re-evaluates
+				// against it and fires at most one follow-up.
+				if (!altGenerationInFlight)
+				{
+					recalculateFrom(currentLocation, pathTargets);
+				}
 				return;
 			}
 			else
