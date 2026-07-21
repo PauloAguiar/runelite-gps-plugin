@@ -265,13 +265,13 @@ public class TransportAuditPlugin extends Plugin
 	private final Set<String> capturedKeys = new HashSet<>();
 	// Parsed captured edges {origin, dest, id} for per-finding state: a finding counts as
 	// captured when an edge with its object id starts or ends near its tile.
-	private final java.util.List<int[]> capturedEdges = new java.util.ArrayList<>();
+	final java.util.List<int[]> capturedEdges = new java.util.ArrayList<>();
 	// edgePaired[i]: capturedEdges[i] has a reverse edge SOMEWHERE (matched by coordinates, not
 	// object id — a cave entrance's reverse is the separate cave-EXIT object's edge). Recomputed
 	// whenever capturedEdges changes.
 	private boolean[] edgePaired = new boolean[0];
 	// Finding keys captured THIS session (vs. edges seeded from the file = earlier sessions).
-	private final Set<Long> capturedThisSession = new HashSet<>();
+	final Set<Long> capturedThisSession = new HashSet<>();
 	// The parsed collection file: recorded unmapped objects from all sessions, shown in the
 	// panel even when their area isn't loaded.
 	private final java.util.List<RecordedEntry> recorded = new java.util.ArrayList<>();
@@ -281,7 +281,7 @@ public class TransportAuditPlugin extends Plugin
 	private java.io.File ignoreFile;
 	// Operator-declared genuine one-ways ("no reverse exists"): edge keys treated as paired so
 	// the row completes instead of asking for a return trip forever. transport-oneway.tsv.
-	private final Set<String> noReverseKeys = ConcurrentHashMap.newKeySet();
+	final Set<String> noReverseKeys = ConcurrentHashMap.newKeySet();
 	private java.io.File oneWayFile;
 	// Manual transport builder (shift right-click sets the pieces; the panel edits and saves).
 	private volatile int builderOrigin = WorldPointUtil.UNDEFINED;
@@ -434,7 +434,7 @@ public class TransportAuditPlugin extends Plugin
 		return tileText(edge[0]) + "|" + tileText(edge[1]) + "|" + edge[2];
 	}
 
-	private void recomputeEdgePairs()
+	void recomputeEdgePairs()
 	{
 		boolean[] paired = new boolean[capturedEdges.size()];
 		for (int i = 0; i < capturedEdges.size(); i++)
@@ -447,7 +447,12 @@ public class TransportAuditPlugin extends Plugin
 			}
 			for (int[] other : capturedEdges)
 			{
-				if (WorldPointUtil.distanceBetween(other[0], edge[1]) <= 5
+				// A reverse must be a DIFFERENT edge travelling the OPPOSITE way: without the
+				// direction check, a same-plane short hop (rockslide: origin and dest within the
+				// 5-tile tolerance) paired with ITSELF or with a same-direction duplicate.
+				if (other != edge
+					&& opposingDirections(edge, other)
+					&& WorldPointUtil.distanceBetween(other[0], edge[1]) <= 5
 					&& WorldPointUtil.distanceBetween(other[1], edge[0]) <= 5)
 				{
 					paired[i] = true;
@@ -456,6 +461,26 @@ public class TransportAuditPlugin extends Plugin
 			}
 		}
 		edgePaired = paired;
+	}
+
+	/** Whether two edges travel opposite ways (plane movement opposed; else 2D headings oppose). */
+	private static boolean opposingDirections(int[] edge, int[] other)
+	{
+		int edgePlanes = WorldPointUtil.unpackWorldPlane(edge[1]) - WorldPointUtil.unpackWorldPlane(edge[0]);
+		int otherPlanes = WorldPointUtil.unpackWorldPlane(other[1]) - WorldPointUtil.unpackWorldPlane(other[0]);
+		if (edgePlanes != -otherPlanes)
+		{
+			return false;
+		}
+		if (edgePlanes != 0)
+		{
+			return true; // up vs down is opposition enough
+		}
+		int edgeDx = WorldPointUtil.unpackWorldX(edge[1]) - WorldPointUtil.unpackWorldX(edge[0]);
+		int edgeDy = WorldPointUtil.unpackWorldY(edge[1]) - WorldPointUtil.unpackWorldY(edge[0]);
+		int otherDx = WorldPointUtil.unpackWorldX(other[1]) - WorldPointUtil.unpackWorldX(other[0]);
+		int otherDy = WorldPointUtil.unpackWorldY(other[1]) - WorldPointUtil.unpackWorldY(other[0]);
+		return edgeDx * otherDx + edgeDy * otherDy < 0;
 	}
 
 	/** The curation state coloring a finding everywhere (panel rows and scene outlines). */
@@ -479,7 +504,7 @@ public class TransportAuditPlugin extends Plugin
 	 * Captured/missing state for an object: fully paired edges keep the session/prior color;
 	 * any unpaired edge demotes to CAPTURED_ONE_WAY ("walk the reverse"). No edges = MISSING.
 	 */
-	private FindingState capturedState(int objectId, int packedTile, boolean thisSession)
+	FindingState capturedState(int objectId, int packedTile, boolean thisSession)
 	{
 		boolean any = false;
 		boolean allPaired = true;
@@ -1011,6 +1036,9 @@ public class TransportAuditPlugin extends Plugin
 		if (appendCaptureRow(row, key))
 		{
 			capturedEdges.add(new int[]{capture.originTile, destTile, capture.finding.object.getId()});
+			// Recompute NOW: without this, live-captured edges sat beyond edgePaired.length and
+			// read as one-way until the next restart, however many reverses were walked.
+			recomputeEdgePairs();
 			log.info("[audit] captured — review then paste into transports.tsv:\n{}", row);
 		}
 	}
@@ -1239,6 +1267,7 @@ public class TransportAuditPlugin extends Plugin
 					}
 				}
 			}
+			recomputeEdgePairs();
 			log.info("[audit] captures file: {} previously captured edges ({})",
 				capturedKeys.size(), capturesFile);
 		}
