@@ -865,22 +865,24 @@ public class ShortestPathPanel extends PluginPanel
 			eta.setToolTipText("The target can't be reached — this ends at the closest reachable tile");
 		}
 		left.add(eta);
-		topRow.add(left, BorderLayout.WEST);
-
-		JPanel right = new JPanel(new FlowLayout(FlowLayout.TRAILING, 5, 0));
-		right.setOpaque(false);
-		// Priority adjustment chip: why this card sits above/below its raw ETA neighbours. Green
-		// = preferred (ranks as if faster), red = avoided (ranks as if slower).
+		// Priority adjustment chip right beside the ETA it modifies: why this card sits
+		// above/below its raw-ETA neighbours. Green = preferred (ranks as if faster), red =
+		// avoided (ranks as if slower).
 		int adjustment = plugin.routeAdjustmentSeconds(route);
 		if (adjustment != 0)
 		{
 			JLabel priorityChip = new JLabel((adjustment > 0 ? "+" : "−") + Math.abs(adjustment) + "s");
 			priorityChip.setFont(FontManager.getRunescapeSmallFont());
+			priorityChip.setBorder(new EmptyBorder(0, 4, 0, 0));
 			priorityChip.setForeground(adjustment < 0
 				? new Color(70, 200, 90) : ColorScheme.PROGRESS_ERROR_COLOR);
 			priorityChip.setToolTipText("Priority adjustment — changes this route's position, not its ETA");
-			right.add(priorityChip);
+			left.add(priorityChip);
 		}
+		topRow.add(left, BorderLayout.WEST);
+
+		JPanel right = new JPanel(new FlowLayout(FlowLayout.TRAILING, 5, 0));
+		right.setOpaque(false);
 		if (route.isViaBank())
 		{
 			// The bank detour as a compact header chip; the coin glyph on the method row below
