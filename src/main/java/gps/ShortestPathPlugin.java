@@ -2612,6 +2612,20 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	private volatile int cachedWalkPreferenceSeconds;
+	private volatile int cachedBankPreferenceSeconds;
+
+	/** The bank-detour bias in seconds: positive prefers via-bank routes, negative avoids them. */
+	public int getBankPreferenceSeconds()
+	{
+		return cachedBankPreferenceSeconds;
+	}
+
+	public void setBankPreferenceSeconds(int seconds)
+	{
+		configManager.setConfiguration(CONFIG_GROUP, "bankPreferenceSeconds", seconds);
+		cachedBankPreferenceSeconds = seconds;
+		resortRoutesByPriority();
+	}
 
 	/**
 	 * The route's ranking adjustment in seconds: the sum of its methods' tiers — or, for the
@@ -2627,6 +2641,10 @@ public class ShortestPathPlugin extends Plugin
 		for (TeleportMethod method : route.getMethods())
 		{
 			seconds += methodPriorities.getOrDefault(method, MethodPriority.NORMAL).adjustSeconds;
+		}
+		if (route.isViaBank())
+		{
+			seconds -= cachedBankPreferenceSeconds;
 		}
 		return seconds;
 	}
@@ -2708,6 +2726,8 @@ public class ShortestPathPlugin extends Plugin
 		}
 		Integer walk = configManager.getConfiguration(CONFIG_GROUP, "walkPreferenceSeconds", Integer.class);
 		cachedWalkPreferenceSeconds = walk != null ? walk : 0;
+		Integer bank = configManager.getConfiguration(CONFIG_GROUP, "bankPreferenceSeconds", Integer.class);
+		cachedBankPreferenceSeconds = bank != null ? bank : 0;
 	}
 
 	private volatile int houseLocationId;

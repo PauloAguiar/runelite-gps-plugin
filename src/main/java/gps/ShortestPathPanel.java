@@ -164,6 +164,7 @@ public class ShortestPathPanel extends PluginPanel
 	private boolean travelSectionExpanded = false;
 	private boolean pohSectionExpanded = false;
 	private boolean wildernessSectionExpanded = false;
+	private boolean walkingSectionExpanded = false;
 	private boolean bankSectionExpanded = false;
 	private boolean balloonSectionExpanded = false;
 	private boolean spiritTreeSectionExpanded = false;
@@ -1130,7 +1131,7 @@ public class ShortestPathPanel extends PluginPanel
 			cardTier == MethodPriority.NORMAL ? RouteIcons.PRIORITY_NEUTRAL_DIM : priorityRestIcon(cardTier),
 			priorityHoverIcon(cardTier),
 			"Priority: " + cardTier.label + " — click to change",
-			() -> showPriorityMenu(excludeHolder[0], method, false));
+			() -> showPriorityMenu(excludeHolder[0], method));
 		IconActionLabel exclude = excludeHolder[0];
 		JPanel actionWrap = new JPanel(new GridBagLayout());
 		actionWrap.setOpaque(false);
@@ -1145,43 +1146,6 @@ public class ShortestPathPanel extends PluginPanel
 				? priorityHoverIcon(hoverTier)
 				: (hoverTier == MethodPriority.NORMAL
 					? RouteIcons.PRIORITY_NEUTRAL_DIM : priorityRestIcon(hoverTier))));
-		return row;
-	}
-
-	/**
-	 * The pinned "Walking" row at the top of the travel methods list: same tier menu as the
-	 * methods (minus exclude), driving the walk-preference seconds.
-	 */
-	private JPanel buildWalkPriorityRow()
-	{
-		JPanel row = new JPanel(new BorderLayout(4, 0));
-		row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		row.setBorder(new EmptyBorder(2, 4, 2, 4));
-		row.setAlignmentX(Component.LEFT_ALIGNMENT);
-		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
-
-		int walkSeconds = plugin.getWalkPreferenceSeconds();
-		MethodPriority tier = walkTierFromSeconds(walkSeconds);
-		String state = walkSeconds == 0
-			? "no preference"
-			: (walkSeconds > 0
-				? "preferred within " + walkSeconds + "s"
-				: "avoided by " + (-walkSeconds) + "s");
-		JLabel text = wrappedLabel("<b>Walking</b> — " + state);
-		text.setToolTipText("<html>How to weigh plain walking against travel methods.<br>"
-			+ "\"Prefer\" gives the walk route ranking slack: it stays on top unless a method"
-			+ " beats it by more than the preference.</html>");
-		row.add(verticallyCentered(text), BorderLayout.CENTER);
-
-		final IconActionLabel[] holder = new IconActionLabel[1];
-		holder[0] = new IconActionLabel(priorityRestIcon(tier), priorityHoverIcon(tier),
-			"Walking priority — click for options",
-			() -> showPriorityMenu(holder[0], null, true));
-		JPanel actionWrap = new JPanel(new GridBagLayout());
-		actionWrap.setOpaque(false);
-		actionWrap.setPreferredSize(new Dimension(CONTROL_SIZE, CONTROL_SIZE));
-		actionWrap.add(control(holder[0]));
-		row.add(actionWrap, BorderLayout.EAST);
 		return row;
 	}
 
@@ -1248,12 +1212,10 @@ public class ShortestPathPanel extends PluginPanel
 	 * the target: tiers set the walking preference instead of a method tier, and Exclude is
 	 * omitted (walking can't be excluded).
 	 */
-	private void showPriorityMenu(Component anchor, TeleportMethod method, boolean walkMode)
+	private void showPriorityMenu(Component anchor, TeleportMethod method)
 	{
 		javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
-		MethodPriority current = walkMode
-			? walkTierFromSeconds(plugin.getWalkPreferenceSeconds())
-			: plugin.getMethodPriority(method);
+		MethodPriority current = plugin.getMethodPriority(method);
 		for (MethodPriority tier : new MethodPriority[]{
 			MethodPriority.PREFER_3, MethodPriority.PREFER_2, MethodPriority.PREFER_1,
 			MethodPriority.NORMAL,
@@ -1263,45 +1225,17 @@ public class ShortestPathPanel extends PluginPanel
 			javax.swing.JMenuItem entry = new javax.swing.JMenuItem(text, priorityRestIcon(tier));
 			entry.setFont(tier == current
 				? FontManager.getRunescapeBoldFont() : FontManager.getRunescapeSmallFont());
-			entry.addActionListener(e ->
-			{
-				if (walkMode)
-				{
-					// Walk preference: "prefer" gives walking that many seconds of slack, so it
-					// outranks methods unless they beat it by more than the preference.
-					plugin.setWalkPreferenceSeconds(-tier.adjustSeconds);
-				}
-				else
-				{
-					plugin.setMethodPriority(method, tier);
-				}
-			});
+			entry.addActionListener(e -> plugin.setMethodPriority(method, tier));
 			menu.add(entry);
 		}
-		if (!walkMode)
-		{
-			menu.addSeparator();
-			javax.swing.JMenuItem exclude = new javax.swing.JMenuItem(
-				MethodPriority.EXCLUDED.label, RouteIcons.CROSS);
-			exclude.setFont(current == MethodPriority.EXCLUDED
-				? FontManager.getRunescapeBoldFont() : FontManager.getRunescapeSmallFont());
-			exclude.addActionListener(e -> plugin.setMethodPriority(method, MethodPriority.EXCLUDED));
-			menu.add(exclude);
-		}
+		menu.addSeparator();
+		javax.swing.JMenuItem exclude = new javax.swing.JMenuItem(
+			MethodPriority.EXCLUDED.label, RouteIcons.CROSS);
+		exclude.setFont(current == MethodPriority.EXCLUDED
+			? FontManager.getRunescapeBoldFont() : FontManager.getRunescapeSmallFont());
+		exclude.addActionListener(e -> plugin.setMethodPriority(method, MethodPriority.EXCLUDED));
+		menu.add(exclude);
 		menu.show(anchor, 0, anchor.getHeight());
-	}
-
-	/** The tier whose seconds match the walk preference (custom values snap to NORMAL display). */
-	private static MethodPriority walkTierFromSeconds(int walkPreferenceSeconds)
-	{
-		for (MethodPriority tier : MethodPriority.values())
-		{
-			if (tier != MethodPriority.EXCLUDED && -tier.adjustSeconds == walkPreferenceSeconds)
-			{
-				return tier;
-			}
-		}
-		return MethodPriority.NORMAL;
 	}
 
 	/** The funnel icon that opens the catalog filter menu; orange while a filter is active. */
@@ -1499,6 +1433,7 @@ public class ShortestPathPanel extends PluginPanel
 		body.setBorder(new EmptyBorder(0, 8, 0, 0));
 		body.add(buildPohSection());
 		body.add(buildWildernessSection());
+		body.add(buildWalkingSection());
 		body.add(buildBankSection());
 		body.add(buildBalloonSection());
 		body.add(buildSpiritTreeSection());
@@ -1721,6 +1656,81 @@ public class ShortestPathPanel extends PluginPanel
 		return section;
 	}
 
+	/** The signed-seconds chip for a Travel-options section header ("+10s" / "−5s" / "neutral"). */
+	private static String biasChip(int seconds)
+	{
+		if (seconds == 0)
+		{
+			return "neutral";
+		}
+		return (seconds > 0 ? "+" : "−") + Math.abs(seconds) + "s";
+	}
+
+	private static Color biasColor(int seconds)
+	{
+		if (seconds == 0)
+		{
+			return ColorScheme.LIGHT_GRAY_COLOR;
+		}
+		return seconds > 0 ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.PROGRESS_INPROGRESS_COLOR;
+	}
+
+	/** A "Bias (seconds)" spinner row: −120..120 in steps of 5, wired to the given setter. */
+	private JPanel biasSpinnerRow(String caption, String tooltip, int value,
+		java.util.function.IntConsumer setter)
+	{
+		JPanel row = new JPanel(new BorderLayout(5, 0));
+		row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		row.setAlignmentX(Component.LEFT_ALIGNMENT);
+		JLabel label = new JLabel(caption);
+		label.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		label.setToolTipText(tooltip);
+		row.add(label, BorderLayout.CENTER);
+		JSpinner spinner = new JSpinner(new SpinnerNumberModel(value, -120, 120, 5));
+		spinner.setToolTipText(tooltip);
+		spinner.addChangeListener(e -> setter.accept((Integer) spinner.getValue()));
+		row.add(spinner, BorderLayout.EAST);
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, spinner.getPreferredSize().height + 4));
+		return row;
+	}
+
+	/**
+	 * Walking as a travel POLICY (not a method): a seconds bias with finer control than the
+	 * method tiers. Positive = walking keeps the top spot unless a method beats it by more than
+	 * the bias; negative penalises the pure-walk route the same way.
+	 */
+	private JPanel buildWalkingSection()
+	{
+		int bias = plugin.getWalkPreferenceSeconds();
+		JPanel section = configSectionShell("Walking",
+			"How plain walking ranks against travel methods",
+			walkingSectionExpanded, () -> walkingSectionExpanded = !walkingSectionExpanded,
+			biasChip(bias), biasColor(bias));
+		if (!walkingSectionExpanded)
+		{
+			return section;
+		}
+		JPanel body = configSectionBody();
+		body.add(configStatusLabel(bias == 0
+				? "No preference — routes rank purely by time."
+				: (bias > 0
+					? "Walking wins unless a method is more than " + bias + "s faster."
+					: "Walking is ranked as if " + (-bias) + "s slower."),
+			ColorScheme.LIGHT_GRAY_COLOR));
+		body.add(biasSpinnerRow("Prefer walking by (s):",
+			"<html>Ranking bias for the pure-walk route, in seconds.<br>"
+				+ "Positive: walking keeps the top spot unless a method beats it by more.<br>"
+				+ "Negative: walking ranks as if slower. Changes re-sort instantly.</html>",
+			bias, v -> {
+				plugin.setWalkPreferenceSeconds(v);
+				SwingUtilities.invokeLater(this::refreshConfigSections);
+			}));
+		body.add(configNote("Ranking only — the walk route's ETA and path never change.",
+			ColorScheme.MEDIUM_GRAY_COLOR));
+		section.add(body);
+		return section;
+	}
+
 	/**
 	 * Bank memory: whether GPS saves the bank's contents when the bank closes and restores them at
 	 * login, so "+ Bank" routes and in-bank availability work without opening the bank first. GPS
@@ -1769,6 +1779,18 @@ public class ShortestPathPanel extends PluginPanel
 			v -> plugin.setPanelConfig("rememberBank", v)));
 		body.add(configNote("Opening the bank always refreshes the snapshot; turning this off deletes it.",
 			ColorScheme.MEDIUM_GRAY_COLOR));
+
+		// Ranking bias for via-bank routes — finer control than the method tiers, and separate
+		// from the withdrawal time already counted inside those routes' ETAs.
+		int bankBias = plugin.getBankPreferenceSeconds();
+		body.add(biasSpinnerRow("Prefer bank routes by (s):",
+			"<html>Ranking bias for routes that detour via a bank, in seconds.<br>"
+				+ "Positive: bank routes rank as if faster; negative: as if slower.<br>"
+				+ "Separate from the withdrawal time, which is already in their ETA.</html>",
+			bankBias, v -> {
+				plugin.setBankPreferenceSeconds(v);
+				SwingUtilities.invokeLater(this::refreshConfigSections);
+			}));
 		section.add(body);
 		return section;
 	}
@@ -2159,13 +2181,6 @@ public class ShortestPathPanel extends PluginPanel
 		String filter = catalogSearch.getText() == null ? "" : catalogSearch.getText().trim().toLowerCase();
 		boolean filtering = !filter.isEmpty();
 
-		// Walking's own priority row, pinned above the method categories: a walk preference gives
-		// the plain-walk route that many seconds of ranking slack (it wins unless a method beats
-		// it by more), and "avoid" tiers penalise it the same way.
-		if (!filtering || "walking".contains(filter))
-		{
-			rows.add(buildWalkPriorityRow());
-		}
 
 		Map<String, List<TeleportMethod>> grouped = new TreeMap<>();
 		for (TeleportMethod method : cachedCatalog)
@@ -2318,7 +2333,7 @@ public class ShortestPathPanel extends PluginPanel
 		final IconActionLabel[] toggleHolder = new IconActionLabel[1];
 		toggleHolder[0] = new IconActionLabel(priorityRestIcon(tier), priorityHoverIcon(tier),
 			priorityTooltip(item.label(), tier),
-			() -> showPriorityMenu(toggleHolder[0], item, false));
+			() -> showPriorityMenu(toggleHolder[0], item));
 		IconActionLabel toggle = toggleHolder[0];
 		// The status marker (lock/bank) stays by the name; the toggle sits at the row's right edge,
 		// aligned with the category toggles, away from where users click to expand.

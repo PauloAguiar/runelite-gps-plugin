@@ -109,6 +109,27 @@ public class MethodPriorityTest
 	}
 
 	@Test
+	public void bankBiasShiftsViaBankRoutes() throws Exception
+	{
+		TeleportMethod tab = new TeleportMethod(TransportType.TELEPORTATION_ITEM, "Tablet", 10);
+		ShortestPathPlugin plugin = pluginWith(Map.of(), 0, Set.of());
+		Field bankField = ShortestPathPlugin.class.getDeclaredField("cachedBankPreferenceSeconds");
+		bankField.setAccessible(true);
+		bankField.setInt(plugin, 10); // prefer bank routes by 10s
+
+		RouteOption viaBank = new RouteOption(List.of(), List.of(tab), List.of(), List.of(),
+			300, 300, true, Set.of(tab), List.of(), 0);
+		RouteOption direct = route(280, tab);
+		assertEquals(-10, plugin.routeAdjustmentSeconds(viaBank));
+		assertEquals("bank route effective 267 beats direct 280",
+			viaBank, plugin.sortByEffectiveOrder(List.of(direct, viaBank)).get(0));
+
+		bankField.setInt(plugin, -10); // avoid bank routes
+		assertEquals(10, plugin.routeAdjustmentSeconds(viaBank));
+		assertEquals(direct, plugin.sortByEffectiveOrder(List.of(viaBank, direct)).get(0));
+	}
+
+	@Test
 	public void adjustmentsNeverPromoteAnUnreachedRoute() throws Exception
 	{
 		TeleportMethod tab = new TeleportMethod(TransportType.TELEPORTATION_ITEM, "Tablet", 6);
