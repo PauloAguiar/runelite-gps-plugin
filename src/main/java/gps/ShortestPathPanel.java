@@ -1656,14 +1656,19 @@ public class ShortestPathPanel extends PluginPanel
 		return section;
 	}
 
-	/** The signed-seconds chip for a Travel-options section header ("+10s" / "−5s" / "neutral"). */
-	private static String biasChip(int seconds)
+	/**
+	 * The seconds chip for a Travel-options section header, in the SAME sign convention as the
+	 * route cards' adjustment chips: green −15s = "ranks as if 15s cheaper". A preference of
+	 * +15s therefore displays as −15s — showing the raw preference read as a surcharge.
+	 */
+	private static String biasChip(int preferenceSeconds)
 	{
-		if (seconds == 0)
+		if (preferenceSeconds == 0)
 		{
 			return "neutral";
 		}
-		return (seconds > 0 ? "+" : "−") + Math.abs(seconds) + "s";
+		int adjustment = -preferenceSeconds;
+		return (adjustment > 0 ? "+" : "−") + Math.abs(adjustment) + "s";
 	}
 
 	private static Color biasColor(int seconds)
