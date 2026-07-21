@@ -1,4 +1,4 @@
-# Origin	Destination	menuOption menuTarget objectID	Duration	Display info	Varbits
+# Origin	Destination	menuOption menuTarget objectID	Duration	Display info	Varbits	Meta
 1960 5750 0	3087 3496 0	Edgeville Amulet of Glory 13523	4	Edgeville
 1960 5750 0	2918 3176 0	Karamja Amulet of Glory 13523	4	Karamja
 1960 5750 0	3105 3251 0	Draynor Village Amulet of Glory 13523	4	Draynor Village
@@ -8,7 +8,7 @@
 1886 5760 0	1752 3566 0	Glade Xeric's Talisman 33412	4	2: Glade
 1886 5760 0	1504 3815 0	Inferno Xeric's Talisman 33413	4	3: Inferno
 1886 5760 0	1644 3673 0	Heart Xeric's Talisman 33414	4	4: Heart
-1886 5760 0	1254 3560 0	Honour Xeric's Talisman 33415	4	5: Honour	4916=1
+1886 5760 0	1254 3560 0	Honour Xeric's Talisman 33415	4	5: Honour	4916=1	?varbits
 1886 5760 0	3341 3445 0	Digsite Digsite Pendant 33417	4	1: Digsite
 1886 5760 0	3763 3869 1	Fossil Island Digsite Pendant 33418	4	2: Fossil Island
 1886 5760 0	3549 10456 0	Lithkren Digsite Pendant 33419	4	3: Lithkren

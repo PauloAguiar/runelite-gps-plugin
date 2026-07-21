@@ -169,6 +169,8 @@ public class TransportAuditPlugin extends Plugin
 		MISSING,
 		ARMED,
 		DOOR,
+		/** A Meta-tagged transport row (machine-derived values) — traverse/use it to confirm. */
+		CONFIRM,
 		/** Captured, but no reverse edge exists anywhere — walk the return trip to complete it. */
 		CAPTURED_ONE_WAY,
 		CAPTURED_SESSION,
@@ -283,6 +285,9 @@ public class TransportAuditPlugin extends Plugin
 	// the row completes instead of asking for a return trip forever. transport-oneway.tsv.
 	final Set<String> noReverseKeys = ConcurrentHashMap.newKeySet();
 	private java.io.File oneWayFile;
+	// Meta-tagged transport rows (the TSVs' Meta column: ~estimated / ?unconfirmed values) —
+	// shown as a "needs confirmation" group so field sessions can verify them.
+	private java.util.List<MetaEdges.Entry> metaEdges = java.util.List.of();
 	// Manual transport builder (shift right-click sets the pieces; the panel edits and saves).
 	private volatile int builderOrigin = WorldPointUtil.UNDEFINED;
 	private volatile int builderDest = WorldPointUtil.UNDEFINED;
@@ -354,6 +359,11 @@ public class TransportAuditPlugin extends Plugin
 		{
 			ignoreFile = new java.io.File(auditFile.getParentFile(), "transport-ignore.tsv");
 			seedIgnoredFromFile();
+		}
+		if (metaEdges.isEmpty())
+		{
+			metaEdges = MetaEdges.load();
+			log.info("[audit] meta-tagged transport rows awaiting confirmation: {}", metaEdges.size());
 		}
 		if (oneWayFile == null)
 		{
@@ -531,6 +541,11 @@ public class TransportAuditPlugin extends Plugin
 			return FindingState.CAPTURED_ONE_WAY;
 		}
 		return thisSession ? FindingState.CAPTURED_SESSION : FindingState.CAPTURED_PRIOR;
+	}
+
+	java.util.List<MetaEdges.Entry> metaEdges()
+	{
+		return metaEdges;
 	}
 
 	Iterable<Finding> findings()
@@ -1309,6 +1324,17 @@ public class TransportAuditPlugin extends Plugin
 				dossierText(entry.name, entry.id, entry.packedTile, entry.action,
 					entry.actions, entry.door, -1)));
 		}
+		for (MetaEdges.Entry entry : metaEdges)
+		{
+			int anchor = entry.origin != WorldPointUtil.UNDEFINED ? entry.origin : entry.destination;
+			int distance = anchor != WorldPointUtil.UNDEFINED
+				? WorldPointUtil.distanceBetween2D(playerTile, anchor) : Integer.MAX_VALUE;
+			rows.add(new Row(entry.menu.isEmpty() ? entry.file : entry.menu, entry.tags, 0,
+				anchor, FindingState.CONFIRM, distance, false,
+				"Meta-tagged row (" + entry.file + "): " + entry.describe()
+					+ "\nConfirm by traversing/using it with the audit running — the capture "
+					+ "measures the real values; then remove the tags from the row."));
+		}
 		rows.sort(java.util.Comparator
 			.comparingInt((Row row) -> row.live ? 0 : 1)
 			.thenComparingInt(row -> statePriority(row.state))
@@ -1344,14 +1370,16 @@ public class TransportAuditPlugin extends Plugin
 				return 1;
 			case DOOR:
 				return 2;
+			case CONFIRM:
+				return 3; // machine-derived values awaiting a field check
 			case CAPTURED_ONE_WAY:
-				return 3; // actionable: the return trip is still missing
+				return 4; // actionable: the return trip is still missing
 			case CAPTURED_SESSION:
-				return 4;
-			case CAPTURED_PRIOR:
 				return 5;
+			case CAPTURED_PRIOR:
+				return 6;
 			default:
-				return 6; // RESOLVED — prunable tail
+				return 7; // RESOLVED — prunable tail
 		}
 	}
 

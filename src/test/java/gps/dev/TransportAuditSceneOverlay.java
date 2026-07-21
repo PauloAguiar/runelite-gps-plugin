@@ -22,6 +22,7 @@ class TransportAuditSceneOverlay extends Overlay
 {
 	static final Color UNMAPPED = new Color(255, 60, 60);
 	static final Color UNMAPPED_DOOR = new Color(255, 160, 40);
+	static final Color CONFIRM = new Color(176, 128, 255);
 
 	private final Client client;
 	private final TransportAuditPlugin plugin;
@@ -39,6 +40,28 @@ class TransportAuditSceneOverlay extends Overlay
 	public Dimension render(Graphics2D graphics)
 	{
 		final int currentPlane = client.getTopLevelWorldView().getPlane();
+		// Meta-tagged rows (machine-derived values): violet markers at their origin tiles, so a
+		// field session can see what nearby needs confirming.
+		for (MetaEdges.Entry entry : plugin.metaEdges())
+		{
+			if (entry.origin == gps.WorldPointUtil.UNDEFINED
+				|| gps.WorldPointUtil.unpackWorldPlane(entry.origin) != currentPlane)
+			{
+				continue;
+			}
+			LocalPoint location = LocalPoint.fromWorld(client.getTopLevelWorldView(),
+				gps.WorldPointUtil.unpackWorldX(entry.origin),
+				gps.WorldPointUtil.unpackWorldY(entry.origin));
+			if (location == null)
+			{
+				continue;
+			}
+			Polygon poly = Perspective.getCanvasTilePoly(client, location);
+			if (poly != null)
+			{
+				OverlayUtil.renderPolygon(graphics, poly, CONFIRM);
+			}
+		}
 		for (TransportAuditPlugin.Finding finding : plugin.findings())
 		{
 			// Only the rendered plane: other-plane findings would project onto this plane's

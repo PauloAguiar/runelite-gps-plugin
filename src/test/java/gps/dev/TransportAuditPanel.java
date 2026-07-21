@@ -370,6 +370,8 @@ class TransportAuditPanel extends PluginPanel
 				return Color.YELLOW;
 			case DOOR:
 				return TransportAuditSceneOverlay.UNMAPPED_DOOR;
+			case CONFIRM:
+				return new Color(176, 128, 255);
 			case CAPTURED_ONE_WAY:
 				return new Color(190, 220, 60);
 			case CAPTURED_SESSION:
@@ -391,6 +393,8 @@ class TransportAuditPanel extends PluginPanel
 				return "capture armed — traverse it now";
 			case DOOR:
 				return "door not in registry — re-run doorDump";
+			case CONFIRM:
+				return "machine-derived — traverse with the audit on to confirm";
 			case CAPTURED_ONE_WAY:
 				return "captured ONE-WAY ✓ — walk the reverse to complete";
 			case CAPTURED_SESSION:
