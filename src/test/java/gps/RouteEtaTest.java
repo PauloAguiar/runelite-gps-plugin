@@ -5,52 +5,51 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 /**
- * The ETA must count the bank detour so it never disagrees with the ranking. From a user capture:
- * a direct route (rawCost 104, no bank) was ranked ABOVE a banking route (rawCost 84) whose total
- * cost was 114 after the +30 bank-pickup — but the ETA showed only the banking route's 84, making
- * the top route look slower. The ETA now includes the bank pickup, so time order matches rank.
+ * The ETA/priority separation: the card's ETA is the route's FULL configured cost (travel time,
+ * bank detour, and the implicit cost modifiers — charged items, transport type, currency), while
+ * explicit priorities stay outside as the green/red chip. List order is always ETA + chip; no
+ * hidden component may reorder cards (the Combat-bracelet capture: a 13s-looking route ranked
+ * last because its charged-item surcharge was invisible).
  */
 public class RouteEtaTest
 {
-	@Test
-	public void bankDetourCountsTowardTheEta()
+	private static RouteOption route(int totalCost, int rawCost, boolean viaBank)
 	{
-		int direct = ShortestPathPanel.etaUnits(104, false, 30);
-		int banking = ShortestPathPanel.etaUnits(84, true, 30);
-		assertEquals("a direct route's ETA is just its travel cost", 104, direct);
-		assertEquals("a banking route's ETA adds the bank-pickup time", 84 + 30, banking);
-		assertTrue("the higher-ranked (cheaper total) route must not show a longer ETA",
-			direct <= banking);
+		TeleportMethod method = new TeleportMethod(
+			gps.transport.TransportType.TELEPORTATION_ITEM, "Test", 1);
+		return new RouteOption(java.util.List.of(), java.util.List.of(method), java.util.List.of(),
+			java.util.List.of(), totalCost, rawCost, true,
+			viaBank ? java.util.Set.of(method) : java.util.Set.of(), java.util.List.of(), 0);
 	}
 
 	@Test
-	public void negativeBankModifierIsAPreferenceNotNegativeTime()
+	public void etaIsTheFullConfiguredCostIncludingModifiers()
 	{
-		// A negative costBankPickup favours banking in the ordering, but banking can't take less
-		// than the raw travel time — the ETA never dips below rawCost.
-		assertEquals(84, ShortestPathPanel.etaUnits(84, true, -50));
-		assertEquals(84, ShortestPathPanel.etaUnits(84, false, -50));
+		// rawCost 84 with a +30 surcharge (bank pickup or charged-item modifier): the ETA shows
+		// the full 114 — the surcharge is never hidden from the number the user compares.
+		assertEquals(114, ShortestPathPanel.routeEtaUnits(route(114, 84, true)));
+		// No modifiers: ETA == raw travel cost.
+		assertEquals(104, ShortestPathPanel.routeEtaUnits(route(104, 104, false)));
 	}
 
 	/**
-	 * The directions overlay's bank-withdraw step and the route card's ETA must count the same bank
-	 * time, so the two surfaces agree. The card adds {@code costBankPickup} cost units; the overlay
-	 * adds {@code bankWithdrawTicks} ticks — those ticks, back in cost units, must match (within the
-	 * one-unit granularity of whole ticks).
+	 * The directions overlay's bank-withdraw step must count the same bank time the search put
+	 * into totalCost: {@code bankWithdrawTicks} in cost units tracks {@code max(0, pickup)}
+	 * within one-tick granularity, and a negative modifier (a ranking preference) is no time.
 	 */
 	@Test
-	public void directionsBankTicksMatchTheCardEta()
+	public void directionsBankTicksMatchTheChargedPickup()
 	{
 		for (int cost : new int[]{0, 15, 16, 30, 100})
 		{
-			int cardUnits = ShortestPathPanel.etaUnits(0, true, cost); // = max(0, cost)
+			int chargedUnits = Math.max(0, cost);
 			int overlayUnits = RouteDirections.bankWithdrawTicks(cost)
 				* gps.pathfinder.CostUnits.UNITS_PER_TICK;
 			assertTrue("bank time must agree for costBankPickup=" + cost
-				+ " (card " + cardUnits + " vs overlay " + overlayUnits + ")",
-				Math.abs(cardUnits - overlayUnits) <= 1);
+				+ " (charged " + chargedUnits + " vs overlay " + overlayUnits + ")",
+				Math.abs(chargedUnits - overlayUnits) <= 1);
 		}
-		// A negative modifier counts as no bank time on both surfaces.
 		assertEquals(0, RouteDirections.bankWithdrawTicks(-50));
 	}
+
 }

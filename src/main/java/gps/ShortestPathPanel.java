@@ -847,33 +847,24 @@ public class ShortestPathPanel extends PluginPanel
 		left.add(rank);
 		// The ETA counts travel + the bank detour; ordering additionally counts preference
 		// modifiers (transport type, currency), so a route can be faster yet ranked lower.
-		int etaUnits = routeEtaUnits(route);
-		boolean weighted = etaUnits != route.getTotalCost();
 		JLabel eta = new JLabel(formatDuration(routeEtaSeconds(route)), RouteIcons.CLOCK, SwingConstants.LEADING);
 		eta.setIconTextGap(3);
 		eta.setBorder(new EmptyBorder(0, 12, 0, 0));
 		eta.setFont(FontManager.getRunescapeBoldFont());
 		eta.setForeground(selected ? ColorScheme.BRAND_ORANGE : Color.WHITE);
-		eta.setToolTipText("<html>Estimated travel time, assuming you run"
-			+ (route.isViaBank() ? " — includes the bank detour" : "") + ".<br>"
-			+ (weighted
-				? "Ordering also counts your method preferences: adjusted cost " + route.getTotalCost()
-					+ " vs " + etaUnits + " for time (run-tiles, 0.3s each)."
-				: "Routes are ordered by this time.")
-			+ "</html>");
+		eta.setToolTipText("<html>Estimated cost of this route, assuming you run"
+			+ (route.isViaBank() ? " — includes the bank detour" : "")
+			+ ".<br>Includes your cost modifiers (charged items, transport type, currency);"
+			+ "<br>routes are ordered by this plus the green/red priority chips.</html>");
 		if (!reaches)
 		{
 			eta.setToolTipText("The target can't be reached — this ends at the closest reachable tile");
 		}
 		left.add(eta);
-		// Ranking-adjustment chip beside the ETA: the TOTAL gap between the shown time and where
-		// the route ranks, from every source — method priorities, walk/bank bias, AND the cost
-		// modifiers the search already charges (charged teleport items, transport-type,
-		// currency). Without the modifier part, a surcharged route looked mis-sorted next to
-		// chips that explained their neighbours. Green = ranks as if faster, red = slower.
-		int modifierSeconds = (int) Math.round(
-			(route.getTotalCost() - etaUnits) * gps.pathfinder.CostUnits.SECONDS_PER_UNIT);
-		int adjustment = plugin.routeAdjustmentSeconds(route) + modifierSeconds;
+		// Explicit-priority chip beside the ETA. Implicit cost modifiers are inside the ETA
+		// itself now, so the chip is purely the user's prefer/avoid/walk/bank bias — and list
+		// order is always ETA + chip, nothing hidden. Green = ranks as if faster, red = slower.
+		int adjustment = plugin.routeAdjustmentSeconds(route);
 		if (adjustment != 0)
 		{
 			JLabel priorityChip = new JLabel((adjustment > 0 ? "+" : "−") + Math.abs(adjustment) + "s");
@@ -881,9 +872,7 @@ public class ShortestPathPanel extends PluginPanel
 			priorityChip.setBorder(new EmptyBorder(0, 4, 0, 0));
 			priorityChip.setForeground(adjustment < 0
 				? new Color(70, 200, 90) : ColorScheme.PROGRESS_ERROR_COLOR);
-			priorityChip.setToolTipText("<html>Ranking adjustment vs the shown ETA — from your"
-				+ " priorities and cost modifiers (charged items, transport type, currency).<br>"
-				+ "Changes this route's position, not its ETA.</html>");
+			priorityChip.setToolTipText("Your priority bias — changes this route's position, not its ETA");
 			left.add(priorityChip);
 		}
 		topRow.add(left, BorderLayout.WEST);
@@ -984,14 +973,15 @@ public class ShortestPathPanel extends PluginPanel
 	 * which are pure ordering preferences. A negative bank modifier is a "favour banking" preference,
 	 * not negative time, so it's clamped out.
 	 */
-	private int routeEtaUnits(RouteOption route)
+	/**
+	 * The ETA is the route's full configured cost: travel time, the bank detour, AND the
+	 * implicit cost modifiers (charged items, transport type, currency) — those model what the
+	 * route costs YOU, so they belong in the number. Explicit priorities stay outside (they're
+	 * the chip): list order = this ETA + priority chips, nothing hidden. Static for tests.
+	 */
+	static int routeEtaUnits(RouteOption route)
 	{
-		return etaUnits(route.getRawCost(), route.isViaBank(), plugin.getGpsConfig().costBankPickup());
-	}
-
-	static int etaUnits(int rawCost, boolean viaBank, int bankPickupCost)
-	{
-		return rawCost + (viaBank ? Math.max(0, bankPickupCost) : 0);
+		return route.getTotalCost();
 	}
 
 	private int routeEtaSeconds(RouteOption route)
