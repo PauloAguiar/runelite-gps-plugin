@@ -771,6 +771,21 @@ final class RouteIcons
 		new ImageIcon(priorityGlyph(3, false, PRIORITY_DOWN_BRIGHT)),
 	};
 
+	// Neutral tier: a quiet dash (a checkmark reads as "enabled", not "no preference"). The dim
+	// variant is the route-card rest state, near-invisible like the old exclude circle.
+	static final ImageIcon PRIORITY_NEUTRAL = new ImageIcon(priorityDash(GREY));
+	static final ImageIcon PRIORITY_NEUTRAL_HOVER = new ImageIcon(priorityDash(new Color(0xE0, 0xE0, 0xE0)));
+	static final ImageIcon PRIORITY_NEUTRAL_DIM = new ImageIcon(priorityDash(new Color(0x45, 0x45, 0x45)));
+
+	private static BufferedImage priorityDash(Color colour)
+	{
+		return render(g ->
+		{
+			g.setColor(colour);
+			g.fillRoundRect(4, 7, 8, 2, 2, 2);
+		});
+	}
+
 	/** 1-3 stacked arrowheads filling the 16px canvas from the middle out. */
 	private static BufferedImage priorityGlyph(int count, boolean up, Color colour)
 	{

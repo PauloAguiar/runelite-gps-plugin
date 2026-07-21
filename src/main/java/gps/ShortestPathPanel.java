@@ -878,9 +878,7 @@ public class ShortestPathPanel extends PluginPanel
 			priorityChip.setFont(FontManager.getRunescapeSmallFont());
 			priorityChip.setForeground(adjustment < 0
 				? new Color(70, 200, 90) : ColorScheme.PROGRESS_ERROR_COLOR);
-			priorityChip.setToolTipText("<html>Your method priorities adjust this route's ranking by "
-				+ (adjustment > 0 ? "+" : "−") + Math.abs(adjustment) + "s.<br>"
-				+ "The ETA itself is unchanged — this only moves the route up or down the list.</html>");
+			priorityChip.setToolTipText("Priority adjustment — changes this route's position, not its ETA");
 			right.add(priorityChip);
 		}
 		if (route.isViaBank())
@@ -1121,12 +1119,15 @@ public class ShortestPathPanel extends PluginPanel
 			: methodTooltip(method));
 		row.add(text, BorderLayout.CENTER);
 
-		// Nearly invisible at rest (always present, so the row never resizes), it reveals in red
-		// while the pointer is over THIS row — and redder still directly over the icon. Opens the
-		// priority menu (prefer/avoid tiers; exclude at the bottom).
+		// Shows the method's CURRENT tier: near-invisible dash at rest when normal (so the row
+		// stays quiet), the stacked arrows when a preference is set. Hovering the row brightens
+		// it; clicking opens the priority menu (prefer/avoid tiers; exclude at the bottom).
+		MethodPriority cardTier = plugin.getMethodPriority(method);
 		final IconActionLabel[] excludeHolder = new IconActionLabel[1];
-		excludeHolder[0] = new IconActionLabel(RouteIcons.EXCLUDE_DIM, RouteIcons.EXCLUDE_HOVER,
-			"Priority options for \"" + method.routeLabel() + "\" (prefer / avoid / exclude)",
+		excludeHolder[0] = new IconActionLabel(
+			cardTier == MethodPriority.NORMAL ? RouteIcons.PRIORITY_NEUTRAL_DIM : priorityRestIcon(cardTier),
+			priorityHoverIcon(cardTier),
+			"Priority: " + cardTier.label + " — click to change",
 			() -> showPriorityMenu(excludeHolder[0], method, false));
 		IconActionLabel exclude = excludeHolder[0];
 		JPanel actionWrap = new JPanel(new GridBagLayout());
@@ -1136,8 +1137,12 @@ public class ShortestPathPanel extends PluginPanel
 		row.add(actionWrap, BorderLayout.EAST);
 
 		// Reveal only this row's control on hover — not the whole card.
+		final MethodPriority hoverTier = cardTier;
 		addHoverRecursively(row, hovered ->
-			exclude.setRestIcon(hovered ? RouteIcons.EXCLUDE_HOVER : RouteIcons.EXCLUDE_DIM));
+			exclude.setRestIcon(hovered
+				? priorityHoverIcon(hoverTier)
+				: (hoverTier == MethodPriority.NORMAL
+					? RouteIcons.PRIORITY_NEUTRAL_DIM : priorityRestIcon(hoverTier))));
 		return row;
 	}
 
@@ -1199,7 +1204,7 @@ public class ShortestPathPanel extends PluginPanel
 			case EXCLUDED:
 				return RouteIcons.CROSS;
 			default:
-				return RouteIcons.CHECK;
+				return RouteIcons.PRIORITY_NEUTRAL;
 		}
 	}
 
@@ -1222,7 +1227,7 @@ public class ShortestPathPanel extends PluginPanel
 			case EXCLUDED:
 				return RouteIcons.CROSS_HOVER;
 			default:
-				return RouteIcons.CHECK_HOVER;
+				return RouteIcons.PRIORITY_NEUTRAL_HOVER;
 		}
 	}
 
