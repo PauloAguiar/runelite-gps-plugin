@@ -1744,11 +1744,13 @@ public class ShortestPathPanel extends PluginPanel
 	private JPanel buildBankSection()
 	{
 		final boolean remember = plugin.getGpsConfig().rememberBank();
+		// The header chip is the ranking bias (same convention as Walking and the card chips);
+		// the remember-between-sessions state is a detail inside the body.
+		int headerBias = plugin.getBankPreferenceSeconds();
 		JPanel section = configSectionShell("Bank",
-			"Remember your bank between sessions so \"+ Bank\" routes work before you open it",
+			"How bank-detour routes rank, and remembering your bank between sessions",
 			bankSectionExpanded, () -> bankSectionExpanded = !bankSectionExpanded,
-			remember ? "remembered" : "this session",
-			remember ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.LIGHT_GRAY_COLOR);
+			biasChip(headerBias), biasColor(headerBias));
 		if (!bankSectionExpanded)
 		{
 			return section;
