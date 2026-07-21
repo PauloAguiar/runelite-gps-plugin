@@ -130,4 +130,25 @@ public class MethodPriorityTest
 		assertEquals(MethodPriority.NORMAL, plugin.getMethodPriority(
 			new TeleportMethod(TransportType.TELEPORTATION_ITEM, "Other", 8)));
 	}
+
+	@Test
+	public void exclusionMasksButDoesNotEraseTheTier() throws Exception
+	{
+		// Set a tier, then exclude (as the category toggle or the menu would): the tier is
+		// shadowed while excluded and restored the moment the exclusion lifts.
+		TeleportMethod tab = new TeleportMethod(TransportType.TELEPORTATION_ITEM, "Tablet", 9);
+		ShortestPathPlugin plugin = pluginWith(Map.of(tab, MethodPriority.PREFER_2), 0, Set.of());
+		assertEquals(MethodPriority.PREFER_2, plugin.getMethodPriority(tab));
+
+		Field exclusionField = ShortestPathPlugin.class.getDeclaredField("userExclusions");
+		exclusionField.setAccessible(true);
+		@SuppressWarnings("unchecked")
+		Set<TeleportMethod> exclusions = (Set<TeleportMethod>) exclusionField.get(plugin);
+		exclusions.add(tab);
+		assertEquals(MethodPriority.EXCLUDED, plugin.getMethodPriority(tab));
+
+		exclusions.remove(tab);
+		assertEquals("re-inclusion must restore the stored tier",
+			MethodPriority.PREFER_2, plugin.getMethodPriority(tab));
+	}
 }

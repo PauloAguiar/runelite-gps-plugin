@@ -2575,9 +2575,11 @@ public class ShortestPathPlugin extends Plugin
 	{
 		if (priority == MethodPriority.EXCLUDED)
 		{
-			methodPriorities.remove(method);
+			// Exclusion is a MASK over the stored tier, not a replacement: the tier stays in the
+			// map (shadowed by the EXCLUDED read-back) so re-including — via this menu, the
+			// category toggle, or clearExclusions — restores the user's tuning. This matches the
+			// section-toggle path, which never touched the tier map in the first place.
 			excludeMethod(method);
-			savePriorities();
 			return;
 		}
 		if (userExclusions.contains(method))
