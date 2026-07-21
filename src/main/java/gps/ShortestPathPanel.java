@@ -869,6 +869,20 @@ public class ShortestPathPanel extends PluginPanel
 
 		JPanel right = new JPanel(new FlowLayout(FlowLayout.TRAILING, 5, 0));
 		right.setOpaque(false);
+		// Priority adjustment chip: why this card sits above/below its raw ETA neighbours. Green
+		// = preferred (ranks as if faster), red = avoided (ranks as if slower).
+		int adjustment = plugin.routeAdjustmentSeconds(route);
+		if (adjustment != 0)
+		{
+			JLabel priorityChip = new JLabel((adjustment > 0 ? "+" : "−") + Math.abs(adjustment) + "s");
+			priorityChip.setFont(FontManager.getRunescapeSmallFont());
+			priorityChip.setForeground(adjustment < 0
+				? new Color(70, 200, 90) : ColorScheme.PROGRESS_ERROR_COLOR);
+			priorityChip.setToolTipText("<html>Your method priorities adjust this route's ranking by "
+				+ (adjustment > 0 ? "+" : "−") + Math.abs(adjustment) + "s.<br>"
+				+ "The ETA itself is unchanged — this only moves the route up or down the list.</html>");
+			right.add(priorityChip);
+		}
 		if (route.isViaBank())
 		{
 			// The bank detour as a compact header chip; the coin glyph on the method row below
@@ -1108,9 +1122,13 @@ public class ShortestPathPanel extends PluginPanel
 		row.add(text, BorderLayout.CENTER);
 
 		// Nearly invisible at rest (always present, so the row never resizes), it reveals in red
-		// while the pointer is over THIS row — and redder still directly over the icon.
-		IconActionLabel exclude = new IconActionLabel(RouteIcons.EXCLUDE_DIM, RouteIcons.EXCLUDE_HOVER,
-			"Exclude \"" + method.routeLabel() + "\" from travel methods", () -> plugin.excludeMethod(method));
+		// while the pointer is over THIS row — and redder still directly over the icon. Opens the
+		// priority menu (prefer/avoid tiers; exclude at the bottom).
+		final IconActionLabel[] excludeHolder = new IconActionLabel[1];
+		excludeHolder[0] = new IconActionLabel(RouteIcons.EXCLUDE_DIM, RouteIcons.EXCLUDE_HOVER,
+			"Priority options for \"" + method.routeLabel() + "\" (prefer / avoid / exclude)",
+			() -> showPriorityMenu(excludeHolder[0], method, false));
+		IconActionLabel exclude = excludeHolder[0];
 		JPanel actionWrap = new JPanel(new GridBagLayout());
 		actionWrap.setOpaque(false);
 		actionWrap.setPreferredSize(new Dimension(CONTROL_SIZE, CONTROL_SIZE));
@@ -1121,6 +1139,162 @@ public class ShortestPathPanel extends PluginPanel
 		addHoverRecursively(row, hovered ->
 			exclude.setRestIcon(hovered ? RouteIcons.EXCLUDE_HOVER : RouteIcons.EXCLUDE_DIM));
 		return row;
+	}
+
+	/**
+	 * The pinned "Walking" row at the top of the travel methods list: same tier menu as the
+	 * methods (minus exclude), driving the walk-preference seconds.
+	 */
+	private JPanel buildWalkPriorityRow()
+	{
+		JPanel row = new JPanel(new BorderLayout(4, 0));
+		row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		row.setBorder(new EmptyBorder(2, 4, 2, 4));
+		row.setAlignmentX(Component.LEFT_ALIGNMENT);
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+
+		int walkSeconds = plugin.getWalkPreferenceSeconds();
+		MethodPriority tier = walkTierFromSeconds(walkSeconds);
+		String state = walkSeconds == 0
+			? "no preference"
+			: (walkSeconds > 0
+				? "preferred within " + walkSeconds + "s"
+				: "avoided by " + (-walkSeconds) + "s");
+		JLabel text = wrappedLabel("<b>Walking</b> — " + state);
+		text.setToolTipText("<html>How to weigh plain walking against travel methods.<br>"
+			+ "\"Prefer\" gives the walk route ranking slack: it stays on top unless a method"
+			+ " beats it by more than the preference.</html>");
+		row.add(verticallyCentered(text), BorderLayout.CENTER);
+
+		final IconActionLabel[] holder = new IconActionLabel[1];
+		holder[0] = new IconActionLabel(priorityRestIcon(tier), priorityHoverIcon(tier),
+			"Walking priority — click for options",
+			() -> showPriorityMenu(holder[0], null, true));
+		JPanel actionWrap = new JPanel(new GridBagLayout());
+		actionWrap.setOpaque(false);
+		actionWrap.setPreferredSize(new Dimension(CONTROL_SIZE, CONTROL_SIZE));
+		actionWrap.add(control(holder[0]));
+		row.add(actionWrap, BorderLayout.EAST);
+		return row;
+	}
+
+	// --- Method priority menu (RimWorld-style tiers; see MethodPriority) ----------------------
+
+	static javax.swing.ImageIcon priorityRestIcon(MethodPriority tier)
+	{
+		switch (tier)
+		{
+			case PREFER_1:
+				return RouteIcons.PRIORITY_UP_ICONS[0];
+			case PREFER_2:
+				return RouteIcons.PRIORITY_UP_ICONS[1];
+			case PREFER_3:
+				return RouteIcons.PRIORITY_UP_ICONS[2];
+			case AVOID_1:
+				return RouteIcons.PRIORITY_DOWN_ICONS[0];
+			case AVOID_2:
+				return RouteIcons.PRIORITY_DOWN_ICONS[1];
+			case AVOID_3:
+				return RouteIcons.PRIORITY_DOWN_ICONS[2];
+			case EXCLUDED:
+				return RouteIcons.CROSS;
+			default:
+				return RouteIcons.CHECK;
+		}
+	}
+
+	private static javax.swing.ImageIcon priorityHoverIcon(MethodPriority tier)
+	{
+		switch (tier)
+		{
+			case PREFER_1:
+				return RouteIcons.PRIORITY_UP_HOVER_ICONS[0];
+			case PREFER_2:
+				return RouteIcons.PRIORITY_UP_HOVER_ICONS[1];
+			case PREFER_3:
+				return RouteIcons.PRIORITY_UP_HOVER_ICONS[2];
+			case AVOID_1:
+				return RouteIcons.PRIORITY_DOWN_HOVER_ICONS[0];
+			case AVOID_2:
+				return RouteIcons.PRIORITY_DOWN_HOVER_ICONS[1];
+			case AVOID_3:
+				return RouteIcons.PRIORITY_DOWN_HOVER_ICONS[2];
+			case EXCLUDED:
+				return RouteIcons.CROSS_HOVER;
+			default:
+				return RouteIcons.CHECK_HOVER;
+		}
+	}
+
+	private static String priorityTooltip(String label, MethodPriority tier)
+	{
+		String state = tier == MethodPriority.NORMAL
+			? "Normal priority"
+			: tier.label + (tier.chipText().isEmpty() ? "" : " (" + tier.chipText() + " on ranking)");
+		return "<html><b>" + escapeHtml(label) + "</b>: " + state
+			+ "<br>Click for priority options — prefer/avoid shift the ranking, exclude removes it.</html>";
+	}
+
+	/**
+	 * The tier context menu. Preferences re-rank the current list instantly (no recalculation);
+	 * Exclude keeps its existing semantics (applies on the next refresh). {@code walkMode} swaps
+	 * the target: tiers set the walking preference instead of a method tier, and Exclude is
+	 * omitted (walking can't be excluded).
+	 */
+	private void showPriorityMenu(Component anchor, TeleportMethod method, boolean walkMode)
+	{
+		javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+		MethodPriority current = walkMode
+			? walkTierFromSeconds(plugin.getWalkPreferenceSeconds())
+			: plugin.getMethodPriority(method);
+		for (MethodPriority tier : new MethodPriority[]{
+			MethodPriority.PREFER_3, MethodPriority.PREFER_2, MethodPriority.PREFER_1,
+			MethodPriority.NORMAL,
+			MethodPriority.AVOID_1, MethodPriority.AVOID_2, MethodPriority.AVOID_3})
+		{
+			String text = tier.label + (tier.chipText().isEmpty() ? "" : "  " + tier.chipText());
+			javax.swing.JMenuItem entry = new javax.swing.JMenuItem(text, priorityRestIcon(tier));
+			entry.setFont(tier == current
+				? FontManager.getRunescapeBoldFont() : FontManager.getRunescapeSmallFont());
+			entry.addActionListener(e ->
+			{
+				if (walkMode)
+				{
+					// Walk preference: "prefer" gives walking that many seconds of slack, so it
+					// outranks methods unless they beat it by more than the preference.
+					plugin.setWalkPreferenceSeconds(-tier.adjustSeconds);
+				}
+				else
+				{
+					plugin.setMethodPriority(method, tier);
+				}
+			});
+			menu.add(entry);
+		}
+		if (!walkMode)
+		{
+			menu.addSeparator();
+			javax.swing.JMenuItem exclude = new javax.swing.JMenuItem(
+				MethodPriority.EXCLUDED.label, RouteIcons.CROSS);
+			exclude.setFont(current == MethodPriority.EXCLUDED
+				? FontManager.getRunescapeBoldFont() : FontManager.getRunescapeSmallFont());
+			exclude.addActionListener(e -> plugin.setMethodPriority(method, MethodPriority.EXCLUDED));
+			menu.add(exclude);
+		}
+		menu.show(anchor, 0, anchor.getHeight());
+	}
+
+	/** The tier whose seconds match the walk preference (custom values snap to NORMAL display). */
+	private static MethodPriority walkTierFromSeconds(int walkPreferenceSeconds)
+	{
+		for (MethodPriority tier : MethodPriority.values())
+		{
+			if (tier != MethodPriority.EXCLUDED && -tier.adjustSeconds == walkPreferenceSeconds)
+			{
+				return tier;
+			}
+		}
+		return MethodPriority.NORMAL;
 	}
 
 	/** The funnel icon that opens the catalog filter menu; orange while a filter is active. */
@@ -1978,6 +2152,14 @@ public class ShortestPathPanel extends PluginPanel
 		String filter = catalogSearch.getText() == null ? "" : catalogSearch.getText().trim().toLowerCase();
 		boolean filtering = !filter.isEmpty();
 
+		// Walking's own priority row, pinned above the method categories: a walk preference gives
+		// the plain-walk route that many seconds of ranking slack (it wins unless a method beats
+		// it by more), and "avoid" tiers penalise it the same way.
+		if (!filtering || "walking".contains(filter))
+		{
+			rows.add(buildWalkPriorityRow());
+		}
+
 		Map<String, List<TeleportMethod>> grouped = new TreeMap<>();
 		for (TeleportMethod method : cachedCatalog)
 		{
@@ -2122,11 +2304,15 @@ public class ShortestPathPanel extends PluginPanel
 		row.setAlignmentX(Component.LEFT_ALIGNMENT);
 		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
-		IconActionLabel toggle = excluded
-			? new IconActionLabel(RouteIcons.CROSS, RouteIcons.CROSS_HOVER,
-				"Excluded — click to include", () -> plugin.includeMethod(item))
-			: new IconActionLabel(RouteIcons.CHECK, RouteIcons.CHECK_HOVER,
-				"Included — click to exclude", () -> plugin.excludeMethod(item));
+		// Priority control (replaces the old include/exclude toggle): the icon shows the current
+		// tier — check = normal, stacked arrows = prefer/avoid, cross = excluded — and clicking
+		// opens the tier menu (exclude is its bottom entry).
+		MethodPriority tier = plugin.getMethodPriority(item);
+		final IconActionLabel[] toggleHolder = new IconActionLabel[1];
+		toggleHolder[0] = new IconActionLabel(priorityRestIcon(tier), priorityHoverIcon(tier),
+			priorityTooltip(item.label(), tier),
+			() -> showPriorityMenu(toggleHolder[0], item, false));
+		IconActionLabel toggle = toggleHolder[0];
 		// The status marker (lock/bank) stays by the name; the toggle sits at the row's right edge,
 		// aligned with the category toggles, away from where users click to expand.
 		MethodAvailability status = cachedUnavailable.get(item);

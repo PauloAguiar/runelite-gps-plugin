@@ -744,6 +744,64 @@ final class RouteIcons
 	}
 
 
+	// Priority tiers (MethodPriority): stacked arrowheads, RimWorld-style — green up = prefer,
+	// amber/red down = avoid, grey dash = normal. Hover variants brighten.
+	private static final Color PRIORITY_UP = new Color(70, 200, 90);
+	private static final Color PRIORITY_UP_BRIGHT = new Color(110, 240, 130);
+	private static final Color PRIORITY_DOWN = new Color(230, 120, 60);
+	private static final Color PRIORITY_DOWN_BRIGHT = new Color(255, 150, 90);
+	static final ImageIcon[] PRIORITY_UP_ICONS = {
+		new ImageIcon(priorityGlyph(1, true, PRIORITY_UP)),
+		new ImageIcon(priorityGlyph(2, true, PRIORITY_UP)),
+		new ImageIcon(priorityGlyph(3, true, PRIORITY_UP)),
+	};
+	static final ImageIcon[] PRIORITY_UP_HOVER_ICONS = {
+		new ImageIcon(priorityGlyph(1, true, PRIORITY_UP_BRIGHT)),
+		new ImageIcon(priorityGlyph(2, true, PRIORITY_UP_BRIGHT)),
+		new ImageIcon(priorityGlyph(3, true, PRIORITY_UP_BRIGHT)),
+	};
+	static final ImageIcon[] PRIORITY_DOWN_ICONS = {
+		new ImageIcon(priorityGlyph(1, false, PRIORITY_DOWN)),
+		new ImageIcon(priorityGlyph(2, false, PRIORITY_DOWN)),
+		new ImageIcon(priorityGlyph(3, false, PRIORITY_DOWN)),
+	};
+	static final ImageIcon[] PRIORITY_DOWN_HOVER_ICONS = {
+		new ImageIcon(priorityGlyph(1, false, PRIORITY_DOWN_BRIGHT)),
+		new ImageIcon(priorityGlyph(2, false, PRIORITY_DOWN_BRIGHT)),
+		new ImageIcon(priorityGlyph(3, false, PRIORITY_DOWN_BRIGHT)),
+	};
+
+	/** 1-3 stacked arrowheads filling the 16px canvas from the middle out. */
+	private static BufferedImage priorityGlyph(int count, boolean up, Color colour)
+	{
+		return render(g ->
+		{
+			g.setColor(colour);
+			// Each arrowhead is 4px tall with a 1px gap; the stack is centred vertically.
+			double totalHeight = count * 5 - 1;
+			double top = (16 - totalHeight) / 2.0;
+			for (int i = 0; i < count; i++)
+			{
+				double y = top + i * 5;
+				Path2D head = new Path2D.Double();
+				if (up)
+				{
+					head.moveTo(3.0, y + 4);
+					head.lineTo(13.0, y + 4);
+					head.lineTo(8.0, y);
+				}
+				else
+				{
+					head.moveTo(3.0, y);
+					head.lineTo(13.0, y);
+					head.lineTo(8.0, y + 4);
+				}
+				head.closePath();
+				g.fill(head);
+			}
+		});
+	}
+
 	private static BufferedImage chevron(Color colour, boolean down)
 	{
 		return render(g ->

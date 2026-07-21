@@ -258,6 +258,9 @@ public class ShortestPathPlugin extends Plugin
 	private boolean navButtonShown = false;
 	private AlternativeRoutesService altRoutesService;
 	private static final String CONFIG_KEY_EXCLUSIONS = "alternativeRoutesExclusions";
+	// Method -> ranking-bias tier (MethodPriority). EXCLUDED never appears here — exclusion stays
+	// in the userExclusions set (it affects the search; priorities only re-rank the list).
+	private static final String CONFIG_KEY_PRIORITIES = "methodPriorities";
 	private static final String CONFIG_KEY_MODE = "alternativeRoutesMode";
 	// The search box's recent selections (most recent first), persisted across sessions.
 	private static final String CONFIG_KEY_SEARCH_HISTORY = "searchHistory";
@@ -541,6 +544,7 @@ public class ShortestPathPlugin extends Plugin
 
 
 		loadExclusions();
+		loadPriorities();
 		searchHistory = SearchHistory.deserialize(
 			configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_SEARCH_HISTORY));
 		favoriteDestinations = SearchHistory.deserialize(
@@ -2541,6 +2545,169 @@ public class ShortestPathPlugin extends Plugin
 		return new HashSet<>(userExclusions);
 	}
 
+	// --- Method priorities (ranking bias; see MethodPriority) ---------------------------------
+
+	private final Map<TeleportMethod, MethodPriority> methodPriorities = new ConcurrentHashMap<>();
+
+	/** One serialized priority entry (method identity + tier), for the config JSON. */
+	private static final class PriorityEntry
+	{
+		TeleportMethod method;
+		MethodPriority priority;
+	}
+
+	/** The method's tier: EXCLUDED when in the exclusion set, else its stored tier or NORMAL. */
+	public MethodPriority getMethodPriority(TeleportMethod method)
+	{
+		if (userExclusions.contains(method))
+		{
+			return MethodPriority.EXCLUDED;
+		}
+		return methodPriorities.getOrDefault(method, MethodPriority.NORMAL);
+	}
+
+	/**
+	 * Sets a method's tier. EXCLUDED delegates to the exclusion set (search-affecting, flags the
+	 * stale banner); every other tier is ranking-only — the current list re-sorts immediately.
+	 * Choosing a non-EXCLUDED tier for an excluded method also un-excludes it.
+	 */
+	public void setMethodPriority(TeleportMethod method, MethodPriority priority)
+	{
+		if (priority == MethodPriority.EXCLUDED)
+		{
+			methodPriorities.remove(method);
+			excludeMethod(method);
+			savePriorities();
+			return;
+		}
+		if (userExclusions.contains(method))
+		{
+			includeMethod(method);
+		}
+		if (priority == MethodPriority.NORMAL)
+		{
+			methodPriorities.remove(method);
+		}
+		else
+		{
+			methodPriorities.put(method, priority);
+		}
+		savePriorities();
+		resortRoutesByPriority();
+	}
+
+	/** The walk-preference bias in seconds (negative effective ETA for the pure-walk route). */
+	public int getWalkPreferenceSeconds()
+	{
+		return cachedWalkPreferenceSeconds;
+	}
+
+	public void setWalkPreferenceSeconds(int seconds)
+	{
+		configManager.setConfiguration(CONFIG_GROUP, "walkPreferenceSeconds", seconds);
+		cachedWalkPreferenceSeconds = seconds;
+		resortRoutesByPriority();
+	}
+
+	private volatile int cachedWalkPreferenceSeconds;
+
+	/**
+	 * The route's ranking adjustment in seconds: the sum of its methods' tiers — or, for the
+	 * pure-walk route, minus the walk preference (walking wins ties up to that many seconds).
+	 */
+	public int routeAdjustmentSeconds(RouteOption route)
+	{
+		if (route.getMethods().isEmpty())
+		{
+			return -cachedWalkPreferenceSeconds;
+		}
+		int seconds = 0;
+		for (TeleportMethod method : route.getMethods())
+		{
+			seconds += methodPriorities.getOrDefault(method, MethodPriority.NORMAL).adjustSeconds;
+		}
+		return seconds;
+	}
+
+	/** Effective sort key: reached routes first, then raw cost plus the priority adjustment. */
+	private java.util.Comparator<RouteOption> effectiveOrder()
+	{
+		return java.util.Comparator
+			.comparingInt((RouteOption r) -> r.isReached() ? 0 : 1)
+			.thenComparingInt(r -> r.getTotalCost() + MethodPriority.unitsFromSeconds(routeAdjustmentSeconds(r)));
+	}
+
+	/** Stable re-sort of the current list (tiers changed) — display-only, no regeneration. */
+	private void resortRoutesByPriority()
+	{
+		List<RouteOption> routes = alternativeRoutes;
+		if (routes != null && !routes.isEmpty())
+		{
+			List<RouteOption> sorted = new ArrayList<>(routes);
+			sorted.sort(effectiveOrder());
+			alternativeRoutes = sorted;
+		}
+		refreshPanel(altGenerationInFlight);
+	}
+
+	/** Applies the effective order to a freshly generated list (called from the update stream). */
+	List<RouteOption> sortByEffectiveOrder(List<RouteOption> routes)
+	{
+		List<RouteOption> sorted = new ArrayList<>(routes);
+		sorted.sort(effectiveOrder());
+		return sorted;
+	}
+
+	private void savePriorities()
+	{
+		try
+		{
+			List<PriorityEntry> entries = new ArrayList<>();
+			for (Map.Entry<TeleportMethod, MethodPriority> e : methodPriorities.entrySet())
+			{
+				PriorityEntry entry = new PriorityEntry();
+				entry.method = e.getKey();
+				entry.priority = e.getValue();
+				entries.add(entry);
+			}
+			configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_PRIORITIES, gson.toJson(entries));
+		}
+		catch (Exception e)
+		{
+			log.warn("Failed to save method priorities", e);
+		}
+	}
+
+	private void loadPriorities()
+	{
+		try
+		{
+			String json = configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_PRIORITIES);
+			if (json != null && !json.isEmpty())
+			{
+				PriorityEntry[] saved = gson.fromJson(json, PriorityEntry[].class);
+				if (saved != null)
+				{
+					for (PriorityEntry entry : saved)
+					{
+						if (entry != null && entry.method != null && entry.method.getType() != null
+							&& entry.priority != null && entry.priority != MethodPriority.NORMAL
+							&& entry.priority != MethodPriority.EXCLUDED)
+						{
+							methodPriorities.put(entry.method, entry.priority);
+						}
+					}
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			log.warn("Failed to load method priorities", e);
+		}
+		Integer walk = configManager.getConfiguration(CONFIG_GROUP, "walkPreferenceSeconds", Integer.class);
+		cachedWalkPreferenceSeconds = walk != null ? walk : 0;
+	}
+
 	private volatile int houseLocationId;
 	private static final String[] HOUSE_LOCATIONS = {
 		null, "Rimmington", "Taverley", "Pollnivneach", "Rellekka", "Brimhaven",
@@ -3679,7 +3846,11 @@ public class ShortestPathPlugin extends Plugin
 	private void onAlternativeRoutesUpdate(List<RouteOption> routes, List<TeleportMethod> catalog,
 		Map<TeleportMethod, MethodAvailability> unavailable, boolean done)
 	{
-		alternativeRoutes = routes;
+		// Priorities re-rank the list (effective ETA = cost + tier adjustments) — everything
+		// downstream (panel, default display pick, rematch) sees the effective order.
+		final List<RouteOption> ordered = sortByEffectiveOrder(routes);
+		routes = ordered;
+		alternativeRoutes = ordered;
 		teleportCatalog = catalog;
 		unavailableMethods = unavailable;
 		if (done)
@@ -3719,7 +3890,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			if (altPanel != null)
 			{
-				altPanel.displayRoutes(routes, catalog, unavailable, getUserExclusions(), !done, hasTarget);
+				altPanel.displayRoutes(ordered, catalog, unavailable, getUserExclusions(), !done, hasTarget);
 			}
 		});
 	}
