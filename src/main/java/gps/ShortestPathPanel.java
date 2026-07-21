@@ -852,10 +852,11 @@ public class ShortestPathPanel extends PluginPanel
 		eta.setBorder(new EmptyBorder(0, 12, 0, 0));
 		eta.setFont(FontManager.getRunescapeBoldFont());
 		eta.setForeground(selected ? ColorScheme.BRAND_ORANGE : Color.WHITE);
-		eta.setToolTipText("<html>Estimated cost of this route, assuming you run"
+		eta.setToolTipText("<html>Estimated time, assuming you run"
 			+ (route.isViaBank() ? " — includes the bank detour" : "")
-			+ ".<br>Includes your cost modifiers (charged items, transport type, currency);"
-			+ "<br>routes are ordered by this plus the green/red priority chips.</html>");
+			+ ".<br>Includes your cost modifiers — real-world corrections for the clicks and"
+			+ "<br>menus a method costs beyond raw travel (charged items, transport type,"
+			+ "<br>currency). Routes are ordered by this plus the green/red priority chips.</html>");
 		if (!reaches)
 		{
 			eta.setToolTipText("The target can't be reached — this ends at the closest reachable tile");
@@ -975,9 +976,12 @@ public class ShortestPathPanel extends PluginPanel
 	 */
 	/**
 	 * The ETA is the route's full configured cost: travel time, the bank detour, AND the
-	 * implicit cost modifiers (charged items, transport type, currency) — those model what the
-	 * route costs YOU, so they belong in the number. Explicit priorities stay outside (they're
-	 * the chip): list order = this ETA + priority chips, nothing hidden. Static for tests.
+	 * implicit cost modifiers (charged items, transport type, currency). The modifiers are
+	 * REAL-WORLD corrections, not preferences: tick-optimal cost is a lower bound no human hits,
+	 * and interacting with a method (finding the item, its menu, the confirm click) has latency
+	 * the raw path math can't see — so the corrected number is the honest estimate. Explicit
+	 * priorities stay outside (they're the chip): list order = this ETA + priority chips,
+	 * nothing hidden. Static for tests.
 	 */
 	static int routeEtaUnits(RouteOption route)
 	{
