@@ -64,9 +64,11 @@ public class DerivedStairsTest
 	{
 		// Ladder pair 17148/17149: ground to first floor, first to second, and back down —
 		// every edge exists purely via derivation.
-		assertRoute(3014, 3519, 0, 3015, 3518, 1, 2);
-		assertRoute(3016, 3518, 1, 3015, 3519, 2, 3);
-		assertRoute(3015, 3519, 2, 3014, 3519, 0, 5);
+		// Ladder climbs UP are calibrated at 4 ticks from 18 field samples (down: 2) — the
+		// one family where the flat 2-tick guess was measurably wrong.
+		assertRoute(3014, 3519, 0, 3015, 3518, 1, 4);
+		assertRoute(3016, 3518, 1, 3015, 3519, 2, 5);
+		assertRoute(3015, 3519, 2, 3014, 3519, 0, 6);
 	}
 
 	@Test
