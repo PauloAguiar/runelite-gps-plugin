@@ -76,4 +76,32 @@ public class CuratedDestinationsTest
 		assertTrue("Unreachable curated destinations (mistyped coordinates?): " + unreachable,
 			unreachable.isEmpty());
 	}
+
+	@Test
+	public void ibansTemplePinExistsOnAWalkableTile()
+	{
+		// The Underground Pass temple (wiki infobox 2136,4648,1 — that tile is the Well of the
+		// Damned structure, so the pin sits one tile west on open floor). Full reachability from
+		// the overworld is NOT asserted yet: the maze-to-temple connectors and the level
+		// transitions are still being captured — when they land, extend this to a Pathfinder
+		// assert from the deep-section entrance.
+		Destinations.Entry temple = null;
+		for (Destinations.Entry entry : Destinations.resourceEntries())
+		{
+			if ("Iban's Temple".equals(entry.name))
+			{
+				temple = entry;
+			}
+		}
+		assertTrue("Iban's Temple must be a curated destination", temple != null);
+		assertTrue("pin must sit at 2135,4648,1",
+			temple.packedPosition == WorldPointUtil.packWorldPoint(2135, 4648, 1));
+
+		PathfinderConfig planning = new TestPathfinderConfig(client, config).copyForPlanning();
+		planning.refresh();
+		assertFalse("pin tile must be walkable (not the well structure itself)",
+			planning.getMap().isBlocked(2135, 4648, 1));
+		assertFalse("search-box targeting must find walkable tiles around the pin",
+			Destinations.walkableTargets(planning.getMap(), temple.packedPosition).isEmpty());
+	}
 }

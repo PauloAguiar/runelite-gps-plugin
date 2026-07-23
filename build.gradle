@@ -92,6 +92,29 @@ tasks.named('jacocoTestReport', JacocoReport) {
     }
 }
 
+// The dev transport audit lives in TEST sources (never in the hub jar). This outgoing variant
+// hands its classes to the dev-launcher composite build — attribute-matched because Gradle's
+// dependency substitution can't resolve classifier artifacts across included builds.
+def devAuditAttribute = Attribute.of('dev.audit.bundle', String)
+tasks.register('devAuditJar', Jar) {
+    dependsOn compileTestJava, processTestResources
+    archiveClassifier = 'dev-audit'
+    from sourceSets.test.output
+    include 'gps/dev/**'
+}
+configurations {
+    devAuditElements {
+        canBeConsumed = true
+        canBeResolved = false
+        attributes {
+            attribute(devAuditAttribute, 'true')
+        }
+    }
+}
+artifacts {
+    devAuditElements devAuditJar
+}
+
 tasks.register('run', JavaExec) {
     classpath = sourceSets.test.runtimeClasspath
     mainClass = pluginMainClass
