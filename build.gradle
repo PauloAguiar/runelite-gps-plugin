@@ -72,7 +72,7 @@ test {
     // Dev data tools living in the test sources (e.g. the wiki location dump) are gated and
     // configured by wikiLocations.* system properties — forward them into the test JVM.
     System.properties.each { key, value ->
-        if (key.toString().startsWith('wikiLocations.') || key.toString().equals('altarProbe')) {
+        if (key.toString().startsWith('wikiLocations.') || key.toString().equals('altarProbe') || key.toString().equals('keldaProbe')) {
             systemProperty key.toString(), value
         }
     }

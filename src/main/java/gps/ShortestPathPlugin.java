@@ -358,11 +358,11 @@ public class ShortestPathPlugin extends Plugin
 	private volatile Set<Integer> pathTargets = Set.of();
 	@Getter
 	private PathfinderConfig pathfinderConfig;
-	@Getter
 	// Journey wall-clock, reported on arrival. 0 means "armed": it starts counting from the first
 	// tick the player MOVES, so standing still after setting a destination (or picking a path)
 	// doesn't inflate the time. Re-armed when a new destination is set OR the user selects a
-	// different path; journeyLastLocation drives the first-movement detection.
+	// different path; journeyLastLocation drives the first-movement detection. NB: exposed via
+	// the hand-written getter below (which documents the 0 sentinel), not lombok.
 	private long journeyStartMillis = 0;
 	private int journeyLastLocation = WorldPointUtil.UNDEFINED;
 	// One-shot world-map pin override for the next setTargets call: the destination a perimeter
@@ -2482,11 +2482,6 @@ public class ShortestPathPlugin extends Plugin
 
 	// --- Alternative-routes feature (driven by ShortestPathPanel) ---
 
-	/**
-	 * The route currently being displayed: the explicitly selected one, or — when the alternatives
-	 * were computed for the pathfinder's current destination — the first (best) route of the list
-	 * under the currently selected mode. Null when neither applies (falls back to the classic path).
-	 */
 	/** The journey wall-clock start, or 0 while it hasn't begun (armed, waiting for movement). */
 	public long getJourneyStartMillis()
 	{
