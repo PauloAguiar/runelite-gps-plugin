@@ -86,6 +86,9 @@ public class TransportAuditPlugin extends Plugin
 		final String action;
 		final String[] actions;
 		final boolean door;
+		// Transport rows nearby cover only ONE direction — traversing the other way while the
+		// audit is armed captures the missing reverse.
+		final boolean oneWayData;
 		// The multiloc controlling varbit (-1 when none): quest doors/caves swap impostors on
 		// the quest's progress varbit, so this is a strong gating hint for the dossier.
 		final int gatingVarbit;
@@ -94,8 +97,9 @@ public class TransportAuditPlugin extends Plugin
 		final int interactRadius;
 
 		Finding(TileObject object, int packedTemplateTile, String name, String action,
-			String[] actions, boolean door, int gatingVarbit)
+			String[] actions, boolean door, int gatingVarbit, boolean oneWayData)
 		{
+			this.oneWayData = oneWayData;
 			this.gatingVarbit = gatingVarbit;
 			this.object = object;
 			this.packedTemplateTile = packedTemplateTile;
@@ -177,6 +181,8 @@ public class TransportAuditPlugin extends Plugin
 		CONFIRM,
 		/** Captured, but no reverse edge exists anywhere — walk the return trip to complete it. */
 		CAPTURED_ONE_WAY,
+		/** The DATA covers one direction only (promoted rows without a reverse) — same cure. */
+		DATA_ONE_WAY,
 		CAPTURED_SESSION,
 		CAPTURED_PRIOR,
 		/** The curated data now covers it (row added since it was recorded) — prunable. */
@@ -252,8 +258,11 @@ public class TransportAuditPlugin extends Plugin
 
 	// Keyed by packed template tile + id so re-spawns don't duplicate; cleared per scene load.
 	private final Map<Long, Finding> findings = new ConcurrentHashMap<>();
-	// Packed tiles that any transport row's origin or destination touches.
-	private Set<Integer> transportTiles;
+	// Packed tiles that transport rows LEAVE from / ARRIVE at, kept separate: an object with
+	// only one direction nearby is half-mapped (the Karuulm rocks were southbound-only and the
+	// old combined set silenced the flag while routing north was impossible).
+	private Set<Integer> transportOriginTiles;
+	private Set<Integer> transportDestTiles;
 	// Packed tiles of EVERY door registry row — including doors the map places open (excluded
 	// from ClosedDoors' pricing masks on purpose, but still registered and handled). The scene's
 	// open-door variant also anchors its swung leaf on a neighbouring tile, so coverage checks a
@@ -321,26 +330,28 @@ public class TransportAuditPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
-		if (transportTiles == null)
+		if (transportOriginTiles == null)
 		{
-			transportTiles = new HashSet<>();
+			transportOriginTiles = new HashSet<>();
+			transportDestTiles = new HashSet<>();
 			HashMap<Integer, Set<Transport>> all = TransportLoader.loadAllFromResources();
 			for (Map.Entry<Integer, Set<Transport>> entry : all.entrySet())
 			{
-				transportTiles.add(entry.getKey());
+				transportOriginTiles.add(entry.getKey());
 				for (Transport transport : entry.getValue())
 				{
 					if (transport.getOrigin() != WorldPointUtil.UNDEFINED)
 					{
-						transportTiles.add(transport.getOrigin());
+						transportOriginTiles.add(transport.getOrigin());
 					}
 					if (transport.getDestination() != WorldPointUtil.UNDEFINED)
 					{
-						transportTiles.add(transport.getDestination());
+						transportDestTiles.add(transport.getDestination());
 					}
 				}
 			}
-			log.info("[audit] transport coverage set: {} tiles", transportTiles.size());
+			log.info("[audit] transport coverage: {} origin tiles, {} dest tiles",
+				transportOriginTiles.size(), transportDestTiles.size());
 		}
 		if (doorTiles == null)
 		{
@@ -508,6 +519,10 @@ public class TransportAuditPlugin extends Plugin
 		if (finding.door)
 		{
 			return FindingState.DOOR;
+		}
+		if (finding.oneWayData)
+		{
+			return FindingState.DATA_ONE_WAY;
 		}
 		long key = ((long) finding.packedTemplateTile << 20) | finding.object.getId();
 		return capturedState(finding.object.getId(), finding.packedTemplateTile,
@@ -1377,6 +1392,7 @@ public class TransportAuditPlugin extends Plugin
 			case CONFIRM:
 				return 3; // machine-derived values awaiting a field check
 			case CAPTURED_ONE_WAY:
+			case DATA_ONE_WAY:
 				return 4; // actionable: the return trip is still missing
 			case CAPTURED_SESSION:
 				return 5;
@@ -1521,9 +1537,22 @@ public class TransportAuditPlugin extends Plugin
 			.fromLocalInstance(client, object.getLocalLocation(), object.getPlane());
 		int templateTile = WorldPointUtil.packWorldPoint(worldPoint);
 		boolean door = wall && (action.equalsIgnoreCase("Open") || action.equalsIgnoreCase("Close"));
-		if (door ? doorCovered(templateTile) : transportCovered(templateTile))
+		boolean oneWayData = false;
+		if (door)
 		{
-			return;
+			if (doorCovered(templateTile))
+			{
+				return;
+			}
+		}
+		else
+		{
+			int coverage = transportCoverage(templateTile);
+			if (coverage == 2)
+			{
+				return;
+			}
+			oneWayData = coverage == 1;
 		}
 
 		String[] actions = new String[0];
@@ -1537,7 +1566,7 @@ public class TransportAuditPlugin extends Plugin
 		{
 			return; // operator declared it a false positive
 		}
-		Finding finding = new Finding(object, templateTile, composition.getName(), action, actions, door, gatingVarbit);
+		Finding finding = new Finding(object, templateTile, composition.getName(), action, actions, door, gatingVarbit, oneWayData);
 		boolean firstEver = findings.put(key, finding) == null && logged.add(key);
 		if (firstEver)
 		{
@@ -1616,7 +1645,7 @@ public class TransportAuditPlugin extends Plugin
 					boolean door = "door".equals(fields[1]);
 					recorded.add(new RecordedEntry(door, id, fields[3], fields[4],
 						fields[5].isEmpty() ? new String[0] : fields[5].split("\\|"), packed,
-						door ? doorCovered(packed) : transportCovered(packed)));
+						door ? doorCovered(packed) : transportCoverage(packed) == 2));
 				}
 				catch (NumberFormatException ignored)
 				{
@@ -1635,6 +1664,10 @@ public class TransportAuditPlugin extends Plugin
 	/** Appends one collection-file row per newly discovered unmapped object. */
 	private void record(Finding finding)
 	{
+		if (finding.oneWayData)
+		{
+			return; // half-mapped, visible live; capturing the reverse resolves it
+		}
 		recorded.add(new RecordedEntry(finding.door, finding.object.getId(), finding.name,
 			finding.action, finding.actions, finding.packedTemplateTile, false));
 		try
@@ -1714,9 +1747,12 @@ public class TransportAuditPlugin extends Plugin
 		return near(doorTiles, packedTile, 2);
 	}
 
-	private boolean transportCovered(int packedTile)
+	/** 2 = rows leave AND arrive nearby (fully mapped), 1 = one direction only, 0 = nothing. */
+	private int transportCoverage(int packedTile)
 	{
-		return near(transportTiles, packedTile, COVERAGE_RADIUS);
+		boolean out = near(transportOriginTiles, packedTile, COVERAGE_RADIUS);
+		boolean in = near(transportDestTiles, packedTile, COVERAGE_RADIUS);
+		return out && in ? 2 : (out || in ? 1 : 0);
 	}
 
 	private static boolean near(Set<Integer> tiles, int packedTile, int radius)

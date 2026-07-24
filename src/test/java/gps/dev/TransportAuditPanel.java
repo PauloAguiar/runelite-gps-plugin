@@ -373,6 +373,7 @@ class TransportAuditPanel extends PluginPanel
 			case CONFIRM:
 				return new Color(176, 128, 255);
 			case CAPTURED_ONE_WAY:
+			case DATA_ONE_WAY:
 				return new Color(190, 220, 60);
 			case CAPTURED_SESSION:
 				return new Color(70, 220, 90);
@@ -397,6 +398,8 @@ class TransportAuditPanel extends PluginPanel
 				return "machine-derived — traverse with the audit on to confirm";
 			case CAPTURED_ONE_WAY:
 				return "captured ONE-WAY ✓ — walk the reverse to complete";
+			case DATA_ONE_WAY:
+				return "data covers ONE direction — traverse the other way to capture it";
 			case CAPTURED_SESSION:
 				return "captured this session ✓ (in transport-captures.tsv)";
 			case CAPTURED_PRIOR:
