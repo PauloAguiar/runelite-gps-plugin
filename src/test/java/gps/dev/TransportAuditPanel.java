@@ -27,11 +27,16 @@ import net.runelite.client.ui.PluginPanel;
 class TransportAuditPanel extends PluginPanel
 {
 	private final TransportAuditPlugin plugin;
-	// Selected row key (packedTile<<20|id), or 0: highlighted and loaded into the builder.
+	// Selected row key (packedTile<<20|id), or 0: highlighted and shown in the detail card.
 	private long selectedKey;
+	private static final Color SELECTED_BG = new Color(0x2E, 0x3E, 0x5E);
+	// Set when the selection moves (click/arrows) so the next rebuild scrolls the row into view.
+	private boolean scrollSelectionIntoView;
 	private final JLabel summary = new JLabel();
 	private final JLabel capture = new JLabel();
 	private final JPanel list = new JPanel();
+	private final JPanel detail = new JPanel();
+	private List<TransportAuditPlugin.Row> currentRows = List.of();
 	private String lastSignature = "";
 
 	// Transport builder controls (values are the operator's; only the labels track the plugin).
@@ -94,6 +99,49 @@ class TransportAuditPanel extends PluginPanel
 		scroll.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		scroll.getVerticalScrollBar().setUnitIncrement(16);
 		add(scroll, BorderLayout.CENTER);
+
+		// The detail card: one place for the selected entry's full story and its actions.
+		detail.setLayout(new BoxLayout(detail, BoxLayout.Y_AXIS));
+		detail.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		detail.setVisible(false);
+		add(detail, BorderLayout.SOUTH);
+
+		// Keyboard navigation: arrows move the selection, Enter routes to it.
+		list.setFocusable(true);
+		list.getInputMap(javax.swing.JComponent.WHEN_FOCUSED)
+			.put(javax.swing.KeyStroke.getKeyStroke("UP"), "up");
+		list.getInputMap(javax.swing.JComponent.WHEN_FOCUSED)
+			.put(javax.swing.KeyStroke.getKeyStroke("DOWN"), "down");
+		list.getInputMap(javax.swing.JComponent.WHEN_FOCUSED)
+			.put(javax.swing.KeyStroke.getKeyStroke("ENTER"), "go");
+		list.getActionMap().put("up", new javax.swing.AbstractAction()
+		{
+			@Override
+			public void actionPerformed(java.awt.event.ActionEvent e)
+			{
+				moveSelection(-1);
+			}
+		});
+		list.getActionMap().put("down", new javax.swing.AbstractAction()
+		{
+			@Override
+			public void actionPerformed(java.awt.event.ActionEvent e)
+			{
+				moveSelection(1);
+			}
+		});
+		list.getActionMap().put("go", new javax.swing.AbstractAction()
+		{
+			@Override
+			public void actionPerformed(java.awt.event.ActionEvent e)
+			{
+				TransportAuditPlugin.Row row = selectedRow();
+				if (row != null)
+				{
+					plugin.routeTo(row.packedTile);
+				}
+			}
+		});
 	}
 
 	/** How many backlog (not-in-scene) rows to show before truncating. */
@@ -188,19 +236,32 @@ class TransportAuditPanel extends PluginPanel
 	{
 		capture.setText(captureLine == null ? " " : captureLine);
 		capture.setForeground(captureColor == null ? ColorScheme.LIGHT_GRAY_COLOR : captureColor);
-		builderOrigin.setText("origin: " + (builderOriginText == null ? "— (shift right-click)" : builderOriginText));
-		builderDest.setText("dest: " + (builderDestText == null ? "—" : builderDestText));
-		builderObject.setText("object: " + (builderMenuText == null ? "—" : builderMenuText));
+		builderOrigin.setText("origin: " + (builderOriginText == null ? "\u2014 (shift right-click)" : builderOriginText));
+		builderDest.setText("dest: " + (builderDestText == null ? "\u2014" : builderDestText));
+		builderObject.setText("object: " + (builderMenuText == null ? "\u2014" : builderMenuText));
 
 		long missing = rows.stream().filter(r -> r.state == TransportAuditPlugin.FindingState.MISSING
 			|| r.state == TransportAuditPlugin.FindingState.ARMED).count();
 		long doors = rows.stream().filter(r -> r.state == TransportAuditPlugin.FindingState.DOOR).count();
 		long resolved = rows.stream().filter(r -> r.state == TransportAuditPlugin.FindingState.RESOLVED).count();
-		long captured = rows.size() - missing - doors - resolved;
+		long known = rows.stream().filter(r -> r.state == TransportAuditPlugin.FindingState.KNOWN).count();
+		long captured = rows.size() - missing - doors - resolved - known;
 		summary.setText(rows.isEmpty()
 			? "Nothing recorded yet"
 			: missing + " missing, " + doors + " door(s), " + captured + " captured, " + resolved + " resolved");
 
+		currentRows = rows;
+		String signature = computeSignature(rows);
+		if (signature.equals(lastSignature))
+		{
+			return;
+		}
+		lastSignature = signature;
+		rebuildList();
+	}
+
+	private String computeSignature(List<TransportAuditPlugin.Row> rows)
+	{
 		StringBuilder signature = new StringBuilder();
 		for (TransportAuditPlugin.Row row : rows)
 		{
@@ -208,18 +269,17 @@ class TransportAuditPanel extends PluginPanel
 				.append(row.state).append(':').append(row.live).append(':')
 				.append(row.distance / 16).append(';');
 		}
-		signature.append("sel=").append(selectedKey);
-		if (signature.toString().equals(lastSignature))
-		{
-			return;
-		}
-		lastSignature = signature.toString();
+		return signature.append("sel=").append(selectedKey).toString();
+	}
 
+	private void rebuildList()
+	{
 		list.removeAll();
 		boolean liveHeaderAdded = false;
 		boolean backlogHeaderAdded = false;
 		int backlogShown = 0;
-		for (TransportAuditPlugin.Row row : rows)
+		JPanel selectedPanel = null;
+		for (TransportAuditPlugin.Row row : currentRows)
 		{
 			if (row.live && !liveHeaderAdded)
 			{
@@ -228,21 +288,36 @@ class TransportAuditPanel extends PluginPanel
 			}
 			if (!row.live && !backlogHeaderAdded)
 			{
-				list.add(groupLabel("Recorded elsewhere"));
+				list.add(groupLabel(row.state == TransportAuditPlugin.FindingState.KNOWN
+					? "Known data nearby" : "Recorded elsewhere"));
 				backlogHeaderAdded = true;
 			}
 			if (!row.live && ++backlogShown > MAX_BACKLOG_ROWS)
 			{
-				JLabel more = groupLabel("… more in transport-audit.tsv (see audit_diff.py)");
+				JLabel more = groupLabel("\u2026 more in transport-audit.tsv (see audit_diff.py)");
 				more.setForeground(ColorScheme.MEDIUM_GRAY_COLOR);
 				list.add(more);
 				break;
 			}
-			list.add(buildRow(row));
-			list.add(javax.swing.Box.createVerticalStrut(4));
+			JPanel rowPanel = buildRow(row);
+			if (keyOf(row) == selectedKey)
+			{
+				selectedPanel = rowPanel;
+			}
+			list.add(rowPanel);
 		}
 		list.revalidate();
 		list.repaint();
+		renderDetail();
+		// Scroll only on selection changes — snapping the viewport on every content rebuild
+		// would fight the user's own scrolling.
+		if (selectedPanel != null && scrollSelectionIntoView)
+		{
+			scrollSelectionIntoView = false;
+			final JPanel target = selectedPanel;
+			javax.swing.SwingUtilities.invokeLater(() ->
+				list.scrollRectToVisible(target.getBounds()));
+		}
 	}
 
 	private static JLabel groupLabel(String text)
@@ -255,84 +330,182 @@ class TransportAuditPanel extends PluginPanel
 		return label;
 	}
 
+	private static long keyOf(TransportAuditPlugin.Row row)
+	{
+		return ((long) row.packedTile << 20) | row.id;
+	}
+
+	/**
+	 * ONE compact line per entry: a state dot, the name, and the distance \u2014 details and
+	 * actions live in the detail card below. Click selects, double-click routes, arrows navigate.
+	 */
 	private JPanel buildRow(TransportAuditPlugin.Row row)
 	{
-		final long key = ((long) row.packedTile << 20) | row.id;
+		final long key = keyOf(row);
 		final boolean selected = key == selectedKey;
-		JPanel panel = new JPanel(new BorderLayout(6, 0));
+		JPanel panel = new JPanel(new BorderLayout(5, 0));
 		panel.setBackground(selected ? SELECTED_BG : ColorScheme.DARKER_GRAY_COLOR);
-		panel.setBorder(selected
-			? javax.swing.BorderFactory.createCompoundBorder(
-				javax.swing.BorderFactory.createMatteBorder(0, 3, 0, 0, stateColor(row.state)),
-				new EmptyBorder(4, 3, 4, 6))
-			: new EmptyBorder(4, 6, 4, 6));
+		panel.setBorder(new EmptyBorder(2, 6, 2, 6));
 		panel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		panel.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
-		java.awt.event.MouseAdapter selector = new java.awt.event.MouseAdapter()
+
+		JLabel dot = new JLabel("\u25CF");
+		dot.setForeground(stateColor(row.state));
+		dot.setFont(FontManager.getRunescapeSmallFont());
+		panel.add(dot, BorderLayout.WEST);
+
+		JLabel name = new JLabel(row.name);
+		name.setForeground(selected ? Color.WHITE : ColorScheme.LIGHT_GRAY_COLOR);
+		name.setFont(FontManager.getRunescapeSmallFont());
+		panel.add(name, BorderLayout.CENTER);
+
+		JLabel distance = new JLabel(row.distance == Integer.MAX_VALUE
+			? "\u2191\u2193" : row.distance + "t");
+		distance.setForeground(ColorScheme.MEDIUM_GRAY_COLOR);
+		distance.setFont(FontManager.getRunescapeSmallFont());
+		panel.add(distance, BorderLayout.EAST);
+
+		panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, panel.getPreferredSize().height));
+		panel.addMouseListener(new java.awt.event.MouseAdapter()
 		{
 			@Override
 			public void mousePressed(java.awt.event.MouseEvent e)
 			{
-				if (selectedKey == key)
+				if (e.getClickCount() >= 2)
 				{
-					selectedKey = 0; // click again to deselect
+					plugin.routeTo(row.packedTile);
+					builderStatus.setText("Routing GPS to " + row.name);
+					return;
 				}
-				else
-				{
-					selectedKey = key;
-					if (row.state == TransportAuditPlugin.FindingState.KNOWN)
-					{
-						plugin.spotlightKnownAt(row.packedTile);
-						builderStatus.setText("Spotlighting curated row in the world");
-					}
-					else
-					{
-						builderStatus.setText(plugin.loadIntoBuilder(row));
-					}
-				}
-				lastSignature = ""; // force restyle on the next snapshot
+				selectRow(key);
+				list.requestFocusInWindow();
 			}
-		};
-		panel.addMouseListener(selector);
-
-		Color color = stateColor(row.state);
-		String distance = row.distance == Integer.MAX_VALUE
-			? "another floor" : (row.live ? row.distance + " tiles away" : "~" + row.distance + " tiles");
-		JLabel text = new JLabel("<html><b>" + row.name + "</b> (" + row.action
-			+ ") id=" + row.id
-			+ "<br>@" + gps.WorldPointUtil.unpackWorldX(row.packedTile)
-			+ "," + gps.WorldPointUtil.unpackWorldY(row.packedTile)
-			+ "," + gps.WorldPointUtil.unpackWorldPlane(row.packedTile)
-			+ " — " + distance
-			+ "<br><font color='" + hex(color) + "'>" + stateText(row.state) + "</font></html>");
-		text.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-		text.setFont(FontManager.getRunescapeSmallFont());
-		text.addMouseListener(selector);
-		panel.add(text, BorderLayout.CENTER);
-
-		JPanel east = new JPanel();
-		east.setLayout(new BoxLayout(east, BoxLayout.Y_AXIS));
-		east.setBackground(selected ? SELECTED_BG : ColorScheme.DARKER_GRAY_COLOR);
-		east.add(rowButton("Go", "Route GPS to this tile",
-			() -> plugin.routeTo(row.packedTile)));
-		east.add(rowButton("Copy",
-			"Copy the dossier (tile, actions, transports.tsv template) to the clipboard",
-			() -> copyText(row.dossier)));
-		east.add(rowButton("Ignore", "Not a transport — never flag this object again",
-			() -> plugin.ignoreEntry(row.id, row.packedTile, row.name)));
-		if (row.state == TransportAuditPlugin.FindingState.CAPTURED_ONE_WAY)
-		{
-			east.add(rowButton("1-way", "No reverse exists in-game — mark the captured edge(s) complete",
-				() -> builderStatus.setText(plugin.markNoReverse(row.id, row.packedTile))));
-		}
-		panel.add(east, BorderLayout.EAST);
-
-		panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, panel.getPreferredSize().height));
+		});
 		return panel;
 	}
 
-	/** GPS's route-card selection blue. */
-	private static final Color SELECTED_BG = new Color(0x2E, 0x3E, 0x5E);
+	/** Selects a row by key: highlight, detail card, and (for known rows) the world spotlight. */
+	private void selectRow(long key)
+	{
+		selectedKey = key;
+		scrollSelectionIntoView = true;
+		TransportAuditPlugin.Row row = selectedRow();
+		if (row != null && row.state == TransportAuditPlugin.FindingState.KNOWN)
+		{
+			plugin.spotlightKnownAt(row.packedTile);
+		}
+		// Immediate feedback: restyle now instead of waiting for the next tick snapshot.
+		lastSignature = computeSignature(currentRows);
+		rebuildList();
+	}
+
+	private TransportAuditPlugin.Row selectedRow()
+	{
+		for (TransportAuditPlugin.Row row : currentRows)
+		{
+			if (keyOf(row) == selectedKey)
+			{
+				return row;
+			}
+		}
+		return null;
+	}
+
+	/** Arrow-key navigation: moves the selection within the flat row order. */
+	private void moveSelection(int delta)
+	{
+		if (currentRows.isEmpty())
+		{
+			return;
+		}
+		int index = -1;
+		for (int i = 0; i < currentRows.size(); i++)
+		{
+			if (keyOf(currentRows.get(i)) == selectedKey)
+			{
+				index = i;
+				break;
+			}
+		}
+		int next = Math.max(0, Math.min(currentRows.size() - 1, index < 0 ? 0 : index + delta));
+		selectRow(keyOf(currentRows.get(next)));
+	}
+
+	/** The detail card: everything about the selected row, plus its actions \u2014 rendered ONCE. */
+	private void renderDetail()
+	{
+		detail.removeAll();
+		TransportAuditPlugin.Row row = selectedRow();
+		if (row == null)
+		{
+			detail.setVisible(false);
+			detail.revalidate();
+			detail.repaint();
+			return;
+		}
+		detail.setVisible(true);
+		Color color = stateColor(row.state);
+		detail.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+			javax.swing.BorderFactory.createMatteBorder(0, 3, 0, 0, color),
+			new EmptyBorder(4, 6, 6, 6)));
+
+		JLabel title = new JLabel(row.name + "  (" + row.action + (row.id > 0 ? " id=" + row.id : "") + ")");
+		title.setForeground(Color.WHITE);
+		title.setFont(FontManager.getRunescapeBoldFont());
+		title.setAlignmentX(Component.LEFT_ALIGNMENT);
+		detail.add(title);
+
+		JLabel state = new JLabel(stateText(row.state));
+		state.setForeground(color);
+		state.setFont(FontManager.getRunescapeSmallFont());
+		state.setAlignmentX(Component.LEFT_ALIGNMENT);
+		detail.add(state);
+
+		JLabel where = new JLabel("@" + gps.WorldPointUtil.unpackWorldX(row.packedTile)
+			+ "," + gps.WorldPointUtil.unpackWorldY(row.packedTile)
+			+ "," + gps.WorldPointUtil.unpackWorldPlane(row.packedTile)
+			+ (row.distance == Integer.MAX_VALUE ? " (another floor)" : " \u2014 " + row.distance + " tiles"));
+		where.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		where.setFont(FontManager.getRunescapeSmallFont());
+		where.setAlignmentX(Component.LEFT_ALIGNMENT);
+		detail.add(where);
+
+		javax.swing.JTextArea info = new javax.swing.JTextArea(row.dossier);
+		info.setEditable(false);
+		info.setLineWrap(true);
+		info.setWrapStyleWord(true);
+		info.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		info.setForeground(ColorScheme.MEDIUM_GRAY_COLOR);
+		info.setFont(FontManager.getRunescapeSmallFont());
+		info.setAlignmentX(Component.LEFT_ALIGNMENT);
+		info.setBorder(new EmptyBorder(3, 0, 3, 0));
+		detail.add(info);
+
+		JPanel actions = new JPanel(new java.awt.GridLayout(0, 3, 4, 3));
+		actions.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		actions.setAlignmentX(Component.LEFT_ALIGNMENT);
+		actions.add(rowButton("Go", "Route GPS to this tile (double-click a row does this too)",
+			() -> plugin.routeTo(row.packedTile)));
+		actions.add(rowButton("Copy", "Copy the dossier to the clipboard",
+			() -> copyText(row.dossier)));
+		if (row.state != TransportAuditPlugin.FindingState.KNOWN)
+		{
+			actions.add(rowButton("Builder", "Load into the transport builder",
+				() -> builderStatus.setText(plugin.loadIntoBuilder(row))));
+			actions.add(rowButton("Ignore", "Not a transport \u2014 never flag this object again",
+				() -> plugin.ignoreEntry(row.id, row.packedTile, row.name)));
+		}
+		if (row.state == TransportAuditPlugin.FindingState.CAPTURED_ONE_WAY
+			|| row.state == TransportAuditPlugin.FindingState.DATA_ONE_WAY)
+		{
+			actions.add(rowButton("1-way", "No reverse exists in-game \u2014 mark complete",
+				() -> builderStatus.setText(plugin.markNoReverse(row.id, row.packedTile))));
+		}
+		actions.setMaximumSize(new Dimension(Integer.MAX_VALUE, actions.getPreferredSize().height));
+		detail.add(actions);
+		detail.revalidate();
+		detail.repaint();
+	}
 
 	private JButton rowButton(String label, String tooltip, Runnable action)
 	{
@@ -340,7 +513,6 @@ class TransportAuditPanel extends PluginPanel
 		button.setMargin(new Insets(2, 6, 2, 6));
 		button.setFont(FontManager.getRunescapeSmallFont());
 		button.setToolTipText(tooltip);
-		button.setAlignmentX(Component.RIGHT_ALIGNMENT);
 		button.addActionListener(e -> action.run());
 		return button;
 	}
