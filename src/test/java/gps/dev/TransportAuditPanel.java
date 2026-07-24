@@ -76,6 +76,7 @@ class TransportAuditPanel extends PluginPanel
 		capture.setAlignmentX(Component.LEFT_ALIGNMENT);
 		top.add(capture);
 		javax.swing.JCheckBox knownToggle = new javax.swing.JCheckBox("Show known data nearby", false);
+		knownToggle.setFocusable(false);
 		knownToggle.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		knownToggle.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 		knownToggle.setFont(FontManager.getRunescapeSmallFont());
@@ -106,42 +107,9 @@ class TransportAuditPanel extends PluginPanel
 		detail.setVisible(false);
 		add(detail, BorderLayout.SOUTH);
 
-		// Keyboard navigation: arrows move the selection, Enter routes to it.
-		list.setFocusable(true);
-		list.getInputMap(javax.swing.JComponent.WHEN_FOCUSED)
-			.put(javax.swing.KeyStroke.getKeyStroke("UP"), "up");
-		list.getInputMap(javax.swing.JComponent.WHEN_FOCUSED)
-			.put(javax.swing.KeyStroke.getKeyStroke("DOWN"), "down");
-		list.getInputMap(javax.swing.JComponent.WHEN_FOCUSED)
-			.put(javax.swing.KeyStroke.getKeyStroke("ENTER"), "go");
-		list.getActionMap().put("up", new javax.swing.AbstractAction()
-		{
-			@Override
-			public void actionPerformed(java.awt.event.ActionEvent e)
-			{
-				moveSelection(-1);
-			}
-		});
-		list.getActionMap().put("down", new javax.swing.AbstractAction()
-		{
-			@Override
-			public void actionPerformed(java.awt.event.ActionEvent e)
-			{
-				moveSelection(1);
-			}
-		});
-		list.getActionMap().put("go", new javax.swing.AbstractAction()
-		{
-			@Override
-			public void actionPerformed(java.awt.event.ActionEvent e)
-			{
-				TransportAuditPlugin.Row row = selectedRow();
-				if (row != null)
-				{
-					plugin.routeTo(row.packedTile);
-				}
-			}
-		});
+		// NO keyboard navigation and NO focus grabs: the sidebar shares the window with the game
+		// canvas, so any component holding keyboard focus kills camera keys until the player
+		// clicks back into the world. Mouse only: click selects, double-click routes.
 	}
 
 	/** How many backlog (not-in-scene) rows to show before truncating. */
@@ -178,6 +146,7 @@ class TransportAuditPanel extends PluginPanel
 		section.add(fieldRow("Info", builderDisplay, "Display info (route/card label)"));
 		section.add(fieldRow("Note", builderNote,
 			"Advisory shown on the route step (\"fire arrow needed\", \"can fail\") — does NOT gate the route"));
+		builderBothWays.setFocusable(false);
 		builderBothWays.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		builderBothWays.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 		builderBothWays.setFont(FontManager.getRunescapeSmallFont());
@@ -190,6 +159,7 @@ class TransportAuditPanel extends PluginPanel
 		buttons.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		buttons.setAlignmentX(Component.LEFT_ALIGNMENT);
 		JButton save = new JButton("Save row");
+		save.setFocusable(false);
 		save.setFont(FontManager.getRunescapeSmallFont());
 		save.addActionListener(e -> builderStatus.setText(plugin.saveBuilderRow(
 			builderSkills.getText().trim(), builderItems.getText().trim(),
@@ -197,6 +167,7 @@ class TransportAuditPanel extends PluginPanel
 			builderDisplay.getText().trim(), builderNote.getText().trim(),
 			builderBothWays.isSelected())));
 		JButton clear = new JButton("Clear");
+		clear.setFocusable(false);
 		clear.setFont(FontManager.getRunescapeSmallFont());
 		clear.addActionListener(e -> {
 			plugin.clearBuilder();
@@ -378,7 +349,6 @@ class TransportAuditPanel extends PluginPanel
 					return;
 				}
 				selectRow(key);
-				list.requestFocusInWindow();
 			}
 		});
 		return panel;
@@ -409,26 +379,6 @@ class TransportAuditPanel extends PluginPanel
 			}
 		}
 		return null;
-	}
-
-	/** Arrow-key navigation: moves the selection within the flat row order. */
-	private void moveSelection(int delta)
-	{
-		if (currentRows.isEmpty())
-		{
-			return;
-		}
-		int index = -1;
-		for (int i = 0; i < currentRows.size(); i++)
-		{
-			if (keyOf(currentRows.get(i)) == selectedKey)
-			{
-				index = i;
-				break;
-			}
-		}
-		int next = Math.max(0, Math.min(currentRows.size() - 1, index < 0 ? 0 : index + delta));
-		selectRow(keyOf(currentRows.get(next)));
 	}
 
 	/** The detail card: everything about the selected row, plus its actions \u2014 rendered ONCE. */
@@ -472,6 +422,7 @@ class TransportAuditPanel extends PluginPanel
 
 		javax.swing.JTextArea info = new javax.swing.JTextArea(row.dossier);
 		info.setEditable(false);
+		info.setFocusable(false); // a focused text area would swallow game keyboard input
 		info.setLineWrap(true);
 		info.setWrapStyleWord(true);
 		info.setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -513,6 +464,7 @@ class TransportAuditPanel extends PluginPanel
 		button.setMargin(new Insets(2, 6, 2, 6));
 		button.setFont(FontManager.getRunescapeSmallFont());
 		button.setToolTipText(tooltip);
+		button.setFocusable(false); // keep keyboard focus on the game canvas after a click
 		button.addActionListener(e -> action.run());
 		return button;
 	}
