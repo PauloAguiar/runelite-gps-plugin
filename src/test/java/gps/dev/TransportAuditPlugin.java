@@ -95,6 +95,10 @@ public class TransportAuditPlugin extends Plugin
 		// "Standing at it" distance from the object's CENTER tile: 2 for single-tile objects,
 		// plus the footprint half-span for large ones (a 5x7 object's edge is 3 tiles out).
 		final int interactRadius;
+		// Exact post-rotation footprint in scene tiles (1x1 when unknown): a 4-wide lava gap is
+		// jumpable from any of its 4 lanes, so one capture can derive the sibling lanes.
+		final int footprintX;
+		final int footprintY;
 
 		Finding(TileObject object, int packedTemplateTile, String name, String action,
 			String[] actions, boolean door, int gatingVarbit, boolean oneWayData)
@@ -108,10 +112,19 @@ public class TransportAuditPlugin extends Plugin
 			this.actions = actions;
 			this.door = door;
 			int halfSpan = 0;
+			int spanX = 1;
+			int spanY = 1;
 			if (object instanceof net.runelite.api.GameObject)
 			{
-				net.runelite.api.Point min = ((net.runelite.api.GameObject) object).getSceneMinLocation();
+				net.runelite.api.GameObject gameObject = (net.runelite.api.GameObject) object;
+				net.runelite.api.Point min = gameObject.getSceneMinLocation();
+				net.runelite.api.Point max = gameObject.getSceneMaxLocation();
 				net.runelite.api.coords.LocalPoint center = object.getLocalLocation();
+				if (min != null && max != null)
+				{
+					spanX = max.getX() - min.getX() + 1;
+					spanY = max.getY() - min.getY() + 1;
+				}
 				if (min != null && center != null)
 				{
 					halfSpan = Math.max(0, Math.max(center.getSceneX() - min.getX(),
@@ -119,6 +132,8 @@ public class TransportAuditPlugin extends Plugin
 				}
 			}
 			this.interactRadius = 2 + halfSpan;
+			this.footprintX = spanX;
+			this.footprintY = spanY;
 		}
 
 		String describe()
@@ -140,13 +155,14 @@ public class TransportAuditPlugin extends Plugin
 		/** Everything the operator needs to register this object, clipboard-ready. */
 		String dossier()
 		{
-			return dossierText(name, object.getId(), packedTemplateTile, action, actions, door, gatingVarbit);
+			return dossierText(name, object.getId(), packedTemplateTile, action, actions, door,
+				gatingVarbit, footprintX, footprintY);
 		}
 	}
 
 	/** The clipboard dossier, buildable from plain fields (live findings and recorded entries). */
 	static String dossierText(String name, int id, int packedTile, String action,
-		String[] actions, boolean door, int gatingVarbit)
+		String[] actions, boolean door, int gatingVarbit, int footprintX, int footprintY)
 	{
 		int x = WorldPointUtil.unpackWorldX(packedTile);
 		int y = WorldPointUtil.unpackWorldY(packedTile);
@@ -155,6 +171,12 @@ public class TransportAuditPlugin extends Plugin
 		sb.append(name).append(" id=").append(id)
 			.append(" tile=").append(x).append(',').append(y).append(',').append(plane).append('\n');
 		sb.append("actions: ").append(String.join(", ", actions)).append('\n');
+		if (footprintX > 1 || footprintY > 1)
+		{
+			sb.append("footprint ").append(footprintX).append('x').append(footprintY)
+				.append(" — capture ONE lane straight across; sibling lanes are derived")
+				.append(" automatically (~geometry)\n");
+		}
 		if (door)
 		{
 			sb.append("door missing from doors.tsv — re-run doorDump in shortest-path-tooling");
@@ -169,6 +191,58 @@ public class TransportAuditPlugin extends Plugin
 				.append("\t\t\t\t\t\t1\t");
 		}
 		return sb.toString();
+	}
+
+	/**
+	 * Sibling-lane rows for a capture across a multi-tile object: a 4-wide lava gap is jumpable
+	 * from any of its 4 lanes, but a traversal only records the lane actually used. The capture
+	 * is translated sideways to every other lane of the footprint, keeping direction, distance
+	 * and per-endpoint plane. Returns {origin, dest} packed pairs, never the traversed lane.
+	 * Skipped entirely when the travel axis is ambiguous (perfect diagonal) or the origin was
+	 * not lined up with a footprint lane (an angled walk-in approach).
+	 */
+	static java.util.List<int[]> expandCaptureLanes(int origin, int dest,
+		int laneMinWorld, int laneMaxWorld, java.util.function.IntPredicate blockedTile)
+	{
+		java.util.List<int[]> lanes = new java.util.ArrayList<>();
+		int dx = Math.abs(WorldPointUtil.unpackWorldX(dest) - WorldPointUtil.unpackWorldX(origin));
+		int dy = Math.abs(WorldPointUtil.unpackWorldY(dest) - WorldPointUtil.unpackWorldY(origin));
+		if (dx == dy || laneMinWorld >= laneMaxWorld || laneMaxWorld - laneMinWorld > 8)
+		{
+			return lanes;
+		}
+		// Travel along x means the parallel lanes differ in y, and vice versa.
+		boolean lanesAlongY = dx > dy;
+		int originLane = lanesAlongY
+			? WorldPointUtil.unpackWorldY(origin) : WorldPointUtil.unpackWorldX(origin);
+		if (originLane < laneMinWorld || originLane > laneMaxWorld)
+		{
+			return lanes;
+		}
+		for (int lane = laneMinWorld; lane <= laneMaxWorld; lane++)
+		{
+			int delta = lane - originLane;
+			if (delta == 0)
+			{
+				continue;
+			}
+			int newOrigin = translateLane(origin, lanesAlongY, delta);
+			int newDest = translateLane(dest, lanesAlongY, delta);
+			if (blockedTile.test(newOrigin) || blockedTile.test(newDest))
+			{
+				continue;
+			}
+			lanes.add(new int[]{newOrigin, newDest});
+		}
+		return lanes;
+	}
+
+	private static int translateLane(int packed, boolean lanesAlongY, int delta)
+	{
+		return WorldPointUtil.packWorldPoint(
+			WorldPointUtil.unpackWorldX(packed) + (lanesAlongY ? 0 : delta),
+			WorldPointUtil.unpackWorldY(packed) + (lanesAlongY ? delta : 0),
+			WorldPointUtil.unpackWorldPlane(packed));
 	}
 
 	/** Curation state of one finding, driving the panel row and scene outline colors. */
@@ -1155,7 +1229,91 @@ public class TransportAuditPlugin extends Plugin
 			// read as one-way until the next restart, however many reverses were walked.
 			recomputeEdgePairs();
 			log.info("[audit] captured — review then paste into transports.tsv:\n{}", row);
+			int derived = deriveSiblingLanes(capture.finding, capture.originTile, destTile, duration);
+			if (derived > 0)
+			{
+				lastCaptureText += " (+" + derived + " lanes derived)";
+			}
 		}
+	}
+
+	/**
+	 * After a verified capture across a multi-lane object, writes the sibling-lane rows to the
+	 * captures file tagged {@code ~geometry ~duration} — verified for the traversed lane only.
+	 * Lanes whose translated endpoints are collision-blocked are dropped; without a loaded GPS
+	 * collision map nothing is derived (better no row than an unwalkable one).
+	 */
+	private int deriveSiblingLanes(Finding finding, int origin, int dest, int duration)
+	{
+		if (finding.footprintX <= 1 && finding.footprintY <= 1
+			|| !(finding.object instanceof net.runelite.api.GameObject))
+		{
+			return 0;
+		}
+		int dx = Math.abs(WorldPointUtil.unpackWorldX(dest) - WorldPointUtil.unpackWorldX(origin));
+		int dy = Math.abs(WorldPointUtil.unpackWorldY(dest) - WorldPointUtil.unpackWorldY(origin));
+		if (dx == dy)
+		{
+			return 0;
+		}
+		net.runelite.api.GameObject gameObject = (net.runelite.api.GameObject) finding.object;
+		net.runelite.api.Point sceneMin = gameObject.getSceneMinLocation();
+		net.runelite.api.Point sceneMax = gameObject.getSceneMaxLocation();
+		net.runelite.api.coords.LocalPoint center = gameObject.getLocalLocation();
+		gps.pathfinder.CollisionMap map = gpsCollisionMap();
+		if (sceneMin == null || sceneMax == null || center == null || map == null)
+		{
+			return 0;
+		}
+		// World coordinate range of the footprint along the lane axis, anchored on the object's
+		// (template) tile so instances stay in transport-data coordinate space.
+		boolean lanesAlongY = dx > dy;
+		int centerLaneScene = lanesAlongY ? center.getSceneY() : center.getSceneX();
+		int minLaneScene = lanesAlongY ? sceneMin.getY() : sceneMin.getX();
+		int maxLaneScene = lanesAlongY ? sceneMax.getY() : sceneMax.getX();
+		int centerLaneWorld = lanesAlongY
+			? WorldPointUtil.unpackWorldY(finding.packedTemplateTile)
+			: WorldPointUtil.unpackWorldX(finding.packedTemplateTile);
+		int laneMinWorld = centerLaneWorld + (minLaneScene - centerLaneScene);
+		int laneMaxWorld = laneMinWorld + (maxLaneScene - minLaneScene);
+		int written = 0;
+		for (int[] lane : expandCaptureLanes(origin, dest, laneMinWorld, laneMaxWorld,
+			p -> map.isBlocked(WorldPointUtil.unpackWorldX(p), WorldPointUtil.unpackWorldY(p),
+				WorldPointUtil.unpackWorldPlane(p))))
+		{
+			String laneKey = tileText(lane[0]) + "|" + tileText(lane[1]) + "|"
+				+ finding.object.getId();
+			if (capturedKeys.contains(laneKey))
+			{
+				continue; // that lane was genuinely traversed at some point — keep the real row
+			}
+			String laneRow = tileText(lane[0]) + "\t" + tileText(lane[1]) + "\t"
+				+ finding.action + " " + finding.name + " " + finding.object.getId()
+				+ "\t\t\t\t\t\t" + duration + "\t\t\t~geometry ~duration";
+			if (appendCaptureRow(laneRow, "~" + laneKey))
+			{
+				written++;
+			}
+		}
+		if (written > 0)
+		{
+			log.info("[audit] derived {} sibling lane row(s) for {} (footprint {}x{})",
+				written, finding.name, finding.footprintX, finding.footprintY);
+		}
+		return written;
+	}
+
+	/** The GPS plugin's live collision map, or null when unavailable. */
+	private gps.pathfinder.CollisionMap gpsCollisionMap()
+	{
+		for (net.runelite.client.plugins.Plugin other : pluginManager.getPlugins())
+		{
+			if (other instanceof gps.ShortestPathPlugin)
+			{
+				return ((gps.ShortestPathPlugin) other).getCollisionMap();
+			}
+		}
+		return null;
 	}
 
 	/** Appends one review-ready transports.tsv row to the captures file. False when a duplicate. */
@@ -1422,7 +1580,7 @@ public class TransportAuditPlugin extends Plugin
 				stateOfRecorded(entry),
 				WorldPointUtil.distanceBetween2D(playerTile, entry.packedTile), false,
 				dossierText(entry.name, entry.id, entry.packedTile, entry.action,
-					entry.actions, entry.door, -1)));
+					entry.actions, entry.door, -1, 1, 1)));
 		}
 		for (MetaEdges.Entry entry : metaEdges)
 		{

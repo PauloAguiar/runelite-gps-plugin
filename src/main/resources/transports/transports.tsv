@@ -7418,6 +7418,18 @@
 1318 10191 2	1313 10189 1	Climb Steps 34531						1	
 1329 10238 1	1336 10238 1	Crawl through Tunnel 34516						6	
 1329 10239 1	1336 10239 1	Crawl through Tunnel 34516						5	
+1270 10170 0	1270 10175 0	Jump Lava gap 34515						4			~geometry ~duration
+1271 10170 0	1271 10175 0	Jump Lava gap 34515						4			~geometry ~duration
+1269 10175 0	1269 10170 0	Jump Lava gap 34515						4			~geometry ~duration
+1270 10175 0	1270 10170 0	Jump Lava gap 34515						4			~geometry ~duration
+1271 10175 0	1271 10170 0	Jump Lava gap 34515						4			~geometry ~duration
+1307 10257 0	1307 10252 0	Jump Lava gap 34515						5			~geometry ~duration
+1308 10257 0	1308 10252 0	Jump Lava gap 34515						5			~geometry ~duration
+1309 10257 0	1309 10252 0	Jump Lava gap 34515						5			~geometry ~duration
+1320 10205 0	1322 10205 0	Climb Rocks 34544						4			~geometry ~duration
+1322 10205 0	1320 10205 0	Climb Rocks 34544						3			~geometry ~duration
+1352 10252 0	1352 10250 0	Climb Rocks 34548						4			~geometry ~duration
+1351 10250 0	1351 10252 0	Climb Rocks 34548						4			~geometry ~duration
 1312 10189 0	1311 3807 0	Exit Cave exit 34514						4	
 1311 10189 0	1311 3807 0	Exit Cave exit 34514						4	
 1587 3820 0	1580 3820 1	Climb Stairs 33575						1	
