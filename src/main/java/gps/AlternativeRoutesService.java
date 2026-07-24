@@ -416,6 +416,15 @@ public class AlternativeRoutesService
 			MethodScan scan = scanMethods(planningConfig, path);
 			List<TeleportMethod> methods = scan.methods;
 
+			// A kept route nested inside this one (detour + same ending): skip it WITHOUT burning
+			// its signature, and keep the chain moving by excluding its primary like any accepted
+			// route — the next iteration can still find genuinely different endings.
+			if (nestsAKeptRoute(methods, !scan.bankGated.isEmpty(), routes))
+			{
+				excluded.add(methods.get(0));
+				continue;
+			}
+
 			// Distinct method-signature gate: if this route uses the same ordered methods as a previous
 			// one, excluding more would only reshuffle, so stop.
 			if (!seenSignatures.add(signature(methods)))
@@ -816,6 +825,11 @@ public class AlternativeRoutesService
 				if (costMultiple > 0 && routes.size() >= MIN_PAGE_ROUTES
 					&& seedResult.totalCost > (long) Math.max(routes.get(0).getTotalCost(), MIN_BEST_FOR_BAND) * costMultiple
 					&& seedResult.totalCost > pageFillCeiling(routes.get(0).getTotalCost(), maxAcceptedCost(routes), costMultiple))
+				{
+					continue;
+				}
+				if (nestsAKeptRoute(seedResult.scan.methods,
+					!seedResult.scan.bankGated.isEmpty(), routes))
 				{
 					continue;
 				}
@@ -1538,6 +1552,34 @@ public class AlternativeRoutesService
 	{
 		return Math.max(0, CostUnits.fromTicks(transport.getDuration())
 			+ config.getAdditionalTransportCost(transport));
+	}
+
+	/**
+	 * Whether the candidate's method sequence ENDS WITH a kept route's entire (non-empty)
+	 * method sequence — the kept route is nested inside it: the candidate detours and then runs
+	 * the kept route anyway ("Ring of dueling + glory + carts" when "glory + carts" is already
+	 * shown; a field capture had SEVEN of these). Strictly costlier, zero new information.
+	 * Seeds produce them because a seed search only excludes fellow NEAR-TARGET teleports, so a
+	 * far teleport chain stays available inside every seed's search. Bank-fetching candidates
+	 * are spared when the kept route isn't via-bank: withdrawing the item IS their point.
+	 */
+	static boolean nestsAKeptRoute(List<TeleportMethod> candidate, boolean candidateViaBank,
+		List<RouteOption> kept)
+	{
+		for (RouteOption route : kept)
+		{
+			List<TeleportMethod> base = route.getMethods();
+			if (base.isEmpty() || candidate.size() <= base.size()
+				|| (candidateViaBank && !route.isViaBank()))
+			{
+				continue;
+			}
+			if (candidate.subList(candidate.size() - base.size(), candidate.size()).equals(base))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static String signature(List<TeleportMethod> methods)
