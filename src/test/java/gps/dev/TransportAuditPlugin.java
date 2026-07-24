@@ -71,6 +71,10 @@ public class TransportAuditPlugin extends Plugin
 		"swing", "squeeze", "crawl", "balance", "vault", "leap", "scale", "grapple", "board",
 		"travel", "ride", "pass", "pull", "push", "step", "dock", "navigate",
 		"walk-", "go-", "teleport",
+		// "activate" is noisy (~60 objects) but a REAL transport hid behind it: the Mount
+		// Karuulm elevator, whose absence made the whole dungeon unreachable (the Kingdom
+		// Divided field report). Ignorable noise beats an invisible island.
+		"activate",
 	};
 
 	/** A traversal object the data doesn't cover, plus what the operator should do about it. */
