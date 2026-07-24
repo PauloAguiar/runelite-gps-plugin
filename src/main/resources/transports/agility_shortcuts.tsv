@@ -1,4 +1,4 @@
-# Origin	Destination	menuOption menuTarget objectID	Skills	Items	Varbits	VarPlayers	Duration
+# Origin	Destination	menuOption menuTarget objectID	Skills	Items	Varbits	VarPlayers	Duration	Meta
 2220 3155 0	2220 3152 0	Step-over Tripwire 3921	1 Agility				8
 2220 3152 0	2220 3155 0	Step-over Tripwire 3921	1 Agility				8
 2215 3156 0	2215 3153 0	Step-over Tripwire 3921	1 Agility				8
@@ -552,3 +552,5 @@
 3504 3562 0	3504 3559 0	Cross Bridge 57716	69 Agility		4441=2;5023=2		4
 3503 3559 0	3503 3562 0	Cross Bridge 57718	69 Agility		4441=2;5023=2		4
 3503 3562 0	3503 3559 0	Cross Bridge 57715	69 Agility		4441=2;5023=2		4
+1346 10232 0	1315 10214 0	Enter Mysterious pipe 34655	88 Agility				5	~geometry
+1315 10214 0	1346 10232 0	Enter Mysterious pipe 34655	88 Agility				5	~geometry
