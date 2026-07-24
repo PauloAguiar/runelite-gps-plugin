@@ -358,6 +358,9 @@ public class TransportAuditPlugin extends Plugin
 	// world for debugging ("what does the data think is here?"). Toggled from the panel.
 	private final java.util.List<KnownEntry> knownEntries = new java.util.ArrayList<>();
 	volatile boolean showKnown = false;
+	// Panel search text (lowercase). Filtering is panel-side except for known-data rows, whose
+	// candidate set is pre-trimmed here: nearby-only while browsing, name-matched when searching.
+	volatile String listFilter = "";
 	private volatile int knownHighlightOrigin = WorldPointUtil.UNDEFINED;
 	private volatile int knownHighlightDest = WorldPointUtil.UNDEFINED;
 	@Inject
@@ -1595,6 +1598,7 @@ public class TransportAuditPlugin extends Plugin
 		}
 		if (showKnown)
 		{
+			String filter = listFilter;
 			java.util.List<Row> known = new java.util.ArrayList<>();
 			for (KnownEntry entry : knownEntries)
 			{
@@ -1604,9 +1608,16 @@ public class TransportAuditPlugin extends Plugin
 					continue;
 				}
 				int distance = WorldPointUtil.distanceBetween2D(playerTile, anchor);
-				if (distance > 60)
+				if (filter.isEmpty())
 				{
-					continue; // browsing aid: only the local area is useful in-world
+					if (distance > 60)
+					{
+						continue; // browsing: only the local area is useful in-world
+					}
+				}
+				else if (!entry.label.toLowerCase(java.util.Locale.ROOT).contains(filter))
+				{
+					continue; // searching: match anywhere in the world, by name
 				}
 				known.add(new Row(entry.label, "curated", 0, anchor, FindingState.KNOWN,
 					distance, false,
@@ -1614,7 +1625,7 @@ public class TransportAuditPlugin extends Plugin
 						+ " -> dest " + tileText(entry.destination)));
 			}
 			known.sort(java.util.Comparator.comparingInt(row -> row.distance));
-			rows.addAll(known.subList(0, Math.min(25, known.size())));
+			rows.addAll(known.subList(0, Math.min(filter.isEmpty() ? 25 : 100, known.size())));
 		}
 		rows.sort(java.util.Comparator
 			.comparingInt((Row row) -> row.live ? 0 : 1)

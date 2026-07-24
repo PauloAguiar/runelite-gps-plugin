@@ -51,6 +51,9 @@ class TransportAuditPanel extends PluginPanel
 	};
 	private List<TransportAuditPlugin.Row> currentRows = List.of();
 	private String lastSignature = "";
+	private final net.runelite.client.ui.components.IconTextField searchBar =
+		new net.runelite.client.ui.components.IconTextField();
+	private String filterText = "";
 
 	// Transport builder controls (values are the operator's; only the labels track the plugin).
 	private final JLabel builderOrigin = new JLabel("origin: — (shift right-click)");
@@ -98,6 +101,34 @@ class TransportAuditPanel extends PluginPanel
 			+ " mark their origins in the world; select one to spotlight its origin and landing");
 		knownToggle.addActionListener(e -> plugin.showKnown = knownToggle.isSelected());
 		top.add(knownToggle);
+		// ONE search box over the whole list — findings, backlog, meta and known rows alike.
+		// Deliberately focusable (typing is the point); clicking the game world releases focus.
+		searchBar.setIcon(net.runelite.client.ui.components.IconTextField.Icon.SEARCH);
+		searchBar.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		searchBar.setHoverBackgroundColor(ColorScheme.DARK_GRAY_HOVER_COLOR);
+		searchBar.setAlignmentX(Component.LEFT_ALIGNMENT);
+		searchBar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+		searchBar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener()
+		{
+			@Override
+			public void insertUpdate(javax.swing.event.DocumentEvent e)
+			{
+				applyFilter();
+			}
+
+			@Override
+			public void removeUpdate(javax.swing.event.DocumentEvent e)
+			{
+				applyFilter();
+			}
+
+			@Override
+			public void changedUpdate(javax.swing.event.DocumentEvent e)
+			{
+				applyFilter();
+			}
+		});
+		top.add(searchBar);
 		top.add(buildBuilderSection());
 		add(top, BorderLayout.NORTH);
 
@@ -127,6 +158,8 @@ class TransportAuditPanel extends PluginPanel
 
 	/** How many backlog (not-in-scene) rows to show before truncating. */
 	private static final int MAX_BACKLOG_ROWS = 30;
+	/** Per-group ceiling while a search filter is active — matched rows, not a fixed window. */
+	private static final int MAX_FILTERED_ROWS = 100;
 
 	/**
 	 * The manual transport builder: origin/destination/object come from shift right-clicks in
@@ -253,35 +286,83 @@ class TransportAuditPanel extends PluginPanel
 				.append(row.state).append(':').append(row.live).append(':')
 				.append(row.distance / 16).append(';');
 		}
-		return signature.append("sel=").append(selectedKey).toString();
+		return signature.append("sel=").append(selectedKey)
+			.append(";f=").append(filterText).toString();
+	}
+
+	/** Search keystrokes re-render immediately and hand the text to the plugin's known-data trim. */
+	private void applyFilter()
+	{
+		filterText = searchBar.getText().trim().toLowerCase(java.util.Locale.ROOT);
+		plugin.listFilter = filterText;
+		lastSignature = computeSignature(currentRows);
+		rebuildList();
+	}
+
+	private boolean matchesFilter(TransportAuditPlugin.Row row)
+	{
+		if (filterText.isEmpty())
+		{
+			return true;
+		}
+		String haystack = (row.name + ' ' + row.action + ' ' + row.id + ' '
+			+ gps.WorldPointUtil.unpackWorldX(row.packedTile) + ','
+			+ gps.WorldPointUtil.unpackWorldY(row.packedTile) + ','
+			+ gps.WorldPointUtil.unpackWorldPlane(row.packedTile) + ' '
+			+ stateText(row.state)).toLowerCase(java.util.Locale.ROOT);
+		return haystack.contains(filterText);
+	}
+
+	private static String groupOf(TransportAuditPlugin.Row row)
+	{
+		if (row.live)
+		{
+			return "In this scene";
+		}
+		return row.state == TransportAuditPlugin.FindingState.KNOWN
+			? "Known data (curated)" : "Recorded elsewhere";
 	}
 
 	private void rebuildList()
 	{
 		list.removeAll();
-		boolean liveHeaderAdded = false;
-		boolean backlogHeaderAdded = false;
+		// Caps are PER GROUP so the backlog can't starve the known-data section (KNOWN sorts
+		// last), and searching lifts them \u2014 a filtered list should show what it matched.
+		boolean filtering = !filterText.isEmpty();
 		int backlogShown = 0;
+		int shown = 0;
+		String currentGroup = null;
+		boolean truncated = false;
 		JPanel selectedPanel = null;
 		for (TransportAuditPlugin.Row row : currentRows)
 		{
-			if (row.live && !liveHeaderAdded)
+			if (!matchesFilter(row))
 			{
-				list.add(groupLabel("In this scene"));
-				liveHeaderAdded = true;
+				continue;
 			}
-			if (!row.live && !backlogHeaderAdded)
+			String group = groupOf(row);
+			if (!group.equals(currentGroup))
 			{
-				list.add(groupLabel(row.state == TransportAuditPlugin.FindingState.KNOWN
-					? "Known data nearby" : "Recorded elsewhere"));
-				backlogHeaderAdded = true;
+				list.add(groupLabel(group));
+				currentGroup = group;
+				truncated = false;
 			}
-			if (!row.live && ++backlogShown > MAX_BACKLOG_ROWS)
+			if (truncated)
 			{
-				JLabel more = groupLabel("\u2026 more in transport-audit.tsv (see audit_diff.py)");
+				continue;
+			}
+			boolean backlog = !row.live
+				&& row.state != TransportAuditPlugin.FindingState.KNOWN;
+			if ((!filtering && backlog && ++backlogShown > MAX_BACKLOG_ROWS)
+				|| (filtering && ++shown > MAX_FILTERED_ROWS))
+			{
+				JLabel more = groupLabel(filtering
+					? "\u2026 narrow the search to see the rest"
+					: "\u2026 more in transport-audit.tsv (see audit_diff.py)");
 				more.setForeground(ColorScheme.MEDIUM_GRAY_COLOR);
 				list.add(more);
-				break;
+				truncated = true;
+				continue;
 			}
 			JPanel rowPanel = buildRow(row);
 			if (keyOf(row) == selectedKey)
@@ -289,6 +370,12 @@ class TransportAuditPanel extends PluginPanel
 				selectedPanel = rowPanel;
 			}
 			list.add(rowPanel);
+		}
+		if (currentGroup == null && filtering)
+		{
+			JLabel none = groupLabel("No matches");
+			none.setForeground(ColorScheme.MEDIUM_GRAY_COLOR);
+			list.add(none);
 		}
 		list.revalidate();
 		list.repaint();
