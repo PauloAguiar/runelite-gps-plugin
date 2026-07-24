@@ -35,7 +35,20 @@ class TransportAuditPanel extends PluginPanel
 	private final JLabel summary = new JLabel();
 	private final JLabel capture = new JLabel();
 	private final JPanel list = new JPanel();
-	private final JPanel detail = new JPanel();
+	// The detail card must never drive the panel's size: a wrapped text area still REPORTS its
+	// longest line as preferred width, and BorderLayout propagates SOUTH's preference upward —
+	// which stretched the whole sidebar when a card popped in. Width is pinned to zero here
+	// (BorderLayout stretches SOUTH to the real container width regardless).
+	private final JPanel detail = new JPanel()
+	{
+		@Override
+		public Dimension getPreferredSize()
+		{
+			Dimension size = super.getPreferredSize();
+			size.width = 0;
+			return size;
+		}
+	};
 	private List<TransportAuditPlugin.Row> currentRows = List.of();
 	private String lastSignature = "";
 
@@ -399,7 +412,8 @@ class TransportAuditPanel extends PluginPanel
 			javax.swing.BorderFactory.createMatteBorder(0, 3, 0, 0, color),
 			new EmptyBorder(4, 6, 6, 6)));
 
-		JLabel title = new JLabel(row.name + "  (" + row.action + (row.id > 0 ? " id=" + row.id : "") + ")");
+		JLabel title = new JLabel(htmlWrap(
+			row.name + "  (" + row.action + (row.id > 0 ? " id=" + row.id : "") + ")"));
 		title.setForeground(Color.WHITE);
 		title.setFont(FontManager.getRunescapeBoldFont());
 		title.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -420,12 +434,10 @@ class TransportAuditPanel extends PluginPanel
 		where.setAlignmentX(Component.LEFT_ALIGNMENT);
 		detail.add(where);
 
-		javax.swing.JTextArea info = new javax.swing.JTextArea(row.dossier);
-		info.setEditable(false);
-		info.setFocusable(false); // a focused text area would swallow game keyboard input
-		info.setLineWrap(true);
-		info.setWrapStyleWord(true);
-		info.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		// HTML label, not a JTextArea: a wrapped text area still reports its longest line as
+		// preferred width (stretching the sidebar), and its preferred height is computed
+		// pre-wrap (clipping). A width-constrained HTML body wraps AND sizes correctly.
+		JLabel info = new JLabel(htmlWrap(row.dossier));
 		info.setForeground(ColorScheme.MEDIUM_GRAY_COLOR);
 		info.setFont(FontManager.getRunescapeSmallFont());
 		info.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -456,6 +468,20 @@ class TransportAuditPanel extends PluginPanel
 		detail.add(actions);
 		detail.revalidate();
 		detail.repaint();
+	}
+
+	/**
+	 * Wraps text for a JLabel at a width that fits the sidebar: escaped, newlines kept, and
+	 * the body width pinned so long dossier lines fold instead of widening the panel.
+	 */
+	static String htmlWrap(String text)
+	{
+		String escaped = text
+			.replace("&", "&amp;")
+			.replace("<", "&lt;")
+			.replace(">", "&gt;")
+			.replace("\n", "<br>");
+		return "<html><body style='width:165px'>" + escaped + "</body></html>";
 	}
 
 	private JButton rowButton(String label, String tooltip, Runnable action)
