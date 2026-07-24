@@ -183,10 +183,27 @@ public class TransportAuditPlugin extends Plugin
 		CAPTURED_ONE_WAY,
 		/** The DATA covers one direction only (promoted rows without a reverse) — same cure. */
 		DATA_ONE_WAY,
+		/** A curated transport row shown by the known-data browser (debugging aid, cyan). */
+		KNOWN,
 		CAPTURED_SESSION,
 		CAPTURED_PRIOR,
 		/** The curated data now covers it (row added since it was recorded) — prunable. */
 		RESOLVED
+	}
+
+	/** A curated transport row, browsable for debugging: where the DATA says you can go. */
+	static final class KnownEntry
+	{
+		final int origin;
+		final int destination;
+		final String label;
+
+		KnownEntry(int origin, int destination, String label)
+		{
+			this.origin = origin;
+			this.destination = destination;
+			this.label = label;
+		}
 	}
 
 	/**
@@ -263,6 +280,14 @@ public class TransportAuditPlugin extends Plugin
 	// old combined set silenced the flag while routing north was impossible).
 	private Set<Integer> transportOriginTiles;
 	private Set<Integer> transportDestTiles;
+	// The known-data browser: every curated transport row, listable and highlightable in the
+	// world for debugging ("what does the data think is here?"). Toggled from the panel.
+	private final java.util.List<KnownEntry> knownEntries = new java.util.ArrayList<>();
+	volatile boolean showKnown = false;
+	private volatile int knownHighlightOrigin = WorldPointUtil.UNDEFINED;
+	private volatile int knownHighlightDest = WorldPointUtil.UNDEFINED;
+	@Inject
+	private net.runelite.client.plugins.PluginManager pluginManager;
 	// Packed tiles of EVERY door registry row — including doors the map places open (excluded
 	// from ClosedDoors' pricing masks on purpose, but still registered and handled). The scene's
 	// open-door variant also anchors its swung leaf on a neighbouring tile, so coverage checks a
@@ -348,6 +373,11 @@ public class TransportAuditPlugin extends Plugin
 					{
 						transportDestTiles.add(transport.getDestination());
 					}
+					String label = transport.getDisplayInfo() != null && !transport.getDisplayInfo().isEmpty()
+						? transport.getDisplayInfo()
+						: (transport.getObjectInfo() != null ? transport.getObjectInfo() : "(transport)");
+					knownEntries.add(new KnownEntry(
+						transport.getOrigin(), transport.getDestination(), label));
 				}
 			}
 			log.info("[audit] transport coverage: {} origin tiles, {} dest tiles",
@@ -560,6 +590,57 @@ public class TransportAuditPlugin extends Plugin
 			return FindingState.CAPTURED_ONE_WAY;
 		}
 		return thisSession ? FindingState.CAPTURED_SESSION : FindingState.CAPTURED_PRIOR;
+	}
+
+	java.util.List<KnownEntry> knownEntries()
+	{
+		return knownEntries;
+	}
+
+	int knownHighlightOrigin()
+	{
+		return knownHighlightOrigin;
+	}
+
+	int knownHighlightDest()
+	{
+		return knownHighlightDest;
+	}
+
+	/** Panel: a KNOWN row was selected — spotlight its endpoints in the world. */
+	void highlightKnown(int origin, int destination)
+	{
+		knownHighlightOrigin = origin;
+		knownHighlightDest = destination;
+	}
+
+	/** Panel selection: spotlight the known entry anchored at this tile (first match wins). */
+	void spotlightKnownAt(int packedTile)
+	{
+		for (KnownEntry entry : knownEntries)
+		{
+			int anchor = entry.origin != WorldPointUtil.UNDEFINED ? entry.origin : entry.destination;
+			if (anchor == packedTile)
+			{
+				highlightKnown(entry.origin, entry.destination);
+				return;
+			}
+		}
+	}
+
+	/** Panel "Go": route GPS to a tile (any row — finding, meta, or known). */
+	void routeTo(int packedTile)
+	{
+		for (net.runelite.client.plugins.Plugin other : pluginManager.getPlugins())
+		{
+			if (other instanceof gps.ShortestPathPlugin)
+			{
+				final gps.ShortestPathPlugin gpsPlugin = (gps.ShortestPathPlugin) other;
+				clientThread.invokeLater(() -> gpsPlugin.setDestination(packedTile, "audit panel"));
+				return;
+			}
+		}
+		log.warn("[audit] GPS plugin not found — cannot route");
 	}
 
 	java.util.List<MetaEdges.Entry> metaEdges()
@@ -1354,6 +1435,29 @@ public class TransportAuditPlugin extends Plugin
 					+ "\nConfirm by traversing/using it with the audit running — the capture "
 					+ "measures the real values; then remove the tags from the row."));
 		}
+		if (showKnown)
+		{
+			java.util.List<Row> known = new java.util.ArrayList<>();
+			for (KnownEntry entry : knownEntries)
+			{
+				int anchor = entry.origin != WorldPointUtil.UNDEFINED ? entry.origin : entry.destination;
+				if (anchor == WorldPointUtil.UNDEFINED)
+				{
+					continue;
+				}
+				int distance = WorldPointUtil.distanceBetween2D(playerTile, anchor);
+				if (distance > 60)
+				{
+					continue; // browsing aid: only the local area is useful in-world
+				}
+				known.add(new Row(entry.label, "curated", 0, anchor, FindingState.KNOWN,
+					distance, false,
+					"Curated row: " + entry.label + "\norigin " + tileText(entry.origin)
+						+ " -> dest " + tileText(entry.destination)));
+			}
+			known.sort(java.util.Comparator.comparingInt(row -> row.distance));
+			rows.addAll(known.subList(0, Math.min(25, known.size())));
+		}
 		rows.sort(java.util.Comparator
 			.comparingInt((Row row) -> row.live ? 0 : 1)
 			.thenComparingInt(row -> statePriority(row.state))
@@ -1398,6 +1502,8 @@ public class TransportAuditPlugin extends Plugin
 				return 5;
 			case CAPTURED_PRIOR:
 				return 6;
+			case KNOWN:
+				return 8; // debugging browser rows sit at the bottom
 			default:
 				return 7; // RESOLVED — prunable tail
 		}

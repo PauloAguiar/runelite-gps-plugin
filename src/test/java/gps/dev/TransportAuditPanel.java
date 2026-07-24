@@ -70,6 +70,15 @@ class TransportAuditPanel extends PluginPanel
 		capture.setFont(FontManager.getRunescapeSmallFont());
 		capture.setAlignmentX(Component.LEFT_ALIGNMENT);
 		top.add(capture);
+		javax.swing.JCheckBox knownToggle = new javax.swing.JCheckBox("Show known data nearby", false);
+		knownToggle.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		knownToggle.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		knownToggle.setFont(FontManager.getRunescapeSmallFont());
+		knownToggle.setAlignmentX(Component.LEFT_ALIGNMENT);
+		knownToggle.setToolTipText("Debugging: list the nearest curated transport rows (cyan) and"
+			+ " mark their origins in the world; select one to spotlight its origin and landing");
+		knownToggle.addActionListener(e -> plugin.showKnown = knownToggle.isSelected());
+		top.add(knownToggle);
 		top.add(buildBuilderSection());
 		add(top, BorderLayout.NORTH);
 
@@ -271,7 +280,15 @@ class TransportAuditPanel extends PluginPanel
 				else
 				{
 					selectedKey = key;
-					builderStatus.setText(plugin.loadIntoBuilder(row));
+					if (row.state == TransportAuditPlugin.FindingState.KNOWN)
+					{
+						plugin.spotlightKnownAt(row.packedTile);
+						builderStatus.setText("Spotlighting curated row in the world");
+					}
+					else
+					{
+						builderStatus.setText(plugin.loadIntoBuilder(row));
+					}
 				}
 				lastSignature = ""; // force restyle on the next snapshot
 			}
@@ -296,6 +313,8 @@ class TransportAuditPanel extends PluginPanel
 		JPanel east = new JPanel();
 		east.setLayout(new BoxLayout(east, BoxLayout.Y_AXIS));
 		east.setBackground(selected ? SELECTED_BG : ColorScheme.DARKER_GRAY_COLOR);
+		east.add(rowButton("Go", "Route GPS to this tile",
+			() -> plugin.routeTo(row.packedTile)));
 		east.add(rowButton("Copy",
 			"Copy the dossier (tile, actions, transports.tsv template) to the clipboard",
 			() -> copyText(row.dossier)));
@@ -379,6 +398,8 @@ class TransportAuditPanel extends PluginPanel
 				return new Color(70, 220, 90);
 			case CAPTURED_PRIOR:
 				return new Color(0, 190, 170);
+			case KNOWN:
+				return new Color(80, 200, 255);
 			case RESOLVED:
 				return ColorScheme.MEDIUM_GRAY_COLOR;
 			default:
@@ -404,6 +425,8 @@ class TransportAuditPanel extends PluginPanel
 				return "captured this session ✓ (in transport-captures.tsv)";
 			case CAPTURED_PRIOR:
 				return "captured in an earlier session ✓";
+			case KNOWN:
+				return "curated data — select to spotlight in the world";
 			case RESOLVED:
 				return "covered by current data ✓ (prunable)";
 			default:

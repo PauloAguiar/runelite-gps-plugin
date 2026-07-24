@@ -23,6 +23,8 @@ class TransportAuditSceneOverlay extends Overlay
 	static final Color UNMAPPED = new Color(255, 60, 60);
 	static final Color UNMAPPED_DOOR = new Color(255, 160, 40);
 	static final Color CONFIRM = new Color(176, 128, 255);
+	static final Color KNOWN = new Color(80, 200, 255);
+	private static final Color KNOWN_DIM = new Color(80, 200, 255, 90);
 
 	private final Client client;
 	private final TransportAuditPlugin plugin;
@@ -40,6 +42,17 @@ class TransportAuditSceneOverlay extends Overlay
 	public Dimension render(Graphics2D graphics)
 	{
 		final int currentPlane = client.getTopLevelWorldView().getPlane();
+		// Known-data browser: dim cyan at every curated origin in the scene, bright cyan on the
+		// selected entry's origin AND landing — "what does the data think is here?".
+		if (plugin.showKnown)
+		{
+			for (TransportAuditPlugin.KnownEntry entry : plugin.knownEntries())
+			{
+				drawKnownTile(graphics, entry.origin, currentPlane, KNOWN_DIM, null);
+			}
+			drawKnownTile(graphics, plugin.knownHighlightOrigin(), currentPlane, KNOWN, "origin");
+			drawKnownTile(graphics, plugin.knownHighlightDest(), currentPlane, KNOWN, "landing");
+		}
 		// Meta-tagged rows (machine-derived values): violet markers at their origin tiles, so a
 		// field session can see what nearby needs confirming.
 		for (MetaEdges.Entry entry : plugin.metaEdges())
@@ -89,5 +102,35 @@ class TransportAuditSceneOverlay extends Overlay
 			}
 		}
 		return null;
+	}
+
+	/** One known-data tile: outline (and label for the spotlighted pair) when in the scene. */
+	private void drawKnownTile(Graphics2D graphics, int packedTile, int currentPlane,
+		Color color, String label)
+	{
+		if (packedTile == gps.WorldPointUtil.UNDEFINED
+			|| gps.WorldPointUtil.unpackWorldPlane(packedTile) != currentPlane)
+		{
+			return;
+		}
+		LocalPoint location = LocalPoint.fromWorld(client.getTopLevelWorldView(),
+			gps.WorldPointUtil.unpackWorldX(packedTile), gps.WorldPointUtil.unpackWorldY(packedTile));
+		if (location == null)
+		{
+			return;
+		}
+		Polygon poly = Perspective.getCanvasTilePoly(client, location);
+		if (poly != null)
+		{
+			OverlayUtil.renderPolygon(graphics, poly, color);
+		}
+		if (label != null)
+		{
+			Point text = Perspective.getCanvasTextLocation(client, graphics, location, label, 30);
+			if (text != null)
+			{
+				OverlayUtil.renderTextLocation(graphics, text, label, color);
+			}
+		}
 	}
 }
