@@ -7085,10 +7085,9 @@
 2151 4614 1	2147 4614 1	Cross Bridge 3254						5			~geometry ~duration
 2154 4689 1	2154 4693 1	Cross Bridge 3254						5			~geometry ~duration
 2161 4636 1	2161 4640 1	Cross Bridge 3254						5			~geometry ~duration
-2145 4647 1	2142 4647 1	Open Door 3334						3			~duration
-2142 4647 1	2145 4647 1	Open Door 3334						3			~duration
-2145 4648 1	2142 4648 1	Open Door 3333						3			~duration
-2142 4648 1	2145 4648 1	Open Door 3333						3			~duration
+2145 4647 1	2014 4711 1	Open Door 3334						3		Instanced temple entry	~duration
+2145 4648 1	2014 4711 1	Open Door 3333						3		Instanced temple entry	~duration
+2014 4711 1	2145 4647 1	Open Door 3334						3		Instance exit	~geometry ~duration
 2162 4662 1	2162 4666 1	Cross Bridge 3254						5			~geometry ~duration
 2120 4686 1	2124 4686 1	Cross Bridge 3255						5			~geometry ~duration
 2123 4581 1	2123 4585 1	Cross Bridge 3255						5			~geometry ~duration

@@ -70,18 +70,19 @@ public class UndergroundPassConnectivityTest
 	}
 
 	@Test
-	public void templeDoorsOpenFromTheAntechamber()
+	public void templeDoorsTeleportIntoTheInstancedTemple()
 	{
 		// The inner sanctum doors are type-10 OBJECTS (3333/3334), invisible to the doors.tsv
-		// registry — explicit transport rows carry the crossing. A map pin on the well platform
-		// (gps-capture-20260724-212231) was unreachable from two rooms away without them.
+		// registry — and they TELEPORT into an instanced temple (field-observed: standing at
+		// 2145,4647 lands at template 2014,4711). The visible interior west of the doors is
+		// scenery; destination-remaps.tsv snaps targets there to the door step.
 		PathfinderConfig planning = new TestPathfinderConfig(client, config).copyForPlanning();
 		planning.refresh();
 		Pathfinder pathfinder = new Pathfinder(planning,
 			WorldPointUtil.packWorldPoint(2152, 4647, 1),
-			Set.of(WorldPointUtil.packWorldPoint(2139, 4647, 1)));
+			Set.of(WorldPointUtil.packWorldPoint(2014, 4711, 1)));
 		pathfinder.run();
-		assertTrue("the well platform must be reachable through the temple doors",
+		assertTrue("the instanced temple's template band must be reachable through the doors",
 			pathfinder.getResult().isReached());
 	}
 }

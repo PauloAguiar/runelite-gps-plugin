@@ -1,0 +1,7 @@
+# Template-only zones: areas a player can NEVER stand in on the real map (instance scenery
+# visible from outside, display-only building interiors). A destination inside a box snaps to
+# the anchor — the nearest known-good tile (usually the entrance) — instead of producing an
+# unreachable-target error or a route to fake geometry. Clue and Quest Helper targets hit
+# these regularly.
+# minX	minY	maxX	maxY	plane	anchorX	anchorY	anchorPlane	label
+2130	4639	2143	4656	1	2145	4647	1	Iban's Temple interior (the real one is instanced; enter by the doors)

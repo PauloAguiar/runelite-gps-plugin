@@ -145,6 +145,7 @@ public final class Destinations
 	 */
 	public static Set<Integer> walkableTargets(gps.pathfinder.CollisionMap map, int packed)
 	{
+		packed = remapTemplateOnlyZones(packed);
 		final int x = WorldPointUtil.unpackWorldX(packed);
 		final int y = WorldPointUtil.unpackWorldY(packed);
 		final int plane = WorldPointUtil.unpackWorldPlane(packed);
@@ -179,6 +180,97 @@ public final class Destinations
 	}
 
 	private static final int MAX_WALKABLE_RING = 5;
+
+	/** A template-only zone: destinations inside the box snap to the anchor tile. */
+	static final class Remap
+	{
+		final int minX;
+		final int minY;
+		final int maxX;
+		final int maxY;
+		final int plane;
+		final int anchor;
+		final String label;
+
+		Remap(int minX, int minY, int maxX, int maxY, int plane, int anchor, String label)
+		{
+			this.minX = minX;
+			this.minY = minY;
+			this.maxX = maxX;
+			this.maxY = maxY;
+			this.plane = plane;
+			this.anchor = anchor;
+			this.label = label;
+		}
+	}
+
+	private static List<Remap> remaps;
+
+	/**
+	 * Some map areas are pure scenery: instance templates visible from outside (Iban's Temple
+	 * interior), display-only floors. A player can never stand there, so a destination inside
+	 * one — a clue step, a Quest Helper tile, a curious map pin — would either error as
+	 * unreachable or route to fake geometry. Those targets snap to the zone's anchor: the
+	 * nearest known-good tile, usually the entrance. Data: destination-remaps.tsv.
+	 */
+	static int remapTemplateOnlyZones(int packed)
+	{
+		final int x = WorldPointUtil.unpackWorldX(packed);
+		final int y = WorldPointUtil.unpackWorldY(packed);
+		final int plane = WorldPointUtil.unpackWorldPlane(packed);
+		for (Remap remap : loadRemaps())
+		{
+			if (plane == remap.plane && x >= remap.minX && x <= remap.maxX
+				&& y >= remap.minY && y <= remap.maxY)
+			{
+				return remap.anchor;
+			}
+		}
+		return packed;
+	}
+
+	private static synchronized List<Remap> loadRemaps()
+	{
+		if (remaps != null)
+		{
+			return remaps;
+		}
+		List<Remap> loaded = new ArrayList<>();
+		try (InputStream in = ShortestPathPlugin.class.getResourceAsStream("/destination-remaps.tsv"))
+		{
+			if (in != null)
+			{
+				try (java.util.Scanner scanner = new java.util.Scanner(in, "UTF-8"))
+				{
+					while (scanner.hasNextLine())
+					{
+						String line = scanner.nextLine();
+						if (line.startsWith("#") || line.isBlank())
+						{
+							continue;
+						}
+						String[] f = line.split("\t");
+						if (f.length < 9)
+						{
+							continue;
+						}
+						loaded.add(new Remap(Integer.parseInt(f[0].trim()), Integer.parseInt(f[1].trim()),
+							Integer.parseInt(f[2].trim()), Integer.parseInt(f[3].trim()),
+							Integer.parseInt(f[4].trim()),
+							WorldPointUtil.packWorldPoint(Integer.parseInt(f[5].trim()),
+								Integer.parseInt(f[6].trim()), Integer.parseInt(f[7].trim())),
+							f[8].trim()));
+					}
+				}
+			}
+		}
+		catch (IOException | NumberFormatException e)
+		{
+			// A malformed remap file must never break routing — fall through with what parsed.
+		}
+		remaps = loaded;
+		return remaps;
+	}
 
 	private static volatile List<Entry> resourceEntries;
 
