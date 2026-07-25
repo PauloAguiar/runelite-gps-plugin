@@ -1291,7 +1291,7 @@ public class PathfinderTest
 
 		Pathfinder pathfinder = assertScenarioPathLengthAndGet(
 			"Wizards' Guild -> Edgeville with burning amulet and avoid wilderness",
-			876,
+			874, // was 876: the 2026-07 collision fixes opened two phantom-blocked tiles en route
 			origin,
 			destination);
 
@@ -1316,7 +1316,7 @@ public class PathfinderTest
 
 		Pathfinder pathfinder = assertScenarioPathLengthAndGet(
 			"Wizards' Guild -> Edgeville with no items and wilderness allowed",
-			771,
+			769, // was 771: same two phantom-blocked tiles as above
 			origin,
 			destination);
 

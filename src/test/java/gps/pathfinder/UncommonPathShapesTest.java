@@ -157,13 +157,15 @@ public class UncommonPathShapesTest
 	@Test
 	public void startOnBlockedFairyRingPlatform()
 	{
-		// The Karamja fairy ring's standing tile: transport ORIGINS on blocked tiles are enterable
-		// and leavable only through the dedicated step-off rules — starting a search there is the
-		// mirror image of the usual case and exercises the isBlocked branch of getTileNeighbors.
-		final int ring = WorldPointUtil.packWorldPoint(2996, 3114, 0);
+		// The Mount Karuulm (CIR) fairy ring's standing tile: transport ORIGINS on blocked tiles
+		// are enterable and leavable only through the dedicated step-off rules — starting a search
+		// there is the mirror image of the usual case and exercises the isBlocked branch of
+		// getTileNeighbors. (Was the Karamja ring, whose platform turned out to be phantom
+		// blocking and opened with the 2026-07 collision fixes.)
+		final int ring = WorldPointUtil.packWorldPoint(1639, 3868, 0);
 		PathfinderConfig cfg = everythingConfig();
 		assertTrue("premise: the fairy ring standing tile is blocked in the collision map",
-			cfg.getMap().isBlocked(2996, 3114, 0));
+			cfg.getMap().isBlocked(1639, 3868, 0));
 		PathfinderResult result = assertParity(cfg, ring, Set.of(LUMBRIDGE));
 		assertTrue("a route off the ring platform must exist", result.isReached());
 	}

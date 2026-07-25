@@ -27,8 +27,9 @@ import gps.WorldPointUtil;
 @RunWith(MockitoJUnitRunner.class)
 public class WalkableTargetsTest
 {
-	// The exact pin from the capture: an unwalkable tile inside Draynor Manor.
-	private static final int MANOR_PIN = WorldPointUtil.packWorldPoint(3093, 3356, 0);
+	// An unwalkable furniture tile inside Draynor Manor, two tiles from the captured pin that
+	// motivated the feature (the original tile opened with the 2026-07 collision fixes).
+	private static final int MANOR_PIN = WorldPointUtil.packWorldPoint(3093, 3359, 0);
 	private static final int LUMBRIDGE = WorldPointUtil.packWorldPoint(3222, 3218, 0);
 
 	@Mock
@@ -64,8 +65,9 @@ public class WalkableTargetsTest
 	public void blockedPinExpandsToTheNearestWalkableRing()
 	{
 		CollisionMap map = planningConfig().getMap();
-		assertTrue("Precondition: the captured pin tile is unwalkable",
-			map.isBlocked(3093, 3356, 0));
+		assertTrue("Precondition: the pin tile is unwalkable",
+			map.isBlocked(WorldPointUtil.unpackWorldX(MANOR_PIN),
+				WorldPointUtil.unpackWorldY(MANOR_PIN), WorldPointUtil.unpackWorldPlane(MANOR_PIN)));
 
 		Set<Integer> targets = Destinations.walkableTargets(map, MANOR_PIN);
 		assertTrue("Expansion must add walkable ring tiles", targets.size() > 1);
