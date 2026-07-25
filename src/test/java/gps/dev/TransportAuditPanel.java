@@ -101,6 +101,17 @@ class TransportAuditPanel extends PluginPanel
 			+ " mark their origins in the world; select one to spotlight its origin and landing");
 		knownToggle.addActionListener(e -> plugin.showKnown = knownToggle.isSelected());
 		top.add(knownToggle);
+		JButton collisionDump = new JButton("Dump live collision");
+		collisionDump.setFont(FontManager.getRunescapeSmallFont());
+		collisionDump.setFocusable(false);
+		collisionDump.setMargin(new Insets(2, 6, 2, 6));
+		collisionDump.setAlignmentX(Component.LEFT_ALIGNMENT);
+		collisionDump.setToolTipText("<html>Ground truth: writes the client's RUNTIME collision around you<br>"
+			+ "vs the shipped map ('!' = map blocks what the game allows).<br>"
+			+ "Stand on the disputed line first.</html>");
+		collisionDump.addActionListener(e -> plugin.requestLiveCollisionDump(
+			message -> javax.swing.SwingUtilities.invokeLater(() -> builderStatus.setText(message))));
+		top.add(collisionDump);
 		// ONE search box over the whole list — findings, backlog, meta and known rows alike.
 		// Deliberately focusable (typing is the point); clicking the game world releases focus.
 		searchBar.setIcon(net.runelite.client.ui.components.IconTextField.Icon.SEARCH);

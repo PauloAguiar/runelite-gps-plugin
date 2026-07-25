@@ -1398,6 +1398,110 @@ public class TransportAuditPlugin extends Plugin
 		builderMenu = "";
 	}
 
+	/** Panel entry point: the dump reads scene state, so it must hop to the client thread. */
+	void requestLiveCollisionDump(java.util.function.Consumer<String> feedback)
+	{
+		clientThread.invokeLater(() -> feedback.accept(dumpLiveCollision()));
+	}
+
+	/**
+	 * Ground truth vs shipped map: dumps the client's RUNTIME collision flags (which include
+	 * every dynamic/invisible state the cache can't express) around the player, side by side
+	 * with the GPS static map's verdicts. For "the data says blocked but I just walked through
+	 * it" reports — stand on the disputed line and dump. CLIENT THREAD.
+	 */
+	String dumpLiveCollision()
+	{
+		net.runelite.api.Player player = client.getLocalPlayer();
+		net.runelite.api.WorldView view = client.getTopLevelWorldView();
+		if (player == null || view == null || view.getCollisionMaps() == null)
+		{
+			return "not logged in";
+		}
+		net.runelite.api.coords.LocalPoint local = player.getLocalLocation();
+		int plane = view.getPlane();
+		int[][] flags = view.getCollisionMaps()[plane].getFlags();
+		int playerWorld = WorldPointUtil.fromLocalInstance(client, local);
+		int baseX = WorldPointUtil.unpackWorldX(playerWorld) - local.getSceneX();
+		int baseY = WorldPointUtil.unpackWorldY(playerWorld) - local.getSceneY();
+		gps.pathfinder.CollisionMap staticMap = gpsCollisionMap();
+
+		final int radius = 15;
+		StringBuilder out = new StringBuilder();
+		out.append("# live vs static collision, player ")
+			.append(tileText(playerWorld)).append(" plane ").append(plane).append('\n');
+		out.append("# tiles: '.' both open, '#' both blocked, '!' STATIC BLOCKED but live open,")
+			.append(" '?' live blocked but static open, ' ' outside scene\n");
+		java.util.List<String> edgeMismatches = new java.util.ArrayList<>();
+		for (int dy = radius; dy >= -radius; dy--)
+		{
+			StringBuilder row = new StringBuilder();
+			for (int dx = -radius; dx <= radius; dx++)
+			{
+				int sx = local.getSceneX() + dx;
+				int sy = local.getSceneY() + dy;
+				if (sx < 0 || sy < 0 || sx >= flags.length || sy >= flags[sx].length)
+				{
+					row.append(' ');
+					continue;
+				}
+				int flag = flags[sx][sy];
+				boolean liveBlocked = (flag & (net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_OBJECT
+					| net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_FLOOR
+					| net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_FLOOR_DECORATION
+					| net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_FULL)) != 0;
+				boolean staticBlocked = staticMap != null
+					&& staticMap.isBlocked(baseX + sx, baseY + sy, plane);
+				row.append(liveBlocked ? (staticBlocked ? '#' : '?') : (staticBlocked ? '!' : '.'));
+				// Directional (wall) flags vs the static map's edge verdicts.
+				if (staticMap != null && !liveBlocked && !staticBlocked)
+				{
+					int world = WorldPointUtil.packWorldPoint(baseX + sx, baseY + sy, plane);
+					int[][] dirs = {
+						{0, 1, net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_NORTH},
+						{1, 0, net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_EAST},
+						{0, -1, net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_SOUTH},
+						{-1, 0, net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_WEST},
+					};
+					for (int[] dir : dirs)
+					{
+						boolean liveStop = (flag & dir[2]) != 0;
+						boolean staticStop = !staticMap.canStep(world,
+							WorldPointUtil.packWorldPoint(baseX + sx + dir[0], baseY + sy + dir[1], plane));
+						if (liveStop != staticStop)
+						{
+							edgeMismatches.add(tileText(world) + " dir(" + dir[0] + "," + dir[1] + ")"
+								+ " live=" + (liveStop ? "wall" : "open")
+								+ " static=" + (staticStop ? "wall" : "open"));
+						}
+					}
+				}
+			}
+			out.append(row).append('\n');
+		}
+		out.append("# edge mismatches (").append(edgeMismatches.size()).append("):\n");
+		for (String mismatch : edgeMismatches)
+		{
+			out.append(mismatch).append('\n');
+		}
+		try
+		{
+			java.io.File file = new java.io.File(capturesFile.getParentFile(),
+				"collision-live-" + System.currentTimeMillis() + ".txt");
+			try (java.io.FileWriter writer = new java.io.FileWriter(file))
+			{
+				writer.write(out.toString());
+			}
+			log.info("[audit] live collision dump:\n{}", out);
+			return "collision dump written: " + file.getName();
+		}
+		catch (Exception e)
+		{
+			log.warn("[audit] collision dump failed", e);
+			return "dump failed: " + e.getMessage();
+		}
+	}
+
 	/**
 	 * Panel row selection: loads the entry into the builder for manual authoring — the menu
 	 * column from the entry, and the object's tile as a STARTING origin (correct it to the tile
