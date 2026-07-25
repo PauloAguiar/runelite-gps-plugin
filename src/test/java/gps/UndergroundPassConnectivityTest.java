@@ -55,6 +55,9 @@ public class UndergroundPassConnectivityTest
 			{2419, 9674, 0}, // internal well, top
 			{2343, 9622, 0}, // Well 4004: the level transition
 			{2010, 4712, 1}, // the deep band
+			// NOT yet a milestone: Iban's temple. The walk frontier from the well landing sits
+			// at (2014,4710,1) — the swamp path obstacles between it and the bridge network at
+			// x2126+ still need a field walk before the temple joins this chain.
 		};
 		for (int[] m : milestones)
 		{
@@ -64,5 +67,21 @@ public class UndergroundPassConnectivityTest
 			assertTrue("must reach " + m[0] + "," + m[1] + "," + m[2],
 				pathfinder.getResult().isReached());
 		}
+	}
+
+	@Test
+	public void templeDoorsOpenFromTheAntechamber()
+	{
+		// The inner sanctum doors are type-10 OBJECTS (3333/3334), invisible to the doors.tsv
+		// registry — explicit transport rows carry the crossing. A map pin on the well platform
+		// (gps-capture-20260724-212231) was unreachable from two rooms away without them.
+		PathfinderConfig planning = new TestPathfinderConfig(client, config).copyForPlanning();
+		planning.refresh();
+		Pathfinder pathfinder = new Pathfinder(planning,
+			WorldPointUtil.packWorldPoint(2152, 4647, 1),
+			Set.of(WorldPointUtil.packWorldPoint(2139, 4647, 1)));
+		pathfinder.run();
+		assertTrue("the well platform must be reachable through the temple doors",
+			pathfinder.getResult().isReached());
 	}
 }
