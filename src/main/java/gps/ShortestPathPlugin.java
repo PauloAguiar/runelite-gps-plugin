@@ -3331,7 +3331,9 @@ public class ShortestPathPlugin extends Plugin
 		return stepsJson;
 	}
 
-	private static final String GITHUB_NEW_ISSUE = "https://github.com/PauloAguiar/runelite-gps-plugin/issues/new";
+	// A BARE constant, browsed as-is: the hub review reads any dynamic URL construction (the old
+	// pre-filled ?title=&body=) as network I/O of player data. Context travels via the clipboard.
+	static final String GITHUB_NEW_ISSUE = "https://github.com/PauloAguiar/runelite-gps-plugin/issues/new";
 
 	/**
 	 * The running plugin's version, read from the bundled {@code runelite-plugin.properties} so it
@@ -3361,24 +3363,39 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	/**
-	 * Opens a GitHub "new issue" page pre-filled with the current routing context — mode, start,
-	 * target, config and the routes found — so a bug report carries what's needed to reproduce it.
-	 * The page only opens pre-filled; the player reviews and submits it themselves.
+	 * Reports an issue WITHOUT sending or touching anything outside the panel: the routing
+	 * context — mode, start, target, config and the routes found — is shown in a text box at
+	 * the top of the panel for the player to copy BY HAND, and a plain, static GitHub
+	 * new-issue link opens (the repo's issue template says where to paste). No pre-filled URL,
+	 * no clipboard API — nothing for the hub review to flag, and the player sees exactly what
+	 * they're sharing.
 	 */
 	public void reportIssue()
 	{
-		// Item names come from the item definitions, which are client-thread-only — build the whole
-		// body there. LinkBrowser spawns its own thread for the actual browse.
+		// Item names come from the item definitions, which are client-thread-only — build the
+		// whole body there; the panel work then happens on the EDT.
 		clientThread.invokeLater(() ->
-			net.runelite.client.util.LinkBrowser.browse(issueUrl("[Bug] ", buildIssueBody())));
+		{
+			final String context = buildIssueBody();
+			javax.swing.SwingUtilities.invokeLater(() ->
+			{
+				if (altPanel != null)
+				{
+					altPanel.showReportContext(context);
+				}
+				// A bare constant on purpose: pre-filling the issue via query params reads as
+				// network I/O of player data to the hub review.
+				net.runelite.client.util.LinkBrowser.browse(GITHUB_NEW_ISSUE);
+			});
+		});
 	}
 
 	private String buildIssueBody()
 	{
 		StringBuilder body = new StringBuilder();
-		body.append("**Describe the issue**\n\n\n");
-		body.append("**What did you expect?**\n\n\n");
-		body.append("---\n*Auto-captured context — please keep:*\n");
+		// No "describe the issue" headings here: the GitHub issue template provides those; this
+		// block is what the player pastes under them.
+		body.append("*Auto-captured context — please keep:*\n");
 		body.append("- GPS ").append(pluginVersion()).append('\n');
 		body.append("- Mode: ").append(routesMode).append(" · limit ").append(routeLimit)
 			.append(" · band x").append(routeCostMultiple).append('\n');
@@ -3507,12 +3524,6 @@ public class ShortestPathPlugin extends Plugin
 		return String.join(", ", parts);
 	}
 
-	/** The GitHub new-issue URL for a pre-filled title and body (both URL-encoded). */
-	static String issueUrl(String title, String body)
-	{
-		return GITHUB_NEW_ISSUE + "?title=" + issueEncode(title) + "&body=" + issueEncode(body);
-	}
-
 	private static String issuePointText(int packed)
 	{
 		if (packed == WorldPointUtil.UNDEFINED)
@@ -3535,18 +3546,6 @@ public class ShortestPathPlugin extends Plugin
 			parts.add(method.routeLabel());
 		}
 		return String.join(" + ", parts);
-	}
-
-	private static String issueEncode(String text)
-	{
-		try
-		{
-			return java.net.URLEncoder.encode(text, "UTF-8");
-		}
-		catch (java.io.UnsupportedEncodingException e)
-		{
-			return "";
-		}
 	}
 
 	public void captureDebugSnapshot()

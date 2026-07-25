@@ -107,6 +107,8 @@ public class ShortestPathPanel extends PluginPanel
 	// The "bank contents unknown" warning, sitting directly under the mode buttons (it's about the
 	// "+ Bank" mode) rather than down in the general notes strip. Repopulated each render.
 	private final JPanel modeBankWarning = new JPanel();
+	private final JPanel reportBox = new JPanel(new BorderLayout(0, 4));
+	private final javax.swing.JTextArea reportContext = new javax.swing.JTextArea();
 	// Set by the plugin the instant it clears the target on arrival, so the status shows an arrival
 	// banner rather than "No destination set". Cleared when a new destination is set.
 	private boolean showingArrival;
@@ -357,14 +359,16 @@ public class ShortestPathPanel extends PluginPanel
 
 		JPanel actions = new JPanel(new FlowLayout(FlowLayout.TRAILING, 4, 0));
 		actions.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		// A compact red button opens a NEW issue pre-filled with the current routing context, next to
-		// the GitHub (project home) and Discord (community) links; occasional actions tuck into the burger.
+		// A compact red button shows the routing context in a copy box below the header and opens
+		// GitHub's new-issue page (a bare link — nothing rides in the URL, no clipboard API).
+		// Occasional actions tuck into the burger.
 		JButton reportButton = new JButton("Report an issue");
 		reportButton.setFont(FontManager.getRunescapeSmallFont());
 		reportButton.setForeground(ColorScheme.PROGRESS_ERROR_COLOR);
 		reportButton.setMargin(new java.awt.Insets(2, 6, 2, 6));
 		reportButton.setFocusPainted(false);
-		reportButton.setToolTipText("<html>Opens GitHub pre-filled with the current routes and settings.<br>"
+		reportButton.setToolTipText("<html>Shows your routes and settings in a box to copy, and opens<br>"
+			+ "GitHub — paste the context into the issue.<br>"
 			+ "First calculate the route that's misbehaving, so the report captures it.</html>");
 		reportButton.addActionListener(e -> plugin.reportIssue());
 		actions.add(reportButton);
@@ -391,6 +395,42 @@ public class ShortestPathPanel extends PluginPanel
 
 		JPanel bottom = new JPanel(new BorderLayout());
 		bottom.setBackground(ColorScheme.DARK_GRAY_COLOR);
+
+		// The "Report an issue" copy box: the routing context appears here for the player to copy
+		// BY HAND into the GitHub issue that just opened — no clipboard API, no data in the URL,
+		// and they see exactly what they're sharing. Hidden until the button is used.
+		reportBox.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		reportBox.setBorder(new EmptyBorder(6, 6, 6, 6));
+		reportBox.setVisible(false);
+		JPanel reportTitleRow = new JPanel(new BorderLayout());
+		reportTitleRow.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		JLabel reportTitle = new JLabel("<html>Select all (Ctrl+A), copy (Ctrl+C), and paste into the GitHub issue:</html>");
+		reportTitle.setFont(FontManager.getRunescapeSmallFont());
+		reportTitle.setForeground(ColorScheme.PROGRESS_COMPLETE_COLOR);
+		reportTitleRow.add(reportTitle, BorderLayout.CENTER);
+		JButton reportHide = new JButton("Hide");
+		reportHide.setFont(FontManager.getRunescapeSmallFont());
+		reportHide.setMargin(new java.awt.Insets(0, 4, 0, 4));
+		reportHide.setFocusable(false);
+		reportHide.addActionListener(e ->
+		{
+			reportBox.setVisible(false);
+			reportBox.revalidate();
+		});
+		reportTitleRow.add(reportHide, BorderLayout.EAST);
+		reportBox.add(reportTitleRow, BorderLayout.NORTH);
+		reportContext.setEditable(false);
+		reportContext.setLineWrap(true);
+		reportContext.setWrapStyleWord(true);
+		reportContext.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		reportContext.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		reportContext.setFont(FontManager.getRunescapeSmallFont());
+		JScrollPane reportScroll = new JScrollPane(reportContext);
+		reportScroll.setBorder(null);
+		// Fixed height, zero preferred width: a text area reports its longest line as preferred
+		// width even when wrapping, which would stretch the whole sidebar (audit-panel lesson).
+		reportScroll.setPreferredSize(new Dimension(0, 150));
+		reportBox.add(reportScroll, BorderLayout.CENTER);
 
 		// Two-level mode picker: family (Owned / All) on top, its two variants indented beneath so they
 		// read as sub-options of whichever family is selected.
@@ -424,7 +464,15 @@ public class ShortestPathPanel extends PluginPanel
 		modeRow.add(allModeButton);
 
 		// Refresh + clear moved under the route list (see buildRouteActions).
-		bottom.add(modeRow, BorderLayout.NORTH);
+		JPanel northStack = new JPanel();
+		northStack.setLayout(new BoxLayout(northStack, BoxLayout.Y_AXIS));
+		northStack.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		reportBox.setAlignmentX(Component.LEFT_ALIGNMENT);
+		reportBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 200));
+		modeRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+		northStack.add(reportBox);
+		northStack.add(modeRow);
+		bottom.add(northStack, BorderLayout.NORTH);
 
 		// The bank-contents warning belongs with the mode buttons it explains (+ Bank mode).
 		modeBankWarning.setLayout(new BoxLayout(modeBankWarning, BoxLayout.Y_AXIS));
@@ -436,6 +484,19 @@ public class ShortestPathPanel extends PluginPanel
 
 		updateModeButtons();
 		return header;
+	}
+
+	/**
+	 * Shows the routing context in the copy box under the header, pre-selected so a single
+	 * Ctrl+C carries it to the GitHub issue. Stays until the player hides it. EDT only.
+	 */
+	void showReportContext(String context)
+	{
+		reportContext.setText(context);
+		reportBox.setVisible(true);
+		reportBox.revalidate();
+		reportContext.requestFocusInWindow();
+		reportContext.selectAll();
 	}
 
 	/**
