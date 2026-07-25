@@ -183,12 +183,13 @@ public class TransportAuditPlugin extends Plugin
 		}
 		else
 		{
-			sb.append("transports.tsv template — fill DEST after traversing; ORIGIN is the ")
-				.append("object's tile, correct it to the tile you STAND on; Duration in ticks:\n");
+			sb.append("transports.tsv template — fill DEST and TICKS after traversing; ORIGIN is ")
+				.append("the object's tile, correct it to the tile you STAND on. TICKS = full ")
+				.append("animation, not tile arrival (auto-capture measures this for you):\n");
 			sb.append(x).append(' ').append(y).append(' ').append(plane).append('\t')
 				.append("DESTX DESTY PLANE").append('\t')
 				.append(action).append(' ').append(name).append(' ').append(id)
-				.append("\t\t\t\t\t\t1\t");
+				.append("\t\t\t\t\t\tTICKS\t");
 		}
 		return sb.toString();
 	}
