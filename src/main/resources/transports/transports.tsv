@@ -7183,20 +7183,17 @@
 2376 9609 0	2371 9666 0	Pass-through Tunnel 3219						3	
 2371 9666 0	2376 9610 0	Pass-through Tunnel 3219						3	
 2376 9610 0	2371 9666 0	Pass-through Tunnel 3218						3	
-2154 4694 1	2154 4689 1	Cross Bridge 3254						5	
-2155 4702 1	2155 4707 1	Cross Bridge 3255						5	
+2154 4693 1	2154 4689 1	Cross Bridge 3254						5	
 2155 4707 1	2155 4703 1	Cross Bridge 3255						4	
 2155 4703 1	2155 4707 1	Cross Bridge 3255						5	
-2155 4716 1	2155 4721 1	Cross Bridge 3254						5	
 2155 4721 1	2155 4717 1	Cross Bridge 3254						4	
 2155 4717 1	2155 4721 1	Cross Bridge 3254						5	
-2157 4723 1	2161 4724 1	Cross Bridge 3254						5	
+2157 4724 1	2161 4724 1	Cross Bridge 3254						5	
 2161 4724 1	2157 4724 1	Cross Bridge 3254						5	
-2147 4720 1	2145 4716 1	Cross Bridge 3254						5	
 2145 4716 1	2145 4720 1	Cross Bridge 3254						5	
 2145 4720 1	2145 4716 1	Cross Bridge 3254						5	
-2125 4686 1	2120 4686 1	Cross Bridge 3255						5	
-2161 4641 1	2161 4636 1	Cross Bridge 3254						5	
+2124 4686 1	2120 4686 1	Cross Bridge 3255						5	
+2161 4640 1	2161 4636 1	Cross Bridge 3254						5	
 2010 4712 1	2343 9622 0	Climb-down Well 4004						1	
 2343 9622 0	2010 4712 1	Climb-down Well 4005						1	
 2315 9625 0	2312 3216 0	Leave Cave exit 4007						3	
@@ -7209,7 +7206,7 @@
 2374 9641 0	2375 9644 0	Cross Ledge 3238						5	
 2379 9634 0	2380 9632 0	Cross Stone bridge 3276						6	
 2380 9632 0	2381 9634 0	Cross Stone bridge 3276						12	
-2162 4667 1	2162 4662 1	Cross Bridge 3254						5	
+2162 4666 1	2162 4662 1	Cross Bridge 3254						5	
 2355 9657 0	2267 3205 0	Climb Protruding rocks 3927						3	
 2928 3255 1	2928 3255 0	Climb-down Ladder 16679						3	
 2926 3258 1	2926 3258 0	Climb-down Ladder 25045						3	
