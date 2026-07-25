@@ -1453,7 +1453,10 @@ public class TransportAuditPlugin extends Plugin
 				boolean staticBlocked = staticMap != null
 					&& staticMap.isBlocked(baseX + sx, baseY + sy, plane);
 				row.append(liveBlocked ? (staticBlocked ? '#' : '?') : (staticBlocked ? '!' : '.'));
-				// Directional (wall) flags vs the static map's edge verdicts.
+				// Directional (wall) flags vs the static map's edge verdicts. Only PURE wall
+				// edges are comparable: canStep() also fails into a blocked tile, while the
+				// live per-direction flags don't — comparing those produced 346 phantom
+				// "mismatches" on the first Kebos dump.
 				if (staticMap != null && !liveBlocked && !staticBlocked)
 				{
 					int world = WorldPointUtil.packWorldPoint(baseX + sx, baseY + sy, plane);
@@ -1465,9 +1468,26 @@ public class TransportAuditPlugin extends Plugin
 					};
 					for (int[] dir : dirs)
 					{
+						int nsx = sx + dir[0];
+						int nsy = sy + dir[1];
+						if (nsx < 0 || nsy < 0 || nsx >= flags.length || nsy >= flags[nsx].length)
+						{
+							continue;
+						}
+						boolean neighbourLiveBlocked = (flags[nsx][nsy]
+							& (net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_OBJECT
+							| net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_FLOOR
+							| net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_FLOOR_DECORATION
+							| net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_FULL)) != 0;
+						boolean neighbourStaticBlocked = staticMap.isBlocked(
+							baseX + nsx, baseY + nsy, plane);
+						if (neighbourLiveBlocked || neighbourStaticBlocked)
+						{
+							continue; // tile-level difference, reported by the grid already
+						}
 						boolean liveStop = (flag & dir[2]) != 0;
 						boolean staticStop = !staticMap.canStep(world,
-							WorldPointUtil.packWorldPoint(baseX + sx + dir[0], baseY + sy + dir[1], plane));
+							WorldPointUtil.packWorldPoint(baseX + nsx, baseY + nsy, plane));
 						if (liveStop != staticStop)
 						{
 							edgeMismatches.add(tileText(world) + " dir(" + dir[0] + "," + dir[1] + ")"
