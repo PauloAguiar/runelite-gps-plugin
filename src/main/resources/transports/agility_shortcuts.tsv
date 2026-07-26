@@ -261,10 +261,9 @@
 1586 3261 0	1591 3257 0	Climb Rock 56983	45 Agility				
 2400 4402 0	2400 4404 0	Squeeze-past Jutting wall 17002	46 Agility				2
 2400 4404 0	2400 4402 0	Squeeze-past Jutting wall 17002	46 Agility				2
-2900 3680 0	2903 3680 0	Climb Rocks 16524	47 Agility				
-2903 3680 0	2900 3680 0	Climb Rocks 16524	47 Agility				
-2901 3679 0	2903 3680 0	Climb Rocks 16524	47 Agility				
-2902 3681 0	2900 3680 0	Climb Rocks 16524	47 Agility				
+2900 3680 0	2903 3680 0	Climb Rocks 16524	47 Agility				6
+2903 3680 0	2900 3680 0	Climb Rocks 16524	47 Agility				4
+2902 3681 0	2900 3680 0	Climb Rocks 16524	47 Agility				4
 1465 3128 0	1455 3128 0	Climb Rocks 51931	47 Agility				8
 1455 3128 0	1465 3128 0	Climb Rocks 51931	47 Agility				8
 2722 3592 0	2722 3596 0	Walk-across Log balance 16542	48 Agility				4
