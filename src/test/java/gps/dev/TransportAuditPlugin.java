@@ -272,12 +272,39 @@ public class TransportAuditPlugin extends Plugin
 		final int origin;
 		final int destination;
 		final String label;
+		final int duration;
 
-		KnownEntry(int origin, int destination, String label)
+		KnownEntry(int origin, int destination, String label, int duration)
 		{
 			this.origin = origin;
 			this.destination = destination;
 			this.label = label;
+			this.duration = duration;
+		}
+	}
+
+	/**
+	 * A traversal of a KNOWN transport being timed: armed by clicking a traversal action while
+	 * standing by a curated row's origin. Where the unmapped-capture flow discovers new rows,
+	 * this enriches existing ones — measured ticks accumulate in duration-samples.tsv and
+	 * scripts/apply_duration_samples.py folds the modes back into the data (the Trollheim
+	 * rocks shipped at a default 1 tick for months because nobody ever re-measured them).
+	 */
+	private static final class DurationWatch
+	{
+		final java.util.List<KnownEntry> candidates;
+		final int clickTick;
+		final int tileAtClick;
+		boolean wasNearOrigin;
+		int departTick = -1;
+		int lastTile = WorldPointUtil.UNDEFINED;
+		int stableTicks;
+
+		DurationWatch(java.util.List<KnownEntry> candidates, int clickTick, int tileAtClick)
+		{
+			this.candidates = candidates;
+			this.clickTick = clickTick;
+			this.tileAtClick = tileAtClick;
 		}
 	}
 
@@ -377,6 +404,8 @@ public class TransportAuditPlugin extends Plugin
 	// Automatic origin/destination capture: armed when the operator clicks a traversal action on
 	// a flagged object, resolved by watching the player's tile until they come to rest.
 	private PendingCapture pending;
+	private DurationWatch durationWatch;
+	private java.io.File durationSamplesFile;
 	private java.io.File capturesFile;
 	// origin|dest|id triples already written, seeded from the captures file, so repeated
 	// traversals (and each direction) record once.
@@ -455,7 +484,8 @@ public class TransportAuditPlugin extends Plugin
 						? transport.getDisplayInfo()
 						: (transport.getObjectInfo() != null ? transport.getObjectInfo() : "(transport)");
 					knownEntries.add(new KnownEntry(
-						transport.getOrigin(), transport.getDestination(), label));
+						transport.getOrigin(), transport.getDestination(), label,
+						transport.getDuration()));
 				}
 			}
 			log.info("[audit] transport coverage: {} origin tiles, {} dest tiles",
@@ -472,6 +502,10 @@ public class TransportAuditPlugin extends Plugin
 				new java.io.File(net.runelite.client.RuneLite.RUNELITE_DIR, "gps-debug"),
 				"transport-audit.tsv");
 			seedLoggedFromFile();
+		}
+		if (durationSamplesFile == null)
+		{
+			durationSamplesFile = new java.io.File(auditFile.getParentFile(), "duration-samples.tsv");
 		}
 		if (capturesFile == null)
 		{
@@ -1128,6 +1162,155 @@ public class TransportAuditPlugin extends Plugin
 			log.info("[audit] capture cancelled (clicked something else): {}", pending.finding.describe());
 			pending = null;
 		}
+		armDurationWatch(event);
+	}
+
+	/**
+	 * A traversal click near a KNOWN row's origin arms a duration sample: no new row to
+	 * discover, but the measured ticks enrich the data as the operator plays.
+	 */
+	private void armDurationWatch(net.runelite.api.events.MenuOptionClicked event)
+	{
+		durationWatch = null;
+		if (client.getLocalPlayer() == null || event.getMenuOption() == null
+			|| !isObjectAction(event.getMenuAction()))
+		{
+			return;
+		}
+		String lower = event.getMenuOption().toLowerCase(java.util.Locale.ROOT);
+		boolean traversal = false;
+		for (String verb : TRAVERSAL_VERBS)
+		{
+			if (lower.startsWith(verb))
+			{
+				traversal = true;
+				break;
+			}
+		}
+		if (!traversal)
+		{
+			return;
+		}
+		int playerTile = WorldPointUtil.fromLocalInstance(client, client.getLocalPlayer());
+		java.util.List<KnownEntry> candidates = new java.util.ArrayList<>();
+		for (KnownEntry entry : knownEntries)
+		{
+			if (entry.origin != WorldPointUtil.UNDEFINED
+				&& entry.destination != WorldPointUtil.UNDEFINED
+				&& WorldPointUtil.unpackWorldPlane(entry.origin) == WorldPointUtil.unpackWorldPlane(playerTile)
+				&& WorldPointUtil.distanceBetween2D(playerTile, entry.origin) <= 3)
+			{
+				candidates.add(entry);
+			}
+		}
+		if (!candidates.isEmpty())
+		{
+			durationWatch = new DurationWatch(candidates, client.getTickCount(), playerTile);
+		}
+	}
+
+	/**
+	 * Drives an armed duration watch, mirroring the capture state machine's semantics so
+	 * samples are comparable with captured durations: departure = animation while by the
+	 * origin, or the first tick after stepping off it; arrival = two stationary ticks at a
+	 * candidate row's destination.
+	 */
+	private void tickDurationWatch(int now, int tile, int animation)
+	{
+		DurationWatch watch = durationWatch;
+		if (watch == null)
+		{
+			return;
+		}
+		if (now - watch.clickTick > 60)
+		{
+			durationWatch = null;
+			return;
+		}
+		if (watch.departTick < 0)
+		{
+			boolean nearOrigin = false;
+			for (KnownEntry entry : watch.candidates)
+			{
+				if (WorldPointUtil.unpackWorldPlane(tile) == WorldPointUtil.unpackWorldPlane(entry.origin)
+					&& WorldPointUtil.distanceBetween2D(tile, entry.origin) <= 1)
+				{
+					nearOrigin = true;
+					break;
+				}
+			}
+			if (nearOrigin)
+			{
+				watch.wasNearOrigin = true;
+				if (animation != -1)
+				{
+					watch.departTick = now; // in-place transports animate before moving
+				}
+			}
+			else if (watch.wasNearOrigin)
+			{
+				watch.departTick = now; // stepped off the origin: the traversal is under way
+			}
+			return;
+		}
+		if (tile == watch.lastTile)
+		{
+			watch.stableTicks++;
+		}
+		else
+		{
+			watch.stableTicks = 1;
+			watch.lastTile = tile;
+		}
+		if (watch.stableTicks < 2 || animation != -1)
+		{
+			return;
+		}
+		for (KnownEntry entry : watch.candidates)
+		{
+			if (WorldPointUtil.unpackWorldPlane(tile) == WorldPointUtil.unpackWorldPlane(entry.destination)
+				&& WorldPointUtil.distanceBetween2D(tile, entry.destination) <= 1)
+			{
+				int arrivalTick = now - watch.stableTicks + 1;
+				recordDurationSample(entry, Math.max(1, arrivalTick - watch.departTick));
+				durationWatch = null;
+				return;
+			}
+		}
+		if (watch.stableTicks >= 6)
+		{
+			durationWatch = null; // at rest, but nowhere the data expected — not this transport
+		}
+	}
+
+	/** Appends one measured traversal to duration-samples.tsv and confirms it in the panel. */
+	private void recordDurationSample(KnownEntry entry, int measured)
+	{
+		try
+		{
+			boolean fresh = !durationSamplesFile.exists();
+			try (java.io.FileWriter writer = new java.io.FileWriter(durationSamplesFile, true))
+			{
+				if (fresh)
+				{
+					writer.write("# Measured traversals of KNOWN transports (audit duration watch)."
+						+ " Fold into the data with scripts/apply_duration_samples.py\n");
+					writer.write("date\torigin\tdestination\tlabel\tdataTicks\tmeasuredTicks\n");
+				}
+				writer.write(new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date())
+					+ "\t" + tileText(entry.origin) + "\t" + tileText(entry.destination)
+					+ "\t" + entry.label + "\t" + entry.duration + "\t" + measured + "\n");
+			}
+		}
+		catch (Exception e)
+		{
+			log.warn("[audit] could not append duration sample", e);
+		}
+		boolean agrees = measured == entry.duration;
+		lastCaptureText = "Sampled " + entry.label + ": " + measured + "t (data "
+			+ entry.duration + "t" + (agrees ? " ✓" : " ✗") + ")";
+		lastCaptureTick = client.getTickCount();
+		log.info("[audit] duration sample: {} measured {}t, data {}t", entry.label, measured, entry.duration);
 	}
 
 	/**
@@ -1144,6 +1327,12 @@ public class TransportAuditPlugin extends Plugin
 			return;
 		}
 		pushPanelSnapshot();
+		if (durationWatch != null)
+		{
+			tickDurationWatch(client.getTickCount(),
+				WorldPointUtil.fromLocalInstance(client, client.getLocalPlayer()),
+				client.getLocalPlayer().getAnimation());
+		}
 		if (pending == null)
 		{
 			return;
