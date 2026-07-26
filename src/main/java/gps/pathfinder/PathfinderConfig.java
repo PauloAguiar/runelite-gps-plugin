@@ -83,6 +83,9 @@ public class PathfinderConfig
 	// is re-derived from each transport), so the per-origin Set/HashMap/Integer-key map the loader
 	// produces is flattened here and not retained (issue #491).
 	private final Transport[] allTransports;
+	// Every data-level transport origin tile, availability-ignored: used to snap blocked
+	// object-footprint targets (a Quest Helper cave tile) to the object's real entrance side.
+	private final java.util.Set<Integer> transportOriginTiles = new java.util.HashSet<>();
 	private final Map<String, Set<Integer>> allDestinations;
 	private final Map<String, Set<Integer>> filteredDestinations;
 	/**
@@ -229,6 +232,7 @@ public class PathfinderConfig
 		this.allTransports = flatten(loadedTransports);
 		this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(allTransports.length).build();
 		this.transportAvailabilityWithBank = new TransportAvailability.Builder(allTransports.length).build();
+		indexTransportOrigins();
 		this.allDestinations = Destination.loadAllFromResources();
 		this.filteredDestinations = filterDestinations(allDestinations);
 		this.destinations = allDestinations;
@@ -246,6 +250,7 @@ public class PathfinderConfig
 		this.mapData = mapData;
 		this.map = ThreadLocal.withInitial(() -> new CollisionMap(this.mapData));
 		this.allTransports = flatten(allTransports);
+		indexTransportOrigins();
 		this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(this.allTransports.length).build();
 		this.transportAvailabilityWithBank = new TransportAvailability.Builder(this.allTransports.length).build();
 		this.allDestinations = allDestinations;
@@ -269,6 +274,7 @@ public class PathfinderConfig
 		this.mapData = source.mapData;
 		this.map = ThreadLocal.withInitial(() -> new CollisionMap(this.mapData));
 		this.allTransports = source.allTransports;
+		this.transportOriginTiles.addAll(source.transportOriginTiles);
 		this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(this.allTransports.length).build();
 		this.transportAvailabilityWithBank = new TransportAvailability.Builder(this.allTransports.length).build();
 		this.allDestinations = source.allDestinations;
@@ -458,6 +464,23 @@ public class PathfinderConfig
 			return "Farming Guild";
 		}
 		return null;
+	}
+
+	private void indexTransportOrigins()
+	{
+		for (Transport transport : allTransports)
+		{
+			if (transport.getOrigin() != Transport.UNDEFINED_ORIGIN)
+			{
+				transportOriginTiles.add(transport.getOrigin());
+			}
+		}
+	}
+
+	/** Whether any transport row (available or not) departs from this tile. */
+	public boolean isTransportOrigin(int packed)
+	{
+		return transportOriginTiles.contains(packed);
 	}
 
 	public CollisionMap getMap()

@@ -1285,7 +1285,27 @@ public class ShortestPathPlugin extends Plugin
 				for (int target : targets)
 				{
 					ends.addAll(Destinations.walkableTargets(
-						pathfinderConfig != null ? pathfinderConfig.getMap() : null, target));
+						pathfinderConfig != null ? pathfinderConfig.getMap() : null, target,
+						pathfinderConfig != null ? pathfinderConfig::isTransportOrigin : null));
+				}
+				// Object targets from other plugins (Quest Helper caves, stairs): when any
+				// expanded tile is a mapped transport ORIGIN, that origin IS the interactable
+				// side — drop the rest, or the search ends wherever the approach is cheapest,
+				// including BEHIND the object (captured at the Troll Stronghold south cave).
+				if (pathfinderConfig != null)
+				{
+					Set<Integer> origins = new HashSet<>();
+					for (int end : ends)
+					{
+						if (pathfinderConfig.isTransportOrigin(end))
+						{
+							origins.add(end);
+						}
+					}
+					if (!origins.isEmpty())
+					{
+						ends = origins;
+					}
 				}
 			}
 			setDestination(start, ends, useOld);
@@ -2356,7 +2376,8 @@ public class ShortestPathPlugin extends Plugin
 			// expand to the nearest walkable ring, like map pins — walkable tiles stay exact.
 			// The world-map pin stays on the destination itself.
 			Set<Integer> targets = new HashSet<>(Destinations.walkableTargets(
-				pathfinderConfig != null ? pathfinderConfig.getMap() : null, packedPosition));
+				pathfinderConfig != null ? pathfinderConfig.getMap() : null, packedPosition,
+				pathfinderConfig != null ? pathfinderConfig::isTransportOrigin : null));
 			if (targets.size() > 1)
 			{
 				markerTarget = packedPosition;
@@ -2414,7 +2435,8 @@ public class ShortestPathPlugin extends Plugin
 			// closest-tile path (captured in-game: 11 exhausted searches, 8.2s). Target the nearest
 			// walkable ring instead; walkable pins stay exact, and the map pin stays on the tile.
 			Set<Integer> walkable = Destinations.walkableTargets(
-				pathfinderConfig != null ? pathfinderConfig.getMap() : null, target);
+				pathfinderConfig != null ? pathfinderConfig.getMap() : null, target,
+				pathfinderConfig != null ? pathfinderConfig::isTransportOrigin : null);
 			if (walkable.size() > 1)
 			{
 				markerTarget = target;

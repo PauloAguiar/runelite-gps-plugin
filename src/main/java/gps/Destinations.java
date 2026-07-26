@@ -145,6 +145,20 @@ public final class Destinations
 	 */
 	public static Set<Integer> walkableTargets(gps.pathfinder.CollisionMap map, int packed)
 	{
+		return walkableTargets(map, packed, null);
+	}
+
+	/**
+	 * As above, but when {@code transportOrigin} is given and the blocked tile has a known
+	 * transport ORIGIN within range, the origin tiles alone become the target set. A Quest
+	 * Helper target on a cave's footprint would otherwise expand to whichever adjacent tile
+	 * the route approaches first — including the BACK of the cave (captured at Trollheim's
+	 * Troll Stronghold entrance: routed behind the mouth, then the game walked the long way
+	 * around). The mapped transport's origin tile is, by definition, the interactable side.
+	 */
+	public static Set<Integer> walkableTargets(gps.pathfinder.CollisionMap map, int packed,
+		java.util.function.IntPredicate transportOrigin)
+	{
 		packed = remapTemplateOnlyZones(packed);
 		final int x = WorldPointUtil.unpackWorldX(packed);
 		final int y = WorldPointUtil.unpackWorldY(packed);
@@ -152,6 +166,34 @@ public final class Destinations
 		if (map == null || !map.isBlocked(x, y, plane))
 		{
 			return Set.of(packed);
+		}
+		// Pass 1: a transport origin near the blocked tile beats plain proximity, even when it
+		// sits a radius further out than the first walkable ring.
+		if (transportOrigin != null)
+		{
+			for (int radius = 1; radius <= MAX_WALKABLE_RING; radius++)
+			{
+				Set<Integer> origins = new HashSet<>();
+				for (int dx = -radius; dx <= radius; dx++)
+				{
+					for (int dy = -radius; dy <= radius; dy++)
+					{
+						if (Math.max(Math.abs(dx), Math.abs(dy)) != radius)
+						{
+							continue;
+						}
+						int tile = WorldPointUtil.packWorldPoint(x + dx, y + dy, plane);
+						if (!map.isBlocked(x + dx, y + dy, plane) && transportOrigin.test(tile))
+						{
+							origins.add(tile);
+						}
+					}
+				}
+				if (!origins.isEmpty())
+				{
+					return origins;
+				}
+			}
 		}
 		for (int radius = 1; radius <= MAX_WALKABLE_RING; radius++)
 		{
