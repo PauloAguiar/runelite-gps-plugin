@@ -116,6 +116,24 @@ class TransportAuditSceneOverlay extends Overlay
 	}
 
 	/**
+	 * Water tinted per ground OVERLAY id: sailing seas use different overlays for deep water
+	 * vs the damaging shallows, and until the ids are confirmed in the field each distinct id
+	 * gets a visibly distinct shade (stable per id). Sail over the hurting patch, note its
+	 * shade, dump — the dump's overlay histogram names the id.
+	 */
+	private static Color waterShade(int overlayId)
+	{
+		if (overlayId == 0)
+		{
+			return COLLISION_WATER_FILL;
+		}
+		// Deterministic tint: hue rotates in the blue-green band by id, alpha constant.
+		float hue = 0.47f + (Math.floorMod(overlayId * 2654435761L, 5L)) * 0.035f;
+		Color base = Color.getHSBColor(hue, 0.85f, 0.9f);
+		return new Color(base.getRed(), base.getGreen(), base.getBlue(), 110);
+	}
+
+	/**
 	 * The collision debug view (old shortest-path debug, upgraded with live comparison):
 	 * gray fill = blocked in both maps; RED fill = phantom (static blocks, live open);
 	 * ORANGE fill = missing (live blocks, static open); light lines = static wall edges;
@@ -137,7 +155,7 @@ class TransportAuditSceneOverlay extends Overlay
 			{
 				Color fill = cell[2] == TransportAuditPlugin.COLLISION_BOTH_BLOCKED ? COLLISION_BOTH
 					: cell[2] == TransportAuditPlugin.COLLISION_STATIC_ONLY ? COLLISION_PHANTOM
-					: cell[2] == TransportAuditPlugin.COLLISION_WATER ? COLLISION_WATER_FILL
+					: cell[2] == TransportAuditPlugin.COLLISION_WATER ? waterShade(cell[5])
 					: COLLISION_MISSING;
 				graphics.setColor(fill);
 				graphics.fillPolygon(poly);

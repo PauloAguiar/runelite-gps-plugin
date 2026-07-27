@@ -1660,6 +1660,7 @@ public class TransportAuditPlugin extends Plugin
 		// Render settings: bit 1 on plane 0 marks water ("nomove" floor) — the same convention
 		// the collision dumper bakes. Upper planes reuse the bit for roof walls, so plane 0 only.
 		byte[][][] settings = view.getTileSettings();
+		short[][][] overlays = view.getScene() != null ? view.getScene().getOverlayIds() : null;
 
 		int[][] dirs = {
 			{0, 1, net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_NORTH},
@@ -1820,7 +1821,12 @@ public class TransportAuditPlugin extends Plugin
 				}
 				if (tileState != 0 || staticEdges != 0 || mismatchEdges != 0)
 				{
-					cells.add(new int[]{sx, sy, tileState, staticEdges, mismatchEdges});
+					// Overlay id rides along for water tiles: sailing shallows (hull damage)
+					// use distinct ground overlays, so the view tints water per overlay and a
+					// dump histograms them — the field method for pinning the damaging ids.
+					int overlayId = overlays != null && plane < overlays.length
+						? overlays[plane][sx][sy] : 0;
+					cells.add(new int[]{sx, sy, tileState, staticEdges, mismatchEdges, overlayId});
 				}
 			}
 		}
@@ -1937,6 +1943,31 @@ public class TransportAuditPlugin extends Plugin
 		for (String mismatch : edgeMismatches)
 		{
 			out.append(mismatch).append('\n');
+		}
+		// Overlay histogram of the window's OPEN tiles: sail onto the damaging shallows and
+		// dump — the id under the boat is the shallow-water overlay to blacklist in routing.
+		short[][][] overlays = view.getScene() != null ? view.getScene().getOverlayIds() : null;
+		if (overlays != null)
+		{
+			java.util.Map<Integer, Integer> overlayCounts = new java.util.TreeMap<>();
+			for (int dy = -radius; dy <= radius; dy++)
+			{
+				for (int dx = -radius; dx <= radius; dx++)
+				{
+					int sx = local.getSceneX() + dx;
+					int sy = local.getSceneY() + dy;
+					if (sx >= 0 && sy >= 0 && sx < flags.length && sy < flags[sx].length
+						&& (flags[sx][sy] & LIVE_BLOCK_MASK) == 0)
+					{
+						overlayCounts.merge((int) overlays[plane][sx][sy], 1, Integer::sum);
+					}
+				}
+			}
+			out.append("# open-tile overlay histogram (id=count): ");
+			overlayCounts.forEach((id, count) -> out.append(id).append('=').append(count).append(' '));
+			out.append('\n');
+			int centerOverlay = overlays[plane][local.getSceneX()][local.getSceneY()];
+			out.append("# overlay under the boat/player: ").append(centerOverlay).append('\n');
 		}
 		try
 		{
