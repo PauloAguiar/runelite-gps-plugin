@@ -123,9 +123,10 @@ class TransportAuditSceneOverlay extends Overlay
 	private static final Color HULL_WALKABLE = new Color(0, 255, 180, 90);
 	private static final Color HULL_STRUCTURE = new Color(255, 90, 90, 100);
 	private static final Color HULL_UNPROVEN = new Color(200, 200, 200, 45);
-	// One tile (128 local units) toward the bow in deck space — see BOW_SHIFT note below.
-	// Field-calibrated: deck-forward is NEGATIVE Y (+128 doubled the aft error to two tiles).
-	private static final int BOW_SHIFT_DECK_Y = -128;
+	// Draw-side deck offset. ZERO since the plane fixes: the early "one tile aft" appearance
+	// was the wrong-plane content read, not a real grid offset — the player ground-truth box
+	// (which must sit under the character) is the calibrator that settled it.
+	private static final int BOW_SHIFT_DECK_Y = 0;
 	private static final Color HULL_PERIMETER = new Color(139, 84, 33, 230);
 
 	/**
