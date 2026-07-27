@@ -177,7 +177,7 @@ class TransportAuditSceneOverlay extends Overlay
 
 		// Pass 1: the hull = deck cells with rendered CONTENT (padding also has zero flags).
 		java.util.Set<Integer> content = new java.util.HashSet<>();
-		int bowY = Integer.MIN_VALUE;
+		int bowY = Integer.MAX_VALUE;
 		for (int sx = 0; sx < Math.min(flags.length, boatView.getSizeX()); sx++)
 		{
 			if (sx >= deckTiles[plane].length || deckTiles[plane][sx] == null)
@@ -192,7 +192,7 @@ class TransportAuditSceneOverlay extends Overlay
 					&& (tile.getSceneTilePaint() != null || tile.getSceneTileModel() != null))
 				{
 					content.add((sx << 16) | sy);
-					bowY = Math.max(bowY, sy); // field: the pointy end is the HIGHEST deck Y
+					bowY = Math.min(bowY, sy); // bow = LOWEST deck Y (round two of field truth)
 				}
 			}
 		}
@@ -267,18 +267,29 @@ class TransportAuditSceneOverlay extends Overlay
 			}
 		}
 
-		// The bow chevron: a little ^ half a tile ahead of the front row's middle column.
+		// The bow ^ spans the FULL front row: wings anchored at the outermost front corners,
+		// apex one tile ahead of the row's middle — a nose, not a one-tile doodle.
 		if (!bowTip.isEmpty())
 		{
-			bowTip.sort(java.util.Comparator.comparingInt(t -> t[0]));
-			int[] mid = bowTip.get(bowTip.size() / 2);
-			net.runelite.api.coords.LocalPoint center = net.runelite.api.coords.LocalPoint.fromScene(
-				boatScene.getBaseX() + mid[0], boatScene.getBaseY() + mid[1], boatScene);
-			if (center != null)
+			int minSx = Integer.MAX_VALUE;
+			int maxSx = Integer.MIN_VALUE;
+			for (int[] t : bowTip)
 			{
-				Point apex = project(boat, center.plus(0, BOW_SHIFT_DECK_Y + 160), topPlane);
-				Point left = project(boat, center.plus(-52, BOW_SHIFT_DECK_Y + 92), topPlane);
-				Point right = project(boat, center.plus(52, BOW_SHIFT_DECK_Y + 92), topPlane);
+				minSx = Math.min(minSx, t[0]);
+				maxSx = Math.max(maxSx, t[0]);
+			}
+			net.runelite.api.coords.LocalPoint leftCell = net.runelite.api.coords.LocalPoint.fromScene(
+				boatScene.getBaseX() + minSx, boatScene.getBaseY() + bowY, boatScene);
+			net.runelite.api.coords.LocalPoint rightCell = net.runelite.api.coords.LocalPoint.fromScene(
+				boatScene.getBaseX() + maxSx, boatScene.getBaseY() + bowY, boatScene);
+			if (leftCell != null && rightCell != null)
+			{
+				int apexX = (leftCell.getX() + rightCell.getX()) / 2;
+				net.runelite.api.coords.LocalPoint apexCell =
+					new net.runelite.api.coords.LocalPoint(apexX, leftCell.getY(), leftCell.getWorldView());
+				Point apex = project(boat, apexCell.plus(0, BOW_SHIFT_DECK_Y - 160), topPlane);
+				Point left = project(boat, leftCell.plus(-64, BOW_SHIFT_DECK_Y - 64), topPlane);
+				Point right = project(boat, rightCell.plus(64, BOW_SHIFT_DECK_Y - 64), topPlane);
 				if (apex != null && left != null && right != null)
 				{
 					graphics.setColor(HULL_PERIMETER);
