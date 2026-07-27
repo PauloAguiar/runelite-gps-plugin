@@ -1672,6 +1672,56 @@ public class TransportAuditPlugin extends Plugin
 		// the boat leaves static coastline — the first symptom was "only blue near the port".
 		// Cells carry SCENE coords for drawing; world coords are only used for map lookups.
 		boolean sailing = playerView != null && !playerView.isTopLevel();
+		// "Open flags" alone are NOT the sea: enclosed voids (the inside of thick walls, sealed
+		// structure interiors) also carry zero flags. Navigable ocean = open tiles CONNECTED to
+		// the boat, so flood within the window from the open ring around the hull (the hull's
+		// own tiles are live-blocked) and only let reachable tiles claim the water color.
+		final int windowSize = 2 * COLLISION_VIEW_RADIUS + 1;
+		boolean[][] openLocal = new boolean[windowSize][windowSize];
+		for (int dy = -COLLISION_VIEW_RADIUS; dy <= COLLISION_VIEW_RADIUS; dy++)
+		{
+			for (int dx = -COLLISION_VIEW_RADIUS; dx <= COLLISION_VIEW_RADIUS; dx++)
+			{
+				int sx = local.getSceneX() + dx;
+				int sy = local.getSceneY() + dy;
+				openLocal[dx + COLLISION_VIEW_RADIUS][dy + COLLISION_VIEW_RADIUS] =
+					sx >= 0 && sy >= 0 && sx < flags.length && sy < flags[sx].length
+						&& (flags[sx][sy] & LIVE_BLOCK_MASK) == 0;
+			}
+		}
+		boolean[][] reachable = new boolean[windowSize][windowSize];
+		java.util.ArrayDeque<int[]> queue = new java.util.ArrayDeque<>();
+		for (int dy = -3; dy <= 3; dy++)
+		{
+			for (int dx = -3; dx <= 3; dx++)
+			{
+				int wx = dx + COLLISION_VIEW_RADIUS;
+				int wy = dy + COLLISION_VIEW_RADIUS;
+				if (openLocal[wx][wy] && !reachable[wx][wy])
+				{
+					reachable[wx][wy] = true;
+					queue.add(new int[]{wx, wy});
+				}
+			}
+		}
+		while (!queue.isEmpty())
+		{
+			int[] at = queue.poll();
+			for (int dy = -1; dy <= 1; dy++)
+			{
+				for (int dx = -1; dx <= 1; dx++)
+				{
+					int wx = at[0] + dx;
+					int wy = at[1] + dy;
+					if (wx >= 0 && wy >= 0 && wx < windowSize && wy < windowSize
+						&& openLocal[wx][wy] && !reachable[wx][wy])
+					{
+						reachable[wx][wy] = true;
+						queue.add(new int[]{wx, wy});
+					}
+				}
+			}
+		}
 		java.util.List<int[]> cells = new java.util.ArrayList<>();
 		for (int dy = -COLLISION_VIEW_RADIUS; dy <= COLLISION_VIEW_RADIUS; dy++)
 		{
@@ -1703,10 +1753,12 @@ public class TransportAuditPlugin extends Plugin
 				else
 				{
 					// Generated sea: open tiles ARE the navigable water (flags 0, no settings
-					// bits — boats sail them), blocked tiles are sailing obstacles. Only claim
-					// water while actually on a boat, so land instances don't paint blue.
+					// bits — boats sail them), blocked tiles are sailing obstacles. Claim water
+					// only while on a boat AND connected to it — enclosed voids inside wall
+					// volumes are also flag-free but no boat can ever reach them.
+					boolean connected = reachable[dx + COLLISION_VIEW_RADIUS][dy + COLLISION_VIEW_RADIUS];
 					tileState = liveBlocked ? COLLISION_BOTH_BLOCKED
-						: (sailing ? COLLISION_WATER : 0);
+						: (sailing && connected ? COLLISION_WATER : 0);
 				}
 				if (liveBlocked && plane == 0 && settings != null
 					&& (settings[0][sx][sy] & 1) != 0)
