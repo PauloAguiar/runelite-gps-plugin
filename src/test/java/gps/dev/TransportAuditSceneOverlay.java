@@ -276,6 +276,24 @@ class TransportAuditSceneOverlay extends Overlay
 			}
 		}
 
+		// The boat's TRUE tile: the top-level cell containing the WorldEntity's local location —
+		// the exact anchor gps.fromLocalInstance resolves and routing/progress consume. Red,
+		// drawn in sea space (no deck projection), so anchor-vs-hull drift is visible at a
+		// glance while gliding.
+		net.runelite.api.coords.LocalPoint anchor = boat.getLocalLocation();
+		if (anchor != null)
+		{
+			Polygon anchorPoly = Perspective.getCanvasTilePoly(client, anchor);
+			if (anchorPoly != null)
+			{
+				graphics.setColor(new Color(255, 40, 40, 90));
+				graphics.fillPolygon(anchorPoly);
+				graphics.setColor(new Color(255, 40, 40, 230));
+				graphics.setStroke(new java.awt.BasicStroke(2));
+				graphics.drawPolygon(anchorPoly);
+			}
+		}
+
 		// The bow ^ spans the FULL front row: wings anchored at the outermost front corners,
 		// apex one tile ahead of the row's middle — a nose, not a one-tile doodle.
 		if (!bowTip.isEmpty())
