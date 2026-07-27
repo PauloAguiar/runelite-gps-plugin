@@ -1640,7 +1640,21 @@ public class TransportAuditPlugin extends Plugin
 			collisionCells = java.util.List.of();
 			return;
 		}
+		// On a boat the player lives in the boat's sub-WorldView: their own LocalPoint indexes
+		// the DECK scene, not the sea. Anchor on the boat WorldEntity's top-level position then
+		// (the port-tasks pattern), so the view keeps painting the water around the hull.
 		net.runelite.api.coords.LocalPoint local = player.getLocalLocation();
+		net.runelite.api.WorldView playerView = player.getWorldView();
+		if (playerView != null && !playerView.isTopLevel())
+		{
+			net.runelite.api.WorldEntity boat = view.worldEntities().byIndex(playerView.getId());
+			local = boat != null ? boat.getLocalLocation() : null;
+		}
+		if (local == null)
+		{
+			collisionCells = java.util.List.of();
+			return;
+		}
 		int plane = view.getPlane();
 		int[][] flags = view.getCollisionMaps()[plane].getFlags();
 		// Render settings: bit 1 on plane 0 marks water ("nomove" floor) — the same convention
@@ -1733,7 +1747,18 @@ public class TransportAuditPlugin extends Plugin
 		{
 			return "not logged in";
 		}
+		// Same boat anchoring as the live view: dump the sea around the hull, not the deck.
 		net.runelite.api.coords.LocalPoint local = player.getLocalLocation();
+		net.runelite.api.WorldView playerView = player.getWorldView();
+		if (playerView != null && !playerView.isTopLevel())
+		{
+			net.runelite.api.WorldEntity boat = view.worldEntities().byIndex(playerView.getId());
+			if (boat == null || boat.getLocalLocation() == null)
+			{
+				return "on a boat, but its world entity is not resolvable";
+			}
+			local = boat.getLocalLocation();
+		}
 		int plane = view.getPlane();
 		int[][] flags = view.getCollisionMaps()[plane].getFlags();
 		int playerWorld = WorldPointUtil.fromLocalInstance(client, local);
