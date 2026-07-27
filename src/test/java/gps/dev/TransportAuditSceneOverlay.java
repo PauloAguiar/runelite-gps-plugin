@@ -57,6 +57,7 @@ class TransportAuditSceneOverlay extends Overlay
 		{
 			renderBoatTiles(graphics);
 			renderBoatWake(graphics);
+			renderPredictedCourse(graphics);
 		}
 		if (plugin.showBoatText)
 		{
@@ -138,6 +139,13 @@ class TransportAuditSceneOverlay extends Overlay
 	private static final Color WAKE_EDGE = new Color(255, 220, 80, 120);
 	private static final Color WAKE_BAND = new Color(255, 220, 80, 35);
 	private static final Color HULL_CONFIG_BOX = new Color(255, 255, 255, 200);
+	private static final Color COURSE_CENTRE = new Color(80, 255, 120, 220);
+	private static final Color COURSE_EDGE = new Color(80, 255, 120, 120);
+	private static final Color COURSE_BAND = new Color(80, 255, 120, 40);
+	/** Ticks of course predicted ahead of the hull. */
+	private static final int COURSE_STEPS = 12;
+	/** Orientation units per tick the hull turns: 128/2048 of a circle = 22.5 degrees. */
+	private static final int TURN_PER_TICK = 128;
 
 	/**
 	 * The boat's footprint on the sea: every deck cell with rendered content, corners pushed
@@ -367,6 +375,129 @@ class TransportAuditSceneOverlay extends Overlay
 		float[] modelY = {centreY, centreY, centreY};
 		float[] modelZ = {0, 0, 0};
 
+		drawSweptRibbon(graphics, wake, centreX, centreY, halfBeam,
+			WAKE_CENTRE, WAKE_EDGE, WAKE_BAND);
+	}
+
+	/**
+	 * The course the hull would sweep if it turned toward the MOUSE and held speed: same green
+	 * ribbon as the wake, projected forward. The client's own numbers drive it — turning is
+	 * {@link #TURN_PER_TICK} orientation units per tick (22.5 degrees, the 16-heading model)
+	 * and speed is measured from the wake. Acceleration is deliberately NOT modelled: this is
+	 * a diagnostic for turning radius and swept width, so a constant-speed arc keeps it honest
+	 * rather than inventing a curve we haven't calibrated.
+	 */
+	private void renderPredictedCourse(Graphics2D graphics)
+	{
+		net.runelite.api.WorldEntity boat = plugin.playerBoat();
+		if (boat == null || boat.getConfig() == null || boat.getTargetLocation() == null)
+		{
+			return;
+		}
+		double speed = plugin.boatSpeedTiles;
+		if (speed <= 0)
+		{
+			return; // parked: no course to draw
+		}
+		int target = mouseHeading(boat.getTargetLocation());
+		if (target < 0)
+		{
+			return;
+		}
+		net.runelite.api.WorldEntityConfig config = boat.getConfig();
+		int orientation = boat.getTargetOrientation();
+		double x = boat.getTargetLocation().getX();
+		double y = boat.getTargetLocation().getY();
+		java.util.List<int[]> course = new java.util.ArrayList<>(COURSE_STEPS + 1);
+		course.add(new int[]{(int) x, (int) y, orientation});
+		for (int step = 0; step < COURSE_STEPS; step++)
+		{
+			if (orientation != target)
+			{
+				// Shortest way round: signed delta folded into [-1024, 1024).
+				int delta = Math.floorMod(target - orientation + 1024, 2048) - 1024;
+				int turn = Math.min(TURN_PER_TICK, Math.abs(delta)) * (delta >= 0 ? 1 : -1);
+				orientation = Math.floorMod(orientation + turn, 2048);
+			}
+			// SailingMath's convention: degrees = 270 - orientation/(2048/360).
+			double radians = Math.toRadians(270 - orientation / (2048 / 360.0));
+			x += Math.cos(radians) * speed * 128;
+			y += Math.sin(radians) * speed * 128;
+			course.add(new int[]{(int) Math.round(x), (int) Math.round(y), orientation});
+		}
+		drawSweptRibbon(graphics, course, config.getBoundsX(), config.getBoundsY(),
+			config.getBoundsWidth() / 2f, COURSE_CENTRE, COURSE_EDGE, COURSE_BAND);
+	}
+
+	/**
+	 * Which of the 16 heading sectors the cursor sits in, as an orientation — the sector
+	 * dividers are drawn from the hull outwards in CANVAS space and the mouse is side-tested
+	 * against them, so the isometric projection is handled for free (the approach
+	 * anmcgrath's turning-circles plugin uses). -1 when the hull is off-screen.
+	 */
+	private int mouseHeading(net.runelite.api.coords.LocalPoint boatCentre)
+	{
+		Point centre = Perspective.localToCanvas(client, boatCentre, 0);
+		if (centre == null)
+		{
+			return -1;
+		}
+		net.runelite.api.Point mouse = client.getMouseCanvasPosition();
+		if (mouse == null)
+		{
+			return -1;
+		}
+		float[] lineX = {0, 0};
+		float[] lineY = {1000, -1000};
+		float[] lineZ = {0, 0};
+		int[][] dividers = new int[16][];
+		for (int n = 0; n < 16; n++)
+		{
+			int[] canvasX = new int[2];
+			int[] canvasY = new int[2];
+			// Offset by half a sector (64) so the lines DIVIDE sectors instead of centring them.
+			Perspective.modelToCanvas(client, client.getTopLevelWorldView(), 2,
+				boatCentre.getX(), boatCentre.getY(), 0, 64 + 128 * n,
+				lineX, lineY, lineZ, canvasX, canvasY);
+			if (canvasX[1] == Integer.MIN_VALUE)
+			{
+				return -1;
+			}
+			dividers[n] = new int[]{centre.getX(), centre.getY(), canvasX[1], canvasY[1]};
+		}
+		for (int i = 0; i < 15; i++)
+		{
+			if (sideOf(dividers[i], mouse) >= 0 && sideOf(dividers[i + 1], mouse) < 0)
+			{
+				return 128 + i * 128;
+			}
+		}
+		return 0;
+	}
+
+	/** >0 left of the line, <0 right, 0 on it. */
+	private static long sideOf(int[] line, net.runelite.api.Point point)
+	{
+		return (long) (line[2] - line[0]) * (point.getY() - line[1])
+			- (long) (line[3] - line[1]) * (point.getX() - line[0]);
+	}
+
+	/**
+	 * Paints a run of {x, y, orientation} hull samples as a swept path: port and starboard
+	 * edges, a filled band between them, and the centre line. Each sample's three model-space
+	 * points go through ONE modelToCanvas call so the client applies that sample's rotation.
+	 */
+	private void drawSweptRibbon(Graphics2D graphics, java.util.List<int[]> samples,
+		float centreX, float centreY, float halfBeam,
+		Color centreColour, Color edgeColour, Color bandColour)
+	{
+		if (samples.size() < 2)
+		{
+			return;
+		}
+		float[] modelX = {centreX - halfBeam, centreX, centreX + halfBeam};
+		float[] modelY = {centreY, centreY, centreY};
+		float[] modelZ = {0, 0, 0};
 		java.awt.geom.Path2D.Double port = new java.awt.geom.Path2D.Double();
 		java.awt.geom.Path2D.Double centre = new java.awt.geom.Path2D.Double();
 		java.awt.geom.Path2D.Double starboard = new java.awt.geom.Path2D.Double();
@@ -374,7 +505,7 @@ class TransportAuditSceneOverlay extends Overlay
 		boolean started = false;
 		int[] canvasX = new int[3];
 		int[] canvasY = new int[3];
-		for (int[] sample : wake)
+		for (int[] sample : samples)
 		{
 			Perspective.modelToCanvas(client, client.getTopLevelWorldView(), 3,
 				sample[0], sample[1], 0, sample[2], modelX, modelY, modelZ, canvasX, canvasY);
@@ -401,23 +532,22 @@ class TransportAuditSceneOverlay extends Overlay
 		{
 			return;
 		}
-		// Swept band: the port edge out, the starboard edge back — the water the hull occupied.
 		java.awt.geom.Path2D.Double band = new java.awt.geom.Path2D.Double(port);
 		for (int i = starboardPoints.size() - 1; i >= 0; i--)
 		{
 			band.lineTo(starboardPoints.get(i)[0], starboardPoints.get(i)[1]);
 		}
 		band.closePath();
-		graphics.setColor(WAKE_BAND);
+		graphics.setColor(bandColour);
 		graphics.fill(band);
 		graphics.setStroke(new java.awt.BasicStroke(1.5f, java.awt.BasicStroke.CAP_ROUND,
 			java.awt.BasicStroke.JOIN_ROUND));
-		graphics.setColor(WAKE_EDGE);
+		graphics.setColor(edgeColour);
 		graphics.draw(port);
 		graphics.draw(starboard);
 		graphics.setStroke(new java.awt.BasicStroke(2.5f, java.awt.BasicStroke.CAP_ROUND,
 			java.awt.BasicStroke.JOIN_ROUND));
-		graphics.setColor(WAKE_CENTRE);
+		graphics.setColor(centreColour);
 		graphics.draw(centre);
 	}
 

@@ -399,8 +399,8 @@ public class TransportAuditPlugin extends Plugin
 	 * The visual counterpart of the speed sampler — the real turning radius and the area the
 	 * hull actually sweeps, which is what the water map's clearance has to respect.
 	 *
-	 * Samples are TOP-LEVEL LOCAL coordinates ({localX, localY, orientation}), so they are
-	 * scene-relative: cleared on scene load and whenever the boat changes.
+	 * Samples are TOP-LEVEL LOCAL coordinates ({localX, localY, orientation, tick}), so they
+	 * are scene-relative: cleared on scene load and whenever the boat changes.
 	 */
 	private static final int WAKE_SAMPLES = 80;
 	private final java.util.ArrayDeque<int[]> boatWake = new java.util.ArrayDeque<>();
@@ -410,6 +410,9 @@ public class TransportAuditPlugin extends Plugin
 	{
 		return new java.util.ArrayList<>(boatWake);
 	}
+
+	/** Measured hull speed in TILES PER TICK, straight off the wake — 0 when parked. */
+	volatile double boatSpeedTiles = 0;
 	private volatile java.util.List<int[]> collisionCells = java.util.List.of();
 	static final int COLLISION_VIEW_RADIUS = 12;
 	// tileState values in collisionCells rows {packedTile, tileState, staticEdgeMask, mismatchEdgeMask}
@@ -1647,11 +1650,22 @@ public class TransportAuditPlugin extends Plugin
 			boatWake.clear();
 			wakeViewId = playerView.getId();
 		}
-		int[] sample = {location.getX(), location.getY(), boat.getOrientation()};
+		int tick = client.getTickCount();
+		int[] sample = {location.getX(), location.getY(), boat.getOrientation(), tick};
 		int[] last = boatWake.peekLast();
 		if (last != null && last[0] == sample[0] && last[1] == sample[1] && last[2] == sample[2])
 		{
+			if (tick - last[3] >= 2)
+			{
+				boatSpeedTiles = 0; // unchanged for a couple of ticks: parked, not gliding
+			}
 			return; // moored or drifting in place: don't fill the trail with duplicates
+		}
+		if (last != null)
+		{
+			// Tiles per tick between consecutive samples (128 local units = one tile).
+			int elapsed = Math.max(1, tick - last[3]);
+			boatSpeedTiles = Math.hypot(sample[0] - last[0], sample[1] - last[1]) / 128.0 / elapsed;
 		}
 		boatWake.addLast(sample);
 		while (boatWake.size() > WAKE_SAMPLES)
