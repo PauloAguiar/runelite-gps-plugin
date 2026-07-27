@@ -188,7 +188,12 @@ class TransportAuditSceneOverlay extends Overlay
 				{
 					continue;
 				}
-				boolean walkable = (flags[sx][sy] & TransportAuditPlugin.LIVE_BLOCK_MASK) == 0;
+				// The deck COLLISION grid is anchored at the true footprint (it's the grid the
+				// player actually walks), while CONTENT is one tile aft — so walkability reads
+				// from the bow-shifted cell that this quad is drawn at, not the content cell.
+				int walkY = sy + BOW_SHIFT_DECK_Y / 128;
+				boolean walkable = walkY >= 0 && walkY < flags[sx].length
+					&& (flags[sx][walkY] & TransportAuditPlugin.LIVE_BLOCK_MASK) == 0;
 				// Scene-overload LocalPoints take BASE-ADDED coordinates (barracuda-trial's
 				// working incantation) — raw scene coords land the quads translated off the
 				// hull and the rotation pivot in the wrong place.
