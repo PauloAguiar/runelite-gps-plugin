@@ -1660,9 +1660,6 @@ public class TransportAuditPlugin extends Plugin
 		// Render settings: bit 1 on plane 0 marks water ("nomove" floor) — the same convention
 		// the collision dumper bakes. Upper planes reuse the bit for roof walls, so plane 0 only.
 		byte[][][] settings = view.getTileSettings();
-		int playerWorld = WorldPointUtil.fromLocalInstance(client, local);
-		int baseX = WorldPointUtil.unpackWorldX(playerWorld) - local.getSceneX();
-		int baseY = WorldPointUtil.unpackWorldY(playerWorld) - local.getSceneY();
 
 		int[][] dirs = {
 			{0, 1, net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_NORTH},
@@ -1670,6 +1667,10 @@ public class TransportAuditPlugin extends Plugin
 			{0, -1, net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_SOUTH},
 			{-1, 0, net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_WEST},
 		};
+		// PER-TILE world resolution, not base+offset: the sea scene while sailing is INSTANCED
+		// (chunks remap individually to template coords), so an affine base breaks the moment
+		// the boat leaves static coastline — the first symptom was "only blue near the port".
+		// Cells carry SCENE coords for drawing; world coords are only used for map lookups.
 		java.util.List<int[]> cells = new java.util.ArrayList<>();
 		for (int dy = -COLLISION_VIEW_RADIUS; dy <= COLLISION_VIEW_RADIUS; dy++)
 		{
@@ -1681,8 +1682,15 @@ public class TransportAuditPlugin extends Plugin
 				{
 					continue;
 				}
+				int world = WorldPointUtil.fromLocalInstance(client,
+					net.runelite.api.coords.LocalPoint.fromScene(sx, sy));
+				if (world == WorldPointUtil.UNDEFINED)
+				{
+					continue;
+				}
 				boolean liveBlocked = (flags[sx][sy] & LIVE_BLOCK_MASK) != 0;
-				boolean staticBlocked = staticMap.isBlocked(baseX + sx, baseY + sy, plane);
+				boolean staticBlocked = staticMap.isBlocked(WorldPointUtil.unpackWorldX(world),
+					WorldPointUtil.unpackWorldY(world), WorldPointUtil.unpackWorldPlane(world));
 				int tileState = liveBlocked
 					? (staticBlocked ? COLLISION_BOTH_BLOCKED : COLLISION_LIVE_ONLY)
 					: (staticBlocked ? COLLISION_STATIC_ONLY : 0);
@@ -1695,7 +1703,6 @@ public class TransportAuditPlugin extends Plugin
 				int mismatchEdges = 0;
 				if (!liveBlocked && !staticBlocked)
 				{
-					int world = WorldPointUtil.packWorldPoint(baseX + sx, baseY + sy, plane);
 					for (int d = 0; d < 4; d++)
 					{
 						int nsx = sx + dirs[d][0];
@@ -1704,10 +1711,24 @@ public class TransportAuditPlugin extends Plugin
 						{
 							continue;
 						}
+						int neighbourWorld = WorldPointUtil.fromLocalInstance(client,
+							net.runelite.api.coords.LocalPoint.fromScene(nsx, nsy));
+						// At instance chunk seams adjacent scene tiles can map to distant
+						// template coords — canStep would misread that as a wall. Skip.
+						if (neighbourWorld == WorldPointUtil.UNDEFINED
+							|| Math.abs(WorldPointUtil.unpackWorldX(neighbourWorld)
+								- WorldPointUtil.unpackWorldX(world)) > 1
+							|| Math.abs(WorldPointUtil.unpackWorldY(neighbourWorld)
+								- WorldPointUtil.unpackWorldY(world)) > 1)
+						{
+							continue;
+						}
 						boolean neighbourLive = (flags[nsx][nsy] & LIVE_BLOCK_MASK) != 0;
-						boolean neighbourStatic = staticMap.isBlocked(baseX + nsx, baseY + nsy, plane);
-						boolean staticStop = !staticMap.canStep(world,
-							WorldPointUtil.packWorldPoint(baseX + nsx, baseY + nsy, plane));
+						boolean neighbourStatic = staticMap.isBlocked(
+							WorldPointUtil.unpackWorldX(neighbourWorld),
+							WorldPointUtil.unpackWorldY(neighbourWorld),
+							WorldPointUtil.unpackWorldPlane(neighbourWorld));
+						boolean staticStop = !staticMap.canStep(world, neighbourWorld);
 						if (staticStop && !neighbourStatic)
 						{
 							staticEdges |= 1 << d;
@@ -1724,9 +1745,7 @@ public class TransportAuditPlugin extends Plugin
 				}
 				if (tileState != 0 || staticEdges != 0 || mismatchEdges != 0)
 				{
-					cells.add(new int[]{
-						WorldPointUtil.packWorldPoint(baseX + sx, baseY + sy, plane),
-						tileState, staticEdges, mismatchEdges});
+					cells.add(new int[]{sx, sy, tileState, staticEdges, mismatchEdges});
 				}
 			}
 		}

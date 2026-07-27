@@ -125,22 +125,19 @@ class TransportAuditSceneOverlay extends Overlay
 	{
 		for (int[] cell : plugin.collisionCells())
 		{
-			LocalPoint location = LocalPoint.fromWorld(client.getTopLevelWorldView(),
-				gps.WorldPointUtil.unpackWorldX(cell[0]), gps.WorldPointUtil.unpackWorldY(cell[0]));
-			if (location == null)
-			{
-				continue;
-			}
+			// Cells carry SCENE coords: drawing by scene position stays correct in the instanced
+			// sea scene while sailing, where world-coord round-trips return null.
+			LocalPoint location = LocalPoint.fromScene(cell[0], cell[1]);
 			Polygon poly = Perspective.getCanvasTilePoly(client, location);
 			if (poly == null || poly.npoints < 4)
 			{
 				continue;
 			}
-			if (cell[1] != 0)
+			if (cell[2] != 0)
 			{
-				Color fill = cell[1] == TransportAuditPlugin.COLLISION_BOTH_BLOCKED ? COLLISION_BOTH
-					: cell[1] == TransportAuditPlugin.COLLISION_STATIC_ONLY ? COLLISION_PHANTOM
-					: cell[1] == TransportAuditPlugin.COLLISION_WATER ? COLLISION_WATER_FILL
+				Color fill = cell[2] == TransportAuditPlugin.COLLISION_BOTH_BLOCKED ? COLLISION_BOTH
+					: cell[2] == TransportAuditPlugin.COLLISION_STATIC_ONLY ? COLLISION_PHANTOM
+					: cell[2] == TransportAuditPlugin.COLLISION_WATER ? COLLISION_WATER_FILL
 					: COLLISION_MISSING;
 				graphics.setColor(fill);
 				graphics.fillPolygon(poly);
@@ -150,8 +147,8 @@ class TransportAuditSceneOverlay extends Overlay
 			int[][] edgeCorners = {{3, 2}, {1, 2}, {0, 1}, {0, 3}};
 			for (int d = 0; d < 4; d++)
 			{
-				boolean wall = (cell[2] & (1 << d)) != 0;
-				boolean mismatch = (cell[3] & (1 << d)) != 0;
+				boolean wall = (cell[3] & (1 << d)) != 0;
+				boolean mismatch = (cell[4] & (1 << d)) != 0;
 				if (!wall && !mismatch)
 				{
 					continue;
