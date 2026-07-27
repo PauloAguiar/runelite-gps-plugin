@@ -385,6 +385,32 @@ class TransportAuditSceneOverlay extends Overlay
 						: world.getX() + "," + world.getY() + "," + world.getPlane()));
 				}
 			}
+			// The oracle line: the player's own cell flags on EVERY plane of the boat view.
+			// Whichever plane reads 0 under their feet is the true walk grid — if none does,
+			// deck walkability is not in the collision flags at all.
+			net.runelite.api.WorldView pv = player.getWorldView();
+			if (pv != null && !pv.isTopLevel() && pv.getCollisionMaps() != null
+				&& player.getLocalLocation() != null)
+			{
+				int psx = player.getLocalLocation().getSceneX();
+				int psy = player.getLocalLocation().getSceneY();
+				StringBuilder sb = new StringBuilder("flags@player ");
+				sb.append("worldPlane=").append(player.getWorldLocation() == null ? "?"
+					: player.getWorldLocation().getPlane());
+				sb.append(" viewPlane=").append(pv.getPlane());
+				for (int pl = 0; pl < pv.getCollisionMaps().length; pl++)
+				{
+					net.runelite.api.CollisionData cd = pv.getCollisionMaps()[pl];
+					String v = "-";
+					if (cd != null && psx >= 0 && psx < cd.getFlags().length
+						&& psy >= 0 && psy < cd.getFlags()[psx].length)
+					{
+						v = Integer.toHexString(cd.getFlags()[psx][psy] & 0xFFFFFF);
+					}
+					sb.append(" p").append(pl).append('=').append(v);
+				}
+				lines.add(sb.toString());
+			}
 			int packed = gps.WorldPointUtil.fromLocalInstance(client, player);
 			lines.add("gps.fromLocalInstance=" + (packed == gps.WorldPointUtil.UNDEFINED ? "UNDEFINED"
 				: gps.WorldPointUtil.unpackWorldX(packed) + "," + gps.WorldPointUtil.unpackWorldY(packed)
