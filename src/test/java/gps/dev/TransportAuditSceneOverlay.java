@@ -125,6 +125,7 @@ class TransportAuditSceneOverlay extends Overlay
 	// One tile (128 local units) toward the bow in deck space — see BOW_SHIFT note below.
 	// Field-calibrated: deck-forward is NEGATIVE Y (+128 doubled the aft error to two tiles).
 	private static final int BOW_SHIFT_DECK_Y = -128;
+	private static final Color HULL_PERIMETER = new Color(139, 84, 33, 230);
 
 	/**
 	 * The boat's ACTUAL tiles, projected onto the sea: every deck tile of the player's boat
@@ -173,66 +174,135 @@ class TransportAuditSceneOverlay extends Overlay
 			return;
 		}
 		int topPlane = top.getPlane();
+
+		// Pass 1: the hull = deck cells with rendered CONTENT (padding also has zero flags).
+		java.util.Set<Integer> content = new java.util.HashSet<>();
+		int bowY = Integer.MAX_VALUE;
 		for (int sx = 0; sx < Math.min(flags.length, boatView.getSizeX()); sx++)
 		{
+			if (sx >= deckTiles[plane].length || deckTiles[plane][sx] == null)
+			{
+				continue;
+			}
 			for (int sy = 0; sy < Math.min(flags[sx].length, boatView.getSizeY()); sy++)
 			{
-				// The hull is where the deck scene has actual CONTENT: the padding around it
-				// carries zero flags too (which read as "walkable"), so flags alone painted a
-				// giant square of sea. Rendered paint/model = a real boat tile.
-				net.runelite.api.Tile tile = sx < deckTiles[plane].length
-					&& deckTiles[plane][sx] != null && sy < deckTiles[plane][sx].length
+				net.runelite.api.Tile tile = sy < deckTiles[plane][sx].length
 					? deckTiles[plane][sx][sy] : null;
-				if (tile == null
-					|| (tile.getSceneTilePaint() == null && tile.getSceneTileModel() == null))
+				if (tile != null
+					&& (tile.getSceneTilePaint() != null || tile.getSceneTileModel() != null))
 				{
-					continue;
+					content.add((sx << 16) | sy);
+					bowY = Math.min(bowY, sy); // deck-forward is -Y: the bow is the lowest Y
 				}
-				// The deck COLLISION grid is anchored at the true footprint (it's the grid the
-				// player actually walks), while CONTENT is one tile aft — so walkability reads
-				// from the bow-shifted cell that this quad is drawn at, not the content cell.
-				int walkY = sy + BOW_SHIFT_DECK_Y / 128;
-				boolean walkable = walkY >= 0 && walkY < flags[sx].length
-					&& (flags[sx][walkY] & TransportAuditPlugin.LIVE_BLOCK_MASK) == 0;
-				// Scene-overload LocalPoints take BASE-ADDED coordinates (barracuda-trial's
-				// working incantation) — raw scene coords land the quads translated off the
-				// hull and the rotation pivot in the wrong place.
-				net.runelite.api.coords.LocalPoint center = net.runelite.api.coords.LocalPoint.fromScene(
-					boatScene.getBaseX() + sx, boatScene.getBaseY() + sy, boatScene);
-				if (center == null)
-				{
-					continue;
-				}
-				// Tile corners in deck space, projected one by one so rotation survives.
-				// BOW_SHIFT: the deck scene's rendered content sits one tile aft of the hull's
-				// visual footprint (field-observed: nose row missing, extra row behind the
-				// helm), so every quad nudges one tile bow-ward in deck space before the
-				// rotation transform. Deck-forward is fixed for all boats; flip the sign if a
-				// different hull ever shows the mirror error.
-				Polygon quad = new Polygon();
-				int[][] corners = {{-64, -64}, {64, -64}, {64, 64}, {-64, 64}};
-				boolean complete = true;
-				for (int[] corner : corners)
-				{
-					net.runelite.api.coords.LocalPoint sea = boat.transformToMainWorld(
-						center.plus(corner[0], corner[1] + BOW_SHIFT_DECK_Y));
-					Point canvas = sea != null
-						? Perspective.localToCanvas(client, sea, topPlane) : null;
-					if (canvas == null)
-					{
-						complete = false;
-						break;
-					}
-					quad.addPoint(canvas.getX(), canvas.getY());
-				}
-				if (!complete)
-				{
-					continue;
-				}
-				graphics.setColor(walkable ? HULL_WALKABLE : HULL_STRUCTURE);
-				graphics.fillPolygon(quad);
 			}
 		}
+		if (content.isEmpty())
+		{
+			return;
+		}
+
+		// Pass 2: fills, per-tile flag text (classification is still not field-correct — the
+		// raw values on screen are how we stop guessing anchors), and brown boundary edges.
+		graphics.setFont(new java.awt.Font(java.awt.Font.MONOSPACED, java.awt.Font.PLAIN, 10));
+		java.util.List<int[]> bowTip = new java.util.ArrayList<>();
+		for (int cell : content)
+		{
+			int sx = cell >> 16;
+			int sy = cell & 0xFFFF;
+			net.runelite.api.coords.LocalPoint center = net.runelite.api.coords.LocalPoint.fromScene(
+				boatScene.getBaseX() + sx, boatScene.getBaseY() + sy, boatScene);
+			if (center == null)
+			{
+				continue;
+			}
+			int walkY = sy + BOW_SHIFT_DECK_Y / 128;
+			int shiftedFlag = walkY >= 0 && walkY < flags[sx].length ? flags[sx][walkY] : -1;
+			boolean walkable = (shiftedFlag & TransportAuditPlugin.LIVE_BLOCK_MASK) == 0;
+			Point[] corners = projectQuad(boat, center, topPlane);
+			if (corners == null)
+			{
+				continue;
+			}
+			Polygon quad = new Polygon();
+			for (Point corner : corners)
+			{
+				quad.addPoint(corner.getX(), corner.getY());
+			}
+			graphics.setColor(walkable ? HULL_WALKABLE : HULL_STRUCTURE);
+			graphics.fillPolygon(quad);
+			// Raw flag of the drawn cell / the content cell when they differ — hex, compact.
+			int contentFlag = flags[sx][sy];
+			String text = Integer.toHexString(shiftedFlag & 0xFFFFFF)
+				+ (contentFlag != shiftedFlag ? "/" + Integer.toHexString(contentFlag & 0xFFFFFF) : "");
+			int cx = (corners[0].getX() + corners[2].getX()) / 2;
+			int cy = (corners[0].getY() + corners[2].getY()) / 2;
+			graphics.setColor(java.awt.Color.BLACK);
+			graphics.drawString(text, cx - 9, cy + 4);
+			graphics.setColor(java.awt.Color.WHITE);
+			graphics.drawString(text, cx - 10, cy + 3);
+			// Brown perimeter: an edge is boundary when the neighbouring cell isn't content.
+			graphics.setColor(HULL_PERIMETER);
+			graphics.setStroke(new java.awt.BasicStroke(2));
+			int[][] neighbours = {{0, -1, 0, 1}, {1, 0, 1, 2}, {0, 1, 2, 3}, {-1, 0, 3, 0}};
+			for (int[] n : neighbours)
+			{
+				if (!content.contains(((sx + n[0]) << 16) | (sy + n[1])))
+				{
+					graphics.drawLine(corners[n[2]].getX(), corners[n[2]].getY(),
+						corners[n[3]].getX(), corners[n[3]].getY());
+				}
+			}
+			if (sy == bowY)
+			{
+				bowTip.add(new int[]{sx, sy});
+			}
+		}
+
+		// The bow chevron: a little ^ half a tile ahead of the front row's middle column.
+		if (!bowTip.isEmpty())
+		{
+			bowTip.sort(java.util.Comparator.comparingInt(t -> t[0]));
+			int[] mid = bowTip.get(bowTip.size() / 2);
+			net.runelite.api.coords.LocalPoint center = net.runelite.api.coords.LocalPoint.fromScene(
+				boatScene.getBaseX() + mid[0], boatScene.getBaseY() + mid[1], boatScene);
+			if (center != null)
+			{
+				Point apex = project(boat, center.plus(0, BOW_SHIFT_DECK_Y - 128), topPlane);
+				Point left = project(boat, center.plus(-52, BOW_SHIFT_DECK_Y - 60), topPlane);
+				Point right = project(boat, center.plus(52, BOW_SHIFT_DECK_Y - 60), topPlane);
+				if (apex != null && left != null && right != null)
+				{
+					graphics.setColor(HULL_PERIMETER);
+					graphics.setStroke(new java.awt.BasicStroke(3));
+					graphics.drawLine(left.getX(), left.getY(), apex.getX(), apex.getY());
+					graphics.drawLine(apex.getX(), apex.getY(), right.getX(), right.getY());
+				}
+			}
+		}
+	}
+
+	/** The four bow-shifted, rotated corners of a deck cell on the sea, or null off-screen. */
+	private Point[] projectQuad(net.runelite.api.WorldEntity boat,
+		net.runelite.api.coords.LocalPoint center, int topPlane)
+	{
+		int[][] offsets = {{-64, -64}, {64, -64}, {64, 64}, {-64, 64}};
+		Point[] out = new Point[4];
+		for (int i = 0; i < 4; i++)
+		{
+			out[i] = project(boat, center.plus(offsets[i][0], offsets[i][1] + BOW_SHIFT_DECK_Y), topPlane);
+			if (out[i] == null)
+			{
+				return null;
+			}
+		}
+		return out;
+	}
+
+	private Point project(net.runelite.api.WorldEntity boat,
+		net.runelite.api.coords.LocalPoint deckPoint, int topPlane)
+	{
+		net.runelite.api.coords.LocalPoint sea = boat.transformToMainWorld(deckPoint);
+		return sea != null ? Perspective.localToCanvas(client, sea, topPlane) : null;
 	}
 
 	/**
