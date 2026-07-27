@@ -108,7 +108,7 @@ class TransportAuditPanel extends PluginPanel
 		collisionToggle.setFont(FontManager.getRunescapeSmallFont());
 		collisionToggle.setAlignmentX(Component.LEFT_ALIGNMENT);
 		collisionToggle.setToolTipText("<html>Static map vs live game, drawn in-world:<br>"
-			+ "gray = blocked in both · <font color='#ff5050'>red</font> = phantom (static only)<br>"
+			+ "<font color='#3c8cff'>blue</font> = water · gray = blocked in both · <font color='#ff5050'>red</font> = phantom (static only)<br>"
 			+ "· <font color='#ffa040'>orange</font> = live only · lines = static walls<br>"
 			+ "· <font color='#ff00ff'>magenta</font> = edge disagreement</html>");
 		collisionToggle.addActionListener(e -> plugin.showCollision = collisionToggle.isSelected());

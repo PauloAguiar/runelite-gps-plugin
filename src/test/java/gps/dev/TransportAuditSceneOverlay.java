@@ -41,6 +41,7 @@ class TransportAuditSceneOverlay extends Overlay
 	private static final Color COLLISION_BOTH = new Color(120, 120, 120, 70);
 	private static final Color COLLISION_PHANTOM = new Color(255, 60, 60, 110);
 	private static final Color COLLISION_MISSING = new Color(255, 160, 40, 110);
+	private static final Color COLLISION_WATER_FILL = new Color(60, 140, 255, 80);
 	private static final Color COLLISION_WALL = new Color(210, 210, 210, 160);
 	private static final Color COLLISION_EDGE_MISMATCH = new Color(255, 0, 255, 220);
 
@@ -139,6 +140,7 @@ class TransportAuditSceneOverlay extends Overlay
 			{
 				Color fill = cell[1] == TransportAuditPlugin.COLLISION_BOTH_BLOCKED ? COLLISION_BOTH
 					: cell[1] == TransportAuditPlugin.COLLISION_STATIC_ONLY ? COLLISION_PHANTOM
+					: cell[1] == TransportAuditPlugin.COLLISION_WATER ? COLLISION_WATER_FILL
 					: COLLISION_MISSING;
 				graphics.setColor(fill);
 				graphics.fillPolygon(poly);

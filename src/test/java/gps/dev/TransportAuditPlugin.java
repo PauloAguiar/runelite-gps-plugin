@@ -395,6 +395,7 @@ public class TransportAuditPlugin extends Plugin
 	static final int COLLISION_BOTH_BLOCKED = 1;
 	static final int COLLISION_STATIC_ONLY = 2; // phantom: shipped map blocks, live game doesn't
 	static final int COLLISION_LIVE_ONLY = 3;   // missing: live game blocks, shipped map doesn't
+	static final int COLLISION_WATER = 4;       // blocked-in-both AND the tile-settings water bit
 	// Panel search text (lowercase). Filtering is panel-side except for known-data rows, whose
 	// candidate set is pre-trimmed here: nearby-only while browsing, name-matched when searching.
 	volatile String listFilter = "";
@@ -1642,6 +1643,9 @@ public class TransportAuditPlugin extends Plugin
 		net.runelite.api.coords.LocalPoint local = player.getLocalLocation();
 		int plane = view.getPlane();
 		int[][] flags = view.getCollisionMaps()[plane].getFlags();
+		// Render settings: bit 1 on plane 0 marks water ("nomove" floor) — the same convention
+		// the collision dumper bakes. Upper planes reuse the bit for roof walls, so plane 0 only.
+		byte[][][] settings = view.getTileSettings();
 		int playerWorld = WorldPointUtil.fromLocalInstance(client, local);
 		int baseX = WorldPointUtil.unpackWorldX(playerWorld) - local.getSceneX();
 		int baseY = WorldPointUtil.unpackWorldY(playerWorld) - local.getSceneY();
@@ -1668,6 +1672,11 @@ public class TransportAuditPlugin extends Plugin
 				int tileState = liveBlocked
 					? (staticBlocked ? COLLISION_BOTH_BLOCKED : COLLISION_LIVE_ONLY)
 					: (staticBlocked ? COLLISION_STATIC_ONLY : 0);
+				if (tileState == COLLISION_BOTH_BLOCKED && plane == 0 && settings != null
+					&& (settings[0][sx][sy] & 1) != 0)
+				{
+					tileState = COLLISION_WATER;
+				}
 				int staticEdges = 0;
 				int mismatchEdges = 0;
 				if (!liveBlocked && !staticBlocked)
