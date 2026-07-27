@@ -1671,6 +1671,7 @@ public class TransportAuditPlugin extends Plugin
 		// (chunks remap individually to template coords), so an affine base breaks the moment
 		// the boat leaves static coastline — the first symptom was "only blue near the port".
 		// Cells carry SCENE coords for drawing; world coords are only used for map lookups.
+		boolean sailing = playerView != null && !playerView.isTopLevel();
 		java.util.List<int[]> cells = new java.util.ArrayList<>();
 		for (int dy = -COLLISION_VIEW_RADIUS; dy <= COLLISION_VIEW_RADIUS; dy++)
 		{
@@ -1701,7 +1702,11 @@ public class TransportAuditPlugin extends Plugin
 				}
 				else
 				{
-					tileState = liveBlocked ? COLLISION_BOTH_BLOCKED : 0;
+					// Generated sea: open tiles ARE the navigable water (flags 0, no settings
+					// bits — boats sail them), blocked tiles are sailing obstacles. Only claim
+					// water while actually on a boat, so land instances don't paint blue.
+					tileState = liveBlocked ? COLLISION_BOTH_BLOCKED
+						: (sailing ? COLLISION_WATER : 0);
 				}
 				if (liveBlocked && plane == 0 && settings != null
 					&& (settings[0][sx][sy] & 1) != 0)
