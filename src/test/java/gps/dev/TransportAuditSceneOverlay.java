@@ -53,6 +53,10 @@ class TransportAuditSceneOverlay extends Overlay
 		{
 			renderCollision(graphics);
 		}
+		if (plugin.showBoatDebug)
+		{
+			renderBoatDebug(graphics);
+		}
 		// Known-data browser: dim cyan at every curated origin in the scene, bright cyan on the
 		// selected entry's origin AND landing — "what does the data think is here?".
 		if (plugin.showKnown)
@@ -113,6 +117,79 @@ class TransportAuditSceneOverlay extends Overlay
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Every link of the boat-position chain, live: which value freezes names the culprit.
+	 * Lines cover the player's view, every WorldEntity (owner type, raw/target local points,
+	 * orientation), the byIndex lookup our conversion uses, RuneLite's fromLocalInstance
+	 * verdict, and GPS's packed result.
+	 */
+	private void renderBoatDebug(Graphics2D graphics)
+	{
+		java.util.List<String> lines = new java.util.ArrayList<>();
+		net.runelite.api.Player player = client.getLocalPlayer();
+		net.runelite.api.WorldView top = client.getTopLevelWorldView();
+		lines.add("tick " + client.getTickCount());
+		if (player == null || top == null)
+		{
+			lines.add("no player/top view");
+		}
+		else
+		{
+			net.runelite.api.WorldView playerView = player.getWorldView();
+			lines.add("playerView id=" + (playerView == null ? "null" : playerView.getId())
+				+ " topLevel=" + (playerView != null && playerView.isTopLevel()));
+			net.runelite.api.coords.WorldPoint deck = player.getWorldLocation();
+			lines.add("player.getWorldLocation=" + (deck == null ? "null"
+				: deck.getX() + "," + deck.getY() + "," + deck.getPlane()) + " [deck coords]");
+			int shown = 0;
+			for (net.runelite.api.WorldEntity entity : top.worldEntities())
+			{
+				if (entity == null || ++shown > 4)
+				{
+					continue;
+				}
+				net.runelite.api.coords.LocalPoint el = entity.getLocalLocation();
+				net.runelite.api.coords.LocalPoint et = entity.getTargetLocation();
+				lines.add("entity view=" + (entity.getWorldView() == null ? "?" : entity.getWorldView().getId())
+					+ " owner=" + entity.getOwnerType()
+					+ " local=" + (el == null ? "null" : el.getX() + "," + el.getY()
+						+ " scene " + el.getSceneX() + "," + el.getSceneY())
+					+ " target=" + (et == null ? "null" : et.getX() + "," + et.getY())
+					+ " orient=" + entity.getOrientation());
+			}
+			if (shown == 0)
+			{
+				lines.add("worldEntities: EMPTY");
+			}
+			if (playerView != null && !playerView.isTopLevel())
+			{
+				net.runelite.api.WorldEntity boat = top.worldEntities().byIndex(playerView.getId());
+				lines.add("byIndex(" + playerView.getId() + ")=" + (boat == null ? "NULL" : "present"));
+				if (boat != null && boat.getLocalLocation() != null)
+				{
+					net.runelite.api.coords.WorldPoint world =
+						net.runelite.api.coords.WorldPoint.fromLocalInstance(client, boat.getLocalLocation());
+					lines.add("WP.fromLocalInstance=" + (world == null ? "NULL"
+						: world.getX() + "," + world.getY() + "," + world.getPlane()));
+				}
+			}
+			int packed = gps.WorldPointUtil.fromLocalInstance(client, player);
+			lines.add("gps.fromLocalInstance=" + (packed == gps.WorldPointUtil.UNDEFINED ? "UNDEFINED"
+				: gps.WorldPointUtil.unpackWorldX(packed) + "," + gps.WorldPointUtil.unpackWorldY(packed)
+					+ "," + gps.WorldPointUtil.unpackWorldPlane(packed)));
+		}
+		graphics.setFont(new java.awt.Font(java.awt.Font.MONOSPACED, java.awt.Font.PLAIN, 12));
+		int y = 46;
+		for (String line : lines)
+		{
+			graphics.setColor(java.awt.Color.BLACK);
+			graphics.drawString(line, 11, y + 1);
+			graphics.setColor(java.awt.Color.YELLOW);
+			graphics.drawString(line, 10, y);
+			y += 14;
+		}
 	}
 
 	/**

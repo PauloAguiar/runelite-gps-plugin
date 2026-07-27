@@ -113,6 +113,16 @@ class TransportAuditPanel extends PluginPanel
 			+ "· <font color='#ff00ff'>magenta</font> = edge disagreement</html>");
 		collisionToggle.addActionListener(e -> plugin.showCollision = collisionToggle.isSelected());
 		top.add(collisionToggle);
+		javax.swing.JCheckBox boatDebugToggle = new javax.swing.JCheckBox("Boat position debug", false);
+		boatDebugToggle.setFocusable(false);
+		boatDebugToggle.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		boatDebugToggle.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		boatDebugToggle.setFont(FontManager.getRunescapeSmallFont());
+		boatDebugToggle.setAlignmentX(Component.LEFT_ALIGNMENT);
+		boatDebugToggle.setToolTipText("On-screen dump of every link in the boat-position chain —"
+			+ " whichever line freezes while sailing is the broken step");
+		boatDebugToggle.addActionListener(e -> plugin.showBoatDebug = boatDebugToggle.isSelected());
+		top.add(boatDebugToggle);
 		JButton collisionDump = new JButton("Dump live collision");
 		collisionDump.setFont(FontManager.getRunescapeSmallFont());
 		collisionDump.setFocusable(false);
