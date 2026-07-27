@@ -56,6 +56,7 @@ class TransportAuditSceneOverlay extends Overlay
 		if (plugin.showBoatDebug)
 		{
 			renderBoatTiles(graphics);
+			renderBoatWake(graphics);
 		}
 		if (plugin.showBoatText)
 		{
@@ -133,6 +134,10 @@ class TransportAuditSceneOverlay extends Overlay
 	// space and matched at -128 ("the exact hitbox", field round 2).
 	private static final int BOW_SHIFT_DECK_Y = -128;
 	private static final Color HULL_PERIMETER = new Color(139, 84, 33, 230);
+	private static final Color WAKE_CENTRE = new Color(255, 220, 80, 220);
+	private static final Color WAKE_EDGE = new Color(255, 220, 80, 120);
+	private static final Color WAKE_BAND = new Color(255, 220, 80, 35);
+	private static final Color HULL_CONFIG_BOX = new Color(255, 255, 255, 200);
 
 	/**
 	 * The boat's footprint on the sea: every deck cell with rendered content, corners pushed
@@ -269,6 +274,39 @@ class TransportAuditSceneOverlay extends Overlay
 			}
 		}
 
+		// The client's OWN hull box (WorldEntityConfig bounds, rotated by the entity's
+		// orientation) — authoritative and calibration-free. Drawn alongside the content-derived
+		// footprint so the two can be compared: if they coincide, the deck scan and its
+		// hard-won BOW_SHIFT can be retired in favour of this.
+		net.runelite.api.WorldEntityConfig hullConfig = boat.getConfig();
+		net.runelite.api.coords.LocalPoint hullAt = boat.getLocalLocation();
+		if (hullConfig != null && hullAt != null)
+		{
+			float halfW = hullConfig.getBoundsWidth() / 2f;
+			float halfH = hullConfig.getBoundsHeight() / 2f;
+			float bx = hullConfig.getBoundsX();
+			float by = hullConfig.getBoundsY();
+			float[] boxX = {bx - halfW, bx + halfW, bx + halfW, bx - halfW};
+			float[] boxY = {by - halfH, by - halfH, by + halfH, by + halfH};
+			float[] boxZ = {0, 0, 0, 0};
+			int[] outX = new int[4];
+			int[] outY = new int[4];
+			Perspective.modelToCanvas(client, client.getTopLevelWorldView(), 4,
+				hullAt.getX(), hullAt.getY(), 0, boat.getOrientation(),
+				boxX, boxY, boxZ, outX, outY);
+			if (outX[0] != Integer.MIN_VALUE)
+			{
+				Polygon box = new Polygon();
+				for (int i = 0; i < 4; i++)
+				{
+					box.addPoint(outX[i], outY[i]);
+				}
+				graphics.setColor(HULL_CONFIG_BOX);
+				graphics.setStroke(new java.awt.BasicStroke(2));
+				graphics.draw(box);
+			}
+		}
+
 		// The bow ^ spans the FULL front row: wings anchored at the outermost front corners,
 		// apex one tile ahead of the row's middle — a nose, not a one-tile doodle.
 		if (!bowTip.isEmpty())
@@ -301,6 +339,86 @@ class TransportAuditSceneOverlay extends Overlay
 				}
 			}
 		}
+	}
+
+	/**
+	 * The boat's WAKE as a swept-path curve: the centre line the hull travelled plus its port
+	 * and starboard edges, filled as a band. Each sample's three model-space points (port,
+	 * centre, starboard) go through ONE modelToCanvas call so the sample's own orientation is
+	 * applied by the same transform the client uses — the technique anmcgrath's turning-circles
+	 * plugin (BSD-2) uses for its prediction boxes, applied to history instead of prediction.
+	 *
+	 * The hull's beam comes from {@link net.runelite.api.WorldEntityConfig} — the client's own
+	 * bounding box, no deck scanning needed.
+	 */
+	private void renderBoatWake(Graphics2D graphics)
+	{
+		java.util.List<int[]> wake = plugin.boatWake();
+		net.runelite.api.WorldEntity boat = plugin.playerBoat();
+		if (wake.size() < 2 || boat == null || boat.getConfig() == null)
+		{
+			return;
+		}
+		net.runelite.api.WorldEntityConfig config = boat.getConfig();
+		float centreX = config.getBoundsX();
+		float centreY = config.getBoundsY();
+		float halfBeam = config.getBoundsWidth() / 2f;
+		float[] modelX = {centreX - halfBeam, centreX, centreX + halfBeam};
+		float[] modelY = {centreY, centreY, centreY};
+		float[] modelZ = {0, 0, 0};
+
+		java.awt.geom.Path2D.Double port = new java.awt.geom.Path2D.Double();
+		java.awt.geom.Path2D.Double centre = new java.awt.geom.Path2D.Double();
+		java.awt.geom.Path2D.Double starboard = new java.awt.geom.Path2D.Double();
+		java.util.List<int[]> starboardPoints = new java.util.ArrayList<>();
+		boolean started = false;
+		int[] canvasX = new int[3];
+		int[] canvasY = new int[3];
+		for (int[] sample : wake)
+		{
+			Perspective.modelToCanvas(client, client.getTopLevelWorldView(), 3,
+				sample[0], sample[1], 0, sample[2], modelX, modelY, modelZ, canvasX, canvasY);
+			if (canvasX[1] == Integer.MIN_VALUE)
+			{
+				continue; // sample off-screen: skip rather than break the whole curve
+			}
+			if (!started)
+			{
+				port.moveTo(canvasX[0], canvasY[0]);
+				centre.moveTo(canvasX[1], canvasY[1]);
+				starboard.moveTo(canvasX[2], canvasY[2]);
+				started = true;
+			}
+			else
+			{
+				port.lineTo(canvasX[0], canvasY[0]);
+				centre.lineTo(canvasX[1], canvasY[1]);
+				starboard.lineTo(canvasX[2], canvasY[2]);
+			}
+			starboardPoints.add(new int[]{canvasX[2], canvasY[2]});
+		}
+		if (!started)
+		{
+			return;
+		}
+		// Swept band: the port edge out, the starboard edge back — the water the hull occupied.
+		java.awt.geom.Path2D.Double band = new java.awt.geom.Path2D.Double(port);
+		for (int i = starboardPoints.size() - 1; i >= 0; i--)
+		{
+			band.lineTo(starboardPoints.get(i)[0], starboardPoints.get(i)[1]);
+		}
+		band.closePath();
+		graphics.setColor(WAKE_BAND);
+		graphics.fill(band);
+		graphics.setStroke(new java.awt.BasicStroke(1.5f, java.awt.BasicStroke.CAP_ROUND,
+			java.awt.BasicStroke.JOIN_ROUND));
+		graphics.setColor(WAKE_EDGE);
+		graphics.draw(port);
+		graphics.draw(starboard);
+		graphics.setStroke(new java.awt.BasicStroke(2.5f, java.awt.BasicStroke.CAP_ROUND,
+			java.awt.BasicStroke.JOIN_ROUND));
+		graphics.setColor(WAKE_CENTRE);
+		graphics.draw(centre);
 	}
 
 	/** The four bow-shifted, rotated corners of a deck cell on the sea, or null off-screen. */

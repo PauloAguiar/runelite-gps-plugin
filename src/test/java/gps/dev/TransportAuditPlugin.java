@@ -394,6 +394,22 @@ public class TransportAuditPlugin extends Plugin
 	// The text dump of the position resolution chain, one line per link — separate toggle:
 	// it's occasional diagnostics, not something to sail with.
 	volatile boolean showBoatText = false;
+	/**
+	 * The boat's WAKE: recent hull position + orientation samples, drawn as a swept-path curve.
+	 * The visual counterpart of the speed sampler — the real turning radius and the area the
+	 * hull actually sweeps, which is what the water map's clearance has to respect.
+	 *
+	 * Samples are TOP-LEVEL LOCAL coordinates ({localX, localY, orientation}), so they are
+	 * scene-relative: cleared on scene load and whenever the boat changes.
+	 */
+	private static final int WAKE_SAMPLES = 80;
+	private final java.util.ArrayDeque<int[]> boatWake = new java.util.ArrayDeque<>();
+	private int wakeViewId = -1;
+
+	java.util.List<int[]> boatWake()
+	{
+		return new java.util.ArrayList<>(boatWake);
+	}
 	private volatile java.util.List<int[]> collisionCells = java.util.List.of();
 	static final int COLLISION_VIEW_RADIUS = 12;
 	// tileState values in collisionCells rows {packedTile, tileState, staticEdgeMask, mismatchEdgeMask}
@@ -791,6 +807,7 @@ public class TransportAuditPlugin extends Plugin
 		if (GameState.LOADING.equals(event.getGameState()))
 		{
 			findings.clear(); // scene rebuild: stale TileObject references must not be drawn
+			boatWake.clear(); // local coords are scene-relative — a rebuild invalidates them
 			// NB: an armed capture survives LOADING on purpose — dungeon entrances land in a new
 			// scene, and the tile tracking uses template coordinates throughout.
 		}
@@ -1343,6 +1360,7 @@ public class TransportAuditPlugin extends Plugin
 		}
 		pushPanelSnapshot();
 		refreshCollisionCells();
+		sampleBoatWake();
 		if (durationWatch != null)
 		{
 			tickDurationWatch(client.getTickCount(),
@@ -1608,6 +1626,67 @@ public class TransportAuditPlugin extends Plugin
 	void requestLiveCollisionDump(java.util.function.Consumer<String> feedback)
 	{
 		clientThread.invokeLater(() -> feedback.accept(dumpLiveCollision()));
+	}
+
+	/** CLIENT THREAD. One wake sample per tick while aboard, deduplicated when idle. */
+	private void sampleBoatWake()
+	{
+		net.runelite.api.WorldEntity boat = playerBoat();
+		if (boat == null)
+		{
+			return;
+		}
+		net.runelite.api.coords.LocalPoint location = boat.getLocalLocation();
+		net.runelite.api.WorldView playerView = client.getLocalPlayer().getWorldView();
+		if (location == null || playerView == null)
+		{
+			return;
+		}
+		if (playerView.getId() != wakeViewId)
+		{
+			boatWake.clear();
+			wakeViewId = playerView.getId();
+		}
+		int[] sample = {location.getX(), location.getY(), boat.getOrientation()};
+		int[] last = boatWake.peekLast();
+		if (last != null && last[0] == sample[0] && last[1] == sample[1] && last[2] == sample[2])
+		{
+			return; // moored or drifting in place: don't fill the trail with duplicates
+		}
+		boatWake.addLast(sample);
+		while (boatWake.size() > WAKE_SAMPLES)
+		{
+			boatWake.removeFirst();
+		}
+	}
+
+	/**
+	 * The player's boat entity, or null when ashore. byIndex(viewId) is the documented lookup;
+	 * the owner-type scan covers the ticks where it returns null mid view-swap.
+	 */
+	net.runelite.api.WorldEntity playerBoat()
+	{
+		net.runelite.api.Player player = client.getLocalPlayer();
+		net.runelite.api.WorldView top = client.getTopLevelWorldView();
+		if (player == null || top == null || player.getWorldView() == null
+			|| player.getWorldView().isTopLevel())
+		{
+			return null;
+		}
+		net.runelite.api.WorldEntity boat = top.worldEntities().byIndex(player.getWorldView().getId());
+		if (boat != null)
+		{
+			return boat;
+		}
+		for (net.runelite.api.WorldEntity entity : top.worldEntities())
+		{
+			if (entity != null
+				&& entity.getOwnerType() == net.runelite.api.WorldEntity.OWNER_TYPE_SELF_PLAYER)
+			{
+				return entity;
+			}
+		}
+		return null;
 	}
 
 	java.util.List<int[]> collisionCells()
