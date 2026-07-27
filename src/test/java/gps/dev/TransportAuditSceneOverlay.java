@@ -123,7 +123,8 @@ class TransportAuditSceneOverlay extends Overlay
 	private static final Color HULL_WALKABLE = new Color(0, 255, 180, 90);
 	private static final Color HULL_STRUCTURE = new Color(255, 255, 255, 60);
 	// One tile (128 local units) toward the bow in deck space — see BOW_SHIFT note below.
-	private static final int BOW_SHIFT_DECK_Y = 128;
+	// Field-calibrated: deck-forward is NEGATIVE Y (+128 doubled the aft error to two tiles).
+	private static final int BOW_SHIFT_DECK_Y = -128;
 
 	/**
 	 * The boat's ACTUAL tiles, projected onto the sea: every deck tile of the player's boat
