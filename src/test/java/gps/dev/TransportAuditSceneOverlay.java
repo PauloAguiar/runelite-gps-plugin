@@ -141,7 +141,7 @@ class TransportAuditSceneOverlay extends Overlay
 					: COLLISION_MISSING;
 				graphics.setColor(fill);
 				graphics.fillPolygon(poly);
-				continue;
+				// No early-out: walls draw on top of fills, outlining blocked volumes.
 			}
 			// getCanvasTilePoly corners: 0=SW, 1=SE, 2=NE, 3=NW. Direction bit order N,E,S,W.
 			int[][] edgeCorners = {{3, 2}, {1, 2}, {0, 1}, {0, 3}};

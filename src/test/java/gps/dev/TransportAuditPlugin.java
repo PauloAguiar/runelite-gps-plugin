@@ -1767,8 +1767,19 @@ public class TransportAuditPlugin extends Plugin
 				}
 				int staticEdges = 0;
 				int mismatchEdges = 0;
-				if (staticKnown && !liveBlocked && !staticBlocked)
+				if (staticKnown)
 				{
+					int wx = WorldPointUtil.unpackWorldX(world);
+					int wy = WorldPointUtil.unpackWorldY(world);
+					int wp = WorldPointUtil.unpackWorldPlane(world);
+					// RAW wall flags (not canStep, which also fails into blocked tiles): drawn
+					// for every templated tile, so walls render on and around blocked ground
+					// too. Interior edges of fully-blocked regions are suppressed — the result
+					// is wall lines plus crisp outlines of blocked volumes, not grid soup.
+					boolean[] closed = {
+						!staticMap.n(wx, wy, wp), !staticMap.e(wx, wy, wp),
+						!staticMap.s(wx, wy, wp), !staticMap.w(wx, wy, wp),
+					};
 					for (int d = 0; d < 4; d++)
 					{
 						int nsx = sx + dirs[d][0];
@@ -1780,12 +1791,10 @@ public class TransportAuditPlugin extends Plugin
 						int neighbourWorld = WorldPointUtil.fromLocalInstance(client,
 							net.runelite.api.coords.LocalPoint.fromScene(nsx, nsy));
 						// At instance chunk seams adjacent scene tiles can map to distant
-						// template coords — canStep would misread that as a wall. Skip.
+						// template coords — edge comparisons would misread them as walls. Skip.
 						if (neighbourWorld == WorldPointUtil.UNDEFINED
-							|| Math.abs(WorldPointUtil.unpackWorldX(neighbourWorld)
-								- WorldPointUtil.unpackWorldX(world)) > 1
-							|| Math.abs(WorldPointUtil.unpackWorldY(neighbourWorld)
-								- WorldPointUtil.unpackWorldY(world)) > 1)
+							|| Math.abs(WorldPointUtil.unpackWorldX(neighbourWorld) - wx) > 1
+							|| Math.abs(WorldPointUtil.unpackWorldY(neighbourWorld) - wy) > 1)
 						{
 							continue;
 						}
@@ -1794,14 +1803,14 @@ public class TransportAuditPlugin extends Plugin
 							WorldPointUtil.unpackWorldX(neighbourWorld),
 							WorldPointUtil.unpackWorldY(neighbourWorld),
 							WorldPointUtil.unpackWorldPlane(neighbourWorld));
-						boolean staticStop = !staticMap.canStep(world, neighbourWorld);
-						if (staticStop && !neighbourStatic)
+						if (closed[d] && !(staticBlocked && neighbourStatic))
 						{
 							staticEdges |= 1 << d;
 						}
-						if (!neighbourLive && !neighbourStatic)
+						if (!liveBlocked && !staticBlocked && !neighbourLive && !neighbourStatic)
 						{
 							boolean liveStop = (flags[sx][sy] & dirs[d][2]) != 0;
+							boolean staticStop = !staticMap.canStep(world, neighbourWorld);
 							if (liveStop != staticStop)
 							{
 								mismatchEdges |= 1 << d;
