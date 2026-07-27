@@ -160,7 +160,10 @@ class TransportAuditSceneOverlay extends Overlay
 		{
 			return;
 		}
-		int plane = boatView.getPlane();
+		// The PLAYER'S plane, not the view's: the walk grid lives on the deck level (the
+		// view's own plane is the hull volume below — its floor-blocked tiles painted the
+		// mid-deck red while the operator stood on it).
+		int plane = player.getWorldLocation() != null ? player.getWorldLocation().getPlane() : boatView.getPlane();
 		if (plane < 0 || plane >= boatView.getCollisionMaps().length
 			|| boatView.getCollisionMaps()[plane] == null)
 		{
