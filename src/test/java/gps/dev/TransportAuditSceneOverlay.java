@@ -55,9 +55,11 @@ class TransportAuditSceneOverlay extends Overlay
 		}
 		if (plugin.showBoatDebug)
 		{
-			renderBoatTiles(graphics);
+			// Ribbons first: the hull then paints over their inner ends, so both appear to run
+			// UNDER the boat instead of butting against it with a hard edge.
 			renderBoatWake(graphics);
 			renderPredictedCourse(graphics);
+			renderBoatTiles(graphics);
 		}
 		if (plugin.showBoatText)
 		{
@@ -135,9 +137,16 @@ class TransportAuditSceneOverlay extends Overlay
 	// space and matched at -128 ("the exact hitbox", field round 2).
 	private static final int BOW_SHIFT_DECK_Y = -128;
 	private static final Color HULL_PERIMETER = new Color(139, 84, 33, 230);
-	private static final Color WAKE_CENTRE = new Color(255, 220, 80, 220);
-	private static final Color WAKE_EDGE = new Color(255, 220, 80, 120);
-	private static final Color WAKE_BAND = new Color(255, 220, 80, 35);
+	// {centre, edge, band} at the hull end and at the far end of each ribbon; segments
+	// interpolate between them, so colour AND alpha ramp along the path.
+	private static final Color[] COURSE_NEAR = {
+		new Color(80, 255, 120, 230), new Color(80, 255, 120, 140), new Color(80, 255, 120, 55)};
+	private static final Color[] COURSE_FAR = {
+		new Color(80, 255, 140, 60), new Color(80, 255, 140, 35), new Color(80, 255, 140, 12)};
+	// The wake begins where the course left off (same green), ageing into faded yellow.
+	private static final Color[] WAKE_NEAR = COURSE_NEAR;
+	private static final Color[] WAKE_FAR = {
+		new Color(255, 210, 70, 45), new Color(255, 210, 70, 28), new Color(255, 210, 70, 10)};
 	private static final Color HULL_CONFIG_BOX = new Color(255, 255, 255, 200);
 	private static final Color COURSE_CENTRE = new Color(80, 255, 120, 220);
 	private static final Color COURSE_EDGE = new Color(80, 255, 120, 120);
@@ -375,8 +384,9 @@ class TransportAuditSceneOverlay extends Overlay
 		float[] modelY = {centreY, centreY, centreY};
 		float[] modelZ = {0, 0, 0};
 
+		// The hull is at the END of the wake (newest sample) and the START of the course.
 		drawSweptRibbon(graphics, wake, centreX, centreY, halfBeam,
-			WAKE_CENTRE, WAKE_EDGE, WAKE_BAND);
+			WAKE_NEAR, WAKE_FAR, false);
 	}
 
 	/**
@@ -408,7 +418,15 @@ class TransportAuditSceneOverlay extends Overlay
 		int orientation = boat.getTargetOrientation();
 		double x = boat.getTargetLocation().getX();
 		double y = boat.getTargetLocation().getY();
-		java.util.List<int[]> course = new java.util.ArrayList<>(COURSE_STEPS + 1);
+		java.util.List<int[]> course = new java.util.ArrayList<>(COURSE_STEPS + 2);
+		// Begin a half-hull BEHIND the centre: the ribbon then emerges from under the bow
+		// rather than starting with a hard line across the deck.
+		double startRadians = Math.toRadians(270 - orientation / (2048 / 360.0));
+		double halfLength = config.getBoundsHeight() / 2.0;
+		course.add(new int[]{
+			(int) Math.round(x - Math.cos(startRadians) * halfLength),
+			(int) Math.round(y - Math.sin(startRadians) * halfLength),
+			orientation});
 		course.add(new int[]{(int) x, (int) y, orientation});
 		for (int step = 0; step < COURSE_STEPS; step++)
 		{
@@ -426,7 +444,7 @@ class TransportAuditSceneOverlay extends Overlay
 			course.add(new int[]{(int) Math.round(x), (int) Math.round(y), orientation});
 		}
 		drawSweptRibbon(graphics, course, config.getBoundsX(), config.getBoundsY(),
-			config.getBoundsWidth() / 2f, COURSE_CENTRE, COURSE_EDGE, COURSE_BAND);
+			config.getBoundsWidth() / 2f, COURSE_NEAR, COURSE_FAR, true);
 	}
 
 	/**
@@ -487,9 +505,20 @@ class TransportAuditSceneOverlay extends Overlay
 	 * edges, a filled band between them, and the centre line. Each sample's three model-space
 	 * points go through ONE modelToCanvas call so the client applies that sample's rotation.
 	 */
+	/**
+	 * Paints a run of {x, y, orientation} hull samples as a swept path: port and starboard
+	 * edges with a filled band between them, plus the centre line. Each sample's three
+	 * model-space points go through ONE modelToCanvas call so the client applies that sample's
+	 * own rotation.
+	 *
+	 * Colour ramps from {@code near} (against the hull) to {@code far}, per segment — a single
+	 * Path2D can only carry one colour, so the ribbon is painted segment by segment. The wake
+	 * and the course share their near colour, which is what makes the predicted path appear to
+	 * turn into the wake as the boat sails along it.
+	 */
 	private void drawSweptRibbon(Graphics2D graphics, java.util.List<int[]> samples,
 		float centreX, float centreY, float halfBeam,
-		Color centreColour, Color edgeColour, Color bandColour)
+		Color[] near, Color[] far, boolean hullAtStart)
 	{
 		if (samples.size() < 2)
 		{
@@ -498,11 +527,7 @@ class TransportAuditSceneOverlay extends Overlay
 		float[] modelX = {centreX - halfBeam, centreX, centreX + halfBeam};
 		float[] modelY = {centreY, centreY, centreY};
 		float[] modelZ = {0, 0, 0};
-		java.awt.geom.Path2D.Double port = new java.awt.geom.Path2D.Double();
-		java.awt.geom.Path2D.Double centre = new java.awt.geom.Path2D.Double();
-		java.awt.geom.Path2D.Double starboard = new java.awt.geom.Path2D.Double();
-		java.util.List<int[]> starboardPoints = new java.util.ArrayList<>();
-		boolean started = false;
+		java.util.List<int[]> projected = new java.util.ArrayList<>(samples.size());
 		int[] canvasX = new int[3];
 		int[] canvasY = new int[3];
 		for (int[] sample : samples)
@@ -511,44 +536,55 @@ class TransportAuditSceneOverlay extends Overlay
 				sample[0], sample[1], 0, sample[2], modelX, modelY, modelZ, canvasX, canvasY);
 			if (canvasX[1] == Integer.MIN_VALUE)
 			{
-				continue; // sample off-screen: skip rather than break the whole curve
+				continue; // off-screen sample: skip rather than break the ribbon
 			}
-			if (!started)
-			{
-				port.moveTo(canvasX[0], canvasY[0]);
-				centre.moveTo(canvasX[1], canvasY[1]);
-				starboard.moveTo(canvasX[2], canvasY[2]);
-				started = true;
-			}
-			else
-			{
-				port.lineTo(canvasX[0], canvasY[0]);
-				centre.lineTo(canvasX[1], canvasY[1]);
-				starboard.lineTo(canvasX[2], canvasY[2]);
-			}
-			starboardPoints.add(new int[]{canvasX[2], canvasY[2]});
+			projected.add(new int[]{canvasX[0], canvasY[0], canvasX[1], canvasY[1],
+				canvasX[2], canvasY[2]});
 		}
-		if (!started)
+		if (projected.size() < 2)
 		{
 			return;
 		}
-		java.awt.geom.Path2D.Double band = new java.awt.geom.Path2D.Double(port);
-		for (int i = starboardPoints.size() - 1; i >= 0; i--)
+		java.awt.Stroke edgeStroke = new java.awt.BasicStroke(1.5f,
+			java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND);
+		java.awt.Stroke centreStroke = new java.awt.BasicStroke(2.5f,
+			java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND);
+		for (int i = 0; i < projected.size() - 1; i++)
 		{
-			band.lineTo(starboardPoints.get(i)[0], starboardPoints.get(i)[1]);
+			int[] from = projected.get(i);
+			int[] to = projected.get(i + 1);
+			// Distance from the hull, 0 at its end of the ribbon and 1 at the far tip.
+			double along = (double) (i + 1) / (projected.size() - 1);
+			double t = hullAtStart ? along : 1 - along;
+
+			Polygon quad = new Polygon();
+			quad.addPoint(from[0], from[1]);
+			quad.addPoint(to[0], to[1]);
+			quad.addPoint(to[4], to[5]);
+			quad.addPoint(from[4], from[5]);
+			graphics.setColor(blend(near[2], far[2], t));
+			graphics.fillPolygon(quad);
+
+			graphics.setStroke(edgeStroke);
+			graphics.setColor(blend(near[1], far[1], t));
+			graphics.drawLine(from[0], from[1], to[0], to[1]);
+			graphics.drawLine(from[4], from[5], to[4], to[5]);
+
+			graphics.setStroke(centreStroke);
+			graphics.setColor(blend(near[0], far[0], t));
+			graphics.drawLine(from[2], from[3], to[2], to[3]);
 		}
-		band.closePath();
-		graphics.setColor(bandColour);
-		graphics.fill(band);
-		graphics.setStroke(new java.awt.BasicStroke(1.5f, java.awt.BasicStroke.CAP_ROUND,
-			java.awt.BasicStroke.JOIN_ROUND));
-		graphics.setColor(edgeColour);
-		graphics.draw(port);
-		graphics.draw(starboard);
-		graphics.setStroke(new java.awt.BasicStroke(2.5f, java.awt.BasicStroke.CAP_ROUND,
-			java.awt.BasicStroke.JOIN_ROUND));
-		graphics.setColor(centreColour);
-		graphics.draw(centre);
+	}
+
+	/** Linear RGBA blend; t=0 keeps {@code from}, t=1 reaches {@code to}. */
+	private static Color blend(Color from, Color to, double t)
+	{
+		double clamped = Math.max(0, Math.min(1, t));
+		return new Color(
+			(int) Math.round(from.getRed() + (to.getRed() - from.getRed()) * clamped),
+			(int) Math.round(from.getGreen() + (to.getGreen() - from.getGreen()) * clamped),
+			(int) Math.round(from.getBlue() + (to.getBlue() - from.getBlue()) * clamped),
+			(int) Math.round(from.getAlpha() + (to.getAlpha() - from.getAlpha()) * clamped));
 	}
 
 	/** The four bow-shifted, rotated corners of a deck cell on the sea, or null off-screen. */
