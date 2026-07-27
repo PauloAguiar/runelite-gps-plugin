@@ -38,10 +38,20 @@ class TransportAuditSceneOverlay extends Overlay
 		setLayer(OverlayLayer.ABOVE_SCENE);
 	}
 
+	private static final Color COLLISION_BOTH = new Color(120, 120, 120, 70);
+	private static final Color COLLISION_PHANTOM = new Color(255, 60, 60, 110);
+	private static final Color COLLISION_MISSING = new Color(255, 160, 40, 110);
+	private static final Color COLLISION_WALL = new Color(210, 210, 210, 160);
+	private static final Color COLLISION_EDGE_MISMATCH = new Color(255, 0, 255, 220);
+
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
 		final int currentPlane = client.getTopLevelWorldView().getPlane();
+		if (plugin.showCollision)
+		{
+			renderCollision(graphics);
+		}
 		// Known-data browser: dim cyan at every curated origin in the scene, bright cyan on the
 		// selected entry's origin AND landing — "what does the data think is here?".
 		if (plugin.showKnown)
@@ -102,6 +112,55 @@ class TransportAuditSceneOverlay extends Overlay
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * The collision debug view (old shortest-path debug, upgraded with live comparison):
+	 * gray fill = blocked in both maps; RED fill = phantom (static blocks, live open);
+	 * ORANGE fill = missing (live blocks, static open); light lines = static wall edges;
+	 * MAGENTA edge = live and static disagree about that wall.
+	 */
+	private void renderCollision(Graphics2D graphics)
+	{
+		for (int[] cell : plugin.collisionCells())
+		{
+			LocalPoint location = LocalPoint.fromWorld(client.getTopLevelWorldView(),
+				gps.WorldPointUtil.unpackWorldX(cell[0]), gps.WorldPointUtil.unpackWorldY(cell[0]));
+			if (location == null)
+			{
+				continue;
+			}
+			Polygon poly = Perspective.getCanvasTilePoly(client, location);
+			if (poly == null || poly.npoints < 4)
+			{
+				continue;
+			}
+			if (cell[1] != 0)
+			{
+				Color fill = cell[1] == TransportAuditPlugin.COLLISION_BOTH_BLOCKED ? COLLISION_BOTH
+					: cell[1] == TransportAuditPlugin.COLLISION_STATIC_ONLY ? COLLISION_PHANTOM
+					: COLLISION_MISSING;
+				graphics.setColor(fill);
+				graphics.fillPolygon(poly);
+				continue;
+			}
+			// getCanvasTilePoly corners: 0=SW, 1=SE, 2=NE, 3=NW. Direction bit order N,E,S,W.
+			int[][] edgeCorners = {{3, 2}, {1, 2}, {0, 1}, {0, 3}};
+			for (int d = 0; d < 4; d++)
+			{
+				boolean wall = (cell[2] & (1 << d)) != 0;
+				boolean mismatch = (cell[3] & (1 << d)) != 0;
+				if (!wall && !mismatch)
+				{
+					continue;
+				}
+				graphics.setColor(mismatch ? COLLISION_EDGE_MISMATCH : COLLISION_WALL);
+				graphics.setStroke(new java.awt.BasicStroke(mismatch ? 3 : 1));
+				int a = edgeCorners[d][0];
+				int b = edgeCorners[d][1];
+				graphics.drawLine(poly.xpoints[a], poly.ypoints[a], poly.xpoints[b], poly.ypoints[b]);
+			}
+		}
 	}
 
 	/** One known-data tile: outline (and label for the spotlighted pair) when in the scene. */

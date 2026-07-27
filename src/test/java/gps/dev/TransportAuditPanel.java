@@ -101,6 +101,18 @@ class TransportAuditPanel extends PluginPanel
 			+ " mark their origins in the world; select one to spotlight its origin and landing");
 		knownToggle.addActionListener(e -> plugin.showKnown = knownToggle.isSelected());
 		top.add(knownToggle);
+		javax.swing.JCheckBox collisionToggle = new javax.swing.JCheckBox("Show collision map", false);
+		collisionToggle.setFocusable(false);
+		collisionToggle.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		collisionToggle.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		collisionToggle.setFont(FontManager.getRunescapeSmallFont());
+		collisionToggle.setAlignmentX(Component.LEFT_ALIGNMENT);
+		collisionToggle.setToolTipText("<html>Static map vs live game, drawn in-world:<br>"
+			+ "gray = blocked in both · <font color='#ff5050'>red</font> = phantom (static only)<br>"
+			+ "· <font color='#ffa040'>orange</font> = live only · lines = static walls<br>"
+			+ "· <font color='#ff00ff'>magenta</font> = edge disagreement</html>");
+		collisionToggle.addActionListener(e -> plugin.showCollision = collisionToggle.isSelected());
+		top.add(collisionToggle);
 		JButton collisionDump = new JButton("Dump live collision");
 		collisionDump.setFont(FontManager.getRunescapeSmallFont());
 		collisionDump.setFocusable(false);

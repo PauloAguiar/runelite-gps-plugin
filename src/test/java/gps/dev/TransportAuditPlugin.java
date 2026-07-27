@@ -386,6 +386,15 @@ public class TransportAuditPlugin extends Plugin
 	// world for debugging ("what does the data think is here?"). Toggled from the panel.
 	private final java.util.List<KnownEntry> knownEntries = new java.util.ArrayList<>();
 	volatile boolean showKnown = false;
+	// In-world collision rendering (the old shortest-path debug view, upgraded): static map
+	// verdicts AND live-vs-static disagreements, rebuilt per tick around the player.
+	volatile boolean showCollision = false;
+	private volatile java.util.List<int[]> collisionCells = java.util.List.of();
+	static final int COLLISION_VIEW_RADIUS = 12;
+	// tileState values in collisionCells rows {packedTile, tileState, staticEdgeMask, mismatchEdgeMask}
+	static final int COLLISION_BOTH_BLOCKED = 1;
+	static final int COLLISION_STATIC_ONLY = 2; // phantom: shipped map blocks, live game doesn't
+	static final int COLLISION_LIVE_ONLY = 3;   // missing: live game blocks, shipped map doesn't
 	// Panel search text (lowercase). Filtering is panel-side except for known-data rows, whose
 	// candidate set is pre-trimmed here: nearby-only while browsing, name-matched when searching.
 	volatile String listFilter = "";
@@ -1327,6 +1336,7 @@ public class TransportAuditPlugin extends Plugin
 			return;
 		}
 		pushPanelSnapshot();
+		refreshCollisionCells();
 		if (durationWatch != null)
 		{
 			tickDurationWatch(client.getTickCount(),
@@ -1592,6 +1602,112 @@ public class TransportAuditPlugin extends Plugin
 	void requestLiveCollisionDump(java.util.function.Consumer<String> feedback)
 	{
 		clientThread.invokeLater(() -> feedback.accept(dumpLiveCollision()));
+	}
+
+	java.util.List<int[]> collisionCells()
+	{
+		return collisionCells;
+	}
+
+	private static final int LIVE_BLOCK_MASK = net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_OBJECT
+		| net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_FLOOR
+		| net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_FLOOR_DECORATION
+		| net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_FULL;
+
+	/**
+	 * The continuous version of {@link #dumpLiveCollision()}: per tick, classifies every tile
+	 * within {@link #COLLISION_VIEW_RADIUS} of the player for the scene overlay — blocked
+	 * verdicts from BOTH maps, static wall edges, and live-vs-static edge disagreements. The
+	 * same pure-wall-edge comparison rule as the dump (canStep also fails into blocked tiles;
+	 * comparing those against live per-direction flags fabricates mismatches). CLIENT THREAD.
+	 */
+	private void refreshCollisionCells()
+	{
+		if (!showCollision)
+		{
+			if (!collisionCells.isEmpty())
+			{
+				collisionCells = java.util.List.of();
+			}
+			return;
+		}
+		net.runelite.api.Player player = client.getLocalPlayer();
+		net.runelite.api.WorldView view = client.getTopLevelWorldView();
+		gps.pathfinder.CollisionMap staticMap = gpsCollisionMap();
+		if (player == null || view == null || view.getCollisionMaps() == null || staticMap == null)
+		{
+			collisionCells = java.util.List.of();
+			return;
+		}
+		net.runelite.api.coords.LocalPoint local = player.getLocalLocation();
+		int plane = view.getPlane();
+		int[][] flags = view.getCollisionMaps()[plane].getFlags();
+		int playerWorld = WorldPointUtil.fromLocalInstance(client, local);
+		int baseX = WorldPointUtil.unpackWorldX(playerWorld) - local.getSceneX();
+		int baseY = WorldPointUtil.unpackWorldY(playerWorld) - local.getSceneY();
+
+		int[][] dirs = {
+			{0, 1, net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_NORTH},
+			{1, 0, net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_EAST},
+			{0, -1, net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_SOUTH},
+			{-1, 0, net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_WEST},
+		};
+		java.util.List<int[]> cells = new java.util.ArrayList<>();
+		for (int dy = -COLLISION_VIEW_RADIUS; dy <= COLLISION_VIEW_RADIUS; dy++)
+		{
+			for (int dx = -COLLISION_VIEW_RADIUS; dx <= COLLISION_VIEW_RADIUS; dx++)
+			{
+				int sx = local.getSceneX() + dx;
+				int sy = local.getSceneY() + dy;
+				if (sx < 0 || sy < 0 || sx >= flags.length || sy >= flags[sx].length)
+				{
+					continue;
+				}
+				boolean liveBlocked = (flags[sx][sy] & LIVE_BLOCK_MASK) != 0;
+				boolean staticBlocked = staticMap.isBlocked(baseX + sx, baseY + sy, plane);
+				int tileState = liveBlocked
+					? (staticBlocked ? COLLISION_BOTH_BLOCKED : COLLISION_LIVE_ONLY)
+					: (staticBlocked ? COLLISION_STATIC_ONLY : 0);
+				int staticEdges = 0;
+				int mismatchEdges = 0;
+				if (!liveBlocked && !staticBlocked)
+				{
+					int world = WorldPointUtil.packWorldPoint(baseX + sx, baseY + sy, plane);
+					for (int d = 0; d < 4; d++)
+					{
+						int nsx = sx + dirs[d][0];
+						int nsy = sy + dirs[d][1];
+						if (nsx < 0 || nsy < 0 || nsx >= flags.length || nsy >= flags[nsx].length)
+						{
+							continue;
+						}
+						boolean neighbourLive = (flags[nsx][nsy] & LIVE_BLOCK_MASK) != 0;
+						boolean neighbourStatic = staticMap.isBlocked(baseX + nsx, baseY + nsy, plane);
+						boolean staticStop = !staticMap.canStep(world,
+							WorldPointUtil.packWorldPoint(baseX + nsx, baseY + nsy, plane));
+						if (staticStop && !neighbourStatic)
+						{
+							staticEdges |= 1 << d;
+						}
+						if (!neighbourLive && !neighbourStatic)
+						{
+							boolean liveStop = (flags[sx][sy] & dirs[d][2]) != 0;
+							if (liveStop != staticStop)
+							{
+								mismatchEdges |= 1 << d;
+							}
+						}
+					}
+				}
+				if (tileState != 0 || staticEdges != 0 || mismatchEdges != 0)
+				{
+					cells.add(new int[]{
+						WorldPointUtil.packWorldPoint(baseX + sx, baseY + sy, plane),
+						tileState, staticEdges, mismatchEdges});
+				}
+			}
+		}
+		collisionCells = cells;
 	}
 
 	/**
