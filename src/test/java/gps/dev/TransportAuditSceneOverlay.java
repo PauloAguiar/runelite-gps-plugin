@@ -56,6 +56,7 @@ class TransportAuditSceneOverlay extends Overlay
 		if (plugin.showBoatDebug)
 		{
 			renderBoatDebug(graphics);
+			renderBoatTiles(graphics);
 		}
 		// Known-data browser: dim cyan at every curated origin in the scene, bright cyan on the
 		// selected entry's origin AND landing — "what does the data think is here?".
@@ -117,6 +118,93 @@ class TransportAuditSceneOverlay extends Overlay
 			}
 		}
 		return null;
+	}
+
+	private static final Color HULL_WALKABLE = new Color(0, 255, 180, 90);
+	private static final Color HULL_STRUCTURE = new Color(255, 255, 255, 60);
+
+	/**
+	 * The boat's ACTUAL tiles, projected onto the sea: every deck tile of the player's boat
+	 * WorldView, its corners pushed through transformToMainWorld (rotation and sub-tile glide
+	 * included) — walkable deck in teal, hull structure in white. The rotated quads are the
+	 * ground truth the water map's hull clearance must respect.
+	 */
+	private void renderBoatTiles(Graphics2D graphics)
+	{
+		net.runelite.api.Player player = client.getLocalPlayer();
+		net.runelite.api.WorldView top = client.getTopLevelWorldView();
+		if (player == null || top == null || player.getWorldView() == null
+			|| player.getWorldView().isTopLevel())
+		{
+			return;
+		}
+		net.runelite.api.WorldView boatView = player.getWorldView();
+		net.runelite.api.WorldEntity boat = top.worldEntities().byIndex(boatView.getId());
+		if (boat == null)
+		{
+			// byIndex assumption may be the broken link — fall back to our own hull by owner.
+			for (net.runelite.api.WorldEntity entity : top.worldEntities())
+			{
+				if (entity != null && entity.getOwnerType() == net.runelite.api.WorldEntity.OWNER_TYPE_SELF_PLAYER)
+				{
+					boat = entity;
+					break;
+				}
+			}
+		}
+		if (boat == null || boatView.getCollisionMaps() == null)
+		{
+			return;
+		}
+		int plane = boatView.getPlane();
+		if (plane < 0 || plane >= boatView.getCollisionMaps().length
+			|| boatView.getCollisionMaps()[plane] == null)
+		{
+			return;
+		}
+		int[][] flags = boatView.getCollisionMaps()[plane].getFlags();
+		int topPlane = top.getPlane();
+		for (int sx = 0; sx < Math.min(flags.length, boatView.getSizeX()); sx++)
+		{
+			for (int sy = 0; sy < Math.min(flags[sx].length, boatView.getSizeY()); sy++)
+			{
+				int flag = flags[sx][sy];
+				if (flag == 0xFFFFFF || flag == -1)
+				{
+					continue; // void padding around the hull
+				}
+				boolean walkable = (flag & TransportAuditPlugin.LIVE_BLOCK_MASK) == 0;
+				net.runelite.api.coords.LocalPoint center =
+					net.runelite.api.coords.LocalPoint.fromScene(sx, sy, boatView);
+				if (center == null)
+				{
+					continue;
+				}
+				// Tile corners in deck space, projected one by one so rotation survives.
+				Polygon quad = new Polygon();
+				int[][] corners = {{-64, -64}, {64, -64}, {64, 64}, {-64, 64}};
+				boolean complete = true;
+				for (int[] corner : corners)
+				{
+					net.runelite.api.coords.LocalPoint sea =
+						boat.transformToMainWorld(center.plus(corner[0], corner[1]));
+					Point canvas = sea != null
+						? Perspective.localToCanvas(client, sea, topPlane) : null;
+					if (canvas == null)
+					{
+						complete = false;
+						break;
+					}
+					quad.addPoint(canvas.getX(), canvas.getY());
+				}
+				if (!complete)
+				{
+					continue;
+				}
+				graphics.setColor(walkable ? HULL_WALKABLE : HULL_STRUCTURE);
+				graphics.fillPolygon(quad);
+			}
+		}
 	}
 
 	/**

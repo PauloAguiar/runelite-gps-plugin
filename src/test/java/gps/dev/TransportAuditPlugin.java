@@ -1613,7 +1613,7 @@ public class TransportAuditPlugin extends Plugin
 		return collisionCells;
 	}
 
-	private static final int LIVE_BLOCK_MASK = net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_OBJECT
+	static final int LIVE_BLOCK_MASK = net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_OBJECT
 		| net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_FLOOR
 		| net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_FLOOR_DECORATION
 		| net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_FULL;
