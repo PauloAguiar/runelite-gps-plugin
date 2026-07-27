@@ -160,16 +160,17 @@ class TransportAuditSceneOverlay extends Overlay
 		{
 			return;
 		}
-		// The PLAYER'S plane, not the view's: the walk grid lives on the deck level (the
-		// view's own plane is the hull volume below — its floor-blocked tiles painted the
-		// mid-deck red while the operator stood on it).
+		// Boats use the BRIDGE arrangement (oracle line: worldPlane=1 p0=0 p1=200000):
+		// the deck RENDERS on the player's plane but the walk grid lives on PLANE 0 —
+		// exactly like bridges on the main map. Content reads the render plane; flags
+		// always read plane 0.
 		int plane = player.getWorldLocation() != null ? player.getWorldLocation().getPlane() : boatView.getPlane();
 		if (plane < 0 || plane >= boatView.getCollisionMaps().length
-			|| boatView.getCollisionMaps()[plane] == null)
+			|| boatView.getCollisionMaps()[0] == null)
 		{
 			return;
 		}
-		int[][] flags = boatView.getCollisionMaps()[plane].getFlags();
+		int[][] flags = boatView.getCollisionMaps()[0].getFlags();
 		net.runelite.api.Scene boatScene = boatView.getScene();
 		net.runelite.api.Tile[][][] deckTiles = boatScene != null ? boatScene.getTiles() : null;
 		if (deckTiles == null || plane >= deckTiles.length || deckTiles[plane] == null)
