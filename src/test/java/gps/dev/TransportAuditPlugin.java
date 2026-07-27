@@ -397,6 +397,7 @@ public class TransportAuditPlugin extends Plugin
 	// (four field rounds: no plane/anchor combination survived), so the deck map is walked
 	// into existence instead — the same philosophy as the duration watch.
 	final java.util.Set<Integer> walkedDeckCells = java.util.concurrent.ConcurrentHashMap.newKeySet();
+	private int walkedDeckViewId = -1;
 	private volatile java.util.List<int[]> collisionCells = java.util.List.of();
 	static final int COLLISION_VIEW_RADIUS = 12;
 	// tileState values in collisionCells rows {packedTile, tileState, staticEdgeMask, mismatchEdgeMask}
@@ -1346,10 +1347,18 @@ public class TransportAuditPlugin extends Plugin
 		}
 		pushPanelSnapshot();
 		// Deck harvest: whenever aboard, the player's current deck cell is proven walkable.
+		// The set is PER BOARDING — scene cells are only meaningful within one boat view, and
+		// stale cells from a previous boat ghosted teal onto tiles of the next one.
 		if (client.getLocalPlayer() != null && client.getLocalPlayer().getWorldView() != null
 			&& !client.getLocalPlayer().getWorldView().isTopLevel()
 			&& client.getLocalPlayer().getLocalLocation() != null)
 		{
+			int viewId = client.getLocalPlayer().getWorldView().getId();
+			if (viewId != walkedDeckViewId)
+			{
+				walkedDeckCells.clear();
+				walkedDeckViewId = viewId;
+			}
 			walkedDeckCells.add((client.getLocalPlayer().getLocalLocation().getSceneX() << 16)
 				| client.getLocalPlayer().getLocalLocation().getSceneY());
 		}
