@@ -55,10 +55,24 @@ class TransportAuditSceneOverlay extends Overlay
 		}
 		if (plugin.showBoatDebug)
 		{
-			// Ribbons first: the hull then paints over their inner ends, so both appear to run
-			// UNDER the boat instead of butting against it with a hard edge.
+			// A 2D overlay always paints OVER the rendered 3D scene, so the only way to let the
+			// ship model sit above the ribbons is to not paint there: the hull's footprint is
+			// subtracted from the clip while the ribbons draw, and the model shows through the
+			// hole. Their inner ends therefore disappear under the boat instead of butting
+			// against it with a hard edge.
+			java.awt.Shape previousClip = graphics.getClip();
+			Polygon hullBox = hullBoxPolygon();
+			if (hullBox != null)
+			{
+				java.awt.Rectangle canvas = previousClip != null ? previousClip.getBounds()
+					: new java.awt.Rectangle(client.getCanvasWidth(), client.getCanvasHeight());
+				java.awt.geom.Area clip = new java.awt.geom.Area(canvas);
+				clip.subtract(new java.awt.geom.Area(hullBox));
+				graphics.setClip(clip);
+			}
 			renderBoatWake(graphics);
 			renderPredictedCourse(graphics);
+			graphics.setClip(previousClip);
 			renderBoatTiles(graphics);
 		}
 		if (plugin.showBoatText)
@@ -295,33 +309,12 @@ class TransportAuditSceneOverlay extends Overlay
 		// orientation) — authoritative and calibration-free. Drawn alongside the content-derived
 		// footprint so the two can be compared: if they coincide, the deck scan and its
 		// hard-won BOW_SHIFT can be retired in favour of this.
-		net.runelite.api.WorldEntityConfig hullConfig = boat.getConfig();
-		net.runelite.api.coords.LocalPoint hullAt = boat.getLocalLocation();
-		if (hullConfig != null && hullAt != null)
+		Polygon configBox = hullBoxPolygon();
+		if (configBox != null)
 		{
-			float halfW = hullConfig.getBoundsWidth() / 2f;
-			float halfH = hullConfig.getBoundsHeight() / 2f;
-			float bx = hullConfig.getBoundsX();
-			float by = hullConfig.getBoundsY();
-			float[] boxX = {bx - halfW, bx + halfW, bx + halfW, bx - halfW};
-			float[] boxY = {by - halfH, by - halfH, by + halfH, by + halfH};
-			float[] boxZ = {0, 0, 0, 0};
-			int[] outX = new int[4];
-			int[] outY = new int[4];
-			Perspective.modelToCanvas(client, client.getTopLevelWorldView(), 4,
-				hullAt.getX(), hullAt.getY(), 0, boat.getOrientation(),
-				boxX, boxY, boxZ, outX, outY);
-			if (outX[0] != Integer.MIN_VALUE)
-			{
-				Polygon box = new Polygon();
-				for (int i = 0; i < 4; i++)
-				{
-					box.addPoint(outX[i], outY[i]);
-				}
-				graphics.setColor(HULL_CONFIG_BOX);
-				graphics.setStroke(new java.awt.BasicStroke(2));
-				graphics.draw(box);
-			}
+			graphics.setColor(HULL_CONFIG_BOX);
+			graphics.setStroke(new java.awt.BasicStroke(2));
+			graphics.draw(configBox);
 		}
 
 		// The bow ^ spans the FULL front row: wings anchored at the outermost front corners,
@@ -574,6 +567,45 @@ class TransportAuditSceneOverlay extends Overlay
 			graphics.setColor(blend(near[0], far[0], t));
 			graphics.drawLine(from[2], from[3], to[2], to[3]);
 		}
+	}
+
+	/**
+	 * The hull's own bounding box (WorldEntityConfig, rotated by the entity's orientation) as a
+	 * canvas polygon — authoritative and calibration-free. Doubles as the shape subtracted from
+	 * the ribbons' clip so the 3D ship model shows through them. Null when ashore or off-screen.
+	 */
+	private Polygon hullBoxPolygon()
+	{
+		net.runelite.api.WorldEntity boat = plugin.playerBoat();
+		if (boat == null || boat.getConfig() == null || boat.getLocalLocation() == null)
+		{
+			return null;
+		}
+		net.runelite.api.WorldEntityConfig config = boat.getConfig();
+		float halfWidth = config.getBoundsWidth() / 2f;
+		float halfHeight = config.getBoundsHeight() / 2f;
+		float boundsX = config.getBoundsX();
+		float boundsY = config.getBoundsY();
+		float[] boxX = {boundsX - halfWidth, boundsX + halfWidth,
+			boundsX + halfWidth, boundsX - halfWidth};
+		float[] boxY = {boundsY - halfHeight, boundsY - halfHeight,
+			boundsY + halfHeight, boundsY + halfHeight};
+		float[] boxZ = {0, 0, 0, 0};
+		int[] canvasX = new int[4];
+		int[] canvasY = new int[4];
+		Perspective.modelToCanvas(client, client.getTopLevelWorldView(), 4,
+			boat.getLocalLocation().getX(), boat.getLocalLocation().getY(), 0,
+			boat.getOrientation(), boxX, boxY, boxZ, canvasX, canvasY);
+		if (canvasX[0] == Integer.MIN_VALUE)
+		{
+			return null;
+		}
+		Polygon box = new Polygon();
+		for (int i = 0; i < 4; i++)
+		{
+			box.addPoint(canvasX[i], canvasY[i]);
+		}
+		return box;
 	}
 
 	/** Linear RGBA blend; t=0 keeps {@code from}, t=1 reaches {@code to}. */
