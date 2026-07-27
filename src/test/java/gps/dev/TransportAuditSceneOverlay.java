@@ -163,19 +163,34 @@ class TransportAuditSceneOverlay extends Overlay
 			return;
 		}
 		int[][] flags = boatView.getCollisionMaps()[plane].getFlags();
+		net.runelite.api.Scene boatScene = boatView.getScene();
+		net.runelite.api.Tile[][][] deckTiles = boatScene != null ? boatScene.getTiles() : null;
+		if (deckTiles == null || plane >= deckTiles.length || deckTiles[plane] == null)
+		{
+			return;
+		}
 		int topPlane = top.getPlane();
 		for (int sx = 0; sx < Math.min(flags.length, boatView.getSizeX()); sx++)
 		{
 			for (int sy = 0; sy < Math.min(flags[sx].length, boatView.getSizeY()); sy++)
 			{
-				int flag = flags[sx][sy];
-				if (flag == 0xFFFFFF || flag == -1)
+				// The hull is where the deck scene has actual CONTENT: the padding around it
+				// carries zero flags too (which read as "walkable"), so flags alone painted a
+				// giant square of sea. Rendered paint/model = a real boat tile.
+				net.runelite.api.Tile tile = sx < deckTiles[plane].length
+					&& deckTiles[plane][sx] != null && sy < deckTiles[plane][sx].length
+					? deckTiles[plane][sx][sy] : null;
+				if (tile == null
+					|| (tile.getSceneTilePaint() == null && tile.getSceneTileModel() == null))
 				{
-					continue; // void padding around the hull
+					continue;
 				}
-				boolean walkable = (flag & TransportAuditPlugin.LIVE_BLOCK_MASK) == 0;
-				net.runelite.api.coords.LocalPoint center =
-					net.runelite.api.coords.LocalPoint.fromScene(sx, sy, boatView);
+				boolean walkable = (flags[sx][sy] & TransportAuditPlugin.LIVE_BLOCK_MASK) == 0;
+				// Scene-overload LocalPoints take BASE-ADDED coordinates (barracuda-trial's
+				// working incantation) — raw scene coords land the quads translated off the
+				// hull and the rotation pivot in the wrong place.
+				net.runelite.api.coords.LocalPoint center = net.runelite.api.coords.LocalPoint.fromScene(
+					boatScene.getBaseX() + sx, boatScene.getBaseY() + sy, boatScene);
 				if (center == null)
 				{
 					continue;
