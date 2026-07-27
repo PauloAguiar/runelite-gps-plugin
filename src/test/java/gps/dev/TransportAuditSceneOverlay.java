@@ -120,9 +120,9 @@ class TransportAuditSceneOverlay extends Overlay
 		return null;
 	}
 
-	private static final Color HULL_WALKABLE = new Color(0, 255, 180, 90);
-	private static final Color HULL_STRUCTURE = new Color(255, 90, 90, 100);
-	private static final Color HULL_UNPROVEN = new Color(200, 200, 200, 45);
+	private static final Color HULL_FILL = new Color(0, 220, 180, 60);
+	private static final Color HULL_ANCHOR_FILL = new Color(255, 40, 40, 90);
+	private static final Color HULL_ANCHOR_LINE = new Color(255, 40, 40, 230);
 	// Draw-side deck offset, ONE TILE bow-ward (-Y). CALIBRATE AGAINST THE HULL, NEVER THE
 	// CHARACTER: the player model glides sub-tile on a moving boat and reads up to a tile off
 	// its logical cell — zeroing this to chase the character pushed every quad (and the
@@ -132,10 +132,15 @@ class TransportAuditSceneOverlay extends Overlay
 	private static final Color HULL_PERIMETER = new Color(139, 84, 33, 230);
 
 	/**
-	 * The boat's ACTUAL tiles, projected onto the sea: every deck tile of the player's boat
-	 * WorldView, its corners pushed through transformToMainWorld (rotation and sub-tile glide
-	 * included) — walkable deck in teal, hull structure in white. The rotated quads are the
-	 * ground truth the water map's hull clearance must respect.
+	 * The boat's footprint on the sea: every deck cell with rendered content, corners pushed
+	 * through transformToMainWorld so rotation and sub-tile glide survive — one uniform fill,
+	 * a brown perimeter and a bow nose. The RED tile is the boat's true position: the
+	 * top-level cell holding the WorldEntity's local location, which is what
+	 * gps.fromLocalInstance resolves and what routing consumes.
+	 *
+	 * Deck conventions, each won in the field: content lives on the PLAYER'S plane; the model
+	 * is drawn one tile bow-ward of the scene grid ({@link #BOW_SHIFT_DECK_Y}); the bow is the
+	 * LOWEST deck Y. Calibrate against the hull, never the character (it glides sub-tile).
 	 */
 	private void renderBoatTiles(Graphics2D graphics)
 	{
@@ -160,47 +165,40 @@ class TransportAuditSceneOverlay extends Overlay
 				}
 			}
 		}
-		if (boat == null || boatView.getCollisionMaps() == null)
+		if (boat == null)
 		{
 			return;
 		}
-		// Boats use the BRIDGE arrangement (oracle line: worldPlane=1 p0=0 p1=200000):
-		// the deck RENDERS on the player's plane but the walk grid lives on PLANE 0 —
-		// exactly like bridges on the main map. Content reads the render plane; flags
-		// always read plane 0.
-		int plane = player.getWorldLocation() != null ? player.getWorldLocation().getPlane() : boatView.getPlane();
-		if (plane < 0 || plane >= boatView.getCollisionMaps().length
-			|| boatView.getCollisionMaps()[0] == null)
-		{
-			return;
-		}
-		int[][] flags = boatView.getCollisionMaps()[0].getFlags();
+		// Content lives on the PLAYER'S plane (the deck renders there; the view's own plane is
+		// the hull volume below). Collision flags are deliberately NOT read: they don't encode
+		// deck walkability consistently, and routing only needs the footprint and the anchor.
+		int plane = player.getWorldLocation() != null
+			? player.getWorldLocation().getPlane() : boatView.getPlane();
 		net.runelite.api.Scene boatScene = boatView.getScene();
 		net.runelite.api.Tile[][][] deckTiles = boatScene != null ? boatScene.getTiles() : null;
-		if (deckTiles == null || plane >= deckTiles.length || deckTiles[plane] == null)
+		if (deckTiles == null || plane < 0 || plane >= deckTiles.length || deckTiles[plane] == null)
 		{
 			return;
 		}
 		int topPlane = top.getPlane();
 
-		// Pass 1: the hull = deck cells with rendered CONTENT (padding also has zero flags).
+		// Pass 1: the hull = deck cells with rendered content (the padding around it has none).
 		java.util.Set<Integer> content = new java.util.HashSet<>();
 		int bowY = Integer.MAX_VALUE;
-		for (int sx = 0; sx < Math.min(flags.length, boatView.getSizeX()); sx++)
+		for (int sx = 0; sx < Math.min(deckTiles[plane].length, boatView.getSizeX()); sx++)
 		{
-			if (sx >= deckTiles[plane].length || deckTiles[plane][sx] == null)
+			if (deckTiles[plane][sx] == null)
 			{
 				continue;
 			}
-			for (int sy = 0; sy < Math.min(flags[sx].length, boatView.getSizeY()); sy++)
+			for (int sy = 0; sy < Math.min(deckTiles[plane][sx].length, boatView.getSizeY()); sy++)
 			{
-				net.runelite.api.Tile tile = sy < deckTiles[plane][sx].length
-					? deckTiles[plane][sx][sy] : null;
+				net.runelite.api.Tile tile = deckTiles[plane][sx][sy];
 				if (tile != null
 					&& (tile.getSceneTilePaint() != null || tile.getSceneTileModel() != null))
 				{
 					content.add((sx << 16) | sy);
-					bowY = Math.min(bowY, sy); // bow = LOWEST deck Y (round two of field truth)
+					bowY = Math.min(bowY, sy);
 				}
 			}
 		}
@@ -209,9 +207,7 @@ class TransportAuditSceneOverlay extends Overlay
 			return;
 		}
 
-		// Pass 2: fills, per-tile flag text (classification is still not field-correct — the
-		// raw values on screen are how we stop guessing anchors), and brown boundary edges.
-		graphics.setFont(new java.awt.Font(java.awt.Font.MONOSPACED, java.awt.Font.PLAIN, 10));
+		// Pass 2: uniform fill plus brown boundary edges.
 		java.util.List<int[]> bowTip = new java.util.ArrayList<>();
 		for (int cell : content)
 		{
@@ -223,12 +219,6 @@ class TransportAuditSceneOverlay extends Overlay
 			{
 				continue;
 			}
-			// Walkability is HARVESTED, not derived: collision flags don't encode deck
-			// walkability consistently (p0/p1 flip per cell — masts at p0, overhead floors at
-			// p1). Teal = the operator has stood there; unproven cells stay neutral. The flag
-			// label remains for reference.
-			int contentFlagValue = flags[sx][sy];
-			boolean walkable = plugin.walkedDeckCells.contains((sx << 16) | sy);
 			Point[] corners = projectQuad(boat, center, topPlane);
 			if (corners == null)
 			{
@@ -239,17 +229,8 @@ class TransportAuditSceneOverlay extends Overlay
 			{
 				quad.addPoint(corner.getX(), corner.getY());
 			}
-			graphics.setColor(walkable ? HULL_WALKABLE : HULL_UNPROVEN);
+			graphics.setColor(HULL_FILL);
 			graphics.fillPolygon(quad);
-			// Raw flag of the drawn cell / the content cell when they differ — hex, compact.
-			String text = Integer.toHexString(contentFlagValue & 0xFFFFFF);
-			int cx = (corners[0].getX() + corners[2].getX()) / 2;
-			int cy = (corners[0].getY() + corners[2].getY()) / 2;
-			graphics.setColor(java.awt.Color.BLACK);
-			graphics.drawString(text, cx - 9, cy + 4);
-			graphics.setColor(java.awt.Color.WHITE);
-			graphics.drawString(text, cx - 10, cy + 3);
-			// Brown perimeter: an edge is boundary when the neighbouring cell isn't content.
 			graphics.setColor(HULL_PERIMETER);
 			graphics.setStroke(new java.awt.BasicStroke(2));
 			int[][] neighbours = {{0, -1, 0, 1}, {1, 0, 1, 2}, {0, 1, 2, 3}, {-1, 0, 3, 0}};
@@ -265,15 +246,6 @@ class TransportAuditSceneOverlay extends Overlay
 			{
 				bowTip.add(new int[]{sx, sy});
 			}
-			// Ground truth: the player's own deck cell is walkable by definition — its label
-			// plus this outline decodes which grid (drawn vs content) owns the real flags.
-			net.runelite.api.coords.LocalPoint me = player.getLocalLocation();
-			if (me != null && me.getSceneX() == sx && me.getSceneY() == sy)
-			{
-				graphics.setColor(java.awt.Color.CYAN);
-				graphics.setStroke(new java.awt.BasicStroke(2));
-				graphics.drawPolygon(quad);
-			}
 		}
 
 		// The boat's TRUE tile: the top-level cell containing the WorldEntity's local location —
@@ -286,9 +258,9 @@ class TransportAuditSceneOverlay extends Overlay
 			Polygon anchorPoly = Perspective.getCanvasTilePoly(client, anchor);
 			if (anchorPoly != null)
 			{
-				graphics.setColor(new Color(255, 40, 40, 90));
+				graphics.setColor(HULL_ANCHOR_FILL);
 				graphics.fillPolygon(anchorPoly);
-				graphics.setColor(new Color(255, 40, 40, 230));
+				graphics.setColor(HULL_ANCHOR_LINE);
 				graphics.setStroke(new java.awt.BasicStroke(2));
 				graphics.drawPolygon(anchorPoly);
 			}
@@ -407,32 +379,6 @@ class TransportAuditSceneOverlay extends Overlay
 					lines.add("WP.fromLocalInstance=" + (world == null ? "NULL"
 						: world.getX() + "," + world.getY() + "," + world.getPlane()));
 				}
-			}
-			// The oracle line: the player's own cell flags on EVERY plane of the boat view.
-			// Whichever plane reads 0 under their feet is the true walk grid — if none does,
-			// deck walkability is not in the collision flags at all.
-			net.runelite.api.WorldView pv = player.getWorldView();
-			if (pv != null && !pv.isTopLevel() && pv.getCollisionMaps() != null
-				&& player.getLocalLocation() != null)
-			{
-				int psx = player.getLocalLocation().getSceneX();
-				int psy = player.getLocalLocation().getSceneY();
-				StringBuilder sb = new StringBuilder("flags@player ");
-				sb.append("worldPlane=").append(player.getWorldLocation() == null ? "?"
-					: player.getWorldLocation().getPlane());
-				sb.append(" viewPlane=").append(pv.getPlane());
-				for (int pl = 0; pl < pv.getCollisionMaps().length; pl++)
-				{
-					net.runelite.api.CollisionData cd = pv.getCollisionMaps()[pl];
-					String v = "-";
-					if (cd != null && psx >= 0 && psx < cd.getFlags().length
-						&& psy >= 0 && psy < cd.getFlags()[psx].length)
-					{
-						v = Integer.toHexString(cd.getFlags()[psx][psy] & 0xFFFFFF);
-					}
-					sb.append(" p").append(pl).append('=').append(v);
-				}
-				lines.add(sb.toString());
 			}
 			int packed = gps.WorldPointUtil.fromLocalInstance(client, player);
 			lines.add("gps.fromLocalInstance=" + (packed == gps.WorldPointUtil.UNDEFINED ? "UNDEFINED"
