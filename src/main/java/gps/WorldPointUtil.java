@@ -389,8 +389,26 @@ public class WorldPointUtil
 		boolean isOnBoat = worldViewId != WorldView.TOPLEVEL;
 		if (isOnBoat)
 		{
+			// The boat is a WorldEntity in the top level; byIndex is briefly null during view
+			// transitions (boarding, chunk swaps) — a single NPE here used to stall every
+			// position consumer for the rest of the session. Resolution goes through
+			// RuneLite's own fromLocalInstance, which stays correct on the open sea
+			// (port-tasks' path matching depends on the same call mid-sail).
 			WorldEntity worldEntity = client.getTopLevelWorldView().worldEntities().byIndex(worldViewId);
-			return fromLocalInstance(client, worldEntity.getLocalLocation());
+			if (worldEntity == null)
+			{
+				return UNDEFINED;
+			}
+			net.runelite.api.coords.LocalPoint boatLocal = worldEntity.getLocalLocation();
+			if (boatLocal == null)
+			{
+				return UNDEFINED;
+			}
+			net.runelite.api.coords.WorldPoint world =
+				net.runelite.api.coords.WorldPoint.fromLocalInstance(client, boatLocal);
+			return world != null
+				? packWorldPoint(world.getX(), world.getY(), world.getPlane())
+				: UNDEFINED;
 		}
 		return fromLocalInstance(client, localPlayer.getLocalLocation());
 	}
