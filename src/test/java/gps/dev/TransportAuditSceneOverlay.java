@@ -215,9 +215,12 @@ class TransportAuditSceneOverlay extends Overlay
 			{
 				continue;
 			}
-			int walkY = sy + BOW_SHIFT_DECK_Y / 128;
-			int shiftedFlag = walkY >= 0 && walkY < flags[sx].length ? flags[sx][walkY] : -1;
-			boolean walkable = (shiftedFlag & TransportAuditPlugin.LIVE_BLOCK_MASK) == 0;
+			// Decoded via the player ground-truth cell (label 100/0 while standing on it):
+			// flags and content share ONE grid — the same scene arrays, same indexing — and
+			// only the VISUAL model is offset (handled by the draw-side BOW_SHIFT). Walkability
+			// therefore reads the content cell itself, no second shift.
+			int contentFlagValue = flags[sx][sy];
+			boolean walkable = (contentFlagValue & TransportAuditPlugin.LIVE_BLOCK_MASK) == 0;
 			Point[] corners = projectQuad(boat, center, topPlane);
 			if (corners == null)
 			{
@@ -231,9 +234,7 @@ class TransportAuditSceneOverlay extends Overlay
 			graphics.setColor(walkable ? HULL_WALKABLE : HULL_STRUCTURE);
 			graphics.fillPolygon(quad);
 			// Raw flag of the drawn cell / the content cell when they differ — hex, compact.
-			int contentFlag = flags[sx][sy];
-			String text = Integer.toHexString(shiftedFlag & 0xFFFFFF)
-				+ (contentFlag != shiftedFlag ? "/" + Integer.toHexString(contentFlag & 0xFFFFFF) : "");
+			String text = Integer.toHexString(contentFlagValue & 0xFFFFFF);
 			int cx = (corners[0].getX() + corners[2].getX()) / 2;
 			int cy = (corners[0].getY() + corners[2].getY()) / 2;
 			graphics.setColor(java.awt.Color.BLACK);
