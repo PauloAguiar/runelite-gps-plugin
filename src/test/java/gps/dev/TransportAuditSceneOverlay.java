@@ -122,6 +122,7 @@ class TransportAuditSceneOverlay extends Overlay
 
 	private static final Color HULL_WALKABLE = new Color(0, 255, 180, 90);
 	private static final Color HULL_STRUCTURE = new Color(255, 90, 90, 100);
+	private static final Color HULL_UNPROVEN = new Color(200, 200, 200, 45);
 	// One tile (128 local units) toward the bow in deck space — see BOW_SHIFT note below.
 	// Field-calibrated: deck-forward is NEGATIVE Y (+128 doubled the aft error to two tiles).
 	private static final int BOW_SHIFT_DECK_Y = -128;
@@ -219,12 +220,12 @@ class TransportAuditSceneOverlay extends Overlay
 			{
 				continue;
 			}
-			// Decoded via the player ground-truth cell (label 100/0 while standing on it):
-			// flags and content share ONE grid — the same scene arrays, same indexing — and
-			// only the VISUAL model is offset (handled by the draw-side BOW_SHIFT). Walkability
-			// therefore reads the content cell itself, no second shift.
+			// Walkability is HARVESTED, not derived: collision flags don't encode deck
+			// walkability consistently (p0/p1 flip per cell — masts at p0, overhead floors at
+			// p1). Teal = the operator has stood there; unproven cells stay neutral. The flag
+			// label remains for reference.
 			int contentFlagValue = flags[sx][sy];
-			boolean walkable = (contentFlagValue & TransportAuditPlugin.LIVE_BLOCK_MASK) == 0;
+			boolean walkable = plugin.walkedDeckCells.contains((sx << 16) | sy);
 			Point[] corners = projectQuad(boat, center, topPlane);
 			if (corners == null)
 			{
@@ -235,7 +236,7 @@ class TransportAuditSceneOverlay extends Overlay
 			{
 				quad.addPoint(corner.getX(), corner.getY());
 			}
-			graphics.setColor(walkable ? HULL_WALKABLE : HULL_STRUCTURE);
+			graphics.setColor(walkable ? HULL_WALKABLE : HULL_UNPROVEN);
 			graphics.fillPolygon(quad);
 			// Raw flag of the drawn cell / the content cell when they differ — hex, compact.
 			String text = Integer.toHexString(contentFlagValue & 0xFFFFFF);
