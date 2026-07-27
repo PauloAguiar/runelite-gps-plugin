@@ -122,6 +122,8 @@ class TransportAuditSceneOverlay extends Overlay
 
 	private static final Color HULL_WALKABLE = new Color(0, 255, 180, 90);
 	private static final Color HULL_STRUCTURE = new Color(255, 255, 255, 60);
+	// One tile (128 local units) toward the bow in deck space — see BOW_SHIFT note below.
+	private static final int BOW_SHIFT_DECK_Y = 128;
 
 	/**
 	 * The boat's ACTUAL tiles, projected onto the sea: every deck tile of the player's boat
@@ -196,13 +198,18 @@ class TransportAuditSceneOverlay extends Overlay
 					continue;
 				}
 				// Tile corners in deck space, projected one by one so rotation survives.
+				// BOW_SHIFT: the deck scene's rendered content sits one tile aft of the hull's
+				// visual footprint (field-observed: nose row missing, extra row behind the
+				// helm), so every quad nudges one tile bow-ward in deck space before the
+				// rotation transform. Deck-forward is fixed for all boats; flip the sign if a
+				// different hull ever shows the mirror error.
 				Polygon quad = new Polygon();
 				int[][] corners = {{-64, -64}, {64, -64}, {64, 64}, {-64, 64}};
 				boolean complete = true;
 				for (int[] corner : corners)
 				{
-					net.runelite.api.coords.LocalPoint sea =
-						boat.transformToMainWorld(center.plus(corner[0], corner[1]));
+					net.runelite.api.coords.LocalPoint sea = boat.transformToMainWorld(
+						center.plus(corner[0], corner[1] + BOW_SHIFT_DECK_Y));
 					Point canvas = sea != null
 						? Perspective.localToCanvas(client, sea, topPlane) : null;
 					if (canvas == null)
