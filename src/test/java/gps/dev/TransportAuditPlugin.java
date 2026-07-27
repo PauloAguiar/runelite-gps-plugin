@@ -1684,24 +1684,33 @@ public class TransportAuditPlugin extends Plugin
 				}
 				int world = WorldPointUtil.fromLocalInstance(client,
 					net.runelite.api.coords.LocalPoint.fromScene(sx, sy));
-				if (world == WorldPointUtil.UNDEFINED)
-				{
-					continue;
-				}
 				boolean liveBlocked = (flags[sx][sy] & LIVE_BLOCK_MASK) != 0;
-				boolean staticBlocked = staticMap.isBlocked(WorldPointUtil.unpackWorldX(world),
-					WorldPointUtil.unpackWorldY(world), WorldPointUtil.unpackWorldPlane(world));
-				int tileState = liveBlocked
-					? (staticBlocked ? COLLISION_BOTH_BLOCKED : COLLISION_LIVE_ONLY)
-					: (staticBlocked ? COLLISION_STATIC_ONLY : 0);
-				if (tileState == COLLISION_BOTH_BLOCKED && plane == 0 && settings != null
+				// Generated sea chunks have no template: no static verdict exists there, but the
+				// LIVE classification still does — render water/blockers from the client alone
+				// instead of leaving holes around the boat (static comparison needs a template).
+				boolean staticKnown = world != WorldPointUtil.UNDEFINED;
+				boolean staticBlocked = staticKnown
+					&& staticMap.isBlocked(WorldPointUtil.unpackWorldX(world),
+						WorldPointUtil.unpackWorldY(world), WorldPointUtil.unpackWorldPlane(world));
+				int tileState;
+				if (staticKnown)
+				{
+					tileState = liveBlocked
+						? (staticBlocked ? COLLISION_BOTH_BLOCKED : COLLISION_LIVE_ONLY)
+						: (staticBlocked ? COLLISION_STATIC_ONLY : 0);
+				}
+				else
+				{
+					tileState = liveBlocked ? COLLISION_BOTH_BLOCKED : 0;
+				}
+				if (liveBlocked && plane == 0 && settings != null
 					&& (settings[0][sx][sy] & 1) != 0)
 				{
 					tileState = COLLISION_WATER;
 				}
 				int staticEdges = 0;
 				int mismatchEdges = 0;
-				if (!liveBlocked && !staticBlocked)
+				if (staticKnown && !liveBlocked && !staticBlocked)
 				{
 					for (int d = 0; d < 4; d++)
 					{
