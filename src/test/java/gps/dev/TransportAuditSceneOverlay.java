@@ -55,8 +55,11 @@ class TransportAuditSceneOverlay extends Overlay
 		}
 		if (plugin.showBoatDebug)
 		{
-			renderBoatDebug(graphics);
 			renderBoatTiles(graphics);
+		}
+		if (plugin.showBoatText)
+		{
+			renderBoatDebug(graphics);
 		}
 		// Known-data browser: dim cyan at every curated origin in the scene, bright cyan on the
 		// selected entry's origin AND landing — "what does the data think is here?".

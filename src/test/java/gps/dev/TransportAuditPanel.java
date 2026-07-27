@@ -113,16 +113,26 @@ class TransportAuditPanel extends PluginPanel
 			+ "· <font color='#ff00ff'>magenta</font> = edge disagreement</html>");
 		collisionToggle.addActionListener(e -> plugin.showCollision = collisionToggle.isSelected());
 		top.add(collisionToggle);
-		javax.swing.JCheckBox boatDebugToggle = new javax.swing.JCheckBox("Boat position debug", false);
+		javax.swing.JCheckBox boatDebugToggle = new javax.swing.JCheckBox("Boat outline", false);
 		boatDebugToggle.setFocusable(false);
 		boatDebugToggle.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		boatDebugToggle.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 		boatDebugToggle.setFont(FontManager.getRunescapeSmallFont());
 		boatDebugToggle.setAlignmentX(Component.LEFT_ALIGNMENT);
-		boatDebugToggle.setToolTipText("On-screen dump of every link in the boat-position chain —"
-			+ " whichever line freezes while sailing is the broken step");
+		boatDebugToggle.setToolTipText("Draws the boat's footprint (brown perimeter + bow nose)"
+			+ " and its true routing tile in red");
 		boatDebugToggle.addActionListener(e -> plugin.showBoatDebug = boatDebugToggle.isSelected());
 		top.add(boatDebugToggle);
+		javax.swing.JCheckBox boatTextToggle = new javax.swing.JCheckBox("Boat position text", false);
+		boatTextToggle.setFocusable(false);
+		boatTextToggle.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		boatTextToggle.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		boatTextToggle.setFont(FontManager.getRunescapeSmallFont());
+		boatTextToggle.setAlignmentX(Component.LEFT_ALIGNMENT);
+		boatTextToggle.setToolTipText("Text dump of every link in the boat-position chain —"
+			+ " whichever line freezes while sailing is the broken step");
+		boatTextToggle.addActionListener(e -> plugin.showBoatText = boatTextToggle.isSelected());
+		top.add(boatTextToggle);
 		JButton collisionDump = new JButton("Dump live collision");
 		collisionDump.setFont(FontManager.getRunescapeSmallFont());
 		collisionDump.setFocusable(false);

@@ -389,9 +389,11 @@ public class TransportAuditPlugin extends Plugin
 	// In-world collision rendering (the old shortest-path debug view, upgraded): static map
 	// verdicts AND live-vs-static disagreements, rebuilt per tick around the player.
 	volatile boolean showCollision = false;
-	// On-screen dump of the whole boat-position resolution chain, one line per link — for
-	// pinning WHICH step goes stale when on-boat tracking stops updating.
+	// The boat's footprint + true-tile anchor drawn on the sea (the keeper instrument).
 	volatile boolean showBoatDebug = false;
+	// The text dump of the position resolution chain, one line per link — separate toggle:
+	// it's occasional diagnostics, not something to sail with.
+	volatile boolean showBoatText = false;
 	private volatile java.util.List<int[]> collisionCells = java.util.List.of();
 	static final int COLLISION_VIEW_RADIUS = 12;
 	// tileState values in collisionCells rows {packedTile, tileState, staticEdgeMask, mismatchEdgeMask}
