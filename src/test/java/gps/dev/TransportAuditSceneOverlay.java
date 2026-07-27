@@ -121,7 +121,7 @@ class TransportAuditSceneOverlay extends Overlay
 	}
 
 	private static final Color HULL_WALKABLE = new Color(0, 255, 180, 90);
-	private static final Color HULL_STRUCTURE = new Color(255, 255, 255, 60);
+	private static final Color HULL_STRUCTURE = new Color(255, 90, 90, 100);
 	// One tile (128 local units) toward the bow in deck space — see BOW_SHIFT note below.
 	// Field-calibrated: deck-forward is NEGATIVE Y (+128 doubled the aft error to two tiles).
 	private static final int BOW_SHIFT_DECK_Y = -128;
@@ -177,7 +177,7 @@ class TransportAuditSceneOverlay extends Overlay
 
 		// Pass 1: the hull = deck cells with rendered CONTENT (padding also has zero flags).
 		java.util.Set<Integer> content = new java.util.HashSet<>();
-		int bowY = Integer.MAX_VALUE;
+		int bowY = Integer.MIN_VALUE;
 		for (int sx = 0; sx < Math.min(flags.length, boatView.getSizeX()); sx++)
 		{
 			if (sx >= deckTiles[plane].length || deckTiles[plane][sx] == null)
@@ -192,7 +192,7 @@ class TransportAuditSceneOverlay extends Overlay
 					&& (tile.getSceneTilePaint() != null || tile.getSceneTileModel() != null))
 				{
 					content.add((sx << 16) | sy);
-					bowY = Math.min(bowY, sy); // deck-forward is -Y: the bow is the lowest Y
+					bowY = Math.max(bowY, sy); // field: the pointy end is the HIGHEST deck Y
 				}
 			}
 		}
@@ -256,6 +256,15 @@ class TransportAuditSceneOverlay extends Overlay
 			{
 				bowTip.add(new int[]{sx, sy});
 			}
+			// Ground truth: the player's own deck cell is walkable by definition — its label
+			// plus this outline decodes which grid (drawn vs content) owns the real flags.
+			net.runelite.api.coords.LocalPoint me = player.getLocalLocation();
+			if (me != null && me.getSceneX() == sx && me.getSceneY() == sy)
+			{
+				graphics.setColor(java.awt.Color.CYAN);
+				graphics.setStroke(new java.awt.BasicStroke(2));
+				graphics.drawPolygon(quad);
+			}
 		}
 
 		// The bow chevron: a little ^ half a tile ahead of the front row's middle column.
@@ -267,9 +276,9 @@ class TransportAuditSceneOverlay extends Overlay
 				boatScene.getBaseX() + mid[0], boatScene.getBaseY() + mid[1], boatScene);
 			if (center != null)
 			{
-				Point apex = project(boat, center.plus(0, BOW_SHIFT_DECK_Y - 128), topPlane);
-				Point left = project(boat, center.plus(-52, BOW_SHIFT_DECK_Y - 60), topPlane);
-				Point right = project(boat, center.plus(52, BOW_SHIFT_DECK_Y - 60), topPlane);
+				Point apex = project(boat, center.plus(0, BOW_SHIFT_DECK_Y + 160), topPlane);
+				Point left = project(boat, center.plus(-52, BOW_SHIFT_DECK_Y + 92), topPlane);
+				Point right = project(boat, center.plus(52, BOW_SHIFT_DECK_Y + 92), topPlane);
 				if (apex != null && left != null && right != null)
 				{
 					graphics.setColor(HULL_PERIMETER);
