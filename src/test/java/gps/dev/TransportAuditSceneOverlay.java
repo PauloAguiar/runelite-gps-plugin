@@ -211,6 +211,8 @@ class TransportAuditSceneOverlay extends Overlay
 	private static final int COURSE_STEPS = 12;
 	/** Orientation units per tick the hull turns: 128/2048 of a circle = 22.5 degrees. */
 	private static final int TURN_PER_TICK = 128;
+	/** Local units per quarter tile: every velocity component snaps to a multiple of this. */
+	private static final int QUARTER_TILE = 32;
 	/** Rendered wake length in tiles; the plugin keeps a little more so the tail can be cut. */
 	private static final double WAKE_RENDER_TILES = 15;
 	/** Tiles from the hull where a ribbon is still fully transparent. */
@@ -493,10 +495,15 @@ class TransportAuditSceneOverlay extends Overlay
 		{
 			return;
 		}
+		// The game's own numbers, straight from the sailing side panel — no calibration needed.
+		double topSpeed = client.getVarbitValue(
+			net.runelite.api.gameval.VarbitID.SAILING_SIDEPANEL_BOAT_BASESPEED) / 128.0;
+		double acceleration = client.getVarbitValue(
+			net.runelite.api.gameval.VarbitID.SAILING_SIDEPANEL_BOAT_ACCELERATION) / 128.0;
 		double speed = plugin.boatSpeedTiles;
-		if (speed <= 0)
+		if (speed <= 0 && topSpeed <= 0)
 		{
-			return; // parked: no course to draw
+			return; // parked with no drive: no course to draw
 		}
 		// The LIVE pose, not the tick-aligned target: getLocalLocation/getOrientation
 		// interpolate between ticks, so the projected course glides with the hull instead of
@@ -512,15 +519,7 @@ class TransportAuditSceneOverlay extends Overlay
 		int orientation = boat.getOrientation();
 		double x = from.getX();
 		double y = from.getY();
-		java.util.List<int[]> course = new java.util.ArrayList<>(COURSE_STEPS + 2);
-		// Begin a half-hull BEHIND the centre: the ribbon then emerges from under the bow
-		// rather than starting with a hard line across the deck.
-		double startRadians = Math.toRadians(270 - orientation / (2048 / 360.0));
-		double halfLength = config.getBoundsHeight() / 2.0;
-		course.add(new int[]{
-			(int) Math.round(x - Math.cos(startRadians) * halfLength),
-			(int) Math.round(y - Math.sin(startRadians) * halfLength),
-			orientation});
+		java.util.List<int[]> course = new java.util.ArrayList<>(COURSE_STEPS + 1);
 		course.add(new int[]{(int) x, (int) y, orientation});
 		for (int step = 0; step < COURSE_STEPS; step++)
 		{
@@ -531,10 +530,16 @@ class TransportAuditSceneOverlay extends Overlay
 				int turn = Math.min(TURN_PER_TICK, Math.abs(delta)) * (delta >= 0 ? 1 : -1);
 				orientation = Math.floorMod(orientation + turn, 2048);
 			}
-			// SailingMath's convention: degrees = 270 - orientation/(2048/360).
-			double radians = Math.toRadians(270 - orientation / (2048 / 360.0));
-			x += Math.cos(radians) * speed * 128;
-			y += Math.sin(radians) * speed * 128;
+			// Accelerate toward the boat's top speed, then advance by the SNAPPED velocity: the
+			// game moves in quarter-tile increments per axis (chart-plotter reads the same
+			// model), so a smooth trigonometric step drifts away from the real track — which is
+			// why this prediction disagreed with theirs.
+			if (acceleration > 0)
+			{
+				speed = Math.min(topSpeed, speed + acceleration);
+			}
+			x += snapQuarterTile(-Perspective.SINE[orientation] * speed / 512.0);
+			y += snapQuarterTile(-Perspective.COSINE[orientation] * speed / 512.0);
 			course.add(new int[]{(int) Math.round(x), (int) Math.round(y), orientation});
 		}
 		drawSweptRibbon(graphics, course, config.getBoundsX(), config.getBoundsY(),
@@ -970,6 +975,17 @@ class TransportAuditSceneOverlay extends Overlay
 			box.addPoint(canvasX[i], canvasY[i]);
 		}
 		return box;
+	}
+
+	/**
+	 * Rounds a velocity component to a whole quarter tile, the way the game steps a boat:
+	 * magnitude-rounded (so the sign is preserved) and then snapped to {@link #QUARTER_TILE}.
+	 */
+	private static int snapQuarterTile(double value)
+	{
+		int rounded = (int) (Math.round(Math.abs(value)) * Math.signum(value));
+		return (int) (Math.round(Math.abs(rounded / (double) QUARTER_TILE))
+			* Math.signum(rounded)) * QUARTER_TILE;
 	}
 
 	/** Scales a colour's alpha by {@code factor} (0 = invisible, 1 = unchanged). */
