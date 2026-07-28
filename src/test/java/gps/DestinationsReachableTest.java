@@ -75,6 +75,22 @@ public class DestinationsReachableTest
 		ArrayDeque<Integer> queue = new ArrayDeque<>();
 		seen.add(LUMBRIDGE);
 		queue.add(LUMBRIDGE);
+		// ORIGIN-LESS teleports (jewellery, tablets, spells) are usable ANYWHERE, so their
+		// landing tiles are reachable outright. Keyed under UNDEFINED_ORIGIN rather than a
+		// tile, they were invisible to a walk-the-graph flood — which made every
+		// teleport-only destination, Port Roberts included, look sealed.
+		Transport[] anywhere = transports.get(Transport.UNDEFINED_ORIGIN);
+		if (anywhere != null)
+		{
+			for (Transport transport : anywhere)
+			{
+				if (transport.getDestination() != WorldPointUtil.UNDEFINED
+					&& seen.add(transport.getDestination()))
+				{
+					queue.add(transport.getDestination());
+				}
+			}
+		}
 		while (!queue.isEmpty())
 		{
 			int at = queue.poll();
