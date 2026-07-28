@@ -61,7 +61,13 @@ class TransportAuditSceneOverlay extends Overlay
 			// hole. Their inner ends therefore disappear under the boat instead of butting
 			// against it with a hard edge.
 			java.awt.Shape previousClip = graphics.getClip();
-			Polygon hullBox = hullBoxPolygon();
+			// The SILHOUETTE, not the bounds box: a rectangle mask left the ribbon dying at a
+			// straight line short of the tapered bow, with open water between it and the hull.
+			Polygon hullBox = hullSilhouettePolygon();
+			if (hullBox == null)
+			{
+				hullBox = hullBoxPolygon();
+			}
 			if (hullBox != null)
 			{
 				java.awt.Rectangle canvas = previousClip != null ? previousClip.getBounds()
@@ -227,24 +233,11 @@ class TransportAuditSceneOverlay extends Overlay
 		int topPlane = top.getPlane();
 
 		// Pass 1: the hull = deck cells with rendered content (the padding around it has none).
-		java.util.Set<Integer> content = new java.util.HashSet<>();
+		java.util.Set<Integer> content = deckContentCells(boatView, plane);
 		int bowY = Integer.MAX_VALUE;
-		for (int sx = 0; sx < Math.min(deckTiles[plane].length, boatView.getSizeX()); sx++)
+		for (int cell : content)
 		{
-			if (deckTiles[plane][sx] == null)
-			{
-				continue;
-			}
-			for (int sy = 0; sy < Math.min(deckTiles[plane][sx].length, boatView.getSizeY()); sy++)
-			{
-				net.runelite.api.Tile tile = deckTiles[plane][sx][sy];
-				if (tile != null
-					&& (tile.getSceneTilePaint() != null || tile.getSceneTileModel() != null))
-				{
-					content.add((sx << 16) | sy);
-					bowY = Math.min(bowY, sy);
-				}
-			}
+			bowY = Math.min(bowY, cell & 0xFFFF);
 		}
 		if (content.isEmpty())
 		{
@@ -575,6 +568,127 @@ class TransportAuditSceneOverlay extends Overlay
 			graphics.setColor(blend(near[0], far[0], t));
 			graphics.drawLine(from[2], from[3], to[2], to[3]);
 		}
+	}
+
+	/**
+	 * The boat's SILHOUETTE as a canvas polygon: the convex hull of every deck-content tile's
+	 * projected corners. A boat is essentially convex — pointed bow, blunt stern — so this
+	 * traces the real outline with clean diagonal edges at the taper, where the
+	 * {@link #hullBoxPolygon() bounds rectangle} cuts straight across open water. Used to mask
+	 * the ribbons so they vanish under the hull instead of stopping short of it.
+	 *
+	 * The client exposes no Model for a WorldEntity (getClickbox would need one), so the deck
+	 * scene's own geometry is the closest thing to the rendered outline available. Null when
+	 * ashore, off-screen, or too few points to hull.
+	 */
+	private Polygon hullSilhouettePolygon()
+	{
+		net.runelite.api.Player player = client.getLocalPlayer();
+		net.runelite.api.WorldEntity boat = plugin.playerBoat();
+		if (player == null || boat == null || player.getWorldView() == null)
+		{
+			return null;
+		}
+		net.runelite.api.WorldView boatView = player.getWorldView();
+		net.runelite.api.Scene boatScene = boatView.getScene();
+		int plane = player.getWorldLocation() != null
+			? player.getWorldLocation().getPlane() : boatView.getPlane();
+		java.util.Set<Integer> content = deckContentCells(boatView, plane);
+		if (boatScene == null || content.isEmpty())
+		{
+			return null;
+		}
+		java.util.List<int[]> points = new java.util.ArrayList<>(content.size() * 4);
+		for (int cell : content)
+		{
+			net.runelite.api.coords.LocalPoint centre = net.runelite.api.coords.LocalPoint.fromScene(
+				boatScene.getBaseX() + (cell >> 16), boatScene.getBaseY() + (cell & 0xFFFF), boatScene);
+			if (centre == null)
+			{
+				continue;
+			}
+			Point[] corners = projectQuad(boat, centre, client.getTopLevelWorldView().getPlane());
+			if (corners == null)
+			{
+				continue;
+			}
+			for (Point corner : corners)
+			{
+				points.add(new int[]{corner.getX(), corner.getY()});
+			}
+		}
+		return convexHull(points);
+	}
+
+	/** Deck cells carrying rendered content — the boat's shape within its own scene. */
+	private java.util.Set<Integer> deckContentCells(net.runelite.api.WorldView boatView, int plane)
+	{
+		java.util.Set<Integer> content = new java.util.HashSet<>();
+		net.runelite.api.Scene boatScene = boatView.getScene();
+		net.runelite.api.Tile[][][] deckTiles = boatScene != null ? boatScene.getTiles() : null;
+		if (deckTiles == null || plane < 0 || plane >= deckTiles.length || deckTiles[plane] == null)
+		{
+			return content;
+		}
+		for (int sx = 0; sx < Math.min(deckTiles[plane].length, boatView.getSizeX()); sx++)
+		{
+			if (deckTiles[plane][sx] == null)
+			{
+				continue;
+			}
+			for (int sy = 0; sy < Math.min(deckTiles[plane][sx].length, boatView.getSizeY()); sy++)
+			{
+				net.runelite.api.Tile tile = deckTiles[plane][sx][sy];
+				if (tile != null
+					&& (tile.getSceneTilePaint() != null || tile.getSceneTileModel() != null))
+				{
+					content.add((sx << 16) | sy);
+				}
+			}
+		}
+		return content;
+	}
+
+	/** Andrew's monotone chain over canvas points; null when fewer than three. */
+	private static Polygon convexHull(java.util.List<int[]> points)
+	{
+		if (points.size() < 3)
+		{
+			return null;
+		}
+		points.sort((a, b) -> a[0] != b[0]
+			? Integer.compare(a[0], b[0]) : Integer.compare(a[1], b[1]));
+		int size = points.size();
+		int[][] hull = new int[size * 2][];
+		int count = 0;
+		for (int i = 0; i < size; i++)
+		{
+			while (count >= 2 && cross(hull[count - 2], hull[count - 1], points.get(i)) <= 0)
+			{
+				count--;
+			}
+			hull[count++] = points.get(i);
+		}
+		for (int i = size - 2, lower = count + 1; i >= 0; i--)
+		{
+			while (count >= lower && cross(hull[count - 2], hull[count - 1], points.get(i)) <= 0)
+			{
+				count--;
+			}
+			hull[count++] = points.get(i);
+		}
+		Polygon polygon = new Polygon();
+		for (int i = 0; i < count - 1; i++)
+		{
+			polygon.addPoint(hull[i][0], hull[i][1]);
+		}
+		return polygon.npoints >= 3 ? polygon : null;
+	}
+
+	private static long cross(int[] origin, int[] a, int[] b)
+	{
+		return (long) (a[0] - origin[0]) * (b[1] - origin[1])
+			- (long) (a[1] - origin[1]) * (b[0] - origin[0]);
 	}
 
 	/**
