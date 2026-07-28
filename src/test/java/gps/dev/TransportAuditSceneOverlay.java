@@ -61,19 +61,23 @@ class TransportAuditSceneOverlay extends Overlay
 			// hole. Their inner ends therefore disappear under the boat instead of butting
 			// against it with a hard edge.
 			java.awt.Shape previousClip = graphics.getClip();
-			// The SILHOUETTE, not the bounds box: a rectangle mask left the ribbon dying at a
-			// straight line short of the tapered bow, with open water between it and the hull.
-			Polygon hullBox = hullSilhouettePolygon();
-			if (hullBox == null)
+			// Mask, best first: the boat MODEL's projected outline (true occlusion, sail and
+			// all), else the deck silhouette, else the bounds box.
+			java.awt.Shape mask = hullModelShape();
+			if (mask == null)
 			{
-				hullBox = hullBoxPolygon();
+				mask = hullSilhouettePolygon();
 			}
-			if (hullBox != null)
+			if (mask == null)
+			{
+				mask = hullBoxPolygon();
+			}
+			if (mask != null)
 			{
 				java.awt.Rectangle canvas = previousClip != null ? previousClip.getBounds()
 					: new java.awt.Rectangle(client.getCanvasWidth(), client.getCanvasHeight());
 				java.awt.geom.Area clip = new java.awt.geom.Area(canvas);
-				clip.subtract(new java.awt.geom.Area(hullBox));
+				clip.subtract(new java.awt.geom.Area(mask));
 				graphics.setClip(clip);
 			}
 			renderBoatWake(graphics);
@@ -570,6 +574,114 @@ class TransportAuditSceneOverlay extends Overlay
 			graphics.setColor(blend(near[0], far[0], t));
 			graphics.drawLine(from[2], from[3], to[2], to[3]);
 		}
+	}
+
+	/** WorldEntity config ids that mean "this is a sailing boat" (boat-hider's BoatID). */
+	private static final java.util.Set<Integer> BOAT_ENTITY_TYPES = java.util.Set.of(1, 2, 3);
+
+	/**
+	 * The boat's TRUE outline: the union of every part's projected clickbox, plus the deck
+	 * silhouette for the floor itself.
+	 *
+	 * A boat is not one model — it is a WorldView full of objects (hull, keel, trim, sail,
+	 * helm, cannon, ...), which is exactly how the boat-hider plugin can hide them
+	 * individually. Everything in that view IS the boat, so no id lists or size heuristics are
+	 * needed: union the lot. The result occludes the ribbons wherever any part of the boat is
+	 * genuinely in front of the water — sail and mast included, which no waterline-derived
+	 * polygon could ever do.
+	 *
+	 * Null when ashore, when the view isn't a boat, or when nothing projects (mid view-swap),
+	 * leaving the polygon fallbacks.
+	 */
+	private java.awt.Shape hullModelShape()
+	{
+		net.runelite.api.Player player = client.getLocalPlayer();
+		if (player == null || player.getWorldView() == null || player.getWorldView().isTopLevel())
+		{
+			return null;
+		}
+		net.runelite.api.WorldView boatView = player.getWorldView();
+		net.runelite.api.WorldEntity entity =
+			client.getTopLevelWorldView().worldEntities().byIndex(boatView.getId());
+		if (entity == null || entity.getConfig() == null
+			|| !BOAT_ENTITY_TYPES.contains(entity.getConfig().getId()))
+		{
+			return null;
+		}
+		net.runelite.api.Scene scene = boatView.getScene();
+		net.runelite.api.Tile[][][] tiles = scene != null ? scene.getTiles() : null;
+		if (tiles == null)
+		{
+			return null;
+		}
+		java.awt.geom.Area area = null;
+		// A multi-tile object is referenced from every tile it covers — dedupe by identity.
+		java.util.Set<net.runelite.api.TileObject> seen = java.util.Collections.newSetFromMap(
+			new java.util.IdentityHashMap<>());
+		for (net.runelite.api.Tile[][] plane : tiles)
+		{
+			if (plane == null)
+			{
+				continue;
+			}
+			for (net.runelite.api.Tile[] column : plane)
+			{
+				if (column == null)
+				{
+					continue;
+				}
+				for (net.runelite.api.Tile tile : column)
+				{
+					if (tile == null)
+					{
+						continue;
+					}
+					java.util.List<net.runelite.api.TileObject> parts = new java.util.ArrayList<>();
+					if (tile.getGameObjects() != null)
+					{
+						java.util.Collections.addAll(parts, tile.getGameObjects());
+					}
+					parts.add(tile.getWallObject());
+					parts.add(tile.getDecorativeObject());
+					parts.add(tile.getGroundObject());
+					for (net.runelite.api.TileObject part : parts)
+					{
+						if (part == null || !seen.add(part))
+						{
+							continue;
+						}
+						java.awt.Shape clickbox = part.getClickbox();
+						if (clickbox == null)
+						{
+							continue;
+						}
+						if (area == null)
+						{
+							area = new java.awt.geom.Area(clickbox);
+						}
+						else
+						{
+							area.add(new java.awt.geom.Area(clickbox));
+						}
+					}
+				}
+			}
+		}
+		// The deck FLOOR is terrain, not an object, so add its tile silhouette to close the gap
+		// between the hull sides and the planking.
+		Polygon deck = hullSilhouettePolygon();
+		if (deck != null)
+		{
+			if (area == null)
+			{
+				area = new java.awt.geom.Area(deck);
+			}
+			else
+			{
+				area.add(new java.awt.geom.Area(deck));
+			}
+		}
+		return area != null && !area.isEmpty() ? area : null;
 	}
 
 	/**
