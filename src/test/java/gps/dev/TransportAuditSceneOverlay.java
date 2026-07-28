@@ -53,7 +53,7 @@ class TransportAuditSceneOverlay extends Overlay
 		{
 			renderCollision(graphics);
 		}
-		if (plugin.showBoatDebug)
+		if (plugin.showBoatWake)
 		{
 			// A 2D overlay always paints OVER the rendered 3D scene, so the only way to let the
 			// ship model sit above the ribbons is to not paint there: the hull's footprint is
@@ -73,6 +73,9 @@ class TransportAuditSceneOverlay extends Overlay
 			renderBoatWake(graphics);
 			renderPredictedCourse(graphics);
 			graphics.setClip(previousClip);
+		}
+		if (plugin.showBoatTiles)
+		{
 			renderBoatTiles(graphics);
 		}
 		if (plugin.showBoatText)
@@ -157,10 +160,12 @@ class TransportAuditSceneOverlay extends Overlay
 		new Color(80, 255, 120, 230), new Color(80, 255, 120, 140), new Color(80, 255, 120, 55)};
 	private static final Color[] COURSE_FAR = {
 		new Color(80, 255, 140, 60), new Color(80, 255, 140, 35), new Color(80, 255, 140, 12)};
-	// The wake begins where the course left off (same green), ageing into faded yellow.
+	// The wake begins where the course left off (same green), ageing into yellow and out to
+	// FULLY TRANSPARENT: the oldest sample drops off the deque every tick, so any alpha left at
+	// the tip would pop out of existence. Ending at zero makes that invisible.
 	private static final Color[] WAKE_NEAR = COURSE_NEAR;
 	private static final Color[] WAKE_FAR = {
-		new Color(255, 210, 70, 45), new Color(255, 210, 70, 28), new Color(255, 210, 70, 10)};
+		new Color(255, 210, 70, 0), new Color(255, 210, 70, 0), new Color(255, 210, 70, 0)};
 	private static final Color HULL_CONFIG_BOX = new Color(255, 255, 255, 200);
 	private static final Color COURSE_CENTRE = new Color(80, 255, 120, 220);
 	private static final Color COURSE_EDGE = new Color(80, 255, 120, 120);
@@ -549,6 +554,9 @@ class TransportAuditSceneOverlay extends Overlay
 			// Distance from the hull, 0 at its end of the ribbon and 1 at the far tip.
 			double along = (double) (i + 1) / (projected.size() - 1);
 			double t = hullAtStart ? along : 1 - along;
+			// Tail-weighted easing: most of the ribbon keeps its near colour and the fade
+			// concentrates toward the tip, instead of washing out linearly from the hull.
+			t = t * t;
 
 			Polygon quad = new Polygon();
 			quad.addPoint(from[0], from[1]);

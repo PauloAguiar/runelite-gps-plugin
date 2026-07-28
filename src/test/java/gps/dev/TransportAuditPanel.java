@@ -113,16 +113,26 @@ class TransportAuditPanel extends PluginPanel
 			+ "· <font color='#ff00ff'>magenta</font> = edge disagreement</html>");
 		collisionToggle.addActionListener(e -> plugin.showCollision = collisionToggle.isSelected());
 		top.add(collisionToggle);
-		javax.swing.JCheckBox boatDebugToggle = new javax.swing.JCheckBox("Boat outline", false);
+		javax.swing.JCheckBox boatDebugToggle = new javax.swing.JCheckBox("Boat wake & course", false);
 		boatDebugToggle.setFocusable(false);
 		boatDebugToggle.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		boatDebugToggle.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 		boatDebugToggle.setFont(FontManager.getRunescapeSmallFont());
 		boatDebugToggle.setAlignmentX(Component.LEFT_ALIGNMENT);
-		boatDebugToggle.setToolTipText("Draws the boat's footprint (brown perimeter + bow nose)"
-			+ " and its true routing tile in red");
-		boatDebugToggle.addActionListener(e -> plugin.showBoatDebug = boatDebugToggle.isSelected());
+		boatDebugToggle.setToolTipText("<html>The swept path the hull travelled (yellow) and the"
+			+ " course<br>it would take toward the mouse (green)</html>");
+		boatDebugToggle.addActionListener(e -> plugin.showBoatWake = boatDebugToggle.isSelected());
 		top.add(boatDebugToggle);
+		javax.swing.JCheckBox boatTilesToggle = new javax.swing.JCheckBox("Boat tiles", false);
+		boatTilesToggle.setFocusable(false);
+		boatTilesToggle.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		boatTilesToggle.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		boatTilesToggle.setFont(FontManager.getRunescapeSmallFont());
+		boatTilesToggle.setAlignmentX(Component.LEFT_ALIGNMENT);
+		boatTilesToggle.setToolTipText("<html>The deck footprint (brown perimeter + bow nose), the"
+			+ " client's<br>hull box in white, and the boat's true routing tile in red</html>");
+		boatTilesToggle.addActionListener(e -> plugin.showBoatTiles = boatTilesToggle.isSelected());
+		top.add(boatTilesToggle);
 		javax.swing.JCheckBox boatTextToggle = new javax.swing.JCheckBox("Boat position text", false);
 		boatTextToggle.setFocusable(false);
 		boatTextToggle.setBackground(ColorScheme.DARK_GRAY_COLOR);

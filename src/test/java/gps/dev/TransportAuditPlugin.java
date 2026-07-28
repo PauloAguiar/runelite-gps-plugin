@@ -389,8 +389,10 @@ public class TransportAuditPlugin extends Plugin
 	// In-world collision rendering (the old shortest-path debug view, upgraded): static map
 	// verdicts AND live-vs-static disagreements, rebuilt per tick around the player.
 	volatile boolean showCollision = false;
-	// The boat's footprint + true-tile anchor drawn on the sea (the keeper instrument).
-	volatile boolean showBoatDebug = false;
+	// The wake + predicted-course ribbons (the navigation view).
+	volatile boolean showBoatWake = false;
+	// The deck footprint, perimeter, nose, hull box and the red true tile (the diagnostic view).
+	volatile boolean showBoatTiles = false;
 	// The text dump of the position resolution chain, one line per link — separate toggle:
 	// it's occasional diagnostics, not something to sail with.
 	volatile boolean showBoatText = false;
