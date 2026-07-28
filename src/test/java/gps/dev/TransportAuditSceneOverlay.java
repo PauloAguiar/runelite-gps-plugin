@@ -62,11 +62,16 @@ class TransportAuditSceneOverlay extends Overlay
 		}
 		if (plugin.showBoatWake)
 		{
-			// Java2D's CLIP is binary — one bit of coverage per pixel, no antialiasing — so
-			// masking with setClip stair-steps the ribbon edges however exact the outline is.
-			// Instead the ribbons go into an offscreen buffer, the boat's outline is ERASED
-			// from it with DST_OUT (antialiased, so the cut has soft edges), and the result is
-			// composited over the scene. Same occlusion, smooth boundary.
+			// Java2D's CLIP is one bit of coverage per pixel — no antialiasing — so masking with
+			// setClip stair-steps the edges however exact the outline is. Everything happens in
+			// offscreen buffers instead:
+			//   1. the ribbons are drawn,
+			//   2. a RIM is built from the boat's silhouette (dilated, then its interior erased)
+			//      and kept only where ribbons lie behind it,
+			//   3. the boat's silhouette is erased from the ribbons (DST_OUT, antialiased),
+			//   4. ribbons then rim are composited over the scene.
+			// The result: ribbons vanish behind the hull with a soft edge, and the boat picks up
+			// a white rim exactly where a ribbon passes behind it.
 			int width = client.getCanvasWidth();
 			int height = client.getCanvasHeight();
 			if (width > 0 && height > 0)
@@ -76,21 +81,43 @@ class TransportAuditSceneOverlay extends Overlay
 				{
 					ribbonBuffer = new java.awt.image.BufferedImage(width, height,
 						java.awt.image.BufferedImage.TYPE_INT_ARGB);
+					rimBuffer = new java.awt.image.BufferedImage(width, height,
+						java.awt.image.BufferedImage.TYPE_INT_ARGB);
 				}
-				Graphics2D buffer = ribbonBuffer.createGraphics();
+				Graphics2D ribbons = ribbonBuffer.createGraphics();
+				Graphics2D rim = rimBuffer.createGraphics();
 				try
 				{
-					buffer.setBackground(new Color(0, 0, 0, 0));
-					buffer.clearRect(0, 0, width, height);
-					buffer.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,
+					ribbons.setBackground(TRANSPARENT);
+					ribbons.clearRect(0, 0, width, height);
+					ribbons.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,
 						java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
-					buffer.setRenderingHint(java.awt.RenderingHints.KEY_STROKE_CONTROL,
+					ribbons.setRenderingHint(java.awt.RenderingHints.KEY_STROKE_CONTROL,
 						java.awt.RenderingHints.VALUE_STROKE_PURE);
-					renderBoatWake(buffer);
-					renderPredictedCourse(buffer);
-					buffer.setComposite(java.awt.AlphaComposite.DstOut);
-					buffer.setColor(Color.BLACK); // DST_OUT erases by the fill's coverage
-					if (!eraseBoatSilhouette(buffer))
+					renderBoatWake(ribbons);
+					renderPredictedCourse(ribbons);
+
+					rim.setBackground(TRANSPARENT);
+					rim.clearRect(0, 0, width, height);
+					rim.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,
+						java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+					// Dilate: filling AND stroking each face pushes the OUTER boundary out by
+					// half the stroke; strokes on interior edges land inside the fill and are
+					// invisible. Erasing the plain silhouette then leaves just the rim.
+					rim.setColor(HULL_GLOW);
+					boolean drawn = drawBoatSilhouette(rim, GLOW_WIDTH);
+					if (drawn)
+					{
+						rim.setComposite(java.awt.AlphaComposite.DstOut);
+						drawBoatSilhouette(rim, 0);
+						// Keep the rim only where a ribbon lies behind the boat.
+						rim.setComposite(java.awt.AlphaComposite.DstIn);
+						rim.drawImage(ribbonBuffer, 0, 0, null);
+					}
+
+					ribbons.setComposite(java.awt.AlphaComposite.DstOut);
+					ribbons.setColor(Color.BLACK); // DST_OUT erases by the fill's coverage
+					if (!drawn)
 					{
 						// Nothing projected (mid view-swap): fall back to the coarse masks.
 						java.awt.Shape mask = hullSilhouettePolygon();
@@ -100,15 +127,21 @@ class TransportAuditSceneOverlay extends Overlay
 						}
 						if (mask != null)
 						{
-							buffer.fill(mask);
+							ribbons.fill(mask);
 						}
+					}
+					else
+					{
+						drawBoatSilhouette(ribbons, 0);
 					}
 				}
 				finally
 				{
-					buffer.dispose();
+					ribbons.dispose();
+					rim.dispose();
 				}
 				graphics.drawImage(ribbonBuffer, 0, 0, null);
+				graphics.drawImage(rimBuffer, 0, 0, null);
 			}
 		}
 		if (plugin.showBoatTiles)
@@ -619,8 +652,13 @@ class TransportAuditSceneOverlay extends Overlay
 
 	/** WorldEntity config ids that mean "this is a sailing boat" (boat-hider's BoatID). */
 	private static final java.util.Set<Integer> BOAT_ENTITY_TYPES = java.util.Set.of(1, 2, 3);
-	/** Reused offscreen surface for the ribbons; rebuilt only when the canvas resizes. */
+	/** Reused offscreen surfaces; rebuilt only when the canvas resizes. */
 	private java.awt.image.BufferedImage ribbonBuffer;
+	private java.awt.image.BufferedImage rimBuffer;
+	private static final Color TRANSPARENT = new Color(0, 0, 0, 0);
+	/** The white rim lit along the boat where a ribbon passes behind it. */
+	private static final Color HULL_GLOW = new Color(255, 255, 255, 190);
+	private static final float GLOW_WIDTH = 5f;
 	/** Reused vertex projection scratch, grown as needed — no per-frame allocation. */
 	private int[] projectedX = new int[0];
 	private int[] projectedY = new int[0];
@@ -710,7 +748,18 @@ class TransportAuditSceneOverlay extends Overlay
 	}
 
 	/**
-	 * Erases the boat's TRUE silhouette from the ribbon buffer, triangle by triangle.
+	 * Draws the boat's TRUE silhouette, triangle by triangle, into whatever surface and
+	 * composite the caller set up — used both to erase the ribbons behind the boat and to
+	 * build the rim glow.
+	 *
+	 * {@link Perspective#getClickbox} would be easier but returns a CONVEX HULL of the model,
+	 * which on a boat spans masthead to bow tip and swallows a wedge of open water. The outline
+	 * plugins avoid that by working from the mesh, and so does this: every part in the boat's
+	 * WorldView has its vertices projected with the same mapping RuneLite uses internally
+	 * ({@code verticesX, verticesZ, verticesY}, which handles non-top-level views) and its
+	 * faces filled. {@code dilate} additionally strokes each face, pushing the OUTER boundary
+	 * out by half that width — interior strokes land under the fill — which is how the rim is
+	 * produced. Returns false when nothing projected.
 	 *
 	 * {@link Perspective#getClickbox} would be easier but returns a CONVEX HULL of the model —
 	 * which on a boat spans from masthead to bow tip and swallows a wedge of open water. The
@@ -722,7 +771,7 @@ class TransportAuditSceneOverlay extends Overlay
 	 * face is filled. With DST_OUT and antialiasing on, the cut follows the real geometry with
 	 * soft edges. Returns false when nothing projected.
 	 */
-	private boolean eraseBoatSilhouette(Graphics2D buffer)
+	private boolean drawBoatSilhouette(Graphics2D target, float dilate)
 	{
 		net.runelite.api.Player player = client.getLocalPlayer();
 		java.util.List<net.runelite.api.TileObject> parts = boatParts();
@@ -730,24 +779,22 @@ class TransportAuditSceneOverlay extends Overlay
 		{
 			return false;
 		}
-		boolean erased = false;
+		if (dilate > 0)
+		{
+			target.setStroke(new java.awt.BasicStroke(dilate, java.awt.BasicStroke.CAP_ROUND,
+				java.awt.BasicStroke.JOIN_ROUND));
+		}
+		boolean drawn = false;
 		for (net.runelite.api.TileObject part : parts)
 		{
-			erased |= eraseObject(buffer, player.getWorldView(), part);
+			drawn |= drawObjectFaces(target, player.getWorldView(), part, dilate > 0);
 		}
-		// The deck FLOOR is terrain, not an object: close the gap between hull sides and planking.
-		Polygon deck = hullSilhouettePolygon();
-		if (deck != null)
-		{
-			buffer.fill(deck);
-			erased = true;
-		}
-		return erased;
+		return drawn;
 	}
 
-	/** Projects one boat part's mesh and fills its faces into the (DST_OUT) buffer. */
-	private boolean eraseObject(Graphics2D buffer, net.runelite.api.WorldView boatView,
-		net.runelite.api.TileObject part)
+	/** Projects one boat part's mesh and fills (optionally also strokes) its faces. */
+	private boolean drawObjectFaces(Graphics2D buffer, net.runelite.api.WorldView boatView,
+		net.runelite.api.TileObject part, boolean stroke)
 	{
 		net.runelite.api.Renderable renderable = renderableOf(part);
 		net.runelite.api.Model model = renderable != null ? renderable.getModel() : null;
@@ -796,6 +843,10 @@ class TransportAuditSceneOverlay extends Overlay
 			triangleY[1] = projectedY[b];
 			triangleY[2] = projectedY[c];
 			buffer.fillPolygon(triangleX, triangleY, 3);
+			if (stroke)
+			{
+				buffer.drawPolygon(triangleX, triangleY, 3);
+			}
 			any = true;
 		}
 		return any;
