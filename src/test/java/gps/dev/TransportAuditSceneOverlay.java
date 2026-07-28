@@ -63,15 +63,14 @@ class TransportAuditSceneOverlay extends Overlay
 		if (plugin.showBoatWake)
 		{
 			// Java2D's CLIP is one bit of coverage per pixel — no antialiasing — so masking with
-			// setClip stair-steps the edges however exact the outline is. Everything happens in
-			// offscreen buffers instead:
-			//   1. the ribbons are drawn,
-			//   2. a RIM is built from the boat's silhouette (dilated, then its interior erased)
-			//      and kept only where ribbons lie behind it,
-			//   3. the boat's silhouette is erased from the ribbons (DST_OUT, antialiased),
-			//   4. ribbons then rim are composited over the scene.
-			// The result: ribbons vanish behind the hull with a soft edge, and the boat picks up
-			// a white rim exactly where a ribbon passes behind it.
+			// setClip stair-steps the edges. The ribbons are drawn into an offscreen buffer, the
+			// boat is erased from it with DST_OUT (antialiased), and the result is composited.
+			//
+			// The mask is one CLICKBOX FILL PER PART. Filling the mesh triangle by triangle gave
+			// a truer silhouette but cost three full-mesh passes a frame and tanked the frame
+			// rate; a clickbox is a convex hull per part, and since a boat is many parts (hull,
+			// keel, sail, mast, cannon...) the union of their hulls still tracks the shape
+			// closely — at the same cost class as drawing the outlines.
 			int width = client.getCanvasWidth();
 			int height = client.getCanvasHeight();
 			if (width > 0 && height > 0)
@@ -81,11 +80,8 @@ class TransportAuditSceneOverlay extends Overlay
 				{
 					ribbonBuffer = new java.awt.image.BufferedImage(width, height,
 						java.awt.image.BufferedImage.TYPE_INT_ARGB);
-					rimBuffer = new java.awt.image.BufferedImage(width, height,
-						java.awt.image.BufferedImage.TYPE_INT_ARGB);
 				}
 				Graphics2D ribbons = ribbonBuffer.createGraphics();
-				Graphics2D rim = rimBuffer.createGraphics();
 				try
 				{
 					ribbons.setBackground(TRANSPARENT);
@@ -97,51 +93,36 @@ class TransportAuditSceneOverlay extends Overlay
 					renderBoatWake(ribbons);
 					renderPredictedCourse(ribbons);
 
-					rim.setBackground(TRANSPARENT);
-					rim.clearRect(0, 0, width, height);
-					rim.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,
-						java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
-					// Dilate: filling AND stroking each face pushes the OUTER boundary out by
-					// half the stroke; strokes on interior edges land inside the fill and are
-					// invisible. Erasing the plain silhouette then leaves just the rim.
-					rim.setColor(HULL_GLOW);
-					boolean drawn = drawBoatSilhouette(rim, GLOW_WIDTH);
-					if (drawn)
-					{
-						rim.setComposite(java.awt.AlphaComposite.DstOut);
-						drawBoatSilhouette(rim, 0);
-						// Keep the rim only where a ribbon lies behind the boat.
-						rim.setComposite(java.awt.AlphaComposite.DstIn);
-						rim.drawImage(ribbonBuffer, 0, 0, null);
-					}
-
 					ribbons.setComposite(java.awt.AlphaComposite.DstOut);
 					ribbons.setColor(Color.BLACK); // DST_OUT erases by the fill's coverage
-					if (!drawn)
+					boolean masked = false;
+					for (net.runelite.api.TileObject part : boatParts())
 					{
-						// Nothing projected (mid view-swap): fall back to the coarse masks.
-						java.awt.Shape mask = hullSilhouettePolygon();
-						if (mask == null)
+						java.awt.Shape clickbox = part.getClickbox();
+						if (clickbox != null)
 						{
-							mask = hullBoxPolygon();
-						}
-						if (mask != null)
-						{
-							ribbons.fill(mask);
+							ribbons.fill(clickbox);
+							masked = true;
 						}
 					}
-					else
+					if (!masked)
 					{
-						drawBoatSilhouette(ribbons, 0);
+						java.awt.Shape fallback = hullSilhouettePolygon();
+						if (fallback == null)
+						{
+							fallback = hullBoxPolygon();
+						}
+						if (fallback != null)
+						{
+							ribbons.fill(fallback);
+						}
 					}
 				}
 				finally
 				{
 					ribbons.dispose();
-					rim.dispose();
 				}
 				graphics.drawImage(ribbonBuffer, 0, 0, null);
-				graphics.drawImage(rimBuffer, 0, 0, null);
 			}
 		}
 		if (plugin.showBoatTiles)
@@ -654,14 +635,7 @@ class TransportAuditSceneOverlay extends Overlay
 	private static final java.util.Set<Integer> BOAT_ENTITY_TYPES = java.util.Set.of(1, 2, 3);
 	/** Reused offscreen surfaces; rebuilt only when the canvas resizes. */
 	private java.awt.image.BufferedImage ribbonBuffer;
-	private java.awt.image.BufferedImage rimBuffer;
 	private static final Color TRANSPARENT = new Color(0, 0, 0, 0);
-	/** The white rim lit along the boat where a ribbon passes behind it. */
-	private static final Color HULL_GLOW = new Color(255, 255, 255, 190);
-	private static final float GLOW_WIDTH = 5f;
-	/** Reused vertex projection scratch, grown as needed — no per-frame allocation. */
-	private int[] projectedX = new int[0];
-	private int[] projectedY = new int[0];
 
 	/**
 	 * Every object making up the player's boat: hull, keel, trim, sail, helm, cannon and the
@@ -745,133 +719,6 @@ class TransportAuditSceneOverlay extends Overlay
 		{
 			outlineRenderer.drawOutline(part, 2, new Color(0, 255, 255, 200), 4);
 		}
-	}
-
-	/**
-	 * Draws the boat's TRUE silhouette, triangle by triangle, into whatever surface and
-	 * composite the caller set up — used both to erase the ribbons behind the boat and to
-	 * build the rim glow.
-	 *
-	 * {@link Perspective#getClickbox} would be easier but returns a CONVEX HULL of the model,
-	 * which on a boat spans masthead to bow tip and swallows a wedge of open water. The outline
-	 * plugins avoid that by working from the mesh, and so does this: every part in the boat's
-	 * WorldView has its vertices projected with the same mapping RuneLite uses internally
-	 * ({@code verticesX, verticesZ, verticesY}, which handles non-top-level views) and its
-	 * faces filled. {@code dilate} additionally strokes each face, pushing the OUTER boundary
-	 * out by half that width — interior strokes land under the fill — which is how the rim is
-	 * produced. Returns false when nothing projected.
-	 *
-	 * {@link Perspective#getClickbox} would be easier but returns a CONVEX HULL of the model —
-	 * which on a boat spans from masthead to bow tip and swallows a wedge of open water. The
-	 * outline plugins avoid that by working from the mesh itself, and so does this: every
-	 * object in the boat's WorldView (hull, keel, trim, sail, helm, cannon — a boat is not one
-	 * model, which is exactly why boat-hider can hide the parts individually) has its vertices
-	 * projected with the same modelToCanvas mapping RuneLite uses internally
-	 * ({@code verticesX, verticesZ, verticesY}, and it handles non-top-level views), then each
-	 * face is filled. With DST_OUT and antialiasing on, the cut follows the real geometry with
-	 * soft edges. Returns false when nothing projected.
-	 */
-	private boolean drawBoatSilhouette(Graphics2D target, float dilate)
-	{
-		net.runelite.api.Player player = client.getLocalPlayer();
-		java.util.List<net.runelite.api.TileObject> parts = boatParts();
-		if (player == null || parts.isEmpty() || player.getWorldView() == null)
-		{
-			return false;
-		}
-		if (dilate > 0)
-		{
-			target.setStroke(new java.awt.BasicStroke(dilate, java.awt.BasicStroke.CAP_ROUND,
-				java.awt.BasicStroke.JOIN_ROUND));
-		}
-		boolean drawn = false;
-		for (net.runelite.api.TileObject part : parts)
-		{
-			drawn |= drawObjectFaces(target, player.getWorldView(), part, dilate > 0);
-		}
-		return drawn;
-	}
-
-	/** Projects one boat part's mesh and fills (optionally also strokes) its faces. */
-	private boolean drawObjectFaces(Graphics2D buffer, net.runelite.api.WorldView boatView,
-		net.runelite.api.TileObject part, boolean stroke)
-	{
-		net.runelite.api.Renderable renderable = renderableOf(part);
-		net.runelite.api.Model model = renderable != null ? renderable.getModel() : null;
-		net.runelite.api.coords.LocalPoint at = part.getLocalLocation();
-		if (model == null || at == null || model.getVerticesCount() <= 0 || model.getFaceCount() <= 0)
-		{
-			return false;
-		}
-		int count = model.getVerticesCount();
-		if (projectedX.length < count)
-		{
-			projectedX = new int[count];
-			projectedY = new int[count];
-		}
-		int orientation = part instanceof net.runelite.api.GameObject
-			? ((net.runelite.api.GameObject) part).getModelOrientation() : 0;
-		// Same argument order RuneLite's own bounds code uses: X, Z, Y.
-		Perspective.modelToCanvas(client, boatView, count, at.getX(), at.getY(), 0, orientation,
-			model.getVerticesX(), model.getVerticesZ(), model.getVerticesY(),
-			projectedX, projectedY);
-		int[] faceA = model.getFaceIndices1();
-		int[] faceB = model.getFaceIndices2();
-		int[] faceC = model.getFaceIndices3();
-		if (faceA == null || faceB == null || faceC == null)
-		{
-			return false;
-		}
-		int[] triangleX = new int[3];
-		int[] triangleY = new int[3];
-		boolean any = false;
-		for (int face = 0; face < model.getFaceCount(); face++)
-		{
-			int a = faceA[face];
-			int b = faceB[face];
-			int c = faceC[face];
-			if (a >= count || b >= count || c >= count
-				|| projectedX[a] == Integer.MIN_VALUE || projectedX[b] == Integer.MIN_VALUE
-				|| projectedX[c] == Integer.MIN_VALUE)
-			{
-				continue;
-			}
-			triangleX[0] = projectedX[a];
-			triangleX[1] = projectedX[b];
-			triangleX[2] = projectedX[c];
-			triangleY[0] = projectedY[a];
-			triangleY[1] = projectedY[b];
-			triangleY[2] = projectedY[c];
-			buffer.fillPolygon(triangleX, triangleY, 3);
-			if (stroke)
-			{
-				buffer.drawPolygon(triangleX, triangleY, 3);
-			}
-			any = true;
-		}
-		return any;
-	}
-
-	/** The renderable behind any flavour of tile object, or null. */
-	private static net.runelite.api.Renderable renderableOf(net.runelite.api.TileObject part)
-	{
-		if (part instanceof net.runelite.api.GameObject)
-		{
-			return ((net.runelite.api.GameObject) part).getRenderable();
-		}
-		if (part instanceof net.runelite.api.WallObject)
-		{
-			return ((net.runelite.api.WallObject) part).getRenderable1();
-		}
-		if (part instanceof net.runelite.api.GroundObject)
-		{
-			return ((net.runelite.api.GroundObject) part).getRenderable();
-		}
-		if (part instanceof net.runelite.api.DecorativeObject)
-		{
-			return ((net.runelite.api.DecorativeObject) part).getRenderable();
-		}
-		return null;
 	}
 
 	/**
