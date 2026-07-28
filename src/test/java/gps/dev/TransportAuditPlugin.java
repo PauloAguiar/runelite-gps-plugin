@@ -389,6 +389,9 @@ public class TransportAuditPlugin extends Plugin
 	// In-world collision rendering (the old shortest-path debug view, upgraded): static map
 	// verdicts AND live-vs-static disagreements, rebuilt per tick around the player.
 	volatile boolean showCollision = false;
+	// RuneLite's own model-outline renderer traced around every boat part (proving ground for
+	// the mask: get the outline right on its own before clipping anything to it).
+	volatile boolean showBoatOutline = false;
 	// The wake + predicted-course ribbons (the navigation view).
 	volatile boolean showBoatWake = false;
 	// The deck footprint, perimeter, nose, hull box and the red true tile (the diagnostic view).

@@ -28,12 +28,15 @@ class TransportAuditSceneOverlay extends Overlay
 
 	private final Client client;
 	private final TransportAuditPlugin plugin;
+	private final net.runelite.client.ui.overlay.outline.ModelOutlineRenderer outlineRenderer;
 
 	@Inject
-	TransportAuditSceneOverlay(Client client, TransportAuditPlugin plugin)
+	TransportAuditSceneOverlay(Client client, TransportAuditPlugin plugin,
+		net.runelite.client.ui.overlay.outline.ModelOutlineRenderer outlineRenderer)
 	{
 		this.client = client;
 		this.plugin = plugin;
+		this.outlineRenderer = outlineRenderer;
 		setPosition(OverlayPosition.DYNAMIC);
 		setLayer(OverlayLayer.ABOVE_SCENE);
 	}
@@ -52,6 +55,10 @@ class TransportAuditSceneOverlay extends Overlay
 		if (plugin.showCollision)
 		{
 			renderCollision(graphics);
+		}
+		if (plugin.showBoatOutline)
+		{
+			renderBoatModelOutline(graphics);
 		}
 		if (plugin.showBoatWake)
 		{
@@ -619,24 +626,18 @@ class TransportAuditSceneOverlay extends Overlay
 	private int[] projectedY = new int[0];
 
 	/**
-	 * Erases the boat's TRUE silhouette from the ribbon buffer, triangle by triangle.
-	 *
-	 * {@link Perspective#getClickbox} would be easier but returns a CONVEX HULL of the model —
-	 * which on a boat spans from masthead to bow tip and swallows a wedge of open water. The
-	 * outline plugins avoid that by working from the mesh itself, and so does this: every
-	 * object in the boat's WorldView (hull, keel, trim, sail, helm, cannon — a boat is not one
-	 * model, which is exactly why boat-hider can hide the parts individually) has its vertices
-	 * projected with the same modelToCanvas mapping RuneLite uses internally
-	 * ({@code verticesX, verticesZ, verticesY}, and it handles non-top-level views), then each
-	 * face is filled. With DST_OUT and antialiasing on, the cut follows the real geometry with
-	 * soft edges. Returns false when nothing projected.
+	 * Every object making up the player's boat: hull, keel, trim, sail, helm, cannon and the
+	 * rest. A boat is not one model but a WorldView full of parts — which is exactly why the
+	 * boat-hider plugin can hide them individually — so "the boat" is simply everything in
+	 * that view. Empty when ashore or when the view isn't a boat.
 	 */
-	private boolean eraseBoatSilhouette(Graphics2D buffer)
+	private java.util.List<net.runelite.api.TileObject> boatParts()
 	{
+		java.util.List<net.runelite.api.TileObject> parts = new java.util.ArrayList<>();
 		net.runelite.api.Player player = client.getLocalPlayer();
 		if (player == null || player.getWorldView() == null || player.getWorldView().isTopLevel())
 		{
-			return false;
+			return parts;
 		}
 		net.runelite.api.WorldView boatView = player.getWorldView();
 		net.runelite.api.WorldEntity entity =
@@ -644,18 +645,17 @@ class TransportAuditSceneOverlay extends Overlay
 		if (entity == null || entity.getConfig() == null
 			|| !BOAT_ENTITY_TYPES.contains(entity.getConfig().getId()))
 		{
-			return false;
+			return parts;
 		}
 		net.runelite.api.Scene scene = boatView.getScene();
 		net.runelite.api.Tile[][][] tiles = scene != null ? scene.getTiles() : null;
 		if (tiles == null)
 		{
-			return false;
+			return parts;
 		}
 		// A multi-tile object is referenced from every tile it covers — dedupe by identity.
 		java.util.Set<net.runelite.api.TileObject> seen = java.util.Collections.newSetFromMap(
 			new java.util.IdentityHashMap<>());
-		boolean erased = false;
 		for (net.runelite.api.Tile[][] plane : tiles)
 		{
 			if (plane == null)
@@ -674,24 +674,66 @@ class TransportAuditSceneOverlay extends Overlay
 					{
 						continue;
 					}
-					java.util.List<net.runelite.api.TileObject> parts = new java.util.ArrayList<>();
+					java.util.List<net.runelite.api.TileObject> candidates = new java.util.ArrayList<>();
 					if (tile.getGameObjects() != null)
 					{
-						java.util.Collections.addAll(parts, tile.getGameObjects());
+						java.util.Collections.addAll(candidates, tile.getGameObjects());
 					}
-					parts.add(tile.getWallObject());
-					parts.add(tile.getDecorativeObject());
-					parts.add(tile.getGroundObject());
-					for (net.runelite.api.TileObject part : parts)
+					candidates.add(tile.getWallObject());
+					candidates.add(tile.getDecorativeObject());
+					candidates.add(tile.getGroundObject());
+					for (net.runelite.api.TileObject candidate : candidates)
 					{
-						if (part == null || !seen.add(part))
+						if (candidate != null && seen.add(candidate))
 						{
-							continue;
+							parts.add(candidate);
 						}
-						erased |= eraseObject(buffer, boatView, part);
 					}
 				}
 			}
+		}
+		return parts;
+	}
+
+	/**
+	 * Draws the boat's real outline with RuneLite's own {@link
+	 * net.runelite.client.ui.overlay.outline.ModelOutlineRenderer} — the renderer the
+	 * highlight/outline plugins use, which walks the model's actual silhouette rather than a
+	 * convex hull. Proving the outline here first; clipping the ribbons to it comes after.
+	 */
+	private void renderBoatModelOutline(Graphics2D graphics)
+	{
+		for (net.runelite.api.TileObject part : boatParts())
+		{
+			outlineRenderer.drawOutline(part, 2, new Color(0, 255, 255, 200), 4);
+		}
+	}
+
+	/**
+	 * Erases the boat's TRUE silhouette from the ribbon buffer, triangle by triangle.
+	 *
+	 * {@link Perspective#getClickbox} would be easier but returns a CONVEX HULL of the model —
+	 * which on a boat spans from masthead to bow tip and swallows a wedge of open water. The
+	 * outline plugins avoid that by working from the mesh itself, and so does this: every
+	 * object in the boat's WorldView (hull, keel, trim, sail, helm, cannon — a boat is not one
+	 * model, which is exactly why boat-hider can hide the parts individually) has its vertices
+	 * projected with the same modelToCanvas mapping RuneLite uses internally
+	 * ({@code verticesX, verticesZ, verticesY}, and it handles non-top-level views), then each
+	 * face is filled. With DST_OUT and antialiasing on, the cut follows the real geometry with
+	 * soft edges. Returns false when nothing projected.
+	 */
+	private boolean eraseBoatSilhouette(Graphics2D buffer)
+	{
+		net.runelite.api.Player player = client.getLocalPlayer();
+		java.util.List<net.runelite.api.TileObject> parts = boatParts();
+		if (player == null || parts.isEmpty() || player.getWorldView() == null)
+		{
+			return false;
+		}
+		boolean erased = false;
+		for (net.runelite.api.TileObject part : parts)
+		{
+			erased |= eraseObject(buffer, player.getWorldView(), part);
 		}
 		// The deck FLOOR is terrain, not an object: close the gap between hull sides and planking.
 		Polygon deck = hullSilhouettePolygon();

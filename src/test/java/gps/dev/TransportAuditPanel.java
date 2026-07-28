@@ -133,6 +133,16 @@ class TransportAuditPanel extends PluginPanel
 			+ " client's<br>hull box in white, and the boat's true routing tile in red</html>");
 		boatTilesToggle.addActionListener(e -> plugin.showBoatTiles = boatTilesToggle.isSelected());
 		top.add(boatTilesToggle);
+		javax.swing.JCheckBox boatOutlineToggle = new javax.swing.JCheckBox("Boat model outline", false);
+		boatOutlineToggle.setFocusable(false);
+		boatOutlineToggle.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		boatOutlineToggle.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		boatOutlineToggle.setFont(FontManager.getRunescapeSmallFont());
+		boatOutlineToggle.setAlignmentX(Component.LEFT_ALIGNMENT);
+		boatOutlineToggle.setToolTipText("<html>Traces every boat part with RuneLite's model-outline"
+			+ " renderer<br>(the one the highlight plugins use) — the true silhouette</html>");
+		boatOutlineToggle.addActionListener(e -> plugin.showBoatOutline = boatOutlineToggle.isSelected());
+		top.add(boatOutlineToggle);
 		javax.swing.JCheckBox boatTextToggle = new javax.swing.JCheckBox("Boat position text", false);
 		boatTextToggle.setFocusable(false);
 		boatTextToggle.setBackground(ColorScheme.DARK_GRAY_COLOR);
