@@ -66,13 +66,11 @@ class TransportAuditSceneOverlay extends Overlay
 			// setClip stair-steps the edges. The ribbons are drawn into an offscreen buffer, the
 			// boat is erased from it with DST_OUT (antialiased), and the result is composited.
 			//
-			// The mask is ONE PROJECTED CONVEX HULL PER PART. getClickbox returns an
-			// axis-aligned BOX, which is what made the cut look like a hitbox; filling the mesh
-			// triangle by triangle was accurate but cost three full-mesh passes a frame and
-			// tanked the frame rate. Hulling each part's projected vertices sits between the
-			// two: bulk-project the vertices (one call per part), hull them, fill once. A boat
-			// is many parts — hull, keel, sail, mast, cannon — so the union of their hulls
-			// tracks the real outline closely at roughly the cost of drawing the outlines.
+			// Masking is only a BACKSTOP now. Chasing an exact silhouette went nowhere:
+			// getClickbox is an axis-aligned box, per-part hulls still read as boxes, and the
+			// exact mesh fill tanked the frame rate. Instead the ribbons simply FADE IN over
+			// the first few tiles from the hull (see HULL_CLEARANCE_TILES), so there is nothing
+			// to hide where the boat sits, and the cheap bounds box catches the remainder.
 			int width = client.getCanvasWidth();
 			int height = client.getCanvasHeight();
 			net.runelite.api.Player player = client.getLocalPlayer();
@@ -98,27 +96,10 @@ class TransportAuditSceneOverlay extends Overlay
 
 					ribbons.setComposite(java.awt.AlphaComposite.DstOut);
 					ribbons.setColor(Color.BLACK); // DST_OUT erases by the fill's coverage
-					boolean masked = false;
-					for (net.runelite.api.TileObject part : boatParts())
+					java.awt.Shape mask = hullBoxPolygon();
+					if (mask != null)
 					{
-						Polygon hull = partHull(player.getWorldView(), part);
-						if (hull != null)
-						{
-							ribbons.fillPolygon(hull);
-							masked = true;
-						}
-					}
-					if (!masked)
-					{
-						java.awt.Shape fallback = hullSilhouettePolygon();
-						if (fallback == null)
-						{
-							fallback = hullBoxPolygon();
-						}
-						if (fallback != null)
-						{
-							ribbons.fill(fallback);
-						}
+						ribbons.fill(mask);
 					}
 				}
 				finally
@@ -230,6 +211,10 @@ class TransportAuditSceneOverlay extends Overlay
 	private static final int COURSE_STEPS = 12;
 	/** Orientation units per tick the hull turns: 128/2048 of a circle = 22.5 degrees. */
 	private static final int TURN_PER_TICK = 128;
+	/** Tiles from the hull where a ribbon is still fully transparent. */
+	private static final double HULL_CLEARANCE_TILES = 1.5;
+	/** Tiles over which it then fades in to full strength. */
+	private static final double HULL_FADE_TILES = 2.5;
 
 	/**
 	 * The boat's footprint on the sea: every deck cell with rendered content, corners pushed
@@ -580,27 +565,49 @@ class TransportAuditSceneOverlay extends Overlay
 				continue; // off-screen sample: skip rather than break the ribbon
 			}
 			projected.add(new int[]{canvasX[0], canvasY[0], canvasX[1], canvasY[1],
-				canvasX[2], canvasY[2]});
+				canvasX[2], canvasY[2], sample[0], sample[1]});
 		}
 		if (projected.size() < 2)
 		{
 			return;
 		}
-		// Cumulative canvas distance along the ribbon, normalised to 0 at the hull end and 1 at
-		// the far tip — the fade parameter for each segment.
-		double[] travelled = new double[projected.size()];
-		for (int i = 1; i < projected.size(); i++)
+		// Two distance measures, both from the sample coordinates (local units, 128 per tile)
+		// rather than canvas pixels, so they mean the same thing at any zoom:
+		//   travelled[] — 0 at the hull end, 1 at the far tip: the colour ramp.
+		//   tilesFromHull[] — absolute distance from the boat: the fade-in that keeps the
+		//   ribbon off the hull entirely.
+		int count = projected.size();
+		double[] travelled = new double[count];
+		double[] tilesFromHull = new double[count];
+		double[] steps = new double[count];
+		for (int i = 1; i < count; i++)
 		{
 			int[] previous = projected.get(i - 1);
 			int[] current = projected.get(i);
-			travelled[i] = travelled[i - 1]
-				+ Math.hypot(current[2] - previous[2], current[3] - previous[3]);
+			steps[i] = Math.hypot(current[6] - previous[6], current[7] - previous[7]) / 128.0;
 		}
-		double total = travelled[travelled.length - 1];
-		for (int i = 0; i < travelled.length; i++)
+		if (hullAtStart)
 		{
-			double fraction = total > 0 ? travelled[i] / total : 0;
-			travelled[i] = hullAtStart ? fraction : 1 - fraction;
+			for (int i = 1; i < count; i++)
+			{
+				tilesFromHull[i] = tilesFromHull[i - 1] + steps[i];
+			}
+		}
+		else
+		{
+			for (int i = count - 2; i >= 0; i--)
+			{
+				tilesFromHull[i] = tilesFromHull[i + 1] + steps[i + 1];
+			}
+		}
+		double total = 0;
+		for (int i = 1; i < count; i++)
+		{
+			total += steps[i];
+		}
+		for (int i = 0; i < count; i++)
+		{
+			travelled[i] = total > 0 ? tilesFromHull[i] / total : 0;
 		}
 		java.awt.Stroke edgeStroke = new java.awt.BasicStroke(1.5f,
 			java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND);
@@ -614,22 +621,32 @@ class TransportAuditSceneOverlay extends Overlay
 			// (speed varies, and identical ones are dropped), so an index ramp made the
 			// gradient jump whenever spacing changed. Distance makes it dissipate evenly.
 			double t = travelled[i + 1];
+			// Fade in over the first tiles out from the boat: at the hull the ribbon is fully
+			// transparent, so it never paints over the deck, rigging or sail — no mask needed
+			// for the part that mattered.
+			double nearHull = Math.min(tilesFromHull[i], tilesFromHull[i + 1]);
+			double emerge = Math.max(0, Math.min(1,
+				(nearHull - HULL_CLEARANCE_TILES) / HULL_FADE_TILES));
+			if (emerge <= 0)
+			{
+				continue;
+			}
 
 			Polygon quad = new Polygon();
 			quad.addPoint(from[0], from[1]);
 			quad.addPoint(to[0], to[1]);
 			quad.addPoint(to[4], to[5]);
 			quad.addPoint(from[4], from[5]);
-			graphics.setColor(blend(near[2], far[2], t));
+			graphics.setColor(fade(blend(near[2], far[2], t), emerge));
 			graphics.fillPolygon(quad);
 
 			graphics.setStroke(edgeStroke);
-			graphics.setColor(blend(near[1], far[1], t));
+			graphics.setColor(fade(blend(near[1], far[1], t), emerge));
 			graphics.drawLine(from[0], from[1], to[0], to[1]);
 			graphics.drawLine(from[4], from[5], to[4], to[5]);
 
 			graphics.setStroke(centreStroke);
-			graphics.setColor(blend(near[0], far[0], t));
+			graphics.setColor(fade(blend(near[0], far[0], t), emerge));
 			graphics.drawLine(from[2], from[3], to[2], to[3]);
 		}
 	}
@@ -722,72 +739,6 @@ class TransportAuditSceneOverlay extends Overlay
 		{
 			outlineRenderer.drawOutline(part, 2, new Color(0, 255, 255, 200), 4);
 		}
-	}
-
-	/** Reused vertex projection scratch, grown as needed — no per-frame allocation. */
-	private int[] projectedX = new int[0];
-	private int[] projectedY = new int[0];
-
-	/**
-	 * One boat part's outline: its mesh vertices bulk-projected, then convex-hulled.
-	 *
-	 * Cheap enough for every frame (one projection call and one hull per part) while being far
-	 * tighter than {@link net.runelite.api.TileObject#getClickbox()}, which returns an
-	 * axis-aligned box. Vertices go through the same mapping RuneLite uses internally
-	 * ({@code verticesX, verticesZ, verticesY}; modelToCanvas handles non-top-level views).
-	 * Null when the part has no model or nothing projects.
-	 */
-	private Polygon partHull(net.runelite.api.WorldView boatView, net.runelite.api.TileObject part)
-	{
-		net.runelite.api.Renderable renderable = renderableOf(part);
-		net.runelite.api.Model model = renderable != null ? renderable.getModel() : null;
-		net.runelite.api.coords.LocalPoint at = part.getLocalLocation();
-		if (model == null || at == null || model.getVerticesCount() <= 0)
-		{
-			return null;
-		}
-		int count = model.getVerticesCount();
-		if (projectedX.length < count)
-		{
-			projectedX = new int[count];
-			projectedY = new int[count];
-		}
-		int orientation = part instanceof net.runelite.api.GameObject
-			? ((net.runelite.api.GameObject) part).getModelOrientation() : 0;
-		Perspective.modelToCanvas(client, boatView, count, at.getX(), at.getY(), 0, orientation,
-			model.getVerticesX(), model.getVerticesZ(), model.getVerticesY(),
-			projectedX, projectedY);
-		java.util.List<int[]> points = new java.util.ArrayList<>(count);
-		for (int i = 0; i < count; i++)
-		{
-			if (projectedX[i] != Integer.MIN_VALUE)
-			{
-				points.add(new int[]{projectedX[i], projectedY[i]});
-			}
-		}
-		return convexHull(points);
-	}
-
-	/** The renderable behind any flavour of tile object, or null. */
-	private static net.runelite.api.Renderable renderableOf(net.runelite.api.TileObject part)
-	{
-		if (part instanceof net.runelite.api.GameObject)
-		{
-			return ((net.runelite.api.GameObject) part).getRenderable();
-		}
-		if (part instanceof net.runelite.api.WallObject)
-		{
-			return ((net.runelite.api.WallObject) part).getRenderable1();
-		}
-		if (part instanceof net.runelite.api.GroundObject)
-		{
-			return ((net.runelite.api.GroundObject) part).getRenderable();
-		}
-		if (part instanceof net.runelite.api.DecorativeObject)
-		{
-			return ((net.runelite.api.DecorativeObject) part).getRenderable();
-		}
-		return null;
 	}
 
 	/**
@@ -948,6 +899,13 @@ class TransportAuditSceneOverlay extends Overlay
 			box.addPoint(canvasX[i], canvasY[i]);
 		}
 		return box;
+	}
+
+	/** Scales a colour's alpha by {@code factor} (0 = invisible, 1 = unchanged). */
+	private static Color fade(Color colour, double factor)
+	{
+		return new Color(colour.getRed(), colour.getGreen(), colour.getBlue(),
+			(int) Math.round(colour.getAlpha() * Math.max(0, Math.min(1, factor))));
 	}
 
 	/** Linear RGBA blend; t=0 keeps {@code from}, t=1 reaches {@code to}. */
