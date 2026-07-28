@@ -166,12 +166,14 @@ class TransportAuditSceneOverlay extends Overlay
 		new Color(80, 255, 120, 230), new Color(80, 255, 120, 140), new Color(80, 255, 120, 55)};
 	private static final Color[] COURSE_FAR = {
 		new Color(80, 255, 140, 60), new Color(80, 255, 140, 35), new Color(80, 255, 140, 12)};
-	// The wake begins where the course left off (same green), ageing into yellow and out to
-	// FULLY TRANSPARENT: the oldest sample drops off the deque every tick, so any alpha left at
-	// the tip would pop out of existence. Ending at zero makes that invisible.
-	private static final Color[] WAKE_NEAR = COURSE_NEAR;
+	// The wake is WHITE foam — band and edges — with the green centre line carried through from
+	// the course, so one continuous green thread runs from the tail through the bow. It fades to
+	// FULLY TRANSPARENT: the oldest sample leaves the deque every tick, and any alpha left at
+	// the tip would pop out of existence.
+	private static final Color[] WAKE_NEAR = {
+		new Color(80, 255, 120, 230), new Color(255, 255, 255, 135), new Color(255, 255, 255, 55)};
 	private static final Color[] WAKE_FAR = {
-		new Color(255, 210, 70, 0), new Color(255, 210, 70, 0), new Color(255, 210, 70, 0)};
+		new Color(120, 255, 160, 0), new Color(255, 255, 255, 0), new Color(255, 255, 255, 0)};
 	private static final Color HULL_CONFIG_BOX = new Color(255, 255, 255, 200);
 	private static final Color COURSE_CENTRE = new Color(80, 255, 120, 220);
 	private static final Color COURSE_EDGE = new Color(80, 255, 120, 120);

@@ -405,6 +405,8 @@ public class TransportAuditPlugin extends Plugin
 	 * are scene-relative: cleared on scene load and whenever the boat changes.
 	 */
 	private static final int WAKE_SAMPLES = 80;
+	/** How far back the wake reaches, in tiles — trimmed by DISTANCE so speed can't stretch it. */
+	private static final int WAKE_MAX_TILES = 15;
 	private final java.util.ArrayDeque<int[]> boatWake = new java.util.ArrayDeque<>();
 	private int wakeViewId = -1;
 
@@ -1671,6 +1673,39 @@ public class TransportAuditPlugin extends Plugin
 		}
 		boatWake.addLast(sample);
 		while (boatWake.size() > WAKE_SAMPLES)
+		{
+			boatWake.removeFirst();
+		}
+		trimWakeToLength();
+	}
+
+	/**
+	 * Drops the oldest samples once the trail is longer than {@link #WAKE_MAX_TILES}. Trimming
+	 * by travelled DISTANCE rather than sample count keeps the wake the same physical length at
+	 * any speed — a fixed sample count would stretch it to a banner at full sail.
+	 */
+	private void trimWakeToLength()
+	{
+		final double budget = WAKE_MAX_TILES * 128.0;
+		java.util.List<int[]> samples = new java.util.ArrayList<>(boatWake);
+		double travelled = 0;
+		int[] previous = null;
+		int keep = 0;
+		for (int i = samples.size() - 1; i >= 0; i--)
+		{
+			int[] sample = samples.get(i);
+			if (previous != null)
+			{
+				travelled += Math.hypot(sample[0] - previous[0], sample[1] - previous[1]);
+				if (travelled > budget)
+				{
+					break;
+				}
+			}
+			previous = sample;
+			keep++;
+		}
+		while (boatWake.size() > keep)
 		{
 			boatWake.removeFirst();
 		}
