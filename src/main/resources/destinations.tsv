@@ -112,15 +112,15 @@ altar	Altar (2430, 3078)	2430	3078	1
 altar	Altar (2431, 3076)	2431	3076	1
 altar	Altar (2431, 3079)	2431	3079	1
 altar	Altar (2455, 2839)	2455	2839	2
-altar	Altar (2456, 2838)	2456	2838	2
+altar	Altar (2456, 2838)	2456	2840	2
 altar	Altar (2456, 2840)	2456	2840	2
-altar	Altar (2457, 2838)	2457	2838	2
+altar	Altar (2457, 2838)	2456	2840	2
 altar	Altar (2457, 2840)	2457	2840	2
-altar	Altar (2458, 2838)	2458	2838	2
+altar	Altar (2458, 2838)	2456	2840	2
 altar	Altar (2458, 2840)	2458	2840	2
 altar	Altar (2459, 2839)	2459	2839	2
-altar	Altar (2570, 9499)	2570	9499	0
-altar	Altar (2570, 9500)	2570	9500	0
+altar	Altar (2570, 9499)	2572	9499	0
+altar	Altar (2570, 9500)	2572	9499	0
 altar	Altar (2572, 9499)	2572	9499	0
 altar	Altar (2572, 9500)	2572	9500	0
 altar	Altar (2748, 3496)	2748	3496	1
@@ -171,10 +171,10 @@ altar	Altar (2938, 5204)	2938	5204	0
 altar	Altar (2939, 5201)	2939	5201	0
 altar	Altar (2939, 5205)	2939	5205	0
 altar	Altar (2942, 5203)	2942	5203	0
-altar	Altar (3026, 3510)	3026	3510	1
-altar	Altar (3027, 3511)	3027	3511	1
-altar	Altar (3028, 3511)	3028	3511	1
-altar	Altar (3029, 3510)	3029	3510	1
+altar	Altar (3026, 3510)	3024	3513	1
+altar	Altar (3027, 3511)	3024	3513	1
+altar	Altar (3028, 3511)	3024	3513	1
+altar	Altar (3029, 3510)	3024	3513	1
 altar	Altar (3050, 3498)	3050	3498	1
 altar	Altar (3051, 3497)	3051	3497	1
 altar	Altar (3051, 3499)	3051	3499	1
@@ -201,7 +201,7 @@ altar	Altar (3263, 6092)	3263	6092	2
 altar	Altar (3264, 6090)	3264	6090	2
 altar	Altar (3264, 6092)	3264	6092	2
 altar	Altar (3265, 6091)	3265	6091	2
-altar	Altar (3420, 3179)	3420	3179	1
+altar	Altar (3420, 3179)	3417	3182	1
 altar	Altar (3420, 3180)	3420	3180	1
 altar	Altar (3420, 3181)	3420	3181	1
 altar	Altar (3440, 9740)	3440	9740	1
@@ -424,8 +424,8 @@ anvil	Al Kharid Anvil	3387	3270	0
 anvil	Al Kharid Anvil	3386	3271	0
 anvil	Aldarin Anvil	1401	2864	0
 anvil	Aldarin Anvil	1402	2863	0
-anvil	Aldarin Anvil	1401	2862	0
-anvil	Aldarin Anvil	1400	2863	0
+anvil	Aldarin Anvil	1400	2861	0
+anvil	Aldarin Anvil	1399	2862	0
 anvil	Anvil (1213, 3110)	1213	3110	0
 anvil	Anvil (1214, 3109)	1214	3109	0
 anvil	Anvil (1214, 3111)	1214	3111	0
@@ -877,47 +877,38 @@ anvil	Yanille Anvil	2652	3163	0
 anvil	Yanille Anvil	2613	3077	0
 anvil	Yanille Anvil	2614	3078	0
 anvil	Yanille Anvil	2616	3080	0
-anvil	Yanille Anvil	2617	3081	0
+anvil	Yanille Anvil	2616	3082	0
 anvil	Yanille Anvil	2613	3079	0
 anvil	Yanille Anvil	2612	3078	0
-anvil	Yanille Anvil	2616	3082	0
 anvil	Yanille Anvil	2613	3080	0
 anvil	Yanille Anvil	2612	3081	0
 anvil	Yanille Anvil	2615	3081	0
 anvil	Yanille Anvil	2613	3082	0
 anvil	Yanille Anvil	2614	3081	0
-bank	Al Kharid Bank	3267	3163	0
-bank	Al Kharid Bank	3266	3163	0
+bank	Al Kharid Bank	3269	3161	0
+bank	Al Kharid Bank	3264	3161	0
 bank	Al Kharid Bank	3268	3165	0
 bank	Al Kharid Bank	3269	3164	0
-bank	Al Kharid Bank	3265	3163	0
-bank	Al Kharid Bank	3267	3161	0
+bank	Al Kharid Bank	3264	3162	0
+bank	Al Kharid Bank	3266	3160	0
 bank	Al Kharid Bank	3269	3167	0
 bank	Al Kharid Bank	3266	3161	0
-bank	Al Kharid Bank	3265	3162	0
 bank	Al Kharid Bank	3269	3166	0
-bank	Al Kharid Bank	3267	3167	0
-bank	Al Kharid Bank	3267	3166	0
-bank	Al Kharid Bank	3266	3164	0
-bank	Al Kharid Bank	3268	3162	0
-bank	Al Kharid Bank	3265	3166	0
-bank	Al Kharid Bank	3266	3165	0
-bank	Al Kharid Bank	3267	3164	0
-bank	Al Kharid Bank	3266	3170	0
-bank	Al Kharid Bank	3267	3171	0
-bank	Al Kharid Bank	3268	3172	0
-bank	Al Kharid Bank	3265	3168	0
-bank	Al Kharid Bank	3266	3171	0
-bank	Al Kharid Bank	3265	3171	0
-bank	Al Kharid Bank	3267	3169	0
-bank	Al Kharid Bank	3266	3169	0
-bank	Al Kharid Bank	3267	3168	0
+bank	Al Kharid Bank	3269	3165	0
+bank	Al Kharid Bank	3264	3165	0
+bank	Al Kharid Bank	3264	3163	0
+bank	Al Kharid Bank	3269	3162	0
+bank	Al Kharid Bank	3264	3168	0
 bank	Al Kharid Bank	3269	3169	0
-bank	Al Kharid Bank	3265	3172	0
+bank	Al Kharid Bank	3269	3171	0
+bank	Al Kharid Bank	3264	3167	0
+bank	Al Kharid Bank	3264	3169	0
+bank	Al Kharid Bank	3264	3170	0
+bank	Al Kharid Bank	3264	3171	0
 bank	Al Kharid Bank	3269	3168	0
 bank	Al Kharid Bank	3267	3173	0
 bank	Al Kharid Bank	3268	3170	0
-bank	Al Kharid Bank	3266	3173	0
+bank	Al Kharid Bank	3265	3174	0
 bank	Al Kharid Bank	3309	3121	0
 bank	Al Kharid Bank	3308	3120	0
 bank	Al Kharid Bank	3381	3268	0
@@ -928,61 +919,55 @@ bank	Al Kharid Bank	3381	3270	0
 bank	Al Kharid Bank	3382	3269	0
 bank	Aldarin Bank	1399	2929	0
 bank	Aldarin Bank	1399	2928	0
-bank	Aldarin Bank	1401	2929	0
-bank	Aldarin Bank	1401	2928	0
+bank	Aldarin Bank	1399	2927	0
+bank	Aldarin Bank	1399	2926	0
 bank	Aldarin Bank	1400	2930	0
 bank	Aldarin Bank	1400	2923	0
-bank	Aldarin Bank	1401	2925	0
-bank	Aldarin Bank	1401	2924	0
+bank	Aldarin Bank	1399	2923	0
 bank	Aldarin Bank	1400	2926	0
 bank	Aldarin Bank	1400	2927	0
 bank	Aldarin Bank	1399	2925	0
 bank	Aldarin Bank	1399	2924	0
-bank	Aldarin Bank	1379	2864	0
+bank	Aldarin Bank	1378	2865	0
 bank	Aldarin Bank	1381	2865	0
-bank	Aldarin Bank	1380	2864	0
+bank	Aldarin Bank	1378	2862	0
 bank	Aldarin Bank	1383	2866	0
-bank	Aldarin Bank	1381	2864	0
-bank	Aldarin Bank	1382	2864	0
+bank	Aldarin Bank	1379	2862	0
 bank	Aldarin Bank	1380	2866	0
-bank	Aldarin Bank	1383	2864	0
+bank	Aldarin Bank	1381	2866	0
 bank	Aldarin Bank	1382	2865	0
-bank	Aldarin Bank	1384	2864	0
+bank	Aldarin Bank	1382	2866	0
 bank	Arceuus Bank	1636	3748	0
 bank	Arceuus Bank	1635	3747	0
-bank	Arceuus Bank	1637	3749	0
 bank	Arceuus Bank	1635	3746	0
 bank	Arceuus Bank	1635	3744	0
 bank	Arceuus Bank	1636	3751	0
-bank	Arceuus Bank	1637	3750	0
+bank	Arceuus Bank	1635	3748	0
 bank	Arceuus Bank	1636	3745	0
-bank	Arceuus Bank	1637	3744	0
+bank	Arceuus Bank	1635	3742	0
 bank	Arceuus Bank	1635	3750	0
-bank	Arceuus Bank	1637	3747	0
+bank	Arceuus Bank	1635	3745	0
 bank	Arceuus Bank	1635	3749	0
-bank	Arceuus Bank	1637	3746	0
 bank	Arceuus Bank	1623	3751	0
-bank	Arceuus Bank	1637	3741	0
+bank	Arceuus Bank	1635	3739	0
 bank	Arceuus Bank	1635	3738	0
-bank	Arceuus Bank	1637	3740	0
 bank	Arceuus Bank	1636	3742	0
-bank	Arceuus Bank	1637	3743	0
-bank	Arceuus Bank	1637	3737	0
+bank	Arceuus Bank	1635	3741	0
+bank	Arceuus Bank	1635	3735	0
 bank	Arceuus Bank	1635	3743	0
 bank	Arceuus Bank	1624	3749	0
-bank	Arceuus Bank	1635	3741	0
 bank	Arceuus Bank	1624	3750	0
 bank	Arceuus Bank	1636	3739	0
-bank	Arceuus Bank	1637	3738	0
+bank	Arceuus Bank	1635	3737	0
 bank	Arceuus Bank	1635	3740	0
 bank	Ardougne Bank	2672	3320	0
 bank	Ardougne Bank	2673	3320	0
 bank	Ardougne Bank	2655	3286	0
 bank	Ardougne Bank	2655	3285	0
-bank	Ardougne Bank	2672	3322	0
+bank	Ardougne Bank	2670	3320	0
 bank	Ardougne Bank	2655	3284	0
-bank	Ardougne Bank	2672	3323	0
-bank	Ardougne Bank	2673	3322	0
+bank	Ardougne Bank	2671	3324	0
+bank	Ardougne Bank	2674	3322	0
 bank	Ardougne Bank	2655	3282	0
 bank	Ardougne Bank	2655	3281	0
 bank	Ardougne Bank	2655	3280	0
@@ -1013,11 +998,11 @@ bank	Bank (1398, 9313)	1398	9313	0
 bank	Bank (1399, 9312)	1399	9312	0
 bank	Bank (1399, 9314)	1399	9314	0
 bank	Bank (1450, 9565)	1450	9565	1
-bank	Bank (1450, 9570)	1450	9570	1
+bank	Bank (1450, 9570)	1449	9569	1
 bank	Bank (1451, 9565)	1451	9565	1
 bank	Bank (1451, 9567)	1451	9567	1
 bank	Bank (1451, 9568)	1451	9568	1
-bank	Bank (1451, 9570)	1451	9570	1
+bank	Bank (1451, 9570)	1449	9568	1
 bank	Bank (1452, 9565)	1452	9565	1
 bank	Bank (1452, 9570)	1452	9570	1
 bank	Bank (1455, 9567)	1455	9567	1
@@ -1036,10 +1021,10 @@ bank	Bank (1520, 3226)	1520	3226	0
 bank	Bank (1520, 3228)	1520	3228	0
 bank	Bank (1520, 3229)	1520	3229	0
 bank	Bank (1520, 3231)	1520	3231	0
-bank	Bank (1521, 3227)	1521	3227	0
-bank	Bank (1521, 3228)	1521	3228	0
-bank	Bank (1521, 3229)	1521	3229	0
-bank	Bank (1521, 3230)	1521	3230	0
+bank	Bank (1521, 3227)	1520	3226	0
+bank	Bank (1521, 3228)	1519	3226	0
+bank	Bank (1521, 3229)	1519	3227	0
+bank	Bank (1521, 3230)	1520	3231	0
 bank	Bank (1550, 9872)	1550	9872	0
 bank	Bank (1551, 9871)	1551	9871	0
 bank	Bank (1551, 9873)	1551	9873	0
@@ -1047,10 +1032,10 @@ bank	Bank (1552, 9872)	1552	9872	0
 bank	Bank (1610, 3679)	1610	3679	2
 bank	Bank (1610, 3680)	1610	3680	2
 bank	Bank (1610, 3681)	1610	3681	2
-bank	Bank (1611, 3679)	1611	3679	2
+bank	Bank (1611, 3679)	1609	3677	2
 bank	Bank (1611, 3680)	1611	3680	2
 bank	Bank (1611, 3681)	1611	3681	2
-bank	Bank (1612, 3679)	1612	3679	2
+bank	Bank (1612, 3679)	1610	3677	2
 bank	Bank (1612, 3680)	1612	3680	2
 bank	Bank (1612, 3681)	1612	3681	2
 bank	Bank (1613, 3679)	1613	3679	2
@@ -1138,13 +1123,13 @@ bank	Bank (2020, 5933)	2020	5933	0
 bank	Bank (2021, 5932)	2021	5932	0
 bank	Bank (2097, 3919)	2097	3919	0
 bank	Bank (2097, 3920)	2097	3920	0
-bank	Bank (2097, 3921)	2097	3921	0
+bank	Bank (2097, 3921)	2096	3921	0
 bank	Bank (2098, 3919)	2098	3919	0
 bank	Bank (2098, 3920)	2098	3920	0
-bank	Bank (2098, 3921)	2098	3921	0
+bank	Bank (2098, 3921)	2097	3922	0
 bank	Bank (2099, 3919)	2099	3919	0
 bank	Bank (2099, 3920)	2099	3920	0
-bank	Bank (2099, 3921)	2099	3921	0
+bank	Bank (2099, 3921)	2098	3922	0
 bank	Bank (2100, 3920)	2100	3920	0
 bank	Bank (2128, 4905)	2128	4905	0
 bank	Bank (2128, 4906)	2128	4906	0
@@ -1192,7 +1177,7 @@ bank	Bank (2190, 6226)	2190	6226	0
 bank	Bank (2190, 6228)	2190	6228	0
 bank	Bank (2211, 2860)	2211	2860	0
 bank	Bank (2212, 2859)	2212	2859	0
-bank	Bank (2212, 2861)	2212	2861	0
+bank	Bank (2212, 2861)	2210	2859	0
 bank	Bank (2213, 2860)	2213	2860	0
 bank	Bank (2310, 5409)	2310	5409	1
 bank	Bank (2311, 5408)	2311	5408	1
@@ -1222,11 +1207,11 @@ bank	Bank (2404, 5986)	2404	5986	0
 bank	Bank (2405, 5985)	2405	5985	0
 bank	Bank (2405, 5987)	2405	5987	0
 bank	Bank (2406, 5986)	2406	5986	0
-bank	Bank (2438, 3489)	2438	3489	1
-bank	Bank (2439, 3488)	2439	3488	1
-bank	Bank (2440, 3487)	2440	3487	1
-bank	Bank (2440, 3488)	2440	3488	1
-bank	Bank (2440, 3489)	2440	3489	1
+bank	Bank (2438, 3489)	2442	3487	1
+bank	Bank (2439, 3488)	2442	3487	1
+bank	Bank (2440, 3487)	2442	3487	1
+bank	Bank (2440, 3488)	2442	3487	1
+bank	Bank (2440, 3489)	2442	3487	1
 bank	Bank (2441, 3487)	2441	3487	1
 bank	Bank (2441, 3488)	2441	3488	1
 bank	Bank (2441, 3489)	2441	3489	1
@@ -1245,15 +1230,15 @@ bank	Bank (2446, 5181)	2446	5181	0
 bank	Bank (2447, 3423)	2447	3423	1
 bank	Bank (2447, 3425)	2447	3425	1
 bank	Bank (2447, 3426)	2447	3426	1
-bank	Bank (2448, 3424)	2448	3424	1
-bank	Bank (2448, 3427)	2448	3427	1
-bank	Bank (2448, 3480)	2448	3480	1
+bank	Bank (2448, 3424)	2446	3422	1
+bank	Bank (2448, 3427)	2446	3426	1
+bank	Bank (2448, 3480)	2448	3482	1
 bank	Bank (2448, 3481)	2448	3481	1
 bank	Bank (2448, 3482)	2448	3482	1
-bank	Bank (2449, 3480)	2449	3480	1
+bank	Bank (2449, 3480)	2448	3482	1
 bank	Bank (2449, 3481)	2449	3481	1
 bank	Bank (2449, 3482)	2449	3482	1
-bank	Bank (2450, 3480)	2450	3480	1
+bank	Bank (2450, 3480)	2448	3482	1
 bank	Bank (2450, 3481)	2450	3481	1
 bank	Bank (2450, 3482)	2450	3482	1
 bank	Bank (2464, 2849)	2464	2849	1
@@ -1366,14 +1351,14 @@ bank	Bank (3180, 2420)	3180	2420	0
 bank	Bank (3181, 2416)	3181	2416	0
 bank	Bank (3181, 2421)	3181	2421	0
 bank	Bank (3183, 2416)	3183	2416	0
-bank	Bank (3183, 2417)	3183	2417	0
+bank	Bank (3183, 2417)	3182	2417	0
 bank	Bank (3183, 2418)	3183	2418	0
 bank	Bank (3183, 2419)	3183	2419	0
-bank	Bank (3183, 2420)	3183	2420	0
+bank	Bank (3183, 2420)	3182	2419	0
 bank	Bank (3184, 2416)	3184	2416	0
-bank	Bank (3184, 2417)	3184	2417	0
-bank	Bank (3184, 2418)	3184	2418	0
-bank	Bank (3184, 2419)	3184	2419	0
+bank	Bank (3184, 2417)	3182	2415	0
+bank	Bank (3184, 2418)	3182	2417	0
+bank	Bank (3184, 2419)	3182	2417	0
 bank	Bank (3184, 2421)	3184	2421	0
 bank	Bank (3187, 9827)	3187	9827	0
 bank	Bank (3187, 9828)	3187	9828	0
@@ -1597,29 +1582,21 @@ bank	Catherby Bank	2811	3445	0
 bank	Catherby Bank	2811	3444	0
 bank	Catherby Bank	2810	3445	0
 bank	Civitas illa Fortis Bank	1646	3118	0
-bank	Civitas illa Fortis Bank	1648	3120	0
 bank	Civitas illa Fortis Bank	1647	3119	0
 bank	Civitas illa Fortis Bank	1647	3118	0
-bank	Civitas illa Fortis Bank	1649	3120	0
 bank	Civitas illa Fortis Bank	1645	3119	0
 bank	Civitas illa Fortis Bank	1650	3119	0
-bank	Civitas illa Fortis Bank	1646	3120	0
 bank	Civitas illa Fortis Bank	1648	3118	0
-bank	Civitas illa Fortis Bank	1647	3120	0
 bank	Civitas illa Fortis Bank	1648	3119	0
 bank	Civitas illa Fortis Bank	1649	3118	0
-bank	Civitas illa Fortis Bank	1780	3092	0
-bank	Civitas illa Fortis Bank	1781	3092	0
+bank	Civitas illa Fortis Bank	1778	3094	0
+bank	Civitas illa Fortis Bank	1782	3093	0
 bank	Civitas illa Fortis Bank	1780	3093	0
 bank	Civitas illa Fortis Bank	1780	3094	0
 bank	Civitas illa Fortis Bank	1781	3094	0
-bank	Civitas illa Fortis Bank	1782	3093	0
-bank	Civitas illa Fortis Bank	1778	3094	0
 bank	Civitas illa Fortis Bank	1777	3093	0
 bank	Civitas illa Fortis Bank	1779	3094	0
 bank	Civitas illa Fortis Bank	1779	3093	0
-bank	Civitas illa Fortis Bank	1778	3092	0
-bank	Civitas illa Fortis Bank	1779	3092	0
 bank	Dorgesh-Kaan Bank	2699	5352	0
 bank	Dorgesh-Kaan Bank	2700	5352	0
 bank	Dorgesh-Kaan Bank	2701	5352	0
@@ -1647,28 +1624,23 @@ bank	Draynor Village Bank	3097	3242	0
 bank	Draynor Village Bank	3096	3244	0
 bank	Draynor Village Bank	3097	3245	0
 bank	Draynor Village Bank	3096	3246	0
-bank	Draynor Village Bank	3090	3242	0
-bank	Draynor Village Bank	3089	3240	0
-bank	Draynor Village Bank	3088	3241	0
-bank	Draynor Village Bank	3090	3243	0
+bank	Draynor Village Bank	3092	3240	0
+bank	Draynor Village Bank	3088	3239	0
+bank	Draynor Village Bank	3087	3240	0
+bank	Draynor Village Bank	3092	3241	0
 bank	Draynor Village Bank	3092	3245	0
 bank	Draynor Village Bank	3091	3242	0
-bank	Draynor Village Bank	3089	3243	0
-bank	Draynor Village Bank	3088	3242	0
+bank	Draynor Village Bank	3087	3241	0
 bank	Draynor Village Bank	3091	3241	0
 bank	Draynor Village Bank	3095	3245	0
-bank	Draynor Village Bank	3090	3241	0
-bank	Draynor Village Bank	3091	3240	0
-bank	Draynor Village Bank	3088	3244	0
-bank	Draynor Village Bank	3088	3245	0
-bank	Draynor Village Bank	3091	3246	0
-bank	Draynor Village Bank	3092	3241	0
+bank	Draynor Village Bank	3090	3239	0
+bank	Draynor Village Bank	3087	3243	0
+bank	Draynor Village Bank	3087	3244	0
+bank	Draynor Village Bank	3090	3247	0
 bank	Draynor Village Bank	3095	3242	0
-bank	Draynor Village Bank	3090	3244	0
 bank	Draynor Village Bank	3092	3242	0
 bank	Draynor Village Bank	3095	3241	0
-bank	Draynor Village Bank	3089	3246	0
-bank	Draynor Village Bank	3090	3245	0
+bank	Draynor Village Bank	3088	3247	0
 bank	Draynor Village Bank	3091	3244	0
 bank	Draynor Village Bank	3092	3243	0
 bank	East Ardougne Bank	2613	3332	0
@@ -1693,24 +1665,23 @@ bank	East Ardougne Bank	2586	3418	0
 bank	East Ardougne Bank	2586	3419	0
 bank	East Ardougne Bank	2588	3421	0
 bank	East Ardougne Bank	2585	3419	0
-bank	East Ardougne Bank	2584	3418	0
+bank	East Ardougne Bank	2583	3417	0
 bank	East Ardougne Bank	2585	3418	0
-bank	East Ardougne Bank	2584	3419	0
-bank	East Ardougne Bank	2584	3420	0
+bank	East Ardougne Bank	2582	3417	0
+bank	East Ardougne Bank	2582	3418	0
 bank	East Ardougne Bank	2585	3421	0
 bank	East Ardougne Bank	2586	3422	0
 bank	East Ardougne Bank	2588	3416	0
 bank	East Ardougne Bank	2591	3418	0
-bank	East Ardougne Bank	2584	3421	0
+bank	East Ardougne Bank	2582	3419	0
 bank	East Ardougne Bank	2585	3420	0
 bank	East Ardougne Bank	2587	3422	0
 bank	East Ardougne Bank	2591	3417	0
-bank	East Ardougne Bank	2584	3422	0
+bank	East Ardougne Bank	2583	3423	0
 bank	East Ardougne Bank	2585	3422	0
 bank	East Ardougne Bank	2586	3421	0
 bank	East Ardougne Bank	2588	3414	0
 bank	East Ardougne Bank	2589	3415	0
-bank	East Ardougne Bank	2583	3419	0
 bank	East Ardougne Bank	2592	3416	0
 bank	Edgeville Bank	3096	3497	0
 bank	Edgeville Bank	3095	3493	0
@@ -1785,10 +1756,9 @@ bank	Falador East Bank	3014	3353	0
 bank	Fossil Island Bank	3819	3809	0
 bank	Fossil Island Bank	3820	3808	0
 bank	Fossil Island Bank	3820	3810	0
-bank	Fossil Island Bank	3768	3899	0
+bank	Fossil Island Bank	3766	3899	0
 bank	Fossil Island Bank	3767	3900	0
 bank	Fossil Island Bank	3767	3898	0
-bank	Fossil Island Bank	3766	3899	0
 bank	Gnome Stronghold Bank	2537	3572	0
 bank	Gnome Stronghold Bank	2536	3573	0
 bank	Gnome Stronghold Bank	2537	3574	0
@@ -1810,17 +1780,16 @@ bank	Hosidius Bank	1718	3466	0
 bank	Hosidius Bank	1717	3465	0
 bank	Hosidius Bank	1718	3464	0
 bank	Hosidius Bank	1719	3465	0
-bank	Keldagrim Bank	2840	10204	0
+bank	Keldagrim Bank	2839	10203	0
 bank	Keldagrim Bank	2841	10205	0
 bank	Keldagrim Bank	2840	10207	0
 bank	Keldagrim Bank	2841	10206	0
-bank	Keldagrim Bank	2839	10206	0
-bank	Keldagrim Bank	2836	10205	0
 bank	Keldagrim Bank	2838	10207	0
-bank	Keldagrim Bank	2839	10205	0
+bank	Keldagrim Bank	2834	10203	0
+bank	Keldagrim Bank	2837	10203	0
 bank	Keldagrim Bank	2836	10207	0
 bank	Keldagrim Bank	2837	10206	0
-bank	Keldagrim Bank	2838	10205	0
+bank	Keldagrim Bank	2836	10203	0
 bank	Keldagrim Bank	2835	10206	0
 bank	Keldagrim Bank	2837	10213	0
 bank	Keldagrim Bank	2835	10211	0
@@ -1847,20 +1816,20 @@ bank	Kourend Bank	1624	3740	0
 bank	Kourend Bank	1624	3741	0
 bank	Kourend Bank	1624	3743	0
 bank	Kourend Bank	1623	3742	0
-bank	Kourend Bank	1622	3743	0
-bank	Kourend Bank	1622	3740	0
-bank	Kourend Bank	1622	3741	0
+bank	Kourend Bank	1620	3741	0
+bank	Kourend Bank	1620	3738	0
+bank	Kourend Bank	1620	3739	0
 bank	Kourend Bank	1623	3739	0
-bank	Kourend Bank	1622	3738	0
+bank	Kourend Bank	1620	3736	0
 bank	Kourend Bank	1623	3736	0
-bank	Kourend Bank	1622	3737	0
-bank	Kourend Bank	1622	3750	0
+bank	Kourend Bank	1620	3735	0
+bank	Kourend Bank	1620	3748	0
 bank	Kourend Bank	1623	3748	0
-bank	Kourend Bank	1622	3749	0
-bank	Kourend Bank	1622	3746	0
-bank	Kourend Bank	1622	3747	0
+bank	Kourend Bank	1620	3747	0
+bank	Kourend Bank	1620	3744	0
+bank	Kourend Bank	1620	3745	0
 bank	Kourend Bank	1623	3745	0
-bank	Kourend Bank	1622	3744	0
+bank	Kourend Bank	1620	3742	0
 bank	Kourend Bank	1624	3744	0
 bank	Kourend Bank	1635	3737	0
 bank	Kourend Bank	1624	3746	0
@@ -1903,13 +1872,10 @@ bank	Lands End Bank	1591	3475	0
 bank	Lands End Bank	1593	3475	0
 bank	Lands End Bank	1592	3476	0
 bank	Lletya Bank	2352	3164	0
-bank	Lletya Bank	2353	3165	0
-bank	Lletya Bank	2354	3166	0
-bank	Lletya Bank	2355	3166	0
-bank	Lletya Bank	2352	3166	0
-bank	Lletya Bank	2354	3164	0
-bank	Lletya Bank	2351	3166	0
+bank	Lletya Bank	2353	3164	0
 bank	Lletya Bank	2351	3164	0
+bank	Lletya Bank	2354	3164	0
+bank	Lletya Bank	2349	3164	0
 bank	Lovakengj Bank	1454	3860	0
 bank	Lovakengj Bank	1454	3858	0
 bank	Lovakengj Bank	1455	3859	0
@@ -2017,20 +1983,18 @@ bank	Mos Le'Harmless Bank	3809	3020	0
 bank	Mos Le'Harmless Bank	3810	3021	0
 bank	Mos Le'Harmless Bank	3811	3020	0
 bank	Mos Le'Harmless Bank	3681	2981	0
-bank	Mos Le'Harmless Bank	3682	2982	0
 bank	Mos Le'Harmless Bank	3680	2981	0
-bank	Mos Le'Harmless Bank	3682	2983	0
+bank	Mos Le'Harmless Bank	3681	2984	0
 bank	Mos Le'Harmless Bank	3681	2983	0
 bank	Mos Le'Harmless Bank	3680	2982	0
 bank	Mos Le'Harmless Bank	3681	2982	0
-bank	Mos Le'Harmless Bank	3682	2981	0
+bank	Mos Le'Harmless Bank	3681	2980	0
 bank	Mos Le'Harmless Bank	3680	2983	0
 bank	Mount Karuulm Bank	1248	3758	0
 bank	Mount Karuulm Bank	1249	3759	0
 bank	Mount Karuulm Bank	1249	3758	0
 bank	Mount Karuulm Bank	1248	3759	0
-bank	Mount Karuulm Bank	1248	3760	0
-bank	Mount Karuulm Bank	1249	3760	0
+bank	Mount Karuulm Bank	1246	3758	0
 bank	Mount Karuulm Bank	1253	3741	0
 bank	Mount Karuulm Bank	1254	3742	0
 bank	Mount Karuulm Bank	1253	3743	0
@@ -2039,17 +2003,17 @@ bank	Mount Karuulm Bank	1323	3825	0
 bank	Mount Karuulm Bank	1324	3824	0
 bank	Mount Karuulm Bank	1325	3825	0
 bank	Nardah Bank	3426	2890	0
-bank	Nardah Bank	3425	2889	0
+bank	Nardah Bank	3423	2887	0
 bank	Nardah Bank	3427	2891	0
 bank	Nardah Bank	3427	2889	0
-bank	Nardah Bank	3425	2891	0
+bank	Nardah Bank	3423	2889	0
 bank	Nardah Bank	3426	2894	0
-bank	Nardah Bank	3425	2893	0
+bank	Nardah Bank	3423	2891	0
 bank	Nardah Bank	3427	2894	0
 bank	Nardah Bank	3426	2892	0
 bank	Nardah Bank	3427	2893	0
 bank	Nardah Bank	3426	2893	0
-bank	Nardah Bank	3425	2894	0
+bank	Nardah Bank	3424	2895	0
 bank	Neitiznot Bank	2335	3807	0
 bank	Neitiznot Bank	2336	3808	0
 bank	Neitiznot Bank	2334	3807	0
@@ -2164,12 +2128,9 @@ bank	Seers' Village Bank	2728	3494	0
 bank	Seers' Village Bank	2729	3495	0
 bank	Shayzien Bank	1487	3594	0
 bank	Shayzien Bank	1487	3593	0
-bank	Shayzien Bank	1486	3592	0
-bank	Shayzien Bank	1487	3592	0
-bank	Shayzien Bank	1486	3593	0
-bank	Shayzien Bank	1487	3591	0
 bank	Shayzien Bank	1487	3590	0
-bank	Shayzien Bank	1486	3591	0
+bank	Shayzien Bank	1487	3592	0
+bank	Shayzien Bank	1487	3591	0
 bank	Shayzien Bank	1488	3591	0
 bank	Shayzien Bank	1488	3592	0
 bank	Shayzien Bank	1488	3593	0
@@ -2224,12 +2185,12 @@ bank	Varrock West Bank	3180	3442	0
 bank	Varrock West Bank	3181	3443	0
 bank	Varrock West Bank	3186	3437	0
 bank	Varrock West Bank	3185	3438	0
-bank	Varrock West Bank	3147	3450	0
-bank	Varrock West Bank	3147	3449	0
-bank	Varrock West Bank	3147	3448	0
+bank	Varrock West Bank	3149	3448	0
+bank	Varrock West Bank	3149	3447	0
+bank	Varrock West Bank	3148	3446	0
 bank	Varrock West Bank	3148	3448	0
 bank	Varrock West Bank	3148	3449	0
-bank	Varrock West Bank	3148	3450	0
+bank	Varrock West Bank	3149	3449	0
 bank	West Ardougne Bank	2555	3323	0
 bank	West Ardougne Bank	2554	3323	0
 bank	West Ardougne Bank	2555	3321	0
@@ -2292,7 +2253,7 @@ dungeon	Ardougne Sewers	2644	9702	0
 dungeon	Blast Mine	1496	3846	0
 dungeon	Camdozaal Mines	2924	5814	0
 dungeon	Cave crawlers	2792	10001	0
-dungeon	Cave horrors & albino bats	3775	9407	0
+dungeon	Cave horrors & albino bats	3769	9401	0
 dungeon	Charred Dungeon	2687	8865	0
 dungeon	Crabclaw Caves	1683	9823	0
 dungeon	Crypt	1685	9516	0
@@ -2300,7 +2261,7 @@ dungeon	Crypt of Tonali	1306	3035	0
 dungeon	Dave's Basement of Doom	3080	9892	0
 dungeon	Deepfin Mine	2016	9194	0
 dungeon	Draynor Manor basement	3072	9763	0
-dungeon	Draynor Sewers	3104	9655	0
+dungeon	Draynor Sewers	3115	9644	0
 dungeon	Dungeon rats	2583	9659	0
 dungeon	Dwarven Mine	3016	3441	0
 dungeon	Earthbound Cavern	1377	9700	0
@@ -2315,7 +2276,7 @@ dungeon	Kalphite Lair	3226	3099	0
 dungeon	Kurask Lair	1182	9200	0
 dungeon	Lizardman Caves	1308	9963	0
 dungeon	Lovakite Mine	1428	3840	0
-dungeon	Lumbridge Castle cellar	3220	9620	0
+dungeon	Lumbridge Castle cellar	3219	9620	0
 dungeon	Mine	3327	9632	0
 dungeon	Minecarts	2928	10170	0
 dungeon	Motherlode Mine	3712	5648	1
@@ -2540,9 +2501,9 @@ furnace	Keldagrim Furnace	2875	10212	0
 furnace	Lands End Furnace	1377	3369	0
 furnace	Lands End Furnace	1376	3369	0
 furnace	Lands End Furnace	1378	3371	0
-furnace	Lands End Furnace	1377	3373	0
-furnace	Lands End Furnace	1376	3373	0
-furnace	Lands End Furnace	1375	3373	0
+furnace	Lands End Furnace	1376	3374	0
+furnace	Lands End Furnace	1375	3374	0
+furnace	Lands End Furnace	1374	3372	0
 furnace	Lands End Furnace	1375	3369	0
 furnace	Lands End Furnace	1622	3290	0
 furnace	Lands End Furnace	1621	3289	0
@@ -2593,8 +2554,8 @@ furnace	Port Phasmatys Furnace	3656	3336	0
 furnace	Port Phasmatys Furnace	3658	3337	0
 furnace	Port Phasmatys Furnace	3659	3336	0
 furnace	Port Phasmatys Furnace	3657	3333	0
-furnace	Port Phasmatys Furnace	3659	3335	0
-furnace	Port Phasmatys Furnace	3659	3334	0
+furnace	Port Phasmatys Furnace	3660	3337	0
+furnace	Port Phasmatys Furnace	3657	3332	0
 furnace	Port Phasmatys Furnace	3656	3334	0
 furnace	Port Phasmatys Furnace	3656	3335	0
 furnace	Port Phasmatys Furnace	3658	3333	0
@@ -2628,7 +2589,7 @@ furnace	Zanaris Furnace	2401	4474	0
 furnace	Zanaris Furnace	2399	4475	0
 furnace	Zanaris Furnace	2399	4471	0
 landmark	A	3787	10156	0
-landmark	Abalone Cliffs	3105	2532	0
+landmark	Abalone Cliffs	3115	2521	0
 landmark	Aberrant Spectres	2457	9788	0
 landmark	Abyssal demons	1670	10091	0
 landmark	Access to Falador	3058	9776	0
@@ -2647,7 +2608,7 @@ landmark	Ancient Forge	1751	5290	1
 landmark	Ancient Prison	2875	5216	0
 landmark	Ancient Reef	3642	4019	0
 landmark	Ancient Shrine	1514	9583	0
-landmark	Ancient Vault	3512	2973	0
+landmark	Ancient Vault	3510	2971	0
 landmark	Anger	3087	5293	0
 landmark	Anglerfish's Light	2759	2359	0
 landmark	Anglers' Retreat	2477	2711	0
@@ -2673,7 +2634,7 @@ landmark	Baby green dragons	2669	9578	2
 landmark	Backwater	2349	3002	0
 landmark	Bandit Camp	3175	2977	0
 landmark	Bandos's Stronghold	2832	5344	2
-landmark	Bank vault	3196	9822	0
+landmark	Bank vault	3192	9825	0
 landmark	Banshees	1615	9994	0
 landmark	Barbarian Assault	2525	3581	0
 landmark	Barbarian Outpost	2542	3558	0
@@ -2685,14 +2646,14 @@ landmark	Basilisks	2744	10004	0
 landmark	Bats	2569	9753	0
 landmark	Battlefield	2522	3232	0
 landmark	Battlefront	1368	3718	0
-landmark	Baxtorian Falls	2515	3462	0
+landmark	Baxtorian Falls	2525	3472	0
 landmark	Bay of Elidinis	3282	2667	0
 landmark	Bay of Sarim	3070	3177	0
 landmark	Bazaar	1681	3108	0
 landmark	Bedabin Camp	3170	3038	0
 landmark	Beware of the dog	1310	1277	0
 landmark	Beware of the mushrooms	2422	4375	0
-landmark	Beware of the scorpions	3052	9809	0
+landmark	Beware of the scorpions	3049	9812	0
 landmark	Black Guard H.Q.	2827	10213	0
 landmark	Black Knights' Base	2908	9689	0
 landmark	Black Knights' Fortress	3018	3522	0
@@ -2713,7 +2674,7 @@ landmark	Bounty Hunter	3141	3623	0
 landmark	Box of Health	2144	5283	0
 landmark	Breakbone Strait	2388	2866	0
 landmark	Brewery	3680	9960	0
-landmark	Brimhaven Passage	2752	3263	0
+landmark	Brimhaven Passage	2763	3274	0
 landmark	Brimstail	2401	9827	0
 landmark	Brittle Isle	1948	4071	0
 landmark	Bronze & iron dragons	1648	10095	0
@@ -2728,7 +2689,7 @@ landmark	C	3830	10157	0
 landmark	Cairn Isle	2764	2979	0
 landmark	Calidum Reach	1190	2642	0
 landmark	Callisto's Den	3293	3848	0
-landmark	Cam Torum	1440	9568	1
+landmark	Cam Torum	1441	9569	1
 landmark	Cam Torum Entrance	1436	3124	0
 landmark	Camdozaal Vault	2971	5823	0
 landmark	Camelot Castle	2763	3505	0
@@ -2736,17 +2697,17 @@ landmark	Cape Atoll	2700	2711	0
 landmark	Cape Conch	3286	2334	0
 landmark	Castle Drakan	3553	3360	0
 landmark	Castle Wars	2440	3092	0
-landmark	Catherby Bay	2823	3410	0
+landmark	Catherby Bay	2834	3422	0
 landmark	Cauldron of Thunder	2895	9833	0
 landmark	Champions' Challenge	3168	9758	0
 landmark	Champions' Guild	3201	3354	0
-landmark	Chaos Temple	2934	3526	0
+landmark	Chaos Temple	2928	3520	0
 landmark	Chaos druids	2934	9852	0
 landmark	Chaos dwarves	2920	9770	0
 landmark	Charcoal Burners	1718	3470	0
 landmark	Charred Island	2642	2405	0
 landmark	Chasm of Fire	1445	3679	0
-landmark	Chasm of Tears	3230	9517	2
+landmark	Chasm of Tears	3236	9524	2
 landmark	Chinchompa Island	1884	3435	0
 landmark	Chinchompas	2522	9299	0
 landmark	Chompy Marsh	2379	3055	0
@@ -2804,7 +2765,7 @@ landmark	Distillery	2152	5102	0
 landmark	Dognose Island	3048	2648	0
 landmark	Dogs	2666	9523	0
 landmark	Dondakan's rock	2836	10166	0
-landmark	Doors of Dinh	1630	3968	0
+landmark	Doors of Dinh	1627	3963	0
 landmark	Dragon Nest	1247	9503	0
 landmark	Dragon's Maw	3902	3559	0
 landmark	Dragons	1936	8992	1
@@ -2817,14 +2778,14 @@ landmark	Drumstick Isle	2145	3547	0
 landmark	Dusk's Maw	1239	2948	0
 landmark	Dust devils	1715	10025	0
 landmark	Dvergfjord	2745	3763	0
-landmark	Eagles' Peak	2337	3486	0
+landmark	Eagles' Peak	2329	3494	0
 landmark	Earth warriors	3119	9996	0
 landmark	Eastern Graveyard	2254	2929	0
 landmark	Eastern Ocean	3682	2854	0
 landmark	Eastern Ridge	3892	3148	0
 landmark	Echoing Rift	3723	3694	0
 landmark	Ectofuntus	3659	3520	0
-landmark	Elid Delta	3269	2718	0
+landmark	Elid Delta	3281	2730	0
 landmark	Elvarg	2856	9638	0
 landmark	Elves	3184	12405	0
 landmark	Emir's Arena	3358	3237	0
@@ -2832,7 +2793,7 @@ landmark	Entrana	2850	3379	0
 landmark	Ents	1565	9891	0
 landmark	Etceteria	2609	3874	0
 landmark	Everwinter Sea	1792	4095	0
-landmark	Exam Centre	3361	3345	0
+landmark	Exam Centre	3360	3344	0
 landmark	Exit	3166	4547	0
 landmark	Falador Park	2995	3375	0
 landmark	Farming Guild	1249	3739	0
@@ -2844,7 +2805,7 @@ landmark	Ferox Enclave	3151	3635	0
 landmark	Fiend's Passage	3308	4002	0
 landmark	Fight Arena	2594	3162	0
 landmark	Fight Pit	2398	5160	0
-landmark	Fire Obelisk	2812	9836	0
+landmark	Fire Obelisk	2817	9830	0
 landmark	Fire giants	2121	9330	0
 landmark	Fishing Guild	2599	3401	0
 landmark	Fishing Hamlet	1696	3936	0
@@ -2853,14 +2814,14 @@ landmark	Foodhall	1842	3748	0
 landmark	Forbidden Depths	3808	2499	0
 landmark	Forgotten Ocean	1251	3991	0
 landmark	Forthos Ruin	1675	3575	0
-landmark	Fortis Aqueduct	1562	3154	0
+landmark	Fortis Aqueduct	1560	3156	0
 landmark	Fortis Bay	1821	3020	0
 landmark	Fortis Colosseum	1825	3109	0
-landmark	Fortis Cothon	1760	3146	0
+landmark	Fortis Cothon	1750	3156	0
 landmark	Fossil Island	3740	3805	0
-landmark	Fountain of Heroes	2918	9889	0
+landmark	Fountain of Heroes	2906	9877	0
 landmark	Fountain of Rune	3379	3893	0
-landmark	Fremennik Isles	2367	3879	0
+landmark	Fremennik Isles	2362	3883	0
 landmark	Fremennik Province	2679	3646	0
 landmark	Fremennik Strait	2349	3747	0
 landmark	Fremensund	2593	3724	0
@@ -2879,7 +2840,7 @@ landmark	Gnome Stronghold	2461	3444	0
 landmark	Gnomeball Field	2401	3487	0
 landmark	Goblin Maze	3264	9630	0
 landmark	Goblin Village	2963	3502	0
-landmark	Golden Apple Tree	2765	3608	0
+landmark	Golden Apple Tree	2760	3603	0
 landmark	Golem Workshop	3010	5798	0
 landmark	Gorlah	2284	3426	0
 landmark	Goutweed store	2856	10084	0
@@ -2913,7 +2874,7 @@ landmark	Haunted Woods	3580	3488	0
 landmark	Hellhounds	2424	9793	0
 landmark	Hemenster	2634	3426	0
 landmark	Here be a big mole	1760	5188	0
-landmark	Here be dead stuff	3263	9904	0
+landmark	Here be dead stuff	3259	9904	0
 landmark	Here be goblins	2594	9823	0
 landmark	Here be minotaurs	1951	9508	0
 landmark	Here be odd stuff	3519	9960	0
@@ -2923,7 +2884,7 @@ landmark	Heroes' Guild	2894	3501	0
 landmark	Hespori	1248	10089	0
 landmark	Highlord's Chamber	1414	9590	1
 landmark	Hill giants	3110	9838	0
-landmark	Hobgoblins	3019	9587	0
+landmark	Hobgoblins	3019	9584	0
 landmark	Hopelessness	3087	5263	0
 landmark	Horizon's End	1278	2371	0
 landmark	Hosidian Sea	1917	3597	0
@@ -2935,7 +2896,7 @@ landmark	Hut	3496	6072	0
 landmark	Hydras	1311	10241	0
 landmark	Ice Mountain	3009	3487	0
 landmark	Ice giants	2965	9565	0
-landmark	Ice path	2857	3809	0
+landmark	Ice path	2868	3821	0
 landmark	Ice warriors & giants	3051	9577	0
 landmark	Iceberg	2681	4048	0
 landmark	Icyene Graveyard	3697	3188	0
@@ -2948,20 +2909,20 @@ landmark	Isafdar	2243	3186	0
 landmark	Island of Stone	2467	4011	0
 landmark	Isle of Bones	2530	2533	0
 landmark	Isle of Serpents	1850	2413	0
-landmark	Isle of Souls	2209	2878	0
+landmark	Isle of Souls	2205	2866	0
 landmark	Jail	3126	3244	0
 landmark	Jaldraocht Pyramid	3233	2900	0
-landmark	Jaleustrophos Pyramid	3365	2845	0
+landmark	Jaleustrophos Pyramid	3357	2853	0
 landmark	Jalsavrah Pyramid	3288	2798	0
-landmark	Jaltevas Pyramid	3365	2705	0
+landmark	Jaltevas Pyramid	3357	2713	0
 landmark	Jellies	1688	9999	0
 landmark	Jiggig	2464	3047	0
 landmark	Jogres	2848	9504	0
 landmark	Kannski Tides	2395	3947	0
 landmark	Karamja	2924	3153	0
-landmark	Karamja Volcano	2843	3176	0
+landmark	Karamja Volcano	2837	3182	0
 landmark	Kastori	1372	3044	0
-landmark	Kebos Lowlands	1265	3649	0
+landmark	Kebos Lowlands	1263	3646	0
 landmark	Kebos Shore	1163	3734	0
 landmark	Kebos Swamp	1255	3622	0
 landmark	Keep Le Faye	2770	3399	0
@@ -2981,21 +2942,21 @@ landmark	Kingstown	1668	3675	0
 landmark	Kourend Castle	1626	3676	0
 landmark	Kourend Woodland	1553	3456	0
 landmark	Kovac	3370	11487	0
-landmark	Kraken Cove	2272	3602	0
+landmark	Kraken Cove	2269	3605	0
 landmark	Kualti Headquarters	1645	3150	0
 landmark	Kurask	2701	10001	0
-landmark	Lacerta Falls	1381	3470	0
+landmark	Lacerta Falls	1378	3475	0
 landmark	Laguna Aurorae	1190	2778	0
 landmark	Lake Hemenster	2610	3444	0
-landmark	Lake Molch	1374	3650	0
+landmark	Lake Molch	1366	3640	0
 landmark	Land's End	1510	3434	0
 landmark	Larran's Chest	3279	3659	0
 landmark	Last Gasp	1060	3379	0
 landmark	Last Light	2857	2330	0
-landmark	Last Man Standing	3142	3644	0
+landmark	Last Man Standing	3141	3643	0
 landmark	Lava Dragon Isle	3199	3824	0
 landmark	Lava Maze	3079	3848	0
-landmark	Legends' Guild	2737	3374	0
+landmark	Legends' Guild	2735	3372	0
 landmark	Lesser demons	2834	9561	0
 landmark	Library	1624	3826	0
 landmark	Lithkren	3567	4003	0
@@ -3009,12 +2970,12 @@ landmark	Locus Oasis	1686	2991	0
 landmark	Lovakengj Assembly	1483	3758	0
 landmark	Lovkengj's Shroud	1447	3994	0
 landmark	Lower level	3184	4544	0
-landmark	Lum Lagoon	3253	3144	0
+landmark	Lum Lagoon	3244	3152	0
 landmark	Lumber Yard	3308	3507	0
 landmark	Lumbridge Basin	3184	3106	0
 landmark	Lumbridge Swamp	3230	3155	0
 landmark	Lunar Bay	2183	3904	0
-landmark	Lunar Isle	2141	3877	0
+landmark	Lunar Isle	2138	3874	0
 landmark	Lunar Sea	2124	4070	0
 landmark	Mage Arena	3107	3933	0
 landmark	Mage Arena bank	2533	4704	0
@@ -3024,7 +2985,7 @@ landmark	Marim	2763	2784	0
 landmark	Market	3080	3250	0
 landmark	Mausoleum	3502	3572	0
 landmark	McGrubor's Wood	2647	3480	0
-landmark	Meiyerditch	3619	3263	0
+landmark	Meiyerditch	3617	3262	0
 landmark	Melzar's Maze	2937	3248	0
 landmark	Menaphite Sea	3057	2721	0
 landmark	Merwick Lake	2779	3553	0
@@ -3055,7 +3016,7 @@ landmark	Mudskipper Point	2990	3118	0
 landmark	Mudskipper Sound	2981	3090	0
 landmark	Muggers	2994	9571	0
 landmark	Murkshore Sea	3694	3122	0
-landmark	Musa Passage	2855	3133	0
+landmark	Musa Passage	2847	3141	0
 landmark	Musa Point	2914	3161	0
 landmark	Museum Camp	3730	3821	0
 landmark	Mushroom Forest	3690	3861	0
@@ -3066,7 +3027,7 @@ landmark	Nechryael	1700	10083	0
 landmark	Necromancer's Tower	2669	3243	0
 landmark	Necropolis	3335	2730	0
 landmark	Nemus Retreat	1373	3313	0
-landmark	Neypotzli Entrance	1440	9600	1
+landmark	Neypotzli Entrance	1439	9599	1
 landmark	Nightmare Zone	2608	3120	0
 landmark	Northern Ocean	2477	4085	0
 landmark	Northern Tundras	1630	3930	0
@@ -3077,7 +3038,7 @@ landmark	Obstacle course	3537	9889	0
 landmark	Ochre Sea	1510	2528	0
 landmark	Offering Altar	2937	5773	0
 landmark	Ogres	2586	9608	0
-landmark	Ogresses	2011	8989	1
+landmark	Ogresses	2008	8991	1
 landmark	Old Manor	3497	6118	0
 landmark	Oldak's teleportation laboratory	2704	5368	0
 landmark	Oo'glog Channel	2644	2828	0
@@ -3110,7 +3071,7 @@ landmark	Port Tyras	2155	3122	0
 landmark	Porth Gwenith	2163	3483	0
 landmark	Porth Neigwl	2124	3205	0
 landmark	Puro-puro	2428	4446	0
-landmark	Pyre Cove	3349	3618	0
+landmark	Pyre Cove	3343	3626	0
 landmark	Pyrefiends	2761	10012	0
 landmark	Quarry	3172	2904	0
 landmark	Queen's Chamber	3488	9504	0
@@ -3131,20 +3092,20 @@ landmark	Refugee Camp	2991	6351	2
 landmark	Residential District	2657	6427	0
 landmark	Resource Area	3187	3936	0
 landmark	Rimmington Strait	2887	3249	0
-landmark	Ritual Site	1130	3420	0
+landmark	Ritual Site	1118	3430	0
 landmark	River Amja	2914	3032	0
 landmark	River Crannmor	2379	3458	0
 landmark	River Dougne	2540	3398	0
-landmark	River Elid	3371	3068	0
+landmark	River Elid	3377	3064	0
 landmark	River Hos	1615	3594	0
 landmark	River Kelda	2842	10141	0
 landmark	River Lum	3167	3350	0
 landmark	River Molch	1260	3672	0
 landmark	River Ortus	1624	3200	0
 landmark	River Salve	3403	3437	0
-landmark	River Shilo	2814	2972	0
-landmark	River Varla	1375	3117	0
-landmark	River of Souls	1842	3892	0
+landmark	River Shilo	2812	2973	0
+landmark	River Varla	1371	3124	0
+landmark	River of Souls	1831	3882	0
 landmark	Rock Island Prison	2898	2837	0
 landmark	Rock lobsters	1950	4362	0
 landmark	Rock slugs	2796	10019	0
@@ -3202,7 +3163,7 @@ landmark	Skeletons & zombies	3121	9899	0
 landmark	Skullball	3560	9866	0
 landmark	Slayer Tower	3429	3555	0
 landmark	Slepe	3718	3330	0
-landmark	Slepe Sound	3718	3259	0
+landmark	Slepe Sound	3721	3270	0
 landmark	Smoke devils	2408	9438	0
 landmark	Soldiers	3330	9486	0
 landmark	Sorcerer's Tower	2713	3410	0
@@ -3256,14 +3217,14 @@ landmark	The Blood Moon	1393	9635	0
 landmark	The Blue Moon	1441	9683	0
 landmark	The Cinderwaters	3443	3923	0
 landmark	The Crown Jewel	1758	2665	0
-landmark	The Darkfrost	1512	3288	0
+landmark	The Darkfrost	1503	3296	0
 landmark	The Dibber	1836	3627	0
 landmark	The Eastern Doldrums	3852	3985	0
 landmark	The Eclipse Moon	1489	9635	0
 landmark	The Endless Sea	1276	4070	0
 landmark	The Everdeep	1884	2729	0
 landmark	The Forgotten Cemetery	2977	3753	0
-landmark	The Forsaken Tower	1385	3830	0
+landmark	The Forsaken Tower	1384	3829	0
 landmark	The Gauntlet	3033	6115	1
 landmark	The Great Conch	3187	2455	0
 landmark	The Hollows	3500	3384	0
@@ -3312,7 +3273,7 @@ landmark	Troll generals	2829	10082	2
 landmark	Trollheim	2892	3678	0
 landmark	Trolls	2790	10132	0
 landmark	Trollweiss Mountain	2782	3863	0
-landmark	Trouble Brewing	3786	2998	0
+landmark	Trouble Brewing	3776	3008	0
 landmark	Turoth	2716	10011	0
 landmark	Turtle Belt	3025	2595	0
 landmark	Tutorial Island	3105	3099	0
@@ -3321,7 +3282,7 @@ landmark	Tyras Camp	2180	3147	0
 landmark	Undead druids	1850	9939	0
 landmark	Underground Pass	2443	3315	0
 landmark	Underwater	3772	10288	1
-landmark	Ungael	2272	4066	0
+landmark	Ungael	2260	4078	0
 landmark	Unmarked Grave	1570	3940	0
 landmark	Unquiet Ocean	2865	2436	0
 landmark	Untamed Ocean	3575	3911	0
@@ -3342,7 +3303,7 @@ landmark	Vet'ion's Rest	3223	3786	0
 landmark	Villa Lucens	1448	2933	0
 landmark	Vinery	1808	3560	0
 landmark	Voice of Yama	1440	10084	0
-landmark	Void Knights' Outpost	2636	2666	0
+landmark	Void Knights' Outpost	2640	2664	0
 landmark	Volcano	3780	3781	0
 landmark	Wallasalki	2506	10145	0
 landmark	War	1888	5184	0
@@ -3379,13 +3340,13 @@ landmark	Wyverns Task Only	3616	10272	0
 landmark	Xeric's Look out	1580	3530	0
 landmark	Xeric's Shrine	1311	3618	0
 landmark	Yama	1504	10084	0
-landmark	Yanille Chain	2664	3102	0
+landmark	Yanille Chain	2670	3107	0
 landmark	Ynysdail	2218	3476	0
 landmark	Zalcano	3035	6051	0
 landmark	Zamorak's Fortress	2909	5363	2
 landmark	Zanaris	2452	4473	0
 landmark	Zanik's bedroom	2744	5351	2
-landmark	Zombies	2842	9766	0
+landmark	Zombies	2849	9774	0
 landmark	Zombies & rocks	2675	9682	0
 landmark	Zul-Andra	2201	3068	0
 landmark	Zul-Egil	2158	3032	0
@@ -3420,7 +3381,7 @@ place	Lumbridge	3222	3218	0
 place	Menaphos	3225	2775	0
 place	Miscellania	2515	3862	0
 place	Mort'ton	3487	3283	0
-place	Mos Le'Harmless	3695	2977	0
+place	Mos Le'Harmless	3693	2975	0
 place	Nardah	3427	2894	0
 place	Neitiznot	2337	3805	0
 place	Piscatoris	2340	3688	0
@@ -3530,12 +3491,7 @@ range	Aldarin Cooking range	1354	2948	0
 range	Aldarin Cooking range	1393	2977	0
 range	Aldarin Cooking range	1375	2958	0
 range	Aldarin Cooking range	1393	2976	0
-range	Aldarin Cooking range	1442	2938	0
-range	Aldarin Cooking range	1440	2937	0
-range	Aldarin Cooking range	1441	2939	0
-range	Aldarin Cooking range	1443	2937	0
-range	Aldarin Cooking range	1441	2938	0
-range	Aldarin Cooking range	1440	2940	0
+range	Aldarin Cooking range	1432	2948	0
 range	Aldarin Cooking range	1376	2959	0
 range	Aldarin Cooking range	1392	2975	0
 range	Aldarin Cooking range	1376	2960	0
@@ -3581,7 +3537,6 @@ range	Burgh de Rott Cooking range	3622	3334	0
 range	Burgh de Rott Cooking range	3624	3336	0
 range	Burgh de Rott Cooking range	3623	3334	0
 range	Burgh de Rott Cooking range	3621	3335	0
-range	Burgh de Rott Cooking range	3621	3336	0
 range	Burgh de Rott Cooking range	3624	3335	0
 range	Camelot Cooking range	2706	3406	0
 range	Camelot Cooking range	2705	3405	0
@@ -3690,26 +3645,26 @@ range	Cooking range (1375, 9709)	1375	9709	0
 range	Cooking range (1375, 9712)	1375	9712	0
 range	Cooking range (1376, 9710)	1376	9710	0
 range	Cooking range (1376, 9711)	1376	9711	0
-range	Cooking range (1401, 9552)	1401	9552	1
-range	Cooking range (1401, 9555)	1401	9555	1
-range	Cooking range (1402, 9552)	1402	9552	1
-range	Cooking range (1402, 9555)	1402	9555	1
-range	Cooking range (1402, 9569)	1402	9569	1
-range	Cooking range (1402, 9570)	1402	9570	1
-range	Cooking range (1403, 9553)	1403	9553	1
-range	Cooking range (1403, 9554)	1403	9554	1
-range	Cooking range (1403, 9568)	1403	9568	1
-range	Cooking range (1403, 9571)	1403	9571	1
-range	Cooking range (1404, 9568)	1404	9568	1
-range	Cooking range (1404, 9571)	1404	9571	1
-range	Cooking range (1405, 9569)	1405	9569	1
-range	Cooking range (1405, 9570)	1405	9570	1
-range	Cooking range (1411, 9567)	1411	9567	1
-range	Cooking range (1411, 9568)	1411	9568	1
-range	Cooking range (1412, 9569)	1412	9569	1
-range	Cooking range (1413, 9569)	1413	9569	1
-range	Cooking range (1414, 9567)	1414	9567	1
-range	Cooking range (1414, 9568)	1414	9568	1
+range	Cooking range (1401, 9552)	1399	9550	1
+range	Cooking range (1401, 9555)	1399	9553	1
+range	Cooking range (1402, 9552)	1399	9549	1
+range	Cooking range (1402, 9555)	1399	9552	1
+range	Cooking range (1402, 9569)	1399	9566	1
+range	Cooking range (1402, 9570)	1399	9567	1
+range	Cooking range (1403, 9553)	1399	9549	1
+range	Cooking range (1403, 9554)	1399	9550	1
+range	Cooking range (1403, 9568)	1400	9565	1
+range	Cooking range (1403, 9571)	1399	9567	1
+range	Cooking range (1404, 9568)	1401	9565	1
+range	Cooking range (1404, 9571)	1399	9566	1
+range	Cooking range (1405, 9569)	1401	9565	1
+range	Cooking range (1405, 9570)	1400	9565	1
+range	Cooking range (1411, 9567)	1408	9564	1
+range	Cooking range (1411, 9568)	1407	9564	1
+range	Cooking range (1412, 9569)	1415	9565	1
+range	Cooking range (1413, 9569)	1416	9566	1
+range	Cooking range (1414, 9567)	1415	9565	1
+range	Cooking range (1414, 9568)	1416	9566	1
 range	Cooking range (1419, 3177)	1419	3177	0
 range	Cooking range (1419, 3178)	1419	3178	0
 range	Cooking range (1420, 3176)	1420	3176	0
@@ -3727,26 +3682,26 @@ range	Cooking range (1450, 9554)	1450	9554	0
 range	Cooking range (1450, 9557)	1450	9557	0
 range	Cooking range (1451, 9555)	1451	9555	0
 range	Cooking range (1451, 9556)	1451	9556	0
-range	Cooking range (1465, 9554)	1465	9554	1
-range	Cooking range (1466, 9554)	1466	9554	1
-range	Cooking range (1467, 9555)	1467	9555	1
-range	Cooking range (1467, 9556)	1467	9556	1
-range	Cooking range (1468, 9567)	1468	9567	1
-range	Cooking range (1468, 9568)	1468	9568	1
-range	Cooking range (1469, 9569)	1469	9569	1
-range	Cooking range (1470, 9569)	1470	9569	1
-range	Cooking range (1473, 9554)	1473	9554	1
-range	Cooking range (1474, 9554)	1474	9554	1
-range	Cooking range (1474, 9569)	1474	9569	1
-range	Cooking range (1474, 9570)	1474	9570	1
-range	Cooking range (1475, 9555)	1475	9555	1
+range	Cooking range (1465, 9554)	1463	9552	1
+range	Cooking range (1466, 9554)	1463	9551	1
+range	Cooking range (1467, 9555)	1464	9558	1
+range	Cooking range (1467, 9556)	1465	9558	1
+range	Cooking range (1468, 9567)	1466	9565	1
+range	Cooking range (1468, 9568)	1465	9565	1
+range	Cooking range (1469, 9569)	1465	9565	1
+range	Cooking range (1470, 9569)	1466	9565	1
+range	Cooking range (1473, 9554)	1476	9558	1
+range	Cooking range (1474, 9554)	1476	9558	1
+range	Cooking range (1474, 9569)	1476	9565	1
+range	Cooking range (1474, 9570)	1476	9565	1
+range	Cooking range (1475, 9555)	1476	9558	1
 range	Cooking range (1475, 9556)	1475	9556	1
-range	Cooking range (1475, 9568)	1475	9568	1
-range	Cooking range (1475, 9571)	1475	9571	1
-range	Cooking range (1476, 9568)	1476	9568	1
-range	Cooking range (1476, 9571)	1476	9571	1
-range	Cooking range (1477, 9569)	1477	9569	1
-range	Cooking range (1477, 9570)	1477	9570	1
+range	Cooking range (1475, 9568)	1476	9565	1
+range	Cooking range (1475, 9571)	1470	9576	1
+range	Cooking range (1476, 9568)	1476	9565	1
+range	Cooking range (1476, 9571)	1480	9567	1
+range	Cooking range (1477, 9569)	1480	9566	1
+range	Cooking range (1477, 9570)	1480	9567	1
 range	Cooking range (1495, 3256)	1495	3256	0
 range	Cooking range (1496, 3256)	1496	3256	0
 range	Cooking range (1497, 3257)	1497	3257	0
@@ -3788,11 +3743,11 @@ range	Cooking range (1750, 3748)	1750	3748	1
 range	Cooking range (1750, 5464)	1750	5464	1
 range	Cooking range (1751, 3747)	1751	3747	1
 range	Cooking range (1751, 3749)	1751	3749	1
-range	Cooking range (1751, 3763)	1751	3763	1
+range	Cooking range (1751, 3763)	1757	3775	1
 range	Cooking range (1752, 3748)	1752	3748	1
 range	Cooking range (1752, 3762)	1752	3762	1
-range	Cooking range (1752, 3764)	1752	3764	1
-range	Cooking range (1753, 3763)	1753	3763	1
+range	Cooking range (1752, 3764)	1757	3775	1
+range	Cooking range (1753, 3763)	1757	3775	1
 range	Cooking range (1763, 3735)	1763	3735	1
 range	Cooking range (1764, 10137)	1764	10137	0
 range	Cooking range (1764, 3734)	1764	3734	1
@@ -3801,11 +3756,11 @@ range	Cooking range (1765, 10136)	1765	10136	0
 range	Cooking range (1765, 3735)	1765	3735	1
 range	Cooking range (1766, 10137)	1766	10137	0
 range	Cooking range (1770, 3751)	1770	3751	1
-range	Cooking range (1771, 3750)	1771	3750	1
-range	Cooking range (1771, 3752)	1771	3752	1
-range	Cooking range (1772, 3751)	1772	3751	1
+range	Cooking range (1771, 3750)	1783	3755	1
+range	Cooking range (1771, 3752)	1783	3755	1
+range	Cooking range (1772, 3751)	1783	3755	1
 range	Cooking range (1775, 3735)	1775	3735	1
-range	Cooking range (1776, 3734)	1776	3734	1
+range	Cooking range (1776, 3734)	1783	3722	1
 range	Cooking range (1776, 3736)	1776	3736	1
 range	Cooking range (1777, 3735)	1777	3735	1
 range	Cooking range (1783, 3754)	1783	3754	2
@@ -3868,9 +3823,9 @@ range	Cooking range (2081, 6155)	2081	6155	0
 range	Cooking range (2082, 6156)	2082	6156	0
 range	Cooking range (2091, 3921)	2091	3921	0
 range	Cooking range (2092, 3920)	2092	3920	0
-range	Cooking range (2094, 3907)	2094	3907	1
-range	Cooking range (2094, 3909)	2094	3909	1
-range	Cooking range (2095, 3908)	2095	3908	1
+range	Cooking range (2094, 3907)	2090	3907	1
+range	Cooking range (2094, 3909)	2090	3907	1
+range	Cooking range (2095, 3908)	2090	3907	1
 range	Cooking range (2136, 3891)	2136	3891	0
 range	Cooking range (2137, 3892)	2137	3892	0
 range	Cooking range (2137, 3893)	2137	3893	0
@@ -3886,7 +3841,7 @@ range	Cooking range (2206, 3404)	2206	3404	0
 range	Cooking range (2209, 3411)	2209	3411	0
 range	Cooking range (2210, 3412)	2210	3412	0
 range	Cooking range (2211, 3412)	2211	3412	0
-range	Cooking range (2212, 3411)	2212	3411	0
+range	Cooking range (2212, 3411)	2211	3412	0
 range	Cooking range (2319, 5429)	2319	5429	1
 range	Cooking range (2320, 5430)	2320	5430	1
 range	Cooking range (2320, 5431)	2320	5431	1
@@ -4051,13 +4006,13 @@ range	Cooking range (3141, 2423)	3141	2423	0
 range	Cooking range (3141, 2426)	3141	2426	0
 range	Cooking range (3142, 2424)	3142	2424	0
 range	Cooking range (3142, 2425)	3142	2425	0
-range	Cooking range (3142, 3453)	3142	3453	1
-range	Cooking range (3143, 3452)	3143	3452	1
-range	Cooking range (3144, 3452)	3144	3452	1
-range	Cooking range (3144, 3453)	3144	3453	1
-range	Cooking range (3145, 3452)	3145	3452	1
-range	Cooking range (3145, 3453)	3145	3453	1
-range	Cooking range (3146, 3452)	3146	3452	1
+range	Cooking range (3142, 3453)	3150	3441	1
+range	Cooking range (3143, 3452)	3150	3441	1
+range	Cooking range (3144, 3452)	3150	3441	1
+range	Cooking range (3144, 3453)	3150	3441	1
+range	Cooking range (3145, 3452)	3150	3441	1
+range	Cooking range (3145, 3453)	3150	3441	1
+range	Cooking range (3146, 3452)	3150	3441	1
 range	Cooking range (3147, 2397)	3147	2397	0
 range	Cooking range (3147, 2398)	3147	2398	0
 range	Cooking range (3187, 2404)	3187	2404	0
@@ -4227,11 +4182,10 @@ range	Kourend Cooking range	1679	3622	0
 range	Kourend Cooking range	1676	3622	0
 range	Kourend Cooking range	1680	3621	0
 range	Kourend Cooking range	1681	3622	0
-range	Kourend Cooking range	1677	3660	0
+range	Kourend Cooking range	1678	3659	0
 range	Kourend Cooking range	1683	3666	0
 range	Kourend Cooking range	1682	3667	0
 range	Kourend Cooking range	1679	3659	0
-range	Kourend Cooking range	1678	3659	0
 range	Kourend Cooking range	1683	3668	0
 range	Kourend Cooking range	1737	3613	0
 range	Kourend Cooking range	1672	3677	0
@@ -4298,8 +4252,7 @@ range	Menaphos Cooking range	3159	2841	0
 range	Mort'ton Cooking range	3609	3336	0
 range	Mort'ton Cooking range	3610	3336	0
 range	Mort'ton Cooking range	3611	3336	0
-range	Mort'ton Cooking range	3608	3334	0
-range	Mort'ton Cooking range	3608	3335	0
+range	Mort'ton Cooking range	3607	3335	0
 range	Mount Karuulm Cooking range	1237	3679	0
 range	Mount Karuulm Cooking range	1237	3680	0
 range	Nardah Cooking range	3409	2937	0
@@ -4358,16 +4311,14 @@ range	Port Phasmatys Cooking range	3696	3360	0
 range	Port Phasmatys Cooking range	3696	3361	0
 range	Port Phasmatys Cooking range	3619	3395	0
 range	Port Phasmatys Cooking range	3665	3377	0
-range	Port Phasmatys Cooking range	3667	3379	0
 range	Port Phasmatys Cooking range	3666	3379	0
-range	Port Phasmatys Cooking range	3622	3396	0
+range	Port Phasmatys Cooking range	3620	3394	0
 range	Port Phasmatys Cooking range	3666	3376	0
 range	Port Phasmatys Cooking range	3665	3378	0
 range	Port Phasmatys Cooking range	3667	3376	0
 range	Port Phasmatys Cooking range	3655	3363	0
 range	Port Phasmatys Cooking range	3622	3395	0
 range	Port Phasmatys Cooking range	3655	3362	0
-range	Port Phasmatys Cooking range	3620	3394	0
 range	Port Phasmatys Cooking range	3663	3369	0
 range	Port Phasmatys Cooking range	3662	3368	0
 range	Port Phasmatys Cooking range	3619	3396	0
@@ -4538,9 +4489,8 @@ range	Varrock West Cooking range	3155	3410	0
 range	Varrock West Cooking range	3157	3409	0
 range	Varrock West Cooking range	3156	3409	0
 range	Varrock West Cooking range	3159	3427	0
-range	Varrock West Cooking range	3145	3452	0
-range	Varrock West Cooking range	3144	3453	0
-range	Varrock West Cooking range	3146	3452	0
+range	Varrock West Cooking range	3143	3454	0
+range	Varrock West Cooking range	3144	3454	0
 range	Varrock West Cooking range	3162	3427	0
 range	Varrock West Cooking range	3160	3428	0
 range	Varrock West Cooking range	3161	3428	0
@@ -4625,7 +4575,7 @@ spinning_wheel	Spinning wheel (2487, 3400)	2487	3400	1
 spinning_wheel	Spinning wheel (2487, 3402)	2487	3402	1
 spinning_wheel	Spinning wheel (2487, 3410)	2487	3410	1
 spinning_wheel	Spinning wheel (2488, 3409)	2488	3409	1
-spinning_wheel	Spinning wheel (2488, 3411)	2488	3411	1
+spinning_wheel	Spinning wheel (2488, 3411)	2487	3410	1
 spinning_wheel	Spinning wheel (2489, 3410)	2489	3410	1
 spinning_wheel	Spinning wheel (2710, 3470)	2710	3470	1
 spinning_wheel	Spinning wheel (2710, 3472)	2710	3472	1
@@ -4727,18 +4677,12 @@ water	Aldarin Water source	1449	2922	0
 water	Aldarin Water source	1451	2920	0
 water	Aldarin Water source	1452	2921	0
 water	Aldarin Water source	1452	2922	0
-water	Aldarin Water source	1446	2940	0
-water	Aldarin Water source	1445	2939	0
-water	Aldarin Water source	1446	2937	0
-water	Aldarin Water source	1445	2938	0
-water	Aldarin Water source	1429	2932	0
-water	Aldarin Water source	1428	2933	0
-water	Aldarin Water source	1430	2935	0
-water	Aldarin Water source	1431	2934	0
-water	Aldarin Water source	1429	2935	0
-water	Aldarin Water source	1428	2934	0
-water	Aldarin Water source	1430	2932	0
-water	Aldarin Water source	1431	2933	0
+water	Aldarin Water source	1437	2949	0
+water	Aldarin Water source	1426	2929	0
+water	Aldarin Water source	1425	2930	0
+water	Aldarin Water source	1426	2937	0
+water	Aldarin Water source	1425	2931	0
+water	Aldarin Water source	1426	2928	0
 water	Aldarin Water source	1379	2967	0
 water	Aldarin Water source	1378	2967	0
 water	Aldarin Water source	1378	2970	0
@@ -5190,7 +5134,6 @@ water	Hosidius Water source	1801	3610	0
 water	Hosidius Water source	1802	3612	0
 water	Hosidius Water source	1823	3486	0
 water	Hosidius Water source	1836	3502	0
-water	Hosidius Water source	1823	3484	0
 water	Hosidius Water source	1822	3485	0
 water	Hosidius Water source	1834	3502	0
 water	Hosidius Water source	1835	3501	0
@@ -5303,7 +5246,6 @@ water	Kourend Water source	1670	3601	0
 water	Kourend Water source	1677	3617	0
 water	Kourend Water source	1676	3616	0
 water	Kourend Water source	1675	3659	0
-water	Kourend Water source	1676	3660	0
 water	Kourend Water source	1674	3659	0
 water	Kourend Water source	1681	3668	0
 water	Kourend Water source	1680	3669	0
@@ -5427,34 +5369,22 @@ water	Lumbridge Water source	3160	3221	0
 water	Lumbridge Water source	3163	3221	0
 water	Lumbridge Water source	3161	3222	0
 water	Lumbridge Water source	3163	3220	0
-water	Mort'ton Water source	3530	3354	0
-water	Mort'ton Water source	3530	3355	0
-water	Mort'ton Water source	3528	3356	0
-water	Mort'ton Water source	3529	3356	0
-water	Mort'ton Water source	3579	3363	0
-water	Mort'ton Water source	3578	3362	0
-water	Mort'ton Water source	3579	3360	0
-water	Mort'ton Water source	3578	3361	0
-water	Mort'ton Water source	3580	3360	0
-water	Mort'ton Water source	3581	3361	0
-water	Mort'ton Water source	3583	3362	0
-water	Mort'ton Water source	3583	3361	0
-water	Mort'ton Water source	3580	3363	0
-water	Mort'ton Water source	3581	3362	0
+water	Mort'ton Water source	3523	3347	0
+water	Mort'ton Water source	3522	3347	0
+water	Mort'ton Water source	3522	3350	0
+water	Mort'ton Water source	3522	3349	0
+water	Mort'ton Water source	3589	3368	0
 water	Mort'ton Water source	3578	3354	0
-water	Mort'ton Water source	3580	3356	0
+water	Mort'ton Water source	3591	3345	0
 water	Mort'ton Water source	3578	3355	0
-water	Mort'ton Water source	3579	3353	0
-water	Mort'ton Water source	3583	3355	0
-water	Mort'ton Water source	3580	3353	0
-water	Mort'ton Water source	3583	3354	0
-water	Mort'ton Water source	3581	3355	0
-water	Mort'ton Water source	3579	3356	0
-water	Mort'ton Water source	3581	3354	0
-water	Mort'ton Water source	3528	3360	0
-water	Mort'ton Water source	3530	3362	0
-water	Mort'ton Water source	3529	3360	0
-water	Mort'ton Water source	3530	3361	0
+water	Mort'ton Water source	3589	3341	0
+water	Mort'ton Water source	3591	3349	0
+water	Mort'ton Water source	3591	3343	0
+water	Mort'ton Water source	3591	3346	0
+water	Mort'ton Water source	3591	3344	0
+water	Mort'ton Water source	3522	3354	0
+water	Mort'ton Water source	3523	3369	0
+water	Mort'ton Water source	3522	3353	0
 water	Mort'ton Water source	3542	3312	0
 water	Mort'ton Water source	3542	3310	0
 water	Mort'ton Water source	3543	3311	0
@@ -5462,25 +5392,13 @@ water	Mort'ton Water source	3541	3311	0
 water	Mort'ton Water source	3496	3289	0
 water	Mort'ton Water source	3497	3288	0
 water	Mort'ton Water source	3495	3289	0
-water	Mort'ton Water source	3585	3353	0
-water	Mort'ton Water source	3586	3354	0
-water	Mort'ton Water source	3584	3353	0
-water	Mort'ton Water source	3586	3355	0
-water	Mort'ton Water source	3584	3356	0
-water	Mort'ton Water source	3585	3356	0
-water	Mort'ton Water source	3584	3360	0
-water	Mort'ton Water source	3586	3362	0
-water	Mort'ton Water source	3585	3360	0
-water	Mort'ton Water source	3585	3363	0
-water	Mort'ton Water source	3584	3363	0
-water	Mort'ton Water source	3586	3361	0
+water	Mort'ton Water source	3591	3350	0
+water	Mort'ton Water source	3591	3357	0
 water	Mos Le'Harmless Water source	3807	2955	0
 water	Mos Le'Harmless Water source	3806	2954	0
 water	Mos Le'Harmless Water source	3807	2953	0
-water	Mos Le'Harmless Water source	3806	2998	0
-water	Mos Le'Harmless Water source	3805	2997	0
-water	Mos Le'Harmless Water source	3806	2996	0
-water	Mos Le'Harmless Water source	3807	2997	0
+water	Mos Le'Harmless Water source	3796	3008	0
+water	Mos Le'Harmless Water source	3794	3008	0
 water	Mos Le'Harmless Water source	3808	2954	0
 water	Mount Karuulm Water source	1246	3743	0
 water	Mount Karuulm Water source	1247	3742	0
@@ -5547,7 +5465,6 @@ water	Port Phasmatys Water source	3613	3359	0
 water	Port Phasmatys Water source	3612	3359	0
 water	Port Phasmatys Water source	3614	3357	0
 water	Port Phasmatys Water source	3645	3385	0
-water	Port Phasmatys Water source	3647	3387	0
 water	Port Phasmatys Water source	3611	3358	0
 water	Port Phasmatys Water source	3646	3387	0
 water	Port Phasmatys Water source	3646	3384	0
@@ -5560,10 +5477,9 @@ water	Port Phasmatys Water source	3628	3383	0
 water	Port Phasmatys Water source	3626	3382	0
 water	Port Phasmatys Water source	3627	3382	0
 water	Port Phasmatys Water source	3646	3348	0
-water	Port Phasmatys Water source	3646	3349	0
+water	Port Phasmatys Water source	3644	3347	0
 water	Port Phasmatys Water source	3643	3349	0
 water	Port Phasmatys Water source	3645	3347	0
-water	Port Phasmatys Water source	3644	3347	0
 water	Port Phasmatys Water source	3643	3348	0
 water	Port Phasmatys Water source	3621	3344	0
 water	Port Phasmatys Water source	3622	3347	0
@@ -5577,22 +5493,18 @@ water	Port Phasmatys Water source	3613	3364	0
 water	Port Phasmatys Water source	3614	3365	0
 water	Port Phasmatys Water source	3611	3365	0
 water	Port Phasmatys Water source	3664	3348	0
-water	Port Phasmatys Water source	3664	3349	0
+water	Port Phasmatys Water source	3662	3347	0
 water	Port Phasmatys Water source	3610	3394	0
 water	Port Phasmatys Water source	3611	3395	0
 water	Port Phasmatys Water source	3661	3349	0
 water	Port Phasmatys Water source	3661	3348	0
 water	Port Phasmatys Water source	3609	3394	0
 water	Port Phasmatys Water source	3608	3395	0
-water	Port Phasmatys Water source	3608	3396	0
 water	Port Phasmatys Water source	3663	3347	0
-water	Port Phasmatys Water source	3662	3347	0
-water	Port Phasmatys Water source	3611	3396	0
 water	Port Phasmatys Water source	3617	3393	0
 water	Port Phasmatys Water source	3618	3394	0
 water	Port Phasmatys Water source	3616	3393	0
 water	Port Phasmatys Water source	3618	3395	0
-water	Port Phasmatys Water source	3616	3396	0
 water	Port Phasmatys Water source	3661	3369	0
 water	Port Phasmatys Water source	3660	3368	0
 water	Port Phasmatys Water source	3617	3396	0
@@ -5652,12 +5564,12 @@ water	Port Piscarilius Water source	1792	3755	0
 water	Port Piscarilius Water source	1793	3757	0
 water	Port Piscarilius Water source	1792	3757	0
 water	Port Piscarilius Water source	1794	3756	0
-water	Port Piscarilius Water source	1813	3756	0
-water	Port Piscarilius Water source	1814	3757	0
+water	Port Piscarilius Water source	1810	3753	0
+water	Port Piscarilius Water source	1816	3755	0
 water	Port Piscarilius Water source	1815	3756	0
 water	Port Piscarilius Water source	1814	3754	0
 water	Port Piscarilius Water source	1815	3755	0
-water	Port Piscarilius Water source	1813	3755	0
+water	Port Piscarilius Water source	1811	3753	0
 water	Port Sarim Water source	3091	3110	0
 water	Port Sarim Water source	3090	3108	0
 water	Port Sarim Water source	3091	3109	0
@@ -5790,7 +5702,7 @@ water	Seers' Village Water source	2700	3473	0
 water	Shayzien Water source	1535	3581	0
 water	Shayzien Water source	1534	3581	0
 water	Shayzien Water source	1533	3582	0
-water	Shayzien Water source	1466	3560	0
+water	Shayzien Water source	1467	3562	0
 water	Shayzien Water source	1467	3560	0
 water	Shayzien Water source	1465	3553	0
 water	Shayzien Water source	1467	3555	0
@@ -5802,9 +5714,8 @@ water	Shayzien Water source	1467	3552	0
 water	Shayzien Water source	1468	3559	0
 water	Shayzien Water source	1468	3553	0
 water	Shayzien Water source	1468	3554	0
-water	Shayzien Water source	1465	3559	0
-water	Shayzien Water source	1467	3557	0
 water	Shayzien Water source	1466	3557	0
+water	Shayzien Water source	1467	3557	0
 water	Shayzien Water source	1465	3558	0
 water	Shayzien Water source	1568	3554	0
 water	Shayzien Water source	1569	3554	0
@@ -5996,10 +5907,9 @@ water	Varrock Water source	3216	3426	0
 water	Varrock Water source	3216	3427	0
 water	Varrock Water source	3216	3430	0
 water	Varrock Water source	3216	3431	0
-water	Varrock West Water source	3138	3451	0
-water	Varrock West Water source	3139	3450	0
-water	Varrock West Water source	3138	3448	0
-water	Varrock West Water source	3139	3449	0
+water	Varrock West Water source	3137	3450	0
+water	Varrock West Water source	3137	3448	0
+water	Varrock West Water source	3137	3447	0
 water	Water source (1190, 10271)	1190	10271	0
 water	Water source (1190, 10272)	1190	10272	0
 water	Water source (1191, 10270)	1191	10270	0
@@ -6027,7 +5937,7 @@ water	Water source (1242, 3096)	1242	3096	0
 water	Water source (1242, 3098)	1242	3098	0
 water	Water source (1243, 3097)	1243	3097	0
 water	Water source (1399, 2893)	1399	2893	2
-water	Water source (1400, 2892)	1400	2892	2
+water	Water source (1400, 2892)	1399	2893	2
 water	Water source (1400, 2894)	1400	2894	2
 water	Water source (1414, 9559)	1414	9559	1
 water	Water source (1414, 9564)	1414	9564	1
@@ -6040,9 +5950,9 @@ water	Water source (1416, 9564)	1416	9564	1
 water	Water source (1417, 3185)	1417	3185	0
 water	Water source (1418, 3184)	1418	3184	0
 water	Water source (1418, 3186)	1418	3186	0
-water	Water source (1424, 9589)	1424	9589	1
-water	Water source (1424, 9591)	1424	9591	1
-water	Water source (1425, 9590)	1425	9590	1
+water	Water source (1424, 9589)	1426	9587	1
+water	Water source (1424, 9591)	1427	9588	1
+water	Water source (1425, 9590)	1427	9588	1
 water	Water source (1435, 9961)	1435	9961	0
 water	Water source (1435, 9964)	1435	9964	0
 water	Water source (1436, 9962)	1436	9962	0
@@ -6110,11 +6020,11 @@ water	Water source (1653, 3047)	1653	3047	2
 water	Water source (1654, 3046)	1654	3046	2
 water	Water source (1670, 3678)	1670	3678	1
 water	Water source (1671, 3679)	1671	3679	1
-water	Water source (1680, 3663)	1680	3663	2
-water	Water source (1681, 3664)	1681	3664	2
-water	Water source (1682, 3664)	1682	3664	2
+water	Water source (1680, 3663)	1690	3653	2
+water	Water source (1681, 3664)	1690	3655	2
+water	Water source (1682, 3664)	1690	3656	2
 water	Water source (1682, 6116)	1682	6116	0
-water	Water source (1683, 3663)	1683	3663	2
+water	Water source (1683, 3663)	1690	3656	2
 water	Water source (1683, 6117)	1683	6117	0
 water	Water source (1683, 6118)	1683	6118	0
 water	Water source (1731, 3542)	1731	3542	2
@@ -6155,24 +6065,24 @@ water	Water source (1763, 3738)	1763	3738	1
 water	Water source (1764, 3736)	1764	3736	1
 water	Water source (1764, 3738)	1764	3738	1
 water	Water source (1765, 3737)	1765	3737	1
-water	Water source (1771, 3750)	1771	3750	1
-water	Water source (1771, 3751)	1771	3751	1
+water	Water source (1771, 3750)	1783	3755	1
+water	Water source (1771, 3751)	1783	3755	1
 water	Water source (1771, 5458)	1771	5458	0
 water	Water source (1771, 5459)	1771	5459	0
-water	Water source (1772, 3749)	1772	3749	1
-water	Water source (1772, 3752)	1772	3752	1
+water	Water source (1772, 3749)	1783	3755	1
+water	Water source (1772, 3752)	1783	3755	1
 water	Water source (1772, 5457)	1772	5457	0
 water	Water source (1772, 5460)	1772	5460	0
 water	Water source (1773, 3735)	1773	3735	1
-water	Water source (1773, 3750)	1773	3750	1
-water	Water source (1773, 3751)	1773	3751	1
+water	Water source (1773, 3750)	1783	3755	1
+water	Water source (1773, 3751)	1783	3755	1
 water	Water source (1773, 5457)	1773	5457	0
 water	Water source (1773, 5460)	1773	5460	0
-water	Water source (1774, 3734)	1774	3734	1
+water	Water source (1774, 3734)	1783	3722	1
 water	Water source (1774, 3736)	1774	3736	1
 water	Water source (1774, 5458)	1774	5458	0
 water	Water source (1774, 5459)	1774	5459	0
-water	Water source (1775, 3734)	1775	3734	1
+water	Water source (1775, 3734)	1783	3722	1
 water	Water source (1775, 3736)	1775	3736	1
 water	Water source (1776, 3735)	1776	3735	1
 water	Water source (1777, 3579)	1777	3579	2
@@ -6241,10 +6151,10 @@ water	Water source (2081, 6154)	2081	6154	0
 water	Water source (2083, 3922)	2083	3922	1
 water	Water source (2084, 3921)	2084	3921	1
 water	Water source (2084, 3923)	2084	3923	1
-water	Water source (2085, 3895)	2085	3895	0
-water	Water source (2085, 3896)	2085	3896	0
+water	Water source (2085, 3895)	2084	3895	0
+water	Water source (2085, 3896)	2084	3895	0
 water	Water source (2085, 3897)	2085	3897	0
-water	Water source (2086, 3894)	2086	3894	0
+water	Water source (2086, 3894)	2084	3895	0
 water	Water source (2086, 3898)	2086	3898	0
 water	Water source (2086, 3907)	2086	3907	0
 water	Water source (2087, 3894)	2087	3894	0
@@ -6259,23 +6169,23 @@ water	Water source (2090, 3899)	2090	3899	1
 water	Water source (2090, 3921)	2090	3921	0
 water	Water source (2091, 3900)	2091	3900	1
 water	Water source (2091, 3921)	2091	3921	0
-water	Water source (2094, 3905)	2094	3905	1
-water	Water source (2094, 3908)	2094	3908	1
-water	Water source (2095, 3906)	2095	3906	1
-water	Water source (2095, 3907)	2095	3907	1
+water	Water source (2094, 3905)	2090	3907	1
+water	Water source (2094, 3908)	2090	3907	1
+water	Water source (2095, 3906)	2090	3907	1
+water	Water source (2095, 3907)	2090	3907	1
 water	Water source (2099, 3898)	2099	3898	0
 water	Water source (2100, 3897)	2100	3897	0
 water	Water source (2105, 6162)	2105	6162	0
 water	Water source (2105, 6163)	2105	6163	0
 water	Water source (2105, 6175)	2105	6175	0
 water	Water source (2105, 6176)	2105	6176	0
-water	Water source (2106, 3907)	2106	3907	1
+water	Water source (2106, 3907)	2098	3899	1
 water	Water source (2106, 6161)	2106	6161	0
 water	Water source (2106, 6164)	2106	6164	0
 water	Water source (2106, 6174)	2106	6174	0
 water	Water source (2106, 6177)	2106	6177	0
-water	Water source (2107, 3906)	2107	3906	1
-water	Water source (2107, 3908)	2107	3908	1
+water	Water source (2107, 3906)	2100	3899	1
+water	Water source (2107, 3908)	2098	3899	1
 water	Water source (2107, 6161)	2107	6161	0
 water	Water source (2107, 6164)	2107	6164	0
 water	Water source (2107, 6174)	2107	6174	0
@@ -6312,10 +6222,10 @@ water	Water source (2198, 3412)	2198	3412	2
 water	Water source (2199, 3413)	2199	3413	2
 water	Water source (2201, 3399)	2201	3399	0
 water	Water source (2201, 3400)	2201	3400	0
-water	Water source (2202, 3398)	2202	3398	0
+water	Water source (2202, 3398)	2201	3399	0
 water	Water source (2202, 3401)	2202	3401	0
 water	Water source (2202, 6247)	2202	6247	0
-water	Water source (2203, 3398)	2203	3398	0
+water	Water source (2203, 3398)	2201	3399	0
 water	Water source (2203, 3401)	2203	3401	0
 water	Water source (2203, 6246)	2203	6246	0
 water	Water source (2204, 3399)	2204	3399	0
