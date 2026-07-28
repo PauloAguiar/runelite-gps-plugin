@@ -66,14 +66,17 @@ class TransportAuditSceneOverlay extends Overlay
 			// setClip stair-steps the edges. The ribbons are drawn into an offscreen buffer, the
 			// boat is erased from it with DST_OUT (antialiased), and the result is composited.
 			//
-			// The mask is one CLICKBOX FILL PER PART. Filling the mesh triangle by triangle gave
-			// a truer silhouette but cost three full-mesh passes a frame and tanked the frame
-			// rate; a clickbox is a convex hull per part, and since a boat is many parts (hull,
-			// keel, sail, mast, cannon...) the union of their hulls still tracks the shape
-			// closely — at the same cost class as drawing the outlines.
+			// The mask is ONE PROJECTED CONVEX HULL PER PART. getClickbox returns an
+			// axis-aligned BOX, which is what made the cut look like a hitbox; filling the mesh
+			// triangle by triangle was accurate but cost three full-mesh passes a frame and
+			// tanked the frame rate. Hulling each part's projected vertices sits between the
+			// two: bulk-project the vertices (one call per part), hull them, fill once. A boat
+			// is many parts — hull, keel, sail, mast, cannon — so the union of their hulls
+			// tracks the real outline closely at roughly the cost of drawing the outlines.
 			int width = client.getCanvasWidth();
 			int height = client.getCanvasHeight();
-			if (width > 0 && height > 0)
+			net.runelite.api.Player player = client.getLocalPlayer();
+			if (width > 0 && height > 0 && player != null && player.getWorldView() != null)
 			{
 				if (ribbonBuffer == null || ribbonBuffer.getWidth() != width
 					|| ribbonBuffer.getHeight() != height)
@@ -98,10 +101,10 @@ class TransportAuditSceneOverlay extends Overlay
 					boolean masked = false;
 					for (net.runelite.api.TileObject part : boatParts())
 					{
-						java.awt.Shape clickbox = part.getClickbox();
-						if (clickbox != null)
+						Polygon hull = partHull(player.getWorldView(), part);
+						if (hull != null)
 						{
-							ribbons.fill(clickbox);
+							ribbons.fillPolygon(hull);
 							masked = true;
 						}
 					}
@@ -719,6 +722,72 @@ class TransportAuditSceneOverlay extends Overlay
 		{
 			outlineRenderer.drawOutline(part, 2, new Color(0, 255, 255, 200), 4);
 		}
+	}
+
+	/** Reused vertex projection scratch, grown as needed — no per-frame allocation. */
+	private int[] projectedX = new int[0];
+	private int[] projectedY = new int[0];
+
+	/**
+	 * One boat part's outline: its mesh vertices bulk-projected, then convex-hulled.
+	 *
+	 * Cheap enough for every frame (one projection call and one hull per part) while being far
+	 * tighter than {@link net.runelite.api.TileObject#getClickbox()}, which returns an
+	 * axis-aligned box. Vertices go through the same mapping RuneLite uses internally
+	 * ({@code verticesX, verticesZ, verticesY}; modelToCanvas handles non-top-level views).
+	 * Null when the part has no model or nothing projects.
+	 */
+	private Polygon partHull(net.runelite.api.WorldView boatView, net.runelite.api.TileObject part)
+	{
+		net.runelite.api.Renderable renderable = renderableOf(part);
+		net.runelite.api.Model model = renderable != null ? renderable.getModel() : null;
+		net.runelite.api.coords.LocalPoint at = part.getLocalLocation();
+		if (model == null || at == null || model.getVerticesCount() <= 0)
+		{
+			return null;
+		}
+		int count = model.getVerticesCount();
+		if (projectedX.length < count)
+		{
+			projectedX = new int[count];
+			projectedY = new int[count];
+		}
+		int orientation = part instanceof net.runelite.api.GameObject
+			? ((net.runelite.api.GameObject) part).getModelOrientation() : 0;
+		Perspective.modelToCanvas(client, boatView, count, at.getX(), at.getY(), 0, orientation,
+			model.getVerticesX(), model.getVerticesZ(), model.getVerticesY(),
+			projectedX, projectedY);
+		java.util.List<int[]> points = new java.util.ArrayList<>(count);
+		for (int i = 0; i < count; i++)
+		{
+			if (projectedX[i] != Integer.MIN_VALUE)
+			{
+				points.add(new int[]{projectedX[i], projectedY[i]});
+			}
+		}
+		return convexHull(points);
+	}
+
+	/** The renderable behind any flavour of tile object, or null. */
+	private static net.runelite.api.Renderable renderableOf(net.runelite.api.TileObject part)
+	{
+		if (part instanceof net.runelite.api.GameObject)
+		{
+			return ((net.runelite.api.GameObject) part).getRenderable();
+		}
+		if (part instanceof net.runelite.api.WallObject)
+		{
+			return ((net.runelite.api.WallObject) part).getRenderable1();
+		}
+		if (part instanceof net.runelite.api.GroundObject)
+		{
+			return ((net.runelite.api.GroundObject) part).getRenderable();
+		}
+		if (part instanceof net.runelite.api.DecorativeObject)
+		{
+			return ((net.runelite.api.DecorativeObject) part).getRenderable();
+		}
+		return null;
 	}
 
 	/**
