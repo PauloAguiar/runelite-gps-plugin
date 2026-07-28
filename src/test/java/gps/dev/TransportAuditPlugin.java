@@ -408,8 +408,12 @@ public class TransportAuditPlugin extends Plugin
 	 * are scene-relative: cleared on scene load and whenever the boat changes.
 	 */
 	private static final int WAKE_SAMPLES = 80;
-	/** How far back the wake reaches, in tiles — trimmed by DISTANCE so speed can't stretch it. */
-	private static final int WAKE_MAX_TILES = 15;
+	/**
+	 * How far back the wake is KEPT, in tiles — trimmed by distance so speed can't stretch it.
+	 * Deliberately longer than the rendered length: the overlay cuts the tail mid-segment for a
+	 * smooth recede, which needs a sample beyond the cut to interpolate towards.
+	 */
+	private static final int WAKE_MAX_TILES = 20;
 	private final java.util.ArrayDeque<int[]> boatWake = new java.util.ArrayDeque<>();
 	private int wakeViewId = -1;
 

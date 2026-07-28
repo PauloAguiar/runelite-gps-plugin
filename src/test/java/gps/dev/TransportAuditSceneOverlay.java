@@ -211,6 +211,8 @@ class TransportAuditSceneOverlay extends Overlay
 	private static final int COURSE_STEPS = 12;
 	/** Orientation units per tick the hull turns: 128/2048 of a circle = 22.5 degrees. */
 	private static final int TURN_PER_TICK = 128;
+	/** Rendered wake length in tiles; the plugin keeps a little more so the tail can be cut. */
+	private static final double WAKE_RENDER_TILES = 15;
 	/** Tiles from the hull where a ribbon is still fully transparent. */
 	private static final double HULL_CLEARANCE_TILES = 1.5;
 	/** Tiles over which it then fades in to full strength. */
@@ -396,9 +398,13 @@ class TransportAuditSceneOverlay extends Overlay
 	 */
 	private void renderBoatWake(Graphics2D graphics)
 	{
-		java.util.List<int[]> wake = plugin.boatWake();
 		net.runelite.api.WorldEntity boat = plugin.playerBoat();
-		if (wake.size() < 2 || boat == null || boat.getConfig() == null)
+		if (boat == null || boat.getConfig() == null)
+		{
+			return;
+		}
+		java.util.List<int[]> wake = smoothedWake(boat);
+		if (wake.size() < 2)
 		{
 			return;
 		}
@@ -413,6 +419,63 @@ class TransportAuditSceneOverlay extends Overlay
 		// The hull is at the END of the wake (newest sample) and the START of the course.
 		drawSweptRibbon(graphics, wake, centreX, centreY, halfBeam,
 			WAKE_NEAR, WAKE_FAR, false);
+	}
+
+	/**
+	 * The wake as it should LOOK rather than as it was sampled.
+	 *
+	 * Samples land once per tick while the hull glides continuously between them, so a raw
+	 * trail grows and sheds in tick-sized jumps — the choppiness. Two corrections: the boat's
+	 * interpolated position becomes the head every frame, and the tail is cut at exactly
+	 * {@link #WAKE_RENDER_TILES} by interpolating along the last segment instead of dropping a
+	 * whole sample. Both ends then move continuously.
+	 */
+	private java.util.List<int[]> smoothedWake(net.runelite.api.WorldEntity boat)
+	{
+		java.util.List<int[]> wake = new java.util.ArrayList<>(plugin.boatWake());
+		net.runelite.api.coords.LocalPoint at = boat.getLocalLocation();
+		if (at != null)
+		{
+			int[] head = {at.getX(), at.getY(), boat.getOrientation(), 0};
+			int[] last = wake.isEmpty() ? null : wake.get(wake.size() - 1);
+			if (last == null || last[0] != head[0] || last[1] != head[1])
+			{
+				wake.add(head);
+			}
+		}
+		if (wake.size() < 2)
+		{
+			return wake;
+		}
+		// Walk back from the hull, cutting the segment that crosses the length budget.
+		final double budget = WAKE_RENDER_TILES * 128.0;
+		double travelled = 0;
+		int keepFrom = 0;
+		int[] cut = null;
+		for (int i = wake.size() - 1; i > 0; i--)
+		{
+			int[] nearer = wake.get(i);
+			int[] older = wake.get(i - 1);
+			double step = Math.hypot(older[0] - nearer[0], older[1] - nearer[1]);
+			if (travelled + step >= budget && step > 0)
+			{
+				double fraction = (budget - travelled) / step;
+				cut = new int[]{
+					(int) Math.round(nearer[0] + (older[0] - nearer[0]) * fraction),
+					(int) Math.round(nearer[1] + (older[1] - nearer[1]) * fraction),
+					older[2], older[3]};
+				keepFrom = i;
+				break;
+			}
+			travelled += step;
+		}
+		java.util.List<int[]> trimmed =
+			new java.util.ArrayList<>(wake.subList(keepFrom, wake.size()));
+		if (cut != null)
+		{
+			trimmed.add(0, cut);
+		}
+		return trimmed;
 	}
 
 	/**
@@ -435,15 +498,20 @@ class TransportAuditSceneOverlay extends Overlay
 		{
 			return; // parked: no course to draw
 		}
-		int target = mouseHeading(boat.getTargetLocation());
+		// The LIVE pose, not the tick-aligned target: getLocalLocation/getOrientation
+		// interpolate between ticks, so the projected course glides with the hull instead of
+		// snapping forward once a tick.
+		net.runelite.api.coords.LocalPoint from = boat.getLocalLocation() != null
+			? boat.getLocalLocation() : boat.getTargetLocation();
+		int target = mouseHeading(from);
 		if (target < 0)
 		{
 			return;
 		}
 		net.runelite.api.WorldEntityConfig config = boat.getConfig();
-		int orientation = boat.getTargetOrientation();
-		double x = boat.getTargetLocation().getX();
-		double y = boat.getTargetLocation().getY();
+		int orientation = boat.getOrientation();
+		double x = from.getX();
+		double y = from.getY();
 		java.util.List<int[]> course = new java.util.ArrayList<>(COURSE_STEPS + 2);
 		// Begin a half-hull BEHIND the centre: the ribbon then emerges from under the bow
 		// rather than starting with a hard line across the deck.
