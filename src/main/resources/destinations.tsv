@@ -312,12 +312,6 @@ altar	Lumbridge Altar	3244	3206	0
 altar	Lumbridge Altar	3245	3207	0
 altar	Lumbridge Altar	3243	3206	0
 altar	Lumbridge Altar	3242	3207	0
-altar	Lumbridge Swamp Altar	3121	3105	0
-altar	Lumbridge Swamp Altar	3122	3106	0
-altar	Lumbridge Swamp Altar	3122	3107	0
-altar	Lumbridge Swamp Altar	3120	3106	0
-altar	Lumbridge Swamp Altar	3120	3107	0
-altar	Lumbridge Swamp Altar	3121	3108	0
 altar	Mort'ton Altar	3376	3286	0
 altar	Mort'ton Altar	3377	3286	0
 altar	Mort'ton Altar	3378	3285	0
@@ -1945,24 +1939,6 @@ bank	Lovakengj Bank	1519	3741	0
 bank	Lovakengj Bank	1435	3823	0
 bank	Lovakengj Bank	1434	3822	0
 bank	Lovakengj Bank	1435	3821	0
-bank	Lumbridge Bank	3126	3126	0
-bank	Lumbridge Bank	3125	3125	0
-bank	Lumbridge Bank	3127	3126	0
-bank	Lumbridge Bank	3123	3122	0
-bank	Lumbridge Bank	3122	3123	0
-bank	Lumbridge Bank	3125	3127	0
-bank	Lumbridge Bank	3123	3121	0
-bank	Lumbridge Bank	3126	3124	0
-bank	Lumbridge Bank	3127	3124	0
-bank	Lumbridge Bank	3120	3123	0
-bank	Lumbridge Bank	3124	3120	0
-bank	Lumbridge Bank	3120	3125	0
-bank	Lumbridge Bank	3121	3124	0
-bank	Lumbridge Bank	3124	3123	0
-bank	Lumbridge Bank	3122	3125	0
-bank	Lumbridge Bank	3123	3124	0
-bank	Lumbridge Bank	3128	3125	0
-bank	Lumbridge Bank	3119	3124	0
 bank	Lumbridge Swamp Bank	3097	3025	0
 bank	Lumbridge Swamp Bank	3098	3026	0
 bank	Lumbridge Swamp Bank	3098	3027	0
@@ -3276,7 +3252,6 @@ landmark	Trollweiss Mountain	2782	3863	0
 landmark	Trouble Brewing	3776	3008	0
 landmark	Turoth	2716	10011	0
 landmark	Turtle Belt	3025	2595	0
-landmark	Tutorial Island	3105	3099	0
 landmark	Twilight Temple	1697	3257	0
 landmark	Tyras Camp	2180	3147	0
 landmark	Undead druids	1850	9939	0
@@ -4402,8 +4377,6 @@ range	Prifddinas Cooking range	3233	6163	0
 range	Prifddinas Cooking range	3234	6164	0
 range	Prifddinas Cooking range	3235	6164	0
 range	Prifddinas Cooking range	3236	6163	0
-range	Rimmington Cooking range	3075	3082	0
-range	Rimmington Cooking range	3076	3082	0
 range	Rimmington Cooking range	2969	3209	0
 range	Rimmington Cooking range	2970	3211	0
 range	Rimmington Cooking range	2969	3210	0
@@ -5570,9 +5543,6 @@ water	Port Piscarilius Water source	1815	3756	0
 water	Port Piscarilius Water source	1814	3754	0
 water	Port Piscarilius Water source	1815	3755	0
 water	Port Piscarilius Water source	1811	3753	0
-water	Port Sarim Water source	3091	3110	0
-water	Port Sarim Water source	3090	3108	0
-water	Port Sarim Water source	3091	3109	0
 water	Port Sarim Water source	3115	3168	0
 water	Port Sarim Water source	3117	3169	0
 water	Port Sarim Water source	3116	3169	0
@@ -5676,9 +5646,6 @@ water	Rellekka Water source	2667	3661	0
 water	Rellekka Water source	2669	3659	0
 water	Rellekka Water source	2668	3659	0
 water	Rellekka Water source	2667	3660	0
-water	Rimmington Water source	3077	3085	0
-water	Rimmington Water source	3076	3086	0
-water	Rimmington Water source	3078	3085	0
 water	Rimmington Water source	2956	3214	0
 water	Rimmington Water source	2958	3212	0
 water	Rimmington Water source	2957	3214	0

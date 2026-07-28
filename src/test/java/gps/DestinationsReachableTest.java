@@ -122,7 +122,7 @@ public class DestinationsReachableTest
 		"Ferox Enclave Dungeon", "Mogre Camp", "Ruins of Mokhaiotl", "Kendal's Lair");
 
 	/** Known-unreachable IMPORTED pins when this test was written; drive it down, never up. */
-	private static final int RATCHET = 780;
+	private static final int RATCHET = 750;
 
 	private boolean anyReachable(int packed)
 	{
