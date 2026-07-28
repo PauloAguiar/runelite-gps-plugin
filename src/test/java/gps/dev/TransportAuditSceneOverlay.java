@@ -55,34 +55,54 @@ class TransportAuditSceneOverlay extends Overlay
 		}
 		if (plugin.showBoatWake)
 		{
-			// A 2D overlay always paints OVER the rendered 3D scene, so the only way to let the
-			// ship model sit above the ribbons is to not paint there: the hull's footprint is
-			// subtracted from the clip while the ribbons draw, and the model shows through the
-			// hole. Their inner ends therefore disappear under the boat instead of butting
-			// against it with a hard edge.
-			java.awt.Shape previousClip = graphics.getClip();
-			// Mask, best first: the boat MODEL's projected outline (true occlusion, sail and
-			// all), else the deck silhouette, else the bounds box.
-			java.awt.Shape mask = hullModelShape();
-			if (mask == null)
+			// Java2D's CLIP is binary — one bit of coverage per pixel, no antialiasing — so
+			// masking with setClip stair-steps the ribbon edges however exact the outline is.
+			// Instead the ribbons go into an offscreen buffer, the boat's outline is ERASED
+			// from it with DST_OUT (antialiased, so the cut has soft edges), and the result is
+			// composited over the scene. Same occlusion, smooth boundary.
+			int width = client.getCanvasWidth();
+			int height = client.getCanvasHeight();
+			if (width > 0 && height > 0)
 			{
-				mask = hullSilhouettePolygon();
+				if (ribbonBuffer == null || ribbonBuffer.getWidth() != width
+					|| ribbonBuffer.getHeight() != height)
+				{
+					ribbonBuffer = new java.awt.image.BufferedImage(width, height,
+						java.awt.image.BufferedImage.TYPE_INT_ARGB);
+				}
+				Graphics2D buffer = ribbonBuffer.createGraphics();
+				try
+				{
+					buffer.setBackground(new Color(0, 0, 0, 0));
+					buffer.clearRect(0, 0, width, height);
+					buffer.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,
+						java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+					buffer.setRenderingHint(java.awt.RenderingHints.KEY_STROKE_CONTROL,
+						java.awt.RenderingHints.VALUE_STROKE_PURE);
+					renderBoatWake(buffer);
+					renderPredictedCourse(buffer);
+					buffer.setComposite(java.awt.AlphaComposite.DstOut);
+					buffer.setColor(Color.BLACK); // DST_OUT erases by the fill's coverage
+					if (!eraseBoatSilhouette(buffer))
+					{
+						// Nothing projected (mid view-swap): fall back to the coarse masks.
+						java.awt.Shape mask = hullSilhouettePolygon();
+						if (mask == null)
+						{
+							mask = hullBoxPolygon();
+						}
+						if (mask != null)
+						{
+							buffer.fill(mask);
+						}
+					}
+				}
+				finally
+				{
+					buffer.dispose();
+				}
+				graphics.drawImage(ribbonBuffer, 0, 0, null);
 			}
-			if (mask == null)
-			{
-				mask = hullBoxPolygon();
-			}
-			if (mask != null)
-			{
-				java.awt.Rectangle canvas = previousClip != null ? previousClip.getBounds()
-					: new java.awt.Rectangle(client.getCanvasWidth(), client.getCanvasHeight());
-				java.awt.geom.Area clip = new java.awt.geom.Area(canvas);
-				clip.subtract(new java.awt.geom.Area(mask));
-				graphics.setClip(clip);
-			}
-			renderBoatWake(graphics);
-			renderPredictedCourse(graphics);
-			graphics.setClip(previousClip);
 		}
 		if (plugin.showBoatTiles)
 		{
@@ -542,6 +562,22 @@ class TransportAuditSceneOverlay extends Overlay
 		{
 			return;
 		}
+		// Cumulative canvas distance along the ribbon, normalised to 0 at the hull end and 1 at
+		// the far tip — the fade parameter for each segment.
+		double[] travelled = new double[projected.size()];
+		for (int i = 1; i < projected.size(); i++)
+		{
+			int[] previous = projected.get(i - 1);
+			int[] current = projected.get(i);
+			travelled[i] = travelled[i - 1]
+				+ Math.hypot(current[2] - previous[2], current[3] - previous[3]);
+		}
+		double total = travelled[travelled.length - 1];
+		for (int i = 0; i < travelled.length; i++)
+		{
+			double fraction = total > 0 ? travelled[i] / total : 0;
+			travelled[i] = hullAtStart ? fraction : 1 - fraction;
+		}
 		java.awt.Stroke edgeStroke = new java.awt.BasicStroke(1.5f,
 			java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND);
 		java.awt.Stroke centreStroke = new java.awt.BasicStroke(2.5f,
@@ -550,12 +586,10 @@ class TransportAuditSceneOverlay extends Overlay
 		{
 			int[] from = projected.get(i);
 			int[] to = projected.get(i + 1);
-			// Distance from the hull, 0 at its end of the ribbon and 1 at the far tip.
-			double along = (double) (i + 1) / (projected.size() - 1);
-			double t = hullAtStart ? along : 1 - along;
-			// Tail-weighted easing: most of the ribbon keeps its near colour and the fade
-			// concentrates toward the tip, instead of washing out linearly from the hull.
-			t = t * t;
+			// Fade by DISTANCE travelled, not by sample index: samples are unevenly spaced
+			// (speed varies, and identical ones are dropped), so an index ramp made the
+			// gradient jump whenever spacing changed. Distance makes it dissipate evenly.
+			double t = travelled[i + 1];
 
 			Polygon quad = new Polygon();
 			quad.addPoint(from[0], from[1]);
@@ -578,27 +612,31 @@ class TransportAuditSceneOverlay extends Overlay
 
 	/** WorldEntity config ids that mean "this is a sailing boat" (boat-hider's BoatID). */
 	private static final java.util.Set<Integer> BOAT_ENTITY_TYPES = java.util.Set.of(1, 2, 3);
+	/** Reused offscreen surface for the ribbons; rebuilt only when the canvas resizes. */
+	private java.awt.image.BufferedImage ribbonBuffer;
+	/** Reused vertex projection scratch, grown as needed — no per-frame allocation. */
+	private int[] projectedX = new int[0];
+	private int[] projectedY = new int[0];
 
 	/**
-	 * The boat's TRUE outline: the union of every part's projected clickbox, plus the deck
-	 * silhouette for the floor itself.
+	 * Erases the boat's TRUE silhouette from the ribbon buffer, triangle by triangle.
 	 *
-	 * A boat is not one model — it is a WorldView full of objects (hull, keel, trim, sail,
-	 * helm, cannon, ...), which is exactly how the boat-hider plugin can hide them
-	 * individually. Everything in that view IS the boat, so no id lists or size heuristics are
-	 * needed: union the lot. The result occludes the ribbons wherever any part of the boat is
-	 * genuinely in front of the water — sail and mast included, which no waterline-derived
-	 * polygon could ever do.
-	 *
-	 * Null when ashore, when the view isn't a boat, or when nothing projects (mid view-swap),
-	 * leaving the polygon fallbacks.
+	 * {@link Perspective#getClickbox} would be easier but returns a CONVEX HULL of the model —
+	 * which on a boat spans from masthead to bow tip and swallows a wedge of open water. The
+	 * outline plugins avoid that by working from the mesh itself, and so does this: every
+	 * object in the boat's WorldView (hull, keel, trim, sail, helm, cannon — a boat is not one
+	 * model, which is exactly why boat-hider can hide the parts individually) has its vertices
+	 * projected with the same modelToCanvas mapping RuneLite uses internally
+	 * ({@code verticesX, verticesZ, verticesY}, and it handles non-top-level views), then each
+	 * face is filled. With DST_OUT and antialiasing on, the cut follows the real geometry with
+	 * soft edges. Returns false when nothing projected.
 	 */
-	private java.awt.Shape hullModelShape()
+	private boolean eraseBoatSilhouette(Graphics2D buffer)
 	{
 		net.runelite.api.Player player = client.getLocalPlayer();
 		if (player == null || player.getWorldView() == null || player.getWorldView().isTopLevel())
 		{
-			return null;
+			return false;
 		}
 		net.runelite.api.WorldView boatView = player.getWorldView();
 		net.runelite.api.WorldEntity entity =
@@ -606,18 +644,18 @@ class TransportAuditSceneOverlay extends Overlay
 		if (entity == null || entity.getConfig() == null
 			|| !BOAT_ENTITY_TYPES.contains(entity.getConfig().getId()))
 		{
-			return null;
+			return false;
 		}
 		net.runelite.api.Scene scene = boatView.getScene();
 		net.runelite.api.Tile[][][] tiles = scene != null ? scene.getTiles() : null;
 		if (tiles == null)
 		{
-			return null;
+			return false;
 		}
-		java.awt.geom.Area area = null;
 		// A multi-tile object is referenced from every tile it covers — dedupe by identity.
 		java.util.Set<net.runelite.api.TileObject> seen = java.util.Collections.newSetFromMap(
 			new java.util.IdentityHashMap<>());
+		boolean erased = false;
 		for (net.runelite.api.Tile[][] plane : tiles)
 		{
 			if (plane == null)
@@ -650,38 +688,97 @@ class TransportAuditSceneOverlay extends Overlay
 						{
 							continue;
 						}
-						java.awt.Shape clickbox = part.getClickbox();
-						if (clickbox == null)
-						{
-							continue;
-						}
-						if (area == null)
-						{
-							area = new java.awt.geom.Area(clickbox);
-						}
-						else
-						{
-							area.add(new java.awt.geom.Area(clickbox));
-						}
+						erased |= eraseObject(buffer, boatView, part);
 					}
 				}
 			}
 		}
-		// The deck FLOOR is terrain, not an object, so add its tile silhouette to close the gap
-		// between the hull sides and the planking.
+		// The deck FLOOR is terrain, not an object: close the gap between hull sides and planking.
 		Polygon deck = hullSilhouettePolygon();
 		if (deck != null)
 		{
-			if (area == null)
-			{
-				area = new java.awt.geom.Area(deck);
-			}
-			else
-			{
-				area.add(new java.awt.geom.Area(deck));
-			}
+			buffer.fill(deck);
+			erased = true;
 		}
-		return area != null && !area.isEmpty() ? area : null;
+		return erased;
+	}
+
+	/** Projects one boat part's mesh and fills its faces into the (DST_OUT) buffer. */
+	private boolean eraseObject(Graphics2D buffer, net.runelite.api.WorldView boatView,
+		net.runelite.api.TileObject part)
+	{
+		net.runelite.api.Renderable renderable = renderableOf(part);
+		net.runelite.api.Model model = renderable != null ? renderable.getModel() : null;
+		net.runelite.api.coords.LocalPoint at = part.getLocalLocation();
+		if (model == null || at == null || model.getVerticesCount() <= 0 || model.getFaceCount() <= 0)
+		{
+			return false;
+		}
+		int count = model.getVerticesCount();
+		if (projectedX.length < count)
+		{
+			projectedX = new int[count];
+			projectedY = new int[count];
+		}
+		int orientation = part instanceof net.runelite.api.GameObject
+			? ((net.runelite.api.GameObject) part).getModelOrientation() : 0;
+		// Same argument order RuneLite's own bounds code uses: X, Z, Y.
+		Perspective.modelToCanvas(client, boatView, count, at.getX(), at.getY(), 0, orientation,
+			model.getVerticesX(), model.getVerticesZ(), model.getVerticesY(),
+			projectedX, projectedY);
+		int[] faceA = model.getFaceIndices1();
+		int[] faceB = model.getFaceIndices2();
+		int[] faceC = model.getFaceIndices3();
+		if (faceA == null || faceB == null || faceC == null)
+		{
+			return false;
+		}
+		int[] triangleX = new int[3];
+		int[] triangleY = new int[3];
+		boolean any = false;
+		for (int face = 0; face < model.getFaceCount(); face++)
+		{
+			int a = faceA[face];
+			int b = faceB[face];
+			int c = faceC[face];
+			if (a >= count || b >= count || c >= count
+				|| projectedX[a] == Integer.MIN_VALUE || projectedX[b] == Integer.MIN_VALUE
+				|| projectedX[c] == Integer.MIN_VALUE)
+			{
+				continue;
+			}
+			triangleX[0] = projectedX[a];
+			triangleX[1] = projectedX[b];
+			triangleX[2] = projectedX[c];
+			triangleY[0] = projectedY[a];
+			triangleY[1] = projectedY[b];
+			triangleY[2] = projectedY[c];
+			buffer.fillPolygon(triangleX, triangleY, 3);
+			any = true;
+		}
+		return any;
+	}
+
+	/** The renderable behind any flavour of tile object, or null. */
+	private static net.runelite.api.Renderable renderableOf(net.runelite.api.TileObject part)
+	{
+		if (part instanceof net.runelite.api.GameObject)
+		{
+			return ((net.runelite.api.GameObject) part).getRenderable();
+		}
+		if (part instanceof net.runelite.api.WallObject)
+		{
+			return ((net.runelite.api.WallObject) part).getRenderable1();
+		}
+		if (part instanceof net.runelite.api.GroundObject)
+		{
+			return ((net.runelite.api.GroundObject) part).getRenderable();
+		}
+		if (part instanceof net.runelite.api.DecorativeObject)
+		{
+			return ((net.runelite.api.DecorativeObject) part).getRenderable();
+		}
+		return null;
 	}
 
 	/**
