@@ -214,9 +214,9 @@ class TransportAuditSceneOverlay extends Overlay
 	/** Rendered wake length in tiles; the plugin keeps a little more so the tail can be cut. */
 	private static final double WAKE_RENDER_TILES = 15;
 	/** Tiles from the hull where a ribbon is still fully transparent. */
-	private static final double HULL_CLEARANCE_TILES = 1.5;
+	private static final double HULL_CLEARANCE_TILES = 2.5;
 	/** Tiles over which it then fades in to full strength. */
-	private static final double HULL_FADE_TILES = 2.5;
+	private static final double HULL_FADE_TILES = 3.0;
 
 	/**
 	 * The boat's footprint on the sea: every deck cell with rendered content, corners pushed
@@ -699,6 +699,9 @@ class TransportAuditSceneOverlay extends Overlay
 			{
 				continue;
 			}
+			// Squared, so the tile just past the clearance is a whisper (~11%) rather than a
+			// third of full strength — the ribbon creeps out of the hull instead of starting.
+			emerge = emerge * emerge;
 
 			Polygon quad = new Polygon();
 			quad.addPoint(from[0], from[1]);
