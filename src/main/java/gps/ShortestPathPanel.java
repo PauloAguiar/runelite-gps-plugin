@@ -2383,7 +2383,7 @@ public class ShortestPathPanel extends PluginPanel
 		return section;
 	}
 
-			int topHeight	/**
+	/**
 	 * The catalog section a method is grouped under. Teleport items are split into two sections —
 	 * "Items (permanent)" (reusable jewellery/staves) and "Items (charged)" (tabs, charged jewellery
 	 * that consume a charge or the item) — since that distinction drives how freely they're used.
