@@ -267,7 +267,17 @@ public class ShortestPathPanel extends PluginPanel
 		belowHeader.add(buildDestinationSearch(), BorderLayout.CENTER);
 		top.add(belowHeader, BorderLayout.CENTER);
 		top.add(buildNotes(), BorderLayout.SOUTH);
-		add(top, BorderLayout.NORTH);
+		// The top block is fixed-height BY DESIGN (expanding the catalog must not push the route
+		// list around), but on a short window it has to give: it goes inside its own scroll pane
+		// that only engages when the panel is squeezed (see SqueezeLayout below).
+		ScrollableBox topWrapper = new ScrollableBox(new BorderLayout());
+		topWrapper.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		topWrapper.add(top, BorderLayout.NORTH);
+		JScrollPane topScroll = new JScrollPane(topWrapper,
+			ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+			ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		topScroll.setBorder(BorderFactory.createEmptyBorder());
+		topScroll.getVerticalScrollBar().setUnitIncrement(16);
 
 		listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
 		listPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -291,9 +301,72 @@ public class ShortestPathPanel extends PluginPanel
 		results.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		results.add(resultsHeaderHolder, BorderLayout.NORTH);
 		results.add(scroll, BorderLayout.CENTER);
-		add(results, BorderLayout.CENTER);
+
+		setLayout(new SqueezeLayout(topScroll, results));
+		add(topScroll);
+		add(results);
 
 		render();
+	}
+
+	/**
+	 * Two stacked components where the top one is fixed-height by design but must yield on a
+	 * short window: the top gets its natural height while there is room, and once the panel is
+	 * squeezed it shrinks — its scroll pane's bar engages — so nothing is ever clipped without a
+	 * scrollbar (issue #13 follow-up), while the results area below keeps a guaranteed slice.
+	 * BorderLayout cannot express this: NORTH always gets its full preferred height.
+	 */
+	private static final class SqueezeLayout implements java.awt.LayoutManager
+	{
+		private static final int RESULTS_MIN_HEIGHT = 150;
+
+		private final Component top;
+		private final Component bottom;
+
+		private SqueezeLayout(Component top, Component bottom)
+		{
+			this.top = top;
+			this.bottom = bottom;
+		}
+
+		@Override
+		public void layoutContainer(java.awt.Container parent)
+		{
+			java.awt.Insets insets = parent.getInsets();
+			int width = parent.getWidth() - insets.left - insets.right;
+			int height = parent.getHeight() - insets.top - insets.bottom;
+			int topHeight = Math.min(top.getPreferredSize().height,
+				Math.max(0, height - RESULTS_MIN_HEIGHT));
+			top.setBounds(insets.left, insets.top, width, topHeight);
+			bottom.setBounds(insets.left, insets.top + topHeight, width, height - topHeight);
+		}
+
+		@Override
+		public Dimension preferredLayoutSize(java.awt.Container parent)
+		{
+			java.awt.Insets insets = parent.getInsets();
+			Dimension topPref = top.getPreferredSize();
+			Dimension bottomPref = bottom.getPreferredSize();
+			return new Dimension(
+				Math.max(topPref.width, bottomPref.width) + insets.left + insets.right,
+				topPref.height + bottomPref.height + insets.top + insets.bottom);
+		}
+
+		@Override
+		public Dimension minimumLayoutSize(java.awt.Container parent)
+		{
+			return new Dimension(0, 0);
+		}
+
+		@Override
+		public void addLayoutComponent(String name, Component component)
+		{
+		}
+
+		@Override
+		public void removeLayoutComponent(Component component)
+		{
+		}
 	}
 
 	/**
