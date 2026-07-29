@@ -36,7 +36,6 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JTextField;
@@ -295,6 +294,20 @@ public class ShortestPathPanel extends PluginPanel
 		add(results, BorderLayout.CENTER);
 
 		render();
+	}
+
+	/**
+	 * Unwrapped panels (super(false)) ARE the component the client UI mounts, so the height this
+	 * returns flows into the frame's layout minimum — BorderLayout sums the fixed top block plus
+	 * every expanded catalog section, and once that passes the window height the client grows to
+	 * obey it (issue #13: "Sidebar modifies client height"). Wrapped panels never have this
+	 * problem because RuneLite mounts their scroll pane, whose minimum is tiny. Report the same:
+	 * a small fixed height, and let the internal scroll areas absorb any shortage.
+	 */
+	@Override
+	public Dimension getMinimumSize()
+	{
+		return new Dimension(super.getMinimumSize().width, 100);
 	}
 
 	/**
@@ -1787,7 +1800,8 @@ public class ShortestPathPanel extends PluginPanel
 			"<html>Ranking bias for the pure-walk route, in seconds.<br>"
 				+ "Positive: walking keeps the top spot unless a method beats it by more.<br>"
 				+ "Negative: walking ranks as if slower. Changes re-sort instantly.</html>",
-			bias, v -> {
+			bias, v ->
+			{
 				plugin.setWalkPreferenceSeconds(v);
 				SwingUtilities.invokeLater(this::refreshConfigSections);
 			}));
@@ -1855,7 +1869,8 @@ public class ShortestPathPanel extends PluginPanel
 			"<html>Ranking bias for routes that detour via a bank, in seconds.<br>"
 				+ "Positive: bank routes rank as if faster; negative: as if slower.<br>"
 				+ "Separate from the withdrawal time, which is already in their ETA.</html>",
-			bankBias, v -> {
+			bankBias, v ->
+			{
 				plugin.setBankPreferenceSeconds(v);
 				SwingUtilities.invokeLater(this::refreshConfigSections);
 			}));
