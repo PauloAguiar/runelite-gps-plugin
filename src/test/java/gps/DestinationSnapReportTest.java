@@ -48,9 +48,21 @@ public class DestinationSnapReportTest
 		Assume.assumeTrue(Boolean.getBoolean("snapReport"));
 		when(config.calculationCutoff()).thenReturn(120);
 		when(config.useTeleportationItems()).thenReturn(gps.TeleportationItem.ALL);
+		when(config.bypassVarbitChecks()).thenReturn(true);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
-		PathfinderConfig planning = new TestPathfinderConfig(client, config).copyForPlanning();
+		TestPathfinderConfig testConfig = new TestPathfinderConfig(client, config);
+		// Universal bank: reachable means "a player CAN get there" — any obtainable item is
+		// assumed owned (dashboard's BANK-preset pattern), else item-gated teleports like the
+		// Sailors' amulet would wrongly strand their destinations (Port Roberts).
+		net.runelite.api.ItemContainer universalBank = mock(net.runelite.api.ItemContainer.class);
+		net.runelite.api.Item[] everyItem = new net.runelite.api.Item[40000];
+		for (int i = 0; i < everyItem.length; i++) {
+			everyItem[i] = new net.runelite.api.Item(i, 1000);
+		}
+		when(universalBank.getItems()).thenReturn(everyItem);
+		testConfig.bank = universalBank;
+		PathfinderConfig planning = testConfig.copyForPlanning();
 		planning.refresh();
 		CollisionMap map = planning.getMap();
 		PrimitiveIntHashMap<Transport[]> transports = planning.getTransportsPacked(true);
