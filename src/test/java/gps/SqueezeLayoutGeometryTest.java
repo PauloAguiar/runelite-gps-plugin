@@ -179,8 +179,12 @@ public class SqueezeLayoutGeometryTest
 		// budget 460; rows = 460 - 190 = 270; top fits the budget exactly: no outer scrolling.
 		assertEquals(270, rowsScroll.getPreferredSize().height);
 		assertEquals(460, topScroll.getHeight());
-		assertTrue("outer scrollbar must stay disengaged",
-			topScroll.getVerticalScrollBar() == null || !topScroll.getVerticalScrollBar().isVisible());
+		// The functional contract, not the bar widget's flag (headless Swing never settles
+		// JScrollBar.isVisible reliably): the viewport shows the WHOLE view — no clipped
+		// content, nothing to scroll.
+		assertTrue("viewport must show the whole top block",
+			topScroll.getViewport().getExtentSize().height
+				>= topScroll.getViewport().getView().getPreferredSize().height);
 	}
 
 	@Test
