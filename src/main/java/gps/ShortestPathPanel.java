@@ -118,6 +118,7 @@ public class ShortestPathPanel extends PluginPanel
 	private final JPanel catalogHolder = new JPanel();
 	/** The whole fixed top block; SqueezeLayout measures it to size the elastic catalog box. */
 	private JPanel topBlock;
+	private JPanel resultsBlock;
 	// Filter box for the catalog; a persistent component so typing keeps focus while only the rows
 	// below repopulate. Shown only while the catalog is expanded.
 	private final IconTextField catalogSearch = new IconTextField();
@@ -303,6 +304,7 @@ public class ShortestPathPanel extends PluginPanel
 		resultsHeaderHolder.setLayout(new BoxLayout(resultsHeaderHolder, BoxLayout.Y_AXIS));
 		resultsHeaderHolder.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		JPanel results = new JPanel(new BorderLayout());
+		resultsBlock = results;
 		results.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		results.add(resultsHeaderHolder, BorderLayout.NORTH);
 		results.add(scroll, BorderLayout.CENTER);
@@ -315,6 +317,67 @@ public class ShortestPathPanel extends PluginPanel
 	}
 
 	/**
+	 * The elastic catalog rows box, PULL model: its preferred height is computed on demand from
+	 * the panel's spare height — natural content size when that fits, everything left over when
+	 * it does not (scrolling inside), never below the floor. Mutating sizes from inside a layout
+	 * pass does not propagate across JScrollPane's validate-root boundary (the bar then engages
+	 * on stale numbers — the issue #13 mid-window bug), so nothing is mutated: every consumer
+	 * always reads a fresh, consistent value. The guard breaks the recursion when the chrome
+	 * measurement asks the top block, which contains this very component.
+	 */
+	private final class FlexRowsScroll extends JScrollPane
+	{
+		private boolean measuring;
+
+		private FlexRowsScroll(Component view)
+		{
+			super(view, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		}
+
+		@Override
+		public Dimension getPreferredSize()
+		{
+			if (measuring)
+			{
+				return new Dimension(10, 0);
+			}
+			if (topBlock == null || resultsBlock == null || getParent() == null)
+			{
+				return new Dimension(10, CATALOG_MAX_HEIGHT);
+			}
+			measuring = true;
+			try
+			{
+				int chrome = topBlock.getPreferredSize().height;
+				int content = getViewport().getView().getPreferredSize().height + 2;
+				int reserve = Math.min(SqueezeLayout.RESULTS_MIN_HEIGHT,
+					resultsBlock.getPreferredSize().height);
+				int budget = getRootPanelHeight() - reserve;
+				return new Dimension(10,
+					Math.max(Math.min(content, budget - chrome), CATALOG_MIN_HEIGHT));
+			}
+			finally
+			{
+				measuring = false;
+			}
+		}
+
+		@Override
+		public Dimension getMaximumSize()
+		{
+			return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+		}
+	}
+
+	/** The panel's own current height minus its insets — the budget everything shares. */
+	private int getRootPanelHeight()
+	{
+		java.awt.Insets insets = getInsets();
+		return getHeight() - insets.top - insets.bottom;
+	}
+
+	/**
 	 * Two stacked components where the top one is fixed-height by design but must yield on a
 	 * short window: the top gets its natural height while there is room, and once the panel is
 	 * squeezed it shrinks — its scroll pane's bar engages — so nothing is ever clipped without a
@@ -323,7 +386,7 @@ public class ShortestPathPanel extends PluginPanel
 	 */
 	private final class SqueezeLayout implements java.awt.LayoutManager
 	{
-		private static final int RESULTS_MIN_HEIGHT = 150;
+		static final int RESULTS_MIN_HEIGHT = 150;
 
 		private final Component top;
 		private final Component bottom;
@@ -343,11 +406,18 @@ public class ShortestPathPanel extends PluginPanel
 			// Reserve only what the results actually need, capped: an empty route list must not
 			// hold dead space while the top block is forced to scroll beside it.
 			int reserve = Math.min(RESULTS_MIN_HEIGHT, bottom.getPreferredSize().height);
-			// The catalog rows box is the ELASTIC part: hand it the leftover height so it fills
-			// the panel before anything scrolls, and shrinks before anything clips.
-			flexCatalogRows(Math.max(0, height - reserve));
 			int topHeight = Math.min(top.getPreferredSize().height,
 				Math.max(0, height - reserve));
+			// Explicit bar decision: ScrollPaneLayout can engage the bar even at an exact fit,
+			// which then shrinks the viewport and cascades (the mid-window regime in the
+			// geometry test). The layout already knows whether the top fits — tell the pane.
+			if (top instanceof JScrollPane)
+			{
+				((JScrollPane) top).setVerticalScrollBarPolicy(
+					top.getPreferredSize().height > topHeight
+						? ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS
+						: ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+			}
 			top.setBounds(insets.left, insets.top, width, topHeight);
 			bottom.setBounds(insets.left, insets.top + topHeight, width, height - topHeight);
 		}
@@ -2300,9 +2370,7 @@ public class ShortestPathPanel extends PluginPanel
 		ScrollableBox rows = new ScrollableBox(null);
 		rows.setLayout(new BoxLayout(rows, BoxLayout.Y_AXIS));
 		rows.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		JScrollPane rowsScroll = new JScrollPane(rows,
-			ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-			ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		JScrollPane rowsScroll = new FlexRowsScroll(rows);
 		rowsScroll.setBorder(BorderFactory.createEmptyBorder());
 		rowsScroll.getVerticalScrollBar().setUnitIncrement(16);
 		rowsScroll.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -2315,33 +2383,7 @@ public class ShortestPathPanel extends PluginPanel
 		return section;
 	}
 
-	/**
-	 * Grants the expanded catalog rows box the panel's spare height: its natural content height
-	 * when that fits inside {@code budget} minus the rest of the top block's chrome, otherwise
-	 * everything that is left (scrolling inside), never below a usable floor. Called from
-	 * SqueezeLayout on every layout pass; converges because the chrome height (top block minus
-	 * the box itself) does not depend on the box's size.
-	 */
-	private void flexCatalogRows(int budget)
-	{
-		JScrollPane rowsScroll = catalogRowsScroll;
-		JPanel rows = catalogRowsPanel;
-		if (rowsScroll == null || rows == null || topBlock == null)
-		{
-			return;
-		}
-		int current = rowsScroll.getPreferredSize().height;
-		int chrome = topBlock.getPreferredSize().height - current;
-		int content = rows.getPreferredSize().height + 2;
-		int target = Math.max(Math.min(content, budget - chrome), CATALOG_MIN_HEIGHT);
-		if (target != current)
-		{
-			rowsScroll.setPreferredSize(new Dimension(10, target));
-			rowsScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, target));
-		}
-	}
-
-	/**
+			int topHeight	/**
 	 * The catalog section a method is grouped under. Teleport items are split into two sections —
 	 * "Items (permanent)" (reusable jewellery/staves) and "Items (charged)" (tabs, charged jewellery
 	 * that consume a charge or the item) — since that distinction drives how freely they're used.
@@ -2425,11 +2467,6 @@ public class ShortestPathPanel extends PluginPanel
 			}
 		}
 
-		// Provisional height for the first paint; SqueezeLayout re-sizes the box every layout
-		// pass to fill whatever the panel has spare (the catalog is the elastic element).
-		int height = Math.min(rows.getPreferredSize().height + 2, CATALOG_MAX_HEIGHT);
-		rowsScroll.setPreferredSize(new Dimension(10, height));
-		rowsScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, height));
 		rows.revalidate();
 		rows.repaint();
 		catalogHolder.revalidate();
