@@ -335,8 +335,11 @@ public class ShortestPathPanel extends PluginPanel
 			java.awt.Insets insets = parent.getInsets();
 			int width = parent.getWidth() - insets.left - insets.right;
 			int height = parent.getHeight() - insets.top - insets.bottom;
+			// Reserve only what the results actually need, capped: an empty route list must not
+			// hold dead space while the top block is forced to scroll beside it.
+			int reserve = Math.min(RESULTS_MIN_HEIGHT, bottom.getPreferredSize().height);
 			int topHeight = Math.min(top.getPreferredSize().height,
-				Math.max(0, height - RESULTS_MIN_HEIGHT));
+				Math.max(0, height - reserve));
 			top.setBounds(insets.left, insets.top, width, topHeight);
 			bottom.setBounds(insets.left, insets.top + topHeight, width, height - topHeight);
 		}
