@@ -45,7 +45,7 @@ public class KaruulmElevatorTest
 			{1311, 10188, 0}, // elevator bottom
 			{1310, 10206, 0}, // beside Kaal-Mej-San (the NPC tile itself is furniture-blocked)
 			{1312, 10217, 0}, // NORTH of the hall rocks — southbound-only rows once made this
-			                  // unreachable while the audit stayed silent (direction-blind coverage)
+			// unreachable while the audit stayed silent (direction-blind coverage)
 		};
 		for (int[] t : targets)
 		{

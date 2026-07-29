@@ -4,7 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.Insets;
 import java.util.List;
 import javax.swing.BoxLayout;
@@ -278,7 +277,8 @@ class TransportAuditPanel extends PluginPanel
 		JButton clear = new JButton("Clear");
 		clear.setFocusable(false);
 		clear.setFont(FontManager.getRunescapeSmallFont());
-		clear.addActionListener(e -> {
+		clear.addActionListener(e ->
+		{
 			plugin.clearBuilder();
 			builderStatus.setText(" ");
 		});

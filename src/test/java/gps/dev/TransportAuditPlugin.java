@@ -902,7 +902,8 @@ public class TransportAuditPlugin extends Plugin
 				.setOption(BUILDER_ITEM_OPTION)
 				.setTarget(itemName)
 				.setType(net.runelite.api.MenuAction.RUNELITE)
-				.onClick(e -> {
+				.onClick(e ->
+				{
 					log.info("[audit] builder item requirement: {} ({})", itemName, itemId);
 					javax.swing.SwingUtilities.invokeLater(() ->
 						panel.appendBuilderItem(itemId, itemName));
@@ -942,7 +943,8 @@ public class TransportAuditPlugin extends Plugin
 			.setOption(option)
 			.setTarget(target)
 			.setType(net.runelite.api.MenuAction.RUNELITE)
-			.onClick(e -> {
+			.onClick(e ->
+			{
 				action.run();
 				log.info("[audit] {} {}", option, target);
 			});

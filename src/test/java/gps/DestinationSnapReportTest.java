@@ -17,6 +17,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -48,7 +49,6 @@ public class DestinationSnapReportTest
 		Assume.assumeTrue(Boolean.getBoolean("snapReport"));
 		when(config.calculationCutoff()).thenReturn(120);
 		when(config.useTeleportationItems()).thenReturn(gps.TeleportationItem.ALL);
-		when(config.bypassVarbitChecks()).thenReturn(true);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		TestPathfinderConfig testConfig = new TestPathfinderConfig(client, config);
@@ -57,7 +57,8 @@ public class DestinationSnapReportTest
 		// Sailors' amulet would wrongly strand their destinations (Port Roberts).
 		net.runelite.api.ItemContainer universalBank = mock(net.runelite.api.ItemContainer.class);
 		net.runelite.api.Item[] everyItem = new net.runelite.api.Item[40000];
-		for (int i = 0; i < everyItem.length; i++) {
+		for (int i = 0; i < everyItem.length; i++)
+		{
 			everyItem[i] = new net.runelite.api.Item(i, 1000);
 		}
 		when(universalBank.getItems()).thenReturn(everyItem);
