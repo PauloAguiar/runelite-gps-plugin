@@ -79,6 +79,8 @@ public class ShortestPathPanel extends PluginPanel
 	private static final Color BANNER_OK_ACCENT = new Color(0x4C, 0xAF, 0x50);     // green
 	// Tallest the expanded teleport-methods box may grow before it scrolls internally.
 	private static final int CATALOG_MAX_HEIGHT = 240;
+	/** Floor for the elastic catalog rows box; below this the outer top scroll takes over. */
+	private static final int CATALOG_MIN_HEIGHT = 60;
 	// The header's GitHub mark points at the project home; the Discord mark at the community invite.
 	private static final String GITHUB_REPO_URL = "https://github.com/PauloAguiar/runelite-gps-plugin";
 	private static final String DISCORD_URL = "https://discord.gg/7VAbrPsUzT";
@@ -114,6 +116,8 @@ public class ShortestPathPanel extends PluginPanel
 	private boolean arrivalImmediate;
 	// Fixed (non-scrolling) slot below the header holding the teleport-methods catalog.
 	private final JPanel catalogHolder = new JPanel();
+	/** The whole fixed top block; SqueezeLayout measures it to size the elastic catalog box. */
+	private JPanel topBlock;
 	// Filter box for the catalog; a persistent component so typing keeps focus while only the rows
 	// below repopulate. Shown only while the catalog is expanded.
 	private final IconTextField catalogSearch = new IconTextField();
@@ -267,6 +271,7 @@ public class ShortestPathPanel extends PluginPanel
 		belowHeader.add(buildDestinationSearch(), BorderLayout.CENTER);
 		top.add(belowHeader, BorderLayout.CENTER);
 		top.add(buildNotes(), BorderLayout.SOUTH);
+		topBlock = top;
 		// The top block is fixed-height BY DESIGN (expanding the catalog must not push the route
 		// list around), but on a short window it has to give: it goes inside its own scroll pane
 		// that only engages when the panel is squeezed (see SqueezeLayout below).
@@ -316,7 +321,7 @@ public class ShortestPathPanel extends PluginPanel
 	 * scrollbar (issue #13 follow-up), while the results area below keeps a guaranteed slice.
 	 * BorderLayout cannot express this: NORTH always gets its full preferred height.
 	 */
-	private static final class SqueezeLayout implements java.awt.LayoutManager
+	private final class SqueezeLayout implements java.awt.LayoutManager
 	{
 		private static final int RESULTS_MIN_HEIGHT = 150;
 
@@ -338,6 +343,9 @@ public class ShortestPathPanel extends PluginPanel
 			// Reserve only what the results actually need, capped: an empty route list must not
 			// hold dead space while the top block is forced to scroll beside it.
 			int reserve = Math.min(RESULTS_MIN_HEIGHT, bottom.getPreferredSize().height);
+			// The catalog rows box is the ELASTIC part: hand it the leftover height so it fills
+			// the panel before anything scrolls, and shrinks before anything clips.
+			flexCatalogRows(Math.max(0, height - reserve));
 			int topHeight = Math.min(top.getPreferredSize().height,
 				Math.max(0, height - reserve));
 			top.setBounds(insets.left, insets.top, width, topHeight);
@@ -2308,6 +2316,32 @@ public class ShortestPathPanel extends PluginPanel
 	}
 
 	/**
+	 * Grants the expanded catalog rows box the panel's spare height: its natural content height
+	 * when that fits inside {@code budget} minus the rest of the top block's chrome, otherwise
+	 * everything that is left (scrolling inside), never below a usable floor. Called from
+	 * SqueezeLayout on every layout pass; converges because the chrome height (top block minus
+	 * the box itself) does not depend on the box's size.
+	 */
+	private void flexCatalogRows(int budget)
+	{
+		JScrollPane rowsScroll = catalogRowsScroll;
+		JPanel rows = catalogRowsPanel;
+		if (rowsScroll == null || rows == null || topBlock == null)
+		{
+			return;
+		}
+		int current = rowsScroll.getPreferredSize().height;
+		int chrome = topBlock.getPreferredSize().height - current;
+		int content = rows.getPreferredSize().height + 2;
+		int target = Math.max(Math.min(content, budget - chrome), CATALOG_MIN_HEIGHT);
+		if (target != current)
+		{
+			rowsScroll.setPreferredSize(new Dimension(10, target));
+			rowsScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, target));
+		}
+	}
+
+	/**
 	 * The catalog section a method is grouped under. Teleport items are split into two sections —
 	 * "Items (permanent)" (reusable jewellery/staves) and "Items (charged)" (tabs, charged jewellery
 	 * that consume a charge or the item) — since that distinction drives how freely they're used.
@@ -2391,7 +2425,8 @@ public class ShortestPathPanel extends PluginPanel
 			}
 		}
 
-		// Bounded height: natural size for short lists, capped so the routes below stay visible.
+		// Provisional height for the first paint; SqueezeLayout re-sizes the box every layout
+		// pass to fill whatever the panel has spare (the catalog is the elastic element).
 		int height = Math.min(rows.getPreferredSize().height + 2, CATALOG_MAX_HEIGHT);
 		rowsScroll.setPreferredSize(new Dimension(10, height));
 		rowsScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, height));
