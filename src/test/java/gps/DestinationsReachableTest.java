@@ -62,6 +62,7 @@ public class DestinationsReachableTest
 			return;
 		}
 		when(config.calculationCutoff()).thenReturn(120);
+		when(config.useTeleportationItems()).thenReturn(gps.TeleportationItem.ALL);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		PathfinderConfig planning = new TestPathfinderConfig(client, config).copyForPlanning();
