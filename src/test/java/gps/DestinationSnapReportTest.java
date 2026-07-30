@@ -49,6 +49,7 @@ public class DestinationSnapReportTest
 		Assume.assumeTrue(Boolean.getBoolean("snapReport"));
 		when(config.calculationCutoff()).thenReturn(120);
 		when(config.useTeleportationItems()).thenReturn(gps.TeleportationItem.ALL);
+		when(config.useSailing()).thenReturn(true);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenReturn(Thread.currentThread());
 		TestPathfinderConfig testConfig = new TestPathfinderConfig(client, config);

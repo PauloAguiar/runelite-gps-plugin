@@ -1981,6 +1981,7 @@ public class ShortestPathPanel extends PluginPanel
 	 */
 	private JPanel buildSailingSection()
 	{
+		final ShortestPathConfig config = plugin.getGpsConfig();
 		final boolean sailingOn = config.useSailing();
 		JPanel section = configSectionShell("Sailing (beta)",
 			"Sail your own boat between mooring points and port berths",

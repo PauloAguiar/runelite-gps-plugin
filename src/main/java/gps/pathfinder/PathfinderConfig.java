@@ -166,6 +166,7 @@ public class PathfinderConfig
 		usePohSpiritTree,
 		usePohMountedItems,
 		usePoh,
+		useSailing,
 		usePohObelisk,
 		includeBankPath;
 	private JewelleryBoxTier pohJewelleryBoxTier;
@@ -558,6 +559,7 @@ public class PathfinderConfig
 		calculationCutoffMillis = (long) config.calculationCutoff() * Constants.GAME_TICK_LENGTH;
 		avoidWilderness = ShortestPathPlugin.override("avoidWilderness", config.avoidWilderness());
 		usePoh = ShortestPathPlugin.override("usePoh", config.usePoh());
+		useSailing = ShortestPathPlugin.override("useSailing", config.useSailing());
 		// Read before refreshTransports() below — passesStructuralGates() gates farmable spirit
 		// trees on it.
 		spiritTreeSmartMode = ShortestPathPlugin.override("spiritTreeSmartMode", config.spiritTreeSmartMode());
@@ -1401,6 +1403,14 @@ public class PathfinderConfig
 		// Sailing: suppress teleports while the player is aboard a boat. We don't model sailing
 		// navigation, so teleporting away mid-ocean would produce confusing suggestions.
 		if (isOnSailingBoat && type.isTeleport())
+		{
+			return false;
+		}
+
+		// Master sailing gate: sailing is a structural world switch (own Travel options
+		// section), not a catalog method — with it off, sailing edges must not exist in ANY
+		// mode, planning included, or "every method excluded" would still sail to islands.
+		if (!useSailing && type == TransportType.SAILING)
 		{
 			return false;
 		}
