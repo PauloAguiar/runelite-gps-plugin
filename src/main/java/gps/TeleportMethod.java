@@ -126,7 +126,10 @@ public final class TeleportMethod
 		return type != null
 			&& type != TransportType.TRANSPORT
 			&& type != TransportType.AGILITY_SHORTCUT
-			&& type != TransportType.GRAPPLE_SHORTCUT;
+			&& type != TransportType.GRAPPLE_SHORTCUT
+			// Sailing is deliberately NOT a catalog method: 2,756 generated port-pair rows
+			// would drown the hand-curated methods, and it has its own Travel options section.
+			&& type != TransportType.SAILING;
 	}
 
 	public static String categoryOf(TransportType type)
@@ -175,8 +178,6 @@ public final class TeleportMethod
 			case CHARTER_SHIP:
 			case SHIP:
 				return "Boats & ships";
-			case SAILING:
-				return "Sailing (beta)";
 			case CANOE:
 				return "Canoes";
 			case SEASONAL_TRANSPORTS:

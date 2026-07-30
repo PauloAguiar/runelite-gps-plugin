@@ -168,6 +168,7 @@ public class ShortestPathPanel extends PluginPanel
 	private boolean walkingSectionExpanded = false;
 	private boolean bankSectionExpanded = false;
 	private boolean balloonSectionExpanded = false;
+	private boolean sailingSectionExpanded = false;
 	private boolean spiritTreeSectionExpanded = false;
 	// Funnel filter next to the catalog search: narrow the list to disabled methods or to a single
 	// kind of unavailability (missing item/level/quest, in bank, not unlocked).
@@ -1510,6 +1511,7 @@ public class ShortestPathPanel extends PluginPanel
 		body.add(buildWalkingSection());
 		body.add(buildBankSection());
 		body.add(buildBalloonSection());
+		body.add(buildSailingSection());
 		body.add(buildSpiritTreeSection());
 		if (!cachedCatalog.isEmpty())
 		{
@@ -1977,6 +1979,31 @@ public class ShortestPathPanel extends PluginPanel
 	 * reads the travel menu to learn which farmable trees you have grown; the detected list shows
 	 * here (or a sync hint, since GPS can't see a farming patch until the menu has been opened).
 	 */
+	private JPanel buildSailingSection()
+	{
+		final boolean sailingOn = config.useSailing();
+		JPanel section = configSectionShell("Sailing (beta)",
+			"Sail your own boat between mooring points and port berths",
+			sailingSectionExpanded, () -> sailingSectionExpanded = !sailingSectionExpanded,
+			sailingOn ? "on" : "off",
+			sailingOn ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.LIGHT_GRAY_COLOR);
+		if (!sailingSectionExpanded)
+		{
+			return section;
+		}
+
+		JPanel body = configSectionBody();
+		JCheckBox master = configCheckBox("Use sailing routes", sailingOn,
+			"<html><body style='width:220px'>Master switch: include sailing your own boat between"
+				+ " mooring points and port berths.<br><br>Assumes you own a boat and can summon it"
+				+ " at the departure point; travel times are provisional estimates until the speed"
+				+ " calibration pass.</body></html>",
+			v -> plugin.setPanelConfig("useSailing", v));
+		body.add(master);
+		section.add(body);
+		return section;
+	}
+
 	private JPanel buildSpiritTreeSection()
 	{
 		final boolean smart = plugin.getGpsConfig().spiritTreeSmartMode();
@@ -3395,7 +3422,6 @@ public class ShortestPathPanel extends PluginPanel
 			case "Quetzals": return new Color(0x4A, 0xC6, 0xE0);        // cyan
 			case "Obelisks": return new Color(0x9A, 0xA5, 0xB1);        // steel
 			case "Boats & ships": return new Color(0x5C, 0x6B, 0xC0);   // indigo — NOT the item teal
-			case "Sailing (beta)": return new Color(0x26, 0xA6, 0x9A);  // sea teal-green
 			case "Canoes": return new Color(0xB5, 0x79, 0x3B);          // wood brown
 			case "Seasonal": return new Color(0x94, 0xB4, 0x4A);        // olive
 			default: return CATEGORY_PALETTE[Math.floorMod(category.hashCode(), CATEGORY_PALETTE.length)];
