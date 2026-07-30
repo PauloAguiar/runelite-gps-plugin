@@ -152,8 +152,13 @@ public class DestinationsReachableTest
 	private static final Set<String> KNOWN_GAPS = Set.of(
 		"Ferox Enclave Dungeon", "Mogre Camp", "Ruins of Mokhaiotl", "Kendal's Lair");
 
-	/** Known-unreachable IMPORTED pins when this test was written; drive it down, never up. */
-	private static final int RATCHET = 647;
+	/**
+	 * Known-unreachable IMPORTED pins; drive it down, never up. Re-based 647 -> 733 on
+	 * 2026-07-29 when the collision substrate fix sealed the sailable ocean (the buoy-network
+	 * flood, exactly): 86 pins had been reachable only by WALKING ON THE SEA. The honest
+	 * backlog shrinks via the snap pass and island landings.
+	 */
+	private static final int RATCHET = 733;
 
 	private boolean anyReachable(int packed)
 	{
