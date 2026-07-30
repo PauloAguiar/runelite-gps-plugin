@@ -3395,6 +3395,7 @@ public class ShortestPathPanel extends PluginPanel
 			case "Quetzals": return new Color(0x4A, 0xC6, 0xE0);        // cyan
 			case "Obelisks": return new Color(0x9A, 0xA5, 0xB1);        // steel
 			case "Boats & ships": return new Color(0x5C, 0x6B, 0xC0);   // indigo — NOT the item teal
+			case "Sailing (beta)": return new Color(0x26, 0xA6, 0x9A);  // sea teal-green
 			case "Canoes": return new Color(0xB5, 0x79, 0x3B);          // wood brown
 			case "Seasonal": return new Color(0x94, 0xB4, 0x4A);        // olive
 			default: return CATEGORY_PALETTE[Math.floorMod(category.hashCode(), CATEGORY_PALETTE.length)];

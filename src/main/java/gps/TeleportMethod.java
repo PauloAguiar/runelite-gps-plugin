@@ -175,6 +175,8 @@ public final class TeleportMethod
 			case CHARTER_SHIP:
 			case SHIP:
 				return "Boats & ships";
+			case SAILING:
+				return "Sailing (beta)";
 			case CANOE:
 				return "Canoes";
 			case SEASONAL_TRANSPORTS:
