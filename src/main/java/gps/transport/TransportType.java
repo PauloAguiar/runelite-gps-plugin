@@ -27,6 +27,7 @@ public enum TransportType
 	CANOE("/transports/canoes.tsv", "useCanoes", ShortestPathConfig::useCanoes, "costCanoes", ShortestPathConfig::costCanoes),
 	CHARTER_SHIP("/transports/charter_ships.tsv", "useCharterShips", ShortestPathConfig::useCharterShips, "costCharterShips", ShortestPathConfig::costCharterShips),
 	SHIP("/transports/ships.tsv", "useShips", ShortestPathConfig::useShips, "costShips", ShortestPathConfig::costShips),
+	SAILING("/transports/sailing.tsv", "useSailing", ShortestPathConfig::useSailing, "costSailing", ShortestPathConfig::costSailing),
 	FAIRY_RING("/transports/fairy_rings.tsv", "useFairyRings", ShortestPathConfig::useFairyRings, "costFairyRings", ShortestPathConfig::costFairyRings, 6),
 	GNOME_GLIDER("/transports/gnome_gliders.tsv", "useGnomeGliders", ShortestPathConfig::useGnomeGliders, "costGnomeGliders", ShortestPathConfig::costGnomeGliders, 6),
 	HOT_AIR_BALLOON("/transports/hot_air_balloons.tsv", "useHotAirBalloons", ShortestPathConfig::useHotAirBalloons, "costHotAirBalloons", ShortestPathConfig::costHotAirBalloons, 7),

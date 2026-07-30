@@ -134,6 +134,20 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigItem(
 		hidden = true,
+		keyName = "useSailing",
+		name = "Use sailing (beta)",
+		description = "Whether to include sailing your own boat in the path.<br>" +
+			"Assumes you own a boat; ETAs are provisional until calibration",
+		position = 158,
+		section = sectionSettings
+	)
+	default boolean useSailing()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		hidden = true,
 		keyName = "useFairyRings",
 		name = "Use fairy rings",
 		description = "Whether to include fairy rings in the path.<br>" +
@@ -885,6 +899,24 @@ public interface ShortestPathConfig extends Config
 		section = sectionThresholds
 	)
 	default int costShips()
+	{
+		return 0;
+	}
+
+	@Range(
+		min = -10000,
+		max = 10000
+	)
+	@ConfigItem(
+		hidden = true,
+		keyName = "costSailing",
+		name = "Sailing modifier",
+		description = "Modifier added to the route's cost when it sails your own boat.<br>" +
+			"In run-tiles (2 = 1 game tick, 0.6s): positive avoids it, negative favors it.",
+		position = 159,
+		section = sectionThresholds
+	)
+	default int costSailing()
 	{
 		return 0;
 	}
