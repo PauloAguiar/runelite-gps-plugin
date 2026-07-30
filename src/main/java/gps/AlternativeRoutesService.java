@@ -1535,7 +1535,10 @@ public class AlternativeRoutesService
 		for (Transport transport : atOrigin)
 		{
 			if (transport.getDestination() == destination
-				&& (!methodsOnly || TeleportMethod.isMethodType(transport.getType()))
+				&& (!methodsOnly || TeleportMethod.isMethodType(transport.getType())
+					// Sailing is not a CATALOG method, but its legs must appear in the route
+					// methods: the cards, and the sea-track edge detection in the overlay.
+					|| transport.getType() == gps.transport.TransportType.SAILING)
 				&& searchEdgeCost(config, transport) < bestCost)
 			{
 				best = transport;
@@ -1545,7 +1548,10 @@ public class AlternativeRoutesService
 		for (Transport transport : config.getUsableTeleports(bankVisited))
 		{
 			if (transport.getDestination() == destination
-				&& (!methodsOnly || TeleportMethod.isMethodType(transport.getType()))
+				&& (!methodsOnly || TeleportMethod.isMethodType(transport.getType())
+					// Sailing is not a CATALOG method, but its legs must appear in the route
+					// methods: the cards, and the sea-track edge detection in the overlay.
+					|| transport.getType() == gps.transport.TransportType.SAILING)
 				&& searchEdgeCost(config, transport) < bestCost)
 			{
 				best = transport;
