@@ -85,6 +85,11 @@ public class SailingSeaTargetTest
 		// The rendering track for a sailing leg: every waypoint must be genuinely sailable
 		// water, and both ends must sit by the leg's endpoints (mooring land / ocean pin).
 		int mooringLand = WorldPointUtil.packWorldPoint(3069, 2986, 0);
+		// The field-reported leg: this mooring's land sits >6 tiles from its water (pier), the
+		// exact case that returned null and left the route dashed (capture 20260729-211852).
+		int pierMooring = WorldPointUtil.packWorldPoint(2965, 2608, 0);
+		assertTrue("pier moorings with distant water must still produce a track",
+			SailingSea.seaPath(pierMooring, SEA_PIN) != null);
 		int[] track = SailingSea.seaPath(mooringLand, SEA_PIN);
 		assertTrue("a track must exist between a port and the ocean pin", track != null);
 		assertTrue("a real track has many waypoints, not a straight hop", track.length > 10);

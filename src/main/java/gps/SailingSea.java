@@ -381,12 +381,16 @@ public final class SailingSea
 		return n + 1 == track.length ? track : java.util.Arrays.copyOf(track, n + 1);
 	}
 
-	/** Grid index of the nearest sailable tile within 6 of the endpoint, or -1. */
+	/**
+	 * Grid index of the nearest sailable tile within 10 of the endpoint, or -1. Ten, not six:
+	 * the mooring dumper pairs land tiles with water up to 8 tiles away (piers), and the track
+	 * must reach the water from the same land tile the transport departs from.
+	 */
 	private static int nearestSailable(SailingSea sea, int packed)
 	{
 		int px = WorldPointUtil.unpackWorldX(packed);
 		int py = WorldPointUtil.unpackWorldY(packed);
-		for (int radius = 0; radius <= 6; radius++)
+		for (int radius = 0; radius <= 10; radius++)
 		{
 			for (int dx = -radius; dx <= radius; dx++)
 			{
