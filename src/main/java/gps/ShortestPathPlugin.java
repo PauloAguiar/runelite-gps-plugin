@@ -3386,6 +3386,29 @@ public class ShortestPathPlugin extends Plugin
 	 * always matches the release (no constant to keep in sync). "unknown" in a dev build where the
 	 * file isn't on the classpath.
 	 */
+	/** The build's git commit (stamped by processResources), or "unknown" in odd builds. */
+	static String buildCommit()
+	{
+		try (java.io.InputStream in = ShortestPathPlugin.class.getResourceAsStream("/gps-build.properties"))
+		{
+			if (in != null)
+			{
+				java.util.Properties props = new java.util.Properties();
+				props.load(in);
+				String commit = props.getProperty("commit");
+				if (commit != null && !commit.isEmpty())
+				{
+					return commit;
+				}
+			}
+		}
+		catch (java.io.IOException ignored)
+		{
+			// Fall through to "unknown".
+		}
+		return "unknown";
+	}
+
 	static String pluginVersion()
 	{
 		try (java.io.InputStream in = ShortestPathPlugin.class.getResourceAsStream("/runelite-plugin.properties"))
@@ -3443,6 +3466,7 @@ public class ShortestPathPlugin extends Plugin
 		// block is what the player pastes under them.
 		body.append("*Auto-captured context — please keep:*\n");
 		body.append("- GPS ").append(pluginVersion()).append('\n');
+		body.append("- Build ").append(buildCommit()).append('\n');
 		body.append("- Mode: ").append(routesMode).append(" · limit ").append(routeLimit)
 			.append(" · band x").append(routeCostMultiple).append('\n');
 		body.append("- Start: ").append(issuePointText(lastAltStart)).append('\n');
@@ -3602,6 +3626,8 @@ public class ShortestPathPlugin extends Plugin
 			{
 				Map<String, Object> snapshot = new LinkedHashMap<>();
 				snapshot.put("capturedAt", new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date()));
+				snapshot.put("pluginVersion", pluginVersion());
+				snapshot.put("buildCommit", buildCommit());
 				// Every non-zero varbit, for identifying state-dependent transport gates (mushtree
 				// discovery, balloon route unlocks): capture before and after the in-game action and
 				// diff the two files — the flipped id is the gate. Runs on the client thread; a few

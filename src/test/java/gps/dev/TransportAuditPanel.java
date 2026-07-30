@@ -55,6 +55,8 @@ class TransportAuditPanel extends PluginPanel
 	private String filterText = "";
 
 	// Transport builder controls (values are the operator's; only the labels track the plugin).
+	/** Build identity so field capture sessions know exactly what code they ran. */
+	private final JLabel buildStamp = new JLabel("GPS " + gps.ShortestPathPlugin.pluginVersion() + " @ " + gps.ShortestPathPlugin.buildCommit());
 	private final JLabel builderOrigin = new JLabel("origin: — (shift right-click)");
 	private final JLabel builderDest = new JLabel("dest: —");
 	private final JLabel builderObject = new JLabel("object: —");
@@ -240,7 +242,7 @@ class TransportAuditPanel extends PluginPanel
 		title.setForeground(Color.WHITE);
 		title.setFont(FontManager.getRunescapeSmallFont());
 		section.add(title);
-		for (JLabel label : new JLabel[]{builderOrigin, builderDest, builderObject})
+		for (JLabel label : new JLabel[]{buildStamp, builderOrigin, builderDest, builderObject})
 		{
 			label.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 			label.setFont(FontManager.getRunescapeSmallFont());

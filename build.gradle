@@ -41,6 +41,21 @@ group = 'gps'
 // (the "report an issue" context). Harmless for the hub, which reads the repo-root copy for metadata.
 processResources {
     from('runelite-plugin.properties')
+    // Stamp the build's git commit so debug snapshots, "Report an issue" and the audit tool
+    // can say exactly what code produced them. 'unknown' when git is unavailable.
+    def gitCommit = 'unknown'
+    try {
+        def proc = 'git rev-parse --short HEAD'.execute(null, projectDir)
+        proc.waitFor()
+        if (proc.exitValue() == 0) {
+            gitCommit = proc.text.trim()
+        }
+    } catch (Exception ignored) {
+    }
+    def commitValue = gitCommit
+    doLast {
+        new File(destinationDir, 'gps-build.properties').text = "commit=${commitValue}\n"
+    }
 }
 
 
