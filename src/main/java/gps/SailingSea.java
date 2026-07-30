@@ -161,6 +161,19 @@ public final class SailingSea
 		return legs;
 	}
 
+	/**
+	 * 16-bearing moves: 8 grid steps plus 8 half-wind (knight) steps at cost 224 (euclidean
+	 * centitiles, sqrt5 x 100) — cuts the 8-dir staircase overestimate on off-axis legs from
+	 * ~8.2% to ~2.8%, matching the offline matrix. Knight steps require both interposed tiles
+	 * sailable so no move skips across an obstacle corner.
+	 */
+	private static final int[][] MOVES = {
+		{1, 0, 100}, {-1, 0, 100}, {0, 1, 100}, {0, -1, 100},
+		{1, 1, 141}, {1, -1, 141}, {-1, 1, 141}, {-1, -1, 141},
+		{2, 1, 224}, {2, -1, 224}, {-2, 1, 224}, {-2, -1, 224},
+		{1, 2, 224}, {1, -2, 224}, {-1, 2, 224}, {-1, -2, 224},
+	};
+
 	/** The last wet-endpoint flood, keyed by target: generations repeat the same pin. */
 	private static volatile int cachedTarget = WorldPointUtil.UNDEFINED;
 	private static volatile int[] cachedDistances;
@@ -215,35 +228,43 @@ public final class SailingSea
 			}
 			int x = index % sea.width;
 			int y = index / sea.width;
-			for (int dx = -1; dx <= 1; dx++)
+			for (int[] move : MOVES)
 			{
-				for (int dy = -1; dy <= 1; dy++)
+				int dx = move[0];
+				int dy = move[1];
+				int nx = x + dx;
+				int ny = y + dy;
+				if (nx < 0 || ny < 0 || nx >= sea.width || ny >= sea.height
+					|| !bit(sea, nx, ny))
 				{
-					int nx = x + dx;
-					int ny = y + dy;
-					if ((dx == 0 && dy == 0) || nx < 0 || ny < 0 || nx >= sea.width
-						|| ny >= sea.height)
-					{
-						continue;
-					}
-					long bit = (long) ny * sea.width + nx;
-					if ((sea.bits[(int) (bit >> 3)] & 1 << (bit & 7)) == 0)
-					{
-						continue;
-					}
-					int step = dx != 0 && dy != 0 ? 141 : 100;
-					int next = ny * sea.width + nx;
-					if (dist[index] + step < dist[next])
-					{
-						dist[next] = dist[index] + step;
-						queue.add(new long[]{dist[next], next});
-					}
+					continue;
+				}
+				if (Math.abs(dx) + Math.abs(dy) == 3
+					&& (!bit(sea, x + dx / 2, y + dy / 2)
+						|| !bit(sea,
+							Math.abs(dx) == 2 ? x + dx / 2 : x + dx,
+							Math.abs(dx) == 2 ? y + dy : y + dy / 2)))
+				{
+					continue;
+				}
+				int next = ny * sea.width + nx;
+				if (dist[index] + move[2] < dist[next])
+				{
+					dist[next] = dist[index] + move[2];
+					queue.add(new long[]{dist[next], next});
 				}
 			}
 		}
 		cachedDistances = result;
 		cachedTarget = targetPacked;
 		return result;
+	}
+
+	/** Local-grid sailability test used by the wet-endpoint flood's move loop. */
+	private static boolean bit(SailingSea sea, int x, int y)
+	{
+		long index = (long) y * sea.width + x;
+		return (sea.bits[(int) (index >> 3)] & 1 << (index & 7)) != 0;
 	}
 
 	/** Octile distance in centitiles (100 per cardinal step, 141 per diagonal step). */
