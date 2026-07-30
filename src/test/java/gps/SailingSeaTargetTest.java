@@ -109,6 +109,26 @@ public class SailingSeaTargetTest
 	}
 
 	@Test
+	public void khazardPinBoardsLocally()
+	{
+		// Field report gps-capture-20260729-213352: a pin beside Port Khazard detoured through
+		// Port Roberts (~1480 cost) because the Khazard mooring boarding tile was not
+		// walk-connected. Boarding locally (teleport + short walk + 13-tile hop) costs a few
+		// hundred at most; anything near the detour cost means boarding broke again.
+		int start = WorldPointUtil.packWorldPoint(2729, 3491, 3);
+		int pin = WorldPointUtil.packWorldPoint(2687, 3152, 0);
+		PathfinderConfig planning = planning(true);
+		planning.setExtraTransports(SailingSea.seaLegTransports(pin, 6));
+		planning.rebuildAvailabilityWithExclusions(Set.of());
+		Pathfinder pathfinder = new Pathfinder(planning, start, Set.of(pin));
+		pathfinder.run();
+		assertTrue("the Khazard pin must be reached", pathfinder.getResult().isReached());
+		assertTrue("must board at Khazard, not detour the western ocean (cost "
+			+ pathfinder.getResult().getTotalCost() + ")",
+			pathfinder.getResult().getTotalCost() < 500);
+	}
+
+	@Test
 	public void oceanPinUnreachableWithSailingOff()
 	{
 		Pathfinder pathfinder = new Pathfinder(planning(false), LUMBRIDGE, Set.of(SEA_PIN));
