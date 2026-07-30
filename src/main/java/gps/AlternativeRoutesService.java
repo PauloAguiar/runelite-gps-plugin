@@ -856,7 +856,12 @@ public class AlternativeRoutesService
 					int maxCost = seedResult.totalCost;
 					for (int r = 0; r < routes.size(); r++)
 					{
-						if (!routes.get(r).isWalkOnly() && routes.get(r).getTotalCost() > maxCost)
+						// The walk baseline is evict-proof only when there is a LIST to anchor:
+						// in overlay-only mode (panel closed, limit 1) the single route must be
+						// the best route, or a slow walk permanently shadows a cheap sea leg
+						// (field report: 7-minute walk shown while a 131-cost sail existed).
+						if ((limit == 1 || !routes.get(r).isWalkOnly())
+							&& routes.get(r).getTotalCost() > maxCost)
 						{
 							maxCost = routes.get(r).getTotalCost();
 							evict = r;
