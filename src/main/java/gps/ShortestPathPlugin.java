@@ -3963,6 +3963,17 @@ public class ShortestPathPlugin extends Plugin
 			// when the picked route genuinely no longer exists does the overlay fall back to the
 			// new best.
 			RouteOption rematched = rematchSelected(routes);
+			// ...unless the pick was never STARTED and the fresh list found something far
+			// better: keeping a 10x-costlier route the player is still standing at the start
+			// of is not stability, it is clinging to a stale result (field capture
+			// 20260729-220017: local 131-cost sail existed at rank 0 while a rematched
+			// 1473-cost detour stayed displayed).
+			if (rematched != null && !routes.isEmpty() && rematched != routes.get(0)
+				&& displayedRouteProgress() == 0
+				&& rematched.getTotalCost() > routes.get(0).getTotalCost() * 2)
+			{
+				rematched = null;
+			}
 			if (rematched != null)
 			{
 				selectedRoute = rematched;
