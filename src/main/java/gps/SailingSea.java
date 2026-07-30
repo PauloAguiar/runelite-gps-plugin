@@ -22,6 +22,8 @@ public final class SailingSea
 {
 	private static final double TILES_PER_TICK = 2.0;
 	private static final int OVERHEAD_TICKS = 20;
+	/** Wet-endpoint flood early stop: only the closest few moorings can appear in sea legs. */
+	private static final int SETTLE_ENDPOINTS = 12;
 
 	private static volatile SailingSea instance;
 
@@ -118,9 +120,10 @@ public final class SailingSea
 
 	/**
 	 * The synthesized final sea legs for a sailable-water target: board at each of the
-	 * {@code count} nearest moorings' land tiles and sail straight out. Distance is octile —
-	 * open ocean is nearly convex, and the port-to-port legs before it use the real Dijkstra
-	 * matrix — and the whole leg is gated like any SAILING transport (master toggle).
+	 * {@code count} closest-by-sea moorings' land tiles and sail out. Distances come from the
+	 * wet-endpoint flood ({@link #seaDistances}) — a real Dijkstra over the shipped ocean, so
+	 * islands and coastlines are respected, unlike the octile draft. Gated like any SAILING
+	 * transport (master toggle).
 	 */
 	public static List<Transport> seaLegTransports(int targetPacked, int count)
 	{
@@ -130,13 +133,23 @@ public final class SailingSea
 		}
 		int tx = WorldPointUtil.unpackWorldX(targetPacked);
 		int ty = WorldPointUtil.unpackWorldY(targetPacked);
-		List<int[]> nearest = new ArrayList<>(get().moorings);
-		nearest.sort(Comparator.comparingInt(m -> octile(m[2], m[3], tx, ty)));
-		List<Transport> legs = new ArrayList<>();
-		for (int[] mooring : nearest.subList(0, Math.min(count, nearest.size())))
+		int[] distances = seaDistances(targetPacked);
+		List<int[]> moorings = get().moorings;
+		List<Integer> order = new ArrayList<>();
+		for (int i = 0; i < moorings.size(); i++)
 		{
+			if (distances[i] != Integer.MAX_VALUE)
+			{
+				order.add(i);
+			}
+		}
+		order.sort(Comparator.comparingInt(i -> distances[i]));
+		List<Transport> legs = new ArrayList<>();
+		for (int i : order.subList(0, Math.min(count, order.size())))
+		{
+			int[] mooring = moorings.get(i);
 			int duration = OVERHEAD_TICKS + (int) Math.ceil(
-				octile(mooring[2], mooring[3], tx, ty) / 100.0 / TILES_PER_TICK);
+				distances[i] / 100.0 / TILES_PER_TICK);
 			legs.add(new Transport.TransportBuilder()
 				.origin(WorldPointUtil.packWorldPoint(mooring[0], mooring[1], 0))
 				.destination(targetPacked)
@@ -146,6 +159,91 @@ public final class SailingSea
 				.build());
 		}
 		return legs;
+	}
+
+	/** The last wet-endpoint flood, keyed by target: generations repeat the same pin. */
+	private static volatile int cachedTarget = WorldPointUtil.UNDEFINED;
+	private static volatile int[] cachedDistances;
+
+	/**
+	 * The wet-endpoint flood: exact sea distance in centitiles from a sailable target to every
+	 * mooring's water endpoint (MAX_VALUE where no sea path exists). Dijkstra over the shipped
+	 * ocean bitset, stopping early once the {@link #SETTLE_ENDPOINTS} nearest endpoints are
+	 * settled — the rest cannot beat them and the sea legs only take the closest few.
+	 */
+	public static int[] seaDistances(int targetPacked)
+	{
+		if (targetPacked == cachedTarget && cachedDistances != null)
+		{
+			return cachedDistances;
+		}
+		SailingSea sea = get();
+		int[] result = new int[sea.moorings.size()];
+		java.util.Arrays.fill(result, Integer.MAX_VALUE);
+		if (!isSailable(targetPacked) || sea.width == 0)
+		{
+			return result;
+		}
+		java.util.Map<Integer, Integer> endpointIndex = new java.util.HashMap<>();
+		for (int i = 0; i < sea.moorings.size(); i++)
+		{
+			int[] m = sea.moorings.get(i);
+			endpointIndex.put((m[3] - sea.minY) * sea.width + (m[2] - sea.minX), i);
+		}
+		int[] dist = new int[sea.width * sea.height];
+		java.util.Arrays.fill(dist, Integer.MAX_VALUE);
+		java.util.PriorityQueue<long[]> queue =
+			new java.util.PriorityQueue<>(Comparator.comparingLong(a -> a[0]));
+		int start = (WorldPointUtil.unpackWorldY(targetPacked) - sea.minY) * sea.width
+			+ (WorldPointUtil.unpackWorldX(targetPacked) - sea.minX);
+		dist[start] = 0;
+		queue.add(new long[]{0, start});
+		int settled = 0;
+		while (!queue.isEmpty() && settled < SETTLE_ENDPOINTS)
+		{
+			long[] head = queue.poll();
+			int index = (int) head[1];
+			if (head[0] > dist[index])
+			{
+				continue;
+			}
+			Integer mooring = endpointIndex.get(index);
+			if (mooring != null && result[mooring] == Integer.MAX_VALUE)
+			{
+				result[mooring] = dist[index];
+				settled++;
+			}
+			int x = index % sea.width;
+			int y = index / sea.width;
+			for (int dx = -1; dx <= 1; dx++)
+			{
+				for (int dy = -1; dy <= 1; dy++)
+				{
+					int nx = x + dx;
+					int ny = y + dy;
+					if ((dx == 0 && dy == 0) || nx < 0 || ny < 0 || nx >= sea.width
+						|| ny >= sea.height)
+					{
+						continue;
+					}
+					long bit = (long) ny * sea.width + nx;
+					if ((sea.bits[(int) (bit >> 3)] & 1 << (bit & 7)) == 0)
+					{
+						continue;
+					}
+					int step = dx != 0 && dy != 0 ? 141 : 100;
+					int next = ny * sea.width + nx;
+					if (dist[index] + step < dist[next])
+					{
+						dist[next] = dist[index] + step;
+						queue.add(new long[]{dist[next], next});
+					}
+				}
+			}
+		}
+		cachedDistances = result;
+		cachedTarget = targetPacked;
+		return result;
 	}
 
 	/** Octile distance in centitiles (100 per cardinal step, 141 per diagonal step). */

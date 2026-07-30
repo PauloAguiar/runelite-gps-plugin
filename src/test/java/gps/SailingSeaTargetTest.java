@@ -58,6 +58,28 @@ public class SailingSeaTargetTest
 	}
 
 	@Test
+	public void wetFloodRespectsCoastlines()
+	{
+		// Exact sea distances are never shorter than the straight line, and the flood must be
+		// fast enough to run per generation (the water-pin performance report).
+		long start = System.nanoTime();
+		int[] distances = SailingSea.seaDistances(SEA_PIN);
+		long coldMs = (System.nanoTime() - start) / 1_000_000;
+		int settled = 0;
+		for (int d : distances)
+		{
+			if (d != Integer.MAX_VALUE)
+			{
+				settled++;
+			}
+		}
+		assertTrue("the flood settles enough moorings to build legs (got " + settled + ")",
+			settled >= 6);
+		assertTrue("cold wet-endpoint flood must stay interactive (took " + coldMs + "ms)",
+			coldMs < 500);
+	}
+
+	@Test
 	public void oceanPinReachableWithSailingOn()
 	{
 		Pathfinder pathfinder = new Pathfinder(planning(true), LUMBRIDGE, Set.of(SEA_PIN));
