@@ -28,6 +28,7 @@
 2059 2605 0	1513 2973 0	Board Mooring point 59834				354	Sailing: Sunset Coast
 2059 2605 0	1506 3402 0	Board Mooring point 59834				541	Sailing: Lands End
 2059 2605 0	2542 3764 0	Board Mooring point 59834				737	Sailing: Waterbirth Island
+2059 2605 0	1556 2769 0	Board Mooring point 59834				291	Sailing: Shimmering Atoll
 2059 2605 0	2579 2843 0	Board Mooring point 59834				313	Sailing: Corsair Cove
 2059 2605 0	2612 3841 0	Board Mooring point 59834				780	Sailing: Etceteria
 2059 2605 0	2660 2392 0	Board Mooring point 59834				358	Sailing: Charred Island
@@ -47,13 +48,16 @@
 2059 2605 0	2860 3970 0	Board Mooring point 59834				921	Sailing: Weiss
 2059 2605 0	1873 2983 0	Board Mooring point 59834				235	Sailing: Vatrachos Island
 2059 2605 0	2907 3225 0	Board Mooring point 59834				637	Sailing: Lone oak island
+2059 2605 0	1860 3306 0	Board Mooring point 59834				395	Sailing: Port Roberts bank
 2059 2605 0	1892 3428 0	Board Mooring point 59834				452	Sailing: Chinchompa Island
 2059 2605 0	2927 4055 0	Board Mooring point 59834				973	Sailing: Grimstone
 2059 2605 0	2996 2287 0	Board Mooring point 59834				530	Sailing: The Onyx Crest
 2059 2605 0	2965 2608 0	Board Mooring point 59834				486	Sailing: 2965,2608
+2059 2605 0	1922 2757 0	Board Mooring point 59834				123	Sailing: Deepfin Point
 2059 2605 0	1958 3113 0	Board Mooring point 59834				289	Sailing: Minotaurs' Rest
 2059 2605 0	2960 3146 0	Board Mooring point 59834				648	Sailing: Mudskipper Point
 2059 2605 0	1953 4056 0	Board Mooring point 59834				758	Sailing: Brittle Isle
+2059 2605 0	3060 2638 0	Board Mooring point 59834				530	Sailing: Dognose Island
 2059 2605 0	3069 2986 0	Board Mooring point 59834				583	Sailing: The Pandemonium (ship)
 2059 2605 0	3050 3192 0	Board Mooring point 59834				676	Sailing: Bay of Sarim
 2095 3188 0	2059 2605 0	Board Mooring point 59834				322	Sailing: Wintumber Island
@@ -80,6 +84,7 @@
 2095 3188 0	1513 2973 0	Board Mooring point 59834				393	Sailing: Sunset Coast
 2095 3188 0	1506 3402 0	Board Mooring point 59834				344	Sailing: Lands End
 2095 3188 0	2542 3764 0	Board Mooring point 59834				440	Sailing: Waterbirth Island
+2095 3188 0	1556 2769 0	Board Mooring point 59834				384	Sailing: Shimmering Atoll
 2095 3188 0	2579 2843 0	Board Mooring point 59834				342	Sailing: Corsair Cove
 2095 3188 0	2612 3841 0	Board Mooring point 59834				482	Sailing: Etceteria
 2095 3188 0	2660 2392 0	Board Mooring point 59834				524	Sailing: Charred Island
@@ -99,13 +104,16 @@
 2095 3188 0	2860 3970 0	Board Mooring point 59834				623	Sailing: Weiss
 2095 3188 0	1873 2983 0	Board Mooring point 59834				181	Sailing: Vatrachos Island
 2095 3188 0	2907 3225 0	Board Mooring point 59834				665	Sailing: Lone oak island
+2095 3188 0	1860 3306 0	Board Mooring point 59834				155	Sailing: Port Roberts bank
 2095 3188 0	1892 3428 0	Board Mooring point 59834				180	Sailing: Chinchompa Island
 2095 3188 0	2927 4055 0	Board Mooring point 59834				675	Sailing: Grimstone
 2095 3188 0	2996 2287 0	Board Mooring point 59834				667	Sailing: The Onyx Crest
 2095 3188 0	2965 2608 0	Board Mooring point 59834				571	Sailing: 2965,2608
+2095 3188 0	1922 2757 0	Board Mooring point 59834				262	Sailing: Deepfin Point
 2095 3188 0	1958 3113 0	Board Mooring point 59834				106	Sailing: Minotaurs' Rest
 2095 3188 0	2960 3146 0	Board Mooring point 59834				677	Sailing: Mudskipper Point
 2095 3188 0	1953 4056 0	Board Mooring point 59834				472	Sailing: Brittle Isle
+2095 3188 0	3060 2638 0	Board Mooring point 59834				613	Sailing: Dognose Island
 2095 3188 0	3069 2986 0	Board Mooring point 59834				612	Sailing: The Pandemonium (ship)
 2095 3188 0	3050 3192 0	Board Mooring point 59834				704	Sailing: Bay of Sarim
 2079 3689 0	2059 2605 0	Board Mooring point 59834				588	Sailing: Wintumber Island
@@ -132,6 +140,7 @@
 2079 3689 0	1513 2973 0	Board Mooring point 59834				616	Sailing: Sunset Coast
 2079 3689 0	1506 3402 0	Board Mooring point 59834				391	Sailing: Lands End
 2079 3689 0	2542 3764 0	Board Mooring point 59834				263	Sailing: Waterbirth Island
+2079 3689 0	1556 2769 0	Board Mooring point 59834				608	Sailing: Shimmering Atoll
 2079 3689 0	2579 2843 0	Board Mooring point 59834				609	Sailing: Corsair Cove
 2079 3689 0	2612 3841 0	Board Mooring point 59834				305	Sailing: Etceteria
 2079 3689 0	2660 2392 0	Board Mooring point 59834				791	Sailing: Charred Island
@@ -151,13 +160,16 @@
 2079 3689 0	2860 3970 0	Board Mooring point 59834				446	Sailing: Weiss
 2079 3689 0	1873 2983 0	Board Mooring point 59834				419	Sailing: Vatrachos Island
 2079 3689 0	2907 3225 0	Board Mooring point 59834				932	Sailing: Lone oak island
+2079 3689 0	1860 3306 0	Board Mooring point 59834				266	Sailing: Port Roberts bank
 2079 3689 0	1892 3428 0	Board Mooring point 59834				206	Sailing: Chinchompa Island
 2079 3689 0	2927 4055 0	Board Mooring point 59834				495	Sailing: Grimstone
 2079 3689 0	2996 2287 0	Board Mooring point 59834				934	Sailing: The Onyx Crest
 2079 3689 0	2965 2608 0	Board Mooring point 59834				837	Sailing: 2965,2608
+2079 3689 0	1922 2757 0	Board Mooring point 59834				526	Sailing: Deepfin Point
 2079 3689 0	1958 3113 0	Board Mooring point 59834				343	Sailing: Minotaurs' Rest
 2079 3689 0	2960 3146 0	Board Mooring point 59834				943	Sailing: Mudskipper Point
 2079 3689 0	1953 4056 0	Board Mooring point 59834				218	Sailing: Brittle Isle
+2079 3689 0	3060 2638 0	Board Mooring point 59834				879	Sailing: Dognose Island
 2079 3689 0	3069 2986 0	Board Mooring point 59834				879	Sailing: The Pandemonium (ship)
 2079 3689 0	3050 3192 0	Board Mooring point 59834				971	Sailing: Bay of Sarim
 3173 2368 0	2059 2605 0	Board Gangplank 59832				609	Sailing: Wintumber Island
@@ -184,6 +196,7 @@
 3173 2368 0	1513 2973 0	Board Gangplank 59832				931	Sailing: Sunset Coast
 3173 2368 0	1506 3402 0	Board Gangplank 59832				1019	Sailing: Lands End
 3173 2368 0	2542 3764 0	Board Gangplank 59832				1130	Sailing: Waterbirth Island
+3173 2368 0	1556 2769 0	Board Gangplank 59832				878	Sailing: Shimmering Atoll
 3173 2368 0	2579 2843 0	Board Gangplank 59832				411	Sailing: Corsair Cove
 3173 2368 0	2612 3841 0	Board Gangplank 59832				1173	Sailing: Etceteria
 3173 2368 0	2660 2392 0	Board Gangplank 59832				281	Sailing: Charred Island
@@ -203,13 +216,16 @@
 3173 2368 0	2860 3970 0	Board Gangplank 59832				1308	Sailing: Weiss
 3173 2368 0	1873 2983 0	Board Gangplank 59832				757	Sailing: Vatrachos Island
 3173 2368 0	2907 3225 0	Board Gangplank 59832				505	Sailing: Lone oak island
+3173 2368 0	1860 3306 0	Board Gangplank 59832				841	Sailing: Port Roberts bank
 3173 2368 0	1892 3428 0	Board Gangplank 59832				876	Sailing: Chinchompa Island
 3173 2368 0	2927 4055 0	Board Gangplank 59832				1284	Sailing: Grimstone
 3173 2368 0	2996 2287 0	Board Gangplank 59832				119	Sailing: The Onyx Crest
 3173 2368 0	2965 2608 0	Board Gangplank 59832				185	Sailing: 2965,2608
+3173 2368 0	1922 2757 0	Board Gangplank 59832				693	Sailing: Deepfin Point
 3173 2368 0	1958 3113 0	Board Gangplank 59832				751	Sailing: Minotaurs' Rest
 3173 2368 0	2960 3146 0	Board Gangplank 59832				456	Sailing: Mudskipper Point
 3173 2368 0	1953 4056 0	Board Gangplank 59832				1167	Sailing: Brittle Isle
+3173 2368 0	3060 2638 0	Board Gangplank 59832				190	Sailing: Dognose Island
 3173 2368 0	3069 2986 0	Board Gangplank 59832				364	Sailing: The Pandemonium (ship)
 3173 2368 0	3050 3192 0	Board Gangplank 59832				470	Sailing: Bay of Sarim
 3145 2824 0	2059 2605 0	Board Gangplank 59832				593	Sailing: Wintumber Island
@@ -236,6 +252,7 @@
 3145 2824 0	1513 2973 0	Board Gangplank 59832				875	Sailing: Sunset Coast
 3145 2824 0	1506 3402 0	Board Gangplank 59832				927	Sailing: Lands End
 3145 2824 0	2542 3764 0	Board Gangplank 59832				1038	Sailing: Waterbirth Island
+3145 2824 0	1556 2769 0	Board Gangplank 59832				825	Sailing: Shimmering Atoll
 3145 2824 0	2579 2843 0	Board Gangplank 59832				306	Sailing: Corsair Cove
 3145 2824 0	2612 3841 0	Board Gangplank 59832				1081	Sailing: Etceteria
 3145 2824 0	2660 2392 0	Board Gangplank 59832				346	Sailing: Charred Island
@@ -255,13 +272,16 @@
 3145 2824 0	2860 3970 0	Board Gangplank 59832				1222	Sailing: Weiss
 3145 2824 0	1873 2983 0	Board Gangplank 59832				692	Sailing: Vatrachos Island
 3145 2824 0	2907 3225 0	Board Gangplank 59832				257	Sailing: Lone oak island
+3145 2824 0	1860 3306 0	Board Gangplank 59832				749	Sailing: Port Roberts bank
 3145 2824 0	1892 3428 0	Board Gangplank 59832				784	Sailing: Chinchompa Island
 3145 2824 0	2927 4055 0	Board Gangplank 59832				1218	Sailing: Grimstone
 3145 2824 0	2996 2287 0	Board Gangplank 59832				306	Sailing: The Onyx Crest
 3145 2824 0	2965 2608 0	Board Gangplank 59832				163	Sailing: 2965,2608
+3145 2824 0	1922 2757 0	Board Gangplank 59832				639	Sailing: Deepfin Point
 3145 2824 0	1958 3113 0	Board Gangplank 59832				659	Sailing: Minotaurs' Rest
 3145 2824 0	2960 3146 0	Board Gangplank 59832				207	Sailing: Mudskipper Point
 3145 2824 0	1953 4056 0	Board Gangplank 59832				1075	Sailing: Brittle Isle
+3145 2824 0	3060 2638 0	Board Gangplank 59832				124	Sailing: Dognose Island
 3145 2824 0	3069 2986 0	Board Gangplank 59832				110	Sailing: The Pandemonium (ship)
 3145 2824 0	3050 3192 0	Board Gangplank 59832				217	Sailing: Bay of Sarim
 2143 3121 0	2059 2605 0	Board Gangplank 59832				290	Sailing: Wintumber Island
@@ -288,6 +308,7 @@
 2143 3121 0	1513 2973 0	Board Gangplank 59832				386	Sailing: Sunset Coast
 2143 3121 0	1506 3402 0	Board Gangplank 59832				373	Sailing: Lands End
 2143 3121 0	2542 3764 0	Board Gangplank 59832				474	Sailing: Waterbirth Island
+2143 3121 0	1556 2769 0	Board Gangplank 59832				376	Sailing: Shimmering Atoll
 2143 3121 0	2579 2843 0	Board Gangplank 59832				302	Sailing: Corsair Cove
 2143 3121 0	2612 3841 0	Board Gangplank 59832				516	Sailing: Etceteria
 2143 3121 0	2660 2392 0	Board Gangplank 59832				485	Sailing: Charred Island
@@ -307,13 +328,16 @@
 2143 3121 0	2860 3970 0	Board Gangplank 59832				657	Sailing: Weiss
 2143 3121 0	1873 2983 0	Board Gangplank 59832				174	Sailing: Vatrachos Island
 2143 3121 0	2907 3225 0	Board Gangplank 59832				626	Sailing: Lone oak island
+2143 3121 0	1860 3306 0	Board Gangplank 59832				192	Sailing: Port Roberts bank
 2143 3121 0	1892 3428 0	Board Gangplank 59832				222	Sailing: Chinchompa Island
 2143 3121 0	2927 4055 0	Board Gangplank 59832				709	Sailing: Grimstone
 2143 3121 0	2996 2287 0	Board Gangplank 59832				627	Sailing: The Onyx Crest
 2143 3121 0	2965 2608 0	Board Gangplank 59832				531	Sailing: 2965,2608
+2143 3121 0	1922 2757 0	Board Gangplank 59832				239	Sailing: Deepfin Point
 2143 3121 0	1958 3113 0	Board Gangplank 59832				114	Sailing: Minotaurs' Rest
 2143 3121 0	2960 3146 0	Board Gangplank 59832				637	Sailing: Mudskipper Point
 2143 3121 0	1953 4056 0	Board Gangplank 59832				511	Sailing: Brittle Isle
+2143 3121 0	3060 2638 0	Board Gangplank 59832				573	Sailing: Dognose Island
 2143 3121 0	3069 2986 0	Board Gangplank 59832				573	Sailing: The Pandemonium (ship)
 2143 3121 0	3050 3192 0	Board Gangplank 59832				665	Sailing: Bay of Sarim
 2157 3325 0	2059 2605 0	Board Gangplank 59832				394	Sailing: Wintumber Island
@@ -340,6 +364,7 @@
 2157 3325 0	1513 2973 0	Board Gangplank 59832				451	Sailing: Sunset Coast
 2157 3325 0	1506 3402 0	Board Gangplank 59832				355	Sailing: Lands End
 2157 3325 0	2542 3764 0	Board Gangplank 59832				373	Sailing: Waterbirth Island
+2157 3325 0	1556 2769 0	Board Gangplank 59832				443	Sailing: Shimmering Atoll
 2157 3325 0	2579 2843 0	Board Gangplank 59832				406	Sailing: Corsair Cove
 2157 3325 0	2612 3841 0	Board Gangplank 59832				416	Sailing: Etceteria
 2157 3325 0	2660 2392 0	Board Gangplank 59832				589	Sailing: Charred Island
@@ -359,13 +384,16 @@
 2157 3325 0	2860 3970 0	Board Gangplank 59832				557	Sailing: Weiss
 2157 3325 0	1873 2983 0	Board Gangplank 59832				245	Sailing: Vatrachos Island
 2157 3325 0	2907 3225 0	Board Gangplank 59832				730	Sailing: Lone oak island
+2157 3325 0	1860 3306 0	Board Gangplank 59832				171	Sailing: Port Roberts bank
 2157 3325 0	1892 3428 0	Board Gangplank 59832				166	Sailing: Chinchompa Island
 2157 3325 0	2927 4055 0	Board Gangplank 59832				609	Sailing: Grimstone
 2157 3325 0	2996 2287 0	Board Gangplank 59832				731	Sailing: The Onyx Crest
 2157 3325 0	2965 2608 0	Board Gangplank 59832				635	Sailing: 2965,2608
+2157 3325 0	1922 2757 0	Board Gangplank 59832				334	Sailing: Deepfin Point
 2157 3325 0	1958 3113 0	Board Gangplank 59832				165	Sailing: Minotaurs' Rest
 2157 3325 0	2960 3146 0	Board Gangplank 59832				741	Sailing: Mudskipper Point
 2157 3325 0	1953 4056 0	Board Gangplank 59832				410	Sailing: Brittle Isle
+2157 3325 0	3060 2638 0	Board Gangplank 59832				677	Sailing: Dognose Island
 2157 3325 0	3069 2986 0	Board Gangplank 59832				677	Sailing: The Pandemonium (ship)
 2157 3325 0	3050 3192 0	Board Gangplank 59832				769	Sailing: Bay of Sarim
 2148 3531 0	2059 2605 0	Board Mooring point 59834				495	Sailing: Wintumber Island
@@ -392,6 +420,7 @@
 2148 3531 0	1513 2973 0	Board Mooring point 59834				534	Sailing: Sunset Coast
 2148 3531 0	1506 3402 0	Board Mooring point 59834				358	Sailing: Lands End
 2148 3531 0	2542 3764 0	Board Mooring point 59834				272	Sailing: Waterbirth Island
+2148 3531 0	1556 2769 0	Board Mooring point 59834				525	Sailing: Shimmering Atoll
 2148 3531 0	2579 2843 0	Board Mooring point 59834				514	Sailing: Corsair Cove
 2148 3531 0	2612 3841 0	Board Mooring point 59834				314	Sailing: Etceteria
 2148 3531 0	2660 2392 0	Board Mooring point 59834				696	Sailing: Charred Island
@@ -411,13 +440,16 @@
 2148 3531 0	2860 3970 0	Board Mooring point 59834				456	Sailing: Weiss
 2148 3531 0	1873 2983 0	Board Mooring point 59834				327	Sailing: Vatrachos Island
 2148 3531 0	2907 3225 0	Board Mooring point 59834				837	Sailing: Lone oak island
+2148 3531 0	1860 3306 0	Board Mooring point 59834				205	Sailing: Port Roberts bank
 2148 3531 0	1892 3428 0	Board Mooring point 59834				161	Sailing: Chinchompa Island
 2148 3531 0	2927 4055 0	Board Mooring point 59834				507	Sailing: Grimstone
 2148 3531 0	2996 2287 0	Board Mooring point 59834				839	Sailing: The Onyx Crest
 2148 3531 0	2965 2608 0	Board Mooring point 59834				742	Sailing: 2965,2608
+2148 3531 0	1922 2757 0	Board Mooring point 59834				434	Sailing: Deepfin Point
 2148 3531 0	1958 3113 0	Board Mooring point 59834				250	Sailing: Minotaurs' Rest
 2148 3531 0	2960 3146 0	Board Mooring point 59834				848	Sailing: Mudskipper Point
 2148 3531 0	1953 4056 0	Board Mooring point 59834				311	Sailing: Brittle Isle
+2148 3531 0	3060 2638 0	Board Mooring point 59834				784	Sailing: Dognose Island
 2148 3531 0	3069 2986 0	Board Mooring point 59834				784	Sailing: The Pandemonium (ship)
 2148 3531 0	3050 3192 0	Board Mooring point 59834				876	Sailing: Bay of Sarim
 2151 3880 0	2059 2605 0	Board Gangplank 59832				678	Sailing: Wintumber Island
@@ -444,6 +476,7 @@
 2151 3880 0	1513 2973 0	Board Gangplank 59832				706	Sailing: Sunset Coast
 2151 3880 0	1506 3402 0	Board Gangplank 59832				480	Sailing: Lands End
 2151 3880 0	2542 3764 0	Board Gangplank 59832				232	Sailing: Waterbirth Island
+2151 3880 0	1556 2769 0	Board Gangplank 59832				698	Sailing: Shimmering Atoll
 2151 3880 0	2579 2843 0	Board Gangplank 59832				697	Sailing: Corsair Cove
 2151 3880 0	2612 3841 0	Board Gangplank 59832				257	Sailing: Etceteria
 2151 3880 0	2660 2392 0	Board Gangplank 59832				879	Sailing: Charred Island
@@ -463,13 +496,16 @@
 2151 3880 0	2860 3970 0	Board Gangplank 59832				385	Sailing: Weiss
 2151 3880 0	1873 2983 0	Board Gangplank 59832				509	Sailing: Vatrachos Island
 2151 3880 0	2907 3225 0	Board Gangplank 59832				1020	Sailing: Lone oak island
+2151 3880 0	1860 3306 0	Board Gangplank 59832				355	Sailing: Port Roberts bank
 2151 3880 0	1892 3428 0	Board Gangplank 59832				294	Sailing: Chinchompa Island
 2151 3880 0	2927 4055 0	Board Gangplank 59832				429	Sailing: Grimstone
 2151 3880 0	2996 2287 0	Board Gangplank 59832				1021	Sailing: The Onyx Crest
 2151 3880 0	2965 2608 0	Board Gangplank 59832				925	Sailing: 2965,2608
+2151 3880 0	1922 2757 0	Board Gangplank 59832				617	Sailing: Deepfin Point
 2151 3880 0	1958 3113 0	Board Gangplank 59832				433	Sailing: Minotaurs' Rest
 2151 3880 0	2960 3146 0	Board Gangplank 59832				1031	Sailing: Mudskipper Point
 2151 3880 0	1953 4056 0	Board Gangplank 59832				175	Sailing: Brittle Isle
+2151 3880 0	3060 2638 0	Board Gangplank 59832				967	Sailing: Dognose Island
 2151 3880 0	3069 2986 0	Board Gangplank 59832				967	Sailing: The Pandemonium (ship)
 2151 3880 0	3050 3192 0	Board Gangplank 59832				1059	Sailing: Bay of Sarim
 2193 2319 0	2059 2605 0	Board Mooring point 59834				176	Sailing: Wintumber Island
@@ -496,6 +532,7 @@
 2193 2319 0	1513 2973 0	Board Mooring point 59834				489	Sailing: Sunset Coast
 2193 2319 0	1506 3402 0	Board Mooring point 59834				696	Sailing: Lands End
 2193 2319 0	2542 3764 0	Board Mooring point 59834				885	Sailing: Waterbirth Island
+2193 2319 0	1556 2769 0	Board Mooring point 59834				412	Sailing: Shimmering Atoll
 2193 2319 0	2579 2843 0	Board Mooring point 59834				349	Sailing: Corsair Cove
 2193 2319 0	2612 3841 0	Board Mooring point 59834				927	Sailing: Etceteria
 2193 2319 0	2660 2392 0	Board Mooring point 59834				273	Sailing: Charred Island
@@ -515,13 +552,16 @@
 2193 2319 0	2860 3970 0	Board Mooring point 59834				1068	Sailing: Weiss
 2193 2319 0	1873 2983 0	Board Mooring point 59834				391	Sailing: Vatrachos Island
 2193 2319 0	2907 3225 0	Board Mooring point 59834				670	Sailing: Lone oak island
+2193 2319 0	1860 3306 0	Board Mooring point 59834				550	Sailing: Port Roberts bank
 2193 2319 0	1892 3428 0	Board Mooring point 59834				608	Sailing: Chinchompa Island
 2193 2319 0	2927 4055 0	Board Mooring point 59834				1120	Sailing: Grimstone
 2193 2319 0	2996 2287 0	Board Mooring point 59834				440	Sailing: The Onyx Crest
 2193 2319 0	2965 2608 0	Board Mooring point 59834				449	Sailing: 2965,2608
+2193 2319 0	1922 2757 0	Board Mooring point 59834				277	Sailing: Deepfin Point
 2193 2319 0	1958 3113 0	Board Mooring point 59834				445	Sailing: Minotaurs' Rest
 2193 2319 0	2960 3146 0	Board Mooring point 59834				652	Sailing: Mudskipper Point
 2193 2319 0	1953 4056 0	Board Mooring point 59834				913	Sailing: Brittle Isle
+2193 2319 0	3060 2638 0	Board Mooring point 59834				498	Sailing: Dognose Island
 2193 2319 0	3069 2986 0	Board Mooring point 59834				587	Sailing: The Pandemonium (ship)
 2193 2319 0	3050 3192 0	Board Mooring point 59834				679	Sailing: Bay of Sarim
 1201 2733 0	2059 2605 0	Board Mooring point 59834				463	Sailing: Wintumber Island
@@ -548,6 +588,7 @@
 1201 2733 0	1513 2973 0	Board Mooring point 59834				227	Sailing: Sunset Coast
 1201 2733 0	1506 3402 0	Board Mooring point 59834				680	Sailing: Lands End
 1201 2733 0	2542 3764 0	Board Mooring point 59834				933	Sailing: Waterbirth Island
+1201 2733 0	1556 2769 0	Board Mooring point 59834				203	Sailing: Shimmering Atoll
 1201 2733 0	2579 2843 0	Board Mooring point 59834				723	Sailing: Corsair Cove
 1201 2733 0	2612 3841 0	Board Mooring point 59834				976	Sailing: Etceteria
 1201 2733 0	2660 2392 0	Board Mooring point 59834				799	Sailing: Charred Island
@@ -567,13 +608,16 @@
 1201 2733 0	2860 3970 0	Board Mooring point 59834				1117	Sailing: Weiss
 1201 2733 0	1873 2983 0	Board Mooring point 59834				387	Sailing: Vatrachos Island
 1201 2733 0	2907 3225 0	Board Mooring point 59834				1046	Sailing: Lone oak island
+1201 2733 0	1860 3306 0	Board Mooring point 59834				534	Sailing: Port Roberts bank
 1201 2733 0	1892 3428 0	Board Mooring point 59834				598	Sailing: Chinchompa Island
 1201 2733 0	2927 4055 0	Board Mooring point 59834				1169	Sailing: Grimstone
 1201 2733 0	2996 2287 0	Board Mooring point 59834				971	Sailing: The Onyx Crest
 1201 2733 0	2965 2608 0	Board Mooring point 59834				922	Sailing: 2965,2608
+1201 2733 0	1922 2757 0	Board Mooring point 59834				384	Sailing: Deepfin Point
 1201 2733 0	1958 3113 0	Board Mooring point 59834				461	Sailing: Minotaurs' Rest
 1201 2733 0	2960 3146 0	Board Mooring point 59834				1058	Sailing: Mudskipper Point
 1201 2733 0	1953 4056 0	Board Mooring point 59834				917	Sailing: Brittle Isle
+1201 2733 0	3060 2638 0	Board Mooring point 59834				964	Sailing: Dognose Island
 1201 2733 0	3069 2986 0	Board Mooring point 59834				993	Sailing: The Pandemonium (ship)
 1201 2733 0	3050 3192 0	Board Mooring point 59834				1085	Sailing: Bay of Sarim
 2220 3466 0	2059 2605 0	Board Mooring point 59834				500	Sailing: Wintumber Island
@@ -600,6 +644,7 @@
 2220 3466 0	1513 2973 0	Board Mooring point 59834				542	Sailing: Sunset Coast
 2220 3466 0	1506 3402 0	Board Mooring point 59834				386	Sailing: Lands End
 2220 3466 0	2542 3764 0	Board Mooring point 59834				280	Sailing: Waterbirth Island
+2220 3466 0	1556 2769 0	Board Mooring point 59834				533	Sailing: Shimmering Atoll
 2220 3466 0	2579 2843 0	Board Mooring point 59834				518	Sailing: Corsair Cove
 2220 3466 0	2612 3841 0	Board Mooring point 59834				322	Sailing: Etceteria
 2220 3466 0	2660 2392 0	Board Mooring point 59834				701	Sailing: Charred Island
@@ -619,13 +664,16 @@
 2220 3466 0	2860 3970 0	Board Mooring point 59834				463	Sailing: Weiss
 2220 3466 0	1873 2983 0	Board Mooring point 59834				335	Sailing: Vatrachos Island
 2220 3466 0	2907 3225 0	Board Mooring point 59834				842	Sailing: Lone oak island
+2220 3466 0	1860 3306 0	Board Mooring point 59834				221	Sailing: Port Roberts bank
 2220 3466 0	1892 3428 0	Board Mooring point 59834				189	Sailing: Chinchompa Island
 2220 3466 0	2927 4055 0	Board Mooring point 59834				515	Sailing: Grimstone
 2220 3466 0	2996 2287 0	Board Mooring point 59834				843	Sailing: The Onyx Crest
 2220 3466 0	2965 2608 0	Board Mooring point 59834				747	Sailing: 2965,2608
+2220 3466 0	1922 2757 0	Board Mooring point 59834				438	Sailing: Deepfin Point
 2220 3466 0	1958 3113 0	Board Mooring point 59834				255	Sailing: Minotaurs' Rest
 2220 3466 0	2960 3146 0	Board Mooring point 59834				853	Sailing: Mudskipper Point
 2220 3466 0	1953 4056 0	Board Mooring point 59834				355	Sailing: Brittle Isle
+2220 3466 0	3060 2638 0	Board Mooring point 59834				789	Sailing: Dognose Island
 2220 3466 0	3069 2986 0	Board Mooring point 59834				789	Sailing: The Pandemonium (ship)
 2220 3466 0	3050 3192 0	Board Mooring point 59834				881	Sailing: Bay of Sarim
 2282 2821 0	2059 2605 0	Board Mooring point 59834				196	Sailing: Wintumber Island
@@ -652,6 +700,7 @@
 2282 2821 0	1513 2973 0	Board Mooring point 59834				471	Sailing: Sunset Coast
 2282 2821 0	1506 3402 0	Board Mooring point 59834				575	Sailing: Lands End
 2282 2821 0	2542 3764 0	Board Mooring point 59834				687	Sailing: Waterbirth Island
+2282 2821 0	1556 2769 0	Board Mooring point 59834				420	Sailing: Shimmering Atoll
 2282 2821 0	2579 2843 0	Board Mooring point 59834				173	Sailing: Corsair Cove
 2282 2821 0	2612 3841 0	Board Mooring point 59834				729	Sailing: Etceteria
 2282 2821 0	2660 2392 0	Board Mooring point 59834				311	Sailing: Charred Island
@@ -671,13 +720,16 @@
 2282 2821 0	2860 3970 0	Board Mooring point 59834				870	Sailing: Weiss
 2282 2821 0	1873 2983 0	Board Mooring point 59834				296	Sailing: Vatrachos Island
 2282 2821 0	2907 3225 0	Board Mooring point 59834				497	Sailing: Lone oak island
+2282 2821 0	1860 3306 0	Board Mooring point 59834				397	Sailing: Port Roberts bank
 2282 2821 0	1892 3428 0	Board Mooring point 59834				432	Sailing: Chinchompa Island
 2282 2821 0	2927 4055 0	Board Mooring point 59834				922	Sailing: Grimstone
 2282 2821 0	2996 2287 0	Board Mooring point 59834				471	Sailing: The Onyx Crest
 2282 2821 0	2965 2608 0	Board Mooring point 59834				393	Sailing: 2965,2608
+2282 2821 0	1922 2757 0	Board Mooring point 59834				234	Sailing: Deepfin Point
 2282 2821 0	1958 3113 0	Board Mooring point 59834				307	Sailing: Minotaurs' Rest
 2282 2821 0	2960 3146 0	Board Mooring point 59834				508	Sailing: Mudskipper Point
 2282 2821 0	1953 4056 0	Board Mooring point 59834				724	Sailing: Brittle Isle
+2282 2821 0	3060 2638 0	Board Mooring point 59834				434	Sailing: Dognose Island
 2282 2821 0	3069 2986 0	Board Mooring point 59834				443	Sailing: The Pandemonium (ship)
 2282 2821 0	3050 3192 0	Board Mooring point 59834				536	Sailing: Bay of Sarim
 3353 2215 0	2059 2605 0	Board Mooring point 59834				717	Sailing: Wintumber Island
@@ -704,6 +756,7 @@
 3353 2215 0	1513 2973 0	Board Mooring point 59834				1039	Sailing: Sunset Coast
 3353 2215 0	1506 3402 0	Board Mooring point 59834				1135	Sailing: Lands End
 3353 2215 0	2542 3764 0	Board Mooring point 59834				1247	Sailing: Waterbirth Island
+3353 2215 0	1556 2769 0	Board Mooring point 59834				985	Sailing: Shimmering Atoll
 3353 2215 0	2579 2843 0	Board Mooring point 59834				527	Sailing: Corsair Cove
 3353 2215 0	2612 3841 0	Board Mooring point 59834				1289	Sailing: Etceteria
 3353 2215 0	2660 2392 0	Board Mooring point 59834				388	Sailing: Charred Island
@@ -723,13 +776,16 @@
 3353 2215 0	2860 3970 0	Board Mooring point 59834				1273	Sailing: Weiss
 3353 2215 0	1873 2983 0	Board Mooring point 59834				865	Sailing: Vatrachos Island
 3353 2215 0	2907 3225 0	Board Mooring point 59834				585	Sailing: Lone oak island
+3353 2215 0	1860 3306 0	Board Mooring point 59834				957	Sailing: Port Roberts bank
 3353 2215 0	1892 3428 0	Board Mooring point 59834				992	Sailing: Chinchompa Island
 3353 2215 0	2927 4055 0	Board Mooring point 59834				1249	Sailing: Grimstone
 3353 2215 0	2996 2287 0	Board Mooring point 59834				208	Sailing: The Onyx Crest
 3353 2215 0	2965 2608 0	Board Mooring point 59834				301	Sailing: 2965,2608
+3353 2215 0	1922 2757 0	Board Mooring point 59834				801	Sailing: Deepfin Point
 3353 2215 0	1958 3113 0	Board Mooring point 59834				867	Sailing: Minotaurs' Rest
 3353 2215 0	2960 3146 0	Board Mooring point 59834				536	Sailing: Mudskipper Point
 3353 2215 0	1953 4056 0	Board Mooring point 59834				1284	Sailing: Brittle Isle
+3353 2215 0	3060 2638 0	Board Mooring point 59834				296	Sailing: Dognose Island
 3353 2215 0	3069 2986 0	Board Mooring point 59834				443	Sailing: The Pandemonium (ship)
 3353 2215 0	3050 3192 0	Board Mooring point 59834				550	Sailing: Bay of Sarim
 2344 2268 0	2059 2605 0	Board Mooring point 59834				245	Sailing: Wintumber Island
@@ -756,6 +812,7 @@
 2344 2268 0	1513 2973 0	Board Mooring point 59834				573	Sailing: Sunset Coast
 2344 2268 0	1506 3402 0	Board Mooring point 59834				754	Sailing: Lands End
 2344 2268 0	2542 3764 0	Board Mooring point 59834				933	Sailing: Waterbirth Island
+2344 2268 0	1556 2769 0	Board Mooring point 59834				495	Sailing: Shimmering Atoll
 2344 2268 0	2579 2843 0	Board Mooring point 59834				337	Sailing: Corsair Cove
 2344 2268 0	2612 3841 0	Board Mooring point 59834				975	Sailing: Etceteria
 2344 2268 0	2660 2392 0	Board Mooring point 59834				199	Sailing: Charred Island
@@ -775,13 +832,16 @@
 2344 2268 0	2860 3970 0	Board Mooring point 59834				1116	Sailing: Weiss
 2344 2268 0	1873 2983 0	Board Mooring point 59834				456	Sailing: Vatrachos Island
 2344 2268 0	2907 3225 0	Board Mooring point 59834				649	Sailing: Lone oak island
+2344 2268 0	1860 3306 0	Board Mooring point 59834				598	Sailing: Port Roberts bank
 2344 2268 0	1892 3428 0	Board Mooring point 59834				656	Sailing: Chinchompa Island
 2344 2268 0	2927 4055 0	Board Mooring point 59834				1168	Sailing: Grimstone
 2344 2268 0	2996 2287 0	Board Mooring point 59834				352	Sailing: The Onyx Crest
 2344 2268 0	2965 2608 0	Board Mooring point 59834				378	Sailing: 2965,2608
+2344 2268 0	1922 2757 0	Board Mooring point 59834				347	Sailing: Deepfin Point
 2344 2268 0	1958 3113 0	Board Mooring point 59834				493	Sailing: Minotaurs' Rest
 2344 2268 0	2960 3146 0	Board Mooring point 59834				600	Sailing: Mudskipper Point
 2344 2268 0	1953 4056 0	Board Mooring point 59834				961	Sailing: Brittle Isle
+2344 2268 0	3060 2638 0	Board Mooring point 59834				425	Sailing: Dognose Island
 2344 2268 0	3069 2986 0	Board Mooring point 59834				535	Sailing: The Pandemonium (ship)
 2344 2268 0	3050 3192 0	Board Mooring point 59834				628	Sailing: Bay of Sarim
 2320 2774 0	2059 2605 0	Board Mooring point 59834				179	Sailing: Wintumber Island
@@ -808,6 +868,7 @@
 2320 2774 0	1513 2973 0	Board Mooring point 59834				456	Sailing: Sunset Coast
 2320 2774 0	1506 3402 0	Board Mooring point 59834				568	Sailing: Lands End
 2320 2774 0	2542 3764 0	Board Mooring point 59834				705	Sailing: Waterbirth Island
+2320 2774 0	1556 2769 0	Board Mooring point 59834				406	Sailing: Shimmering Atoll
 2320 2774 0	2579 2843 0	Board Mooring point 59834				167	Sailing: Corsair Cove
 2320 2774 0	2612 3841 0	Board Mooring point 59834				747	Sailing: Etceteria
 2320 2774 0	2660 2392 0	Board Mooring point 59834				280	Sailing: Charred Island
@@ -827,13 +888,16 @@
 2320 2774 0	2860 3970 0	Board Mooring point 59834				888	Sailing: Weiss
 2320 2774 0	1873 2983 0	Board Mooring point 59834				282	Sailing: Vatrachos Island
 2320 2774 0	2907 3225 0	Board Mooring point 59834				490	Sailing: Lone oak island
+2320 2774 0	1860 3306 0	Board Mooring point 59834				409	Sailing: Port Roberts bank
 2320 2774 0	1892 3428 0	Board Mooring point 59834				450	Sailing: Chinchompa Island
 2320 2774 0	2927 4055 0	Board Mooring point 59834				940	Sailing: Grimstone
 2320 2774 0	2996 2287 0	Board Mooring point 59834				443	Sailing: The Onyx Crest
 2320 2774 0	2965 2608 0	Board Mooring point 59834				371	Sailing: 2965,2608
+2320 2774 0	1922 2757 0	Board Mooring point 59834				220	Sailing: Deepfin Point
 2320 2774 0	1958 3113 0	Board Mooring point 59834				303	Sailing: Minotaurs' Rest
 2320 2774 0	2960 3146 0	Board Mooring point 59834				501	Sailing: Mudskipper Point
 2320 2774 0	1953 4056 0	Board Mooring point 59834				742	Sailing: Brittle Isle
+2320 2774 0	3060 2638 0	Board Mooring point 59834				413	Sailing: Dognose Island
 2320 2774 0	3069 2986 0	Board Mooring point 59834				437	Sailing: The Pandemonium (ship)
 2320 2774 0	3050 3192 0	Board Mooring point 59834				529	Sailing: Bay of Sarim
 2305 3689 0	2059 2605 0	Board Gangplank 59832				603	Sailing: Wintumber Island
@@ -860,6 +924,7 @@
 2305 3689 0	1513 2973 0	Board Gangplank 59832				645	Sailing: Sunset Coast
 2305 3689 0	1506 3402 0	Board Gangplank 59832				459	Sailing: Lands End
 2305 3689 0	2542 3764 0	Board Gangplank 59832				155	Sailing: Waterbirth Island
+2305 3689 0	1556 2769 0	Board Gangplank 59832				636	Sailing: Shimmering Atoll
 2305 3689 0	2579 2843 0	Board Gangplank 59832				622	Sailing: Corsair Cove
 2305 3689 0	2612 3841 0	Board Gangplank 59832				198	Sailing: Etceteria
 2305 3689 0	2660 2392 0	Board Gangplank 59832				804	Sailing: Charred Island
@@ -879,13 +944,16 @@
 2305 3689 0	2860 3970 0	Board Gangplank 59832				339	Sailing: Weiss
 2305 3689 0	1873 2983 0	Board Gangplank 59832				438	Sailing: Vatrachos Island
 2305 3689 0	2907 3225 0	Board Gangplank 59832				945	Sailing: Lone oak island
+2305 3689 0	1860 3306 0	Board Gangplank 59832				315	Sailing: Port Roberts bank
 2305 3689 0	1892 3428 0	Board Gangplank 59832				266	Sailing: Chinchompa Island
 2305 3689 0	2927 4055 0	Board Gangplank 59832				390	Sailing: Grimstone
 2305 3689 0	2996 2287 0	Board Gangplank 59832				947	Sailing: The Onyx Crest
 2305 3689 0	2965 2608 0	Board Gangplank 59832				850	Sailing: 2965,2608
+2305 3689 0	1922 2757 0	Board Gangplank 59832				542	Sailing: Deepfin Point
 2305 3689 0	1958 3113 0	Board Gangplank 59832				359	Sailing: Minotaurs' Rest
 2305 3689 0	2960 3146 0	Board Gangplank 59832				956	Sailing: Mudskipper Point
 2305 3689 0	1953 4056 0	Board Gangplank 59832				282	Sailing: Brittle Isle
+2305 3689 0	3060 2638 0	Board Gangplank 59832				892	Sailing: Dognose Island
 2305 3689 0	3069 2986 0	Board Gangplank 59832				892	Sailing: The Pandemonium (ship)
 2305 3689 0	3050 3192 0	Board Gangplank 59832				984	Sailing: Bay of Sarim
 2310 3781 0	2059 2605 0	Board Gangplank 59832				643	Sailing: Wintumber Island
@@ -912,6 +980,7 @@
 2310 3781 0	1513 2973 0	Board Gangplank 59832				685	Sailing: Sunset Coast
 2310 3781 0	1506 3402 0	Board Gangplank 59832				488	Sailing: Lands End
 2310 3781 0	2542 3764 0	Board Gangplank 59832				140	Sailing: Waterbirth Island
+2310 3781 0	1556 2769 0	Board Gangplank 59832				676	Sailing: Shimmering Atoll
 2310 3781 0	2579 2843 0	Board Gangplank 59832				662	Sailing: Corsair Cove
 2310 3781 0	2612 3841 0	Board Gangplank 59832				181	Sailing: Etceteria
 2310 3781 0	2660 2392 0	Board Gangplank 59832				844	Sailing: Charred Island
@@ -931,13 +1000,16 @@
 2310 3781 0	2860 3970 0	Board Gangplank 59832				322	Sailing: Weiss
 2310 3781 0	1873 2983 0	Board Gangplank 59832				478	Sailing: Vatrachos Island
 2310 3781 0	2907 3225 0	Board Gangplank 59832				985	Sailing: Lone oak island
+2310 3781 0	1860 3306 0	Board Gangplank 59832				348	Sailing: Port Roberts bank
 2310 3781 0	1892 3428 0	Board Gangplank 59832				296	Sailing: Chinchompa Island
 2310 3781 0	2927 4055 0	Board Gangplank 59832				371	Sailing: Grimstone
 2310 3781 0	2996 2287 0	Board Gangplank 59832				987	Sailing: The Onyx Crest
 2310 3781 0	2965 2608 0	Board Gangplank 59832				890	Sailing: 2965,2608
+2310 3781 0	1922 2757 0	Board Gangplank 59832				582	Sailing: Deepfin Point
 2310 3781 0	1958 3113 0	Board Gangplank 59832				399	Sailing: Minotaurs' Rest
 2310 3781 0	2960 3146 0	Board Gangplank 59832				996	Sailing: Mudskipper Point
 2310 3781 0	1953 4056 0	Board Gangplank 59832				250	Sailing: Brittle Isle
+2310 3781 0	3060 2638 0	Board Gangplank 59832				932	Sailing: Dognose Island
 2310 3781 0	3069 2986 0	Board Gangplank 59832				932	Sailing: The Pandemonium (ship)
 2310 3781 0	3050 3192 0	Board Gangplank 59832				1024	Sailing: Bay of Sarim
 2411 3781 0	2059 2605 0	Board Gangplank 59832				676	Sailing: Wintumber Island
@@ -964,6 +1036,7 @@
 2411 3781 0	1513 2973 0	Board Gangplank 59832				718	Sailing: Sunset Coast
 2411 3781 0	1506 3402 0	Board Gangplank 59832				530	Sailing: Lands End
 2411 3781 0	2542 3764 0	Board Gangplank 59832				88	Sailing: Waterbirth Island
+2411 3781 0	1556 2769 0	Board Gangplank 59832				709	Sailing: Shimmering Atoll
 2411 3781 0	2579 2843 0	Board Gangplank 59832				694	Sailing: Corsair Cove
 2411 3781 0	2612 3841 0	Board Gangplank 59832				128	Sailing: Etceteria
 2411 3781 0	2660 2392 0	Board Gangplank 59832				877	Sailing: Charred Island
@@ -983,13 +1056,16 @@
 2411 3781 0	2860 3970 0	Board Gangplank 59832				269	Sailing: Weiss
 2411 3781 0	1873 2983 0	Board Gangplank 59832				511	Sailing: Vatrachos Island
 2411 3781 0	2907 3225 0	Board Gangplank 59832				1018	Sailing: Lone oak island
+2411 3781 0	1860 3306 0	Board Gangplank 59832				386	Sailing: Port Roberts bank
 2411 3781 0	1892 3428 0	Board Gangplank 59832				338	Sailing: Chinchompa Island
 2411 3781 0	2927 4055 0	Board Gangplank 59832				321	Sailing: Grimstone
 2411 3781 0	2996 2287 0	Board Gangplank 59832				1019	Sailing: The Onyx Crest
 2411 3781 0	2965 2608 0	Board Gangplank 59832				923	Sailing: 2965,2608
+2411 3781 0	1922 2757 0	Board Gangplank 59832				614	Sailing: Deepfin Point
 2411 3781 0	1958 3113 0	Board Gangplank 59832				431	Sailing: Minotaurs' Rest
 2411 3781 0	2960 3146 0	Board Gangplank 59832				1029	Sailing: Mudskipper Point
 2411 3781 0	1953 4056 0	Board Gangplank 59832				297	Sailing: Brittle Isle
+2411 3781 0	3060 2638 0	Board Gangplank 59832				965	Sailing: Dognose Island
 2411 3781 0	3069 2986 0	Board Gangplank 59832				964	Sailing: The Pandemonium (ship)
 2411 3781 0	3050 3192 0	Board Gangplank 59832				1057	Sailing: Bay of Sarim
 2467 2718 0	2059 2605 0	Board Mooring point 59834				241	Sailing: Wintumber Island
@@ -1016,6 +1092,7 @@
 2467 2718 0	1513 2973 0	Board Mooring point 59834				535	Sailing: Sunset Coast
 2467 2718 0	1506 3402 0	Board Mooring point 59834				632	Sailing: Lands End
 2467 2718 0	2542 3764 0	Board Mooring point 59834				743	Sailing: Waterbirth Island
+2467 2718 0	1556 2769 0	Board Mooring point 59834				481	Sailing: Shimmering Atoll
 2467 2718 0	2579 2843 0	Board Mooring point 59834				105	Sailing: Corsair Cove
 2467 2718 0	2612 3841 0	Board Mooring point 59834				786	Sailing: Etceteria
 2467 2718 0	2660 2392 0	Board Mooring point 59834				218	Sailing: Charred Island
@@ -1035,13 +1112,16 @@
 2467 2718 0	2860 3970 0	Board Mooring point 59834				927	Sailing: Weiss
 2467 2718 0	1873 2983 0	Board Mooring point 59834				361	Sailing: Vatrachos Island
 2467 2718 0	2907 3225 0	Board Mooring point 59834				427	Sailing: Lone oak island
+2467 2718 0	1860 3306 0	Board Mooring point 59834				454	Sailing: Port Roberts bank
 2467 2718 0	1892 3428 0	Board Mooring point 59834				489	Sailing: Chinchompa Island
 2467 2718 0	2927 4055 0	Board Mooring point 59834				979	Sailing: Grimstone
 2467 2718 0	2996 2287 0	Board Mooring point 59834				371	Sailing: The Onyx Crest
 2467 2718 0	2965 2608 0	Board Mooring point 59834				292	Sailing: 2965,2608
+2467 2718 0	1922 2757 0	Board Mooring point 59834				297	Sailing: Deepfin Point
 2467 2718 0	1958 3113 0	Board Mooring point 59834				364	Sailing: Minotaurs' Rest
 2467 2718 0	2960 3146 0	Board Mooring point 59834				428	Sailing: Mudskipper Point
 2467 2718 0	1953 4056 0	Board Mooring point 59834				781	Sailing: Brittle Isle
+2467 2718 0	3060 2638 0	Board Mooring point 59834				334	Sailing: Dognose Island
 2467 2718 0	3069 2986 0	Board Mooring point 59834				363	Sailing: The Pandemonium (ship)
 2467 2718 0	3050 3192 0	Board Mooring point 59834				456	Sailing: Bay of Sarim
 1451 2969 0	2059 2605 0	Board Gangplank 59832				377	Sailing: Wintumber Island
@@ -1068,6 +1148,7 @@
 1451 2969 0	1513 2973 0	Board Gangplank 59832				51	Sailing: Sunset Coast
 1451 2969 0	1506 3402 0	Board Gangplank 59832				550	Sailing: Lands End
 1451 2969 0	2542 3764 0	Board Gangplank 59832				803	Sailing: Waterbirth Island
+1451 2969 0	1556 2769 0	Board Gangplank 59832				140	Sailing: Shimmering Atoll
 1451 2969 0	2579 2843 0	Board Gangplank 59832				619	Sailing: Corsair Cove
 1451 2969 0	2612 3841 0	Board Gangplank 59832				845	Sailing: Etceteria
 1451 2969 0	2660 2392 0	Board Gangplank 59832				703	Sailing: Charred Island
@@ -1087,13 +1168,16 @@
 1451 2969 0	2860 3970 0	Board Gangplank 59832				986	Sailing: Weiss
 1451 2969 0	1873 2983 0	Board Gangplank 59832				257	Sailing: Vatrachos Island
 1451 2969 0	2907 3225 0	Board Gangplank 59832				943	Sailing: Lone oak island
+1451 2969 0	1860 3306 0	Board Gangplank 59832				404	Sailing: Port Roberts bank
 1451 2969 0	1892 3428 0	Board Gangplank 59832				467	Sailing: Chinchompa Island
 1451 2969 0	2927 4055 0	Board Gangplank 59832				1038	Sailing: Grimstone
 1451 2969 0	2996 2287 0	Board Gangplank 59832				876	Sailing: The Onyx Crest
 1451 2969 0	2965 2608 0	Board Gangplank 59832				827	Sailing: 2965,2608
+1451 2969 0	1922 2757 0	Board Gangplank 59832				283	Sailing: Deepfin Point
 1451 2969 0	1958 3113 0	Board Gangplank 59832				331	Sailing: Minotaurs' Rest
 1451 2969 0	2960 3146 0	Board Gangplank 59832				954	Sailing: Mudskipper Point
 1451 2969 0	1953 4056 0	Board Gangplank 59832				787	Sailing: Brittle Isle
+1451 2969 0	3060 2638 0	Board Gangplank 59832				869	Sailing: Dognose Island
 1451 2969 0	3069 2986 0	Board Gangplank 59832				890	Sailing: The Pandemonium (ship)
 1451 2969 0	3050 3192 0	Board Gangplank 59832				982	Sailing: Bay of Sarim
 2532 2531 0	2059 2605 0	Board Mooring point 59834				278	Sailing: Wintumber Island
@@ -1120,6 +1204,7 @@
 2532 2531 0	1513 2973 0	Board Mooring point 59834				600	Sailing: Sunset Coast
 2532 2531 0	1506 3402 0	Board Mooring point 59834				724	Sailing: Lands End
 2532 2531 0	2542 3764 0	Board Mooring point 59834				849	Sailing: Waterbirth Island
+2532 2531 0	1556 2769 0	Board Mooring point 59834				547	Sailing: Shimmering Atoll
 2532 2531 0	2579 2843 0	Board Mooring point 59834				185	Sailing: Corsair Cove
 2532 2531 0	2612 3841 0	Board Mooring point 59834				891	Sailing: Etceteria
 2532 2531 0	2660 2392 0	Board Mooring point 59834				120	Sailing: Charred Island
@@ -1139,13 +1224,16 @@
 2532 2531 0	2860 3970 0	Board Mooring point 59834				1033	Sailing: Weiss
 2532 2531 0	1873 2983 0	Board Mooring point 59834				439	Sailing: Vatrachos Island
 2532 2531 0	2907 3225 0	Board Mooring point 59834				500	Sailing: Lone oak island
+2532 2531 0	1860 3306 0	Board Mooring point 59834				560	Sailing: Port Roberts bank
 2532 2531 0	1892 3428 0	Board Mooring point 59834				595	Sailing: Chinchompa Island
 2532 2531 0	2927 4055 0	Board Mooring point 59834				1084	Sailing: Grimstone
 2532 2531 0	2996 2287 0	Board Mooring point 59834				283	Sailing: The Onyx Crest
 2532 2531 0	2965 2608 0	Board Mooring point 59834				249	Sailing: 2965,2608
+2532 2531 0	1922 2757 0	Board Mooring point 59834				362	Sailing: Deepfin Point
 2532 2531 0	1958 3113 0	Board Mooring point 59834				460	Sailing: Minotaurs' Rest
 2532 2531 0	2960 3146 0	Board Mooring point 59834				451	Sailing: Mudskipper Point
 2532 2531 0	1953 4056 0	Board Mooring point 59834				886	Sailing: Brittle Isle
+2532 2531 0	3060 2638 0	Board Mooring point 59834				298	Sailing: Dognose Island
 2532 2531 0	3069 2986 0	Board Mooring point 59834				386	Sailing: The Pandemonium (ship)
 2532 2531 0	3050 3192 0	Board Mooring point 59834				479	Sailing: Bay of Sarim
 1513 2973 0	2059 2605 0	Board Gangplank 59832				354	Sailing: Wintumber Island
@@ -1172,6 +1260,7 @@
 1513 2973 0	2532 2531 0	Board Gangplank 59832				600	Sailing: Isle of Bones
 1513 2973 0	1506 3402 0	Board Gangplank 59832				526	Sailing: Lands End
 1513 2973 0	2542 3764 0	Board Gangplank 59832				779	Sailing: Waterbirth Island
+1513 2973 0	1556 2769 0	Board Gangplank 59832				132	Sailing: Shimmering Atoll
 1513 2973 0	2579 2843 0	Board Gangplank 59832				596	Sailing: Corsair Cove
 1513 2973 0	2612 3841 0	Board Gangplank 59832				821	Sailing: Etceteria
 1513 2973 0	2660 2392 0	Board Gangplank 59832				679	Sailing: Charred Island
@@ -1191,13 +1280,16 @@
 1513 2973 0	2860 3970 0	Board Gangplank 59832				963	Sailing: Weiss
 1513 2973 0	1873 2983 0	Board Gangplank 59832				233	Sailing: Vatrachos Island
 1513 2973 0	2907 3225 0	Board Gangplank 59832				919	Sailing: Lone oak island
+1513 2973 0	1860 3306 0	Board Gangplank 59832				380	Sailing: Port Roberts bank
 1513 2973 0	1892 3428 0	Board Gangplank 59832				444	Sailing: Chinchompa Island
 1513 2973 0	2927 4055 0	Board Gangplank 59832				1014	Sailing: Grimstone
 1513 2973 0	2996 2287 0	Board Gangplank 59832				852	Sailing: The Onyx Crest
 1513 2973 0	2965 2608 0	Board Gangplank 59832				803	Sailing: 2965,2608
+1513 2973 0	1922 2757 0	Board Gangplank 59832				259	Sailing: Deepfin Point
 1513 2973 0	1958 3113 0	Board Gangplank 59832				307	Sailing: Minotaurs' Rest
 1513 2973 0	2960 3146 0	Board Gangplank 59832				930	Sailing: Mudskipper Point
 1513 2973 0	1953 4056 0	Board Gangplank 59832				763	Sailing: Brittle Isle
+1513 2973 0	3060 2638 0	Board Gangplank 59832				845	Sailing: Dognose Island
 1513 2973 0	3069 2986 0	Board Gangplank 59832				866	Sailing: The Pandemonium (ship)
 1513 2973 0	3050 3192 0	Board Gangplank 59832				958	Sailing: Bay of Sarim
 1506 3402 0	2059 2605 0	Board Gangplank 59832				541	Sailing: Wintumber Island
@@ -1224,6 +1316,7 @@
 1506 3402 0	2532 2531 0	Board Gangplank 59832				724	Sailing: Isle of Bones
 1506 3402 0	1513 2973 0	Board Gangplank 59832				526	Sailing: Sunset Coast
 1506 3402 0	2542 3764 0	Board Gangplank 59832				592	Sailing: Waterbirth Island
+1506 3402 0	1556 2769 0	Board Gangplank 59832				517	Sailing: Shimmering Atoll
 1506 3402 0	2579 2843 0	Board Gangplank 59832				644	Sailing: Corsair Cove
 1506 3402 0	2612 3841 0	Board Gangplank 59832				634	Sailing: Etceteria
 1506 3402 0	2660 2392 0	Board Gangplank 59832				813	Sailing: Charred Island
@@ -1243,13 +1336,16 @@
 1506 3402 0	2860 3970 0	Board Gangplank 59832				775	Sailing: Weiss
 1506 3402 0	1873 2983 0	Board Gangplank 59832				329	Sailing: Vatrachos Island
 1506 3402 0	2907 3225 0	Board Gangplank 59832				968	Sailing: Lone oak island
+1506 3402 0	1860 3306 0	Board Gangplank 59832				209	Sailing: Port Roberts bank
 1506 3402 0	1892 3428 0	Board Gangplank 59832				221	Sailing: Chinchompa Island
 1506 3402 0	2927 4055 0	Board Gangplank 59832				827	Sailing: Grimstone
 1506 3402 0	2996 2287 0	Board Gangplank 59832				969	Sailing: The Onyx Crest
 1506 3402 0	2965 2608 0	Board Gangplank 59832				873	Sailing: 2965,2608
+1506 3402 0	1922 2757 0	Board Gangplank 59832				448	Sailing: Deepfin Point
 1506 3402 0	1958 3113 0	Board Gangplank 59832				294	Sailing: Minotaurs' Rest
 1506 3402 0	2960 3146 0	Board Gangplank 59832				979	Sailing: Mudskipper Point
 1506 3402 0	1953 4056 0	Board Gangplank 59832				521	Sailing: Brittle Isle
+1506 3402 0	3060 2638 0	Board Gangplank 59832				915	Sailing: Dognose Island
 1506 3402 0	3069 2986 0	Board Gangplank 59832				914	Sailing: The Pandemonium (ship)
 1506 3402 0	3050 3192 0	Board Gangplank 59832				1007	Sailing: Bay of Sarim
 2542 3764 0	2059 2605 0	Board Mooring point 59834				737	Sailing: Wintumber Island
@@ -1276,6 +1372,7 @@
 2542 3764 0	2532 2531 0	Board Mooring point 59834				849	Sailing: Isle of Bones
 2542 3764 0	1513 2973 0	Board Mooring point 59834				779	Sailing: Sunset Coast
 2542 3764 0	1506 3402 0	Board Mooring point 59834				592	Sailing: Lands End
+2542 3764 0	1556 2769 0	Board Mooring point 59834				770	Sailing: Shimmering Atoll
 2542 3764 0	2579 2843 0	Board Mooring point 59834				756	Sailing: Corsair Cove
 2542 3764 0	2612 3841 0	Board Mooring point 59834				72	Sailing: Etceteria
 2542 3764 0	2660 2392 0	Board Mooring point 59834				938	Sailing: Charred Island
@@ -1295,15 +1392,74 @@
 2542 3764 0	2860 3970 0	Board Mooring point 59834				212	Sailing: Weiss
 2542 3764 0	1873 2983 0	Board Mooring point 59834				572	Sailing: Vatrachos Island
 2542 3764 0	2907 3225 0	Board Mooring point 59834				1079	Sailing: Lone oak island
+2542 3764 0	1860 3306 0	Board Mooring point 59834				448	Sailing: Port Roberts bank
 2542 3764 0	1892 3428 0	Board Mooring point 59834				399	Sailing: Chinchompa Island
 2542 3764 0	2927 4055 0	Board Mooring point 59834				264	Sailing: Grimstone
 2542 3764 0	2996 2287 0	Board Mooring point 59834				1081	Sailing: The Onyx Crest
 2542 3764 0	2965 2608 0	Board Mooring point 59834				984	Sailing: 2965,2608
+2542 3764 0	1922 2757 0	Board Mooring point 59834				676	Sailing: Deepfin Point
 2542 3764 0	1958 3113 0	Board Mooring point 59834				493	Sailing: Minotaurs' Rest
 2542 3764 0	2960 3146 0	Board Mooring point 59834				1090	Sailing: Mudskipper Point
 2542 3764 0	1953 4056 0	Board Mooring point 59834				358	Sailing: Brittle Isle
+2542 3764 0	3060 2638 0	Board Mooring point 59834				1026	Sailing: Dognose Island
 2542 3764 0	3069 2986 0	Board Mooring point 59834				1026	Sailing: The Pandemonium (ship)
 2542 3764 0	3050 3192 0	Board Mooring point 59834				1118	Sailing: Bay of Sarim
+1556 2769 0	2059 2605 0	Board Mooring point 59834				291	Sailing: Wintumber Island
+1556 2769 0	2095 3188 0	Board Mooring point 59834				384	Sailing: Lledrith Island
+1556 2769 0	2079 3689 0	Board Mooring point 59834				608	Sailing: Buccaneers' Haven
+1556 2769 0	3173 2368 0	Board Mooring point 59834				878	Sailing: The Summer Shore
+1556 2769 0	3145 2824 0	Board Mooring point 59834				825	Sailing: Sea Spirit Dock
+1556 2769 0	2143 3121 0	Board Mooring point 59834				376	Sailing: Port Tyras
+1556 2769 0	2157 3325 0	Board Mooring point 59834				443	Sailing: Tirannwn Bight
+1556 2769 0	2148 3531 0	Board Mooring point 59834				525	Sailing: Drumstick Isle
+1556 2769 0	2151 3880 0	Board Mooring point 59834				698	Sailing: Lunar Isle
+1556 2769 0	2193 2319 0	Board Mooring point 59834				412	Sailing: Sunbleak Island
+1556 2769 0	1201 2733 0	Board Mooring point 59834				203	Sailing: Laguna Aurorae
+1556 2769 0	2220 3466 0	Board Mooring point 59834				533	Sailing: Ynysdail
+1556 2769 0	2282 2821 0	Board Mooring point 59834				420	Sailing: 2282,2821
+1556 2769 0	3353 2215 0	Board Mooring point 59834				985	Sailing: The Little Pearl
+1556 2769 0	2344 2268 0	Board Mooring point 59834				495	Sailing: Rainbow's End
+1556 2769 0	2320 2774 0	Board Mooring point 59834				406	Sailing: Tear of the Soul
+1556 2769 0	2305 3689 0	Board Mooring point 59834				636	Sailing: Piscatoris bank
+1556 2769 0	2310 3781 0	Board Mooring point 59834				676	Sailing: Neitiznot
+1556 2769 0	2411 3781 0	Board Mooring point 59834				709	Sailing: Jatizso
+1556 2769 0	2467 2718 0	Board Mooring point 59834				481	Sailing: Anglers' Retreat
+1556 2769 0	1451 2969 0	Board Mooring point 59834				140	Sailing: Aldarin
+1556 2769 0	2532 2531 0	Board Mooring point 59834				547	Sailing: Isle of Bones
+1556 2769 0	1513 2973 0	Board Mooring point 59834				132	Sailing: Sunset Coast
+1556 2769 0	1506 3402 0	Board Mooring point 59834				517	Sailing: Lands End
+1556 2769 0	2542 3764 0	Board Mooring point 59834				770	Sailing: Waterbirth Island
+1556 2769 0	2579 2843 0	Board Mooring point 59834				545	Sailing: Corsair Cove
+1556 2769 0	2612 3841 0	Board Mooring point 59834				813	Sailing: Etceteria
+1556 2769 0	2660 2392 0	Board Mooring point 59834				626	Sailing: Charred Island
+1556 2769 0	2651 2677 0	Board Mooring point 59834				579	Sailing: Void Knights' Outpost
+1556 2769 0	2685 3161 0	Board Mooring point 59834				724	Sailing: Port Khazard
+1556 2769 0	2670 3266 0	Board Mooring point 59834				776	Sailing: Necromancer Tower
+1556 2769 0	2629 3704 0	Board Mooring point 59834				805	Sailing: Fremensund
+1556 2769 0	2751 2951 0	Board Mooring point 59834				648	Sailing: Cairn Isle
+1556 2769 0	2746 3304 0	Board Mooring point 59834				807	Sailing: Witchaven church
+1556 2769 0	1726 3453 0	Board Mooring point 59834				460	Sailing: Charcoal Burners
+1556 2769 0	1758 2655 0	Board Mooring point 59834				147	Sailing: The Crown Jewel
+1556 2769 0	1776 3141 0	Board Mooring point 59834				373	Sailing: Fortis Cothon
+1556 2769 0	2759 3229 0	Board Mooring point 59834				798	Sailing: North Brimhaven mine
+1556 2769 0	2796 3413 0	Board Mooring point 59834				867	Sailing: Keep Le Faye
+1556 2769 0	2878 3335 0	Board Mooring point 59834				866	Sailing: Entrana church
+1556 2769 0	1844 3688 0	Board Mooring point 59834				567	Sailing: Port Piscarilius
+1556 2769 0	2860 3970 0	Board Mooring point 59834				954	Sailing: Weiss
+1556 2769 0	1873 2983 0	Board Mooring point 59834				224	Sailing: Vatrachos Island
+1556 2769 0	2907 3225 0	Board Mooring point 59834				869	Sailing: Lone oak island
+1556 2769 0	1860 3306 0	Board Mooring point 59834				371	Sailing: Port Roberts bank
+1556 2769 0	1892 3428 0	Board Mooring point 59834				435	Sailing: Chinchompa Island
+1556 2769 0	2927 4055 0	Board Mooring point 59834				1006	Sailing: Grimstone
+1556 2769 0	2996 2287 0	Board Mooring point 59834				799	Sailing: The Onyx Crest
+1556 2769 0	2965 2608 0	Board Mooring point 59834				750	Sailing: 2965,2608
+1556 2769 0	1922 2757 0	Board Mooring point 59834				207	Sailing: Deepfin Point
+1556 2769 0	1958 3113 0	Board Mooring point 59834				298	Sailing: Minotaurs' Rest
+1556 2769 0	2960 3146 0	Board Mooring point 59834				880	Sailing: Mudskipper Point
+1556 2769 0	1953 4056 0	Board Mooring point 59834				754	Sailing: Brittle Isle
+1556 2769 0	3060 2638 0	Board Mooring point 59834				791	Sailing: Dognose Island
+1556 2769 0	3069 2986 0	Board Mooring point 59834				816	Sailing: The Pandemonium (ship)
+1556 2769 0	3050 3192 0	Board Mooring point 59834				908	Sailing: Bay of Sarim
 2579 2843 0	2059 2605 0	Board Gangplank 59832				313	Sailing: Wintumber Island
 2579 2843 0	2095 3188 0	Board Gangplank 59832				342	Sailing: Lledrith Island
 2579 2843 0	2079 3689 0	Board Gangplank 59832				609	Sailing: Buccaneers' Haven
@@ -1329,6 +1485,7 @@
 2579 2843 0	1513 2973 0	Board Gangplank 59832				596	Sailing: Sunset Coast
 2579 2843 0	1506 3402 0	Board Gangplank 59832				644	Sailing: Lands End
 2579 2843 0	2542 3764 0	Board Gangplank 59832				756	Sailing: Waterbirth Island
+2579 2843 0	1556 2769 0	Board Gangplank 59832				545	Sailing: Shimmering Atoll
 2579 2843 0	2612 3841 0	Board Gangplank 59832				798	Sailing: Etceteria
 2579 2843 0	2660 2392 0	Board Gangplank 59832				255	Sailing: Charred Island
 2579 2843 0	2651 2677 0	Board Gangplank 59832				112	Sailing: Void Knights' Outpost
@@ -1347,13 +1504,16 @@
 2579 2843 0	2860 3970 0	Board Gangplank 59832				939	Sailing: Weiss
 2579 2843 0	1873 2983 0	Board Gangplank 59832				410	Sailing: Vatrachos Island
 2579 2843 0	2907 3225 0	Board Gangplank 59832				344	Sailing: Lone oak island
+2579 2843 0	1860 3306 0	Board Gangplank 59832				467	Sailing: Port Roberts bank
 2579 2843 0	1892 3428 0	Board Gangplank 59832				501	Sailing: Chinchompa Island
 2579 2843 0	2927 4055 0	Board Gangplank 59832				991	Sailing: Grimstone
 2579 2843 0	2996 2287 0	Board Gangplank 59832				371	Sailing: The Onyx Crest
 2579 2843 0	2965 2608 0	Board Gangplank 59832				264	Sailing: 2965,2608
+2579 2843 0	1922 2757 0	Board Gangplank 59832				359	Sailing: Deepfin Point
 2579 2843 0	1958 3113 0	Board Gangplank 59832				376	Sailing: Minotaurs' Rest
 2579 2843 0	2960 3146 0	Board Gangplank 59832				355	Sailing: Mudskipper Point
 2579 2843 0	1953 4056 0	Board Gangplank 59832				793	Sailing: Brittle Isle
+2579 2843 0	3060 2638 0	Board Gangplank 59832				299	Sailing: Dognose Island
 2579 2843 0	3069 2986 0	Board Gangplank 59832				291	Sailing: The Pandemonium (ship)
 2579 2843 0	3050 3192 0	Board Gangplank 59832				383	Sailing: Bay of Sarim
 2612 3841 0	2059 2605 0	Board Gangplank 59832				780	Sailing: Wintumber Island
@@ -1381,6 +1541,7 @@
 2612 3841 0	1513 2973 0	Board Gangplank 59832				821	Sailing: Sunset Coast
 2612 3841 0	1506 3402 0	Board Gangplank 59832				634	Sailing: Lands End
 2612 3841 0	2542 3764 0	Board Gangplank 59832				72	Sailing: Waterbirth Island
+2612 3841 0	1556 2769 0	Board Gangplank 59832				813	Sailing: Shimmering Atoll
 2612 3841 0	2579 2843 0	Board Gangplank 59832				798	Sailing: Corsair Cove
 2612 3841 0	2660 2392 0	Board Gangplank 59832				980	Sailing: Charred Island
 2612 3841 0	2651 2677 0	Board Gangplank 59832				863	Sailing: Void Knights' Outpost
@@ -1399,13 +1560,16 @@
 2612 3841 0	2860 3970 0	Board Gangplank 59832				162	Sailing: Weiss
 2612 3841 0	1873 2983 0	Board Gangplank 59832				615	Sailing: Vatrachos Island
 2612 3841 0	2907 3225 0	Board Gangplank 59832				1121	Sailing: Lone oak island
+2612 3841 0	1860 3306 0	Board Gangplank 59832				490	Sailing: Port Roberts bank
 2612 3841 0	1892 3428 0	Board Gangplank 59832				441	Sailing: Chinchompa Island
 2612 3841 0	2927 4055 0	Board Gangplank 59832				214	Sailing: Grimstone
 2612 3841 0	2996 2287 0	Board Gangplank 59832				1123	Sailing: The Onyx Crest
 2612 3841 0	2965 2608 0	Board Gangplank 59832				1027	Sailing: 2965,2608
+2612 3841 0	1922 2757 0	Board Gangplank 59832				718	Sailing: Deepfin Point
 2612 3841 0	1958 3113 0	Board Gangplank 59832				535	Sailing: Minotaurs' Rest
 2612 3841 0	2960 3146 0	Board Gangplank 59832				1133	Sailing: Mudskipper Point
 2612 3841 0	1953 4056 0	Board Gangplank 59832				380	Sailing: Brittle Isle
+2612 3841 0	3060 2638 0	Board Gangplank 59832				1069	Sailing: Dognose Island
 2612 3841 0	3069 2986 0	Board Gangplank 59832				1068	Sailing: The Pandemonium (ship)
 2612 3841 0	3050 3192 0	Board Gangplank 59832				1160	Sailing: Bay of Sarim
 2660 2392 0	2059 2605 0	Board Mooring point 59834				358	Sailing: Wintumber Island
@@ -1433,6 +1597,7 @@
 2660 2392 0	1513 2973 0	Board Mooring point 59834				679	Sailing: Sunset Coast
 2660 2392 0	1506 3402 0	Board Mooring point 59834				813	Sailing: Lands End
 2660 2392 0	2542 3764 0	Board Mooring point 59834				938	Sailing: Waterbirth Island
+2660 2392 0	1556 2769 0	Board Mooring point 59834				626	Sailing: Shimmering Atoll
 2660 2392 0	2579 2843 0	Board Mooring point 59834				255	Sailing: Corsair Cove
 2660 2392 0	2612 3841 0	Board Mooring point 59834				980	Sailing: Etceteria
 2660 2392 0	2651 2677 0	Board Mooring point 59834				173	Sailing: Void Knights' Outpost
@@ -1451,13 +1616,16 @@
 2660 2392 0	2860 3970 0	Board Mooring point 59834				1122	Sailing: Weiss
 2660 2392 0	1873 2983 0	Board Mooring point 59834				527	Sailing: Vatrachos Island
 2660 2392 0	2907 3225 0	Board Mooring point 59834				500	Sailing: Lone oak island
+2660 2392 0	1860 3306 0	Board Mooring point 59834				649	Sailing: Port Roberts bank
 2660 2392 0	1892 3428 0	Board Mooring point 59834				684	Sailing: Chinchompa Island
 2660 2392 0	2927 4055 0	Board Mooring point 59834				1173	Sailing: Grimstone
 2660 2392 0	2996 2287 0	Board Mooring point 59834				202	Sailing: The Onyx Crest
 2660 2392 0	2965 2608 0	Board Mooring point 59834				210	Sailing: 2965,2608
+2660 2392 0	1922 2757 0	Board Mooring point 59834				444	Sailing: Deepfin Point
 2660 2392 0	1958 3113 0	Board Mooring point 59834				549	Sailing: Minotaurs' Rest
 2660 2392 0	2960 3146 0	Board Mooring point 59834				451	Sailing: Mudskipper Point
 2660 2392 0	1953 4056 0	Board Mooring point 59834				975	Sailing: Brittle Isle
+2660 2392 0	3060 2638 0	Board Mooring point 59834				258	Sailing: Dognose Island
 2660 2392 0	3069 2986 0	Board Mooring point 59834				385	Sailing: The Pandemonium (ship)
 2660 2392 0	3050 3192 0	Board Mooring point 59834				478	Sailing: Bay of Sarim
 2651 2677 0	2059 2605 0	Board Gangplank 59832				329	Sailing: Wintumber Island
@@ -1485,6 +1653,7 @@
 2651 2677 0	1513 2973 0	Board Gangplank 59832				632	Sailing: Sunset Coast
 2651 2677 0	1506 3402 0	Board Gangplank 59832				710	Sailing: Lands End
 2651 2677 0	2542 3764 0	Board Gangplank 59832				821	Sailing: Waterbirth Island
+2651 2677 0	1556 2769 0	Board Gangplank 59832				579	Sailing: Shimmering Atoll
 2651 2677 0	2579 2843 0	Board Gangplank 59832				112	Sailing: Corsair Cove
 2651 2677 0	2612 3841 0	Board Gangplank 59832				863	Sailing: Etceteria
 2651 2677 0	2660 2392 0	Board Gangplank 59832				173	Sailing: Charred Island
@@ -1503,13 +1672,16 @@
 2651 2677 0	2860 3970 0	Board Gangplank 59832				1005	Sailing: Weiss
 2651 2677 0	1873 2983 0	Board Gangplank 59832				458	Sailing: Vatrachos Island
 2651 2677 0	2907 3225 0	Board Gangplank 59832				412	Sailing: Lone oak island
+2651 2677 0	1860 3306 0	Board Gangplank 59832				532	Sailing: Port Roberts bank
 2651 2677 0	1892 3428 0	Board Gangplank 59832				567	Sailing: Chinchompa Island
 2651 2677 0	2927 4055 0	Board Gangplank 59832				1056	Sailing: Grimstone
 2651 2677 0	2996 2287 0	Board Gangplank 59832				287	Sailing: The Onyx Crest
 2651 2677 0	2965 2608 0	Board Gangplank 59832				191	Sailing: 2965,2608
+2651 2677 0	1922 2757 0	Board Gangplank 59832				394	Sailing: Deepfin Point
 2651 2677 0	1958 3113 0	Board Gangplank 59832				442	Sailing: Minotaurs' Rest
 2651 2677 0	2960 3146 0	Board Gangplank 59832				367	Sailing: Mudskipper Point
 2651 2677 0	1953 4056 0	Board Gangplank 59832				858	Sailing: Brittle Isle
+2651 2677 0	3060 2638 0	Board Gangplank 59832				233	Sailing: Dognose Island
 2651 2677 0	3069 2986 0	Board Gangplank 59832				301	Sailing: The Pandemonium (ship)
 2651 2677 0	3050 3192 0	Board Gangplank 59832				394	Sailing: Bay of Sarim
 2685 3161 0	2059 2605 0	Board Gangplank 59832				492	Sailing: Wintumber Island
@@ -1537,6 +1709,7 @@
 2685 3161 0	1513 2973 0	Board Gangplank 59832				774	Sailing: Sunset Coast
 2685 3161 0	1506 3402 0	Board Gangplank 59832				823	Sailing: Lands End
 2685 3161 0	2542 3764 0	Board Gangplank 59832				934	Sailing: Waterbirth Island
+2685 3161 0	1556 2769 0	Board Gangplank 59832				724	Sailing: Shimmering Atoll
 2685 3161 0	2579 2843 0	Board Gangplank 59832				199	Sailing: Corsair Cove
 2685 3161 0	2612 3841 0	Board Gangplank 59832				976	Sailing: Etceteria
 2685 3161 0	2660 2392 0	Board Gangplank 59832				408	Sailing: Charred Island
@@ -1555,13 +1728,16 @@
 2685 3161 0	2860 3970 0	Board Gangplank 59832				1118	Sailing: Weiss
 2685 3161 0	1873 2983 0	Board Gangplank 59832				588	Sailing: Vatrachos Island
 2685 3161 0	2907 3225 0	Board Gangplank 59832				166	Sailing: Lone oak island
+2685 3161 0	1860 3306 0	Board Gangplank 59832				645	Sailing: Port Roberts bank
 2685 3161 0	1892 3428 0	Board Gangplank 59832				679	Sailing: Chinchompa Island
 2685 3161 0	2927 4055 0	Board Gangplank 59832				1169	Sailing: Grimstone
 2685 3161 0	2996 2287 0	Board Gangplank 59832				495	Sailing: The Onyx Crest
 2685 3161 0	2965 2608 0	Board Gangplank 59832				347	Sailing: 2965,2608
+2685 3161 0	1922 2757 0	Board Gangplank 59832				538	Sailing: Deepfin Point
 2685 3161 0	1958 3113 0	Board Gangplank 59832				555	Sailing: Minotaurs' Rest
 2685 3161 0	2960 3146 0	Board Gangplank 59832				204	Sailing: Mudskipper Point
 2685 3161 0	1953 4056 0	Board Gangplank 59832				971	Sailing: Brittle Isle
+2685 3161 0	3060 2638 0	Board Gangplank 59832				367	Sailing: Dognose Island
 2685 3161 0	3069 2986 0	Board Gangplank 59832				302	Sailing: The Pandemonium (ship)
 2685 3161 0	3050 3192 0	Board Gangplank 59832				288	Sailing: Bay of Sarim
 2670 3266 0	2059 2605 0	Board Gangplank 59832				544	Sailing: Wintumber Island
@@ -1589,6 +1765,7 @@
 2670 3266 0	1513 2973 0	Board Gangplank 59832				826	Sailing: Sunset Coast
 2670 3266 0	1506 3402 0	Board Gangplank 59832				875	Sailing: Lands End
 2670 3266 0	2542 3764 0	Board Gangplank 59832				986	Sailing: Waterbirth Island
+2670 3266 0	1556 2769 0	Board Gangplank 59832				776	Sailing: Shimmering Atoll
 2670 3266 0	2579 2843 0	Board Gangplank 59832				251	Sailing: Corsair Cove
 2670 3266 0	2612 3841 0	Board Gangplank 59832				1029	Sailing: Etceteria
 2670 3266 0	2660 2392 0	Board Gangplank 59832				461	Sailing: Charred Island
@@ -1607,13 +1784,16 @@
 2670 3266 0	2860 3970 0	Board Gangplank 59832				1170	Sailing: Weiss
 2670 3266 0	1873 2983 0	Board Gangplank 59832				640	Sailing: Vatrachos Island
 2670 3266 0	2907 3225 0	Board Gangplank 59832				143	Sailing: Lone oak island
+2670 3266 0	1860 3306 0	Board Gangplank 59832				697	Sailing: Port Roberts bank
 2670 3266 0	1892 3428 0	Board Gangplank 59832				732	Sailing: Chinchompa Island
 2670 3266 0	2927 4055 0	Board Gangplank 59832				1221	Sailing: Grimstone
 2670 3266 0	2996 2287 0	Board Gangplank 59832				549	Sailing: The Onyx Crest
 2670 3266 0	2965 2608 0	Board Gangplank 59832				400	Sailing: 2965,2608
+2670 3266 0	1922 2757 0	Board Gangplank 59832				590	Sailing: Deepfin Point
 2670 3266 0	1958 3113 0	Board Gangplank 59832				607	Sailing: Minotaurs' Rest
 2670 3266 0	2960 3146 0	Board Gangplank 59832				182	Sailing: Mudskipper Point
 2670 3266 0	1953 4056 0	Board Gangplank 59832				1023	Sailing: Brittle Isle
+2670 3266 0	3060 2638 0	Board Gangplank 59832				420	Sailing: Dognose Island
 2670 3266 0	3069 2986 0	Board Gangplank 59832				280	Sailing: The Pandemonium (ship)
 2670 3266 0	3050 3192 0	Board Gangplank 59832				266	Sailing: Bay of Sarim
 2629 3704 0	2059 2605 0	Board Gangplank 59832				772	Sailing: Wintumber Island
@@ -1641,6 +1821,7 @@
 2629 3704 0	1513 2973 0	Board Gangplank 59832				814	Sailing: Sunset Coast
 2629 3704 0	1506 3402 0	Board Gangplank 59832				626	Sailing: Lands End
 2629 3704 0	2542 3764 0	Board Gangplank 59832				74	Sailing: Waterbirth Island
+2629 3704 0	1556 2769 0	Board Gangplank 59832				805	Sailing: Shimmering Atoll
 2629 3704 0	2579 2843 0	Board Gangplank 59832				790	Sailing: Corsair Cove
 2629 3704 0	2612 3841 0	Board Gangplank 59832				90	Sailing: Etceteria
 2629 3704 0	2660 2392 0	Board Gangplank 59832				973	Sailing: Charred Island
@@ -1659,13 +1840,16 @@
 2629 3704 0	2860 3970 0	Board Gangplank 59832				203	Sailing: Weiss
 2629 3704 0	1873 2983 0	Board Gangplank 59832				607	Sailing: Vatrachos Island
 2629 3704 0	2907 3225 0	Board Gangplank 59832				1114	Sailing: Lone oak island
+2629 3704 0	1860 3306 0	Board Gangplank 59832				482	Sailing: Port Roberts bank
 2629 3704 0	1892 3428 0	Board Gangplank 59832				434	Sailing: Chinchompa Island
 2629 3704 0	2927 4055 0	Board Gangplank 59832				254	Sailing: Grimstone
 2629 3704 0	2996 2287 0	Board Gangplank 59832				1115	Sailing: The Onyx Crest
 2629 3704 0	2965 2608 0	Board Gangplank 59832				1019	Sailing: 2965,2608
+2629 3704 0	1922 2757 0	Board Gangplank 59832				710	Sailing: Deepfin Point
 2629 3704 0	1958 3113 0	Board Gangplank 59832				527	Sailing: Minotaurs' Rest
 2629 3704 0	2960 3146 0	Board Gangplank 59832				1125	Sailing: Mudskipper Point
 2629 3704 0	1953 4056 0	Board Gangplank 59832				411	Sailing: Brittle Isle
+2629 3704 0	3060 2638 0	Board Gangplank 59832				1061	Sailing: Dognose Island
 2629 3704 0	3069 2986 0	Board Gangplank 59832				1060	Sailing: The Pandemonium (ship)
 2629 3704 0	3050 3192 0	Board Gangplank 59832				1153	Sailing: Bay of Sarim
 2751 2951 0	2059 2605 0	Board Gangplank 59832				416	Sailing: Wintumber Island
@@ -1693,6 +1877,7 @@
 2751 2951 0	1513 2973 0	Board Gangplank 59832				699	Sailing: Sunset Coast
 2751 2951 0	1506 3402 0	Board Gangplank 59832				747	Sailing: Lands End
 2751 2951 0	2542 3764 0	Board Gangplank 59832				859	Sailing: Waterbirth Island
+2751 2951 0	1556 2769 0	Board Gangplank 59832				648	Sailing: Shimmering Atoll
 2751 2951 0	2579 2843 0	Board Gangplank 59832				123	Sailing: Corsair Cove
 2751 2951 0	2612 3841 0	Board Gangplank 59832				901	Sailing: Etceteria
 2751 2951 0	2660 2392 0	Board Gangplank 59832				310	Sailing: Charred Island
@@ -1711,13 +1896,16 @@
 2751 2951 0	2860 3970 0	Board Gangplank 59832				1042	Sailing: Weiss
 2751 2951 0	1873 2983 0	Board Gangplank 59832				512	Sailing: Vatrachos Island
 2751 2951 0	2907 3225 0	Board Gangplank 59832				278	Sailing: Lone oak island
+2751 2951 0	1860 3306 0	Board Gangplank 59832				569	Sailing: Port Roberts bank
 2751 2951 0	1892 3428 0	Board Gangplank 59832				604	Sailing: Chinchompa Island
 2751 2951 0	2927 4055 0	Board Gangplank 59832				1094	Sailing: Grimstone
 2751 2951 0	2996 2287 0	Board Gangplank 59832				383	Sailing: The Onyx Crest
 2751 2951 0	2965 2608 0	Board Gangplank 59832				234	Sailing: 2965,2608
+2751 2951 0	1922 2757 0	Board Gangplank 59832				462	Sailing: Deepfin Point
 2751 2951 0	1958 3113 0	Board Gangplank 59832				479	Sailing: Minotaurs' Rest
 2751 2951 0	2960 3146 0	Board Gangplank 59832				293	Sailing: Mudskipper Point
 2751 2951 0	1953 4056 0	Board Gangplank 59832				896	Sailing: Brittle Isle
+2751 2951 0	3060 2638 0	Board Gangplank 59832				255	Sailing: Dognose Island
 2751 2951 0	3069 2986 0	Board Gangplank 59832				229	Sailing: The Pandemonium (ship)
 2751 2951 0	3050 3192 0	Board Gangplank 59832				321	Sailing: Bay of Sarim
 2746 3304 0	2059 2605 0	Board Gangplank 59832				575	Sailing: Wintumber Island
@@ -1745,6 +1933,7 @@
 2746 3304 0	1513 2973 0	Board Gangplank 59832				858	Sailing: Sunset Coast
 2746 3304 0	1506 3402 0	Board Gangplank 59832				906	Sailing: Lands End
 2746 3304 0	2542 3764 0	Board Gangplank 59832				1018	Sailing: Waterbirth Island
+2746 3304 0	1556 2769 0	Board Gangplank 59832				807	Sailing: Shimmering Atoll
 2746 3304 0	2579 2843 0	Board Gangplank 59832				282	Sailing: Corsair Cove
 2746 3304 0	2612 3841 0	Board Gangplank 59832				1060	Sailing: Etceteria
 2746 3304 0	2660 2392 0	Board Gangplank 59832				491	Sailing: Charred Island
@@ -1763,13 +1952,16 @@
 2746 3304 0	2860 3970 0	Board Gangplank 59832				1201	Sailing: Weiss
 2746 3304 0	1873 2983 0	Board Gangplank 59832				671	Sailing: Vatrachos Island
 2746 3304 0	2907 3225 0	Board Gangplank 59832				116	Sailing: Lone oak island
+2746 3304 0	1860 3306 0	Board Gangplank 59832				728	Sailing: Port Roberts bank
 2746 3304 0	1892 3428 0	Board Gangplank 59832				763	Sailing: Chinchompa Island
 2746 3304 0	2927 4055 0	Board Gangplank 59832				1253	Sailing: Grimstone
 2746 3304 0	2996 2287 0	Board Gangplank 59832				578	Sailing: The Onyx Crest
 2746 3304 0	2965 2608 0	Board Gangplank 59832				430	Sailing: 2965,2608
+2746 3304 0	1922 2757 0	Board Gangplank 59832				621	Sailing: Deepfin Point
 2746 3304 0	1958 3113 0	Board Gangplank 59832				638	Sailing: Minotaurs' Rest
 2746 3304 0	2960 3146 0	Board Gangplank 59832				156	Sailing: Mudskipper Point
 2746 3304 0	1953 4056 0	Board Gangplank 59832				1055	Sailing: Brittle Isle
+2746 3304 0	3060 2638 0	Board Gangplank 59832				422	Sailing: Dognose Island
 2746 3304 0	3069 2986 0	Board Gangplank 59832				253	Sailing: The Pandemonium (ship)
 2746 3304 0	3050 3192 0	Board Gangplank 59832				240	Sailing: Bay of Sarim
 1726 3453 0	2059 2605 0	Board Gangplank 59832				484	Sailing: Wintumber Island
@@ -1797,6 +1989,7 @@
 1726 3453 0	1513 2973 0	Board Gangplank 59832				469	Sailing: Sunset Coast
 1726 3453 0	1506 3402 0	Board Gangplank 59832				136	Sailing: Lands End
 1726 3453 0	2542 3764 0	Board Gangplank 59832				477	Sailing: Waterbirth Island
+1726 3453 0	1556 2769 0	Board Gangplank 59832				460	Sailing: Shimmering Atoll
 1726 3453 0	2579 2843 0	Board Gangplank 59832				568	Sailing: Corsair Cove
 1726 3453 0	2612 3841 0	Board Gangplank 59832				519	Sailing: Etceteria
 1726 3453 0	2660 2392 0	Board Gangplank 59832				751	Sailing: Charred Island
@@ -1815,13 +2008,16 @@
 1726 3453 0	2860 3970 0	Board Gangplank 59832				660	Sailing: Weiss
 1726 3453 0	1873 2983 0	Board Gangplank 59832				272	Sailing: Vatrachos Island
 1726 3453 0	2907 3225 0	Board Gangplank 59832				892	Sailing: Lone oak island
+1726 3453 0	1860 3306 0	Board Gangplank 59832				122	Sailing: Port Roberts bank
 1726 3453 0	1892 3428 0	Board Gangplank 59832				113	Sailing: Chinchompa Island
 1726 3453 0	2927 4055 0	Board Gangplank 59832				712	Sailing: Grimstone
 1726 3453 0	2996 2287 0	Board Gangplank 59832				893	Sailing: The Onyx Crest
 1726 3453 0	2965 2608 0	Board Gangplank 59832				797	Sailing: 2965,2608
+1726 3453 0	1922 2757 0	Board Gangplank 59832				391	Sailing: Deepfin Point
 1726 3453 0	1958 3113 0	Board Gangplank 59832				228	Sailing: Minotaurs' Rest
 1726 3453 0	2960 3146 0	Board Gangplank 59832				903	Sailing: Mudskipper Point
 1726 3453 0	1953 4056 0	Board Gangplank 59832				406	Sailing: Brittle Isle
+1726 3453 0	3060 2638 0	Board Gangplank 59832				839	Sailing: Dognose Island
 1726 3453 0	3069 2986 0	Board Gangplank 59832				839	Sailing: The Pandemonium (ship)
 1726 3453 0	3050 3192 0	Board Gangplank 59832				931	Sailing: Bay of Sarim
 1758 2655 0	2059 2605 0	Board Mooring point 59834				172	Sailing: Wintumber Island
@@ -1849,6 +2045,7 @@
 1758 2655 0	1513 2973 0	Board Mooring point 59834				227	Sailing: Sunset Coast
 1758 2655 0	1506 3402 0	Board Mooring point 59834				504	Sailing: Lands End
 1758 2655 0	2542 3764 0	Board Mooring point 59834				744	Sailing: Waterbirth Island
+1758 2655 0	1556 2769 0	Board Mooring point 59834				147	Sailing: Shimmering Atoll
 1758 2655 0	2579 2843 0	Board Mooring point 59834				450	Sailing: Corsair Cove
 1758 2655 0	2612 3841 0	Board Mooring point 59834				786	Sailing: Etceteria
 1758 2655 0	2660 2392 0	Board Mooring point 59834				508	Sailing: Charred Island
@@ -1867,13 +2064,16 @@
 1758 2655 0	2860 3970 0	Board Mooring point 59834				928	Sailing: Weiss
 1758 2655 0	1873 2983 0	Board Mooring point 59834				196	Sailing: Vatrachos Island
 1758 2655 0	2907 3225 0	Board Mooring point 59834				773	Sailing: Lone oak island
+1758 2655 0	1860 3306 0	Board Mooring point 59834				359	Sailing: Port Roberts bank
 1758 2655 0	1892 3428 0	Board Mooring point 59834				422	Sailing: Chinchompa Island
 1758 2655 0	2927 4055 0	Board Mooring point 59834				979	Sailing: Grimstone
 1758 2655 0	2996 2287 0	Board Mooring point 59834				680	Sailing: The Onyx Crest
 1758 2655 0	2965 2608 0	Board Mooring point 59834				631	Sailing: 2965,2608
+1758 2655 0	1922 2757 0	Board Mooring point 59834				115	Sailing: Deepfin Point
 1758 2655 0	1958 3113 0	Board Mooring point 59834				273	Sailing: Minotaurs' Rest
 1758 2655 0	2960 3146 0	Board Mooring point 59834				784	Sailing: Mudskipper Point
 1758 2655 0	1953 4056 0	Board Mooring point 59834				742	Sailing: Brittle Isle
+1758 2655 0	3060 2638 0	Board Mooring point 59834				673	Sailing: Dognose Island
 1758 2655 0	3069 2986 0	Board Mooring point 59834				720	Sailing: The Pandemonium (ship)
 1758 2655 0	3050 3192 0	Board Mooring point 59834				812	Sailing: Bay of Sarim
 1776 3141 0	2059 2605 0	Board Gangplank 59832				397	Sailing: Wintumber Island
@@ -1901,6 +2101,7 @@
 1776 3141 0	1513 2973 0	Board Gangplank 59832				382	Sailing: Sunset Coast
 1776 3141 0	1506 3402 0	Board Gangplank 59832				230	Sailing: Lands End
 1776 3141 0	2542 3764 0	Board Gangplank 59832				548	Sailing: Waterbirth Island
+1776 3141 0	1556 2769 0	Board Gangplank 59832				373	Sailing: Shimmering Atoll
 1776 3141 0	2579 2843 0	Board Gangplank 59832				510	Sailing: Corsair Cove
 1776 3141 0	2612 3841 0	Board Gangplank 59832				591	Sailing: Etceteria
 1776 3141 0	2660 2392 0	Board Gangplank 59832				669	Sailing: Charred Island
@@ -1919,13 +2120,16 @@
 1776 3141 0	2860 3970 0	Board Gangplank 59832				732	Sailing: Weiss
 1776 3141 0	1873 2983 0	Board Gangplank 59832				185	Sailing: Vatrachos Island
 1776 3141 0	2907 3225 0	Board Gangplank 59832				833	Sailing: Lone oak island
+1776 3141 0	1860 3306 0	Board Gangplank 59832				123	Sailing: Port Roberts bank
 1776 3141 0	1892 3428 0	Board Gangplank 59832				184	Sailing: Chinchompa Island
 1776 3141 0	2927 4055 0	Board Gangplank 59832				783	Sailing: Grimstone
 1776 3141 0	2996 2287 0	Board Gangplank 59832				832	Sailing: The Onyx Crest
 1776 3141 0	2965 2608 0	Board Gangplank 59832				738	Sailing: 2965,2608
+1776 3141 0	1922 2757 0	Board Gangplank 59832				304	Sailing: Deepfin Point
 1776 3141 0	1958 3113 0	Board Gangplank 59832				154	Sailing: Minotaurs' Rest
 1776 3141 0	2960 3146 0	Board Gangplank 59832				844	Sailing: Mudskipper Point
 1776 3141 0	1953 4056 0	Board Gangplank 59832				502	Sailing: Brittle Isle
+1776 3141 0	3060 2638 0	Board Gangplank 59832				780	Sailing: Dognose Island
 1776 3141 0	3069 2986 0	Board Gangplank 59832				780	Sailing: The Pandemonium (ship)
 1776 3141 0	3050 3192 0	Board Gangplank 59832				872	Sailing: Bay of Sarim
 2759 3229 0	2059 2605 0	Board Gangplank 59832				566	Sailing: Wintumber Island
@@ -1953,6 +2157,7 @@
 2759 3229 0	1513 2973 0	Board Gangplank 59832				848	Sailing: Sunset Coast
 2759 3229 0	1506 3402 0	Board Gangplank 59832				897	Sailing: Lands End
 2759 3229 0	2542 3764 0	Board Gangplank 59832				1008	Sailing: Waterbirth Island
+2759 3229 0	1556 2769 0	Board Gangplank 59832				798	Sailing: Shimmering Atoll
 2759 3229 0	2579 2843 0	Board Gangplank 59832				273	Sailing: Corsair Cove
 2759 3229 0	2612 3841 0	Board Gangplank 59832				1051	Sailing: Etceteria
 2759 3229 0	2660 2392 0	Board Gangplank 59832				481	Sailing: Charred Island
@@ -1971,13 +2176,16 @@
 2759 3229 0	2860 3970 0	Board Gangplank 59832				1192	Sailing: Weiss
 2759 3229 0	1873 2983 0	Board Gangplank 59832				662	Sailing: Vatrachos Island
 2759 3229 0	2907 3225 0	Board Gangplank 59832				96	Sailing: Lone oak island
+2759 3229 0	1860 3306 0	Board Gangplank 59832				719	Sailing: Port Roberts bank
 2759 3229 0	1892 3428 0	Board Gangplank 59832				754	Sailing: Chinchompa Island
 2759 3229 0	2927 4055 0	Board Gangplank 59832				1244	Sailing: Grimstone
 2759 3229 0	2996 2287 0	Board Gangplank 59832				567	Sailing: The Onyx Crest
 2759 3229 0	2965 2608 0	Board Gangplank 59832				411	Sailing: 2965,2608
+2759 3229 0	1922 2757 0	Board Gangplank 59832				612	Sailing: Deepfin Point
 2759 3229 0	1958 3113 0	Board Gangplank 59832				629	Sailing: Minotaurs' Rest
 2759 3229 0	2960 3146 0	Board Gangplank 59832				134	Sailing: Mudskipper Point
 2759 3229 0	1953 4056 0	Board Gangplank 59832				1046	Sailing: Brittle Isle
+2759 3229 0	3060 2638 0	Board Gangplank 59832				401	Sailing: Dognose Island
 2759 3229 0	3069 2986 0	Board Gangplank 59832				232	Sailing: The Pandemonium (ship)
 2759 3229 0	3050 3192 0	Board Gangplank 59832				219	Sailing: Bay of Sarim
 2796 3413 0	2059 2605 0	Board Gangplank 59832				635	Sailing: Wintumber Island
@@ -2005,6 +2213,7 @@
 2796 3413 0	1513 2973 0	Board Gangplank 59832				917	Sailing: Sunset Coast
 2796 3413 0	1506 3402 0	Board Gangplank 59832				966	Sailing: Lands End
 2796 3413 0	2542 3764 0	Board Gangplank 59832				1077	Sailing: Waterbirth Island
+2796 3413 0	1556 2769 0	Board Gangplank 59832				867	Sailing: Shimmering Atoll
 2796 3413 0	2579 2843 0	Board Gangplank 59832				342	Sailing: Corsair Cove
 2796 3413 0	2612 3841 0	Board Gangplank 59832				1119	Sailing: Etceteria
 2796 3413 0	2660 2392 0	Board Gangplank 59832				550	Sailing: Charred Island
@@ -2023,13 +2232,16 @@
 2796 3413 0	2860 3970 0	Board Gangplank 59832				1261	Sailing: Weiss
 2796 3413 0	1873 2983 0	Board Gangplank 59832				731	Sailing: Vatrachos Island
 2796 3413 0	2907 3225 0	Board Gangplank 59832				140	Sailing: Lone oak island
+2796 3413 0	1860 3306 0	Board Gangplank 59832				788	Sailing: Port Roberts bank
 2796 3413 0	1892 3428 0	Board Gangplank 59832				822	Sailing: Chinchompa Island
 2796 3413 0	2927 4055 0	Board Gangplank 59832				1312	Sailing: Grimstone
 2796 3413 0	2996 2287 0	Board Gangplank 59832				621	Sailing: The Onyx Crest
 2796 3413 0	2965 2608 0	Board Gangplank 59832				466	Sailing: 2965,2608
+2796 3413 0	1922 2757 0	Board Gangplank 59832				681	Sailing: Deepfin Point
 2796 3413 0	1958 3113 0	Board Gangplank 59832				698	Sailing: Minotaurs' Rest
 2796 3413 0	2960 3146 0	Board Gangplank 59832				189	Sailing: Mudskipper Point
 2796 3413 0	1953 4056 0	Board Gangplank 59832				1114	Sailing: Brittle Isle
+2796 3413 0	3060 2638 0	Board Gangplank 59832				455	Sailing: Dognose Island
 2796 3413 0	3069 2986 0	Board Gangplank 59832				286	Sailing: The Pandemonium (ship)
 2796 3413 0	3050 3192 0	Board Gangplank 59832				273	Sailing: Bay of Sarim
 2878 3335 0	2059 2605 0	Board Gangplank 59832				634	Sailing: Wintumber Island
@@ -2057,6 +2269,7 @@
 2878 3335 0	1513 2973 0	Board Gangplank 59832				916	Sailing: Sunset Coast
 2878 3335 0	1506 3402 0	Board Gangplank 59832				965	Sailing: Lands End
 2878 3335 0	2542 3764 0	Board Gangplank 59832				1076	Sailing: Waterbirth Island
+2878 3335 0	1556 2769 0	Board Gangplank 59832				866	Sailing: Shimmering Atoll
 2878 3335 0	2579 2843 0	Board Gangplank 59832				341	Sailing: Corsair Cove
 2878 3335 0	2612 3841 0	Board Gangplank 59832				1118	Sailing: Etceteria
 2878 3335 0	2660 2392 0	Board Gangplank 59832				549	Sailing: Charred Island
@@ -2075,13 +2288,16 @@
 2878 3335 0	2860 3970 0	Board Gangplank 59832				1260	Sailing: Weiss
 2878 3335 0	1873 2983 0	Board Gangplank 59832				730	Sailing: Vatrachos Island
 2878 3335 0	2907 3225 0	Board Gangplank 59832				79	Sailing: Lone oak island
+2878 3335 0	1860 3306 0	Board Gangplank 59832				787	Sailing: Port Roberts bank
 2878 3335 0	1892 3428 0	Board Gangplank 59832				821	Sailing: Chinchompa Island
 2878 3335 0	2927 4055 0	Board Gangplank 59832				1311	Sailing: Grimstone
 2878 3335 0	2996 2287 0	Board Gangplank 59832				560	Sailing: The Onyx Crest
 2878 3335 0	2965 2608 0	Board Gangplank 59832				405	Sailing: 2965,2608
+2878 3335 0	1922 2757 0	Board Gangplank 59832				680	Sailing: Deepfin Point
 2878 3335 0	1958 3113 0	Board Gangplank 59832				697	Sailing: Minotaurs' Rest
 2878 3335 0	2960 3146 0	Board Gangplank 59832				127	Sailing: Mudskipper Point
 2878 3335 0	1953 4056 0	Board Gangplank 59832				1113	Sailing: Brittle Isle
+2878 3335 0	3060 2638 0	Board Gangplank 59832				394	Sailing: Dognose Island
 2878 3335 0	3069 2986 0	Board Gangplank 59832				225	Sailing: The Pandemonium (ship)
 2878 3335 0	3050 3192 0	Board Gangplank 59832				212	Sailing: Bay of Sarim
 1844 3688 0	2059 2605 0	Board Gangplank 59832				587	Sailing: Wintumber Island
@@ -2109,6 +2325,7 @@
 1844 3688 0	1513 2973 0	Board Gangplank 59832				576	Sailing: Sunset Coast
 1844 3688 0	1506 3402 0	Board Gangplank 59832				333	Sailing: Lands End
 1844 3688 0	2542 3764 0	Board Gangplank 59832				381	Sailing: Waterbirth Island
+1844 3688 0	1556 2769 0	Board Gangplank 59832				567	Sailing: Shimmering Atoll
 1844 3688 0	2579 2843 0	Board Gangplank 59832				623	Sailing: Corsair Cove
 1844 3688 0	2612 3841 0	Board Gangplank 59832				423	Sailing: Etceteria
 1844 3688 0	2660 2392 0	Board Gangplank 59832				805	Sailing: Charred Island
@@ -2127,13 +2344,16 @@
 1844 3688 0	2860 3970 0	Board Gangplank 59832				562	Sailing: Weiss
 1844 3688 0	1873 2983 0	Board Gangplank 59832				379	Sailing: Vatrachos Island
 1844 3688 0	2907 3225 0	Board Gangplank 59832				946	Sailing: Lone oak island
+1844 3688 0	1860 3306 0	Board Gangplank 59832				218	Sailing: Port Roberts bank
 1844 3688 0	1892 3428 0	Board Gangplank 59832				155	Sailing: Chinchompa Island
 1844 3688 0	2927 4055 0	Board Gangplank 59832				606	Sailing: Grimstone
 1844 3688 0	2996 2287 0	Board Gangplank 59832				948	Sailing: The Onyx Crest
 1844 3688 0	2965 2608 0	Board Gangplank 59832				851	Sailing: 2965,2608
+1844 3688 0	1922 2757 0	Board Gangplank 59832				494	Sailing: Deepfin Point
 1844 3688 0	1958 3113 0	Board Gangplank 59832				320	Sailing: Minotaurs' Rest
 1844 3688 0	2960 3146 0	Board Gangplank 59832				958	Sailing: Mudskipper Point
 1844 3688 0	1953 4056 0	Board Gangplank 59832				218	Sailing: Brittle Isle
+1844 3688 0	3060 2638 0	Board Gangplank 59832				893	Sailing: Dognose Island
 1844 3688 0	3069 2986 0	Board Gangplank 59832				893	Sailing: The Pandemonium (ship)
 1844 3688 0	3050 3192 0	Board Gangplank 59832				985	Sailing: Bay of Sarim
 2860 3970 0	2059 2605 0	Board Mooring point 59834				921	Sailing: Wintumber Island
@@ -2161,6 +2381,7 @@
 2860 3970 0	1513 2973 0	Board Mooring point 59834				963	Sailing: Sunset Coast
 2860 3970 0	1506 3402 0	Board Mooring point 59834				775	Sailing: Lands End
 2860 3970 0	2542 3764 0	Board Mooring point 59834				212	Sailing: Waterbirth Island
+2860 3970 0	1556 2769 0	Board Mooring point 59834				954	Sailing: Shimmering Atoll
 2860 3970 0	2579 2843 0	Board Mooring point 59834				939	Sailing: Corsair Cove
 2860 3970 0	2612 3841 0	Board Mooring point 59834				162	Sailing: Etceteria
 2860 3970 0	2660 2392 0	Board Mooring point 59834				1122	Sailing: Charred Island
@@ -2179,13 +2400,16 @@
 2860 3970 0	1844 3688 0	Board Mooring point 59834				562	Sailing: Port Piscarilius
 2860 3970 0	1873 2983 0	Board Mooring point 59834				756	Sailing: Vatrachos Island
 2860 3970 0	2907 3225 0	Board Mooring point 59834				1263	Sailing: Lone oak island
+2860 3970 0	1860 3306 0	Board Mooring point 59834				631	Sailing: Port Roberts bank
 2860 3970 0	1892 3428 0	Board Mooring point 59834				583	Sailing: Chinchompa Island
 2860 3970 0	2927 4055 0	Board Mooring point 59834				75	Sailing: Grimstone
 2860 3970 0	2996 2287 0	Board Mooring point 59834				1264	Sailing: The Onyx Crest
 2860 3970 0	2965 2608 0	Board Mooring point 59834				1168	Sailing: 2965,2608
+2860 3970 0	1922 2757 0	Board Mooring point 59834				859	Sailing: Deepfin Point
 2860 3970 0	1958 3113 0	Board Mooring point 59834				676	Sailing: Minotaurs' Rest
 2860 3970 0	2960 3146 0	Board Mooring point 59834				1274	Sailing: Mudskipper Point
 2860 3970 0	1953 4056 0	Board Mooring point 59834				484	Sailing: Brittle Isle
+2860 3970 0	3060 2638 0	Board Mooring point 59834				1210	Sailing: Dognose Island
 2860 3970 0	3069 2986 0	Board Mooring point 59834				1209	Sailing: The Pandemonium (ship)
 2860 3970 0	3050 3192 0	Board Mooring point 59834				1302	Sailing: Bay of Sarim
 1873 2983 0	2059 2605 0	Board Mooring point 59834				235	Sailing: Wintumber Island
@@ -2213,6 +2437,7 @@
 1873 2983 0	1513 2973 0	Board Mooring point 59834				233	Sailing: Sunset Coast
 1873 2983 0	1506 3402 0	Board Mooring point 59834				329	Sailing: Lands End
 1873 2983 0	2542 3764 0	Board Mooring point 59834				572	Sailing: Waterbirth Island
+1873 2983 0	1556 2769 0	Board Mooring point 59834				224	Sailing: Shimmering Atoll
 1873 2983 0	2579 2843 0	Board Mooring point 59834				410	Sailing: Corsair Cove
 1873 2983 0	2612 3841 0	Board Mooring point 59834				615	Sailing: Etceteria
 1873 2983 0	2660 2392 0	Board Mooring point 59834				527	Sailing: Charred Island
@@ -2231,13 +2456,16 @@
 1873 2983 0	1844 3688 0	Board Mooring point 59834				379	Sailing: Port Piscarilius
 1873 2983 0	2860 3970 0	Board Mooring point 59834				756	Sailing: Weiss
 1873 2983 0	2907 3225 0	Board Mooring point 59834				733	Sailing: Lone oak island
+1873 2983 0	1860 3306 0	Board Mooring point 59834				183	Sailing: Port Roberts bank
 1873 2983 0	1892 3428 0	Board Mooring point 59834				246	Sailing: Chinchompa Island
 1873 2983 0	2927 4055 0	Board Mooring point 59834				808	Sailing: Grimstone
 1873 2983 0	2996 2287 0	Board Mooring point 59834				690	Sailing: The Onyx Crest
 1873 2983 0	2965 2608 0	Board Mooring point 59834				629	Sailing: 2965,2608
+1873 2983 0	1922 2757 0	Board Mooring point 59834				140	Sailing: Deepfin Point
 1873 2983 0	1958 3113 0	Board Mooring point 59834				100	Sailing: Minotaurs' Rest
 1873 2983 0	2960 3146 0	Board Mooring point 59834				744	Sailing: Mudskipper Point
 1873 2983 0	1953 4056 0	Board Mooring point 59834				566	Sailing: Brittle Isle
+1873 2983 0	3060 2638 0	Board Mooring point 59834				671	Sailing: Dognose Island
 1873 2983 0	3069 2986 0	Board Mooring point 59834				680	Sailing: The Pandemonium (ship)
 1873 2983 0	3050 3192 0	Board Mooring point 59834				772	Sailing: Bay of Sarim
 2907 3225 0	2059 2605 0	Board Gangplank 59832				637	Sailing: Wintumber Island
@@ -2265,6 +2493,7 @@
 2907 3225 0	1513 2973 0	Board Gangplank 59832				919	Sailing: Sunset Coast
 2907 3225 0	1506 3402 0	Board Gangplank 59832				968	Sailing: Lands End
 2907 3225 0	2542 3764 0	Board Gangplank 59832				1079	Sailing: Waterbirth Island
+2907 3225 0	1556 2769 0	Board Gangplank 59832				869	Sailing: Shimmering Atoll
 2907 3225 0	2579 2843 0	Board Gangplank 59832				344	Sailing: Corsair Cove
 2907 3225 0	2612 3841 0	Board Gangplank 59832				1121	Sailing: Etceteria
 2907 3225 0	2660 2392 0	Board Gangplank 59832				500	Sailing: Charred Island
@@ -2283,15 +2512,74 @@
 2907 3225 0	1844 3688 0	Board Gangplank 59832				946	Sailing: Port Piscarilius
 2907 3225 0	2860 3970 0	Board Gangplank 59832				1263	Sailing: Weiss
 2907 3225 0	1873 2983 0	Board Gangplank 59832				733	Sailing: Vatrachos Island
+2907 3225 0	1860 3306 0	Board Gangplank 59832				790	Sailing: Port Roberts bank
 2907 3225 0	1892 3428 0	Board Gangplank 59832				825	Sailing: Chinchompa Island
 2907 3225 0	2927 4055 0	Board Gangplank 59832				1314	Sailing: Grimstone
 2907 3225 0	2996 2287 0	Board Gangplank 59832				502	Sailing: The Onyx Crest
 2907 3225 0	2965 2608 0	Board Gangplank 59832				347	Sailing: 2965,2608
+2907 3225 0	1922 2757 0	Board Gangplank 59832				683	Sailing: Deepfin Point
 2907 3225 0	1958 3113 0	Board Gangplank 59832				700	Sailing: Minotaurs' Rest
 2907 3225 0	2960 3146 0	Board Gangplank 59832				70	Sailing: Mudskipper Point
 2907 3225 0	1953 4056 0	Board Gangplank 59832				1116	Sailing: Brittle Isle
+2907 3225 0	3060 2638 0	Board Gangplank 59832				337	Sailing: Dognose Island
 2907 3225 0	3069 2986 0	Board Gangplank 59832				167	Sailing: The Pandemonium (ship)
 2907 3225 0	3050 3192 0	Board Gangplank 59832				154	Sailing: Bay of Sarim
+1860 3306 0	2059 2605 0	Board Gangplank 59832				395	Sailing: Wintumber Island
+1860 3306 0	2095 3188 0	Board Gangplank 59832				155	Sailing: Lledrith Island
+1860 3306 0	2079 3689 0	Board Gangplank 59832				266	Sailing: Buccaneers' Haven
+1860 3306 0	3173 2368 0	Board Gangplank 59832				841	Sailing: The Summer Shore
+1860 3306 0	3145 2824 0	Board Gangplank 59832				749	Sailing: Sea Spirit Dock
+1860 3306 0	2143 3121 0	Board Gangplank 59832				192	Sailing: Port Tyras
+1860 3306 0	2157 3325 0	Board Gangplank 59832				171	Sailing: Tirannwn Bight
+1860 3306 0	2148 3531 0	Board Gangplank 59832				205	Sailing: Drumstick Isle
+1860 3306 0	2151 3880 0	Board Gangplank 59832				355	Sailing: Lunar Isle
+1860 3306 0	2193 2319 0	Board Gangplank 59832				550	Sailing: Sunbleak Island
+1860 3306 0	1201 2733 0	Board Gangplank 59832				534	Sailing: Laguna Aurorae
+1860 3306 0	2220 3466 0	Board Gangplank 59832				221	Sailing: Ynysdail
+1860 3306 0	2282 2821 0	Board Gangplank 59832				397	Sailing: 2282,2821
+1860 3306 0	3353 2215 0	Board Gangplank 59832				957	Sailing: The Little Pearl
+1860 3306 0	2344 2268 0	Board Gangplank 59832				598	Sailing: Rainbow's End
+1860 3306 0	2320 2774 0	Board Gangplank 59832				409	Sailing: Tear of the Soul
+1860 3306 0	2305 3689 0	Board Gangplank 59832				315	Sailing: Piscatoris bank
+1860 3306 0	2310 3781 0	Board Gangplank 59832				348	Sailing: Neitiznot
+1860 3306 0	2411 3781 0	Board Gangplank 59832				386	Sailing: Jatizso
+1860 3306 0	2467 2718 0	Board Gangplank 59832				454	Sailing: Anglers' Retreat
+1860 3306 0	1451 2969 0	Board Gangplank 59832				404	Sailing: Aldarin
+1860 3306 0	2532 2531 0	Board Gangplank 59832				560	Sailing: Isle of Bones
+1860 3306 0	1513 2973 0	Board Gangplank 59832				380	Sailing: Sunset Coast
+1860 3306 0	1506 3402 0	Board Gangplank 59832				209	Sailing: Lands End
+1860 3306 0	2542 3764 0	Board Gangplank 59832				448	Sailing: Waterbirth Island
+1860 3306 0	1556 2769 0	Board Gangplank 59832				371	Sailing: Shimmering Atoll
+1860 3306 0	2579 2843 0	Board Gangplank 59832				467	Sailing: Corsair Cove
+1860 3306 0	2612 3841 0	Board Gangplank 59832				490	Sailing: Etceteria
+1860 3306 0	2660 2392 0	Board Gangplank 59832				649	Sailing: Charred Island
+1860 3306 0	2651 2677 0	Board Gangplank 59832				532	Sailing: Void Knights' Outpost
+1860 3306 0	2685 3161 0	Board Gangplank 59832				645	Sailing: Port Khazard
+1860 3306 0	2670 3266 0	Board Gangplank 59832				697	Sailing: Necromancer Tower
+1860 3306 0	2629 3704 0	Board Gangplank 59832				482	Sailing: Fremensund
+1860 3306 0	2751 2951 0	Board Gangplank 59832				569	Sailing: Cairn Isle
+1860 3306 0	2746 3304 0	Board Gangplank 59832				728	Sailing: Witchaven church
+1860 3306 0	1726 3453 0	Board Gangplank 59832				122	Sailing: Charcoal Burners
+1860 3306 0	1758 2655 0	Board Gangplank 59832				359	Sailing: The Crown Jewel
+1860 3306 0	1776 3141 0	Board Gangplank 59832				123	Sailing: Fortis Cothon
+1860 3306 0	2759 3229 0	Board Gangplank 59832				719	Sailing: North Brimhaven mine
+1860 3306 0	2796 3413 0	Board Gangplank 59832				788	Sailing: Keep Le Faye
+1860 3306 0	2878 3335 0	Board Gangplank 59832				787	Sailing: Entrana church
+1860 3306 0	1844 3688 0	Board Gangplank 59832				218	Sailing: Port Piscarilius
+1860 3306 0	2860 3970 0	Board Gangplank 59832				631	Sailing: Weiss
+1860 3306 0	1873 2983 0	Board Gangplank 59832				183	Sailing: Vatrachos Island
+1860 3306 0	2907 3225 0	Board Gangplank 59832				790	Sailing: Lone oak island
+1860 3306 0	1892 3428 0	Board Gangplank 59832				86	Sailing: Chinchompa Island
+1860 3306 0	2927 4055 0	Board Gangplank 59832				683	Sailing: Grimstone
+1860 3306 0	2996 2287 0	Board Gangplank 59832				791	Sailing: The Onyx Crest
+1860 3306 0	2965 2608 0	Board Gangplank 59832				695	Sailing: 2965,2608
+1860 3306 0	1922 2757 0	Board Gangplank 59832				302	Sailing: Deepfin Point
+1860 3306 0	1958 3113 0	Board Gangplank 59832				128	Sailing: Minotaurs' Rest
+1860 3306 0	2960 3146 0	Board Gangplank 59832				801	Sailing: Mudskipper Point
+1860 3306 0	1953 4056 0	Board Gangplank 59832				406	Sailing: Brittle Isle
+1860 3306 0	3060 2638 0	Board Gangplank 59832				737	Sailing: Dognose Island
+1860 3306 0	3069 2986 0	Board Gangplank 59832				737	Sailing: The Pandemonium (ship)
+1860 3306 0	3050 3192 0	Board Gangplank 59832				829	Sailing: Bay of Sarim
 1892 3428 0	2059 2605 0	Board Mooring point 59834				452	Sailing: Wintumber Island
 1892 3428 0	2095 3188 0	Board Mooring point 59834				180	Sailing: Lledrith Island
 1892 3428 0	2079 3689 0	Board Mooring point 59834				206	Sailing: Buccaneers' Haven
@@ -2317,6 +2605,7 @@
 1892 3428 0	1513 2973 0	Board Mooring point 59834				444	Sailing: Sunset Coast
 1892 3428 0	1506 3402 0	Board Mooring point 59834				221	Sailing: Lands End
 1892 3428 0	2542 3764 0	Board Mooring point 59834				399	Sailing: Waterbirth Island
+1892 3428 0	1556 2769 0	Board Mooring point 59834				435	Sailing: Shimmering Atoll
 1892 3428 0	2579 2843 0	Board Mooring point 59834				501	Sailing: Corsair Cove
 1892 3428 0	2612 3841 0	Board Mooring point 59834				441	Sailing: Etceteria
 1892 3428 0	2660 2392 0	Board Mooring point 59834				684	Sailing: Charred Island
@@ -2336,12 +2625,15 @@
 1892 3428 0	2860 3970 0	Board Mooring point 59834				583	Sailing: Weiss
 1892 3428 0	1873 2983 0	Board Mooring point 59834				246	Sailing: Vatrachos Island
 1892 3428 0	2907 3225 0	Board Mooring point 59834				825	Sailing: Lone oak island
+1892 3428 0	1860 3306 0	Board Mooring point 59834				86	Sailing: Port Roberts bank
 1892 3428 0	2927 4055 0	Board Mooring point 59834				634	Sailing: Grimstone
 1892 3428 0	2996 2287 0	Board Mooring point 59834				826	Sailing: The Onyx Crest
 1892 3428 0	2965 2608 0	Board Mooring point 59834				730	Sailing: 2965,2608
+1892 3428 0	1922 2757 0	Board Mooring point 59834				360	Sailing: Deepfin Point
 1892 3428 0	1958 3113 0	Board Mooring point 59834				185	Sailing: Minotaurs' Rest
 1892 3428 0	2960 3146 0	Board Mooring point 59834				836	Sailing: Mudskipper Point
 1892 3428 0	1953 4056 0	Board Mooring point 59834				341	Sailing: Brittle Isle
+1892 3428 0	3060 2638 0	Board Mooring point 59834				772	Sailing: Dognose Island
 1892 3428 0	3069 2986 0	Board Mooring point 59834				771	Sailing: The Pandemonium (ship)
 1892 3428 0	3050 3192 0	Board Mooring point 59834				863	Sailing: Bay of Sarim
 2927 4055 0	2059 2605 0	Board Mooring point 59834				973	Sailing: Wintumber Island
@@ -2369,6 +2661,7 @@
 2927 4055 0	1513 2973 0	Board Mooring point 59834				1014	Sailing: Sunset Coast
 2927 4055 0	1506 3402 0	Board Mooring point 59834				827	Sailing: Lands End
 2927 4055 0	2542 3764 0	Board Mooring point 59834				264	Sailing: Waterbirth Island
+2927 4055 0	1556 2769 0	Board Mooring point 59834				1006	Sailing: Shimmering Atoll
 2927 4055 0	2579 2843 0	Board Mooring point 59834				991	Sailing: Corsair Cove
 2927 4055 0	2612 3841 0	Board Mooring point 59834				214	Sailing: Etceteria
 2927 4055 0	2660 2392 0	Board Mooring point 59834				1173	Sailing: Charred Island
@@ -2388,12 +2681,15 @@
 2927 4055 0	2860 3970 0	Board Mooring point 59834				75	Sailing: Weiss
 2927 4055 0	1873 2983 0	Board Mooring point 59834				808	Sailing: Vatrachos Island
 2927 4055 0	2907 3225 0	Board Mooring point 59834				1314	Sailing: Lone oak island
+2927 4055 0	1860 3306 0	Board Mooring point 59834				683	Sailing: Port Roberts bank
 2927 4055 0	1892 3428 0	Board Mooring point 59834				634	Sailing: Chinchompa Island
 2927 4055 0	2996 2287 0	Board Mooring point 59834				1316	Sailing: The Onyx Crest
 2927 4055 0	2965 2608 0	Board Mooring point 59834				1219	Sailing: 2965,2608
+2927 4055 0	1922 2757 0	Board Mooring point 59834				911	Sailing: Deepfin Point
 2927 4055 0	1958 3113 0	Board Mooring point 59834				728	Sailing: Minotaurs' Rest
 2927 4055 0	2960 3146 0	Board Mooring point 59834				1326	Sailing: Mudskipper Point
 2927 4055 0	1953 4056 0	Board Mooring point 59834				518	Sailing: Brittle Isle
+2927 4055 0	3060 2638 0	Board Mooring point 59834				1195	Sailing: Dognose Island
 2927 4055 0	3069 2986 0	Board Mooring point 59834				1261	Sailing: The Pandemonium (ship)
 2927 4055 0	3050 3192 0	Board Mooring point 59834				1353	Sailing: Bay of Sarim
 2996 2287 0	2059 2605 0	Board Mooring point 59834				530	Sailing: Wintumber Island
@@ -2421,6 +2717,7 @@
 2996 2287 0	1513 2973 0	Board Mooring point 59834				852	Sailing: Sunset Coast
 2996 2287 0	1506 3402 0	Board Mooring point 59834				969	Sailing: Lands End
 2996 2287 0	2542 3764 0	Board Mooring point 59834				1081	Sailing: Waterbirth Island
+2996 2287 0	1556 2769 0	Board Mooring point 59834				799	Sailing: Shimmering Atoll
 2996 2287 0	2579 2843 0	Board Mooring point 59834				371	Sailing: Corsair Cove
 2996 2287 0	2612 3841 0	Board Mooring point 59834				1123	Sailing: Etceteria
 2996 2287 0	2660 2392 0	Board Mooring point 59834				202	Sailing: Charred Island
@@ -2440,12 +2737,15 @@
 2996 2287 0	2860 3970 0	Board Mooring point 59834				1264	Sailing: Weiss
 2996 2287 0	1873 2983 0	Board Mooring point 59834				690	Sailing: Vatrachos Island
 2996 2287 0	2907 3225 0	Board Mooring point 59834				502	Sailing: Lone oak island
+2996 2287 0	1860 3306 0	Board Mooring point 59834				791	Sailing: Port Roberts bank
 2996 2287 0	1892 3428 0	Board Mooring point 59834				826	Sailing: Chinchompa Island
 2996 2287 0	2927 4055 0	Board Mooring point 59834				1316	Sailing: Grimstone
 2996 2287 0	2965 2608 0	Board Mooring point 59834				180	Sailing: 2965,2608
+2996 2287 0	1922 2757 0	Board Mooring point 59834				614	Sailing: Deepfin Point
 2996 2287 0	1958 3113 0	Board Mooring point 59834				701	Sailing: Minotaurs' Rest
 2996 2287 0	2960 3146 0	Board Mooring point 59834				453	Sailing: Mudskipper Point
 2996 2287 0	1953 4056 0	Board Mooring point 59834				1118	Sailing: Brittle Isle
+2996 2287 0	3060 2638 0	Board Mooring point 59834				203	Sailing: Dognose Island
 2996 2287 0	3069 2986 0	Board Mooring point 59834				378	Sailing: The Pandemonium (ship)
 2996 2287 0	3050 3192 0	Board Mooring point 59834				479	Sailing: Bay of Sarim
 2965 2608 0	2059 2605 0	Board Mooring point 59834				486	Sailing: Wintumber Island
@@ -2473,6 +2773,7 @@
 2965 2608 0	1513 2973 0	Board Mooring point 59834				803	Sailing: Sunset Coast
 2965 2608 0	1506 3402 0	Board Mooring point 59834				873	Sailing: Lands End
 2965 2608 0	2542 3764 0	Board Mooring point 59834				984	Sailing: Waterbirth Island
+2965 2608 0	1556 2769 0	Board Mooring point 59834				750	Sailing: Shimmering Atoll
 2965 2608 0	2579 2843 0	Board Mooring point 59834				264	Sailing: Corsair Cove
 2965 2608 0	2612 3841 0	Board Mooring point 59834				1027	Sailing: Etceteria
 2965 2608 0	2660 2392 0	Board Mooring point 59834				210	Sailing: Charred Island
@@ -2492,14 +2793,73 @@
 2965 2608 0	2860 3970 0	Board Mooring point 59834				1168	Sailing: Weiss
 2965 2608 0	1873 2983 0	Board Mooring point 59834				629	Sailing: Vatrachos Island
 2965 2608 0	2907 3225 0	Board Mooring point 59834				347	Sailing: Lone oak island
+2965 2608 0	1860 3306 0	Board Mooring point 59834				695	Sailing: Port Roberts bank
 2965 2608 0	1892 3428 0	Board Mooring point 59834				730	Sailing: Chinchompa Island
 2965 2608 0	2927 4055 0	Board Mooring point 59834				1219	Sailing: Grimstone
 2965 2608 0	2996 2287 0	Board Mooring point 59834				180	Sailing: The Onyx Crest
+2965 2608 0	1922 2757 0	Board Mooring point 59834				565	Sailing: Deepfin Point
 2965 2608 0	1958 3113 0	Board Mooring point 59834				605	Sailing: Minotaurs' Rest
 2965 2608 0	2960 3146 0	Board Mooring point 59834				298	Sailing: Mudskipper Point
 2965 2608 0	1953 4056 0	Board Mooring point 59834				1021	Sailing: Brittle Isle
+2965 2608 0	3060 2638 0	Board Mooring point 59834				70	Sailing: Dognose Island
 2965 2608 0	3069 2986 0	Board Mooring point 59834				225	Sailing: The Pandemonium (ship)
 2965 2608 0	3050 3192 0	Board Mooring point 59834				326	Sailing: Bay of Sarim
+1922 2757 0	2059 2605 0	Board Gangplank 59832				123	Sailing: Wintumber Island
+1922 2757 0	2095 3188 0	Board Gangplank 59832				262	Sailing: Lledrith Island
+1922 2757 0	2079 3689 0	Board Gangplank 59832				526	Sailing: Buccaneers' Haven
+1922 2757 0	3173 2368 0	Board Gangplank 59832				693	Sailing: The Summer Shore
+1922 2757 0	3145 2824 0	Board Gangplank 59832				639	Sailing: Sea Spirit Dock
+1922 2757 0	2143 3121 0	Board Gangplank 59832				239	Sailing: Port Tyras
+1922 2757 0	2157 3325 0	Board Gangplank 59832				334	Sailing: Tirannwn Bight
+1922 2757 0	2148 3531 0	Board Gangplank 59832				434	Sailing: Drumstick Isle
+1922 2757 0	2151 3880 0	Board Gangplank 59832				617	Sailing: Lunar Isle
+1922 2757 0	2193 2319 0	Board Gangplank 59832				277	Sailing: Sunbleak Island
+1922 2757 0	1201 2733 0	Board Gangplank 59832				384	Sailing: Laguna Aurorae
+1922 2757 0	2220 3466 0	Board Gangplank 59832				438	Sailing: Ynysdail
+1922 2757 0	2282 2821 0	Board Gangplank 59832				234	Sailing: 2282,2821
+1922 2757 0	3353 2215 0	Board Gangplank 59832				801	Sailing: The Little Pearl
+1922 2757 0	2344 2268 0	Board Gangplank 59832				347	Sailing: Rainbow's End
+1922 2757 0	2320 2774 0	Board Gangplank 59832				220	Sailing: Tear of the Soul
+1922 2757 0	2305 3689 0	Board Gangplank 59832				542	Sailing: Piscatoris bank
+1922 2757 0	2310 3781 0	Board Gangplank 59832				582	Sailing: Neitiznot
+1922 2757 0	2411 3781 0	Board Gangplank 59832				614	Sailing: Jatizso
+1922 2757 0	2467 2718 0	Board Gangplank 59832				297	Sailing: Anglers' Retreat
+1922 2757 0	1451 2969 0	Board Gangplank 59832				283	Sailing: Aldarin
+1922 2757 0	2532 2531 0	Board Gangplank 59832				362	Sailing: Isle of Bones
+1922 2757 0	1513 2973 0	Board Gangplank 59832				259	Sailing: Sunset Coast
+1922 2757 0	1506 3402 0	Board Gangplank 59832				448	Sailing: Lands End
+1922 2757 0	2542 3764 0	Board Gangplank 59832				676	Sailing: Waterbirth Island
+1922 2757 0	1556 2769 0	Board Gangplank 59832				207	Sailing: Shimmering Atoll
+1922 2757 0	2579 2843 0	Board Gangplank 59832				359	Sailing: Corsair Cove
+1922 2757 0	2612 3841 0	Board Gangplank 59832				718	Sailing: Etceteria
+1922 2757 0	2660 2392 0	Board Gangplank 59832				444	Sailing: Charred Island
+1922 2757 0	2651 2677 0	Board Gangplank 59832				394	Sailing: Void Knights' Outpost
+1922 2757 0	2685 3161 0	Board Gangplank 59832				538	Sailing: Port Khazard
+1922 2757 0	2670 3266 0	Board Gangplank 59832				590	Sailing: Necromancer Tower
+1922 2757 0	2629 3704 0	Board Gangplank 59832				710	Sailing: Fremensund
+1922 2757 0	2751 2951 0	Board Gangplank 59832				462	Sailing: Cairn Isle
+1922 2757 0	2746 3304 0	Board Gangplank 59832				621	Sailing: Witchaven church
+1922 2757 0	1726 3453 0	Board Gangplank 59832				391	Sailing: Charcoal Burners
+1922 2757 0	1758 2655 0	Board Gangplank 59832				115	Sailing: The Crown Jewel
+1922 2757 0	1776 3141 0	Board Gangplank 59832				304	Sailing: Fortis Cothon
+1922 2757 0	2759 3229 0	Board Gangplank 59832				612	Sailing: North Brimhaven mine
+1922 2757 0	2796 3413 0	Board Gangplank 59832				681	Sailing: Keep Le Faye
+1922 2757 0	2878 3335 0	Board Gangplank 59832				680	Sailing: Entrana church
+1922 2757 0	1844 3688 0	Board Gangplank 59832				494	Sailing: Port Piscarilius
+1922 2757 0	2860 3970 0	Board Gangplank 59832				859	Sailing: Weiss
+1922 2757 0	1873 2983 0	Board Gangplank 59832				140	Sailing: Vatrachos Island
+1922 2757 0	2907 3225 0	Board Gangplank 59832				683	Sailing: Lone oak island
+1922 2757 0	1860 3306 0	Board Gangplank 59832				302	Sailing: Port Roberts bank
+1922 2757 0	1892 3428 0	Board Gangplank 59832				360	Sailing: Chinchompa Island
+1922 2757 0	2927 4055 0	Board Gangplank 59832				911	Sailing: Grimstone
+1922 2757 0	2996 2287 0	Board Gangplank 59832				614	Sailing: The Onyx Crest
+1922 2757 0	2965 2608 0	Board Gangplank 59832				565	Sailing: 2965,2608
+1922 2757 0	1958 3113 0	Board Gangplank 59832				205	Sailing: Minotaurs' Rest
+1922 2757 0	2960 3146 0	Board Gangplank 59832				694	Sailing: Mudskipper Point
+1922 2757 0	1953 4056 0	Board Gangplank 59832				673	Sailing: Brittle Isle
+1922 2757 0	3060 2638 0	Board Gangplank 59832				607	Sailing: Dognose Island
+1922 2757 0	3069 2986 0	Board Gangplank 59832				629	Sailing: The Pandemonium (ship)
+1922 2757 0	3050 3192 0	Board Gangplank 59832				722	Sailing: Bay of Sarim
 1958 3113 0	2059 2605 0	Board Mooring point 59834				289	Sailing: Wintumber Island
 1958 3113 0	2095 3188 0	Board Mooring point 59834				106	Sailing: Lledrith Island
 1958 3113 0	2079 3689 0	Board Mooring point 59834				343	Sailing: Buccaneers' Haven
@@ -2525,6 +2885,7 @@
 1958 3113 0	1513 2973 0	Board Mooring point 59834				307	Sailing: Sunset Coast
 1958 3113 0	1506 3402 0	Board Mooring point 59834				294	Sailing: Lands End
 1958 3113 0	2542 3764 0	Board Mooring point 59834				493	Sailing: Waterbirth Island
+1958 3113 0	1556 2769 0	Board Mooring point 59834				298	Sailing: Shimmering Atoll
 1958 3113 0	2579 2843 0	Board Mooring point 59834				376	Sailing: Corsair Cove
 1958 3113 0	2612 3841 0	Board Mooring point 59834				535	Sailing: Etceteria
 1958 3113 0	2660 2392 0	Board Mooring point 59834				549	Sailing: Charred Island
@@ -2544,12 +2905,15 @@
 1958 3113 0	2860 3970 0	Board Mooring point 59834				676	Sailing: Weiss
 1958 3113 0	1873 2983 0	Board Mooring point 59834				100	Sailing: Vatrachos Island
 1958 3113 0	2907 3225 0	Board Mooring point 59834				700	Sailing: Lone oak island
+1958 3113 0	1860 3306 0	Board Mooring point 59834				128	Sailing: Port Roberts bank
 1958 3113 0	1892 3428 0	Board Mooring point 59834				185	Sailing: Chinchompa Island
 1958 3113 0	2927 4055 0	Board Mooring point 59834				728	Sailing: Grimstone
 1958 3113 0	2996 2287 0	Board Mooring point 59834				701	Sailing: The Onyx Crest
 1958 3113 0	2965 2608 0	Board Mooring point 59834				605	Sailing: 2965,2608
+1958 3113 0	1922 2757 0	Board Mooring point 59834				205	Sailing: Deepfin Point
 1958 3113 0	2960 3146 0	Board Mooring point 59834				711	Sailing: Mudskipper Point
 1958 3113 0	1953 4056 0	Board Mooring point 59834				490	Sailing: Brittle Isle
+1958 3113 0	3060 2638 0	Board Mooring point 59834				647	Sailing: Dognose Island
 1958 3113 0	3069 2986 0	Board Mooring point 59834				647	Sailing: The Pandemonium (ship)
 1958 3113 0	3050 3192 0	Board Mooring point 59834				739	Sailing: Bay of Sarim
 2960 3146 0	2059 2605 0	Board Gangplank 59832				648	Sailing: Wintumber Island
@@ -2577,6 +2941,7 @@
 2960 3146 0	1513 2973 0	Board Gangplank 59832				930	Sailing: Sunset Coast
 2960 3146 0	1506 3402 0	Board Gangplank 59832				979	Sailing: Lands End
 2960 3146 0	2542 3764 0	Board Gangplank 59832				1090	Sailing: Waterbirth Island
+2960 3146 0	1556 2769 0	Board Gangplank 59832				880	Sailing: Shimmering Atoll
 2960 3146 0	2579 2843 0	Board Gangplank 59832				355	Sailing: Corsair Cove
 2960 3146 0	2612 3841 0	Board Gangplank 59832				1133	Sailing: Etceteria
 2960 3146 0	2660 2392 0	Board Gangplank 59832				451	Sailing: Charred Island
@@ -2596,12 +2961,15 @@
 2960 3146 0	2860 3970 0	Board Gangplank 59832				1274	Sailing: Weiss
 2960 3146 0	1873 2983 0	Board Gangplank 59832				744	Sailing: Vatrachos Island
 2960 3146 0	2907 3225 0	Board Gangplank 59832				70	Sailing: Lone oak island
+2960 3146 0	1860 3306 0	Board Gangplank 59832				801	Sailing: Port Roberts bank
 2960 3146 0	1892 3428 0	Board Gangplank 59832				836	Sailing: Chinchompa Island
 2960 3146 0	2927 4055 0	Board Gangplank 59832				1326	Sailing: Grimstone
 2960 3146 0	2996 2287 0	Board Gangplank 59832				453	Sailing: The Onyx Crest
 2960 3146 0	2965 2608 0	Board Gangplank 59832				298	Sailing: 2965,2608
+2960 3146 0	1922 2757 0	Board Gangplank 59832				694	Sailing: Deepfin Point
 2960 3146 0	1958 3113 0	Board Gangplank 59832				711	Sailing: Minotaurs' Rest
 2960 3146 0	1953 4056 0	Board Gangplank 59832				1127	Sailing: Brittle Isle
+2960 3146 0	3060 2638 0	Board Gangplank 59832				288	Sailing: Dognose Island
 2960 3146 0	3069 2986 0	Board Gangplank 59832				118	Sailing: The Pandemonium (ship)
 2960 3146 0	3050 3192 0	Board Gangplank 59832				105	Sailing: Bay of Sarim
 1953 4056 0	2059 2605 0	Board Mooring point 59834				758	Sailing: Wintumber Island
@@ -2629,6 +2997,7 @@
 1953 4056 0	1513 2973 0	Board Mooring point 59834				763	Sailing: Sunset Coast
 1953 4056 0	1506 3402 0	Board Mooring point 59834				521	Sailing: Lands End
 1953 4056 0	2542 3764 0	Board Mooring point 59834				358	Sailing: Waterbirth Island
+1953 4056 0	1556 2769 0	Board Mooring point 59834				754	Sailing: Shimmering Atoll
 1953 4056 0	2579 2843 0	Board Mooring point 59834				793	Sailing: Corsair Cove
 1953 4056 0	2612 3841 0	Board Mooring point 59834				380	Sailing: Etceteria
 1953 4056 0	2660 2392 0	Board Mooring point 59834				975	Sailing: Charred Island
@@ -2648,14 +3017,73 @@
 1953 4056 0	2860 3970 0	Board Mooring point 59834				484	Sailing: Weiss
 1953 4056 0	1873 2983 0	Board Mooring point 59834				566	Sailing: Vatrachos Island
 1953 4056 0	2907 3225 0	Board Mooring point 59834				1116	Sailing: Lone oak island
+1953 4056 0	1860 3306 0	Board Mooring point 59834				406	Sailing: Port Roberts bank
 1953 4056 0	1892 3428 0	Board Mooring point 59834				341	Sailing: Chinchompa Island
 1953 4056 0	2927 4055 0	Board Mooring point 59834				518	Sailing: Grimstone
 1953 4056 0	2996 2287 0	Board Mooring point 59834				1118	Sailing: The Onyx Crest
 1953 4056 0	2965 2608 0	Board Mooring point 59834				1021	Sailing: 2965,2608
+1953 4056 0	1922 2757 0	Board Mooring point 59834				673	Sailing: Deepfin Point
 1953 4056 0	1958 3113 0	Board Mooring point 59834				490	Sailing: Minotaurs' Rest
 1953 4056 0	2960 3146 0	Board Mooring point 59834				1127	Sailing: Mudskipper Point
+1953 4056 0	3060 2638 0	Board Mooring point 59834				1063	Sailing: Dognose Island
 1953 4056 0	3069 2986 0	Board Mooring point 59834				1063	Sailing: The Pandemonium (ship)
 1953 4056 0	3050 3192 0	Board Mooring point 59834				1155	Sailing: Bay of Sarim
+3060 2638 0	2059 2605 0	Board Mooring point 59834				530	Sailing: Wintumber Island
+3060 2638 0	2095 3188 0	Board Mooring point 59834				613	Sailing: Lledrith Island
+3060 2638 0	2079 3689 0	Board Mooring point 59834				879	Sailing: Buccaneers' Haven
+3060 2638 0	3173 2368 0	Board Mooring point 59834				190	Sailing: The Summer Shore
+3060 2638 0	3145 2824 0	Board Mooring point 59834				124	Sailing: Sea Spirit Dock
+3060 2638 0	2143 3121 0	Board Mooring point 59834				573	Sailing: Port Tyras
+3060 2638 0	2157 3325 0	Board Mooring point 59834				677	Sailing: Tirannwn Bight
+3060 2638 0	2148 3531 0	Board Mooring point 59834				784	Sailing: Drumstick Isle
+3060 2638 0	2151 3880 0	Board Mooring point 59834				967	Sailing: Lunar Isle
+3060 2638 0	2193 2319 0	Board Mooring point 59834				498	Sailing: Sunbleak Island
+3060 2638 0	1201 2733 0	Board Mooring point 59834				964	Sailing: Laguna Aurorae
+3060 2638 0	2220 3466 0	Board Mooring point 59834				789	Sailing: Ynysdail
+3060 2638 0	2282 2821 0	Board Mooring point 59834				434	Sailing: 2282,2821
+3060 2638 0	3353 2215 0	Board Mooring point 59834				296	Sailing: The Little Pearl
+3060 2638 0	2344 2268 0	Board Mooring point 59834				425	Sailing: Rainbow's End
+3060 2638 0	2320 2774 0	Board Mooring point 59834				413	Sailing: Tear of the Soul
+3060 2638 0	2305 3689 0	Board Mooring point 59834				892	Sailing: Piscatoris bank
+3060 2638 0	2310 3781 0	Board Mooring point 59834				932	Sailing: Neitiznot
+3060 2638 0	2411 3781 0	Board Mooring point 59834				965	Sailing: Jatizso
+3060 2638 0	2467 2718 0	Board Mooring point 59834				334	Sailing: Anglers' Retreat
+3060 2638 0	1451 2969 0	Board Mooring point 59834				869	Sailing: Aldarin
+3060 2638 0	2532 2531 0	Board Mooring point 59834				298	Sailing: Isle of Bones
+3060 2638 0	1513 2973 0	Board Mooring point 59834				845	Sailing: Sunset Coast
+3060 2638 0	1506 3402 0	Board Mooring point 59834				915	Sailing: Lands End
+3060 2638 0	2542 3764 0	Board Mooring point 59834				1026	Sailing: Waterbirth Island
+3060 2638 0	1556 2769 0	Board Mooring point 59834				791	Sailing: Shimmering Atoll
+3060 2638 0	2579 2843 0	Board Mooring point 59834				299	Sailing: Corsair Cove
+3060 2638 0	2612 3841 0	Board Mooring point 59834				1069	Sailing: Etceteria
+3060 2638 0	2660 2392 0	Board Mooring point 59834				258	Sailing: Charred Island
+3060 2638 0	2651 2677 0	Board Mooring point 59834				233	Sailing: Void Knights' Outpost
+3060 2638 0	2685 3161 0	Board Mooring point 59834				367	Sailing: Port Khazard
+3060 2638 0	2670 3266 0	Board Mooring point 59834				420	Sailing: Necromancer Tower
+3060 2638 0	2629 3704 0	Board Mooring point 59834				1061	Sailing: Fremensund
+3060 2638 0	2751 2951 0	Board Mooring point 59834				255	Sailing: Cairn Isle
+3060 2638 0	2746 3304 0	Board Mooring point 59834				422	Sailing: Witchaven church
+3060 2638 0	1726 3453 0	Board Mooring point 59834				839	Sailing: Charcoal Burners
+3060 2638 0	1758 2655 0	Board Mooring point 59834				673	Sailing: The Crown Jewel
+3060 2638 0	1776 3141 0	Board Mooring point 59834				780	Sailing: Fortis Cothon
+3060 2638 0	2759 3229 0	Board Mooring point 59834				401	Sailing: North Brimhaven mine
+3060 2638 0	2796 3413 0	Board Mooring point 59834				455	Sailing: Keep Le Faye
+3060 2638 0	2878 3335 0	Board Mooring point 59834				394	Sailing: Entrana church
+3060 2638 0	1844 3688 0	Board Mooring point 59834				893	Sailing: Port Piscarilius
+3060 2638 0	2860 3970 0	Board Mooring point 59834				1210	Sailing: Weiss
+3060 2638 0	1873 2983 0	Board Mooring point 59834				671	Sailing: Vatrachos Island
+3060 2638 0	2907 3225 0	Board Mooring point 59834				337	Sailing: Lone oak island
+3060 2638 0	1860 3306 0	Board Mooring point 59834				737	Sailing: Port Roberts bank
+3060 2638 0	1892 3428 0	Board Mooring point 59834				772	Sailing: Chinchompa Island
+3060 2638 0	2927 4055 0	Board Mooring point 59834				1195	Sailing: Grimstone
+3060 2638 0	2996 2287 0	Board Mooring point 59834				203	Sailing: The Onyx Crest
+3060 2638 0	2965 2608 0	Board Mooring point 59834				70	Sailing: 2965,2608
+3060 2638 0	1922 2757 0	Board Mooring point 59834				607	Sailing: Deepfin Point
+3060 2638 0	1958 3113 0	Board Mooring point 59834				647	Sailing: Minotaurs' Rest
+3060 2638 0	2960 3146 0	Board Mooring point 59834				288	Sailing: Mudskipper Point
+3060 2638 0	1953 4056 0	Board Mooring point 59834				1063	Sailing: Brittle Isle
+3060 2638 0	3069 2986 0	Board Mooring point 59834				196	Sailing: The Pandemonium (ship)
+3060 2638 0	3050 3192 0	Board Mooring point 59834				302	Sailing: Bay of Sarim
 3069 2986 0	2059 2605 0	Board Gangplank 59832				583	Sailing: Wintumber Island
 3069 2986 0	2095 3188 0	Board Gangplank 59832				612	Sailing: Lledrith Island
 3069 2986 0	2079 3689 0	Board Gangplank 59832				879	Sailing: Buccaneers' Haven
@@ -2681,6 +3109,7 @@
 3069 2986 0	1513 2973 0	Board Gangplank 59832				866	Sailing: Sunset Coast
 3069 2986 0	1506 3402 0	Board Gangplank 59832				914	Sailing: Lands End
 3069 2986 0	2542 3764 0	Board Gangplank 59832				1026	Sailing: Waterbirth Island
+3069 2986 0	1556 2769 0	Board Gangplank 59832				816	Sailing: Shimmering Atoll
 3069 2986 0	2579 2843 0	Board Gangplank 59832				291	Sailing: Corsair Cove
 3069 2986 0	2612 3841 0	Board Gangplank 59832				1068	Sailing: Etceteria
 3069 2986 0	2660 2392 0	Board Gangplank 59832				385	Sailing: Charred Island
@@ -2700,13 +3129,16 @@
 3069 2986 0	2860 3970 0	Board Gangplank 59832				1209	Sailing: Weiss
 3069 2986 0	1873 2983 0	Board Gangplank 59832				680	Sailing: Vatrachos Island
 3069 2986 0	2907 3225 0	Board Gangplank 59832				167	Sailing: Lone oak island
+3069 2986 0	1860 3306 0	Board Gangplank 59832				737	Sailing: Port Roberts bank
 3069 2986 0	1892 3428 0	Board Gangplank 59832				771	Sailing: Chinchompa Island
 3069 2986 0	2927 4055 0	Board Gangplank 59832				1261	Sailing: Grimstone
 3069 2986 0	2996 2287 0	Board Gangplank 59832				378	Sailing: The Onyx Crest
 3069 2986 0	2965 2608 0	Board Gangplank 59832				225	Sailing: 2965,2608
+3069 2986 0	1922 2757 0	Board Gangplank 59832				629	Sailing: Deepfin Point
 3069 2986 0	1958 3113 0	Board Gangplank 59832				647	Sailing: Minotaurs' Rest
 3069 2986 0	2960 3146 0	Board Gangplank 59832				118	Sailing: Mudskipper Point
 3069 2986 0	1953 4056 0	Board Gangplank 59832				1063	Sailing: Brittle Isle
+3069 2986 0	3060 2638 0	Board Gangplank 59832				196	Sailing: Dognose Island
 3069 2986 0	3050 3192 0	Board Gangplank 59832				127	Sailing: Bay of Sarim
 3050 3192 0	2059 2605 0	Board Gangplank 59832				676	Sailing: Wintumber Island
 3050 3192 0	2095 3188 0	Board Gangplank 59832				704	Sailing: Lledrith Island
@@ -2733,6 +3165,7 @@
 3050 3192 0	1513 2973 0	Board Gangplank 59832				958	Sailing: Sunset Coast
 3050 3192 0	1506 3402 0	Board Gangplank 59832				1007	Sailing: Lands End
 3050 3192 0	2542 3764 0	Board Gangplank 59832				1118	Sailing: Waterbirth Island
+3050 3192 0	1556 2769 0	Board Gangplank 59832				908	Sailing: Shimmering Atoll
 3050 3192 0	2579 2843 0	Board Gangplank 59832				383	Sailing: Corsair Cove
 3050 3192 0	2612 3841 0	Board Gangplank 59832				1160	Sailing: Etceteria
 3050 3192 0	2660 2392 0	Board Gangplank 59832				478	Sailing: Charred Island
@@ -2752,11 +3185,14 @@
 3050 3192 0	2860 3970 0	Board Gangplank 59832				1302	Sailing: Weiss
 3050 3192 0	1873 2983 0	Board Gangplank 59832				772	Sailing: Vatrachos Island
 3050 3192 0	2907 3225 0	Board Gangplank 59832				154	Sailing: Lone oak island
+3050 3192 0	1860 3306 0	Board Gangplank 59832				829	Sailing: Port Roberts bank
 3050 3192 0	1892 3428 0	Board Gangplank 59832				863	Sailing: Chinchompa Island
 3050 3192 0	2927 4055 0	Board Gangplank 59832				1353	Sailing: Grimstone
 3050 3192 0	2996 2287 0	Board Gangplank 59832				479	Sailing: The Onyx Crest
 3050 3192 0	2965 2608 0	Board Gangplank 59832				326	Sailing: 2965,2608
+3050 3192 0	1922 2757 0	Board Gangplank 59832				722	Sailing: Deepfin Point
 3050 3192 0	1958 3113 0	Board Gangplank 59832				739	Sailing: Minotaurs' Rest
 3050 3192 0	2960 3146 0	Board Gangplank 59832				105	Sailing: Mudskipper Point
 3050 3192 0	1953 4056 0	Board Gangplank 59832				1155	Sailing: Brittle Isle
+3050 3192 0	3060 2638 0	Board Gangplank 59832				302	Sailing: Dognose Island
 3050 3192 0	3069 2986 0	Board Gangplank 59832				127	Sailing: The Pandemonium (ship)
