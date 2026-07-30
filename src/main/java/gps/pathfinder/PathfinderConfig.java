@@ -325,6 +325,7 @@ public class PathfinderConfig
 		copy.calculationCutoffMillis = calculationCutoffMillis;
 		copy.avoidWilderness = avoidWilderness;
 		copy.spiritTreeSmartMode = spiritTreeSmartMode;
+		copy.extraTransports = extraTransports;
 		copy.includeBankPath = includeBankPath;
 		copy.accessibleBankTiles = accessibleBankTiles;
 		copy.destinations = destinations;
@@ -1166,6 +1167,18 @@ public class PathfinderConfig
 	 * data — safe to call from the alt-routes worker thread, eliminating a client-thread round-trip
 	 * per search. Planning copies only; no-op until a refresh has captured the base lists.
 	 */
+	/**
+	 * Per-generation synthetic transports (sailing sea legs to a water target). Applied during
+	 * {@link #rebuildAvailabilityWithExclusions} through the same {@link #useTransport} gates as
+	 * static rows, so the sailing master toggle governs them; carried onto parallel-search copies.
+	 */
+	private List<Transport> extraTransports = List.of();
+
+	public void setExtraTransports(List<Transport> extras)
+	{
+		extraTransports = extras == null ? List.of() : extras;
+	}
+
 	public void rebuildAvailabilityWithExclusions(Set<TeleportMethod> excluded)
 	{
 		List<Transport> baseWithoutBank = baseUsableWithoutBank;
@@ -1187,6 +1200,14 @@ public class PathfinderConfig
 		{
 			if (excluded.isEmpty() || !excluded.contains(TeleportMethod.fromTransport(transport)))
 			{
+				withBank.add(transport);
+			}
+		}
+		for (Transport transport : extraTransports)
+		{
+			if (useTransport(transport))
+			{
+				withoutBank.add(transport);
 				withBank.add(transport);
 			}
 		}

@@ -234,6 +234,14 @@ public class AlternativeRoutesService
 				emit(gen, listener, List.of(), List.of(), Map.of(), true);
 				return;
 			}
+			// Water targets: synthesize the final sea legs (board at a nearby mooring, sail
+			// straight out) so a pin on the ocean is a real destination, not a closest-point miss.
+			List<Transport> seaLegs = new ArrayList<>();
+			for (int target : ends)
+			{
+				seaLegs.addAll(SailingSea.seaLegTransports(target, 6));
+			}
+			planningConfig.setExtraTransports(seaLegs);
 			catalog = new ArrayList<>(planningConfig.getMethodCatalog());
 			// The catalog is the full method universe in every mode; this maps each entry the player can't
 			// use straight from the inventory to WHY (missing item/level/quest, in the bank, not unlocked),
