@@ -3387,7 +3387,7 @@ public class ShortestPathPlugin extends Plugin
 	 * file isn't on the classpath.
 	 */
 	/** The build's git commit (stamped by processResources), or "unknown" in odd builds. */
-	static String buildCommit()
+	public static String buildCommit()
 	{
 		try (java.io.InputStream in = ShortestPathPlugin.class.getResourceAsStream("/gps-build.properties"))
 		{
@@ -3409,7 +3409,7 @@ public class ShortestPathPlugin extends Plugin
 		return "unknown";
 	}
 
-	static String pluginVersion()
+	public static String pluginVersion()
 	{
 		try (java.io.InputStream in = ShortestPathPlugin.class.getResourceAsStream("/runelite-plugin.properties"))
 		{
