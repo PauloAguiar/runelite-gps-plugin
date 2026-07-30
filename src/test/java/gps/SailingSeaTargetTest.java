@@ -80,6 +80,21 @@ public class SailingSeaTargetTest
 	}
 
 	@Test
+	public void seaTrackFollowsWater()
+	{
+		// The rendering track for a sailing leg: every waypoint must be genuinely sailable
+		// water, and both ends must sit by the leg's endpoints (mooring land / ocean pin).
+		int mooringLand = WorldPointUtil.packWorldPoint(3069, 2986, 0);
+		int[] track = SailingSea.seaPath(mooringLand, SEA_PIN);
+		assertTrue("a track must exist between a port and the ocean pin", track != null);
+		assertTrue("a real track has many waypoints, not a straight hop", track.length > 10);
+		for (int waypoint : track)
+		{
+			assertTrue("every waypoint is sailable water", SailingSea.isSailable(waypoint));
+		}
+	}
+
+	@Test
 	public void oceanPinReachableWithSailingOn()
 	{
 		Pathfinder pathfinder = new Pathfinder(planning(true), LUMBRIDGE, Set.of(SEA_PIN));

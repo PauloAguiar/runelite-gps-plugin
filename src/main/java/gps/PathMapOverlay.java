@@ -58,7 +58,7 @@ public class PathMapOverlay extends Overlay
 			java.util.List<PathStep> path = plugin.getDisplayPath();
 			Point cursorPos = client.getMouseCanvasPosition();
 			graphics.setColor(colour);
-			drawArrowPath(graphics, path);
+			drawArrowPath(graphics, path, plugin.getDisplaySailingEdges());
 			for (int target : plugin.getPathTargets())
 			{
 				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
@@ -78,7 +78,8 @@ public class PathMapOverlay extends Overlay
 	 * teleport/transport jumps are dashed. (Arrowhead technique adapted from Quest Helper's
 	 * DirectionArrow, see {@link ArrowHead}.)
 	 */
-	private void drawArrowPath(Graphics2D graphics, java.util.List<PathStep> path)
+	private void drawArrowPath(Graphics2D graphics, java.util.List<PathStep> path,
+		java.util.Set<Integer> sailingEdges)
 	{
 		final java.awt.Stroke walkStroke = new BasicStroke(2, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
 		final java.awt.Stroke jumpStroke = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{9}, 0);
@@ -91,8 +92,21 @@ public class PathMapOverlay extends Overlay
 
 			if (WorldPointUtil.distanceBetween(from, next) > 1)
 			{
-				// Teleport/transport jump: dashed segment.
-				drawMapSegment(graphics, from, next, jumpStroke);
+				// Sailing leg: draw the actual sea track (bounded Dijkstra over the shipped
+				// ocean, cached per leg) as a solid line; anything else — and any sailing leg
+				// whose track cannot be computed — stays the dashed jump hint.
+				int[] track = sailingEdges.contains(i) ? SailingSea.seaPath(from, next) : null;
+				if (track != null)
+				{
+					for (int s = 0; s < track.length - 1; s++)
+					{
+						drawMapSegment(graphics, track[s], track[s + 1], walkStroke);
+					}
+				}
+				else
+				{
+					drawMapSegment(graphics, from, next, jumpStroke);
+				}
 				i++;
 				continue;
 			}

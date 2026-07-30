@@ -2568,6 +2568,30 @@ public class ShortestPathPlugin extends Plugin
 		return route != null ? route.getPath() : List.of();
 	}
 
+	/**
+	 * Path indexes of the displayed route where a SAILING leg departs — the overlays draw
+	 * those jumps as real sea tracks ({@link SailingSea#seaPath}) instead of dashed lines.
+	 */
+	public Set<Integer> getDisplaySailingEdges()
+	{
+		RouteOption route = getDisplayedRoute();
+		if (route == null)
+		{
+			return Set.of();
+		}
+		Set<Integer> edges = new HashSet<>();
+		List<TeleportMethod> methods = route.getMethods();
+		List<Integer> indexes = route.getMethodEdgeIndexes();
+		for (int i = 0; i < methods.size() && i < indexes.size(); i++)
+		{
+			if (methods.get(i).getType() == gps.transport.TransportType.SAILING)
+			{
+				edges.add(indexes.get(i));
+			}
+		}
+		return edges;
+	}
+
 	public Set<TeleportMethod> getUserExclusions()
 	{
 		return new HashSet<>(userExclusions);

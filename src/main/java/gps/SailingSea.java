@@ -260,6 +260,154 @@ public final class SailingSea
 		return result;
 	}
 
+	/** Sea tracks for the displayed route's sailing legs, keyed by (from, to). */
+	private static final java.util.LinkedHashMap<Long, int[]> trackCache =
+		new java.util.LinkedHashMap<Long, int[]>(16, 0.75f, true)
+		{
+			@Override
+			protected boolean removeEldestEntry(java.util.Map.Entry<Long, int[]> eldest)
+			{
+				return size() > 8;
+			}
+		};
+
+	/**
+	 * The actual sea track between two sailing-leg endpoints, as decimated packed waypoints —
+	 * what the overlays draw instead of a straight jump line. Runs a bounded 16-bearing
+	 * Dijkstra inside the leg's bounding box (+60 tiles margin) on first request and caches;
+	 * null when either endpoint has no sailable water within 6 tiles or no track fits the box
+	 * (the caller falls back to the dashed jump).
+	 */
+	public static synchronized int[] seaPath(int fromPacked, int toPacked)
+	{
+		long key = (long) fromPacked << 32 | toPacked & 0xFFFFFFFFL;
+		if (trackCache.containsKey(key))
+		{
+			return trackCache.get(key);
+		}
+		int[] track = computeSeaPath(fromPacked, toPacked);
+		trackCache.put(key, track);
+		return track;
+	}
+
+	private static int[] computeSeaPath(int fromPacked, int toPacked)
+	{
+		SailingSea sea = get();
+		if (sea.width == 0)
+		{
+			return null;
+		}
+		int start = nearestSailable(sea, fromPacked);
+		int goal = nearestSailable(sea, toPacked);
+		if (start < 0 || goal < 0 || start == goal)
+		{
+			return null;
+		}
+		int margin = 60;
+		int x0 = Math.max(0, Math.min(start % sea.width, goal % sea.width) - margin);
+		int y0 = Math.max(0, Math.min(start / sea.width, goal / sea.width) - margin);
+		int x1 = Math.min(sea.width - 1, Math.max(start % sea.width, goal % sea.width) + margin);
+		int y1 = Math.min(sea.height - 1, Math.max(start / sea.width, goal / sea.width) + margin);
+		int boxWidth = x1 - x0 + 1;
+		int boxHeight = y1 - y0 + 1;
+		int[] dist = new int[boxWidth * boxHeight];
+		int[] parent = new int[boxWidth * boxHeight];
+		java.util.Arrays.fill(dist, Integer.MAX_VALUE);
+		java.util.Arrays.fill(parent, -1);
+		int boxStart = (start / sea.width - y0) * boxWidth + (start % sea.width - x0);
+		int boxGoal = (goal / sea.width - y0) * boxWidth + (goal % sea.width - x0);
+		java.util.PriorityQueue<long[]> queue =
+			new java.util.PriorityQueue<>(Comparator.comparingLong(a -> a[0]));
+		dist[boxStart] = 0;
+		queue.add(new long[]{0, boxStart});
+		while (!queue.isEmpty())
+		{
+			long[] head = queue.poll();
+			int index = (int) head[1];
+			if (head[0] > dist[index])
+			{
+				continue;
+			}
+			if (index == boxGoal)
+			{
+				break;
+			}
+			int x = index % boxWidth;
+			int y = index / boxWidth;
+			for (int[] move : MOVES)
+			{
+				int nx = x + move[0];
+				int ny = y + move[1];
+				if (nx < 0 || ny < 0 || nx >= boxWidth || ny >= boxHeight
+					|| !bit(sea, x0 + nx, y0 + ny))
+				{
+					continue;
+				}
+				if (Math.abs(move[0]) + Math.abs(move[1]) == 3
+					&& (!bit(sea, x0 + x + move[0] / 2, y0 + y + move[1] / 2)
+						|| !bit(sea,
+							Math.abs(move[0]) == 2 ? x0 + x + move[0] / 2 : x0 + x + move[0],
+							Math.abs(move[0]) == 2 ? y0 + y + move[1] : y0 + y + move[1] / 2)))
+				{
+					continue;
+				}
+				int next = ny * boxWidth + nx;
+				if (dist[index] + move[2] < dist[next])
+				{
+					dist[next] = dist[index] + move[2];
+					parent[next] = index;
+					queue.add(new long[]{dist[next], next});
+				}
+			}
+		}
+		if (dist[boxGoal] == Integer.MAX_VALUE)
+		{
+			return null;
+		}
+		java.util.List<Integer> waypoints = new ArrayList<>();
+		for (int at = boxGoal; at != -1; at = parent[at])
+		{
+			waypoints.add(WorldPointUtil.packWorldPoint(
+				sea.minX + x0 + at % boxWidth, sea.minY + y0 + at / boxWidth, 0));
+		}
+		java.util.Collections.reverse(waypoints);
+		int[] track = new int[(waypoints.size() + 2) / 3 + 1];
+		int n = 0;
+		for (int i = 0; i < waypoints.size(); i += 3)
+		{
+			track[n++] = waypoints.get(i);
+		}
+		track[n] = waypoints.get(waypoints.size() - 1);
+		return n + 1 == track.length ? track : java.util.Arrays.copyOf(track, n + 1);
+	}
+
+	/** Grid index of the nearest sailable tile within 6 of the endpoint, or -1. */
+	private static int nearestSailable(SailingSea sea, int packed)
+	{
+		int px = WorldPointUtil.unpackWorldX(packed);
+		int py = WorldPointUtil.unpackWorldY(packed);
+		for (int radius = 0; radius <= 6; radius++)
+		{
+			for (int dx = -radius; dx <= radius; dx++)
+			{
+				for (int dy = -radius; dy <= radius; dy++)
+				{
+					if (Math.max(Math.abs(dx), Math.abs(dy)) != radius)
+					{
+						continue;
+					}
+					int x = px + dx - sea.minX;
+					int y = py + dy - sea.minY;
+					if (x >= 0 && y >= 0 && x < sea.width && y < sea.height && bit(sea, x, y))
+					{
+						return y * sea.width + x;
+					}
+				}
+			}
+		}
+		return -1;
+	}
+
 	/** Local-grid sailability test used by the wet-endpoint flood's move loop. */
 	private static boolean bit(SailingSea sea, int x, int y)
 	{
