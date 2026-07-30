@@ -89,8 +89,8 @@ public class SailingSeaTargetTest
 		// exact case that returned null and left the route dashed (capture 20260729-211852).
 		int pierMooring = WorldPointUtil.packWorldPoint(2965, 2608, 0);
 		assertTrue("pier moorings with distant water must still produce a track",
-			SailingSea.seaPath(pierMooring, SEA_PIN) != null);
-		int[] track = SailingSea.seaPath(mooringLand, SEA_PIN);
+			SailingSea.seaPathBlocking(pierMooring, SEA_PIN) != null);
+		int[] track = SailingSea.seaPathBlocking(mooringLand, SEA_PIN);
 		assertTrue("a track must exist between a port and the ocean pin", track != null);
 		assertTrue("a real track has many waypoints, not a straight hop", track.length > 10);
 		for (int waypoint : track)

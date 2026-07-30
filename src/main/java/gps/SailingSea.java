@@ -278,15 +278,63 @@ public final class SailingSea
 	 * null when either endpoint has no sailable water within 6 tiles or no track fits the box
 	 * (the caller falls back to the dashed jump).
 	 */
-	public static synchronized int[] seaPath(int fromPacked, int toPacked)
+	private static final java.util.Set<Long> tracksInFlight =
+		java.util.concurrent.ConcurrentHashMap.newKeySet();
+	private static final java.util.concurrent.ExecutorService trackExecutor =
+		java.util.concurrent.Executors.newSingleThreadExecutor(runnable ->
+		{
+			Thread thread = new Thread(runnable, "gps-sea-track");
+			thread.setDaemon(true);
+			return thread;
+		});
+
+	/**
+	 * The overlay-facing track lookup: NEVER computes on the caller's thread. Absent tracks
+	 * schedule a background computation and return null — the overlay draws the dashed hint
+	 * for a beat and the solid track appears once cached. Long legs (rounding a continent,
+	 * threading to Weiss) can take seconds on the full grid; render must not pay that.
+	 */
+	public static int[] seaPath(int fromPacked, int toPacked)
 	{
 		long key = (long) fromPacked << 32 | toPacked & 0xFFFFFFFFL;
-		if (trackCache.containsKey(key))
+		synchronized (trackCache)
 		{
-			return trackCache.get(key);
+			if (trackCache.containsKey(key))
+			{
+				return trackCache.get(key);
+			}
+		}
+		if (tracksInFlight.add(key))
+		{
+			trackExecutor.submit(() ->
+			{
+				int[] track = seaPathBlocking(fromPacked, toPacked);
+				synchronized (trackCache)
+				{
+					trackCache.put(key, track);
+				}
+				tracksInFlight.remove(key);
+			});
+		}
+		return null;
+	}
+
+	/** Synchronous computation+cache, for tests and background workers. */
+	static int[] seaPathBlocking(int fromPacked, int toPacked)
+	{
+		long key = (long) fromPacked << 32 | toPacked & 0xFFFFFFFFL;
+		synchronized (trackCache)
+		{
+			if (trackCache.containsKey(key))
+			{
+				return trackCache.get(key);
+			}
 		}
 		int[] track = computeSeaPath(fromPacked, toPacked);
-		trackCache.put(key, track);
+		synchronized (trackCache)
+		{
+			trackCache.put(key, track);
+		}
 		return track;
 	}
 
@@ -297,17 +345,42 @@ public final class SailingSea
 		{
 			return null;
 		}
-		int start = nearestSailable(sea, fromPacked);
-		int goal = nearestSailable(sea, toPacked);
+		int start = trackEndpoint(sea, fromPacked);
+		int goal = trackEndpoint(sea, toPacked);
 		if (start < 0 || goal < 0 || start == goal)
 		{
 			return null;
 		}
-		int margin = 60;
-		int x0 = Math.max(0, Math.min(start % sea.width, goal % sea.width) - margin);
-		int y0 = Math.max(0, Math.min(start / sea.width, goal / sea.width) - margin);
-		int x1 = Math.min(sea.width - 1, Math.max(start % sea.width, goal % sea.width) + margin);
-		int y1 = Math.min(sea.height - 1, Math.max(start / sea.width, goal / sea.width) + margin);
+		// Leg bounding box + margin first (cheap, covers open-water legs); a leg that must
+		// round a continent — Sunset coast to Kandarin dips far south of its box — retries on
+		// the full grid. Both results cache, so the expensive case pays once per leg.
+		// Staged margins: 60 covers open-water legs; 600 covers rounding a continent
+		// (Sunset coast -> Kandarin dips ~500 south of its leg box). No full-grid stage —
+		// a 6M-cell Dijkstra is too heavy for the render thread even once.
+		int[] track = computeSeaPathInBox(sea, start, goal, 60);
+		if (track == null)
+		{
+			track = computeSeaPathInBox(sea, start, goal, 600);
+		}
+		if (track == null)
+		{
+			// Rounding half the world (Weiss, Grimstone): full grid, seconds — but only ever
+			// off-thread and only once per leg, then cached.
+			track = computeSeaPathInBox(sea, start, goal, Integer.MAX_VALUE);
+		}
+		return track;
+	}
+
+	private static int[] computeSeaPathInBox(SailingSea sea, int start, int goal, int margin)
+	{
+		int x0 = margin >= sea.width ? 0
+			: Math.max(0, Math.min(start % sea.width, goal % sea.width) - margin);
+		int y0 = margin >= sea.height ? 0
+			: Math.max(0, Math.min(start / sea.width, goal / sea.width) - margin);
+		int x1 = margin >= sea.width ? sea.width - 1
+			: Math.min(sea.width - 1, Math.max(start % sea.width, goal % sea.width) + margin);
+		int y1 = margin >= sea.height ? sea.height - 1
+			: Math.min(sea.height - 1, Math.max(start / sea.width, goal / sea.width) + margin);
 		int boxWidth = x1 - x0 + 1;
 		int boxHeight = y1 - y0 + 1;
 		int[] dist = new int[boxWidth * boxHeight];
@@ -386,6 +459,30 @@ public final class SailingSea
 	 * the mooring dumper pairs land tiles with water up to 8 tiles away (piers), and the track
 	 * must reach the water from the same land tile the transport departs from.
 	 */
+	/**
+	 * The sea tile a track starts/ends at. A mooring LAND tile maps to its PAIRED water
+	 * endpoint from the shipped data — the radius spiral can snap to a disconnected inland
+	 * magenta pocket instead of the harbour (Sunset coast: every track from that port flooded
+	 * a puddle, returned null, and dashed the whole port). Water tiles map to themselves.
+	 */
+	private static int trackEndpoint(SailingSea sea, int packed)
+	{
+		int x = WorldPointUtil.unpackWorldX(packed);
+		int y = WorldPointUtil.unpackWorldY(packed);
+		for (int[] mooring : sea.moorings)
+		{
+			if (mooring[0] == x && mooring[1] == y)
+			{
+				return (mooring[3] - sea.minY) * sea.width + (mooring[2] - sea.minX);
+			}
+		}
+		if (isSailable(packed))
+		{
+			return (y - sea.minY) * sea.width + (x - sea.minX);
+		}
+		return nearestSailable(sea, packed);
+	}
+
 	private static int nearestSailable(SailingSea sea, int packed)
 	{
 		int px = WorldPointUtil.unpackWorldX(packed);
