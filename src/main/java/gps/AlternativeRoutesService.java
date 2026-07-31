@@ -305,6 +305,26 @@ public class AlternativeRoutesService
 			// to seed extra routes if the exclusion loop dries up before the limit.
 			seedCandidates = new ArrayList<>(Arrays.asList(
 				planningConfig.getUsableTeleports(mode == AlternativeRoutesMode.OWNED_WITH_BANK)));
+			// Aboard: the closest-port disembark always gets its own seeded search, so the
+			// "park the boat properly" option is always on the card next to any
+			// teleport-and-abandon routes.
+			if (planningConfig.isOnSailingBoat())
+			{
+				Transport nearestPort = null;
+				for (Transport leg : seaLegs)
+				{
+					if (leg.getOrigin() == start && leg.getDisplayInfo() != null
+						&& leg.getDisplayInfo().startsWith("Disembark")
+						&& (nearestPort == null || leg.getDuration() < nearestPort.getDuration()))
+					{
+						nearestPort = leg;
+					}
+				}
+				if (nearestPort != null)
+				{
+					seedCandidates.add(0, nearestPort);
+				}
+			}
 		}
 
 		// Per-generation preprocessing: one multi-source reverse flood from the target set builds a

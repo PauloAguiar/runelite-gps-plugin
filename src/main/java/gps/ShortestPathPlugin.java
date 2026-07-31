@@ -880,7 +880,25 @@ public class ShortestPathPlugin extends Plugin
 	private boolean hasArrived(int currentLocation)
 	{
 		Set<Integer> zone = getArrivalTiles();
-		if (zone.isEmpty() || !zone.contains(currentLocation))
+		boolean inZone = !zone.isEmpty() && zone.contains(currentLocation);
+		if (!inZone)
+		{
+			// Wet arrival: the arrival zone floods over WALKABLE tiles and the ocean is
+			// sealed, so a water pin's zone is empty and on-foot arrival can never fire at
+			// sea. A boat parked within the sea arrival radius of a sailable target IS
+			// arrival — the same 8-tile radius the route tracker stamps with (hull anchor,
+			// parking clearance).
+			for (int target : pathTargets)
+			{
+				if (SailingSea.isSailable(target)
+					&& WorldPointUtil.distanceBetween(currentLocation, target) <= 8)
+				{
+					inZone = true;
+					break;
+				}
+			}
+		}
+		if (!inZone)
 		{
 			return false;
 		}

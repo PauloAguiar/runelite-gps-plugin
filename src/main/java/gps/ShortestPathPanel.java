@@ -2033,6 +2033,15 @@ public class ShortestPathPanel extends PluginPanel
 				+ " calibration pass.</body></html>",
 			v -> plugin.setPanelConfig("useSailing", v));
 		body.add(master);
+		JCheckBox abandon = configCheckBox("Teleports may abandon the boat",
+			config.sailingTeleportAbandon(),
+			"<html><body style='width:220px'>Aboard, teleport routes leave the boat where it"
+				+ " floats.<br><br>Off: routes from the water only disembark at moorings and port"
+				+ " berths — the boat is never left at sea.</body></html>",
+			v -> plugin.setPanelConfig("sailingTeleportAbandon", v));
+		abandon.setEnabled(sailingOn);
+		abandon.setBorder(new EmptyBorder(2, 18, 2, 0));
+		body.add(abandon);
 		section.add(body);
 		return section;
 	}

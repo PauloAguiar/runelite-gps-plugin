@@ -1431,6 +1431,14 @@ public class PathfinderConfig
 	{
 		TransportType type = transport.getType();
 
+		// Aboard, teleporting away abandons the boat where it floats. Legal in game and often
+		// optimal, but the player decides: with abandonment forbidden, aboard routes may only
+		// leave the water through moorings and port berths.
+		if (isOnSailingBoat && type.isTeleport() && !config.sailingTeleportAbandon())
+		{
+			return false;
+		}
+
 		// Master sailing gate: sailing is a structural world switch (own Travel options
 		// section), not a catalog method — with it off, sailing edges must not exist in ANY
 		// mode, planning included, or "every method excluded" would still sail to islands.

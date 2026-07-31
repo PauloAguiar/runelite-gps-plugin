@@ -148,6 +148,20 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigItem(
 		hidden = true,
+		keyName = "sailingTeleportAbandon",
+		name = "Teleports may abandon the boat",
+		description = "Whether routes may teleport away while aboard, leaving the boat where it floats.<br>" +
+			"Off: aboard routes only disembark at moorings and ports",
+		position = 159,
+		section = sectionSettings
+	)
+	default boolean sailingTeleportAbandon()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		hidden = true,
 		keyName = "useFairyRings",
 		name = "Use fairy rings",
 		description = "Whether to include fairy rings in the path.<br>" +
