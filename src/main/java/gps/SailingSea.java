@@ -18,6 +18,7 @@ import java.util.zip.InflaterInputStream;
  * mooring's land tile, sail straight out to the target. Durations use the same PROVISIONAL
  * speed model as the generated port-to-port rows until the calibration pass.
  */
+@lombok.extern.slf4j.Slf4j
 public final class SailingSea
 {
 	private static final double TILES_PER_TICK = 2.0;
@@ -316,6 +317,8 @@ public final class SailingSea
 				}
 				catch (RuntimeException e)
 				{
+					log.warn("sea track computation failed for {} -> {}",
+						fromPacked, toPacked, e);
 					synchronized (trackCache)
 					{
 						trackCache.put(key, null);
