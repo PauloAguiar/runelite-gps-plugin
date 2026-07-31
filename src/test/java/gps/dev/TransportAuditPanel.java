@@ -165,6 +165,18 @@ class TransportAuditPanel extends PluginPanel
 		collisionDump.addActionListener(e -> plugin.requestLiveCollisionDump(
 			message -> javax.swing.SwingUtilities.invokeLater(() -> builderStatus.setText(message))));
 		top.add(collisionDump);
+		JButton vesselDump = new JButton("Dump moored vessels");
+		vesselDump.setFont(FontManager.getRunescapeSmallFont());
+		vesselDump.setFocusable(false);
+		vesselDump.setMargin(new Insets(2, 6, 2, 6));
+		vesselDump.setAlignmentX(Component.LEFT_ALIGNMENT);
+		vesselDump.setToolTipText("<html>Every WorldEntity vessel in the scene (except your own boat):<br>"
+			+ "position + hull bounds, appended to gps-debug/sea-obstacles.tsv.<br>"
+			+ "Moored ships block hulls at a layer NO collision flags expose —<br>"
+			+ "this harvest is the only way the sea map learns them.</html>");
+		vesselDump.addActionListener(e -> plugin.requestVesselDump(
+			message -> javax.swing.SwingUtilities.invokeLater(() -> builderStatus.setText(message))));
+		top.add(vesselDump);
 		// ONE search box over the whole list — findings, backlog, meta and known rows alike.
 		// Deliberately focusable (typing is the point); clicking the game world releases focus.
 		searchBar.setIcon(net.runelite.client.ui.components.IconTextField.Icon.SEARCH);

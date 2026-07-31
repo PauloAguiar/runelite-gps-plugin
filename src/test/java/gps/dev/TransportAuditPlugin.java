@@ -1644,6 +1644,84 @@ public class TransportAuditPlugin extends Plugin
 		clientThread.invokeLater(() -> feedback.accept(dumpLiveCollision()));
 	}
 
+	/** Panel entry point: harvest every moored vessel in the scene (see sea-obstacles.tsv). */
+	void requestVesselDump(java.util.function.Consumer<String> feedback)
+	{
+		clientThread.invokeLater(() -> feedback.accept(dumpMooredVessels()));
+	}
+
+	/**
+	 * CLIENT THREAD. Moored vessels (NPC galleons, ambient port ships) are WorldEntities:
+	 * their hull blocking lives in a layer neither the cache nor the top-level collision
+	 * flags expose (field-verified: two live dumps beside a galleon showed ZERO divergent
+	 * tiles). Harvesting position + config hull bounds is the only way the shipped sea map
+	 * can learn to route around them. The player's own boat is skipped.
+	 */
+	private String dumpMooredVessels()
+	{
+		net.runelite.api.WorldView top = client.getTopLevelWorldView();
+		net.runelite.api.Player player = client.getLocalPlayer();
+		if (top == null)
+		{
+			return "no top-level world view";
+		}
+		int ownViewId = player != null && player.getWorldView() != null
+			? player.getWorldView().getId() : -1;
+		StringBuilder rows = new StringBuilder();
+		int count = 0;
+		for (net.runelite.api.WorldEntity entity : top.worldEntities())
+		{
+			if (entity == null || entity.getConfig() == null || (entity.getWorldView() != null && entity.getWorldView().getId() == ownViewId))
+			{
+				continue;
+			}
+			net.runelite.api.coords.LocalPoint local = entity.getLocalLocation();
+			if (local == null)
+			{
+				continue;
+			}
+			net.runelite.api.coords.WorldPoint world =
+				net.runelite.api.coords.WorldPoint.fromLocalInstance(client, local);
+			if (world == null)
+			{
+				continue;
+			}
+			net.runelite.api.WorldEntityConfig config = entity.getConfig();
+			rows.append(config.getId()).append('\t')
+				.append(world.getX()).append('\t').append(world.getY()).append('\t')
+				.append(config.getBoundsX()).append('\t').append(config.getBoundsY()).append('\t')
+				.append(config.getBoundsWidth()).append('\t').append(config.getBoundsHeight())
+				.append('\t').append(entity.getOrientation())
+				.append('\t').append(config.getCategory()).append('\n');
+			count++;
+		}
+		if (count == 0)
+		{
+			return "no moored vessels in scene";
+		}
+		try
+		{
+			java.io.File dir = new java.io.File(net.runelite.client.RuneLite.RUNELITE_DIR, "gps-debug");
+			dir.mkdirs();
+			java.io.File out = new java.io.File(dir, "sea-obstacles.tsv");
+			boolean fresh = !out.exists();
+			try (java.io.FileWriter writer = new java.io.FileWriter(out, true))
+			{
+				if (fresh)
+				{
+					writer.write("# Moored vessels harvested by the audit tool: configId\tx\ty\t"
+						+ "boundsX\tboundsY\tboundsW\tboundsH\torientation\tcategory\n");
+				}
+				writer.write(rows.toString());
+			}
+			return count + " vessel(s) appended to " + out.getName();
+		}
+		catch (java.io.IOException e)
+		{
+			return "vessel dump failed: " + e.getMessage();
+		}
+	}
+
 	/** CLIENT THREAD. One wake sample per tick while aboard, deduplicated when idle. */
 	private void sampleBoatWake()
 	{
