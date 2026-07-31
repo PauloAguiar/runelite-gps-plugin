@@ -83,6 +83,24 @@ public class SailingSeaTargetTest
 	}
 
 	@Test
+	public void abandonForbiddenGatesTeleportsByPosition()
+	{
+		// Abandonment forbidden: no casting from the helm (water nodes), but after
+		// disembarking (land nodes) teleports are legal — the config-wide kill made every
+		// post-landing continuation walk-only.
+		when(client.getVarbitValue(net.runelite.api.gameval.VarbitID.SAILING_BOARDED_BOAT))
+			.thenReturn(1);
+		when(config.sailingTeleportAbandon()).thenReturn(false);
+		PathfinderConfig planning = planning(true);
+		int helm = WorldPointUtil.packWorldPoint(3091, 2955, 0);
+		int lumbridge = WorldPointUtil.packWorldPoint(3222, 3218, 0);
+		assertTrue("no teleports from the helm", planning.teleportsBlockedAt(helm));
+		assertTrue("teleports fine on land", !planning.teleportsBlockedAt(lumbridge));
+		when(config.sailingTeleportAbandon()).thenReturn(true);
+		assertTrue("abandon allowed: helm teleports fine", !planning.teleportsBlockedAt(helm));
+	}
+
+	@Test
 	public void aboardStartRoutesToWaterAndLand()
 	{
 		// Player aboard mid-ocean: without start-side legs the search dies on its sealed

@@ -190,6 +190,18 @@ public class PathfinderConfig
 	{
 		return isOnSailingBoat;
 	}
+
+	/**
+	 * With boat abandonment forbidden, WATER nodes must not expand global teleports — you
+	 * cannot cast away from the helm — but LAND nodes may: disembark first, then teleport.
+	 * The earlier config-wide teleport kill made every post-landing continuation walk-only
+	 * (field capture 20260731-134750: 'very inefficient path after getting back to port').
+	 */
+	public boolean teleportsBlockedAt(int packed)
+	{
+		return isOnSailingBoat && !config.sailingTeleportAbandon()
+			&& gps.SailingSea.isSailable(packed);
+	}
 	/**
 	 * Alternative-routes "planning" mode. When true the per-player possession/unlock gates (transport
 	 * type toggles, item/rune/level/quest/var requirements, jewellery-box tier) are bypassed so the
@@ -336,6 +348,7 @@ public class PathfinderConfig
 		// sailing — seeds and the walk search silently lost all sea edges (extras AND static
 		// rows) and blind-exhausted 1.2M nodes per search on water pins.
 		copy.useSailing = useSailing;
+		copy.isOnSailingBoat = isOnSailingBoat;
 		copy.includeBankPath = includeBankPath;
 		copy.accessibleBankTiles = accessibleBankTiles;
 		copy.destinations = destinations;
@@ -1431,13 +1444,6 @@ public class PathfinderConfig
 	{
 		TransportType type = transport.getType();
 
-		// Aboard, teleporting away abandons the boat where it floats. Legal in game and often
-		// optimal, but the player decides: with abandonment forbidden, aboard routes may only
-		// leave the water through moorings and port berths.
-		if (isOnSailingBoat && type.isTeleport() && !config.sailingTeleportAbandon())
-		{
-			return false;
-		}
 
 		// Master sailing gate: sailing is a structural world switch (own Travel options
 		// section), not a catalog method — with it off, sailing edges must not exist in ANY

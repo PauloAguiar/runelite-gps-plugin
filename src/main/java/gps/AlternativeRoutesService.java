@@ -305,6 +305,12 @@ public class AlternativeRoutesService
 			// to seed extra routes if the exclusion loop dries up before the limit.
 			seedCandidates = new ArrayList<>(Arrays.asList(
 				planningConfig.getUsableTeleports(mode == AlternativeRoutesMode.OWNED_WITH_BANK)));
+			// Abandonment forbidden: teleport-FIRST seeds would cast from the helm — the
+			// search itself blocks that (teleportsBlockedAt), so the seeds are dead weight.
+			if (planningConfig.teleportsBlockedAt(start))
+			{
+				seedCandidates.clear();
+			}
 			// Aboard: the closest-port disembark always gets its own seeded search, so the
 			// "park the boat properly" option is always on the card next to any
 			// teleport-and-abandon routes.

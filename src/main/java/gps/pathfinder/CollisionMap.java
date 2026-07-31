@@ -229,9 +229,11 @@ public class CollisionMap
 		}
 
 		// Global teleports are only considered from an abstract node, so each
-		// wilderness/bank state expands them once.
+		// wilderness/bank state expands them once. Water nodes may be barred from expanding
+		// it entirely (abandonment forbidden: no casting from the helm; land nodes fine).
 		AbstractNodeKind abstractKind = AbstractNodeKind.fromWildernessLevel(wildernessLevel);
-		if (!visited.getAbstract(abstractKind, bankVisited))
+		if (!visited.getAbstract(abstractKind, bankVisited)
+			&& !config.teleportsBlockedAt(WorldPointUtil.packWorldPoint(x, y, z)))
 		{
 			neighbors.add(graph.createAbstract(abstractKind, node, bankVisited, 0));
 		}
