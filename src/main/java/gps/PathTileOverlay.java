@@ -98,6 +98,7 @@ public class PathTileOverlay extends Overlay
 			// its proximity to the nearest ripple centre in a train spaced WAVE_SPACING apart.
 			double waveOffset = ((System.currentTimeMillis() % 600_000L) / 1000.0 * WAVE_TILES_PER_SECOND)
 				% WAVE_SPACING;
+			java.util.Set<Integer> sailingEdges = plugin.getDisplaySailingEdges();
 			for (int i = 1; i < path.size(); i++)
 			{
 				PathStep currentStep = path.get(i - 1);
@@ -105,6 +106,27 @@ public class PathTileOverlay extends Overlay
 				// A non-adjacent pair is a teleport/transport jump, not a walkable edge.
 				boolean jump = WorldPointUtil.distanceBetween(
 					currentStep.getPackedPosition(), nextStep.getPackedPosition()) > 1;
+				// Sailing legs draw their sea track through the scene: the jump's endpoints
+				// are ports/pins far outside the loaded scene mid-voyage, so the dashed beam
+				// below rendered NOTHING while actually sailing. Track segments near the boat
+				// project fine; drawLine skips the rest.
+				if (jump && sailingEdges.contains(i - 1))
+				{
+					int[] track = SailingSea.seaPath(
+						currentStep.getPackedPosition(), nextStep.getPackedPosition());
+					if (track != null && track.length > 1)
+					{
+						boolean done = i <= progress;
+						Color edgeColor = done ? doneColor : (i >= blockedFrom ? blockedColor : color);
+						for (int s = 1; s < track.length; s++)
+						{
+							drawLine(graphics, track[s - 1], track[s], edgeColor,
+								s == track.length - 1, 0, false);
+						}
+						drawTransportInfo(graphics, currentStep, nextStep, path, i - 1);
+						continue;
+					}
+				}
 				// Arrowheads only where they carry information: at direction changes and the end.
 				boolean head = i == path.size() - 1
 					|| directionChanges(currentStep.getPackedPosition(), nextStep.getPackedPosition(),

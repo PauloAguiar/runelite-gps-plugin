@@ -686,7 +686,11 @@ public class RouteDirectionsOverlay extends OverlayPanel
 			speedSampleAt = now;
 			speedSamplePosition = playerPacked;
 		}
-		boolean riding = speedTilesPerSecond > VEHICLE_TILES_PER_SECOND;
+		// Speed alone cannot see a slow boat: 2 tiles/tick equals running speed, so the
+		// vehicle threshold never trips aboard and the ETA froze (field report at sea). The
+		// boarded varbit says it plainly.
+		boolean riding = speedTilesPerSecond > VEHICLE_TILES_PER_SECOND
+			|| client.getVarbitValue(net.runelite.api.gameval.VarbitID.SAILING_BOARDED_BOAT) != 0;
 
 		if (riding)
 		{
@@ -701,7 +705,30 @@ public class RouteDirectionsOverlay extends OverlayPanel
 			{
 				int origin = path.get(Math.max(0, ride.getStartIndex())).getPackedPosition();
 				int destination = path.get(ride.getEndIndex()).getPackedPosition();
-				if (WorldPointUtil.unpackWorldPlane(destination) == playerPlane)
+				// Sailing rides follow a CURVED track: straight-line fraction misreads any
+				// leg that rounds a coast. The cached track's nearest waypoint gives the true
+				// fraction; null (still computing) falls through to the straight-line guess.
+				int[] track = route.sailingJumpDepartures().contains(ride.getStartIndex())
+					? SailingSea.seaPath(origin, destination)
+					: null;
+				if (track != null && track.length > 1)
+				{
+					int nearest = 0;
+					int nearestDistance = Integer.MAX_VALUE;
+					for (int w = 0; w < track.length; w++)
+					{
+						int d = WorldPointUtil.distanceBetween(playerPacked, track[w]);
+						if (d < nearestDistance)
+						{
+							nearestDistance = d;
+							nearest = w;
+						}
+					}
+					double completed = nearest / (double) (track.length - 1);
+					liveRemainingTicks = remainingTicksAt[ride.getEndIndex()]
+						+ ride.getTicks() * (1 - completed);
+				}
+				else if (WorldPointUtil.unpackWorldPlane(destination) == playerPlane)
 				{
 					double total = WorldPointUtil.distanceBetween(origin, destination);
 					if (total > 4)

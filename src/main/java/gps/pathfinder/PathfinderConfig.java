@@ -184,6 +184,12 @@ public class PathfinderConfig
 	private int bankPickupCost;
 	@Getter
 	private boolean isOnSailingBoat;
+
+	/** Whether the player is aboard their boat (SAILING_BOARDED_BOAT, read at refresh). */
+	public boolean isOnSailingBoat()
+	{
+		return isOnSailingBoat;
+	}
 	/**
 	 * Alternative-routes "planning" mode. When true the per-player possession/unlock gates (transport
 	 * type toggles, item/rune/level/quest/var requirements, jewellery-box tier) are bypassed so the

@@ -212,8 +212,13 @@ public class AlternativeRoutesService
 		}
 		// Player aboard: the start tile is sealed ocean with no walk edges — without legs
 		// FROM it (disembark at nearby ports, or sail straight to a water pin), every search
-		// dies on the start node and the whole generation reports unreachable.
-		seaLegs.addAll(SailingSea.aboardLegTransports(start, ends, 6));
+		// dies on the start node and the whole generation reports unreachable. Gated on the
+		// BOARDED varbit, not tile wateriness: stilt decks (the Pandemonium) are sailable
+		// tiles a player stands on afoot, and offering "sail from here" there was wrong.
+		if (planningConfig.isOnSailingBoat())
+		{
+			seaLegs.addAll(SailingSea.aboardLegTransports(start, ends, 6));
+		}
 		planningConfig.setExtraTransports(seaLegs);
 
 		if (resumed)
