@@ -13,7 +13,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
@@ -54,7 +53,11 @@ public class SailingSeaTargetTest
 		assertTrue("the reported pin is on the shipped ocean", SailingSea.isSailable(SEA_PIN));
 		assertFalse("land is not ocean", SailingSea.isSailable(LUMBRIDGE));
 		List<Transport> legs = SailingSea.seaLegTransports(SEA_PIN, 6);
-		assertEquals("six nearest moorings serve the pin", 6, legs.size());
+		// Six nearest plus the walk-reachable guarantee: near new islands the nearest moorings
+		// can all be walk-unreachable unlocks, and legs only from those give the heuristic
+		// field no mainland anchors — every search of the generation then runs blind.
+		assertTrue("at least the six nearest moorings serve the pin", legs.size() >= 6);
+		assertTrue("the guarantee never adds more than three ports", legs.size() <= 9);
 	}
 
 	@Test

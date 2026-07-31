@@ -300,7 +300,6 @@ public class AlternativeRoutesService
 		// past the band edge still gets exact heuristic guidance.
 		final DistanceField field = DistanceField.buildIfCompact(planningConfig, ends, 2 * costMultiple);
 		timer.fieldNanos = System.nanoTime() - fieldStart;
-
 		// Walk-only search, run concurrently on the seed pool (its own config copy — the chain
 		// mutates planningConfig per iteration): its cost is a rigorous expansion cap for every
 		// search that starts after it finishes (routes costlier than walking are never shown, so a

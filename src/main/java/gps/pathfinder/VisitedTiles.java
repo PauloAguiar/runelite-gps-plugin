@@ -123,7 +123,11 @@ public class VisitedTiles
 		VisitedRegion region = visitedRegions[regionIndex];
 		if (region == null)
 		{
-			region = new VisitedRegion(map.getRegionPlaneCounts(regionIndex));
+			// Math.max(1, ...): pure-ocean regions report zero walkable planes, and a
+			// zero-plane VisitedRegion refuses plane 0 — the distance-field flood then
+			// silently skipped water-pin targets (settled.set false -> continue) and every
+			// search of the generation ran blind. DistanceField.relax has the same guard.
+			region = new VisitedRegion((byte) Math.max(1, map.getRegionPlaneCounts(regionIndex)));
 			visitedRegions[regionIndex] = region;
 		}
 		return region.set(x % REGION_SIZE, y % REGION_SIZE, plane);

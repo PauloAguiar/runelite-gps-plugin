@@ -25,6 +25,8 @@ public final class SailingSea
 	private static final int OVERHEAD_TICKS = 20;
 	/** Wet-endpoint flood early stop: only the closest few moorings can appear in sea legs. */
 	private static final int SETTLE_ENDPOINTS = 12;
+	/** Wet floods keep going until this many WALK-REACHABLE ports settle (field anchors). */
+	private static final int REACHABLE_QUOTA = 4;
 
 	private static volatile SailingSea instance;
 
@@ -87,7 +89,8 @@ public final class SailingSea
 						continue;
 					}
 					moorings.add(new int[]{Integer.parseInt(fields[1]), Integer.parseInt(fields[2]),
-						Integer.parseInt(fields[3]), Integer.parseInt(fields[4])});
+						Integer.parseInt(fields[3]), Integer.parseInt(fields[4]),
+						fields.length > 5 && "true".equals(fields[5].trim()) ? 1 : 0});
 				}
 			}
 			return new SailingSea(minX, minY, width, height, bits, moorings);
@@ -145,8 +148,31 @@ public final class SailingSea
 			}
 		}
 		order.sort(Comparator.comparingInt(i -> distances[i]));
+		// Nearest-by-sea plus a guarantee: at least three legs from WALK-REACHABLE ports.
+		// Near new islands every nearby mooring is an unreachable unlock — legs only from
+		// those give the heuristic field nothing on the mainland, and every search of the
+		// generation runs blind (the 30s water-pin captures).
+		List<Integer> chosen = new ArrayList<>();
+		int reachableChosen = 0;
+		for (int i : order)
+		{
+			boolean reachable = moorings.get(i).length > 4 && moorings.get(i)[4] == 1;
+			if (chosen.size() < count)
+			{
+				chosen.add(i);
+				if (reachable)
+				{
+					reachableChosen++;
+				}
+			}
+			else if (reachableChosen < 3 && reachable)
+			{
+				chosen.add(i);
+				reachableChosen++;
+			}
+		}
 		List<Transport> legs = new ArrayList<>();
-		for (int i : order.subList(0, Math.min(count, order.size())))
+		for (int i : chosen)
 		{
 			int[] mooring = moorings.get(i);
 			int duration = OVERHEAD_TICKS + (int) Math.ceil(
@@ -290,7 +316,9 @@ public final class SailingSea
 		dist[start] = 0;
 		queue.push(start);
 		int settled = 0;
-		while (!queue.isEmpty() && settled < SETTLE_ENDPOINTS)
+		int settledReachable = 0;
+		while (!queue.isEmpty()
+			&& (settled < SETTLE_ENDPOINTS || settledReachable < REACHABLE_QUOTA))
 		{
 			long head = queue.pop();
 			int index = (int) (head & 0xFFFFFFFFL);
@@ -303,6 +331,10 @@ public final class SailingSea
 			{
 				result[mooring] = dist[index];
 				settled++;
+				if (sea.moorings.get(mooring).length > 4 && sea.moorings.get(mooring)[4] == 1)
+				{
+					settledReachable++;
+				}
 			}
 			int x = index % sea.width;
 			int y = index / sea.width;

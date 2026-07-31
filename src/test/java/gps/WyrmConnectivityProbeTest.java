@@ -33,7 +33,7 @@ public class WyrmConnectivityProbeTest
 		PathfinderConfig planning = new TestPathfinderConfig(client, config).copyForPlanning();
 		planning.refresh();
 		CollisionMap map = planning.getMap();
-		int landing = WorldPointUtil.packWorldPoint(2575, 2291, 0);
+		int landing = WorldPointUtil.packWorldPoint(2568, 2295, 0);
 		int pin = WorldPointUtil.packWorldPoint(2606, 2277, 0);
 		Set<Integer> seen = new HashSet<>();
 		ArrayDeque<Integer> queue = new ArrayDeque<>();

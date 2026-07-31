@@ -326,6 +326,10 @@ public class PathfinderConfig
 		copy.avoidWilderness = avoidWilderness;
 		copy.spiritTreeSmartMode = spiritTreeSmartMode;
 		copy.extraTransports = extraTransports;
+		// Refresh-derived master gate: without this, every parallel copy rebuilt WITHOUT
+		// sailing — seeds and the walk search silently lost all sea edges (extras AND static
+		// rows) and blind-exhausted 1.2M nodes per search on water pins.
+		copy.useSailing = useSailing;
 		copy.includeBankPath = includeBankPath;
 		copy.accessibleBankTiles = accessibleBankTiles;
 		copy.destinations = destinations;
@@ -1173,6 +1177,18 @@ public class PathfinderConfig
 	 * static rows, so the sailing master toggle governs them; carried onto parallel-search copies.
 	 */
 	private List<Transport> extraTransports = List.of();
+
+	/** Diagnostic: does this config's snapshot allow sailing edges (see useTransport). */
+	public boolean sailingEnabled()
+	{
+		return useSailing;
+	}
+
+	/** Diagnostic: how many synthetic transports this config carries (see setExtraTransports). */
+	public int getExtraTransportCount()
+	{
+		return extraTransports.size();
+	}
 
 	public void setExtraTransports(List<Transport> extras)
 	{
