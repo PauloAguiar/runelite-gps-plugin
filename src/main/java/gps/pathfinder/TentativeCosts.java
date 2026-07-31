@@ -60,7 +60,7 @@ class TentativeCosts
 		if (region == null)
 		{
 			final byte planeCount = map.getRegionPlaneCounts(regionIndex);
-			region = new short[Math.max(1, planeCount) * REGION_SIZE * REGION_SIZE];
+			region = new short[planeCount * REGION_SIZE * REGION_SIZE];
 			java.util.Arrays.fill(region, EMPTY);
 			regions[regionIndex] = region;
 		}

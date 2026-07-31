@@ -1178,18 +1178,6 @@ public class PathfinderConfig
 	 */
 	private List<Transport> extraTransports = List.of();
 
-	/** Diagnostic: does this config's snapshot allow sailing edges (see useTransport). */
-	public boolean sailingEnabled()
-	{
-		return useSailing;
-	}
-
-	/** Diagnostic: how many synthetic transports this config carries (see setExtraTransports). */
-	public int getExtraTransportCount()
-	{
-		return extraTransports.size();
-	}
-
 	public void setExtraTransports(List<Transport> extras)
 	{
 		extraTransports = extras == null ? List.of() : extras;

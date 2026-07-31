@@ -27,6 +27,8 @@ public final class SailingSea
 	private static final int SETTLE_ENDPOINTS = 12;
 	/** Wet floods keep going until this many WALK-REACHABLE ports settle (field anchors). */
 	private static final int REACHABLE_QUOTA = 4;
+	/** Sea-leg sets always include at least this many walk-reachable ports (field anchors). */
+	private static final int REACHABLE_LEGS = 3;
 
 	private static volatile SailingSea instance;
 
@@ -35,8 +37,11 @@ public final class SailingSea
 	private final int width;
 	private final int height;
 	private final byte[] bits;
-	/** Rows of {landX, landY, waterX, waterY}. */
+	/** Rows of {landX, landY, waterX, waterY, walkReachable(0/1)}. */
 	private final List<int[]> moorings;
+	/** Water-endpoint grid index -> mooring index, precomputed at load: the wet flood
+	 * consults it once per popped node (millions on mid-ocean floods), so no boxed keys. */
+	private final PrimitiveIntHashMap<Integer> endpointIndex;
 
 	private SailingSea(int minX, int minY, int width, int height, byte[] bits, List<int[]> moorings)
 	{
@@ -46,6 +51,12 @@ public final class SailingSea
 		this.height = height;
 		this.bits = bits;
 		this.moorings = moorings;
+		this.endpointIndex = new PrimitiveIntHashMap<>(Math.max(1, moorings.size() * 2));
+		for (int i = 0; i < moorings.size(); i++)
+		{
+			int[] mooring = moorings.get(i);
+			endpointIndex.put((mooring[3] - minY) * width + (mooring[2] - minX), i);
+		}
 	}
 
 	private static SailingSea get()
@@ -117,17 +128,14 @@ public final class SailingSea
 		{
 			return false;
 		}
-		long index = (long) y * sea.width + x;
-		int byteIndex = (int) (index >> 3);
-		return byteIndex < sea.bits.length && (sea.bits[byteIndex] & 1 << (index & 7)) != 0;
+		return bit(sea, x, y);
 	}
 
 	/**
 	 * The synthesized final sea legs for a sailable-water target: board at each of the
 	 * {@code count} closest-by-sea moorings' land tiles and sail out. Distances come from the
 	 * wet-endpoint flood ({@link #seaDistances}) — a real Dijkstra over the shipped ocean, so
-	 * islands and coastlines are respected, unlike the octile draft. Gated like any SAILING
-	 * transport (master toggle).
+	 * islands and coastlines are respected. Gated like any SAILING transport (master toggle).
 	 */
 	public static List<Transport> seaLegTransports(int targetPacked, int count)
 	{
@@ -148,15 +156,15 @@ public final class SailingSea
 			}
 		}
 		order.sort(Comparator.comparingInt(i -> distances[i]));
-		// Nearest-by-sea plus a guarantee: at least three legs from WALK-REACHABLE ports.
-		// Near new islands every nearby mooring is an unreachable unlock — legs only from
-		// those give the heuristic field nothing on the mainland, and every search of the
-		// generation runs blind (the 30s water-pin captures).
+		// Nearest-by-sea plus a guarantee of REACHABLE_LEGS walk-reachable ports. Near new
+		// islands every nearby mooring is an unreachable unlock — legs only from those give
+		// the heuristic field nothing on the mainland, and every search of the generation
+		// runs blind (the 30s water-pin captures).
 		List<Integer> chosen = new ArrayList<>();
 		int reachableChosen = 0;
 		for (int i : order)
 		{
-			boolean reachable = moorings.get(i).length > 4 && moorings.get(i)[4] == 1;
+			boolean reachable = reachable(moorings.get(i));
 			if (chosen.size() < count)
 			{
 				chosen.add(i);
@@ -165,7 +173,7 @@ public final class SailingSea
 					reachableChosen++;
 				}
 			}
-			else if (reachableChosen < 3 && reachable)
+			else if (reachableChosen < REACHABLE_LEGS && reachable)
 			{
 				chosen.add(i);
 				reachableChosen++;
@@ -205,12 +213,6 @@ public final class SailingSea
 	private static volatile int cachedTarget = WorldPointUtil.UNDEFINED;
 	private static volatile int[] cachedDistances;
 
-	/**
-	 * The wet-endpoint flood: exact sea distance in centitiles from a sailable target to every
-	 * mooring's water endpoint (MAX_VALUE where no sea path exists). Dijkstra over the shipped
-	 * ocean bitset, stopping early once the {@link #SETTLE_ENDPOINTS} nearest endpoints are
-	 * settled — the rest cannot beat them and the sea legs only take the closest few.
-	 */
 	/**
 	 * Array-backed min-heap of packed longs (dist << 32 | gridIndex): natural long ordering is
 	 * distance-major, so Dijkstra needs no comparator and — the actual point — no allocation
@@ -284,6 +286,12 @@ public final class SailingSea
 	private static int[] wetScratch;
 	private static final LongHeap wetHeap = new LongHeap();
 
+	/**
+	 * The wet-endpoint flood: exact sea distance in centitiles from a sailable target to every
+	 * mooring's water endpoint (MAX_VALUE where no sea path exists). Dijkstra over the shipped
+	 * ocean bitset, stopping early once the {@link #SETTLE_ENDPOINTS} nearest endpoints AND
+	 * {@link #REACHABLE_QUOTA} walk-reachable ports are settled.
+	 */
 	public static synchronized int[] seaDistances(int targetPacked)
 	{
 		if (targetPacked == cachedTarget && cachedDistances != null)
@@ -296,12 +304,6 @@ public final class SailingSea
 		if (!isSailable(targetPacked) || sea.width == 0)
 		{
 			return result;
-		}
-		java.util.Map<Integer, Integer> endpointIndex = new java.util.HashMap<>();
-		for (int i = 0; i < sea.moorings.size(); i++)
-		{
-			int[] m = sea.moorings.get(i);
-			endpointIndex.put((m[3] - sea.minY) * sea.width + (m[2] - sea.minX), i);
 		}
 		if (wetScratch == null || wetScratch.length != sea.width * sea.height)
 		{
@@ -326,12 +328,12 @@ public final class SailingSea
 			{
 				continue;
 			}
-			Integer mooring = endpointIndex.get(index);
+			Integer mooring = sea.endpointIndex.get(index);
 			if (mooring != null && result[mooring] == Integer.MAX_VALUE)
 			{
 				result[mooring] = dist[index];
 				settled++;
-				if (sea.moorings.get(mooring).length > 4 && sea.moorings.get(mooring)[4] == 1)
+				if (reachable(sea.moorings.get(mooring)))
 				{
 					settledReachable++;
 				}
@@ -349,11 +351,7 @@ public final class SailingSea
 				{
 					continue;
 				}
-				if (Math.abs(dx) + Math.abs(dy) == 3
-					&& (!bit(sea, x + dx / 2, y + dy / 2)
-						|| !bit(sea,
-							Math.abs(dx) == 2 ? x + dx / 2 : x + dx,
-							Math.abs(dx) == 2 ? y + dy : y + dy / 2)))
+				if (knightBlocked(sea, x, y, dx, dy))
 				{
 					continue;
 				}
@@ -406,13 +404,11 @@ public final class SailingSea
 	 */
 	public static int[] seaPath(int fromPacked, int toPacked)
 	{
-		long key = (long) fromPacked << 32 | toPacked & 0xFFFFFFFFL;
-		synchronized (trackCache)
+		long key = trackKey(fromPacked, toPacked);
+		int[] cached = cachedTrack(key);
+		if (cached != null || trackCached(key))
 		{
-			if (trackCache.containsKey(key))
-			{
-				return trackCache.get(key);
-			}
+			return cached;
 		}
 		if (tracksInFlight.add(key))
 		{
@@ -445,13 +441,11 @@ public final class SailingSea
 	/** Synchronous computation+cache, for tests and background workers. */
 	static int[] seaPathBlocking(int fromPacked, int toPacked)
 	{
-		long key = (long) fromPacked << 32 | toPacked & 0xFFFFFFFFL;
-		synchronized (trackCache)
+		long key = trackKey(fromPacked, toPacked);
+		int[] cached = cachedTrack(key);
+		if (cached != null || trackCached(key))
 		{
-			if (trackCache.containsKey(key))
-			{
-				return trackCache.get(key);
-			}
+			return cached;
 		}
 		int[] track = computeSeaPath(fromPacked, toPacked);
 		synchronized (trackCache)
@@ -538,11 +532,7 @@ public final class SailingSea
 				{
 					continue;
 				}
-				if (Math.abs(move[0]) + Math.abs(move[1]) == 3
-					&& (!bit(sea, x0 + x + move[0] / 2, y0 + y + move[1] / 2)
-						|| !bit(sea,
-							Math.abs(move[0]) == 2 ? x0 + x + move[0] / 2 : x0 + x + move[0],
-							Math.abs(move[0]) == 2 ? y0 + y + move[1] : y0 + y + move[1] / 2)))
+				if (knightBlocked(sea, x0 + x, y0 + y, move[0], move[1]))
 				{
 					continue;
 				}
@@ -576,11 +566,28 @@ public final class SailingSea
 		return n + 1 == track.length ? track : java.util.Arrays.copyOf(track, n + 1);
 	}
 
-	/**
-	 * Grid index of the nearest sailable tile within 10 of the endpoint, or -1. Ten, not six:
-	 * the mooring dumper pairs land tiles with water up to 8 tiles away (piers), and the track
-	 * must reach the water from the same land tile the transport departs from.
-	 */
+	private static long trackKey(int fromPacked, int toPacked)
+	{
+		return (long) fromPacked << 32 | toPacked & 0xFFFFFFFFL;
+	}
+
+	private static int[] cachedTrack(long key)
+	{
+		synchronized (trackCache)
+		{
+			return trackCache.get(key);
+		}
+	}
+
+	/** Distinguishes a cached null (no track computable) from a cache miss. */
+	private static boolean trackCached(long key)
+	{
+		synchronized (trackCache)
+		{
+			return trackCache.containsKey(key);
+		}
+	}
+
 	/**
 	 * The sea tile a track starts/ends at. A mooring LAND tile maps to its PAIRED water
 	 * endpoint from the shipped data — the radius spiral can snap to a disconnected inland
@@ -605,6 +612,11 @@ public final class SailingSea
 		return nearestSailable(sea, packed);
 	}
 
+	/**
+	 * Grid index of the nearest sailable tile within 10 of the endpoint, or -1. Ten, not six:
+	 * the mooring dumper pairs land tiles with water up to 8 tiles away (piers), and the track
+	 * must reach the water from the same land tile the transport departs from.
+	 */
 	private static int nearestSailable(SailingSea sea, int packed)
 	{
 		int px = WorldPointUtil.unpackWorldX(packed);
@@ -642,6 +654,26 @@ public final class SailingSea
 		return (int) Math.round(Math.max(0, durationTicks - OVERHEAD_TICKS) * TILES_PER_TICK);
 	}
 
+	/** The shipped walk-reachable flag: a mainland port the walking network serves. */
+	private static boolean reachable(int[] mooring)
+	{
+		return mooring[4] == 1;
+	}
+
+	/**
+	 * Half-wind (knight) steps must not cut across obstacle corners: both interposed tiles —
+	 * the half-step along the long axis, and the full short-axis neighbour beside it — must be
+	 * sailable. The one subtle piece of the 16-bearing geometry, shared by both Dijkstras.
+	 */
+	private static boolean knightBlocked(SailingSea sea, int x, int y, int dx, int dy)
+	{
+		return Math.abs(dx) + Math.abs(dy) == 3
+			&& (!bit(sea, x + dx / 2, y + dy / 2)
+				|| !bit(sea,
+					Math.abs(dx) == 2 ? x + dx / 2 : x + dx,
+					Math.abs(dx) == 2 ? y + dy : y + dy / 2));
+	}
+
 	/** Local-grid sailability test used by the wet-endpoint flood's move loop. */
 	private static boolean bit(SailingSea sea, int x, int y)
 	{
@@ -649,11 +681,4 @@ public final class SailingSea
 		return (sea.bits[(int) (index >> 3)] & 1 << (index & 7)) != 0;
 	}
 
-	/** Octile distance in centitiles (100 per cardinal step, 141 per diagonal step). */
-	private static int octile(int x1, int y1, int x2, int y2)
-	{
-		int dx = Math.abs(x1 - x2);
-		int dy = Math.abs(y1 - y2);
-		return 100 * Math.max(dx, dy) + 41 * Math.min(dx, dy);
 	}
-}

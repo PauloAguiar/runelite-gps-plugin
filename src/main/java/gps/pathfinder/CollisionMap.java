@@ -35,9 +35,15 @@ public class CollisionMap
 		return WorldPointUtil.packWorldPoint(x + direction.x, y + direction.y, plane);
 	}
 
+	/**
+	 * Walkable plane count for allocating region-indexed side arrays — never below one:
+	 * pure-ocean regions record ZERO walkable planes, and every consumer that sized an array
+	 * from the raw count silently refused plane 0 there (the water-pin blind-search outage,
+	 * fixed three times in three consumers before the clamp moved here).
+	 */
 	public byte getRegionPlaneCounts(int regionIndex)
 	{
-		return collisionData.getRegionPlaneCounts(regionIndex);
+		return (byte) Math.max(1, collisionData.getRegionPlaneCounts(regionIndex));
 	}
 
 	private boolean get(int x, int y, int z, int flag)

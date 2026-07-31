@@ -295,6 +295,7 @@ public class AlternativeRoutesService
 		// guided / 19 blind searches and a 30s wall for a pin the direct probe (which rebuilt
 		// first) served a healthy field for.
 		planningConfig.rebuildAvailabilityWithExclusions(excluded);
+		boolean availabilityCurrent = true;
 		long fieldStart = System.nanoTime();
 		// The horizon matches the searches' sanity ceiling (2x the display band), so the fill region
 		// past the band edge still gets exact heuristic guidance.
@@ -341,7 +342,13 @@ public class AlternativeRoutesService
 			// Rebuild availability for the current exclusion set — pure computation over the base lists
 			// captured by the client-thread pass above, so no client-thread round-trip per search.
 			long rebuildStart = System.nanoTime();
-			planningConfig.rebuildAvailabilityWithExclusions(excluded);
+			// The pre-field rebuild covered the first iteration's exclusion set; later
+			// iterations rebuild because the chain grows the set between them.
+			if (!availabilityCurrent)
+			{
+				planningConfig.rebuildAvailabilityWithExclusions(excluded);
+			}
+			availabilityCurrent = false;
 			timer.rebuildNanos += System.nanoTime() - rebuildStart;
 
 			long searchStart = System.nanoTime();

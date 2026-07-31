@@ -81,6 +81,13 @@ public final class RouteOption
 	 */
 	public java.util.Set<Integer> sailingJumpDepartures()
 	{
+		// Memoized: the overlay asks once per rendered frame, and this object is immutable.
+		// Benign race — concurrent first calls compute identical sets.
+		java.util.Set<Integer> cached = sailingJumpDeparturesCache;
+		if (cached != null)
+		{
+			return cached;
+		}
 		java.util.Set<Integer> departures = new java.util.HashSet<>();
 		for (int i = 0; i < methods.size() && i < methodEdgeIndexes.size(); i++)
 		{
@@ -89,8 +96,11 @@ public final class RouteOption
 				departures.add(methodEdgeIndexes.get(i) - 1);
 			}
 		}
-		return departures;
+		sailingJumpDeparturesCache = java.util.Collections.unmodifiableSet(departures);
+		return sailingJumpDeparturesCache;
 	}
+
+	private transient volatile java.util.Set<Integer> sailingJumpDeparturesCache;
 
 	public RouteOption(List<PathStep> path, List<TeleportMethod> methods, List<Integer> methodEdgeIndexes,
 		List<Integer> methodDurations, int totalCost, int rawCost, boolean reached, Set<TeleportMethod> bankMethods,
