@@ -185,7 +185,80 @@ public final class SailingSea
 	 * ocean bitset, stopping early once the {@link #SETTLE_ENDPOINTS} nearest endpoints are
 	 * settled — the rest cannot beat them and the sea legs only take the closest few.
 	 */
-	public static int[] seaDistances(int targetPacked)
+	/**
+	 * Array-backed min-heap of packed longs (dist << 32 | gridIndex): natural long ordering is
+	 * distance-major, so Dijkstra needs no comparator and — the actual point — no allocation
+	 * per node. The boxed PriorityQueue<long[]> it replaces allocated a long[2] per push;
+	 * mid-ocean wet floods push millions.
+	 */
+	static final class LongHeap
+	{
+		private long[] heap = new long[1 << 12];
+		private int size;
+
+		boolean isEmpty()
+		{
+			return size == 0;
+		}
+
+		void push(long value)
+		{
+			if (size == heap.length)
+			{
+				heap = java.util.Arrays.copyOf(heap, size * 2);
+			}
+			int i = size++;
+			while (i > 0)
+			{
+				int parent = (i - 1) >> 1;
+				if (heap[parent] <= value)
+				{
+					break;
+				}
+				heap[i] = heap[parent];
+				i = parent;
+			}
+			heap[i] = value;
+		}
+
+		long pop()
+		{
+			long top = heap[0];
+			long last = heap[--size];
+			int i = 0;
+			while (true)
+			{
+				int child = 2 * i + 1;
+				if (child >= size)
+				{
+					break;
+				}
+				if (child + 1 < size && heap[child + 1] < heap[child])
+				{
+					child++;
+				}
+				if (heap[child] >= last)
+				{
+					break;
+				}
+				heap[i] = heap[child];
+				i = child;
+			}
+			heap[i] = last;
+			return top;
+		}
+
+		void clear()
+		{
+			size = 0;
+		}
+	}
+
+	/** Scratch distance grid reused across wet floods (24MB: never reallocate per pin). */
+	private static int[] wetScratch;
+	private static final LongHeap wetHeap = new LongHeap();
+
+	public static synchronized int[] seaDistances(int targetPacked)
 	{
 		if (targetPacked == cachedTarget && cachedDistances != null)
 		{
@@ -204,20 +277,24 @@ public final class SailingSea
 			int[] m = sea.moorings.get(i);
 			endpointIndex.put((m[3] - sea.minY) * sea.width + (m[2] - sea.minX), i);
 		}
-		int[] dist = new int[sea.width * sea.height];
+		if (wetScratch == null || wetScratch.length != sea.width * sea.height)
+		{
+			wetScratch = new int[sea.width * sea.height];
+		}
+		int[] dist = wetScratch;
 		java.util.Arrays.fill(dist, Integer.MAX_VALUE);
-		java.util.PriorityQueue<long[]> queue =
-			new java.util.PriorityQueue<>(Comparator.comparingLong(a -> a[0]));
+		LongHeap queue = wetHeap;
+		queue.clear();
 		int start = (WorldPointUtil.unpackWorldY(targetPacked) - sea.minY) * sea.width
 			+ (WorldPointUtil.unpackWorldX(targetPacked) - sea.minX);
 		dist[start] = 0;
-		queue.add(new long[]{0, start});
+		queue.push(start);
 		int settled = 0;
 		while (!queue.isEmpty() && settled < SETTLE_ENDPOINTS)
 		{
-			long[] head = queue.poll();
-			int index = (int) head[1];
-			if (head[0] > dist[index])
+			long head = queue.pop();
+			int index = (int) (head & 0xFFFFFFFFL);
+			if ((int) (head >>> 32) > dist[index])
 			{
 				continue;
 			}
@@ -252,7 +329,7 @@ public final class SailingSea
 				if (dist[index] + move[2] < dist[next])
 				{
 					dist[next] = dist[index] + move[2];
-					queue.add(new long[]{dist[next], next});
+					queue.push((long) dist[next] << 32 | next);
 				}
 			}
 		}
@@ -403,15 +480,14 @@ public final class SailingSea
 		java.util.Arrays.fill(parent, -1);
 		int boxStart = (start / sea.width - y0) * boxWidth + (start % sea.width - x0);
 		int boxGoal = (goal / sea.width - y0) * boxWidth + (goal % sea.width - x0);
-		java.util.PriorityQueue<long[]> queue =
-			new java.util.PriorityQueue<>(Comparator.comparingLong(a -> a[0]));
+		LongHeap queue = new LongHeap();
 		dist[boxStart] = 0;
-		queue.add(new long[]{0, boxStart});
+		queue.push(boxStart);
 		while (!queue.isEmpty())
 		{
-			long[] head = queue.poll();
-			int index = (int) head[1];
-			if (head[0] > dist[index])
+			long head = queue.pop();
+			int index = (int) (head & 0xFFFFFFFFL);
+			if ((int) (head >>> 32) > dist[index])
 			{
 				continue;
 			}
@@ -443,7 +519,7 @@ public final class SailingSea
 				{
 					dist[next] = dist[index] + move[2];
 					parent[next] = index;
-					queue.add(new long[]{dist[next], next});
+					queue.push((long) dist[next] << 32 | next);
 				}
 			}
 		}
