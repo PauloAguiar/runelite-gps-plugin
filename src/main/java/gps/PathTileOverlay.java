@@ -117,10 +117,40 @@ public class PathTileOverlay extends Overlay
 					if (track != null && track.length > 1)
 					{
 						boolean done = i <= progress;
-						Color edgeColor = done ? doneColor : (i >= blockedFrom ? blockedColor : color);
+						// The sailed stretch greys waypoint by waypoint behind the boat: the
+						// aboard position scored against the track, same rule the tracker uses.
+						int sailedUpTo = -1;
+						if (!done && client.getVarbitValue(
+							net.runelite.api.gameval.VarbitID.SAILING_BOARDED_BOAT) != 0)
+						{
+							int playerPacked = WorldPointUtil.fromLocalInstance(
+								client, client.getLocalPlayer());
+							if (playerPacked != WorldPointUtil.UNDEFINED)
+							{
+								int nearestDistance = Integer.MAX_VALUE;
+								for (int w = 0; w < track.length; w++)
+								{
+									int d = WorldPointUtil.distanceBetween(playerPacked, track[w]);
+									if (d < nearestDistance)
+									{
+										nearestDistance = d;
+										sailedUpTo = w;
+									}
+								}
+								if (nearestDistance > 30)
+								{
+									sailedUpTo = -1; // aboard on a DIFFERENT leg: grey nothing here
+								}
+							}
+						}
+						Color sail = plugin.getSailingPathColor();
+						Color sailColor = new Color(sail.getRed(), sail.getGreen(), sail.getBlue(),
+							sail.getAlpha() / 2);
 						for (int s = 1; s < track.length; s++)
 						{
-							drawLine(graphics, track[s - 1], track[s], edgeColor,
+							Color segment = done || s <= sailedUpTo ? doneColor
+								: (i >= blockedFrom ? blockedColor : sailColor);
+							drawLine(graphics, track[s - 1], track[s], segment,
 								s == track.length - 1, 0, false);
 						}
 						drawTransportInfo(graphics, currentStep, nextStep, path, i - 1);

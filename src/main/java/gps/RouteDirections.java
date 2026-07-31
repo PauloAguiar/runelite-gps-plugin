@@ -44,15 +44,25 @@ final class RouteDirections
 		// stairs/ladders, ...). Like a closed door, the player can't click-walk PAST it, so the
 		// path beyond it is drawn blocked until they use it. Doors carry {@link #door} instead.
 		private final boolean obstacle;
+		// True for the boarding half of a sailing leg: standing on the boarding tile does NOT
+		// finish it — only actually being aboard (the BOARDED varbit) does, else the step
+		// greyed out while the player was still on the dock.
+		private final boolean embark;
 
 		private Step(String text, int startIndex, int endIndex, int ticks)
 		{
-			this(text, startIndex, endIndex, ticks, false, false, false);
+			this(text, startIndex, endIndex, ticks, false, false, false, false);
 		}
 
 		private Step(String text, int startIndex, int endIndex, int ticks, boolean transport)
 		{
-			this(text, startIndex, endIndex, ticks, transport, false, false);
+			this(text, startIndex, endIndex, ticks, transport, false, false, false);
+		}
+
+		private Step(String text, int startIndex, int endIndex, int ticks, boolean transport,
+			boolean door, boolean obstacle)
+		{
+			this(text, startIndex, endIndex, ticks, transport, door, obstacle, false);
 		}
 
 		private Step(String text, int startIndex, int endIndex, int ticks, boolean transport, boolean door)
@@ -61,7 +71,7 @@ final class RouteDirections
 		}
 
 		private Step(String text, int startIndex, int endIndex, int ticks,
-			boolean transport, boolean door, boolean obstacle)
+			boolean transport, boolean door, boolean obstacle, boolean embark)
 		{
 			this.text = text;
 			this.startIndex = startIndex;
@@ -70,6 +80,7 @@ final class RouteDirections
 			this.transport = transport;
 			this.door = door;
 			this.obstacle = obstacle;
+			this.embark = embark;
 		}
 
 		/** Whether the player must interact with something to cross this edge (door or shortcut). */
@@ -280,7 +291,7 @@ final class RouteDirections
 		}
 		int sailTicks = Math.max(1, duration - SailingSea.OVERHEAD_TICKS);
 		steps.add(new Step("\u26F5 Embark at " + origin, i - 1, i - 1,
-			Math.max(0, duration - sailTicks), true));
+			Math.max(0, duration - sailTicks), true, false, false, true));
 		steps.add(new Step("Sail to " + destination, i - 1, i, sailTicks, true));
 	}
 

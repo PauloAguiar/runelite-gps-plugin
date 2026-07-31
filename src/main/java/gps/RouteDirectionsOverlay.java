@@ -172,7 +172,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		int current = steps.size() - 1;
 		for (int i = 0; i < steps.size(); i++)
 		{
-			if (steps.get(i).getEndIndex() > reachedIndex)
+			if (!finished(steps.get(i)))
 			{
 				current = i;
 				break;
@@ -689,8 +689,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		// Speed alone cannot see a slow boat: 2 tiles/tick equals running speed, so the
 		// vehicle threshold never trips aboard and the ETA froze (field report at sea). The
 		// boarded varbit says it plainly.
-		boolean riding = speedTilesPerSecond > VEHICLE_TILES_PER_SECOND
-			|| client.getVarbitValue(net.runelite.api.gameval.VarbitID.SAILING_BOARDED_BOAT) != 0;
+		boolean riding = speedTilesPerSecond > VEHICLE_TILES_PER_SECOND || aboard();
 
 		if (riding)
 		{
@@ -705,9 +704,12 @@ public class RouteDirectionsOverlay extends OverlayPanel
 			{
 				int origin = path.get(Math.max(0, ride.getStartIndex())).getPackedPosition();
 				int destination = path.get(ride.getEndIndex()).getPackedPosition();
-				// Sailing rides follow a CURVED track: straight-line fraction misreads any
-				// leg that rounds a coast. The cached track's nearest waypoint gives the true
-				// fraction; null (still computing) falls through to the straight-line guess.
+				// Sailing rides follow a CURVED track: the embarked world position scores
+				// directly against the leg's own waypoints (no walls at sea, so straight-line
+				// to the track IS the walk metric — the collision BFS the land selector uses
+				// cannot flood a sealed ocean). Progress advances waypoint by waypoint; the
+				// last waypoint, or proximity to the landing, stamps the arrival — that is
+				// what greys the sailed stretch and completes water-pin routes.
 				int[] track = route.sailingJumpDepartures().contains(ride.getStartIndex())
 					? SailingSea.seaPath(origin, destination)
 					: null;
@@ -724,9 +726,18 @@ public class RouteDirectionsOverlay extends OverlayPanel
 							nearest = w;
 						}
 					}
-					double completed = nearest / (double) (track.length - 1);
-					liveRemainingTicks = remainingTicksAt[ride.getEndIndex()]
-						+ ride.getTicks() * (1 - completed);
+					if (nearest == track.length - 1
+						|| WorldPointUtil.distanceBetween(playerPacked, destination) <= NEAR_DISTANCE)
+					{
+						reachedIndex = Math.max(reachedIndex, ride.getEndIndex());
+						liveRemainingTicks = remainingTicksAt[ride.getEndIndex()];
+					}
+					else
+					{
+						double completed = nearest / (double) (track.length - 1);
+						liveRemainingTicks = remainingTicksAt[ride.getEndIndex()]
+							+ ride.getTicks() * (1 - completed);
+					}
 				}
 				else if (WorldPointUtil.unpackWorldPlane(destination) == playerPlane)
 				{
@@ -849,12 +860,32 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	{
 		for (RouteDirections.Step step : steps)
 		{
-			if (step.getEndIndex() > reachedIndex)
+			if (!finished(step))
 			{
 				return step;
 			}
 		}
 		return steps.isEmpty() ? null : steps.get(steps.size() - 1);
+	}
+
+	/**
+	 * A step is finished once the player has passed its last path node — EXCEPT the boarding
+	 * half of a sailing leg, which shares its node with the walk that leads there: standing on
+	 * the dock is not boarding, only the BOARDED varbit finishes it.
+	 */
+	private boolean finished(RouteDirections.Step step)
+	{
+		if (step.getEndIndex() > reachedIndex)
+		{
+			return false;
+		}
+		return !step.isEmbark() || aboard();
+	}
+
+	/** Whether the player is at the helm (SAILING_BOARDED_BOAT). */
+	private boolean aboard()
+	{
+		return client.getVarbitValue(net.runelite.api.gameval.VarbitID.SAILING_BOARDED_BOAT) != 0;
 	}
 
 	/**
