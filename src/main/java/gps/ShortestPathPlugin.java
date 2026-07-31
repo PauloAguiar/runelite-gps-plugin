@@ -178,6 +178,7 @@ public class ShortestPathPlugin extends Plugin
 	boolean showTransportInfo;
 	boolean showBankPickupInfo;
 	Color colourPath;
+	Color colourPathSailing;
 	Color colourPathBlocked;
 	Color colourPathCalculating;
 	Color colourPathUnreachable;
@@ -872,6 +873,12 @@ public class ShortestPathPlugin extends Plugin
 			return step.getEndIndex();
 		}
 		return Integer.MAX_VALUE;
+	}
+
+	/** Colour for the sailed portions of the displayed route (world-map sea tracks). */
+	public Color getSailingPathColor()
+	{
+		return colourPathSailing;
 	}
 
 	public Color getPathColor()
@@ -2293,6 +2300,7 @@ public class ShortestPathPlugin extends Plugin
 		showBankPickupInfo = override("showBankPickupInfo", config.showBankPickupInfo());
 
 		colourPath = override("colourPath", config.colourPath());
+		colourPathSailing = override("colourPathSailing", config.colourPathSailing());
 		colourPathBlocked = override("colourPathBlocked", config.colourPathBlocked());
 		colourPathCalculating = override("colourPathCalculating", config.colourPathCalculating());
 		colourPathUnreachable = override("colourPathUnreachable", config.colourPathUnreachable());

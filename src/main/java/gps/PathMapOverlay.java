@@ -100,10 +100,16 @@ public class PathMapOverlay extends Overlay
 				int[] track = sailingEdges.contains(i) ? SailingSea.seaPath(from, next) : null;
 				if (track != null)
 				{
+					// Sea legs draw in their own (configurable) colour: amber reads over both
+					// the ocean and the cyan walking path, then the path colour is restored
+					// for the legs that follow.
+					java.awt.Color pathColour = graphics.getColor();
+					graphics.setColor(plugin.getSailingPathColor());
 					for (int s = 0; s < track.length - 1; s++)
 					{
 						drawMapSegment(graphics, track[s], track[s + 1], walkStroke);
 					}
+					graphics.setColor(pathColour);
 				}
 				else
 				{

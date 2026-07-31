@@ -1423,6 +1423,19 @@ public interface ShortestPathConfig extends Config
 
 	@Alpha
 	@ConfigItem(
+		keyName = "colourPathSailing",
+		name = "Sailing legs",
+		description = "Colour of the sailed portions of a route on the world map — amber by default, the nautical buoy colour, visible over both open ocean and the cyan walking path",
+		position = 73,
+		section = sectionColours
+	)
+	default Color colourPathSailing()
+	{
+		return new Color(255, 160, 0);
+	}
+
+	@Alpha
+	@ConfigItem(
 		keyName = "colourPathBlocked",
 		name = "Blocked by door",
 		description = "Colour of the path beyond a door that has not been seen open yet:<br>" +
