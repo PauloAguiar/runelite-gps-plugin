@@ -83,6 +83,30 @@ public class SailingSeaTargetTest
 	}
 
 	@Test
+	public void aboardStartRoutesToWaterAndLand()
+	{
+		// Player aboard mid-ocean: without start-side legs the search dies on its sealed
+		// start tile (field report: pin on water from a boat said unreachable).
+		int aboard = WorldPointUtil.packWorldPoint(3091, 2955, 0);
+		assertTrue("test start must be sailable water", SailingSea.isSailable(aboard));
+		PathfinderConfig planning = planning(true);
+		java.util.List<gps.transport.Transport> extras = new java.util.ArrayList<>();
+		extras.addAll(SailingSea.seaLegTransports(SEA_PIN, 6));
+		extras.addAll(SailingSea.aboardLegTransports(aboard, java.util.Set.of(SEA_PIN), 6));
+		planning.setExtraTransports(extras);
+		planning.rebuildAvailabilityWithExclusions(java.util.Set.of());
+		Pathfinder toWater = new Pathfinder(planning, aboard, java.util.Set.of(SEA_PIN));
+		toWater.run();
+		assertTrue("aboard -> water pin must reach (direct sail leg)",
+			toWater.getResult().isReached());
+		int lumbridge = WorldPointUtil.packWorldPoint(3222, 3218, 0);
+		Pathfinder toLand = new Pathfinder(planning, aboard, java.util.Set.of(lumbridge));
+		toLand.run();
+		assertTrue("aboard -> land must reach (disembark at a port, then walk/teleport)",
+			toLand.getResult().isReached());
+	}
+
+	@Test
 	public void seaTrackFollowsWater()
 	{
 		// The rendering track for a sailing leg: every waypoint must be genuinely sailable

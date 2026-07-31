@@ -145,6 +145,138 @@ public final class SailingSea
 	 * wet-endpoint flood ({@link #seaDistances}) — a real Dijkstra over the shipped ocean, so
 	 * islands and coastlines are respected. Gated like any SAILING transport (master toggle).
 	 */
+	/**
+	 * Legs for a search STARTING on the water (player aboard): sail from the start to each of
+	 * the {@code count} closest moorings and disembark — the start-side twin of
+	 * {@link #seaLegTransports} — plus, when a target is itself sailable water, one direct
+	 * sail-to-the-pin leg. Without these, a search from aboard dies on its sealed start tile
+	 * ("unreachable" the moment the player boards and drops a pin).
+	 */
+	public static List<Transport> aboardLegTransports(int startPacked,
+		java.util.Set<Integer> targets, int count)
+	{
+		if (!isSailable(startPacked))
+		{
+			return List.of();
+		}
+		List<Transport> legs = new ArrayList<>();
+		SailingSea sea = get();
+		int[] distances = seaDistances(startPacked);
+		List<Integer> order = new ArrayList<>();
+		for (int i = 0; i < distances.length; i++)
+		{
+			if (distances[i] != Integer.MAX_VALUE)
+			{
+				order.add(i);
+			}
+		}
+		order.sort(Comparator.comparingInt(i -> distances[i]));
+		for (int i : order.subList(0, Math.min(count, order.size())))
+		{
+			int[] mooring = sea.moorings.get(i);
+			int duration = OVERHEAD_TICKS + (int) Math.ceil(
+				distances[i] / 100.0 / TILES_PER_TICK);
+			legs.add(new Transport.TransportBuilder()
+				.origin(startPacked)
+				.destination(WorldPointUtil.packWorldPoint(mooring[0], mooring[1], 0))
+				.type(TransportType.SAILING)
+				.duration(duration)
+				.displayInfo("Disembark at " + portName(i))
+				.build());
+		}
+		for (int target : targets)
+		{
+			int centitiles = seaDistanceBetween(startPacked, target);
+			if (centitiles >= 0)
+			{
+				legs.add(new Transport.TransportBuilder()
+					.origin(startPacked)
+					.destination(target)
+					.type(TransportType.SAILING)
+					.duration(Math.max(1, (int) Math.ceil(centitiles / 100.0 / TILES_PER_TICK)))
+					.displayInfo("Sail to the destination")
+					.build());
+			}
+		}
+		return legs;
+	}
+
+	/**
+	 * Exact sea distance between two sailable tiles in centitiles, or -1 when either tile is
+	 * not sailable or no path fits the staged search boxes (60 then 600 margin — no full-grid
+	 * stage: this runs on the generation thread, and a leg the 600 box cannot connect is
+	 * served by the mooring legs instead).
+	 */
+	public static synchronized int seaDistanceBetween(int fromPacked, int toPacked)
+	{
+		SailingSea sea = get();
+		if (sea.width == 0 || !isSailable(fromPacked) || !isSailable(toPacked))
+		{
+			return -1;
+		}
+		int start = (WorldPointUtil.unpackWorldY(fromPacked) - sea.minY) * sea.width
+			+ (WorldPointUtil.unpackWorldX(fromPacked) - sea.minX);
+		int goal = (WorldPointUtil.unpackWorldY(toPacked) - sea.minY) * sea.width
+			+ (WorldPointUtil.unpackWorldX(toPacked) - sea.minX);
+		if (start == goal)
+		{
+			return 0;
+		}
+		int cost = boxDistance(sea, start, goal, 60);
+		return cost >= 0 ? cost : boxDistance(sea, start, goal, 600);
+	}
+
+	/** Box-bounded Dijkstra cost from start to goal grid index, or -1 when unconnected. */
+	private static int boxDistance(SailingSea sea, int start, int goal, int margin)
+	{
+		int x0 = Math.max(0, Math.min(start % sea.width, goal % sea.width) - margin);
+		int y0 = Math.max(0, Math.min(start / sea.width, goal / sea.width) - margin);
+		int x1 = Math.min(sea.width - 1, Math.max(start % sea.width, goal % sea.width) + margin);
+		int y1 = Math.min(sea.height - 1, Math.max(start / sea.width, goal / sea.width) + margin);
+		int boxWidth = x1 - x0 + 1;
+		int boxHeight = y1 - y0 + 1;
+		int[] dist = new int[boxWidth * boxHeight];
+		java.util.Arrays.fill(dist, Integer.MAX_VALUE);
+		int boxStart = (start / sea.width - y0) * boxWidth + (start % sea.width - x0);
+		int boxGoal = (goal / sea.width - y0) * boxWidth + (goal % sea.width - x0);
+		LongHeap queue = new LongHeap();
+		dist[boxStart] = 0;
+		queue.push(boxStart);
+		while (!queue.isEmpty())
+		{
+			long head = queue.pop();
+			int index = (int) (head & 0xFFFFFFFFL);
+			if ((int) (head >>> 32) > dist[index])
+			{
+				continue;
+			}
+			if (index == boxGoal)
+			{
+				return dist[index];
+			}
+			int x = index % boxWidth;
+			int y = index / boxWidth;
+			for (int[] move : MOVES)
+			{
+				int nx = x + move[0];
+				int ny = y + move[1];
+				if (nx < 0 || ny < 0 || nx >= boxWidth || ny >= boxHeight
+					|| !bit(sea, x0 + nx, y0 + ny)
+					|| knightBlocked(sea, x0 + x, y0 + y, move[0], move[1]))
+				{
+					continue;
+				}
+				int next = ny * boxWidth + nx;
+				if (dist[index] + move[2] < dist[next])
+				{
+					dist[next] = dist[index] + move[2];
+					queue.push((long) dist[next] << 32 | next);
+				}
+			}
+		}
+		return -1;
+	}
+
 	public static List<Transport> seaLegTransports(int targetPacked, int count)
 	{
 		if (!isSailable(targetPacked))

@@ -695,6 +695,32 @@ public class ShortestPathPlugin extends Plugin
 		{
 			best = Math.min(best, WorldPointUtil.distanceBetween(location, pathStep.getPackedPosition()));
 		}
+		// A sailing leg contributes only its two endpoints to the path, so mid-sail the player
+		// is "hundreds of tiles off route" by node distance and auto-recalc wiped the route a
+		// few tiles out of port. Measure against the legs' SEA TRACKS too (cached waypoints,
+		// non-blocking); while a track is still computing, treat the sailor as on route rather
+		// than recalc against incomplete geometry.
+		RouteOption displayed = getDisplayedRoute();
+		if (displayed != null && SailingSea.isSailable(location))
+		{
+			for (int departure : displayed.sailingJumpDepartures())
+			{
+				if (departure < 0 || departure + 1 >= path.size())
+				{
+					continue;
+				}
+				int[] track = SailingSea.seaPath(path.get(departure).getPackedPosition(),
+					path.get(departure + 1).getPackedPosition());
+				if (track == null)
+				{
+					return 0;
+				}
+				for (int waypoint : track)
+				{
+					best = Math.min(best, WorldPointUtil.distanceBetween(location, waypoint));
+				}
+			}
+		}
 		return best;
 	}
 

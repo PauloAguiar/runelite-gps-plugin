@@ -210,6 +210,10 @@ public class AlternativeRoutesService
 		{
 			seaLegs.addAll(SailingSea.seaLegTransports(target, 6));
 		}
+		// Player aboard: the start tile is sealed ocean with no walk edges — without legs
+		// FROM it (disembark at nearby ports, or sail straight to a water pin), every search
+		// dies on the start node and the whole generation reports unreachable.
+		seaLegs.addAll(SailingSea.aboardLegTransports(start, ends, 6));
 		planningConfig.setExtraTransports(seaLegs);
 
 		if (resumed)
