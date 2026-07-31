@@ -740,6 +740,9 @@ public class RouteDirectionsOverlay extends OverlayPanel
 				{
 					reachedIndex = Math.max(reachedIndex, ride.getEndIndex());
 					liveRemainingTicks = remainingTicksAt[ride.getEndIndex()];
+					// The completion banner gates on selection distance ZERO — a land-selector
+					// concept the riding branch pins to MAX_VALUE. Sea arrival IS selection.
+					lastSelectionDistance = 0;
 					return;
 				}
 				int[] track = sailingRide ? SailingSea.seaPath(origin, destination) : null;
@@ -763,6 +766,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 					{
 						reachedIndex = Math.max(reachedIndex, ride.getEndIndex());
 						liveRemainingTicks = remainingTicksAt[ride.getEndIndex()];
+						lastSelectionDistance = 0;
 					}
 					else
 					{

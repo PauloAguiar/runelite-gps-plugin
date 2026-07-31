@@ -1431,13 +1431,6 @@ public class PathfinderConfig
 	{
 		TransportType type = transport.getType();
 
-		// Sailing: suppress teleports while the player is aboard a boat. We don't model sailing
-		// navigation, so teleporting away mid-ocean would produce confusing suggestions.
-		if (isOnSailingBoat && type.isTeleport())
-		{
-			return false;
-		}
-
 		// Master sailing gate: sailing is a structural world switch (own Travel options
 		// section), not a catalog method — with it off, sailing edges must not exist in ANY
 		// mode, planning included, or "every method excluded" would still sail to islands.
