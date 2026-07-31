@@ -268,7 +268,10 @@ final class RouteDirections
 		int sailTicks = Math.max(1, duration - SailingSea.OVERHEAD_TICKS);
 		steps.add(new Step("\u26F5 Embark at " + origin, i - 1, i - 1,
 			Math.max(0, duration - sailTicks), true));
-		steps.add(new Step("Sail to " + destination, i - 1, i, sailTicks, true));
+		// Water pins say "the destination" (matching the walk phrasing); port legs name
+		// the port. Coordinates never appear in either.
+		String sailTarget = "destination".equals(destination) ? "the destination" : destination;
+		steps.add(new Step("Sail to " + sailTarget, i - 1, i, sailTicks, true));
 	}
 
 	private static String walkText(String target)
