@@ -700,6 +700,21 @@ public class RouteDirectionsOverlay extends OverlayPanel
 			// path, so a ride passing over the destination can't stamp an arrival.
 			lastSelectionDistance = Integer.MAX_VALUE;
 			RouteDirections.Step ride = currentStep(plugin.getRouteDirections(route));
+			// Aboard, the ride is found by GEOMETRY: boarding happens from range, so the
+			// boarding node may never have been stood on — currentStep would stay the walk
+			// leg forever, freezing the list at "Walk" and never stamping the arrival. The
+			// sail step whose cached track passes nearest the boat is the active one; being
+			// aboard also means everything before its departure node is done.
+			if (aboard())
+			{
+				RouteDirections.Step sail = activeSailRide(
+					route, plugin.getRouteDirections(route), playerPacked);
+				if (sail != null)
+				{
+					ride = sail;
+					reachedIndex = Math.max(reachedIndex, sail.getStartIndex());
+				}
+			}
 			if (ride != null && ride.isTransport())
 			{
 				int origin = path.get(Math.max(0, ride.getStartIndex())).getPackedPosition();
@@ -880,6 +895,43 @@ public class RouteDirectionsOverlay extends OverlayPanel
 			return false;
 		}
 		return !step.isEmbark() || aboard();
+	}
+
+	/**
+	 * The sailing ride step whose cached sea track passes nearest the aboard player (within
+	 * 30 tiles), or null: multiple sail legs in one route disambiguate by geometry.
+	 */
+	private RouteDirections.Step activeSailRide(RouteOption route,
+		List<RouteDirections.Step> steps, int playerPacked)
+	{
+		List<gps.pathfinder.PathStep> path = route.getPath();
+		RouteDirections.Step best = null;
+		int bestDistance = 30;
+		for (RouteDirections.Step step : steps)
+		{
+			if (!step.isTransport() || step.getEndIndex() >= path.size()
+				|| !route.sailingJumpDepartures().contains(step.getStartIndex()))
+			{
+				continue;
+			}
+			int[] track = SailingSea.seaPath(
+				path.get(Math.max(0, step.getStartIndex())).getPackedPosition(),
+				path.get(step.getEndIndex()).getPackedPosition());
+			if (track == null)
+			{
+				continue;
+			}
+			for (int waypoint : track)
+			{
+				int d = WorldPointUtil.distanceBetween(playerPacked, waypoint);
+				if (d < bestDistance)
+				{
+					bestDistance = d;
+					best = step;
+				}
+			}
+		}
+		return best;
 	}
 
 	/** Whether the player is at the helm (SAILING_BOARDED_BOAT). */

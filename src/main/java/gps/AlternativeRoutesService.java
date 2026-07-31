@@ -206,7 +206,20 @@ public class AlternativeRoutesService
 		// the resumed path reuses the prior snapshot and previously lost the legs entirely,
 		// leaving water pins to detour via whatever static landing the search could reach.
 		List<Transport> seaLegs = new ArrayList<>();
+		// Wet = sailable terrain AND collision-blocked: stilt-deck tiles (the Pandemonium
+		// dock) sit on water-family terrain but are walkable pier cells — functionally land.
+		// Sea legs to those said "sail to the destination" where mooring + walking is the
+		// real route (and the only physically sensible one).
+		Set<Integer> wetTargets = new HashSet<>();
 		for (int target : ends)
+		{
+			if (planningConfig.getMap().isBlocked(WorldPointUtil.unpackWorldX(target),
+				WorldPointUtil.unpackWorldY(target), WorldPointUtil.unpackWorldPlane(target)))
+			{
+				wetTargets.add(target);
+			}
+		}
+		for (int target : wetTargets)
 		{
 			seaLegs.addAll(SailingSea.seaLegTransports(target, 6));
 		}
@@ -217,7 +230,7 @@ public class AlternativeRoutesService
 		// tiles a player stands on afoot, and offering "sail from here" there was wrong.
 		if (planningConfig.isOnSailingBoat())
 		{
-			seaLegs.addAll(SailingSea.aboardLegTransports(start, ends, 6));
+			seaLegs.addAll(SailingSea.aboardLegTransports(start, wetTargets, 6));
 		}
 		planningConfig.setExtraTransports(seaLegs);
 
