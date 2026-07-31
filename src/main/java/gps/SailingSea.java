@@ -198,7 +198,7 @@ public final class SailingSea
 				.destination(targetPacked)
 				.type(TransportType.SAILING)
 				.duration(duration)
-				.displayInfo("Sailing: " + portName(i) + " \u2192 destination")
+				.displayInfo("Embark at " + portName(i))
 				.build());
 		}
 		return legs;

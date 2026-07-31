@@ -256,22 +256,32 @@ final class RouteDirections
 	{
 		String label = method.getDisplayInfo() == null ? "" : method.getDisplayInfo();
 		String trimmed = label.startsWith("Sailing: ") ? label.substring(9) : label;
+		String origin;
+		String destination;
 		int arrow = trimmed.indexOf(" \u2192 ");
-		if (arrow < 0)
+		if (arrow >= 0)
+		{
+			// Port-to-port rows: "Sailing: {origin} \u2192 {destination}".
+			origin = trimmed.substring(0, arrow);
+			destination = trimmed.substring(arrow + 3);
+		}
+		else if (trimmed.startsWith("Embark at "))
+		{
+			// Synthetic water-pin legs: the card just says where to board; the sail step
+			// mirrors the walk phrasing.
+			origin = trimmed.substring(10);
+			destination = "the destination";
+		}
+		else
 		{
 			steps.add(new Step("\u26F5 " + (trimmed.isEmpty() ? "Sail" : trimmed), i - 1, i,
 				duration, true));
 			return;
 		}
-		String origin = trimmed.substring(0, arrow);
-		String destination = trimmed.substring(arrow + 3);
 		int sailTicks = Math.max(1, duration - SailingSea.OVERHEAD_TICKS);
 		steps.add(new Step("\u26F5 Embark at " + origin, i - 1, i - 1,
 			Math.max(0, duration - sailTicks), true));
-		// Water pins say "the destination" (matching the walk phrasing); port legs name
-		// the port. Coordinates never appear in either.
-		String sailTarget = "destination".equals(destination) ? "the destination" : destination;
-		steps.add(new Step("Sail to " + sailTarget, i - 1, i, sailTicks, true));
+		steps.add(new Step("Sail to " + destination, i - 1, i, sailTicks, true));
 	}
 
 	private static String walkText(String target)
