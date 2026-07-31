@@ -158,7 +158,9 @@ public class DestinationsReachableTest
 	 * flood, exactly): 86 pins had been reachable only by WALKING ON THE SEA. The honest
 	 * backlog shrinks via the snap pass and island landings.
 	 */
-	private static final int RATCHET = 733;
+	// 733 -> 747 with the 2026-07-30 cache refresh (rev 2644): a world update legitimately
+	// moves this number; the ratchet exists to catch OUR data regressions between refreshes.
+	private static final int RATCHET = 747;
 
 	private boolean anyReachable(int packed)
 	{
