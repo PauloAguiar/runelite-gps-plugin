@@ -311,24 +311,26 @@ public class AlternativeRoutesService
 			{
 				seedCandidates.clear();
 			}
-			// Aboard: the closest-port disembark always gets its own seeded search, so the
-			// "park the boat properly" option is always on the card next to any
-			// teleport-and-abandon routes.
+			// Aboard: EVERY disembark port gets its own seeded search — nearest first. With
+			// abandonment forbidden this is the whole diversity engine (teleport-first seeds
+			// are barred, and one port seed + chains produced exactly one route in the
+			// field); with abandonment allowed it still guarantees the "park the boat
+			// properly" options ride alongside the teleport routes.
 			if (planningConfig.isOnSailingBoat())
 			{
-				Transport nearestPort = null;
+				List<Transport> ports = new ArrayList<>();
 				for (Transport leg : seaLegs)
 				{
 					if (leg.getOrigin() == start && leg.getDisplayInfo() != null
-						&& leg.getDisplayInfo().startsWith("Disembark")
-						&& (nearestPort == null || leg.getDuration() < nearestPort.getDuration()))
+						&& leg.getDisplayInfo().startsWith("Disembark"))
 					{
-						nearestPort = leg;
+						ports.add(leg);
 					}
 				}
-				if (nearestPort != null)
+				ports.sort(Comparator.comparingInt(Transport::getDuration));
+				for (int i = 0; i < ports.size(); i++)
 				{
-					seedCandidates.add(0, nearestPort);
+					seedCandidates.add(Math.min(i, seedCandidates.size()), ports.get(i));
 				}
 			}
 		}
