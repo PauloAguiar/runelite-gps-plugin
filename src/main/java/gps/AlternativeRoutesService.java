@@ -289,6 +289,12 @@ public class AlternativeRoutesService
 		// walking+transport distance field — the near-exact A* heuristic every search of this
 		// generation shares (chain, walk, seeds). Compact target sets only; a map-wide nearest-X
 		// set would flood everything for searches that are already cheap.
+		// The field's reverse-transport index must see the sea legs set above: availability
+		// only absorbs extras on REBUILD, and the first in-loop rebuild happens after the field
+		// is built. Water pins therefore got an EMPTY field — production diagnostics showed 0
+		// guided / 19 blind searches and a 30s wall for a pin the direct probe (which rebuilt
+		// first) served a healthy field for.
+		planningConfig.rebuildAvailabilityWithExclusions(excluded);
 		long fieldStart = System.nanoTime();
 		// The horizon matches the searches' sanity ceiling (2x the display band), so the fill region
 		// past the band edge still gets exact heuristic guidance.
