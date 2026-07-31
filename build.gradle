@@ -53,6 +53,10 @@ processResources {
     } catch (Exception ignored) {
     }
     def commitValue = gitCommit
+    // Task INPUT, not just doLast side effect: without this, a Java-only commit leaves
+    // processResources UP-TO-DATE and the stamp freezes at whatever commit last touched a
+    // resource file — the stamp then lies about what code is running.
+    inputs.property('gitCommit', commitValue)
     doLast {
         new File(destinationDir, 'gps-build.properties').text = "commit=${commitValue}\n"
     }
