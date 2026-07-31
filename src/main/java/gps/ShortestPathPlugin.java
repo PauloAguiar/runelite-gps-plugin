@@ -1509,6 +1509,14 @@ public class ShortestPathPlugin extends Plugin
 			int d = distanceFromPath(currentLocation);
 			pathDistance = d;
 			int warn = Math.max(0, Math.min(config.offRouteWarnDistance(), recalc));
+			// At the helm the bands stretch: a boat's wide 16-bearing turning arcs swing off
+			// the decimated track line farther than a walker ever drifts off a path, and a
+			// land-tuned radius recalculated away perfectly good voyages mid-turn.
+			if (client.getVarbitValue(net.runelite.api.gameval.VarbitID.SAILING_BOARDED_BOAT) != 0)
+			{
+				recalc *= 3;
+				warn *= 3;
+			}
 			// A boat cutscene / teleport landing carries the player far from the path in one leap;
 			// that isn't drifting off route. A jump bigger than running arms a grace window that
 			// refreshes while the transport keeps moving them, and clears once they're back within

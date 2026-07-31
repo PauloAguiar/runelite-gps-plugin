@@ -78,6 +78,12 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	// Progress-selection thresholds live in RouteProgress (the unit-testable tracker); this alias
 	// remains for the vehicle-speed heuristic below.
 	private static final int NEAR_DISTANCE = RouteProgress.NEAR_DISTANCE;
+	/**
+	 * Arrival radius for SAILING legs: the tracked position is the hull's anchor tile, and a
+	 * boat stops short — hull clearance, quarter-tile velocity snapping, and the game halting
+	 * adjacent to the target can leave the anchor several tiles out while the bow touches it.
+	 */
+	private static final int SEA_NEAR_DISTANCE = 8;
 	// Walk-distance flood memo (see updateProgress): recomputed only when the player's tile changes.
 	private java.util.Map<Integer, Integer> walkCache;
 	private int walkCacheTile = WorldPointUtil.UNDEFINED;
@@ -741,8 +747,10 @@ public class RouteDirectionsOverlay extends OverlayPanel
 							nearest = w;
 						}
 					}
-					if (nearest == track.length - 1
-						|| WorldPointUtil.distanceBetween(playerPacked, destination) <= NEAR_DISTANCE)
+					// Last FEW waypoints, not the literal last: waypoints are decimated
+					// (every 3rd tile) and the hull parks short of the pin.
+					if (nearest >= track.length - 3
+						|| WorldPointUtil.distanceBetween(playerPacked, destination) <= SEA_NEAR_DISTANCE)
 					{
 						reachedIndex = Math.max(reachedIndex, ride.getEndIndex());
 						liveRemainingTicks = remainingTicksAt[ride.getEndIndex()];
