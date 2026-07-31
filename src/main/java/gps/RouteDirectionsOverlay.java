@@ -731,9 +731,18 @@ public class RouteDirectionsOverlay extends OverlayPanel
 				// cannot flood a sealed ocean). Progress advances waypoint by waypoint; the
 				// last waypoint, or proximity to the landing, stamps the arrival — that is
 				// what greys the sailed stretch and completes water-pin routes.
-				int[] track = route.sailingJumpDepartures().contains(ride.getStartIndex())
-					? SailingSea.seaPath(origin, destination)
-					: null;
+				boolean sailingRide = route.sailingJumpDepartures().contains(ride.getStartIndex());
+				// Proximity to the landing IS arrival — checked before anything track-based,
+				// because the live learner invalidates the track cache exactly when arriving
+				// at an obstacle-rich port, and the stamp must not depend on a cache.
+				if (sailingRide && WorldPointUtil.distanceBetween(playerPacked, destination)
+					<= SEA_NEAR_DISTANCE)
+				{
+					reachedIndex = Math.max(reachedIndex, ride.getEndIndex());
+					liveRemainingTicks = remainingTicksAt[ride.getEndIndex()];
+					return;
+				}
+				int[] track = sailingRide ? SailingSea.seaPath(origin, destination) : null;
 				if (track != null && track.length > 1)
 				{
 					int nearest = 0;
@@ -922,11 +931,20 @@ public class RouteDirectionsOverlay extends OverlayPanel
 			{
 				continue;
 			}
-			int[] track = SailingSea.seaPath(
-				path.get(Math.max(0, step.getStartIndex())).getPackedPosition(),
-				path.get(step.getEndIndex()).getPackedPosition());
+			int origin = path.get(Math.max(0, step.getStartIndex())).getPackedPosition();
+			int destination = path.get(step.getEndIndex()).getPackedPosition();
+			int[] track = SailingSea.seaPath(origin, destination);
 			if (track == null)
 			{
+				// Track cache just invalidated (the live learner clears it precisely at
+				// obstacle-rich ports — i.e. at ARRIVAL): endpoints still identify the leg.
+				int d = Math.min(WorldPointUtil.distanceBetween(playerPacked, origin),
+					WorldPointUtil.distanceBetween(playerPacked, destination));
+				if (d < bestDistance)
+				{
+					bestDistance = d;
+					best = step;
+				}
 				continue;
 			}
 			for (int waypoint : track)
