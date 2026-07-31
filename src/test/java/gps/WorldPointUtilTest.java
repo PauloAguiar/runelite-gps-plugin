@@ -195,6 +195,88 @@ public class WorldPointUtilTest
 		assertEquals(0, WorldPointUtil.unpackWorldPlane(packed));
 	}
 
+	// --- Boat-aware Player overload (the branch the aboard field bug lived in) ---
+
+	private Client mockedShoreClient()
+	{
+		Client client = Mockito.mock(Client.class);
+		WorldView view = Mockito.mock(WorldView.class);
+		Mockito.when(client.getWorldView(0)).thenReturn(view);
+		Mockito.when(view.getPlane()).thenReturn(0);
+		Mockito.when(view.isInstance()).thenReturn(false);
+		Mockito.when(view.getBaseX()).thenReturn(3200);
+		Mockito.when(view.getBaseY()).thenReturn(3200);
+		return client;
+	}
+
+	@Test
+	public void fromLocalInstancePlayerAshoreDelegates()
+	{
+		Client client = mockedShoreClient();
+		net.runelite.api.Player player = Mockito.mock(net.runelite.api.Player.class);
+		WorldView playerView = Mockito.mock(WorldView.class);
+		Mockito.when(playerView.getId()).thenReturn(WorldView.TOPLEVEL);
+		Mockito.when(player.getWorldView()).thenReturn(playerView);
+		Mockito.when(player.getLocalLocation()).thenReturn(
+			new LocalPoint(10 << LOCAL_COORD_BITS, 22 << LOCAL_COORD_BITS, 0));
+		int packed = WorldPointUtil.fromLocalInstance(client, player);
+		assertEquals(3210, WorldPointUtil.unpackWorldX(packed));
+		assertEquals(3222, WorldPointUtil.unpackWorldY(packed));
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void fromLocalInstanceAboardResolvesThroughTheBoat()
+	{
+		// Aboard: the player's view is the boat's sub-view; position resolves through the
+		// boat WorldEntity's TOP-LEVEL location, never the player's sub-view LocalPoint.
+		Client client = mockedShoreClient();
+		net.runelite.api.Player player = Mockito.mock(net.runelite.api.Player.class);
+		WorldView boatView = Mockito.mock(WorldView.class);
+		Mockito.when(boatView.getId()).thenReturn(7);
+		Mockito.when(player.getWorldView()).thenReturn(boatView);
+		WorldView topLevel = Mockito.mock(WorldView.class);
+		net.runelite.api.IndexedObjectSet<net.runelite.api.WorldEntity> entities =
+			Mockito.mock(net.runelite.api.IndexedObjectSet.class);
+		net.runelite.api.WorldEntity boat = Mockito.mock(net.runelite.api.WorldEntity.class);
+		Mockito.when(client.getTopLevelWorldView()).thenReturn(topLevel);
+		// RuneLite's WorldPoint.fromLocal resolves against the TOP-LEVEL view's base.
+		Mockito.when(topLevel.getBaseX()).thenReturn(3200);
+		Mockito.when(topLevel.getBaseY()).thenReturn(3200);
+		Mockito.doReturn(entities).when(topLevel).worldEntities();
+		Mockito.doReturn(boat).when(entities).byIndex(7);
+		Mockito.when(boat.getLocalLocation()).thenReturn(
+			new LocalPoint(40 << LOCAL_COORD_BITS, 55 << LOCAL_COORD_BITS, 0));
+		int packed = WorldPointUtil.fromLocalInstance(client, player);
+		assertEquals(3240, WorldPointUtil.unpackWorldX(packed));
+		assertEquals(3255, WorldPointUtil.unpackWorldY(packed));
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void fromLocalInstanceAboardTransientsAreUndefined()
+	{
+		// byIndex is briefly null during boarding view swaps; a missing boat local likewise.
+		// Both must yield UNDEFINED (skip the frame), never a throw or garbage coordinates.
+		Client client = Mockito.mock(Client.class);
+		net.runelite.api.Player player = Mockito.mock(net.runelite.api.Player.class);
+		WorldView boatView = Mockito.mock(WorldView.class);
+		Mockito.when(boatView.getId()).thenReturn(9);
+		Mockito.when(player.getWorldView()).thenReturn(boatView);
+		WorldView topLevel = Mockito.mock(WorldView.class);
+		net.runelite.api.IndexedObjectSet<net.runelite.api.WorldEntity> entities =
+			Mockito.mock(net.runelite.api.IndexedObjectSet.class);
+		Mockito.when(client.getTopLevelWorldView()).thenReturn(topLevel);
+		Mockito.doReturn(entities).when(topLevel).worldEntities();
+		Mockito.doReturn(null).when(entities).byIndex(9);
+		assertEquals(WorldPointUtil.UNDEFINED, WorldPointUtil.fromLocalInstance(client, player));
+
+		net.runelite.api.WorldEntity boat = Mockito.mock(net.runelite.api.WorldEntity.class);
+		Mockito.doReturn(boat).when(entities).byIndex(9);
+		Mockito.when(boat.getLocalLocation()).thenReturn(null);
+		assertEquals(WorldPointUtil.UNDEFINED, WorldPointUtil.fromLocalInstance(client, player));
+	}
+
 	// --- Tests merged from WorldPointTests.java ---
 
 	@SuppressWarnings("ConstantValue")
