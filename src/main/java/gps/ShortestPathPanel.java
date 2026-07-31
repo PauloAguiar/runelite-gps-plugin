@@ -994,6 +994,21 @@ public class ShortestPathPanel extends PluginPanel
 		{
 			methods.add(buildWalkRow(totalWalk));
 		}
+		// One sailing row for the whole route, mirroring the walk row: total sea tiles across
+		// every sailing leg (distances inverted from the legs' durations).
+		int totalSail = 0;
+		for (int m = 0; m < route.getMethods().size(); m++)
+		{
+			if (route.getMethods().get(m).getType() == TransportType.SAILING
+				&& m < route.getMethodDurations().size())
+			{
+				totalSail += SailingSea.tilesFromDuration(route.getMethodDurations().get(m));
+			}
+		}
+		if (totalSail > 0)
+		{
+			methods.add(buildSailRow(totalSail));
+		}
 		card.add(methods, BorderLayout.CENTER);
 
 		card.setToolTipText(selected ? "Showing on map — click to hide" : "Click to show this route on the map");
@@ -1080,6 +1095,7 @@ public class ShortestPathPanel extends PluginPanel
 	// Neutral dot colour for walking legs; deliberately outside the category palette so walking
 	// doesn't masquerade as a teleport category.
 	private static final Color WALK_DOT_COLOUR = new Color(0x9E, 0x9E, 0x9E);
+	private static final Color SAIL_DOT_COLOUR = new Color(0x2E, 0x86, 0xC1);
 	// Teleport-item dots are coloured by charge model — permanent (reusable) vs charged (consumes a
 	// charge or the item) — so the two read apart in a route card.
 	private static final Color PERMANENT_ITEM_DOT = new Color(0x4D, 0xB6, 0xAC); // teal
@@ -1114,6 +1130,22 @@ public class ShortestPathPanel extends PluginPanel
 	 * A walking-leg row, shaped exactly like a method row: a neutral grey dot in the category-dot
 	 * column, then the step count.
 	 */
+	/** The sailing twin of the walk row: sea-blue dot, total tiles sailed across the route. */
+	private JPanel buildSailRow(int tiles)
+	{
+		JPanel row = new JPanel(new BorderLayout(5, 0));
+		row.setOpaque(false);
+		JLabel dot = new JLabel(dot(SAIL_DOT_COLOUR));
+		dot.setToolTipText("Sailing");
+		row.add(verticallyCentered(dot), BorderLayout.WEST);
+		JLabel text = wrappedLabel("Sail <font color='#9E9E9E'>" + tiles + " tiles</font>");
+		text.setVerticalAlignment(SwingConstants.CENTER);
+		text.setToolTipText("Total open-sea distance across this route's sailing legs"
+			+ " (provisional speed model until calibration)");
+		row.add(text, BorderLayout.CENTER);
+		return row;
+	}
+
 	private JPanel buildWalkRow(int steps)
 	{
 		JPanel row = new JPanel(new BorderLayout(5, 0));

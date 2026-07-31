@@ -523,6 +523,17 @@ public final class SailingSea
 		return -1;
 	}
 
+	/**
+	 * Sea tiles covered by a sailing leg of the given duration — the inverse of the duration
+	 * model every sailing edge (static rows and synthetic legs) is generated with:
+	 * OVERHEAD_TICKS + tiles / TILES_PER_TICK. COUPLED to that provisional model: when the
+	 * calibration campaign replaces the constants, this inverts whatever replaces them.
+	 */
+	public static int tilesFromDuration(int durationTicks)
+	{
+		return (int) Math.round(Math.max(0, durationTicks - OVERHEAD_TICKS) * TILES_PER_TICK);
+	}
+
 	/** Local-grid sailability test used by the wet-endpoint flood's move loop. */
 	private static boolean bit(SailingSea sea, int x, int y)
 	{
