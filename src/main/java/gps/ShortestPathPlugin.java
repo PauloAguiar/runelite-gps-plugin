@@ -680,6 +680,56 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	/** Chebyshev distance from {@code location} to the nearest tile of the displayed path, or -1. */
+	private int seaObstacleScanCooldown;
+
+	/**
+	 * Scene scan for live sea blockers. A real obstacle carries BLOCK_MOVEMENT_OBJECT; scene
+	 * border padding reads 0xFFFFFF (everything blocked) and is skipped, as is a 3-tile edge
+	 * margin — the first field harvest showed the border bands dwarfing the actual galleon.
+	 */
+	private void scanSeaObstacles()
+	{
+		net.runelite.api.WorldView view = client.getTopLevelWorldView();
+		if (view == null || view.getCollisionMaps() == null || view.getPlane() != 0)
+		{
+			return;
+		}
+		net.runelite.api.CollisionData collision = view.getCollisionMaps()[0];
+		if (collision == null)
+		{
+			return;
+		}
+		int[][] flags = collision.getFlags();
+		int baseX = view.getBaseX();
+		int baseY = view.getBaseY();
+		List<Integer> found = null;
+		for (int sx = 3; sx < flags.length - 3; sx++)
+		{
+			for (int sy = 3; sy < flags[sx].length - 3; sy++)
+			{
+				int tileFlags = flags[sx][sy];
+				if (tileFlags == 0xFFFFFF
+					|| (tileFlags & net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_OBJECT) == 0)
+				{
+					continue;
+				}
+				int packed = WorldPointUtil.packWorldPoint(baseX + sx, baseY + sy, 0);
+				if (SailingSea.isSailable(packed) && !SailingSea.obstacleAt(baseX + sx, baseY + sy))
+				{
+					if (found == null)
+					{
+						found = new ArrayList<>();
+					}
+					found.add(packed);
+				}
+			}
+		}
+		if (found != null)
+		{
+			SailingSea.learnObstacles(found);
+		}
+	}
+
 	public int distanceFromPath(int location)
 	{
 		// Measured against the DISPLAYED route (the line the player is actually following), not the
@@ -1430,6 +1480,14 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
+		// Passive sea-obstacle learning: every 10 ticks, harvest scene tiles that the shipped
+		// ocean calls sailable but live collision blocks (moored vessels, harbour clutter).
+		// The offline map plans; the client corrects itself as scenes reveal the truth.
+		if (--seaObstacleScanCooldown <= 0)
+		{
+			seaObstacleScanCooldown = 10;
+			scanSeaObstacles();
+		}
 		for (int i = 0; i < pendingTasks.size(); i++)
 		{
 			if (pendingTasks.get(i).check(client.getTickCount()))

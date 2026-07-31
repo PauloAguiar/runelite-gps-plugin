@@ -107,6 +107,40 @@ public class SailingSeaTargetTest
 	}
 
 	@Test
+	public void learnedObstaclesBendTracks()
+	{
+		// The runtime learner: live-blocked sailable tiles (a moored galleon) must bend the
+		// cached track around them, and new knowledge must invalidate the old cache.
+		int from = WorldPointUtil.packWorldPoint(3080, 2990, 0);
+		int to = WorldPointUtil.packWorldPoint(3080, 3010, 0);
+		try
+		{
+			int[] before = SailingSea.seaPathBlocking(from, to);
+			assertTrue("baseline track exists", before != null);
+			// Wall the straight line: three tiles across the corridor at y 3000.
+			java.util.List<Integer> wall = new java.util.ArrayList<>();
+			for (int x = 3070; x <= 3090; x++)
+			{
+				wall.add(WorldPointUtil.packWorldPoint(x, 3000, 0));
+			}
+			SailingSea.learnObstacles(wall);
+			int[] after = SailingSea.seaPathBlocking(from, to);
+			assertTrue("track must still exist after learning", after != null);
+			for (int waypoint : after)
+			{
+				int wx = WorldPointUtil.unpackWorldX(waypoint);
+				int wy = WorldPointUtil.unpackWorldY(waypoint);
+				assertTrue("track must avoid learned obstacles (hit " + wx + "," + wy + ")",
+					!SailingSea.obstacleAt(wx, wy));
+			}
+		}
+		finally
+		{
+			SailingSea.clearLiveObstacles();
+		}
+	}
+
+	@Test
 	public void seaTrackFollowsWater()
 	{
 		// The rendering track for a sailing leg: every waypoint must be genuinely sailable

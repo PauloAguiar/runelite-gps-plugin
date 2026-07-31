@@ -262,6 +262,7 @@ public final class SailingSea
 				int ny = y + move[1];
 				if (nx < 0 || ny < 0 || nx >= boxWidth || ny >= boxHeight
 					|| !bit(sea, x0 + nx, y0 + ny)
+					|| obstacleAtGrid(sea, x0 + nx, y0 + ny)
 					|| knightBlocked(sea, x0 + x, y0 + y, move[0], move[1]))
 				{
 					continue;
@@ -487,7 +488,7 @@ public final class SailingSea
 				int nx = x + dx;
 				int ny = y + dy;
 				if (nx < 0 || ny < 0 || nx >= sea.width || ny >= sea.height
-					|| !bit(sea, nx, ny))
+					|| !bit(sea, nx, ny) || obstacleAtGrid(sea, nx, ny))
 				{
 					continue;
 				}
@@ -509,6 +510,116 @@ public final class SailingSea
 	}
 
 	/** Sea tracks for the displayed route's sailing legs, keyed by (from, to). */
+	/**
+	 * Session-learned sea blockers: tiles the shipped ocean calls sailable but LIVE scene
+	 * collision blocks — moored vessels, harbour clutter, true hazards. The offline map stays
+	 * the approximate planner; the client corrects itself as scenes reveal the truth (the
+	 * user's chosen architecture over curated harvests). Dilated by one tile for hull
+	 * standoff; water within 4 of a mooring's water endpoint is never masked so berth
+	 * approaches survive. Volatile copy-on-write: hot flood loops read without locks.
+	 */
+	private static volatile PrimitiveIntHashMap<Boolean> liveObstacles;
+
+	/** Whether a world tile is masked by a live-learned obstacle. */
+	public static boolean obstacleAt(int worldX, int worldY)
+	{
+		PrimitiveIntHashMap<Boolean> mask = liveObstacles;
+		return mask != null
+			&& mask.get(WorldPointUtil.packWorldPoint(worldX, worldY, 0)) != null;
+	}
+
+	private static boolean obstacleAtGrid(SailingSea sea, int gridX, int gridY)
+	{
+		PrimitiveIntHashMap<Boolean> mask = liveObstacles;
+		return mask != null && mask.get(
+			WorldPointUtil.packWorldPoint(sea.minX + gridX, sea.minY + gridY, 0)) != null;
+	}
+
+	/**
+	 * Learns live-blocked sailable tiles (packed world points). New knowledge invalidates
+	 * every cached track and wet flood — they recompute lazily against the corrected sea.
+	 */
+	public static synchronized void learnObstacles(java.util.List<Integer> packedTiles)
+	{
+		SailingSea sea = get();
+		if (sea.width == 0 || packedTiles.isEmpty())
+		{
+			return;
+		}
+		PrimitiveIntHashMap<Boolean> current = liveObstacles;
+		PrimitiveIntHashMap<Boolean> grown = null;
+		for (int packed : packedTiles)
+		{
+			int px = WorldPointUtil.unpackWorldX(packed);
+			int py = WorldPointUtil.unpackWorldY(packed);
+			for (int dx = -1; dx <= 1; dx++)
+			{
+				for (int dy = -1; dy <= 1; dy++)
+				{
+					int tile = WorldPointUtil.packWorldPoint(px + dx, py + dy, 0);
+					if (!isSailable(tile) || nearMooringWater(sea, px + dx, py + dy)
+						|| (current != null && current.get(tile) != null)
+						|| (grown != null && grown.get(tile) != null))
+					{
+						continue;
+					}
+					if (grown == null)
+					{
+						grown = copyMask(current);
+					}
+					grown.put(tile, Boolean.TRUE);
+				}
+			}
+		}
+		if (grown != null)
+		{
+			liveObstacles = grown;
+			synchronized (trackCache)
+			{
+				trackCache.clear();
+			}
+			cachedTarget = WorldPointUtil.UNDEFINED;
+			cachedDistances = null;
+		}
+	}
+
+	private static PrimitiveIntHashMap<Boolean> copyMask(PrimitiveIntHashMap<Boolean> current)
+	{
+		PrimitiveIntHashMap<Boolean> copy = new PrimitiveIntHashMap<>(256);
+		if (current != null)
+		{
+			for (int key : current.keys())
+			{
+				copy.put(key, Boolean.TRUE);
+			}
+		}
+		return copy;
+	}
+
+	private static boolean nearMooringWater(SailingSea sea, int x, int y)
+	{
+		for (int[] mooring : sea.moorings)
+		{
+			if (Math.max(Math.abs(mooring[2] - x), Math.abs(mooring[3] - y)) <= 4)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Test seam: forget everything learned this session. */
+	static synchronized void clearLiveObstacles()
+	{
+		liveObstacles = null;
+		synchronized (trackCache)
+		{
+			trackCache.clear();
+		}
+		cachedTarget = WorldPointUtil.UNDEFINED;
+		cachedDistances = null;
+	}
+
 	private static final java.util.LinkedHashMap<Long, int[]> trackCache =
 		new java.util.LinkedHashMap<Long, int[]>(16, 0.75f, true)
 		{
@@ -668,7 +779,8 @@ public final class SailingSea
 				int nx = x + move[0];
 				int ny = y + move[1];
 				if (nx < 0 || ny < 0 || nx >= boxWidth || ny >= boxHeight
-					|| !bit(sea, x0 + nx, y0 + ny))
+					|| !bit(sea, x0 + nx, y0 + ny)
+					|| obstacleAtGrid(sea, x0 + nx, y0 + ny))
 				{
 					continue;
 				}

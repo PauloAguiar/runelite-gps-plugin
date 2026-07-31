@@ -1689,9 +1689,12 @@ public class TransportAuditPlugin extends Plugin
 			for (int sy = 0; sy < flags[sx].length; sy++)
 			{
 				int world = WorldPointUtil.packWorldPoint(baseX + sx, baseY + sy, 0);
-				boolean liveBlocked =
-					(flags[sx][sy] & net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_FULL) != 0;
-				if (liveBlocked && gps.SailingSea.isSailable(world))
+				// Same filter as the plugin's passive learner: OBJECT-blocked, not the
+				// 0xFFFFFF border padding (the first harvest was 96% scene-edge bands).
+				boolean liveBlocked = flags[sx][sy] != 0xFFFFFF
+					&& (flags[sx][sy] & net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_OBJECT) != 0;
+				if (sx >= 3 && sy >= 3 && sx < flags.length - 3 && sy < flags[sx].length - 3
+					&& liveBlocked && gps.SailingSea.isSailable(world))
 				{
 					rows.append(baseX + sx).append('\t').append(baseY + sy).append('\n');
 					count++;
