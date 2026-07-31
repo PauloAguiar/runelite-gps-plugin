@@ -1216,11 +1216,11 @@ public class ShortestPathPlugin extends Plugin
 				: ((objStart instanceof Integer) ? ((int) objStart) : WorldPointUtil.UNDEFINED);
 			if (start == WorldPointUtil.UNDEFINED)
 			{
-				if (client.getLocalPlayer() == null)
+				start = getPlayerLocation();
+				if (start == WorldPointUtil.UNDEFINED)
 				{
 					return;
 				}
-				start = WorldPointUtil.packWorldPoint(client.getLocalPlayer().getWorldLocation());
 			}
 
 			Set<Integer> targets = new HashSet<>();
@@ -2425,12 +2425,18 @@ public class ShortestPathPlugin extends Plugin
 		});
 	}
 
-	/** The player's packed world position, or {@link WorldPointUtil#UNDEFINED} when not logged in. */
+	/**
+	 * The player's packed world position, or {@link WorldPointUtil#UNDEFINED} when not logged
+	 * in — BOAT-AWARE: aboard, the raw local position lives in the boat's sub-WorldView
+	 * (template-band coordinates that broke progress tracking and hid the route overlays the
+	 * moment the player boarded); the Player overload resolves through the boat WorldEntity,
+	 * returning UNDEFINED transiently during view swaps.
+	 */
 	public int getPlayerLocation()
 	{
 		Player local = client.getLocalPlayer();
 		return local == null ? WorldPointUtil.UNDEFINED
-			: WorldPointUtil.fromLocalInstance(client, local.getLocalLocation());
+			: WorldPointUtil.fromLocalInstance(client, local);
 	}
 
 	private void setTarget(int target, boolean append)
@@ -3648,7 +3654,10 @@ public class ShortestPathPlugin extends Plugin
 				}
 				snapshot.put("varbitSnapshot", varbitSnapshot);
 				Player local = client.getLocalPlayer();
-				snapshot.put("player", local != null ? packedPointJson(WorldPointUtil.packWorldPoint(local.getWorldLocation())) : null);
+				int playerPacked = local != null
+					? WorldPointUtil.fromLocalInstance(client, local) : WorldPointUtil.UNDEFINED;
+				snapshot.put("player",
+					playerPacked != WorldPointUtil.UNDEFINED ? packedPointJson(playerPacked) : null);
 				snapshot.put("routesMode", String.valueOf(routesMode));
 				snapshot.put("routeLimit", routeLimit);
 			snapshot.put("routeCostMultiple", routeCostMultiple);

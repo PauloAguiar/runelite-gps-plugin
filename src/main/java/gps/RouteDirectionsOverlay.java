@@ -660,7 +660,14 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		{
 			return;
 		}
-		int playerPacked = WorldPointUtil.fromLocalInstance(client, player.getLocalLocation());
+		// Boat-aware: aboard, the raw local position is in the boat's sub-WorldView — the
+		// tracker froze the moment the player boarded. UNDEFINED transients (view swaps)
+		// simply skip this frame's update.
+		int playerPacked = WorldPointUtil.fromLocalInstance(client, player);
+		if (playerPacked == WorldPointUtil.UNDEFINED)
+		{
+			return;
+		}
 		int playerPlane = WorldPointUtil.unpackWorldPlane(playerPacked);
 
 		// Rolling speed estimate (tiles/second): faster than any running player means a transport is
