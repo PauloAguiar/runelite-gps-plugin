@@ -308,12 +308,23 @@ public final class SailingSea
 		{
 			trackExecutor.submit(() ->
 			{
-				int[] track = seaPathBlocking(fromPacked, toPacked);
-				synchronized (trackCache)
+				// try/finally: an exception here must not wedge the key in-flight forever
+				// (permanent silent dashes) — cache the null so the overlay falls back cleanly.
+				try
 				{
-					trackCache.put(key, track);
+					seaPathBlocking(fromPacked, toPacked);
 				}
-				tracksInFlight.remove(key);
+				catch (RuntimeException e)
+				{
+					synchronized (trackCache)
+					{
+						trackCache.put(key, null);
+					}
+				}
+				finally
+				{
+					tracksInFlight.remove(key);
+				}
 			});
 		}
 		return null;
