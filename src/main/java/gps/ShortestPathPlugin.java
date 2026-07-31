@@ -2579,17 +2579,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return Set.of();
 		}
-		Set<Integer> edges = new HashSet<>();
-		List<TeleportMethod> methods = route.getMethods();
-		List<Integer> indexes = route.getMethodEdgeIndexes();
-		for (int i = 0; i < methods.size() && i < indexes.size(); i++)
-		{
-			if (methods.get(i).getType() == gps.transport.TransportType.SAILING)
-			{
-				edges.add(indexes.get(i));
-			}
-		}
-		return edges;
+		return route.sailingJumpDepartures();
 	}
 
 	public Set<TeleportMethod> getUserExclusions()

@@ -72,6 +72,26 @@ public final class RouteOption
 	 */
 	private final int turnaroundIndex;
 
+	/**
+	 * DEPARTURE indexes of this route's sailing jumps: values i such that the path edge
+	 * path[i] -> path[i+1] is a SAILING leg. methodEdgeIndexes stores each transport edge by
+	 * its ARRIVAL step (scanMethods records edge (i-1)->i as i) — an implicit convention that
+	 * cost us an invisible off-by-one in the overlay (every sea leg permanently dashed); this
+	 * method is the single place that arithmetic lives now, pinned by RouteOptionTest.
+	 */
+	public java.util.Set<Integer> sailingJumpDepartures()
+	{
+		java.util.Set<Integer> departures = new java.util.HashSet<>();
+		for (int i = 0; i < methods.size() && i < methodEdgeIndexes.size(); i++)
+		{
+			if (methods.get(i).getType() == gps.transport.TransportType.SAILING)
+			{
+				departures.add(methodEdgeIndexes.get(i) - 1);
+			}
+		}
+		return departures;
+	}
+
 	public RouteOption(List<PathStep> path, List<TeleportMethod> methods, List<Integer> methodEdgeIndexes,
 		List<Integer> methodDurations, int totalCost, int rawCost, boolean reached, Set<TeleportMethod> bankMethods,
 		List<Integer> walkBeforeSteps, int trailingWalkSteps)

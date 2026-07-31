@@ -95,9 +95,9 @@ public class PathMapOverlay extends Overlay
 				// Sailing leg: draw the actual sea track (bounded Dijkstra over the shipped
 				// ocean, cached per leg) as a solid line; anything else — and any sailing leg
 				// whose track cannot be computed — stays the dashed jump hint.
-				// methodEdgeIndexes record the ARRIVAL step (scanMethods: edge (i-1)->i is
-				// recorded as i); this loop's i is the DEPARTURE step, hence i + 1.
-				int[] track = sailingEdges.contains(i + 1) ? SailingSea.seaPath(from, next) : null;
+				// sailingEdges holds DEPARTURE indexes (RouteOption.sailingJumpDepartures
+				// owns the arrival->departure arithmetic, pinned by its unit test).
+				int[] track = sailingEdges.contains(i) ? SailingSea.seaPath(from, next) : null;
 				if (track != null)
 				{
 					for (int s = 0; s < track.length - 1; s++)
