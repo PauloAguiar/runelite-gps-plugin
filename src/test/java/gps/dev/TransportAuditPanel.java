@@ -165,15 +165,15 @@ class TransportAuditPanel extends PluginPanel
 		collisionDump.addActionListener(e -> plugin.requestLiveCollisionDump(
 			message -> javax.swing.SwingUtilities.invokeLater(() -> builderStatus.setText(message))));
 		top.add(collisionDump);
-		JButton vesselDump = new JButton("Dump moored vessels");
+		JButton vesselDump = new JButton("Dump sea obstacles");
 		vesselDump.setFont(FontManager.getRunescapeSmallFont());
 		vesselDump.setFocusable(false);
 		vesselDump.setMargin(new Insets(2, 6, 2, 6));
 		vesselDump.setAlignmentX(Component.LEFT_ALIGNMENT);
-		vesselDump.setToolTipText("<html>Every WorldEntity vessel in the scene (except your own boat):<br>"
-			+ "position + hull bounds, appended to gps-debug/sea-obstacles.tsv.<br>"
-			+ "Moored ships block hulls at a layer NO collision flags expose —<br>"
-			+ "this harvest is the only way the sea map learns them.</html>");
+		vesselDump.setToolTipText("<html>Every scene tile that is SAILABLE in the shipped ocean but BLOCKED in<br>"
+			+ "live collision: moored vessels, rocks, true hazards. Appended to<br>"
+			+ "gps-debug/sea-obstacles.tsv. Harvest each port once; the emitters<br>"
+			+ "subtract the tiles so tracks bend around parked ships.</html>");
 		vesselDump.addActionListener(e -> plugin.requestVesselDump(
 			message -> javax.swing.SwingUtilities.invokeLater(() -> builderStatus.setText(message))));
 		top.add(vesselDump);

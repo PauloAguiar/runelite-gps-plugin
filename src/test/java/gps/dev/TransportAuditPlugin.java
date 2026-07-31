@@ -1651,53 +1651,56 @@ public class TransportAuditPlugin extends Plugin
 	}
 
 	/**
-	 * CLIENT THREAD. Moored vessels (NPC galleons, ambient port ships) are WorldEntities:
-	 * their hull blocking lives in a layer neither the cache nor the top-level collision
-	 * flags expose (field-verified: two live dumps beside a galleon showed ZERO divergent
-	 * tiles). Harvesting position + config hull bounds is the only way the shipped sea map
-	 * can learn to route around them. The player's own boat is skipped.
+	 * CLIENT THREAD. Harvests true sea blockers: every tile in the loaded scene that the
+	 * shipped ocean calls SAILABLE but LIVE collision blocks. Moored vessels looked
+	 * unharvestable at first — the walk-map comparison hid them ('#': sealed ocean and hull
+	 * both read blocked) and they are not WorldEntities — but against the sailing bitset the
+	 * discriminator is exact: sailable + live-blocked = a hull, a rock, a genuine hazard.
+	 * chart-plotter routes around these tiles live; this harvest teaches the OFFLINE map.
 	 */
 	private String dumpMooredVessels()
 	{
-		net.runelite.api.WorldView top = client.getTopLevelWorldView();
 		net.runelite.api.Player player = client.getLocalPlayer();
-		if (top == null)
+		net.runelite.api.WorldView view = client.getTopLevelWorldView();
+		if (player == null || view == null || view.getCollisionMaps() == null)
 		{
-			return "no top-level world view";
+			return "not logged in";
 		}
-		int ownViewId = player != null && player.getWorldView() != null
-			? player.getWorldView().getId() : -1;
+		net.runelite.api.coords.LocalPoint local = player.getLocalLocation();
+		net.runelite.api.WorldView playerView = player.getWorldView();
+		if (playerView != null && !playerView.isTopLevel())
+		{
+			net.runelite.api.WorldEntity boat = view.worldEntities().byIndex(playerView.getId());
+			if (boat == null || boat.getLocalLocation() == null)
+			{
+				return "on a boat, but its world entity is not resolvable";
+			}
+			local = boat.getLocalLocation();
+		}
+		int[][] flags = view.getCollisionMaps()[view.getPlane()].getFlags();
+		int anchorWorld = WorldPointUtil.fromLocalInstance(client, local);
+		int baseX = WorldPointUtil.unpackWorldX(anchorWorld) - local.getSceneX();
+		int baseY = WorldPointUtil.unpackWorldY(anchorWorld) - local.getSceneY();
+
 		StringBuilder rows = new StringBuilder();
 		int count = 0;
-		for (net.runelite.api.WorldEntity entity : top.worldEntities())
+		for (int sx = 0; sx < flags.length; sx++)
 		{
-			if (entity == null || entity.getConfig() == null || (entity.getWorldView() != null && entity.getWorldView().getId() == ownViewId))
+			for (int sy = 0; sy < flags[sx].length; sy++)
 			{
-				continue;
+				int world = WorldPointUtil.packWorldPoint(baseX + sx, baseY + sy, 0);
+				boolean liveBlocked =
+					(flags[sx][sy] & net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_FULL) != 0;
+				if (liveBlocked && gps.SailingSea.isSailable(world))
+				{
+					rows.append(baseX + sx).append('\t').append(baseY + sy).append('\n');
+					count++;
+				}
 			}
-			net.runelite.api.coords.LocalPoint local = entity.getLocalLocation();
-			if (local == null)
-			{
-				continue;
-			}
-			net.runelite.api.coords.WorldPoint world =
-				net.runelite.api.coords.WorldPoint.fromLocalInstance(client, local);
-			if (world == null)
-			{
-				continue;
-			}
-			net.runelite.api.WorldEntityConfig config = entity.getConfig();
-			rows.append(config.getId()).append('\t')
-				.append(world.getX()).append('\t').append(world.getY()).append('\t')
-				.append(config.getBoundsX()).append('\t').append(config.getBoundsY()).append('\t')
-				.append(config.getBoundsWidth()).append('\t').append(config.getBoundsHeight())
-				.append('\t').append(entity.getOrientation())
-				.append('\t').append(config.getCategory()).append('\n');
-			count++;
 		}
 		if (count == 0)
 		{
-			return "no moored vessels in scene";
+			return "no sailable-but-live-blocked tiles in scene";
 		}
 		try
 		{
@@ -1709,16 +1712,15 @@ public class TransportAuditPlugin extends Plugin
 			{
 				if (fresh)
 				{
-					writer.write("# Moored vessels harvested by the audit tool: configId\tx\ty\t"
-						+ "boundsX\tboundsY\tboundsW\tboundsH\torientation\tcategory\n");
+					writer.write("# Sailable-but-live-blocked tiles harvested by the audit tool: x\ty\n");
 				}
 				writer.write(rows.toString());
 			}
-			return count + " vessel(s) appended to " + out.getName();
+			return count + " obstacle tile(s) appended to " + out.getName();
 		}
 		catch (java.io.IOException e)
 		{
-			return "vessel dump failed: " + e.getMessage();
+			return "obstacle dump failed: " + e.getMessage();
 		}
 	}
 
