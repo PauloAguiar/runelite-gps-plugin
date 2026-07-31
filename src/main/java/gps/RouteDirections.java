@@ -133,8 +133,16 @@ final class RouteDirections
 			{
 				flushWalk(steps, walk, legStart, i - 1);
 				walk = 0;
-				steps.add(new Step(methodText(route.getMethods().get(nextMethod)), i - 1, i,
-					route.getMethodDurations().get(nextMethod), true));
+				TeleportMethod method = route.getMethods().get(nextMethod);
+				int duration = route.getMethodDurations().get(nextMethod);
+				if (TransportType.SAILING.equals(method.getType()))
+				{
+					addSailingSteps(steps, method, duration, i);
+				}
+				else
+				{
+					steps.add(new Step(methodText(method), i - 1, i, duration, true));
+				}
 				nextMethod++;
 				legStart = i;
 				continue;
@@ -236,6 +244,31 @@ final class RouteDirections
 		// marked in the world instead (section marker / destination pulse), the next step names
 		// what's there, and the time column already sizes the leg.
 		steps.add(new Step("Walk", legStart, endIndex, walkTicks(walk)));
+	}
+
+	/**
+	 * A sailing leg reads like the player experiences it: board the boat at a NAMED port, then
+	 * sail — with the fixed boarding overhead and the travel time split the way Walk legs get
+	 * their own time. The display info carries "Sailing: {origin} \u2192 {destination}"; when
+	 * the arrow is absent (older data), the leg stays one step.
+	 */
+	private static void addSailingSteps(List<Step> steps, TeleportMethod method, int duration, int i)
+	{
+		String label = method.getDisplayInfo() == null ? "" : method.getDisplayInfo();
+		String trimmed = label.startsWith("Sailing: ") ? label.substring(9) : label;
+		int arrow = trimmed.indexOf(" \u2192 ");
+		if (arrow < 0)
+		{
+			steps.add(new Step("\u26F5 " + (trimmed.isEmpty() ? "Sail" : trimmed), i - 1, i,
+				duration, true));
+			return;
+		}
+		String origin = trimmed.substring(0, arrow);
+		String destination = trimmed.substring(arrow + 3);
+		int sailTicks = Math.max(1, duration - SailingSea.OVERHEAD_TICKS);
+		steps.add(new Step("\u26F5 Embark at " + origin, i - 1, i - 1,
+			Math.max(0, duration - sailTicks), true));
+		steps.add(new Step("Sail to " + destination, i - 1, i, sailTicks, true));
 	}
 
 	private static String walkText(String target)

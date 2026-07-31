@@ -22,7 +22,9 @@ import java.util.zip.InflaterInputStream;
 public final class SailingSea
 {
 	private static final double TILES_PER_TICK = 2.0;
-	private static final int OVERHEAD_TICKS = 20;
+	/** Board + cast off + moor + disembark, in ticks — every sailing edge's fixed cost.
+	 * Shared with RouteDirections, which splits a leg into embark + sail steps. */
+	static final int OVERHEAD_TICKS = 20;
 	/** Wet-endpoint flood early stop: only the closest few moorings can appear in sea legs. */
 	private static final int SETTLE_ENDPOINTS = 12;
 	/** Wet floods keep going until this many WALK-REACHABLE ports settle (field anchors). */
@@ -39,11 +41,14 @@ public final class SailingSea
 	private final byte[] bits;
 	/** Rows of {landX, landY, waterX, waterY, walkReachable(0/1)}. */
 	private final List<int[]> moorings;
+	/** Port display names, parallel to {@link #moorings} (shipped, nearest-pin derived). */
+	private final List<String> mooringNames;
 	/** Water-endpoint grid index -> mooring index, precomputed at load: the wet flood
 	 * consults it once per popped node (millions on mid-ocean floods), so no boxed keys. */
 	private final PrimitiveIntHashMap<Integer> endpointIndex;
 
-	private SailingSea(int minX, int minY, int width, int height, byte[] bits, List<int[]> moorings)
+	private SailingSea(int minX, int minY, int width, int height, byte[] bits,
+		List<int[]> moorings, List<String> mooringNames)
 	{
 		this.minX = minX;
 		this.minY = minY;
@@ -51,6 +56,7 @@ public final class SailingSea
 		this.height = height;
 		this.bits = bits;
 		this.moorings = moorings;
+		this.mooringNames = mooringNames;
 		this.endpointIndex = new PrimitiveIntHashMap<>(Math.max(1, moorings.size() * 2));
 		for (int i = 0; i < moorings.size(); i++)
 		{
@@ -89,6 +95,7 @@ public final class SailingSea
 			byte[] bits = new InflaterInputStream(in).readAllBytes();
 
 			List<int[]> moorings = new ArrayList<>();
+			List<String> mooringNames = new ArrayList<>();
 			try (InputStream tsv = SailingSea.class.getResourceAsStream("/sailing-moorings.tsv");
 				Scanner scanner = new Scanner(tsv, "UTF-8"))
 			{
@@ -102,15 +109,16 @@ public final class SailingSea
 					moorings.add(new int[]{Integer.parseInt(fields[1]), Integer.parseInt(fields[2]),
 						Integer.parseInt(fields[3]), Integer.parseInt(fields[4]),
 						fields.length > 5 && "true".equals(fields[5].trim()) ? 1 : 0});
+					mooringNames.add(fields.length > 6 ? fields[6].trim() : "");
 				}
 			}
-			return new SailingSea(minX, minY, width, height, bits, moorings);
+			return new SailingSea(minX, minY, width, height, bits, moorings, mooringNames);
 		}
 		catch (IOException | RuntimeException e)
 		{
 			// Missing/corrupt resources must not break routing; sailing sea targets just
 			// won't resolve.
-			return new SailingSea(0, 0, 0, 0, new byte[0], List.of());
+			return new SailingSea(0, 0, 0, 0, new byte[0], List.of(), List.of());
 		}
 	}
 
@@ -190,7 +198,7 @@ public final class SailingSea
 				.destination(targetPacked)
 				.type(TransportType.SAILING)
 				.duration(duration)
-				.displayInfo("Sailing: open sea " + tx + "," + ty)
+				.displayInfo("Sailing: " + portName(i) + " \u2192 open sea (" + tx + ", " + ty + ")")
 				.build());
 		}
 		return legs;
@@ -652,6 +660,20 @@ public final class SailingSea
 	public static int tilesFromDuration(int durationTicks)
 	{
 		return (int) Math.round(Math.max(0, durationTicks - OVERHEAD_TICKS) * TILES_PER_TICK);
+	}
+
+	/** The shipped port display name, falling back to the boarding tile's coordinates. */
+	private static String portName(int mooringIndex)
+	{
+		SailingSea sea = get();
+		String name = mooringIndex < sea.mooringNames.size()
+			? sea.mooringNames.get(mooringIndex) : "";
+		if (!name.isEmpty())
+		{
+			return name;
+		}
+		int[] mooring = sea.moorings.get(mooringIndex);
+		return mooring[0] + "," + mooring[1];
 	}
 
 	/** The shipped walk-reachable flag: a mainland port the walking network serves. */
