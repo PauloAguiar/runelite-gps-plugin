@@ -152,7 +152,8 @@ final class RouteDirections
 				}
 				else
 				{
-					steps.add(new Step(methodText(method), i - 1, i, duration, true));
+					steps.add(new Step(methodText(method) + fareText(plugin, from, to),
+						i - 1, i, duration, true));
 				}
 				nextMethod++;
 				legStart = i;
@@ -170,7 +171,7 @@ final class RouteDirections
 				// mapped doors ("Open Door" — flagged so the door progress gate applies), ...
 				flushWalk(steps, walk, legStart, i - 1);
 				walk = 0;
-				String text = objectText(object);
+				String text = objectText(object) + fareOf(object);
 				boolean isDoor = text.startsWith("Open ");
 				// Advisory note from the transport data ("fire arrow needed", "can fail") — the
 				// route is offered regardless; the player just gets told what to expect.
@@ -230,6 +231,54 @@ final class RouteDirections
 	private static int walkTicks(int tiles)
 	{
 		return (tiles + 1) / 2;
+	}
+
+	private static final int COINS_ITEM_ID = 995;
+
+	/**
+	 * " — N gp fare" when the edge's transport charges coins (Barnaby's ship, charters,
+	 * travel carts), else "". A paid crossing looked free in the step list — the fare is a
+	 * real cost the player must carry, and the card's item chips don't say WHICH step
+	 * spends it.
+	 */
+	private static String fareText(ShortestPathPlugin plugin, PathStep from, PathStep to)
+	{
+		int fare = Integer.MAX_VALUE;
+		for (Transport transport : plugin.transportsForEdge(from, to))
+		{
+			int coins = coinsOf(transport);
+			if (coins > 0)
+			{
+				fare = Math.min(fare, coins);
+			}
+		}
+		return fare == Integer.MAX_VALUE ? "" : " — " + fare + " gp fare";
+	}
+
+	private static String fareOf(Transport transport)
+	{
+		int coins = coinsOf(transport);
+		return coins > 0 ? " — " + coins + " gp fare" : "";
+	}
+
+	private static int coinsOf(Transport transport)
+	{
+		if (transport.getItemRequirements() == null)
+		{
+			return 0;
+		}
+		for (gps.transport.requirement.ItemRequirement requirement
+			: transport.getItemRequirements().getRequirements())
+		{
+			for (int itemId : requirement.getItemIds())
+			{
+				if (itemId == COINS_ITEM_ID)
+				{
+					return requirement.getQuantity();
+				}
+			}
+		}
+		return 0;
 	}
 
 	private static Transport findObjectTransport(ShortestPathPlugin plugin, PathStep from, PathStep to)
