@@ -3068,7 +3068,7 @@ public class ShortestPathPanel extends PluginPanel
 		resultEntries.clear();
 		selectedResult = -1;
 		String query = destinationSearch.getText().trim();
-		final int player = plugin.getPlayerLocation();
+		final int player = plugin.getLastKnownPlayerLocation();
 		if (query.isEmpty())
 		{
 			// An empty box offers the saved favourites and the recent selections instead of hiding —
@@ -3237,7 +3237,7 @@ public class ShortestPathPanel extends PluginPanel
 			favoriteEditor.setVisible(false);
 			return;
 		}
-		int player = plugin.getPlayerLocation();
+		int player = plugin.getLastKnownPlayerLocation();
 		String prefill = "";
 		if (player != WorldPointUtil.UNDEFINED)
 		{
@@ -3266,7 +3266,7 @@ public class ShortestPathPanel extends PluginPanel
 		}
 		String positionText = favoritePositionInput.getText().trim();
 		int position = positionText.isEmpty()
-			? plugin.getPlayerLocation() : parseCoordinateQuery(positionText);
+			? plugin.getLastKnownPlayerLocation() : parseCoordinateQuery(positionText);
 		if (position == WorldPointUtil.UNDEFINED)
 		{
 			favoriteInputError(positionText.isEmpty()

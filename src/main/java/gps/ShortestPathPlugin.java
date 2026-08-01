@@ -1498,6 +1498,10 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
+		// Tick-cached position for Swing-thread consumers (the panel's destination search):
+		// live resolution walks player.getWorldView(), a client-thread-only call since the
+		// boat-position fix — the EDT reads this cache instead and can never trip it.
+		lastKnownPlayerLocation = getPlayerLocation();
 		// Passive sea-obstacle learning: every 10 ticks, harvest scene tiles that the shipped
 		// ocean calls sailable but live collision blocks (moored vessels, harbour clutter).
 		// The offline map plans; the client corrects itself as scenes reveal the truth.
@@ -2542,6 +2546,14 @@ public class ShortestPathPlugin extends Plugin
 	 * moment the player boarded); the Player overload resolves through the boat WorldEntity,
 	 * returning UNDEFINED transiently during view swaps.
 	 */
+	private volatile int lastKnownPlayerLocation = WorldPointUtil.UNDEFINED;
+
+	/** Where the player was as of the last game tick — safe from ANY thread (see onGameTick). */
+	public int getLastKnownPlayerLocation()
+	{
+		return lastKnownPlayerLocation;
+	}
+
 	public int getPlayerLocation()
 	{
 		Player local = client.getLocalPlayer();
