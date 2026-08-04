@@ -849,6 +849,31 @@ public class AlternativeRoutesService
 		// safety net against a missed-cheap-route bug, and cost nearly nothing when they lose.
 		final int maxAttempts = Math.max(6, (limit - routes.size()) * 3);
 		final List<Transport> attempts = rankSeedCandidates(seedCandidates, ends, userExclusions, maxAttempts);
+		// Aboard, the closest-port disembark is ALWAYS attempted: cheap teleports outrank
+		// every port seed and the ranking silently dropped them all (field capture 225140 —
+		// ten teleport routes, zero "park the boat" options). One guaranteed attempt keeps
+		// the promise that docking properly is always on the card.
+		if (planningConfig.isOnSailingBoat())
+		{
+			Transport nearestPort = null;
+			for (Transport candidate : seedCandidates)
+			{
+				if (candidate.getDisplayInfo() != null
+					&& candidate.getDisplayInfo().startsWith("Disembark")
+					&& (nearestPort == null || candidate.getDuration() < nearestPort.getDuration()))
+				{
+					nearestPort = candidate;
+				}
+			}
+			if (nearestPort != null && !attempts.contains(nearestPort))
+			{
+				if (attempts.size() >= maxAttempts && !attempts.isEmpty())
+				{
+					attempts.remove(attempts.size() - 1);
+				}
+				attempts.add(nearestPort);
+			}
+		}
 		if (attempts.isEmpty())
 		{
 			return;

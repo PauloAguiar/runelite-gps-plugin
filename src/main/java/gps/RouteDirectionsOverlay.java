@@ -83,7 +83,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	 * boat stops short — hull clearance, quarter-tile velocity snapping, and the game halting
 	 * adjacent to the target can leave the anchor several tiles out while the bow touches it.
 	 */
-	private static final int SEA_NEAR_DISTANCE = 8;
+	private static final int SEA_NEAR_DISTANCE = 12;
 	// Walk-distance flood memo (see updateProgress): recomputed only when the player's tile changes.
 	private java.util.Map<Integer, Integer> walkCache;
 	private int walkCacheTile = WorldPointUtil.UNDEFINED;

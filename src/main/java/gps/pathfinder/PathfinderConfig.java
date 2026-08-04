@@ -1228,7 +1228,12 @@ public class PathfinderConfig
 		}
 		for (Transport transport : extraTransports)
 		{
-			if (useTransport(transport))
+			// The exclusion filter applies to extras exactly as to the base lists: seed
+			// searches exclude every OTHER seed to force diversity, and unfiltered extras
+			// made all six aboard port seeds find the same route (field capture 225226 —
+			// six searches, six identical results).
+			if (useTransport(transport)
+				&& !excluded.contains(TeleportMethod.fromTransport(transport)))
 			{
 				withoutBank.add(transport);
 				withBank.add(transport);

@@ -31,6 +31,8 @@ public final class SailingSea
 	private static final int REACHABLE_QUOTA = 4;
 	/** Sea-leg sets always include at least this many walk-reachable ports (field anchors). */
 	private static final int REACHABLE_LEGS = 3;
+	/** Moor + step off, for legs that START aboard (the full cycle is OVERHEAD_TICKS). */
+	private static final int DISEMBARK_TICKS = 8;
 
 	private static volatile SailingSea instance;
 
@@ -174,7 +176,10 @@ public final class SailingSea
 		for (int i : order.subList(0, Math.min(count, order.size())))
 		{
 			int[] mooring = sea.moorings.get(i);
-			int duration = OVERHEAD_TICKS + (int) Math.ceil(
+			// Moor + step off only (~8 ticks): the player is already aboard and under way;
+			// the full 20-tick cycle (board, cast off, moor, disembark) double-charged every
+			// aboard hop — a berth-adjacent disembark priced at 16 seconds in the field.
+			int duration = DISEMBARK_TICKS + (int) Math.ceil(
 				distances[i] / 100.0 / TILES_PER_TICK);
 			legs.add(new Transport.TransportBuilder()
 				.origin(startPacked)

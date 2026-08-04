@@ -1594,7 +1594,9 @@ public class ShortestPathPlugin extends Plugin
 			// land-tuned radius recalculated away perfectly good voyages mid-turn.
 			if (client.getVarbitValue(net.runelite.api.gameval.VarbitID.SAILING_BOARDED_BOAT) != 0)
 			{
-				recalc *= 3;
+				// 2x, not 3x: field-tuned — 3x let the boat wander far off the track before
+				// a recalc rescued it; turning arcs fit comfortably inside 2x.
+				recalc *= 2;
 				warn *= 3;
 			}
 			// A boat cutscene / teleport landing carries the player far from the path in one leap;
