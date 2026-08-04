@@ -714,6 +714,19 @@ public class ShortestPathPlugin extends Plugin
 					continue;
 				}
 				int packed = WorldPointUtil.packWorldPoint(baseX + sx, baseY + sy, 0);
+				// NEVER learn near the player's own boat: the hull is itself a WorldEntity
+				// projecting live-blocked collision onto sailable water — without this
+				// exclusion every scan learned the boat's current footprint as a permanent
+				// obstacle, poisoning a breadcrumb trail along everywhere the player sails
+				// (field capture 232906: the direct channel home was sealed by the player's
+				// own wake, forcing a disembark/re-embark detour through Cairn Isle).
+				int playerAt = getLastKnownPlayerLocation();
+				if (playerAt != WorldPointUtil.UNDEFINED
+					&& Math.max(Math.abs(WorldPointUtil.unpackWorldX(playerAt) - (baseX + sx)),
+						Math.abs(WorldPointUtil.unpackWorldY(playerAt) - (baseY + sy))) <= 10)
+				{
+					continue;
+				}
 				if (SailingSea.isSailable(packed) && !SailingSea.obstacleAt(baseX + sx, baseY + sy))
 				{
 					if (found == null)
