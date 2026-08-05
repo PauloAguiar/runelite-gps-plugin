@@ -199,9 +199,17 @@ public class PathfinderConfig
 	 */
 	public boolean teleportsBlockedAt(int packed)
 	{
-		return isOnSailingBoat && !config.sailingTeleportAbandon()
+		return isOnSailingBoat && (!config.sailingTeleportAbandon() || portPromiseSearch)
 			&& gps.SailingSea.isSailable(packed);
 	}
+
+	/**
+	 * Per-search override: the nearest-port promise seed wants "dock first, then anything" —
+	 * teleports suppressed at the water start ONLY, exactly like abandon-off, regardless of
+	 * the abandon toggle. Without it the promise seed had to exclude every teleport seed
+	 * outright and could not afford the walk-only continuation (the service test's finding).
+	 */
+	public boolean portPromiseSearch;
 	/**
 	 * Alternative-routes "planning" mode. When true the per-player possession/unlock gates (transport
 	 * type toggles, item/rune/level/quest/var requirements, jewellery-box tier) are bypassed so the

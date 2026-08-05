@@ -311,7 +311,7 @@ public class AlternativeRoutesService
 			{
 				seedCandidates.clear();
 			}
-			// Aboard: EVERY disembark port gets its own seeded search — nearest first. With
+		// Aboard: EVERY disembark port gets its own seeded search — nearest first. With
 			// abandonment forbidden this is the whole diversity engine (teleport-first seeds
 			// are barred, and one port seed + chains produced exactly one route in the
 			// field); with abandonment allowed it still guarantees the "park the boat
@@ -595,7 +595,8 @@ public class AlternativeRoutesService
 				int maxCost = -1;
 				for (int r = 0; r < routes.size(); r++)
 				{
-					if (!routes.get(r).isWalkOnly() && routes.get(r).getTotalCost() > maxCost)
+					if (!routes.get(r).isWalkOnly() && r != solePortFirstIndex(routes)
+						&& routes.get(r).getTotalCost() > maxCost)
 					{
 						maxCost = routes.get(r).getTotalCost();
 						drop = r;
@@ -849,6 +850,7 @@ public class AlternativeRoutesService
 		// safety net against a missed-cheap-route bug, and cost nearly nothing when they lose.
 		final int maxAttempts = Math.max(6, (limit - routes.size()) * 3);
 		final List<Transport> attempts = rankSeedCandidates(seedCandidates, ends, userExclusions, maxAttempts);
+		String nearestPortInfo = null;
 		// Aboard, the closest-port disembark is ALWAYS attempted: cheap teleports outrank
 		// every port seed and the ranking silently dropped them all (field capture 225140 —
 		// ten teleport routes, zero "park the boat" options). One guaranteed attempt keeps
@@ -873,6 +875,7 @@ public class AlternativeRoutesService
 				}
 				attempts.add(nearestPort);
 			}
+			nearestPortInfo = nearestPort != null ? nearestPort.getDisplayInfo() : null;
 		}
 		if (attempts.isEmpty())
 		{
@@ -889,12 +892,15 @@ public class AlternativeRoutesService
 			configPool.add(planningConfig.copyForParallelSearch());
 		}
 		final AtomicBoolean stop = new AtomicBoolean(false);
+		final String nearestPortRetained = nearestPortInfo;
 		final CompletionService<SeedResult> completion = new ExecutorCompletionService<>(seedExecutor);
 		final List<Future<SeedResult>> futures = new ArrayList<>(attempts.size());
 		for (Transport seed : attempts)
 		{
 			futures.add(completion.submit(() ->
-				runSeedSearch(gen, stop, start, ends, userExclusions, allSeedMethods, seed, bestRemaining, costCap,
+				runSeedSearch(gen, stop, start, ends, userExclusions, allSeedMethods, seed,
+					nearestPortRetained != null && nearestPortRetained.equals(seed.getDisplayInfo()),
+					bestRemaining, costCap,
 					field, configPool, timer)));
 		}
 
@@ -920,13 +926,24 @@ public class AlternativeRoutesService
 				// (skip, not stop — seeds complete in parallel, a later one can be cheaper). Checked
 				// BEFORE the signature is consumed: a cost-rejected seed must stay eligible for a
 				// widened re-run ("+"), which resumes with this generation's seenSignatures.
-				if (costMultiple > 0 && routes.size() >= MIN_PAGE_ROUTES
+				// The nearest-port disembark is the walk fallback's sea twin: docking properly
+				// is ALWAYS on the card when aboard, however cheap the teleports are. It is
+				// exempt from the cost band and, below, evicts the costliest teleport route
+				// even when every shown route is cheaper (finding 4: the seed always ran but
+				// its route died here, and the service test caught the gap the field saw).
+				boolean portPromise = nearestPortRetained != null
+					&& !seedResult.scan.methods.isEmpty()
+					&& nearestPortRetained.equals(seedResult.scan.methods.get(0).getDisplayInfo())
+					&& !hasPortFirstRoute(routes);
+				if (!portPromise && costMultiple > 0 && routes.size() >= MIN_PAGE_ROUTES
 					&& seedResult.totalCost > (long) Math.max(routes.get(0).getTotalCost(), MIN_BEST_FOR_BAND) * costMultiple
 					&& seedResult.totalCost > pageFillCeiling(routes.get(0).getTotalCost(), maxAcceptedCost(routes), costMultiple))
 				{
 					continue;
 				}
-				if (nestsAKeptRoute(seedResult.scan.methods,
+				// The port promise IS a detour with the same ending (Disembark + the teleport
+				// the bare route uses) — the nesting filter would always drop it.
+				if (!portPromise && nestsAKeptRoute(seedResult.scan.methods,
 					!seedResult.scan.bankGated.isEmpty(), routes))
 				{
 					continue;
@@ -940,14 +957,18 @@ public class AlternativeRoutesService
 				if (routes.size() >= limit)
 				{
 					int evict = -1;
-					int maxCost = seedResult.totalCost;
+					int maxCost = portPromise ? -1 : seedResult.totalCost;
 					for (int r = 0; r < routes.size(); r++)
 					{
 						// The walk baseline is evict-proof only when there is a LIST to anchor:
 						// in overlay-only mode (panel closed, limit 1) the single route must be
 						// the best route, or a slow walk permanently shadows a cheap sea leg
 						// (field report: 7-minute walk shown while a 131-cost sail existed).
+						// The sole port-first route is evict-proof like the walk baseline:
+						// the debug trail showed the promise accepted at cost 59 and then
+						// evicted by a later 17-cost teleport seed's arrival.
 						if ((limit == 1 || !routes.get(r).isWalkOnly())
+							&& r != solePortFirstIndex(routes)
 							&& routes.get(r).getTotalCost() > maxCost)
 						{
 							maxCost = routes.get(r).getTotalCost();
@@ -1052,9 +1073,49 @@ public class AlternativeRoutesService
 	 * One parallel seed attempt: rebuild availability on a worker-owned config with every other
 	 * global teleport excluded, search, and pre-filter the result. Returns null when rejected.
 	 */
+	/** Index of the ONLY port-first route (evict-proof), or -1 when zero or several. */
+	private static int solePortFirstIndex(List<RouteOption> routes)
+	{
+		int found = -1;
+		for (int r = 0; r < routes.size(); r++)
+		{
+			List<TeleportMethod> methods = routes.get(r).getMethods();
+			if (!methods.isEmpty()
+				&& gps.transport.TransportType.SAILING.equals(methods.get(0).getType())
+				&& methods.get(0).getDisplayInfo() != null
+				&& methods.get(0).getDisplayInfo().startsWith("Disembark"))
+			{
+				if (found >= 0)
+				{
+					return -1;
+				}
+				found = r;
+			}
+		}
+		return found;
+	}
+
+	/** Whether any shown route already starts by disembarking at a port. */
+	private static boolean hasPortFirstRoute(List<RouteOption> routes)
+	{
+		for (RouteOption route : routes)
+		{
+			List<TeleportMethod> methods = route.getMethods();
+			if (!methods.isEmpty()
+				&& gps.transport.TransportType.SAILING.equals(methods.get(0).getType())
+				&& methods.get(0).getDisplayInfo() != null
+				&& methods.get(0).getDisplayInfo().startsWith("Disembark"))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private SeedResult runSeedSearch(int gen, AtomicBoolean stop, int start, Set<Integer> ends,
 		Set<TeleportMethod> userExclusions, Set<TeleportMethod> allSeedMethods, Transport seed,
-		int bestRemaining, int costCap, DistanceField field, Queue<PathfinderConfig> configPool, GenTimer timer)
+		boolean portPromiseSeed, int bestRemaining, int costCap, DistanceField field,
+		Queue<PathfinderConfig> configPool, GenTimer timer)
 	{
 		if (gen != generation.get() || stop.get())
 		{
@@ -1078,8 +1139,24 @@ public class AlternativeRoutesService
 			Set<TeleportMethod> seedExclusions = new HashSet<>(allSeedMethods);
 			seedExclusions.remove(TeleportMethod.fromTransport(seed));
 			seedExclusions.addAll(userExclusions);
+			// The port-promise seed forces its port by excluding only the OTHER sailing
+			// seeds; teleports stay usable but position-gated off the water start, so the
+			// route is 'Disembark at the nearest port, then the best of everything'.
+			config.portPromiseSearch = portPromiseSeed;
+			Set<TeleportMethod> effectiveExclusions = seedExclusions;
+			if (portPromiseSeed)
+			{
+				effectiveExclusions = new HashSet<>();
+				for (TeleportMethod method : seedExclusions)
+				{
+					if (!method.getType().isTeleport())
+					{
+						effectiveExclusions.add(method);
+					}
+				}
+			}
 			long rebuildStart = System.nanoTime();
-			config.rebuildAvailabilityWithExclusions(seedExclusions);
+			config.rebuildAvailabilityWithExclusions(effectiveExclusions);
 			long searchStart = System.nanoTime();
 			// Seed searches exclude every other global teleport, so the floor comes from the seed
 			// itself and the search's own optimal route uses it — strongly directed by
@@ -1127,6 +1204,7 @@ public class AlternativeRoutesService
 		}
 		finally
 		{
+			config.portPromiseSearch = false;
 			configPool.offer(config);
 		}
 	}
