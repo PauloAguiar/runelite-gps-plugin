@@ -172,10 +172,25 @@ public class SailingSeaTargetTest
 		int[] track = SailingSea.seaPathBlocking(mooringLand, SEA_PIN);
 		assertTrue("a track must exist between a port and the ocean pin", track != null);
 		assertTrue("a real track has many waypoints, not a straight hop", track.length > 10);
+		int bearingChanges = 0;
+		for (int w = 0; w + 2 < track.length; w++)
+		{
+			long b1 = bearing(track[w], track[w + 1]);
+			long b2 = bearing(track[w + 1], track[w + 2]);
+			if (b1 != b2)
+			{
+				bearingChanges++;
+			}
+		}
 		for (int waypoint : track)
 		{
 			assertTrue("every waypoint is sailable water", SailingSea.isSailable(waypoint));
 		}
+		// LOS smoothing: a mostly-open-water leg must be a few long straight runs, not a
+		// staircase — the field complaint was scattered bearing changes hugging the coast.
+		assertTrue("track should be long straight legs, got " + bearingChanges
+			+ " bearing changes over " + track.length + " points",
+			bearingChanges <= track.length / 3);
 	}
 
 	@Test
@@ -214,5 +229,14 @@ public class SailingSeaTargetTest
 		pathfinder.run();
 		assertFalse("with the master toggle off the sea legs must not exist",
 			pathfinder.getResult().isReached());
+	}
+
+	private static long bearing(int fromPacked, int toPacked)
+	{
+		int dx = Integer.compare(WorldPointUtil.unpackWorldX(toPacked)
+			- WorldPointUtil.unpackWorldX(fromPacked), 0);
+		int dy = Integer.compare(WorldPointUtil.unpackWorldY(toPacked)
+			- WorldPointUtil.unpackWorldY(fromPacked), 0);
+		return dx * 10L + dy;
 	}
 }

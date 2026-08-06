@@ -793,10 +793,16 @@ public final class SailingSea
 				{
 					continue;
 				}
+				// Distance-optimal paths GRAZE obstacles (tangents are shortest), so pure
+				// Dijkstra hugs every coastline. A soft near-land penalty makes the track
+				// stand off wherever open water is free while still threading channels and
+				// port approaches. Track aesthetics only: durations come from the
+				// un-penalised wet flood and boxDistance.
+				int step = move[2] + (nearLand(sea, x0 + nx, y0 + ny) ? SHORE_PENALTY : 0);
 				int next = ny * boxWidth + nx;
-				if (dist[index] + move[2] < dist[next])
+				if (dist[index] + step < dist[next])
 				{
-					dist[next] = dist[index] + move[2];
+					dist[next] = dist[index] + step;
 					parent[next] = index;
 					queue.push((long) dist[next] << 32 | next);
 				}
@@ -813,14 +819,98 @@ public final class SailingSea
 				sea.minX + x0 + at % boxWidth, sea.minY + y0 + at / boxWidth, 0));
 		}
 		java.util.Collections.reverse(waypoints);
-		int[] track = new int[(waypoints.size() + 2) / 3 + 1];
-		int n = 0;
-		for (int i = 0; i < waypoints.size(); i += 3)
+		return smoothTrack(sea, waypoints);
+	}
+
+	/** Penalty per near-land step: ~0.6 tiles equivalent — stand off shore when open water is free. */
+	private static final int SHORE_PENALTY = 60;
+	/** Re-densified waypoint spacing: progress tracking and off-route bands need dense points. */
+	private static final int TRACK_POINT_SPACING = 4;
+
+	private static boolean nearLand(SailingSea sea, int gridX, int gridY)
+	{
+		for (int dx = -1; dx <= 1; dx++)
 		{
-			track[n++] = waypoints.get(i);
+			for (int dy = -1; dy <= 1; dy++)
+			{
+				int x = gridX + dx;
+				int y = gridY + dy;
+				if (x < 0 || y < 0 || x >= sea.width || y >= sea.height || !bit(sea, x, y))
+				{
+					return true;
+				}
+			}
 		}
-		track[n] = waypoints.get(waypoints.size() - 1);
-		return n + 1 == track.length ? track : java.util.Arrays.copyOf(track, n + 1);
+		return false;
+	}
+
+	/**
+	 * Long straight legs from a jittery grid path: greedy line-of-sight simplification (extend
+	 * each leg to the farthest waypoint the straight line can reach over sailable water), then
+	 * re-densify points every {@link #TRACK_POINT_SPACING} tiles along the straight legs —
+	 * the overlays and off-route bands measure against WAYPOINTS, so long bare segments would
+	 * break progress tracking mid-leg.
+	 */
+	private static int[] smoothTrack(SailingSea sea, java.util.List<Integer> waypoints)
+	{
+		java.util.List<Integer> corners = new ArrayList<>();
+		int at = 0;
+		corners.add(waypoints.get(0));
+		while (at < waypoints.size() - 1)
+		{
+			int reach = at + 1;
+			for (int j = waypoints.size() - 1; j > at + 1; j--)
+			{
+				if (lineIsSailable(sea, waypoints.get(at), waypoints.get(j)))
+				{
+					reach = j;
+					break;
+				}
+			}
+			corners.add(waypoints.get(reach));
+			at = reach;
+		}
+		java.util.List<Integer> dense = new ArrayList<>();
+		for (int c = 0; c + 1 < corners.size(); c++)
+		{
+			int ax = WorldPointUtil.unpackWorldX(corners.get(c));
+			int ay = WorldPointUtil.unpackWorldY(corners.get(c));
+			int bx = WorldPointUtil.unpackWorldX(corners.get(c + 1));
+			int by = WorldPointUtil.unpackWorldY(corners.get(c + 1));
+			int steps = Math.max(1, Math.max(Math.abs(bx - ax), Math.abs(by - ay)) / TRACK_POINT_SPACING);
+			for (int s = 0; s < steps; s++)
+			{
+				dense.add(WorldPointUtil.packWorldPoint(
+					ax + (bx - ax) * s / steps, ay + (by - ay) * s / steps, 0));
+			}
+		}
+		dense.add(corners.get(corners.size() - 1));
+		int[] track = new int[dense.size()];
+		for (int i = 0; i < track.length; i++)
+		{
+			track[i] = dense.get(i);
+		}
+		return track;
+	}
+
+	/** Supercover line test: every cell the segment passes through must be sailable sea. */
+	private static boolean lineIsSailable(SailingSea sea, int fromPacked, int toPacked)
+	{
+		int x0 = WorldPointUtil.unpackWorldX(fromPacked) - sea.minX;
+		int y0 = WorldPointUtil.unpackWorldY(fromPacked) - sea.minY;
+		int x1 = WorldPointUtil.unpackWorldX(toPacked) - sea.minX;
+		int y1 = WorldPointUtil.unpackWorldY(toPacked) - sea.minY;
+		int steps = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) * 2;
+		for (int s = 0; s <= steps; s++)
+		{
+			int x = x0 + Math.round((float) (x1 - x0) * s / steps);
+			int y = y0 + Math.round((float) (y1 - y0) * s / steps);
+			if (!bit(sea, x, y) || obstacleAtGrid(sea, x, y))
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 
 	private static long trackKey(int fromPacked, int toPacked)
