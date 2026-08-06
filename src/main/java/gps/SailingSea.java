@@ -893,20 +893,17 @@ public final class SailingSea
 				}
 			}
 		}
+		// The boat steers 16 quantized bearings: snap every leg onto them by decomposing
+		// each chord into (at most) two runs along adjacent bearings — the adjacent basis
+		// determinants are 1, so the decomposition is exact and integer. Points sampled
+		// along an exact bearing run are perfectly collinear: the drawn line is straight
+		// because the geometry is, not because rendering hides jitter (field screenshot:
+		// tracks neither straight nor on sailable headings).
+		corners = snapCornersToBearings(sea, corners, trackStart, trackGoal);
 		java.util.List<Integer> dense = new ArrayList<>();
 		for (int c = 0; c + 1 < corners.size(); c++)
 		{
-			int ax = WorldPointUtil.unpackWorldX(corners.get(c));
-			int ay = WorldPointUtil.unpackWorldY(corners.get(c));
-			int bx = WorldPointUtil.unpackWorldX(corners.get(c + 1));
-			int by = WorldPointUtil.unpackWorldY(corners.get(c + 1));
-			int steps = Math.max(1, Math.max(Math.abs(bx - ax), Math.abs(by - ay)) / TRACK_POINT_SPACING);
-			for (int s = 0; s < steps; s++)
-			{
-				dense.add(WorldPointUtil.packWorldPoint(
-					ax + Math.round((float) (bx - ax) * s / steps),
-					ay + Math.round((float) (by - ay) * s / steps), 0));
-			}
+			densifyLeg(dense, corners.get(c), corners.get(c + 1));
 		}
 		dense.add(corners.get(corners.size() - 1));
 		int[] track = new int[dense.size()];
@@ -943,6 +940,118 @@ public final class SailingSea
 		}
 		corners.add(track.length - 1);
 		return corners;
+	}
+
+	/**
+	 * The 16 boat bearings in angular order — the game's OWN movement vectors (chart-plotter's
+	 * DX/DY table): a uniform 22.5-degree grid. NOT knight vectors: (2,1) is 26.6 degrees,
+	 * visibly off the heading a boat actually holds; (9,4) is 24.0, within 1.5 of the grid.
+	 */
+	private static final int[][] BEARINGS = {
+		{10, 0}, {9, 4}, {7, 7}, {4, 9}, {0, 10}, {-4, 9}, {-7, 7}, {-9, 4},
+		{-10, 0}, {-9, -4}, {-7, -7}, {-4, -9}, {0, -10}, {4, -9}, {7, -7}, {9, -4},
+	};
+
+	/**
+	 * Rewrites each leg between corners as at most two exact bearing runs (A -> A+a*u -> B,
+	 * u and v adjacent bearings whose cone contains the displacement). Both runs must keep
+	 * the standoff or the raw chord stays — port approaches and tight channels degrade
+	 * gracefully instead of failing.
+	 */
+	private static java.util.List<Integer> snapCornersToBearings(SailingSea sea,
+		java.util.List<Integer> corners, int trackStart, int trackGoal)
+	{
+		java.util.List<Integer> snapped = new ArrayList<>();
+		snapped.add(corners.get(0));
+		for (int c = 1; c < corners.size(); c++)
+		{
+			int from = snapped.get(snapped.size() - 1);
+			int to = corners.get(c);
+			int dx = WorldPointUtil.unpackWorldX(to) - WorldPointUtil.unpackWorldX(from);
+			int dy = WorldPointUtil.unpackWorldY(to) - WorldPointUtil.unpackWorldY(from);
+			int mid = bearingMidpoint(from, dx, dy, false);
+			if (mid == from || mid == to)
+			{
+				snapped.add(to);
+				continue;
+			}
+			if (lineKeepsStandoff(sea, from, mid, trackStart, trackGoal)
+				&& lineKeepsStandoff(sea, mid, to, trackStart, trackGoal))
+			{
+				snapped.add(mid);
+				snapped.add(to);
+				continue;
+			}
+			int alt = bearingMidpoint(from, dx, dy, true);
+			if (alt != from && alt != to
+				&& lineKeepsStandoff(sea, from, alt, trackStart, trackGoal)
+				&& lineKeepsStandoff(sea, alt, to, trackStart, trackGoal))
+			{
+				snapped.add(alt);
+				snapped.add(to);
+				continue;
+			}
+			snapped.add(to);
+		}
+		return snapped;
+	}
+
+	/**
+	 * The corner of the two-bearing decomposition of (dx, dy): from + a*u (or from + b*v
+	 * when {@code swapOrder}). Returns {@code from} when the displacement is already a
+	 * single bearing run or the cone search fails.
+	 */
+	private static int bearingMidpoint(int from, int dx, int dy, boolean swapOrder)
+	{
+		for (int k = 0; k < BEARINGS.length; k++)
+		{
+			int[] u = BEARINGS[k];
+			int[] v = BEARINGS[(k + 1) % BEARINGS.length];
+			double det = u[0] * v[1] - u[1] * v[0];
+			double a = (dx * v[1] - dy * v[0]) / det;
+			double b = (dy * u[0] - dx * u[1]) / det;
+			// Real-valued cone test: the true bearing vectors have det 40-ish, so the
+			// decomposition is fractional; the midpoint rounds to the nearest tile (the
+			// half-tile error tilts a long leg by well under a degree).
+			if (a < -1e-9 || b < -1e-9)
+			{
+				continue;
+			}
+			if (a < 0.5 || b < 0.5)
+			{
+				return from;
+			}
+			int x = WorldPointUtil.unpackWorldX(from);
+			int y = WorldPointUtil.unpackWorldY(from);
+			return swapOrder
+				? WorldPointUtil.packWorldPoint(x + (int) Math.round(b * v[0]),
+					y + (int) Math.round(b * v[1]), 0)
+				: WorldPointUtil.packWorldPoint(x + (int) Math.round(a * u[0]),
+					y + (int) Math.round(a * u[1]), 0);
+		}
+		return from;
+	}
+
+	/**
+	 * Densifies one leg. Exact bearing runs step their basis vector (points ON the line);
+	 * fallback chords keep the rounded interpolation.
+	 */
+	private static void densifyLeg(java.util.List<Integer> dense, int from, int to)
+	{
+		int ax = WorldPointUtil.unpackWorldX(from);
+		int ay = WorldPointUtil.unpackWorldY(from);
+		int dx = WorldPointUtil.unpackWorldX(to) - ax;
+		int dy = WorldPointUtil.unpackWorldY(to) - ay;
+		// Bearing-aligned legs interpolate along the true (fractional) direction; rounding
+		// keeps every point within half a tile of the ideal line, which is sub-pixel on the
+		// world map — no basis-stepping special case needed with the 10-scale vectors.
+		int steps = Math.max(1, Math.max(Math.abs(dx), Math.abs(dy)) / TRACK_POINT_SPACING);
+		for (int s = 0; s < steps; s++)
+		{
+			dense.add(WorldPointUtil.packWorldPoint(
+				ax + Math.round((float) dx * s / steps),
+				ay + Math.round((float) dy * s / steps), 0));
+		}
 	}
 
 	/**
