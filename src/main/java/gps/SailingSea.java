@@ -876,6 +876,23 @@ public final class SailingSea
 			corners.add(waypoints.get(reach));
 			at = reach;
 		}
+		// Greedy never revisits: a second pass merges corners whose neighbours connect
+		// directly (13 -> fewer helm changes on the capture-212843 leg), repeated to fixpoint.
+		boolean merged = true;
+		while (merged)
+		{
+			merged = false;
+			for (int c = 1; c + 1 < corners.size(); c++)
+			{
+				if (lineKeepsStandoff(sea, corners.get(c - 1), corners.get(c + 1),
+					trackStart, trackGoal))
+				{
+					corners.remove(c);
+					merged = true;
+					c--;
+				}
+			}
+		}
 		java.util.List<Integer> dense = new ArrayList<>();
 		for (int c = 0; c + 1 < corners.size(); c++)
 		{
@@ -887,7 +904,8 @@ public final class SailingSea
 			for (int s = 0; s < steps; s++)
 			{
 				dense.add(WorldPointUtil.packWorldPoint(
-					ax + (bx - ax) * s / steps, ay + (by - ay) * s / steps, 0));
+					ax + Math.round((float) (bx - ax) * s / steps),
+					ay + Math.round((float) (by - ay) * s / steps), 0));
 			}
 		}
 		dense.add(corners.get(corners.size() - 1));
@@ -897,6 +915,34 @@ public final class SailingSea
 			track[i] = dense.get(i);
 		}
 		return track;
+	}
+
+	/**
+	 * Indices of the REAL corners of a dense track: direction measured over a two-point
+	 * window on each side, so the integer stair-stepping of a densified straight chord
+	 * (E, E, NE, E...) does not count as helm changes. First and last index included.
+	 */
+	public static java.util.List<Integer> trackCorners(int[] track)
+	{
+		java.util.List<Integer> corners = new ArrayList<>();
+		corners.add(0);
+		for (int w = 2; w + 2 < track.length; w++)
+		{
+			double inX = WorldPointUtil.unpackWorldX(track[w]) - WorldPointUtil.unpackWorldX(track[w - 2]);
+			double inY = WorldPointUtil.unpackWorldY(track[w]) - WorldPointUtil.unpackWorldY(track[w - 2]);
+			double outX = WorldPointUtil.unpackWorldX(track[w + 2]) - WorldPointUtil.unpackWorldX(track[w]);
+			double outY = WorldPointUtil.unpackWorldY(track[w + 2]) - WorldPointUtil.unpackWorldY(track[w]);
+			double cross = inX * outY - inY * outX;
+			double dot = inX * outX + inY * outY;
+			// > ~18 degrees of direction change across the window = a genuine turn.
+			if (Math.abs(Math.atan2(cross, dot)) > Math.toRadians(18))
+			{
+				corners.add(w);
+				w += 2;
+			}
+		}
+		corners.add(track.length - 1);
+		return corners;
 	}
 
 	/**
