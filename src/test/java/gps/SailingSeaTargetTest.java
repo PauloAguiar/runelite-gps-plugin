@@ -191,6 +191,22 @@ public class SailingSeaTargetTest
 		assertTrue("track should be long straight legs, got " + bearingChanges
 			+ " bearing changes over " + track.length + " points",
 			bearingChanges <= track.length / 3);
+		// Standoff: interior waypoints keep 2 tiles of clearance from land (endpoints and
+		// their approaches excepted) — capture 212843 showed smoothed chords re-hugging
+		// the headlands the Dijkstra penalty had paid to avoid.
+		for (int w = 3; w < track.length - 3; w++)
+		{
+			int wx = WorldPointUtil.unpackWorldX(track[w]);
+			int wy = WorldPointUtil.unpackWorldY(track[w]);
+			for (int dx = -2; dx <= 2; dx++)
+			{
+				for (int dy = -2; dy <= 2; dy++)
+				{
+					assertTrue("waypoint " + wx + "," + wy + " hugs land",
+						SailingSea.isSailable(WorldPointUtil.packWorldPoint(wx + dx, wy + dy, 0)));
+				}
+			}
+		}
 	}
 
 	@Test

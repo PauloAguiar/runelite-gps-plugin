@@ -827,11 +827,15 @@ public final class SailingSea
 	/** Re-densified waypoint spacing: progress tracking and off-route bands need dense points. */
 	private static final int TRACK_POINT_SPACING = 4;
 
+	/** Standoff radius: hugging means within TWO tiles of land — one tile still reads
+	 * "almost touching" at sea scale (field capture 212843). */
+	private static final int STANDOFF = 2;
+
 	private static boolean nearLand(SailingSea sea, int gridX, int gridY)
 	{
-		for (int dx = -1; dx <= 1; dx++)
+		for (int dx = -STANDOFF; dx <= STANDOFF; dx++)
 		{
-			for (int dy = -1; dy <= 1; dy++)
+			for (int dy = -STANDOFF; dy <= STANDOFF; dy++)
 			{
 				int x = gridX + dx;
 				int y = gridY + dy;
@@ -854,14 +858,16 @@ public final class SailingSea
 	private static int[] smoothTrack(SailingSea sea, java.util.List<Integer> waypoints)
 	{
 		java.util.List<Integer> corners = new ArrayList<>();
+		int trackStart = waypoints.get(0);
+		int trackGoal = waypoints.get(waypoints.size() - 1);
 		int at = 0;
-		corners.add(waypoints.get(0));
+		corners.add(trackStart);
 		while (at < waypoints.size() - 1)
 		{
 			int reach = at + 1;
 			for (int j = waypoints.size() - 1; j > at + 1; j--)
 			{
-				if (lineIsSailable(sea, waypoints.get(at), waypoints.get(j)))
+				if (lineKeepsStandoff(sea, waypoints.get(at), waypoints.get(j), trackStart, trackGoal))
 				{
 					reach = j;
 					break;
@@ -893,8 +899,15 @@ public final class SailingSea
 		return track;
 	}
 
-	/** Supercover line test: every cell the segment passes through must be sailable sea. */
-	private static boolean lineIsSailable(SailingSea sea, int fromPacked, int toPacked)
+	/**
+	 * Supercover line test that PRESERVES the standoff: every cell sailable, and — except
+	 * within 8 tiles of the track's endpoints (port water must be approachable) — no cell
+	 * within {@link #STANDOFF} of land. Without the standoff requirement the simplification
+	 * chords cut straight back around every headland, undoing what the Dijkstra penalty paid
+	 * to avoid (field capture 212843: smoothed tracks still touching the shore).
+	 */
+	private static boolean lineKeepsStandoff(SailingSea sea, int fromPacked, int toPacked,
+		int trackStart, int trackGoal)
 	{
 		int x0 = WorldPointUtil.unpackWorldX(fromPacked) - sea.minX;
 		int y0 = WorldPointUtil.unpackWorldY(fromPacked) - sea.minY;
@@ -906,6 +919,14 @@ public final class SailingSea
 			int x = x0 + Math.round((float) (x1 - x0) * s / steps);
 			int y = y0 + Math.round((float) (y1 - y0) * s / steps);
 			if (!bit(sea, x, y) || obstacleAtGrid(sea, x, y))
+			{
+				return false;
+			}
+			int world = WorldPointUtil.packWorldPoint(sea.minX + x, sea.minY + y, 0);
+			boolean nearEndpoint =
+				WorldPointUtil.distanceBetween(world, trackStart) <= 8
+					|| WorldPointUtil.distanceBetween(world, trackGoal) <= 8;
+			if (!nearEndpoint && nearLand(sea, x, y))
 			{
 				return false;
 			}
