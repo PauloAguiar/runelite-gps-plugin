@@ -2453,6 +2453,8 @@
 3061 3376 0	3058 9776 0	Climb-down Staircase 16664							
 3728 5692 0	3060 9766 0	Exit Tunnel 26655							
 3060 9766 0	3728 5692 0	Enter Cave 26654							
+3755 5673 0	3755 5674 1	Climb Ladder 19047				4					~geometry ~duration
+3755 5674 1	3755 5673 0	Climb Ladder 19049				2					~geometry ~duration
 									
 # Mining Guild									
 # Two entrances, both require 60 Mining									

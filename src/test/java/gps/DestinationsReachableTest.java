@@ -121,7 +121,15 @@ public class DestinationsReachableTest
 						continue;
 					}
 					int next = WorldPointUtil.packWorldPoint(x + dx, y + dy, plane);
-					if (!seen.contains(next) && map.canStep(at, next))
+					// Transport origins may be collision-blocked (a fairy ring blocks its
+					// own tile); the engine admits them via isTransportOrigin, so the flood
+					// must too — without this, ALL ring-only content (Zanaris) reads sealed.
+					// ...and symmetrically OFF one: a transport delivers you ONTO its
+					// blocked destination ring; without the exit clause Zanaris's hub ring
+					// was a trap node and the whole realm stayed sealed.
+					if (!seen.contains(next)
+						&& (map.canStep(at, next) || transports.get(next) != null
+							|| (transports.get(at) != null && !map.isBlocked(x + dx, y + dy, plane))))
 					{
 						seen.add(next);
 						queue.add(next);
@@ -160,7 +168,33 @@ public class DestinationsReachableTest
 	 */
 	// 733 -> 747 with the 2026-07-30 cache refresh (rev 2644): a world update legitimately
 	// moves this number; the ratchet exists to catch OUR data regressions between refreshes.
-	private static final int RATCHET = 747;
+	private static final int RATCHET = 745;
+
+	/**
+	 * Real content living inside the instance template band, enforced by the invariant like
+	 * anywhere else. The band is MOSTLY scenery copies (POH layouts, cutscenes), but a few
+	 * genuine places are built there — the blanket skip hid a fully sealed Motherlode Mine
+	 * pin. Transport-proximity was tried and over-matched (POH portal rows qualified whole
+	 * template houses); an explicit box per known place is honest and auditable.
+	 */
+	private static final int[][] BAND_CONTENT_BOXES = {
+		{3700, 5620, 3780, 5710}, // Motherlode Mine
+		{2360, 4340, 2500, 4480}, // Zanaris
+	};
+
+	private boolean bandContent(int packed)
+	{
+		int x = WorldPointUtil.unpackWorldX(packed);
+		int y = WorldPointUtil.unpackWorldY(packed);
+		for (int[] box : BAND_CONTENT_BOXES)
+		{
+			if (x >= box[0] && y >= box[1] && x <= box[2] && y <= box[3])
+			{
+				return true;
+			}
+		}
+		return false;
+	}
 
 	private boolean anyReachable(int packed)
 	{
@@ -226,9 +260,9 @@ public class DestinationsReachableTest
 		for (Destinations.Entry entry : Destinations.resourceEntries())
 		{
 			int y = WorldPointUtil.unpackWorldY(entry.packedPosition);
-			if (y >= INSTANCE_MIN_Y && y <= INSTANCE_MAX_Y)
+			if (y >= INSTANCE_MIN_Y && y <= INSTANCE_MAX_Y && !bandContent(entry.packedPosition))
 			{
-				continue; // instance template band: not a real place
+				continue; // template junk: no transports anywhere near
 			}
 			checked++;
 			if (!anyReachable(entry.packedPosition))
@@ -240,7 +274,21 @@ public class DestinationsReachableTest
 			}
 		}
 		assertTrue("checked at least a few hundred destinations", checked > 200);
-		assertTrue(unreachable.size() + " of " + checked + " imported destinations are unreachable"
+		// Band-content offenders get named first: they are enforced by an explicit box, so
+		// a failure here is either a data gap in a REAL band place or a wrong box.
+		List<String> bandOffenders = new ArrayList<>();
+		for (String entry : unreachable)
+		{
+			String[] at = entry.substring(entry.lastIndexOf('@') + 1).split(",");
+			int y = Integer.parseInt(at[1]);
+			if (y >= INSTANCE_MIN_Y && y <= INSTANCE_MAX_Y)
+			{
+				bandOffenders.add(entry);
+			}
+		}
+		assertTrue("BAND-CONTENT offenders (" + bandOffenders.size() + "): "
+			+ String.join("; ", bandOffenders) + " ||| "
+			+ unreachable.size() + " of " + checked + " imported destinations are unreachable"
 			+ " (ratchet: " + RATCHET + "). New unreachable pins are not acceptable; the existing"
 			+ " backlog is being worked down. First offenders:\n  "
 			+ String.join("\n  ", unreachable.subList(0, Math.min(40, unreachable.size()))),
