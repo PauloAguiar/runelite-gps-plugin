@@ -413,7 +413,7 @@
 3134 3616 0	3134 3617 0	Pass-Through Barrier 39652						2	
 3134 3617 0	3134 3616 0	Pass-Through Barrier 39652						2	
 3123 3629 0	3122 3629 0	Pass-Through Barrier 39652						2	
-3122 3629 0	3123 3629 0	Pass-Through Barrier 39652						2	
+3122 3629 0	3123 3629 0	Pass-Through Barrier 39652						1	
 3123 3628 0	3122 3628 0	Pass-Through Barrier 39653						2	
 3122 3628 0	3123 3628 0	Pass-Through Barrier 39653						2	
 3135 3639 0	3135 3640 0	Pass-Through Barrier 39652						2	
@@ -819,7 +819,7 @@
 3083 3512 1	3083 3512 0	Climb-down Ladder 16679							
 3082 3513 0	3082 3513 1	Climb-up Ladder 16683							
 3082 3513 1	3082 3513 0	Climb-down Ladder 16679							
-3096 3468 0	3096 9867 0	Climb-down Trapdoor 1581							
+3096 3468 0	3096 9867 0	Climb-down Trapdoor 1581						1	
 3096 9867 0	3096 3468 0	Climb-up Ladder 17385							
 3097 9868 0	3096 3468 0	Climb-up Ladder 17385							
 3094 9895 0	3093 9895 0	Push Odd looking wall 1736							
@@ -961,7 +961,7 @@
 3267 3379 0	3269 3379 1	Climb-up Ladder 11794							
 3267 3379 1	3267 3379 0	Climb-down Ladder 11795							
 3237 9858 0	3236 3458 0	Climb-up Ladder 11806							
-3236 3458 0	3237 9858 0	Climb-down Manhole 882							
+3236 3458 0	3237 9858 0	Climb-down Manhole 882						1	
 									
 # Digsite									
 3295 3428 0	3296 3428 0	Open Gate 24560				3637>152		2	
@@ -5103,8 +5103,8 @@
 									
 # Hunter Guild									
 1559 3046 0	1556 3046 2	Climb-up Rope 51647						2	
-1556 3046 2	1559 3046 0	Climb-down Rope 51644						2	
-1558 3047 0	1558 9451 0	Climb-down Stairs 51641						2	
+1556 3046 2	1559 3046 0	Climb-down Rope 51644						1	
+1558 3047 0	1558 9451 0	Climb-down Stairs 51641						1	
 1557 3047 0	1557 9451 0	Climb-down Stairs 51641						2	
 1558 9451 0	1558 3047 0	Climb-up Stairs 51642						2	
 1557 9451 0	1557 3047 0	Climb-up Stairs 51642						2	
@@ -6552,7 +6552,7 @@
 2646 6405 1	2646 6409 0	Climb-down Stairs 48047						2			~geometry ~duration
 2646 6409 0	2646 6405 1	Climb-up Stairs 48046						2			~geometry ~duration
 2648 3221 2	2647 3220 3	Climb-up Ladder 17974						4	
-2648 3221 3	2646 3221 2	Climb-down Ladder 17975						2			~geometry ~duration
+2648 3221 3	2646 3221 2	Climb-down Ladder 17975						1			~geometry
 2649 6443 1	2649 6443 2	Climb-up Ladder 48040						4	
 2649 6443 2	2649 6443 1	Climb-down Ladder 48043						2			~geometry ~duration
 2650 4684 1	2649 4685 0	Climb-down Staircase 16673						2			~geometry ~duration
