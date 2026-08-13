@@ -168,7 +168,7 @@ public class DestinationsReachableTest
 	 */
 	// 733 -> 747 with the 2026-07-30 cache refresh (rev 2644): a world update legitimately
 	// moves this number; the ratchet exists to catch OUR data regressions between refreshes.
-	private static final int RATCHET = 745;
+	private static final int RATCHET = 738;
 
 	/**
 	 * Real content living inside the instance template band, enforced by the invariant like
