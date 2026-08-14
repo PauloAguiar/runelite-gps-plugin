@@ -42,6 +42,9 @@ public class SailingGenerationTest
 	 * the wet flood's settle horizon: only matrix-composed aboard legs reach it directly. */
 	private static final int GRIMSTONE_PIN = WorldPointUtil.packWorldPoint(2927, 4055, 0);
 	private static final int PORT_ID_PANDEMONIUM = 1;
+	/** Port Sarim (id 0) — a MAINLAND berth: walkable from Varrock, so OWNED-mode
+	 * scenarios can actually reach the boat with an empty mocked inventory. */
+	private static final int PORT_ID_PORT_SARIM = 0;
 	private static final int PORT_ID_WINTUMBER = 46;
 
 	private AlternativeRoutesService service;
@@ -60,7 +63,20 @@ public class SailingGenerationTest
 	private List<RouteOption> generate(int start, int target, boolean abandon, boolean summon,
 		int boatPort, boolean aboard) throws Exception
 	{
-		final Thread clientThread = Thread.currentThread();
+		return generate(start, target, abandon, summon, boatPort, aboard,
+			AlternativeRoutesMode.ALL_EVERYTHING);
+	}
+
+	/** The refreshed planning-copy config all these tests search with. */
+	private PathfinderConfig buildConfig(boolean summon, int boatPort, boolean aboard)
+		throws Exception
+	{
+		return buildConfig(true, summon, boatPort, aboard);
+	}
+
+	private PathfinderConfig buildConfig(boolean abandon, boolean summon, int boatPort,
+		boolean aboard) throws Exception
+	{
 		Client client = (Client) Proxy.newProxyInstance(Client.class.getClassLoader(),
 			new Class<?>[]{Client.class}, (proxy, method, args) ->
 			{
@@ -69,7 +85,10 @@ public class SailingGenerationTest
 					case "getGameState":
 						return GameState.LOGGED_IN;
 					case "getClientThread":
-						return clientThread;
+						// Whatever thread asks IS the client thread: the mocked ClientThread
+						// runs invokeLater inline on the service worker, and the per-mode
+						// refreshTransports must not no-op behind its thread guard there.
+						return Thread.currentThread();
 					case "getBoostedSkillLevel":
 						return 99;
 					case "getVarbitValue":
@@ -99,6 +118,13 @@ public class SailingGenerationTest
 		Mockito.when(cfg.sailingAssumeSummon()).thenReturn(summon);
 		PathfinderConfig config = new TestPathfinderConfig(client, cfg).copyForPlanning();
 		config.refresh();
+		return config;
+	}
+
+	private List<RouteOption> generate(int start, int target, boolean abandon, boolean summon,
+		int boatPort, boolean aboard, AlternativeRoutesMode mode) throws Exception
+	{
+		PathfinderConfig config = buildConfig(abandon, summon, boatPort, aboard);
 		ClientThread ct = Mockito.mock(ClientThread.class, Mockito.withSettings().stubOnly());
 		Mockito.doAnswer(i ->
 		{
@@ -110,7 +136,7 @@ public class SailingGenerationTest
 		CountDownLatch latch = new CountDownLatch(1);
 		AtomicReference<List<RouteOption>> out = new AtomicReference<>();
 		service.generate(start, Set.of(target), Set.of(),
-			AlternativeRoutesMode.ALL_EVERYTHING, 10, 3, false,
+			mode, 10, 3, false,
 			(routes, catalog, unavailable, done) ->
 			{
 				if (done)
@@ -214,39 +240,75 @@ public class SailingGenerationTest
 	}
 
 	/**
-	 * Boat-location awareness: with the boat moored at the Pandemonium and Summon Boat NOT
-	 * assumed, no route may board anywhere else — and Teleport to Boat (the generated spell
-	 * row surviving the structural gate) is how routes reach the far-off berth.
+	 * Boat-location awareness in an OWNED mode (the gate is a possession, so the "All"
+	 * family legitimately bypasses it): with the boat moored at the Pandemonium and Summon
+	 * Boat NOT assumed, no route may board anywhere else.
 	 */
 	@Test
 	public void summonOffBoardsOnlyWhereTheBoatIs() throws Exception
 	{
-		List<RouteOption> routes =
-			generate(VARROCK, DOGNOSE_PIN, true, false, PORT_ID_PANDEMONIUM, false);
+		List<RouteOption> routes = generate(VARROCK, DOGNOSE_PIN, true, false,
+			PORT_ID_PORT_SARIM, false, AlternativeRoutesMode.OWNED_INVENTORY);
 		assertTrue("routes must exist", !routes.isEmpty());
-		boolean teleportToBoat = false;
 		boolean sailed = false;
 		for (RouteOption route : routes)
 		{
 			for (TeleportMethod method : route.getMethods())
 			{
 				String info = method.getDisplayInfo();
-				if (info == null)
-				{
-					continue;
-				}
-				if (info.startsWith("Sailing: "))
+				if (info != null && info.startsWith("Sailing: "))
 				{
 					sailed = true;
-					assertTrue("with the boat at the Pandemonium and no summon, a route boards"
+					assertTrue("with the boat at the Bay of Sarim and no summon, a route boards"
 							+ " elsewhere: " + info,
-						info.startsWith("Sailing: The Pandemonium"));
+						info.startsWith("Sailing: Bay of Sarim"));
 				}
-				teleportToBoat |= info.equals("Teleport to Boat — The Pandemonium");
 			}
 		}
 		assertTrue("a sailing route via the boat's berth must exist", sailed);
-		assertTrue("Teleport to Boat must carry routes to the far-off berth", teleportToBoat);
+	}
+
+	/**
+	 * Sailing on by default must not sell boatless accounts a boarding step: boat varbits
+	 * read (logged in), NO boat owned, no summon — an OWNED-mode generation to a
+	 * sailing-only island produces no sailing methods at all.
+	 */
+	@Test
+	public void boatlessAccountsGetNoBoardingLegs() throws Exception
+	{
+		List<RouteOption> routes = generate(VARROCK, DOGNOSE_PIN, true, false,
+			-1, false, AlternativeRoutesMode.OWNED_INVENTORY);
+		for (RouteOption route : routes)
+		{
+			for (TeleportMethod method : route.getMethods())
+			{
+				assertTrue("boatless account was offered sailing: " + method.getDisplayInfo(),
+					!isSailing(method));
+			}
+		}
+	}
+
+	/**
+	 * Teleport to Boat at the availability level: the generated spell rows exist for every
+	 * port, and ONLY the live berth's row survives the structural gate — asserted directly
+	 * on the planning copy's usable teleports so route-card competition can't hide it.
+	 */
+	@Test
+	public void teleportToBoatTargetsTheLiveBerth() throws Exception
+	{
+		PathfinderConfig config = buildConfig(false, PORT_ID_PANDEMONIUM, false);
+		boolean berthRow = false;
+		for (gps.transport.Transport teleport : config.getUsableTeleports(false))
+		{
+			String info = teleport.getDisplayInfo();
+			if (info != null && info.startsWith("Teleport to Boat"))
+			{
+				assertTrue("only the live berth's teleport row may survive, got " + info,
+					info.equals("Teleport to Boat — The Pandemonium"));
+				berthRow = true;
+			}
+		}
+		assertTrue("the berth's Teleport to Boat row must be usable", berthRow);
 	}
 
 	/**

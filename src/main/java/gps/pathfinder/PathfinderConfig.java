@@ -194,9 +194,13 @@ public class PathfinderConfig
 	/** Packed mooring land tiles where an owned boat is moored (SAILING_BOAT_N_PORT, read
 	 * at refresh). Capsized/bottled boats contribute nothing. */
 	private Set<Integer> boatMoorings = Set.of();
-	/** Any owned boat seen this refresh — without one the boat-location gate stands down
-	 * (no data beats wrong data: routing then behaves as before detection existed). */
+	/** Any owned boat seen this refresh. */
 	private boolean boatSeen;
+	/** Whether boat varbits have actually been read (logged in): only then does "no owned
+	 * boat" MEAN no boat — sailing is on by default, so a boatless account must get no
+	 * boarding legs rather than a permissive stand-down. Unread (logged out, bare test
+	 * configs) stays permissive: no data beats wrong data. */
+	private boolean boatStateFresh;
 	/** Summon Boat assumed available: the toggle, and (outside planning mode) its real
 	 * requirements — 56 Magic and Pandemonium. With it, any mooring can host an embark. */
 	private boolean assumeSummonBoat;
@@ -232,10 +236,13 @@ public class PathfinderConfig
 			moorings.addAll(gps.SailingPorts.portMoorings(client.getVarbitValue(boat[1])));
 		}
 		boatSeen = seen;
+		boatStateFresh = true;
 		boatMoorings = moorings;
+		// The toggle plus the spell's real requirements; the "All" family needs no term
+		// here — the gate is possession-class and bypassItemPossession covers it there.
 		assumeSummonBoat = config.sailingAssumeSummon()
-			&& (planningMode || (boostedSkillLevelsAndMore[Skill.MAGIC.ordinal()] >= 56
-				&& QuestState.FINISHED.equals(getQuestState(Quest.PANDEMONIUM))));
+			&& boostedSkillLevelsAndMore[Skill.MAGIC.ordinal()] >= 56
+			&& QuestState.FINISHED.equals(getQuestState(Quest.PANDEMONIUM));
 	}
 
 	/**
@@ -394,6 +401,11 @@ public class PathfinderConfig
 		copy.bypassItemPossession = bypassItemPossession;
 		copy.considerBank = considerBank;
 		copy.excludedMethods = excludedMethods;
+		// Boat-location state rides along: inner per-search copies never re-read varbits.
+		copy.boatSeen = boatSeen;
+		copy.boatStateFresh = boatStateFresh;
+		copy.boatMoorings = boatMoorings;
+		copy.assumeSummonBoat = assumeSummonBoat;
 		// Search-time state derived by the last refresh() of this config.
 		copy.calculationCutoffMillis = calculationCutoffMillis;
 		copy.avoidWilderness = avoidWilderness;
@@ -1458,6 +1470,18 @@ public class PathfinderConfig
 				return false;
 			}
 
+			// Boat-location gate: a boarding leg needs the boat AT that mooring, or Summon
+			// Boat assumed and castable. With boat state read (logged in) and NO boat
+			// owned, no mooring boards at all — sailing is on by default, so boatless
+			// accounts get no boarding legs. Aboard legs (origin = open water) pass
+			// untouched; the "All" family bypasses above (ownership is a possession).
+			if (TransportType.SAILING.equals(type) && boatStateFresh && !assumeSummonBoat
+				&& gps.SailingSea.isMooringLand(transport.getOrigin())
+				&& !boatMoorings.contains(transport.getOrigin()))
+			{
+				return false;
+			}
+
 			// Handle special cases for teleportation items and seasonal transports
 			if (!checkTeleportationItemRules(transport, type))
 			{
@@ -1514,16 +1538,9 @@ public class PathfinderConfig
 			return false;
 		}
 
-		// Boat-location gate: sailing legs board the player's OWN boat. With Summon Boat
-		// not assumed (or not castable) and a boat actually seen, an edge may only START
-		// at a mooring where one is moored — aboard legs (origin = open water) and every
-		// mooring pass untouched while no boat has been seen.
-		if (type == TransportType.SAILING && boatSeen && !assumeSummonBoat
-			&& gps.SailingSea.isMooringLand(transport.getOrigin())
-			&& !boatMoorings.contains(transport.getOrigin()))
-		{
-			return false;
-		}
+		// (The boat-location gate for BOARDING legs lives in useTransport's possession
+		// block, not here: boat ownership is a possession, so the "All" family bypasses
+		// it while Owned modes and the main path honor it.)
 
 		// Teleport to Boat rows exist for every port; only the live berth's row is real —
 		// no boat seen (or sailing off entirely) means none are.
