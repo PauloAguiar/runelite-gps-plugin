@@ -1094,6 +1094,9 @@ public final class SailingSea
 	 * the standoff or the raw chord stays — port approaches and tight channels degrade
 	 * gracefully instead of failing.
 	 */
+	/** Dogleg turn positions along the first bearing run, tried in order. */
+	private static final double[] DOGLEG_FRACTIONS = {0.7, 0.5, 0.3};
+
 	private static java.util.List<Integer> snapCornersToBearings(SailingSea sea,
 		java.util.List<Integer> corners, int trackStart, int trackGoal)
 	{
@@ -1103,33 +1106,81 @@ public final class SailingSea
 		{
 			int from = snapped.get(snapped.size() - 1);
 			int to = corners.get(c);
-			int dx = WorldPointUtil.unpackWorldX(to) - WorldPointUtil.unpackWorldX(from);
-			int dy = WorldPointUtil.unpackWorldY(to) - WorldPointUtil.unpackWorldY(from);
-			int mid = bearingMidpoint(from, dx, dy, false);
-			if (mid == from || mid == to)
+			// Clearance staging: full standoff first; when hulls or headlands block every
+			// on-bearing shape, retry requiring only sailable water — the OLD fallback (a
+			// raw off-grid chord) threaded the same tight corridor anyway, so staying on
+			// the 16 headings at reduced clearance is a strict improvement. The chord
+			// remains the true last resort.
+			if (!snapLeg(sea, snapped, from, to, trackStart, trackGoal, true)
+				&& !snapLeg(sea, snapped, from, to, trackStart, trackGoal, false))
 			{
 				snapped.add(to);
-				continue;
 			}
-			if (lineKeepsStandoff(sea, from, mid, trackStart, trackGoal)
-				&& lineKeepsStandoff(sea, mid, to, trackStart, trackGoal))
-			{
-				snapped.add(mid);
-				snapped.add(to);
-				continue;
-			}
-			int alt = bearingMidpoint(from, dx, dy, true);
-			if (alt != from && alt != to
-				&& lineKeepsStandoff(sea, from, alt, trackStart, trackGoal)
-				&& lineKeepsStandoff(sea, alt, to, trackStart, trackGoal))
-			{
-				snapped.add(alt);
-				snapped.add(to);
-				continue;
-			}
-			snapped.add(to);
 		}
 		return snapped;
+	}
+
+	/**
+	 * Appends an on-bearing rewrite of from -> to (two-leg corner, else a three-leg
+	 * dogleg with the turn slid along the first run — the shape that clears a moored
+	 * hull the single corner cannot). False when no shape fits at this clearance.
+	 */
+	private static boolean snapLeg(SailingSea sea, java.util.List<Integer> snapped,
+		int from, int to, int trackStart, int trackGoal, boolean fullClearance)
+	{
+		int dx = WorldPointUtil.unpackWorldX(to) - WorldPointUtil.unpackWorldX(from);
+		int dy = WorldPointUtil.unpackWorldY(to) - WorldPointUtil.unpackWorldY(from);
+		int mid = bearingMidpoint(from, dx, dy, false);
+		if (mid == from || mid == to)
+		{
+			// Already a single bearing run (or no cone contains it): nothing to rewrite.
+			return false;
+		}
+		int alt = bearingMidpoint(from, dx, dy, true);
+		int[] mids = alt == from || alt == to ? new int[]{mid} : new int[]{mid, alt};
+		for (int full : mids)
+		{
+			if (lineKeepsStandoff(sea, from, full, trackStart, trackGoal, fullClearance)
+				&& lineKeepsStandoff(sea, full, to, trackStart, trackGoal, fullClearance))
+			{
+				snapped.add(full);
+				snapped.add(to);
+				return true;
+			}
+		}
+		// Doglegs: mid1 = lerp(from, full, t) stays on the first bearing; mid2 = mid1 +
+		// (to - full) makes the middle leg EXACTLY the second bearing's displacement;
+		// the final leg is the first bearing's remainder. Only mid1 rounds.
+		for (int full : mids)
+		{
+			int fx = WorldPointUtil.unpackWorldX(full);
+			int fy = WorldPointUtil.unpackWorldY(full);
+			int sx = WorldPointUtil.unpackWorldX(from);
+			int sy = WorldPointUtil.unpackWorldY(from);
+			for (double t : DOGLEG_FRACTIONS)
+			{
+				int mid1 = WorldPointUtil.packWorldPoint(
+					sx + (int) Math.round((fx - sx) * t),
+					sy + (int) Math.round((fy - sy) * t), 0);
+				int mid2 = WorldPointUtil.packWorldPoint(
+					WorldPointUtil.unpackWorldX(mid1) + WorldPointUtil.unpackWorldX(to) - fx,
+					WorldPointUtil.unpackWorldY(mid1) + WorldPointUtil.unpackWorldY(to) - fy, 0);
+				if (mid1 == from || mid1 == mid2 || mid2 == to)
+				{
+					continue;
+				}
+				if (lineKeepsStandoff(sea, from, mid1, trackStart, trackGoal, fullClearance)
+					&& lineKeepsStandoff(sea, mid1, mid2, trackStart, trackGoal, fullClearance)
+					&& lineKeepsStandoff(sea, mid2, to, trackStart, trackGoal, fullClearance))
+				{
+					snapped.add(mid1);
+					snapped.add(mid2);
+					snapped.add(to);
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -1200,6 +1251,15 @@ public final class SailingSea
 	private static boolean lineKeepsStandoff(SailingSea sea, int fromPacked, int toPacked,
 		int trackStart, int trackGoal)
 	{
+		return lineKeepsStandoff(sea, fromPacked, toPacked, trackStart, trackGoal, true);
+	}
+
+	/** {@code requireClearance} false = sailable, obstacle-free water only — the reduced
+	 * bar for last-resort on-bearing shapes through corridors the raw chord would have
+	 * threaded anyway. */
+	private static boolean lineKeepsStandoff(SailingSea sea, int fromPacked, int toPacked,
+		int trackStart, int trackGoal, boolean requireClearance)
+	{
 		int x0 = WorldPointUtil.unpackWorldX(fromPacked) - sea.minX;
 		int y0 = WorldPointUtil.unpackWorldY(fromPacked) - sea.minY;
 		int x1 = WorldPointUtil.unpackWorldX(toPacked) - sea.minX;
@@ -1217,7 +1277,7 @@ public final class SailingSea
 			boolean nearEndpoint =
 				WorldPointUtil.distanceBetween(world, trackStart) <= 8
 					|| WorldPointUtil.distanceBetween(world, trackGoal) <= 8;
-			if (!nearEndpoint && nearLand(sea, x, y))
+			if (requireClearance && !nearEndpoint && nearLand(sea, x, y))
 			{
 				return false;
 			}
