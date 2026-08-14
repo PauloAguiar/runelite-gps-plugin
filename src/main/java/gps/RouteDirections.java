@@ -135,7 +135,7 @@ final class RouteDirections
 					steps.add(new Step(walkText("the bank"), legStart, i, walkTicks(walk)));
 					walk = 0;
 					legStart = i;
-					steps.add(new Step("Withdraw item for: " + joinLabels(route.getBankMethods()), i, i,
+					steps.add(new Step(withdrawText(plugin, route, path, i), i, i,
 						bankWithdrawTicks(plugin.getGpsConfig().costBankPickup())));
 				}
 			}
@@ -387,6 +387,31 @@ final class RouteDirections
 			sb.append(code);
 		}
 		return sb.toString();
+	}
+
+	/**
+	 * The withdraw step names the ACTUAL pickups when the live bank is known — the same
+	 * phrases as the bank-tile overlay hint ("Coins (30)", "Air rune (3) or Varrock
+	 * teleport") — falling back to the method list when it is not. The singleton location
+	 * set stands in for the bank-destination guard: this call site already KNOWS index
+	 * {@code pathIndex} is the tile where the path flips banked.
+	 */
+	private static String withdrawText(ShortestPathPlugin plugin, RouteOption route,
+		List<PathStep> path, int pathIndex)
+	{
+		net.runelite.api.Item[] bank = plugin.getPathfinderConfig().getBankSnapshot();
+		if (bank != null)
+		{
+			List<String> items = gps.transport.BankPickupRequirements.getRequiredBankItems(
+				plugin.getClient(), bank, plugin.getPathfinderConfig(),
+				Set.of(path.get(pathIndex).getPackedPosition()), path, pathIndex);
+			if (!items.isEmpty())
+			{
+				return "Withdraw " + String.join(", ", items)
+					+ " for: " + joinLabels(route.getBankMethods());
+			}
+		}
+		return "Withdraw item for: " + joinLabels(route.getBankMethods());
 	}
 
 	private static String joinLabels(Set<TeleportMethod> methods)

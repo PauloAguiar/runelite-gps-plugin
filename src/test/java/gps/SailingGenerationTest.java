@@ -4,7 +4,6 @@ import gps.pathfinder.PathfinderConfig;
 import gps.pathfinder.TestPathfinderConfig;
 import gps.transport.TransportType;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;

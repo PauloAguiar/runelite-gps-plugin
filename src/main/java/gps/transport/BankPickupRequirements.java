@@ -45,7 +45,7 @@ public final class BankPickupRequirements
 	 */
 	public static List<String> getRequiredBankItems(
 		Client client,
-		ItemContainer bank,
+		Item[] bankItems,
 		PathfinderConfig pathfinderConfig,
 		Set<Integer> bankLocations,
 		List<PathStep> path,
@@ -54,7 +54,7 @@ public final class BankPickupRequirements
 
 		List<String> requiredItems = new ArrayList<>();
 
-		if (bank == null || path == null || pathIndex < 0 || pathIndex >= path.size())
+		if (bankItems == null || path == null || pathIndex < 0 || pathIndex >= path.size())
 		{
 			return requiredItems;
 		}
@@ -68,7 +68,7 @@ public final class BankPickupRequirements
 
 		// Snapshot bank contents.
 		Map<Integer, Integer> bankHas = new HashMap<>();
-		for (Item bankItem : bank.getItems())
+		for (Item bankItem : bankItems)
 		{
 			if (bankItem.getId() >= 0 && bankItem.getQuantity() > 0)
 			{

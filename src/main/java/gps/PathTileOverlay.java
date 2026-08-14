@@ -769,13 +769,15 @@ public class PathTileOverlay extends Overlay
 			}
 		}
 
-		// Check if this is a bank step and items need to be picked up
+		// Check if this is a bank step and items need to be picked up. The SNAPSHOT (live
+		// contents once a bank opens, the previous session's persisted state before that)
+		// stands in for the live container so the hint works from login.
 		Set<Integer> bankLocations = plugin.getPathfinderConfig().getDestinations("bank");
-		if (bankLocations != null && plugin.getPathfinderConfig().bank != null)
+		if (bankLocations != null && plugin.getPathfinderConfig().getBankSnapshot() != null)
 		{
 			List<String> bankPickupItems = BankPickupRequirements.getRequiredBankItems(
 				client,
-				plugin.getPathfinderConfig().bank,
+				plugin.getPathfinderConfig().getBankSnapshot(),
 				plugin.getPathfinderConfig(),
 				bankLocations,
 				path,

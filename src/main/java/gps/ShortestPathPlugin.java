@@ -196,6 +196,7 @@ public class ShortestPathPlugin extends Plugin
 	int arrivalDismissSeconds;
 	int unreachableTargetDistance;
 	String unreachableText;
+	@Getter
 	@Inject
 	private Client client;
 	@Getter
