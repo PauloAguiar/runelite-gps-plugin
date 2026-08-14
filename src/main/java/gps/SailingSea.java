@@ -51,6 +51,9 @@ public final class SailingSea
 	/** Water-endpoint grid index -> mooring index, precomputed at load: the wet flood
 	 * consults it once per popped node (millions on mid-ocean floods), so no boxed keys. */
 	private final PrimitiveIntHashMap<Integer> endpointIndex;
+	/** Packed land tiles of every mooring — the origins of boarding legs, for the
+	 * boat-location gate to tell "boards a boat here" from "already under way". */
+	private final java.util.Set<Integer> mooringLandTiles;
 
 	private SailingSea(int minX, int minY, int width, int height, byte[] bits,
 		List<int[]> moorings, List<String> mooringNames)
@@ -63,11 +66,20 @@ public final class SailingSea
 		this.moorings = moorings;
 		this.mooringNames = mooringNames;
 		this.endpointIndex = new PrimitiveIntHashMap<>(Math.max(1, moorings.size() * 2));
+		this.mooringLandTiles = new java.util.HashSet<>();
 		for (int i = 0; i < moorings.size(); i++)
 		{
 			int[] mooring = moorings.get(i);
 			endpointIndex.put((mooring[3] - minY) * width + (mooring[2] - minX), i);
+			mooringLandTiles.add(WorldPointUtil.packWorldPoint(mooring[0], mooring[1], 0));
 		}
+	}
+
+	/** Whether the tile is a mooring's boarding (land) tile — the origin class of every
+	 * static sailing row and synthetic embark leg. */
+	public static boolean isMooringLand(int packed)
+	{
+		return get().mooringLandTiles.contains(packed);
 	}
 
 	private static SailingSea get()
@@ -288,6 +300,18 @@ public final class SailingSea
 
 	public static List<Transport> seaLegTransports(int targetPacked, int count)
 	{
+		return seaLegTransports(targetPacked, count, java.util.Set.of());
+	}
+
+	/**
+	 * @param mustIncludeLands packed mooring land tiles that get an embark leg even when
+	 *                         outside the nearest-{@code count} — with Summon Boat not
+	 *                         assumed, the boat's actual berth is the ONLY legal embark, and
+	 *                         nearest-selection would happily gate every offered leg away.
+	 */
+	public static List<Transport> seaLegTransports(int targetPacked, int count,
+		java.util.Set<Integer> mustIncludeLands)
+	{
 		if (!isSailable(targetPacked))
 		{
 			return List.of();
@@ -326,6 +350,11 @@ public final class SailingSea
 			{
 				chosen.add(i);
 				reachableChosen++;
+			}
+			else if (!mustIncludeLands.isEmpty() && mustIncludeLands.contains(
+				WorldPointUtil.packWorldPoint(moorings.get(i)[0], moorings.get(i)[1], 0)))
+			{
+				chosen.add(i);
 			}
 		}
 		List<Transport> legs = new ArrayList<>();

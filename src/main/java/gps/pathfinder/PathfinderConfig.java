@@ -191,6 +191,53 @@ public class PathfinderConfig
 		return isOnSailingBoat;
 	}
 
+	/** Packed mooring land tiles where an owned boat is moored (SAILING_BOAT_N_PORT, read
+	 * at refresh). Capsized/bottled boats contribute nothing. */
+	private Set<Integer> boatMoorings = Set.of();
+	/** Any owned boat seen this refresh — without one the boat-location gate stands down
+	 * (no data beats wrong data: routing then behaves as before detection existed). */
+	private boolean boatSeen;
+	/** Summon Boat assumed available: the toggle, and (outside planning mode) its real
+	 * requirements — 56 Magic and Pandemonium. With it, any mooring can host an embark. */
+	private boolean assumeSummonBoat;
+
+	private static final int[][] BOAT_VARBITS = {
+		{VarbitID.SAILING_BOAT_1_OWNED, VarbitID.SAILING_BOAT_1_PORT, VarbitID.SAILING_BOAT_1_NAME_2},
+		{VarbitID.SAILING_BOAT_2_OWNED, VarbitID.SAILING_BOAT_2_PORT, VarbitID.SAILING_BOAT_2_NAME_2},
+		{VarbitID.SAILING_BOAT_3_OWNED, VarbitID.SAILING_BOAT_3_PORT, VarbitID.SAILING_BOAT_3_NAME_2},
+		{VarbitID.SAILING_BOAT_4_OWNED, VarbitID.SAILING_BOAT_4_PORT, VarbitID.SAILING_BOAT_4_NAME_2},
+		{VarbitID.SAILING_BOAT_5_OWNED, VarbitID.SAILING_BOAT_5_PORT, VarbitID.SAILING_BOAT_5_NAME_2},
+	};
+
+	/** The moorings that may host an embark under the boat-location gate, or empty when the
+	 * gate stands down (summon assumed, or no boat seen) — leg synthesis must offer these. */
+	public Set<Integer> gatedBoatMoorings()
+	{
+		return boatSeen && !assumeSummonBoat ? boatMoorings : Set.of();
+	}
+
+	private void refreshBoatLocations()
+	{
+		Set<Integer> moorings = new HashSet<>();
+		boolean seen = false;
+		for (int[] boat : BOAT_VARBITS)
+		{
+			// The owned varbit alone is unreliable (Where's My Boat's field lesson); a set
+			// name descriptor also proves ownership, and covers Port Sarim's port id 0.
+			if (client.getVarbitValue(boat[0]) <= 0 && client.getVarbitValue(boat[2]) <= 0)
+			{
+				continue;
+			}
+			seen = true;
+			moorings.addAll(gps.SailingPorts.portMoorings(client.getVarbitValue(boat[1])));
+		}
+		boatSeen = seen;
+		boatMoorings = moorings;
+		assumeSummonBoat = config.sailingAssumeSummon()
+			&& (planningMode || (boostedSkillLevelsAndMore[Skill.MAGIC.ordinal()] >= 56
+				&& QuestState.FINISHED.equals(getQuestState(Quest.PANDEMONIUM))));
+	}
+
 	/**
 	 * With boat abandonment forbidden, WATER nodes must not expand global teleports — you
 	 * cannot cast away from the helm — but LAND nodes may: disembark first, then teleport.
@@ -659,6 +706,7 @@ public class PathfinderConfig
 			boostedSkillLevelsAndMore[i++] = getCombatLevel(); // combat level
 			boostedSkillLevelsAndMore[i] = client.getVarpValue(VarPlayerID.QP); // quest points
 
+			refreshBoatLocations();
 			refreshTransports();
 		}
 
@@ -1462,6 +1510,26 @@ public class PathfinderConfig
 		// section), not a catalog method — with it off, sailing edges must not exist in ANY
 		// mode, planning included, or "every method excluded" would still sail to islands.
 		if (!useSailing && type == TransportType.SAILING)
+		{
+			return false;
+		}
+
+		// Boat-location gate: sailing legs board the player's OWN boat. With Summon Boat
+		// not assumed (or not castable) and a boat actually seen, an edge may only START
+		// at a mooring where one is moored — aboard legs (origin = open water) and every
+		// mooring pass untouched while no boat has been seen.
+		if (type == TransportType.SAILING && boatSeen && !assumeSummonBoat
+			&& gps.SailingSea.isMooringLand(transport.getOrigin())
+			&& !boatMoorings.contains(transport.getOrigin()))
+		{
+			return false;
+		}
+
+		// Teleport to Boat rows exist for every port; only the live berth's row is real —
+		// no boat seen (or sailing off entirely) means none are.
+		if (transport.getDisplayInfo() != null
+			&& transport.getDisplayInfo().startsWith("Teleport to Boat")
+			&& (!useSailing || !boatSeen || !boatMoorings.contains(transport.getDestination())))
 		{
 			return false;
 		}

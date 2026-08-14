@@ -221,7 +221,8 @@ public class AlternativeRoutesService
 		}
 		for (int target : wetTargets)
 		{
-			seaLegs.addAll(SailingSea.seaLegTransports(target, 6));
+			seaLegs.addAll(SailingSea.seaLegTransports(target, 6,
+				planningConfig.gatedBoatMoorings()));
 		}
 		// Player aboard: the start tile is sealed ocean with no walk edges — without legs
 		// FROM it (disembark at nearby ports, or sail straight to a water pin), every search

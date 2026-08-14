@@ -171,3 +171,66 @@
 								
 # Ape Atoll Teleport								
 2771 9102 0	BLOOD_RUNE=2&&LAW_RUNE=2&&SOUL_RUNE=2	90 Magic	Monkey Madness I	4	Ape Atoll Teleport	20	4070=3	
+# Teleport to Boat (Standard, 67 Magic, Pandemonium; the boat needs a greater teleport
+# focus — assumed owned, like the boat itself): one row per port, GENERATED from
+# sailing-ports.tsv. Only the row matching the boat's live position survives the
+# boat-location structural gate; with no boat seen, none do.
+3050 3192 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Port Sarim	20	4070=0	
+3069 2986 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — The Pandemonium	20	4070=0	
+1506 3402 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Land's End	20	4070=0	
+2960 3146 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Musa Point	20	4070=0	
+1726 3453 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Hosidius	20	4070=0	
+2907 3225 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Rimmington	20	4070=0	
+2796 3413 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Catherby	20	4070=0	
+1844 3688 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Port Piscarillius	20	4070=0	
+2759 3229 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Brimhaven	20	4070=0	
+2670 3266 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Ardougne	20	4070=0	
+2685 3162 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Port Khazard	20	4070=0	
+2746 3304 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Witchaven	20	4070=0	
+2878 3335 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Entrana	20	4070=0	
+1776 3141 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Civitas illa Fortis	20	4070=0	
+2579 2843 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Corsair Cove	20	4070=0	
+2751 2951 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Cairn Isle	20	4070=0	
+1513 2973 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Sunset Coast	20	4070=0	
+3173 2368 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — The Summer Shore	20	4070=0	
+1451 2969 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Aldarin	20	4070=0	
+3145 2824 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Ruins of Unkah	20	4070=0	
+2651 2677 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Void Knights' Outpost	20	4070=0	
+1862 3307 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Port Roberts	20	4070=0	
+2808 2509 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Red Rock	20	4070=0	
+2629 3704 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Rellekka	20	4070=0	
+2612 3841 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Etceteria	20	4070=0	
+2143 3121 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Port Tyras	20	4070=0	
+1922 2759 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Deepfin Point	20	4070=0	
+2411 3781 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Jatizso	20	4070=0	
+2310 3781 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Netiznot	20	4070=0	
+2157 3325 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Prifddinas	20	4070=0	
+2305 3689 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Piscatoris	20	4070=0	
+2151 3880 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Lunar Isle	20	4070=0	
+2282 2821 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Isle of Souls	20	4070=0	
+2542 3764 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Waterbirth Island	20	4070=0	
+2860 3970 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Weiss	20	4070=0	
+3060 2638 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Dognose Island	20	4070=0	
+2965 2608 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Remote Island	20	4070=0	
+3353 2215 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — The Little Pearl	20	4070=0	
+2996 2287 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — The Onyx Crest	20	4070=0	
+2849 2325 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Last Light	20	4070=0	
+2660 2392 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Charred Island	20	4070=0	
+1873 2983 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Vatrachos Island	20	4070=0	
+2467 2718 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Anglers' Retreat	20	4070=0	
+1958 3113 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Minotaurs' Rest	20	4070=0	
+2532 2531 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Isle of Bones	20	4070=0	
+2320 2774 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Tear of the Soul	20	4070=0	
+2059 2605 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Wintumber Island	20	4070=0	
+1758 2655 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — The Crown Jewel	20	4070=0	
+2344 2268 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Rainbow's End	20	4070=0	
+2193 2319 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Sunbleak Island	20	4070=0	
+1555 2772 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Shimmering Atoll	20	4070=0	
+1201 2733 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Laguna Aurorae	20	4070=0	
+1892 3428 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Chinchompa Island	20	4070=0	
+2095 3188 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Lledrith Island	20	4070=0	
+2220 3466 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Ynysdail	20	4070=0	
+2079 3689 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Buccaneers' Haven	20	4070=0	
+2148 3531 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Drumstick Isle	20	4070=0	
+1953 4056 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Brittle Isle	20	4070=0	
+2927 4055 0	EARTH_RUNE=2&&WATER_RUNE=2&&LAW_RUNE=2	67 Magic	Pandemonium	4	Teleport to Boat — Grimstone	20	4070=0	

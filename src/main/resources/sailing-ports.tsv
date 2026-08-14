@@ -1,0 +1,66 @@
+# Sailing port registry: the game's boat-location varbit values (SAILING_BOAT_N_PORT)
+# joined to this plugin's mooring tiles. GENERATED — regenerate when ports change. Port
+# ids and map positions adapted from the 'Dude, Where's My Boat?' hub plugin
+# (github.com/ArchRBX/wheresmyboat, BSD-2-Clause), joined by proximity (<=15 tiles, name
+# fallback for offset map markers) to sailing-moorings.tsv land tiles. A port may span
+# several moorings; the FIRST row per id is the primary (teleport landing) berth.
+portId	name	landX	landY
+0	Port Sarim	3050	3192
+1	The Pandemonium	3069	2986
+2	Land's End	1506	3402
+3	Musa Point	2960	3146
+4	Hosidius	1726	3453
+5	Rimmington	2907	3225
+6	Catherby	2796	3413
+7	Port Piscarillius	1844	3688
+8	Brimhaven	2759	3229
+9	Ardougne	2670	3266
+10	Port Khazard	2685	3162
+11	Witchaven	2746	3304
+12	Entrana	2878	3335
+13	Civitas illa Fortis	1776	3141
+14	Corsair Cove	2579	2843
+15	Cairn Isle	2751	2951
+16	Sunset Coast	1513	2973
+17	The Summer Shore	3173	2368
+18	Aldarin	1451	2969
+19	Ruins of Unkah	3145	2824
+20	Void Knights' Outpost	2651	2677
+21	Port Roberts	1862	3307
+22	Red Rock	2808	2509
+23	Rellekka	2629	3704
+24	Etceteria	2612	3841
+25	Port Tyras	2143	3121
+26	Deepfin Point	1922	2759
+27	Jatizso	2411	3781
+28	Netiznot	2310	3781
+29	Prifddinas	2157	3325
+30	Piscatoris	2305	3689
+31	Lunar Isle	2151	3880
+32	Isle of Souls	2282	2821
+33	Waterbirth Island	2542	3764
+34	Weiss	2860	3970
+35	Dognose Island	3060	2638
+36	Remote Island	2965	2608
+37	The Little Pearl	3353	2215
+38	The Onyx Crest	2996	2287
+39	Last Light	2849	2325
+40	Charred Island	2660	2392
+41	Vatrachos Island	1873	2983
+42	Anglers' Retreat	2467	2718
+43	Minotaurs' Rest	1958	3113
+44	Isle of Bones	2532	2531
+45	Tear of the Soul	2320	2774
+46	Wintumber Island	2059	2605
+47	The Crown Jewel	1758	2655
+48	Rainbow's End	2344	2268
+49	Sunbleak Island	2193	2319
+50	Shimmering Atoll	1555	2772
+51	Laguna Aurorae	1201	2733
+52	Chinchompa Island	1892	3428
+53	Lledrith Island	2095	3188
+54	Ynysdail	2220	3466
+55	Buccaneers' Haven	2079	3689
+56	Drumstick Isle	2148	3531
+57	Brittle Isle	1953	4056
+58	Grimstone	2927	4055

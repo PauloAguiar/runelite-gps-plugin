@@ -2028,8 +2028,9 @@ public class ShortestPathPanel extends PluginPanel
 		JPanel body = configSectionBody();
 		JCheckBox master = configCheckBox("Use sailing routes", sailingOn,
 			"<html><body style='width:220px'>Master switch: include sailing your own boat between"
-				+ " mooring points and port berths.<br><br>Assumes you own a boat and can summon it"
-				+ " at the departure point; travel times assume a mid-tier hull speed.</body></html>",
+				+ " mooring points and port berths.<br><br>Assumes you own a boat; travel times"
+				+ " assume a mid-tier hull speed. Where routes may board is governed by your boat's"
+				+ " detected berth and the Summon Boat assumption below.</body></html>",
 			v -> plugin.setPanelConfig("useSailing", v));
 		body.add(master);
 		JCheckBox abandon = configCheckBox("Teleports may abandon the boat",
@@ -2041,6 +2042,48 @@ public class ShortestPathPanel extends PluginPanel
 		abandon.setEnabled(sailingOn);
 		abandon.setBorder(new EmptyBorder(2, 18, 2, 0));
 		body.add(abandon);
+
+		JCheckBox summon = configCheckBox("Assume Summon Boat spell",
+			plugin.getGpsConfig().sailingAssumeSummon(),
+			"<html><body style='width:220px'>Routes may board at ANY mooring — the boat is"
+				+ " summoned there first (56 Magic, Pandemonium, teleport focus).<br><br>Off:"
+				+ " sailing legs start only where a boat is actually moored, and Teleport to"
+				+ " Boat (67 Magic, greater focus) covers the distance.</body></html>",
+			v -> plugin.setPanelConfig("sailingAssumeSummon", v));
+		summon.setEnabled(sailingOn);
+		summon.setBorder(new EmptyBorder(2, 18, 2, 0));
+		body.add(summon);
+
+		// Latest known berths: live varbits once seen this session, the stored snapshot
+		// from the last one before that.
+		List<String[]> banner = plugin.getBoatBanner();
+		String berths;
+		if (banner == null)
+		{
+			berths = "No boat seen yet — berths appear after login.";
+		}
+		else if (banner.isEmpty())
+		{
+			berths = "No owned boat detected.";
+		}
+		else
+		{
+			StringBuilder sb = new StringBuilder();
+			for (String[] row : banner)
+			{
+				sb.append(sb.length() > 0 ? "<br>" : "").append("⛵ ").append(row[0])
+					.append(" <font color='#9E9E9E'>— ").append(row[1]).append("</font>");
+			}
+			if (!plugin.isBoatBannerLive())
+			{
+				sb.append("<br><font color='#9E9E9E'>(from last session)</font>");
+			}
+			berths = sb.toString();
+		}
+		JLabel berthLabel = wrappedLabel(berths);
+		berthLabel.setBorder(new EmptyBorder(4, 18, 2, 0));
+		body.add(berthLabel);
+
 		section.add(body);
 		return section;
 	}

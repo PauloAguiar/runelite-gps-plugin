@@ -36,10 +36,26 @@ public class SailingGenerationTest
 	private static final int VARROCK = WorldPointUtil.packWorldPoint(3212, 3433, 0);
 	private static final int NEAR_CAIRN_WATER = WorldPointUtil.packWorldPoint(2744, 2989, 0);
 	private static final int CAIRN_PIN = WorldPointUtil.packWorldPoint(2692, 2941, 0);
+	/** Land on a sailing-only island: every route must sail, so boarding rules are visible. */
+	private static final int DOGNOSE_PIN = WorldPointUtil.packWorldPoint(3048, 2648, 0);
+	private static final int PORT_ID_PANDEMONIUM = 1;
+	private static final int PORT_ID_WINTUMBER = 46;
 
 	private AlternativeRoutesService service;
 
 	private List<RouteOption> generate(int start, int target, boolean abandon) throws Exception
+	{
+		return generate(start, target, abandon, true, -1, true);
+	}
+
+	/**
+	 * @param summon   the "Assume Summon Boat spell" toggle
+	 * @param boatPort SAILING_BOAT_1's port id (boat owned and moored there), or -1 for no
+	 *                 boat seen — the pre-detection world every earlier test lives in
+	 * @param aboard   whether the start is aboard the boat (SAILING_BOARDED_BOAT)
+	 */
+	private List<RouteOption> generate(int start, int target, boolean abandon, boolean summon,
+		int boatPort, boolean aboard) throws Exception
 	{
 		final Thread clientThread = Thread.currentThread();
 		Client client = (Client) Proxy.newProxyInstance(Client.class.getClassLoader(),
@@ -54,8 +70,20 @@ public class SailingGenerationTest
 					case "getBoostedSkillLevel":
 						return 99;
 					case "getVarbitValue":
-						// ABOARD: the aboard-legs and teleport gating both key off this.
-						return (int) args[0] == VarbitID.SAILING_BOARDED_BOAT ? 1 : 0;
+						int id = (int) args[0];
+						if (id == VarbitID.SAILING_BOARDED_BOAT)
+						{
+							return aboard ? 1 : 0;
+						}
+						if (id == VarbitID.SAILING_BOAT_1_OWNED)
+						{
+							return boatPort >= 0 ? 1 : 0;
+						}
+						if (id == VarbitID.SAILING_BOAT_1_PORT)
+						{
+							return Math.max(boatPort, 0);
+						}
+						return 0;
 					default:
 						return HybridPageFillTest.defaultValue(method.getReturnType());
 				}
@@ -65,6 +93,7 @@ public class SailingGenerationTest
 		Mockito.when(cfg.calculationCutoff()).thenReturn(120);
 		Mockito.when(cfg.useSailing()).thenReturn(true);
 		Mockito.when(cfg.sailingTeleportAbandon()).thenReturn(abandon);
+		Mockito.when(cfg.sailingAssumeSummon()).thenReturn(summon);
 		PathfinderConfig config = new TestPathfinderConfig(client, cfg).copyForPlanning();
 		config.refresh();
 		ClientThread ct = Mockito.mock(ClientThread.class, Mockito.withSettings().stubOnly());
@@ -179,6 +208,66 @@ public class SailingGenerationTest
 			firstPorts.size() >= 2);
 		assertTrue("teleports must fire AFTER landing (position-scoped gate)",
 			teleportAfterLanding);
+	}
+
+	/**
+	 * Boat-location awareness: with the boat moored at the Pandemonium and Summon Boat NOT
+	 * assumed, no route may board anywhere else — and Teleport to Boat (the generated spell
+	 * row surviving the structural gate) is how routes reach the far-off berth.
+	 */
+	@Test
+	public void summonOffBoardsOnlyWhereTheBoatIs() throws Exception
+	{
+		List<RouteOption> routes =
+			generate(VARROCK, DOGNOSE_PIN, true, false, PORT_ID_PANDEMONIUM, false);
+		assertTrue("routes must exist", !routes.isEmpty());
+		boolean teleportToBoat = false;
+		boolean sailed = false;
+		for (RouteOption route : routes)
+		{
+			for (TeleportMethod method : route.getMethods())
+			{
+				String info = method.getDisplayInfo();
+				if (info == null)
+				{
+					continue;
+				}
+				if (info.startsWith("Sailing: "))
+				{
+					sailed = true;
+					assertTrue("with the boat at the Pandemonium and no summon, a route boards"
+							+ " elsewhere: " + info,
+						info.startsWith("Sailing: The Pandemonium"));
+				}
+				teleportToBoat |= info.equals("Teleport to Boat — The Pandemonium");
+			}
+		}
+		assertTrue("a sailing route via the boat's berth must exist", sailed);
+		assertTrue("Teleport to Boat must carry routes to the far-off berth", teleportToBoat);
+	}
+
+	/**
+	 * The toggle really disables the gate: the boat rots at far-north Wintumber, Summon Boat
+	 * IS assumed, and a sailing-only pin still gets boarded at sensible nearby ports.
+	 */
+	@Test
+	public void summonOnFreesEveryMooring() throws Exception
+	{
+		List<RouteOption> routes =
+			generate(VARROCK, DOGNOSE_PIN, true, true, PORT_ID_WINTUMBER, false);
+		assertTrue("routes must exist", !routes.isEmpty());
+		boolean otherPort = false;
+		for (RouteOption route : routes)
+		{
+			for (TeleportMethod method : route.getMethods())
+			{
+				String info = method.getDisplayInfo();
+				otherPort |= info != null && info.startsWith("Sailing: ")
+					&& !info.startsWith("Sailing: Wintumber Island");
+			}
+		}
+		assertTrue("assuming Summon Boat, boardings must not be pinned to the boat's berth",
+			otherPort);
 	}
 
 	@Test

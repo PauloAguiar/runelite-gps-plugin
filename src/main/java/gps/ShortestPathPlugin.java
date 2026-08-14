@@ -50,6 +50,8 @@ import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOpened;
 import net.runelite.api.events.PostClientTick;
+import net.runelite.api.events.VarbitChanged;
+import net.runelite.api.gameval.DBTableID;
 import net.runelite.api.events.WidgetClosed;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.events.WorldChanged;
@@ -271,6 +273,30 @@ public class ShortestPathPlugin extends Plugin
 	private static final String CONFIG_KEY_SPIRIT_TREES = "plantedSpiritTrees";
 	// RSProfile-scoped: the last house scan's furniture (see PohScanner.encode); present = scanned.
 	private static final String CONFIG_KEY_POH_FURNITURE = "pohFurniture";
+	// RSProfile-scoped: owned boats' last seen berths, "name|port" rows joined by ';'.
+	private static final String CONFIG_KEY_BOAT_PORTS = "boatPorts";
+
+	/** Owned boats as {name, port label} display rows — live varbit reads once seen this
+	 * session, the persisted snapshot before that, null when never collected. Routing does
+	 * NOT read this: PathfinderConfig reads the boat varbits itself at refresh. */
+	private volatile List<String[]> boatBanner;
+	private boolean boatBannerLive;
+	private boolean boatBannerDirty;
+
+	private static final int[][] BOAT_BANNER_VARBITS = {
+		{VarbitID.SAILING_BOAT_1_OWNED, VarbitID.SAILING_BOAT_1_PORT, VarbitID.SAILING_BOAT_1_NAME_1,
+			VarbitID.SAILING_BOAT_1_NAME_2, VarbitID.SAILING_BOAT_1_NAME_3},
+		{VarbitID.SAILING_BOAT_2_OWNED, VarbitID.SAILING_BOAT_2_PORT, VarbitID.SAILING_BOAT_2_NAME_1,
+			VarbitID.SAILING_BOAT_2_NAME_2, VarbitID.SAILING_BOAT_2_NAME_3},
+		{VarbitID.SAILING_BOAT_3_OWNED, VarbitID.SAILING_BOAT_3_PORT, VarbitID.SAILING_BOAT_3_NAME_1,
+			VarbitID.SAILING_BOAT_3_NAME_2, VarbitID.SAILING_BOAT_3_NAME_3},
+		{VarbitID.SAILING_BOAT_4_OWNED, VarbitID.SAILING_BOAT_4_PORT, VarbitID.SAILING_BOAT_4_NAME_1,
+			VarbitID.SAILING_BOAT_4_NAME_2, VarbitID.SAILING_BOAT_4_NAME_3},
+		{VarbitID.SAILING_BOAT_5_OWNED, VarbitID.SAILING_BOAT_5_PORT, VarbitID.SAILING_BOAT_5_NAME_1,
+			VarbitID.SAILING_BOAT_5_NAME_2, VarbitID.SAILING_BOAT_5_NAME_3},
+	};
+	private static final Set<Integer> BOAT_BANNER_VARBIT_IDS = Arrays.stream(BOAT_BANNER_VARBITS)
+		.flatMapToInt(Arrays::stream).boxed().collect(java.util.stream.Collectors.toSet());
 	private static final String CONFIG_KEY_FAVORITES = "favoriteDestinations";
 	private static final int FAVORITES_LIMIT = 100;
 	private volatile List<Destinations.Entry> favoriteDestinations = new ArrayList<>();
@@ -1249,6 +1275,9 @@ public class ShortestPathPlugin extends Plugin
 			pohFurnitureFoundThisVisit = false;
 			pohScanAttempts = 0;
 			pohSpawnedFurniture.clear();
+			boatBanner = null;
+			boatBannerLive = false;
+			boatBannerDirty = false;
 		}
 
 		if (pathfinderConfig == null
@@ -1515,6 +1544,13 @@ public class ShortestPathPlugin extends Plugin
 		// live resolution walks player.getWorldView(), a client-thread-only call since the
 		// boat-position fix — the EDT reads this cache instead and can never trip it.
 		lastKnownPlayerLocation = getPlayerLocation();
+		// Boat berth changes arrive as varbit bursts (login sync, docking); one banner
+		// rebuild per tick at most.
+		if (boatBannerDirty)
+		{
+			boatBannerDirty = false;
+			refreshBoatBanner();
+		}
 		// Passive sea-obstacle learning: every 10 ticks, harvest scene tiles that the shipped
 		// ocean calls sailable but live collision blocks (moored vessels, harbour clutter).
 		// The offline map plans; the client corrects itself as scenes reveal the truth.
@@ -1875,6 +1911,95 @@ public class ShortestPathPlugin extends Plugin
 	 * a fresh sync of each. Every piece is superseded by its live source the moment that source is
 	 * seen (bank opened, travel menu read, house entered).
 	 */
+	@Subscribe
+	public void onVarbitChanged(VarbitChanged event)
+	{
+		if (BOAT_BANNER_VARBIT_IDS.contains(event.getVarbitId()))
+		{
+			boatBannerDirty = true;
+		}
+	}
+
+	/** Client thread: re-read every boat's ownership, berth and name, persist, and let the
+	 * panel's sailing section relabel itself. */
+	private void refreshBoatBanner()
+	{
+		if (!GameState.LOGGED_IN.equals(client.getGameState()))
+		{
+			return;
+		}
+		List<String[]> rows = new ArrayList<>();
+		for (int slot = 0; slot < BOAT_BANNER_VARBITS.length; slot++)
+		{
+			int[] varbits = BOAT_BANNER_VARBITS[slot];
+			// Owned varbit alone is unreliable (Where's My Boat's field lesson); a set name
+			// descriptor also proves ownership, and covers Port Sarim's port id 0.
+			if (client.getVarbitValue(varbits[0]) <= 0 && client.getVarbitValue(varbits[3]) <= 0)
+			{
+				continue;
+			}
+			rows.add(new String[]{decodeBoatName(slot, varbits),
+				SailingPorts.portName(client.getVarbitValue(varbits[1]))});
+		}
+		boatBanner = rows;
+		boatBannerLive = true;
+		configManager.setRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_BOAT_PORTS,
+			rows.stream().map(r -> r[0] + "|" + r[1]).collect(java.util.stream.Collectors.joining(";")));
+		if (altPanel != null)
+		{
+			SwingUtilities.invokeLater(altPanel::refreshConfigSections);
+		}
+	}
+
+	/** The three name varbits index the game's own name-part tables (prefix, descriptor,
+	 * noun) — the same decode Where's My Boat ships. Any surprise falls back to a slot label. */
+	private String decodeBoatName(int slot, int[] varbits)
+	{
+		try
+		{
+			int[] rowIds = {DBTableID.SailingBoatNameOptions.Row.SAILING_BOAT_NAME_PREFIX_OPTIONS,
+				DBTableID.SailingBoatNameOptions.Row.SAILING_BOAT_NAME_DESCRIPTOR_OPTIONS,
+				DBTableID.SailingBoatNameOptions.Row.SAILING_BOAT_NAME_NOUN_OPTIONS};
+			List<String> parts = new ArrayList<>();
+			for (int part = 0; part < 3; part++)
+			{
+				int index = client.getVarbitValue(varbits[2 + part]) - 1;
+				if (index > 0)
+				{
+					Object[] options = client.getDBTableField(rowIds[part],
+						DBTableID.SailingBoatNameOptions.COL_OPTION, 0);
+					if (index < options.length && options[index] instanceof String
+						&& !((String) options[index]).isEmpty())
+					{
+						parts.add((String) options[index]);
+					}
+				}
+			}
+			if (!parts.isEmpty())
+			{
+				return String.join(" ", parts);
+			}
+		}
+		catch (RuntimeException e)
+		{
+			// Name tables unavailable (cache quirk) — the slot label below still identifies it.
+		}
+		return "Boat " + (slot + 1);
+	}
+
+	/** Owned boats as {name, port label} rows for the panel's sailing section; null = never
+	 * collected for this character. */
+	public List<String[]> getBoatBanner()
+	{
+		return boatBanner;
+	}
+
+	/** Whether the banner reflects this session's live varbits rather than a restored snapshot. */
+	public boolean isBoatBannerLive()
+	{
+		return boatBannerLive;
+	}
+
 	private void restoreDetectionsFromConfig()
 	{
 		restoreBankFromConfig();
@@ -1895,6 +2020,23 @@ public class ShortestPathPlugin extends Plugin
 			{
 				detectedPohFurniture = detected;
 				pohScanned = true;
+			}
+		}
+		if (boatBanner == null)
+		{
+			String raw = configManager.getRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_BOAT_PORTS);
+			if (raw != null)
+			{
+				List<String[]> rows = new ArrayList<>();
+				for (String row : raw.split(";"))
+				{
+					int split = row.indexOf('|');
+					if (split > 0)
+					{
+						rows.add(new String[]{row.substring(0, split), row.substring(split + 1)});
+					}
+				}
+				boatBanner = rows;
 			}
 		}
 		// The panel's sections label their sync state — reflect what was just restored.

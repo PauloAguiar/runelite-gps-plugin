@@ -162,6 +162,20 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigItem(
 		hidden = true,
+		keyName = "sailingAssumeSummon",
+		name = "Assume Summon Boat spell",
+		description = "Whether routes may board at any mooring, assuming the boat is summoned there<br>" +
+			"(56 Magic, Pandemonium, teleport focus). Off: sailing starts only where a boat is moored",
+		position = 160,
+		section = sectionSettings
+	)
+	default boolean sailingAssumeSummon()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		hidden = true,
 		keyName = "useFairyRings",
 		name = "Use fairy rings",
 		description = "Whether to include fairy rings in the path.<br>" +
