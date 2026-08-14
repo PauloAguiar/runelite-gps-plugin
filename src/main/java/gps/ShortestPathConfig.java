@@ -675,6 +675,19 @@ public interface ShortestPathConfig extends Config
 		return 12;
 	}
 
+	@ConfigItem(
+		hidden = true,
+		keyName = "questHelperBannerDismissed",
+		name = "Quest Helper banner dismissed",
+		description = "Whether the 'Quest Helper isn't routing through GPS' banner has been dismissed",
+		position = 161,
+		section = sectionSettings
+	)
+	default boolean questHelperBannerDismissed()
+	{
+		return false;
+	}
+
 	@Range(
 		max = 20000
 	)

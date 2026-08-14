@@ -544,6 +544,33 @@ public class ShortestPathPanel extends PluginPanel
 		return buildBanner(icon, html, accent);
 	}
 
+	private boolean cfgQuestBannerDismissed()
+	{
+		return plugin.getGpsConfig().questHelperBannerDismissed();
+	}
+
+	/** Adds a small persistent-dismiss x to a banner's right edge: clicking writes the given
+	 * boolean config key and the next render drops the banner for good. */
+	private JPanel withDismiss(JPanel banner, String dismissedConfigKey)
+	{
+		JLabel close = new JLabel("✕");
+		close.setFont(FontManager.getRunescapeSmallFont());
+		close.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		close.setToolTipText("Dismiss permanently");
+		close.setBorder(new EmptyBorder(0, 4, 0, 2));
+		close.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		close.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mousePressed(MouseEvent e)
+			{
+				plugin.setPanelConfig(dismissedConfigKey, true);
+			}
+		});
+		banner.add(verticallyCentered(close), BorderLayout.EAST);
+		return banner;
+	}
+
 	private JPanel buildBanner(Icon icon, String innerHtml, Color accent)
 	{
 		JPanel banner = new JPanel(new BorderLayout(7, 0));
@@ -671,6 +698,17 @@ public class ShortestPathPanel extends PluginPanel
 		// trees, balloon logs) live here at the top — inside their (collapsed) sections they were
 		// easy to miss.
 		List<JPanel> warnings = new ArrayList<>();
+		// Quest Helper only hands its quest-step destinations to GPS when its own
+		// "Use Shortest Path plugin" option is on — with it off, quest steps silently never
+		// arrive. Dismissable (the x persists via config) for users who prefer it that way.
+		if (plugin.isQuestHelperPathingOff() && !cfgQuestBannerDismissed())
+		{
+			warnings.add(withDismiss(buildBanner(RouteIcons.BANNER_WARNING,
+				"Quest Helper isn't routing through GPS",
+				"Enable \"Use Shortest Path plugin\" in Quest Helper's settings so quest steps"
+					+ " hand their destinations to GPS.",
+				BANNER_WARN_ACCENT), "questHelperBannerDismissed"));
+		}
 		// Running the original Shortest Path plugin alongside GPS doubles the path rendering and
 		// the plugin-message integrations (both answer Quest Helper's destinations).
 		if (plugin.isShortestPathConflict())

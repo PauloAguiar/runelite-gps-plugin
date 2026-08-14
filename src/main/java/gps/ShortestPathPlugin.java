@@ -235,6 +235,7 @@ public class ShortestPathPlugin extends Plugin
 	// True while the original Shortest Path plugin is also enabled: both plugins draw paths and
 	// answer the same plugin-message integrations, so the panel warns and recommends disabling it.
 	private volatile boolean shortestPathConflict = false;
+	private volatile boolean questHelperPathingOff = false;
 	// Click-to-dismiss for the GPS overlay's lingering "Arrived!" panel.
 	private final MouseAdapter arrivalDismissListener = new MouseAdapter()
 	{
@@ -615,6 +616,7 @@ public class ShortestPathPlugin extends Plugin
 		mouseManager.registerMouseListener(arrivalDismissListener);
 		// Plugins enabled later are caught by the PluginChanged/ExternalPluginsChanged events.
 		updateShortestPathConflict();
+		updateQuestHelperIntegration();
 	}
 
 	@Override
@@ -1095,6 +1097,19 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
+		// Quest Helper's own "Use Shortest Path plugin" toggle governs whether quest steps
+		// reach GPS at all — flipping it shows/clears the panel's integration banner live.
+		// Turning it ON re-arms a dismissed banner: the dismissal covered THIS off-period,
+		// not a future regression.
+		if ("questhelper".equals(event.getGroup()) && "useShortestPath".equals(event.getKey()))
+		{
+			if (Boolean.parseBoolean(event.getNewValue()))
+			{
+				configManager.unsetConfiguration(CONFIG_GROUP, "questHelperBannerDismissed");
+			}
+			updateQuestHelperIntegration();
+			return;
+		}
 		if (!CONFIG_GROUP.equals(event.getGroup()))
 		{
 			return;
@@ -1196,16 +1211,53 @@ public class ShortestPathPlugin extends Plugin
 		}
 	}
 
+	/** Whether Quest Helper runs WITHOUT its "Use Shortest Path plugin" option — the panel
+	 * shows a dismissable banner explaining quest steps won't reach GPS until it's on. */
+	public boolean isQuestHelperPathingOff()
+	{
+		return questHelperPathingOff;
+	}
+
+	/**
+	 * Quest Helper hands quest-step destinations over the {@code shortestpath} plugin-message
+	 * integration only when its own "Use Shortest Path plugin" option is on
+	 * ({@code questhelper.useShortestPath}, default off) — enabled Quest Helper with the
+	 * option off silently draws its own lines and GPS never hears about the step. Matched by
+	 * descriptor name like the Shortest Path conflict above.
+	 */
+	private void updateQuestHelperIntegration()
+	{
+		boolean off = false;
+		for (Plugin other : pluginManager.getPlugins())
+		{
+			PluginDescriptor descriptor = other.getClass().getAnnotation(PluginDescriptor.class);
+			if (descriptor != null && "Quest Helper".equals(descriptor.name())
+				&& pluginManager.isPluginEnabled(other))
+			{
+				off = !Boolean.parseBoolean(
+					configManager.getConfiguration("questhelper", "useShortestPath"));
+				break;
+			}
+		}
+		if (off != questHelperPathingOff)
+		{
+			questHelperPathingOff = off;
+			refreshPanel(altGenerationInFlight);
+		}
+	}
+
 	@Subscribe
 	public void onPluginChanged(net.runelite.client.events.PluginChanged event)
 	{
 		updateShortestPathConflict();
+		updateQuestHelperIntegration();
 	}
 
 	@Subscribe
 	public void onExternalPluginsChanged(net.runelite.client.events.ExternalPluginsChanged event)
 	{
 		updateShortestPathConflict();
+		updateQuestHelperIntegration();
 	}
 
 	/**
