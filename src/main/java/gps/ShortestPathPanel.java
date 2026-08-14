@@ -705,8 +705,8 @@ public class ShortestPathPanel extends PluginPanel
 		{
 			warnings.add(withDismiss(buildBanner(RouteIcons.BANNER_WARNING,
 				"Quest Helper isn't routing through GPS",
-				"Enable \"Use Shortest Path plugin\" in Quest Helper's settings so quest steps"
-					+ " hand their destinations to GPS.",
+				"Turn on <b>Use Shortest Path plugin</b> in Quest Helper's settings so quest"
+					+ " steps hand their destinations to GPS.",
 				BANNER_WARN_ACCENT), "questHelperBannerDismissed"));
 		}
 		// Running the original Shortest Path plugin alongside GPS doubles the path rendering and
