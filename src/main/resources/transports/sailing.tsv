@@ -28,7 +28,7 @@
 2059 2605 0	1513 2973 0	Board Mooring point 59834				354	Sailing: Wintumber Island → Sunset Coast
 2059 2605 0	1506 3402 0	Board Mooring point 59834				541	Sailing: Wintumber Island → Lands End
 2059 2605 0	2542 3764 0	Board Mooring point 59834				737	Sailing: Wintumber Island → Waterbirth Island
-2059 2605 0	2575 2291 0	Board Mooring point 59834				323	Sailing: Wintumber Island → 2575,2291
+2059 2605 0	2569 2295 0	Board Mooring point 59834				323	Sailing: Wintumber Island → Wyrmscraig
 2059 2605 0	1555 2772 0	Board Mooring point 59834				291	Sailing: Wintumber Island → Shimmering Atoll
 2059 2605 0	2579 2843 0	Board Mooring point 59834				315	Sailing: Wintumber Island → Corsair Cove
 2059 2605 0	2612 3841 0	Board Mooring point 59834				780	Sailing: Wintumber Island → Etceteria
@@ -87,7 +87,7 @@
 2095 3188 0	1513 2973 0	Board Mooring point 59834				393	Sailing: Lledrith Island → Sunset Coast
 2095 3188 0	1506 3402 0	Board Mooring point 59834				344	Sailing: Lledrith Island → Lands End
 2095 3188 0	2542 3764 0	Board Mooring point 59834				440	Sailing: Lledrith Island → Waterbirth Island
-2095 3188 0	2575 2291 0	Board Mooring point 59834				551	Sailing: Lledrith Island → 2575,2291
+2095 3188 0	2569 2295 0	Board Mooring point 59834				551	Sailing: Lledrith Island → Wyrmscraig
 2095 3188 0	1555 2772 0	Board Mooring point 59834				384	Sailing: Lledrith Island → Shimmering Atoll
 2095 3188 0	2579 2843 0	Board Mooring point 59834				358	Sailing: Lledrith Island → Corsair Cove
 2095 3188 0	2612 3841 0	Board Mooring point 59834				482	Sailing: Lledrith Island → Etceteria
@@ -146,7 +146,7 @@
 2079 3689 0	1513 2973 0	Board Mooring point 59834				617	Sailing: Buccaneers' Haven → Sunset Coast
 2079 3689 0	1506 3402 0	Board Mooring point 59834				391	Sailing: Buccaneers' Haven → Lands End
 2079 3689 0	2542 3764 0	Board Mooring point 59834				263	Sailing: Buccaneers' Haven → Waterbirth Island
-2079 3689 0	2575 2291 0	Board Mooring point 59834				818	Sailing: Buccaneers' Haven → 2575,2291
+2079 3689 0	2569 2295 0	Board Mooring point 59834				818	Sailing: Buccaneers' Haven → Wyrmscraig
 2079 3689 0	1555 2772 0	Board Mooring point 59834				608	Sailing: Buccaneers' Haven → Shimmering Atoll
 2079 3689 0	2579 2843 0	Board Mooring point 59834				624	Sailing: Buccaneers' Haven → Corsair Cove
 2079 3689 0	2612 3841 0	Board Mooring point 59834				305	Sailing: Buccaneers' Haven → Etceteria
@@ -205,7 +205,7 @@
 3173 2368 0	1513 2973 0	Board Gangplank 59832				932	Sailing: The Summer Shore → Sunset Coast
 3173 2368 0	1506 3402 0	Board Gangplank 59832				1021	Sailing: The Summer Shore → Lands End
 3173 2368 0	2542 3764 0	Board Gangplank 59832				1133	Sailing: The Summer Shore → Waterbirth Island
-3173 2368 0	2575 2291 0	Board Gangplank 59832				333	Sailing: The Summer Shore → 2575,2291
+3173 2368 0	2569 2295 0	Board Gangplank 59832				333	Sailing: The Summer Shore → Wyrmscraig
 3173 2368 0	1555 2772 0	Board Gangplank 59832				878	Sailing: The Summer Shore → Shimmering Atoll
 3173 2368 0	2579 2843 0	Board Gangplank 59832				411	Sailing: The Summer Shore → Corsair Cove
 3173 2368 0	2612 3841 0	Board Gangplank 59832				1175	Sailing: The Summer Shore → Etceteria
@@ -264,7 +264,7 @@
 3145 2824 0	1513 2973 0	Board Gangplank 59832				876	Sailing: Sea Spirit Dock → Sunset Coast
 3145 2824 0	1506 3402 0	Board Gangplank 59832				937	Sailing: Sea Spirit Dock → Lands End
 3145 2824 0	2542 3764 0	Board Gangplank 59832				1049	Sailing: Sea Spirit Dock → Waterbirth Island
-3145 2824 0	2575 2291 0	Board Gangplank 59832				413	Sailing: Sea Spirit Dock → 2575,2291
+3145 2824 0	2569 2295 0	Board Gangplank 59832				413	Sailing: Sea Spirit Dock → Wyrmscraig
 3145 2824 0	1555 2772 0	Board Gangplank 59832				825	Sailing: Sea Spirit Dock → Shimmering Atoll
 3145 2824 0	2579 2843 0	Board Gangplank 59832				307	Sailing: Sea Spirit Dock → Corsair Cove
 3145 2824 0	2612 3841 0	Board Gangplank 59832				1092	Sailing: Sea Spirit Dock → Etceteria
@@ -323,7 +323,7 @@
 2143 3121 0	1513 2973 0	Board Gangplank 59832				387	Sailing: Port Tyras → Sunset Coast
 2143 3121 0	1506 3402 0	Board Gangplank 59832				373	Sailing: Port Tyras → Lands End
 2143 3121 0	2542 3764 0	Board Gangplank 59832				475	Sailing: Port Tyras → Waterbirth Island
-2143 3121 0	2575 2291 0	Board Gangplank 59832				512	Sailing: Port Tyras → 2575,2291
+2143 3121 0	2569 2295 0	Board Gangplank 59832				512	Sailing: Port Tyras → Wyrmscraig
 2143 3121 0	1555 2772 0	Board Gangplank 59832				376	Sailing: Port Tyras → Shimmering Atoll
 2143 3121 0	2579 2843 0	Board Gangplank 59832				318	Sailing: Port Tyras → Corsair Cove
 2143 3121 0	2612 3841 0	Board Gangplank 59832				517	Sailing: Port Tyras → Etceteria
@@ -382,7 +382,7 @@
 2157 3325 0	1513 2973 0	Board Gangplank 59832				452	Sailing: Tirannwn Bight → Sunset Coast
 2157 3325 0	1506 3402 0	Board Gangplank 59832				355	Sailing: Tirannwn Bight → Lands End
 2157 3325 0	2542 3764 0	Board Gangplank 59832				374	Sailing: Tirannwn Bight → Waterbirth Island
-2157 3325 0	2575 2291 0	Board Gangplank 59832				616	Sailing: Tirannwn Bight → 2575,2291
+2157 3325 0	2569 2295 0	Board Gangplank 59832				616	Sailing: Tirannwn Bight → Wyrmscraig
 2157 3325 0	1555 2772 0	Board Gangplank 59832				443	Sailing: Tirannwn Bight → Shimmering Atoll
 2157 3325 0	2579 2843 0	Board Gangplank 59832				423	Sailing: Tirannwn Bight → Corsair Cove
 2157 3325 0	2612 3841 0	Board Gangplank 59832				416	Sailing: Tirannwn Bight → Etceteria
@@ -441,7 +441,7 @@
 2148 3531 0	1513 2973 0	Board Mooring point 59834				535	Sailing: Drumstick Isle → Sunset Coast
 2148 3531 0	1506 3402 0	Board Mooring point 59834				358	Sailing: Drumstick Isle → Lands End
 2148 3531 0	2542 3764 0	Board Mooring point 59834				272	Sailing: Drumstick Isle → Waterbirth Island
-2148 3531 0	2575 2291 0	Board Mooring point 59834				723	Sailing: Drumstick Isle → 2575,2291
+2148 3531 0	2569 2295 0	Board Mooring point 59834				723	Sailing: Drumstick Isle → Wyrmscraig
 2148 3531 0	1555 2772 0	Board Mooring point 59834				525	Sailing: Drumstick Isle → Shimmering Atoll
 2148 3531 0	2579 2843 0	Board Mooring point 59834				529	Sailing: Drumstick Isle → Corsair Cove
 2148 3531 0	2612 3841 0	Board Mooring point 59834				314	Sailing: Drumstick Isle → Etceteria
@@ -500,7 +500,7 @@
 2151 3880 0	1513 2973 0	Board Gangplank 59832				707	Sailing: Lunar Isle → Sunset Coast
 2151 3880 0	1506 3402 0	Board Gangplank 59832				480	Sailing: Lunar Isle → Lands End
 2151 3880 0	2542 3764 0	Board Gangplank 59832				236	Sailing: Lunar Isle → Waterbirth Island
-2151 3880 0	2575 2291 0	Board Gangplank 59832				905	Sailing: Lunar Isle → 2575,2291
+2151 3880 0	2569 2295 0	Board Gangplank 59832				905	Sailing: Lunar Isle → Wyrmscraig
 2151 3880 0	1555 2772 0	Board Gangplank 59832				698	Sailing: Lunar Isle → Shimmering Atoll
 2151 3880 0	2579 2843 0	Board Gangplank 59832				712	Sailing: Lunar Isle → Corsair Cove
 2151 3880 0	2612 3841 0	Board Gangplank 59832				266	Sailing: Lunar Isle → Etceteria
@@ -559,7 +559,7 @@
 2193 2319 0	1513 2973 0	Board Mooring point 59834				490	Sailing: Sunbleak Island → Sunset Coast
 2193 2319 0	1506 3402 0	Board Mooring point 59834				696	Sailing: Sunbleak Island → Lands End
 2193 2319 0	2542 3764 0	Board Mooring point 59834				885	Sailing: Sunbleak Island → Waterbirth Island
-2193 2319 0	2575 2291 0	Board Mooring point 59834				224	Sailing: Sunbleak Island → 2575,2291
+2193 2319 0	2569 2295 0	Board Mooring point 59834				224	Sailing: Sunbleak Island → Wyrmscraig
 2193 2319 0	1555 2772 0	Board Mooring point 59834				412	Sailing: Sunbleak Island → Shimmering Atoll
 2193 2319 0	2579 2843 0	Board Mooring point 59834				350	Sailing: Sunbleak Island → Corsair Cove
 2193 2319 0	2612 3841 0	Board Mooring point 59834				927	Sailing: Sunbleak Island → Etceteria
@@ -618,7 +618,7 @@
 1201 2733 0	1513 2973 0	Board Mooring point 59834				227	Sailing: Laguna Aurorae → Sunset Coast
 1201 2733 0	1506 3402 0	Board Mooring point 59834				681	Sailing: Laguna Aurorae → Lands End
 1201 2733 0	2542 3764 0	Board Mooring point 59834				933	Sailing: Laguna Aurorae → Waterbirth Island
-1201 2733 0	2575 2291 0	Board Mooring point 59834				756	Sailing: Laguna Aurorae → 2575,2291
+1201 2733 0	2569 2295 0	Board Mooring point 59834				756	Sailing: Laguna Aurorae → Wyrmscraig
 1201 2733 0	1555 2772 0	Board Mooring point 59834				203	Sailing: Laguna Aurorae → Shimmering Atoll
 1201 2733 0	2579 2843 0	Board Mooring point 59834				725	Sailing: Laguna Aurorae → Corsair Cove
 1201 2733 0	2612 3841 0	Board Mooring point 59834				976	Sailing: Laguna Aurorae → Etceteria
@@ -677,7 +677,7 @@
 2220 3466 0	1513 2973 0	Board Mooring point 59834				542	Sailing: Ynysdail → Sunset Coast
 2220 3466 0	1506 3402 0	Board Mooring point 59834				386	Sailing: Ynysdail → Lands End
 2220 3466 0	2542 3764 0	Board Mooring point 59834				280	Sailing: Ynysdail → Waterbirth Island
-2220 3466 0	2575 2291 0	Board Mooring point 59834				727	Sailing: Ynysdail → 2575,2291
+2220 3466 0	2569 2295 0	Board Mooring point 59834				727	Sailing: Ynysdail → Wyrmscraig
 2220 3466 0	1555 2772 0	Board Mooring point 59834				533	Sailing: Ynysdail → Shimmering Atoll
 2220 3466 0	2579 2843 0	Board Mooring point 59834				534	Sailing: Ynysdail → Corsair Cove
 2220 3466 0	2612 3841 0	Board Mooring point 59834				322	Sailing: Ynysdail → Etceteria
@@ -736,7 +736,7 @@
 2282 2821 0	1513 2973 0	Board Mooring point 59834				471	Sailing: 2282,2821 → Sunset Coast
 2282 2821 0	1506 3402 0	Board Mooring point 59834				575	Sailing: 2282,2821 → Lands End
 2282 2821 0	2542 3764 0	Board Mooring point 59834				687	Sailing: 2282,2821 → Waterbirth Island
-2282 2821 0	2575 2291 0	Board Mooring point 59834				321	Sailing: 2282,2821 → 2575,2291
+2282 2821 0	2569 2295 0	Board Mooring point 59834				321	Sailing: 2282,2821 → Wyrmscraig
 2282 2821 0	1555 2772 0	Board Mooring point 59834				420	Sailing: 2282,2821 → Shimmering Atoll
 2282 2821 0	2579 2843 0	Board Mooring point 59834				175	Sailing: 2282,2821 → Corsair Cove
 2282 2821 0	2612 3841 0	Board Mooring point 59834				729	Sailing: 2282,2821 → Etceteria
@@ -795,7 +795,7 @@
 3353 2215 0	1513 2973 0	Board Mooring point 59834				1039	Sailing: The Little Pearl → Sunset Coast
 3353 2215 0	1506 3402 0	Board Mooring point 59834				1137	Sailing: The Little Pearl → Lands End
 3353 2215 0	2542 3764 0	Board Mooring point 59834				1249	Sailing: The Little Pearl → Waterbirth Island
-3353 2215 0	2575 2291 0	Board Mooring point 59834				425	Sailing: The Little Pearl → 2575,2291
+3353 2215 0	2569 2295 0	Board Mooring point 59834				425	Sailing: The Little Pearl → Wyrmscraig
 3353 2215 0	1555 2772 0	Board Mooring point 59834				985	Sailing: The Little Pearl → Shimmering Atoll
 3353 2215 0	2579 2843 0	Board Mooring point 59834				527	Sailing: The Little Pearl → Corsair Cove
 3353 2215 0	2612 3841 0	Board Mooring point 59834				1291	Sailing: The Little Pearl → Etceteria
@@ -854,7 +854,7 @@
 2344 2268 0	1513 2973 0	Board Mooring point 59834				574	Sailing: Rainbow's End → Sunset Coast
 2344 2268 0	1506 3402 0	Board Mooring point 59834				754	Sailing: Rainbow's End → Lands End
 2344 2268 0	2542 3764 0	Board Mooring point 59834				933	Sailing: Rainbow's End → Waterbirth Island
-2344 2268 0	2575 2291 0	Board Mooring point 59834				135	Sailing: Rainbow's End → 2575,2291
+2344 2268 0	2569 2295 0	Board Mooring point 59834				135	Sailing: Rainbow's End → Wyrmscraig
 2344 2268 0	1555 2772 0	Board Mooring point 59834				495	Sailing: Rainbow's End → Shimmering Atoll
 2344 2268 0	2579 2843 0	Board Mooring point 59834				337	Sailing: Rainbow's End → Corsair Cove
 2344 2268 0	2612 3841 0	Board Mooring point 59834				975	Sailing: Rainbow's End → Etceteria
@@ -913,7 +913,7 @@
 2320 2774 0	1513 2973 0	Board Mooring point 59834				457	Sailing: Tear of the Soul → Sunset Coast
 2320 2774 0	1506 3402 0	Board Mooring point 59834				568	Sailing: Tear of the Soul → Lands End
 2320 2774 0	2542 3764 0	Board Mooring point 59834				705	Sailing: Tear of the Soul → Waterbirth Island
-2320 2774 0	2575 2291 0	Board Mooring point 59834				291	Sailing: Tear of the Soul → 2575,2291
+2320 2774 0	2569 2295 0	Board Mooring point 59834				291	Sailing: Tear of the Soul → Wyrmscraig
 2320 2774 0	1555 2772 0	Board Mooring point 59834				406	Sailing: Tear of the Soul → Shimmering Atoll
 2320 2774 0	2579 2843 0	Board Mooring point 59834				168	Sailing: Tear of the Soul → Corsair Cove
 2320 2774 0	2612 3841 0	Board Mooring point 59834				748	Sailing: Tear of the Soul → Etceteria
@@ -972,7 +972,7 @@
 2305 3689 0	1513 2973 0	Board Gangplank 59832				646	Sailing: Piscatoris bank → Sunset Coast
 2305 3689 0	1506 3402 0	Board Gangplank 59832				459	Sailing: Piscatoris bank → Lands End
 2305 3689 0	2542 3764 0	Board Gangplank 59832				155	Sailing: Piscatoris bank → Waterbirth Island
-2305 3689 0	2575 2291 0	Board Gangplank 59832				831	Sailing: Piscatoris bank → 2575,2291
+2305 3689 0	2569 2295 0	Board Gangplank 59832				831	Sailing: Piscatoris bank → Wyrmscraig
 2305 3689 0	1555 2772 0	Board Gangplank 59832				636	Sailing: Piscatoris bank → Shimmering Atoll
 2305 3689 0	2579 2843 0	Board Gangplank 59832				637	Sailing: Piscatoris bank → Corsair Cove
 2305 3689 0	2612 3841 0	Board Gangplank 59832				198	Sailing: Piscatoris bank → Etceteria
@@ -1031,7 +1031,7 @@
 2310 3781 0	1513 2973 0	Board Gangplank 59832				686	Sailing: Neitiznot → Sunset Coast
 2310 3781 0	1506 3402 0	Board Gangplank 59832				488	Sailing: Neitiznot → Lands End
 2310 3781 0	2542 3764 0	Board Gangplank 59832				147	Sailing: Neitiznot → Waterbirth Island
-2310 3781 0	2575 2291 0	Board Gangplank 59832				871	Sailing: Neitiznot → 2575,2291
+2310 3781 0	2569 2295 0	Board Gangplank 59832				871	Sailing: Neitiznot → Wyrmscraig
 2310 3781 0	1555 2772 0	Board Gangplank 59832				676	Sailing: Neitiznot → Shimmering Atoll
 2310 3781 0	2579 2843 0	Board Gangplank 59832				677	Sailing: Neitiznot → Corsair Cove
 2310 3781 0	2612 3841 0	Board Gangplank 59832				190	Sailing: Neitiznot → Etceteria
@@ -1090,7 +1090,7 @@
 2411 3781 0	1513 2973 0	Board Gangplank 59832				718	Sailing: Jatizso → Sunset Coast
 2411 3781 0	1506 3402 0	Board Gangplank 59832				530	Sailing: Jatizso → Lands End
 2411 3781 0	2542 3764 0	Board Gangplank 59832				88	Sailing: Jatizso → Waterbirth Island
-2411 3781 0	2575 2291 0	Board Gangplank 59832				903	Sailing: Jatizso → 2575,2291
+2411 3781 0	2569 2295 0	Board Gangplank 59832				903	Sailing: Jatizso → Wyrmscraig
 2411 3781 0	1555 2772 0	Board Gangplank 59832				709	Sailing: Jatizso → Shimmering Atoll
 2411 3781 0	2579 2843 0	Board Gangplank 59832				710	Sailing: Jatizso → Corsair Cove
 2411 3781 0	2612 3841 0	Board Gangplank 59832				128	Sailing: Jatizso → Etceteria
@@ -1149,7 +1149,7 @@
 2467 2718 0	1513 2973 0	Board Mooring point 59834				535	Sailing: Anglers' Retreat → Sunset Coast
 2467 2718 0	1506 3402 0	Board Mooring point 59834				632	Sailing: Anglers' Retreat → Lands End
 2467 2718 0	2542 3764 0	Board Mooring point 59834				744	Sailing: Anglers' Retreat → Waterbirth Island
-2467 2718 0	2575 2291 0	Board Mooring point 59834				245	Sailing: Anglers' Retreat → 2575,2291
+2467 2718 0	2569 2295 0	Board Mooring point 59834				245	Sailing: Anglers' Retreat → Wyrmscraig
 2467 2718 0	1555 2772 0	Board Mooring point 59834				481	Sailing: Anglers' Retreat → Shimmering Atoll
 2467 2718 0	2579 2843 0	Board Mooring point 59834				106	Sailing: Anglers' Retreat → Corsair Cove
 2467 2718 0	2612 3841 0	Board Mooring point 59834				786	Sailing: Anglers' Retreat → Etceteria
@@ -1208,7 +1208,7 @@
 1451 2969 0	1513 2973 0	Board Gangplank 59832				51	Sailing: Aldarin → Sunset Coast
 1451 2969 0	1506 3402 0	Board Gangplank 59832				551	Sailing: Aldarin → Lands End
 1451 2969 0	2542 3764 0	Board Gangplank 59832				803	Sailing: Aldarin → Waterbirth Island
-1451 2969 0	2575 2291 0	Board Gangplank 59832				679	Sailing: Aldarin → 2575,2291
+1451 2969 0	2569 2295 0	Board Gangplank 59832				679	Sailing: Aldarin → Wyrmscraig
 1451 2969 0	1555 2772 0	Board Gangplank 59832				141	Sailing: Aldarin → Shimmering Atoll
 1451 2969 0	2579 2843 0	Board Gangplank 59832				621	Sailing: Aldarin → Corsair Cove
 1451 2969 0	2612 3841 0	Board Gangplank 59832				845	Sailing: Aldarin → Etceteria
@@ -1267,7 +1267,7 @@
 2532 2531 0	1513 2973 0	Board Mooring point 59834				601	Sailing: Isle of Bones → Sunset Coast
 2532 2531 0	1506 3402 0	Board Mooring point 59834				724	Sailing: Isle of Bones → Lands End
 2532 2531 0	2542 3764 0	Board Mooring point 59834				850	Sailing: Isle of Bones → Waterbirth Island
-2532 2531 0	2575 2291 0	Board Mooring point 59834				142	Sailing: Isle of Bones → 2575,2291
+2532 2531 0	2569 2295 0	Board Mooring point 59834				142	Sailing: Isle of Bones → Wyrmscraig
 2532 2531 0	1555 2772 0	Board Mooring point 59834				547	Sailing: Isle of Bones → Shimmering Atoll
 2532 2531 0	2579 2843 0	Board Mooring point 59834				185	Sailing: Isle of Bones → Corsair Cove
 2532 2531 0	2612 3841 0	Board Mooring point 59834				892	Sailing: Isle of Bones → Etceteria
@@ -1326,7 +1326,7 @@
 1513 2973 0	2532 2531 0	Board Gangplank 59832				601	Sailing: Sunset Coast → Isle of Bones
 1513 2973 0	1506 3402 0	Board Gangplank 59832				527	Sailing: Sunset Coast → Lands End
 1513 2973 0	2542 3764 0	Board Gangplank 59832				780	Sailing: Sunset Coast → Waterbirth Island
-1513 2973 0	2575 2291 0	Board Gangplank 59832				656	Sailing: Sunset Coast → 2575,2291
+1513 2973 0	2569 2295 0	Board Gangplank 59832				656	Sailing: Sunset Coast → Wyrmscraig
 1513 2973 0	1555 2772 0	Board Gangplank 59832				132	Sailing: Sunset Coast → Shimmering Atoll
 1513 2973 0	2579 2843 0	Board Gangplank 59832				598	Sailing: Sunset Coast → Corsair Cove
 1513 2973 0	2612 3841 0	Board Gangplank 59832				822	Sailing: Sunset Coast → Etceteria
@@ -1385,7 +1385,7 @@
 1506 3402 0	2532 2531 0	Board Gangplank 59832				724	Sailing: Lands End → Isle of Bones
 1506 3402 0	1513 2973 0	Board Gangplank 59832				527	Sailing: Lands End → Sunset Coast
 1506 3402 0	2542 3764 0	Board Gangplank 59832				592	Sailing: Lands End → Waterbirth Island
-1506 3402 0	2575 2291 0	Board Gangplank 59832				806	Sailing: Lands End → 2575,2291
+1506 3402 0	2569 2295 0	Board Gangplank 59832				806	Sailing: Lands End → Wyrmscraig
 1506 3402 0	1555 2772 0	Board Gangplank 59832				518	Sailing: Lands End → Shimmering Atoll
 1506 3402 0	2579 2843 0	Board Gangplank 59832				659	Sailing: Lands End → Corsair Cove
 1506 3402 0	2612 3841 0	Board Gangplank 59832				634	Sailing: Lands End → Etceteria
@@ -1444,7 +1444,7 @@
 2542 3764 0	2532 2531 0	Board Mooring point 59834				850	Sailing: Waterbirth Island → Isle of Bones
 2542 3764 0	1513 2973 0	Board Mooring point 59834				780	Sailing: Waterbirth Island → Sunset Coast
 2542 3764 0	1506 3402 0	Board Mooring point 59834				592	Sailing: Waterbirth Island → Lands End
-2542 3764 0	2575 2291 0	Board Mooring point 59834				965	Sailing: Waterbirth Island → 2575,2291
+2542 3764 0	2569 2295 0	Board Mooring point 59834				965	Sailing: Waterbirth Island → Wyrmscraig
 2542 3764 0	1555 2772 0	Board Mooring point 59834				770	Sailing: Waterbirth Island → Shimmering Atoll
 2542 3764 0	2579 2843 0	Board Mooring point 59834				771	Sailing: Waterbirth Island → Corsair Cove
 2542 3764 0	2612 3841 0	Board Mooring point 59834				72	Sailing: Waterbirth Island → Etceteria
@@ -1479,66 +1479,66 @@
 2542 3764 0	3060 2638 0	Board Mooring point 59834				1031	Sailing: Waterbirth Island → Dognose Island
 2542 3764 0	3069 2986 0	Board Mooring point 59834				1042	Sailing: Waterbirth Island → The Pandemonium (ship)
 2542 3764 0	3050 3192 0	Board Mooring point 59834				1132	Sailing: Waterbirth Island → Bay of Sarim
-2575 2291 0	2059 2605 0	Board Gangplank 59832				323	Sailing: 2575,2291 → Wintumber Island
-2575 2291 0	2095 3188 0	Board Gangplank 59832				551	Sailing: 2575,2291 → Lledrith Island
-2575 2291 0	2079 3689 0	Board Gangplank 59832				818	Sailing: 2575,2291 → Buccaneers' Haven
-2575 2291 0	3173 2368 0	Board Gangplank 59832				333	Sailing: 2575,2291 → The Summer Shore
-2575 2291 0	3145 2824 0	Board Gangplank 59832				413	Sailing: 2575,2291 → Sea Spirit Dock
-2575 2291 0	2143 3121 0	Board Gangplank 59832				512	Sailing: 2575,2291 → Port Tyras
-2575 2291 0	2157 3325 0	Board Gangplank 59832				616	Sailing: 2575,2291 → Tirannwn Bight
-2575 2291 0	2148 3531 0	Board Gangplank 59832				723	Sailing: 2575,2291 → Drumstick Isle
-2575 2291 0	2151 3880 0	Board Gangplank 59832				905	Sailing: 2575,2291 → Lunar Isle
-2575 2291 0	2193 2319 0	Board Gangplank 59832				224	Sailing: 2575,2291 → Sunbleak Island
-2575 2291 0	1201 2733 0	Board Gangplank 59832				756	Sailing: 2575,2291 → Laguna Aurorae
-2575 2291 0	2220 3466 0	Board Gangplank 59832				727	Sailing: 2575,2291 → Ynysdail
-2575 2291 0	2282 2821 0	Board Gangplank 59832				321	Sailing: 2575,2291 → 2282,2821
-2575 2291 0	3353 2215 0	Board Gangplank 59832				425	Sailing: 2575,2291 → The Little Pearl
-2575 2291 0	2344 2268 0	Board Gangplank 59832				135	Sailing: 2575,2291 → Rainbow's End
-2575 2291 0	2320 2774 0	Board Gangplank 59832				291	Sailing: 2575,2291 → Tear of the Soul
-2575 2291 0	2305 3689 0	Board Gangplank 59832				831	Sailing: 2575,2291 → Piscatoris bank
-2575 2291 0	2310 3781 0	Board Gangplank 59832				871	Sailing: 2575,2291 → Neitiznot
-2575 2291 0	2411 3781 0	Board Gangplank 59832				903	Sailing: 2575,2291 → Jatizso
-2575 2291 0	2467 2718 0	Board Gangplank 59832				245	Sailing: 2575,2291 → Anglers' Retreat
-2575 2291 0	1451 2969 0	Board Gangplank 59832				679	Sailing: 2575,2291 → Aldarin
-2575 2291 0	2532 2531 0	Board Gangplank 59832				142	Sailing: 2575,2291 → Isle of Bones
-2575 2291 0	1513 2973 0	Board Gangplank 59832				656	Sailing: 2575,2291 → Sunset Coast
-2575 2291 0	1506 3402 0	Board Gangplank 59832				806	Sailing: 2575,2291 → Lands End
-2575 2291 0	2542 3764 0	Board Gangplank 59832				965	Sailing: 2575,2291 → Waterbirth Island
-2575 2291 0	2575 2291 0	Board Gangplank 59832				21	Sailing: 2575,2291 → 2575,2291
-2575 2291 0	1555 2772 0	Board Gangplank 59832				583	Sailing: 2575,2291 → Shimmering Atoll
-2575 2291 0	2579 2843 0	Board Gangplank 59832				296	Sailing: 2575,2291 → Corsair Cove
-2575 2291 0	2612 3841 0	Board Gangplank 59832				1007	Sailing: 2575,2291 → Etceteria
-2575 2291 0	2660 2392 0	Board Gangplank 59832				91	Sailing: 2575,2291 → Charred Island
-2575 2291 0	2651 2677 0	Board Gangplank 59832				225	Sailing: 2575,2291 → Void Knights' Outpost
-2575 2291 0	2685 3162 0	Board Gangplank 59832				468	Sailing: 2575,2291 → Port Khazard
-2575 2291 0	2670 3266 0	Board Gangplank 59832				521	Sailing: 2575,2291 → Necromancer Tower
-2575 2291 0	2629 3704 0	Board Gangplank 59832				999	Sailing: 2575,2291 → Fremensund
-2575 2291 0	2751 2951 0	Board Gangplank 59832				370	Sailing: 2575,2291 → Cairn Isle
-2575 2291 0	2746 3304 0	Board Gangplank 59832				551	Sailing: 2575,2291 → Witchaven church
-2575 2291 0	1726 3453 0	Board Gangplank 59832				745	Sailing: 2575,2291 → Charcoal Burners
-2575 2291 0	2808 2509 0	Board Gangplank 59832				184	Sailing: 2575,2291 → Red Rock
-2575 2291 0	1758 2655 0	Board Gangplank 59832				465	Sailing: 2575,2291 → The Crown Jewel
-2575 2291 0	1776 3141 0	Board Gangplank 59832				663	Sailing: 2575,2291 → Fortis Cothon
-2575 2291 0	2759 3229 0	Board Gangplank 59832				542	Sailing: 2575,2291 → North Brimhaven mine
-2575 2291 0	2796 3413 0	Board Gangplank 59832				610	Sailing: 2575,2291 → Keep Le Faye
-2575 2291 0	2849 2325 0	Board Gangplank 59832				165	Sailing: 2575,2291 → Last Light
-2575 2291 0	2878 3335 0	Board Gangplank 59832				611	Sailing: 2575,2291 → Entrana church
-2575 2291 0	1844 3688 0	Board Gangplank 59832				832	Sailing: 2575,2291 → Port Piscarilius
-2575 2291 0	2860 3970 0	Board Gangplank 59832				1149	Sailing: 2575,2291 → Weiss
-2575 2291 0	1873 2983 0	Board Gangplank 59832				510	Sailing: 2575,2291 → Vatrachos Island
-2575 2291 0	2907 3225 0	Board Gangplank 59832				572	Sailing: 2575,2291 → Lone oak island
-2575 2291 0	1862 3307 0	Board Gangplank 59832				649	Sailing: 2575,2291 → Port Roberts bank
-2575 2291 0	1892 3428 0	Board Gangplank 59832				703	Sailing: 2575,2291 → Chinchompa Island
-2575 2291 0	2927 4055 0	Board Gangplank 59832				1200	Sailing: 2575,2291 → Grimstone
-2575 2291 0	2996 2287 0	Board Gangplank 59832				239	Sailing: 2575,2291 → The Onyx Crest
-2575 2291 0	2965 2608 0	Board Gangplank 59832				277	Sailing: 2575,2291 → 2965,2608
-2575 2291 0	1922 2759 0	Board Gangplank 59832				422	Sailing: 2575,2291 → Deepfin Point
-2575 2291 0	1958 3113 0	Board Gangplank 59832				541	Sailing: 2575,2291 → Minotaurs' Rest
-2575 2291 0	2960 3146 0	Board Gangplank 59832				523	Sailing: 2575,2291 → Mudskipper Point
-2575 2291 0	1953 4056 0	Board Gangplank 59832				1002	Sailing: 2575,2291 → Brittle Isle
-2575 2291 0	3060 2638 0	Board Gangplank 59832				324	Sailing: 2575,2291 → Dognose Island
-2575 2291 0	3069 2986 0	Board Gangplank 59832				454	Sailing: 2575,2291 → The Pandemonium (ship)
-2575 2291 0	3050 3192 0	Board Gangplank 59832				546	Sailing: 2575,2291 → Bay of Sarim
+2569 2295 0	2059 2605 0	Board Gangplank 59832				323	Sailing: Wyrmscraig → Wintumber Island
+2569 2295 0	2095 3188 0	Board Gangplank 59832				551	Sailing: Wyrmscraig → Lledrith Island
+2569 2295 0	2079 3689 0	Board Gangplank 59832				818	Sailing: Wyrmscraig → Buccaneers' Haven
+2569 2295 0	3173 2368 0	Board Gangplank 59832				333	Sailing: Wyrmscraig → The Summer Shore
+2569 2295 0	3145 2824 0	Board Gangplank 59832				413	Sailing: Wyrmscraig → Sea Spirit Dock
+2569 2295 0	2143 3121 0	Board Gangplank 59832				512	Sailing: Wyrmscraig → Port Tyras
+2569 2295 0	2157 3325 0	Board Gangplank 59832				616	Sailing: Wyrmscraig → Tirannwn Bight
+2569 2295 0	2148 3531 0	Board Gangplank 59832				723	Sailing: Wyrmscraig → Drumstick Isle
+2569 2295 0	2151 3880 0	Board Gangplank 59832				905	Sailing: Wyrmscraig → Lunar Isle
+2569 2295 0	2193 2319 0	Board Gangplank 59832				224	Sailing: Wyrmscraig → Sunbleak Island
+2569 2295 0	1201 2733 0	Board Gangplank 59832				756	Sailing: Wyrmscraig → Laguna Aurorae
+2569 2295 0	2220 3466 0	Board Gangplank 59832				727	Sailing: Wyrmscraig → Ynysdail
+2569 2295 0	2282 2821 0	Board Gangplank 59832				321	Sailing: Wyrmscraig → 2282,2821
+2569 2295 0	3353 2215 0	Board Gangplank 59832				425	Sailing: Wyrmscraig → The Little Pearl
+2569 2295 0	2344 2268 0	Board Gangplank 59832				135	Sailing: Wyrmscraig → Rainbow's End
+2569 2295 0	2320 2774 0	Board Gangplank 59832				291	Sailing: Wyrmscraig → Tear of the Soul
+2569 2295 0	2305 3689 0	Board Gangplank 59832				831	Sailing: Wyrmscraig → Piscatoris bank
+2569 2295 0	2310 3781 0	Board Gangplank 59832				871	Sailing: Wyrmscraig → Neitiznot
+2569 2295 0	2411 3781 0	Board Gangplank 59832				903	Sailing: Wyrmscraig → Jatizso
+2569 2295 0	2467 2718 0	Board Gangplank 59832				245	Sailing: Wyrmscraig → Anglers' Retreat
+2569 2295 0	1451 2969 0	Board Gangplank 59832				679	Sailing: Wyrmscraig → Aldarin
+2569 2295 0	2532 2531 0	Board Gangplank 59832				142	Sailing: Wyrmscraig → Isle of Bones
+2569 2295 0	1513 2973 0	Board Gangplank 59832				656	Sailing: Wyrmscraig → Sunset Coast
+2569 2295 0	1506 3402 0	Board Gangplank 59832				806	Sailing: Wyrmscraig → Lands End
+2569 2295 0	2542 3764 0	Board Gangplank 59832				965	Sailing: Wyrmscraig → Waterbirth Island
+2569 2295 0	2569 2295 0	Board Gangplank 59832				21	Sailing: Wyrmscraig → Wyrmscraig
+2569 2295 0	1555 2772 0	Board Gangplank 59832				583	Sailing: Wyrmscraig → Shimmering Atoll
+2569 2295 0	2579 2843 0	Board Gangplank 59832				296	Sailing: Wyrmscraig → Corsair Cove
+2569 2295 0	2612 3841 0	Board Gangplank 59832				1007	Sailing: Wyrmscraig → Etceteria
+2569 2295 0	2660 2392 0	Board Gangplank 59832				91	Sailing: Wyrmscraig → Charred Island
+2569 2295 0	2651 2677 0	Board Gangplank 59832				225	Sailing: Wyrmscraig → Void Knights' Outpost
+2569 2295 0	2685 3162 0	Board Gangplank 59832				468	Sailing: Wyrmscraig → Port Khazard
+2569 2295 0	2670 3266 0	Board Gangplank 59832				521	Sailing: Wyrmscraig → Necromancer Tower
+2569 2295 0	2629 3704 0	Board Gangplank 59832				999	Sailing: Wyrmscraig → Fremensund
+2569 2295 0	2751 2951 0	Board Gangplank 59832				370	Sailing: Wyrmscraig → Cairn Isle
+2569 2295 0	2746 3304 0	Board Gangplank 59832				551	Sailing: Wyrmscraig → Witchaven church
+2569 2295 0	1726 3453 0	Board Gangplank 59832				745	Sailing: Wyrmscraig → Charcoal Burners
+2569 2295 0	2808 2509 0	Board Gangplank 59832				184	Sailing: Wyrmscraig → Red Rock
+2569 2295 0	1758 2655 0	Board Gangplank 59832				465	Sailing: Wyrmscraig → The Crown Jewel
+2569 2295 0	1776 3141 0	Board Gangplank 59832				663	Sailing: Wyrmscraig → Fortis Cothon
+2569 2295 0	2759 3229 0	Board Gangplank 59832				542	Sailing: Wyrmscraig → North Brimhaven mine
+2569 2295 0	2796 3413 0	Board Gangplank 59832				610	Sailing: Wyrmscraig → Keep Le Faye
+2569 2295 0	2849 2325 0	Board Gangplank 59832				165	Sailing: Wyrmscraig → Last Light
+2569 2295 0	2878 3335 0	Board Gangplank 59832				611	Sailing: Wyrmscraig → Entrana church
+2569 2295 0	1844 3688 0	Board Gangplank 59832				832	Sailing: Wyrmscraig → Port Piscarilius
+2569 2295 0	2860 3970 0	Board Gangplank 59832				1149	Sailing: Wyrmscraig → Weiss
+2569 2295 0	1873 2983 0	Board Gangplank 59832				510	Sailing: Wyrmscraig → Vatrachos Island
+2569 2295 0	2907 3225 0	Board Gangplank 59832				572	Sailing: Wyrmscraig → Lone oak island
+2569 2295 0	1862 3307 0	Board Gangplank 59832				649	Sailing: Wyrmscraig → Port Roberts bank
+2569 2295 0	1892 3428 0	Board Gangplank 59832				703	Sailing: Wyrmscraig → Chinchompa Island
+2569 2295 0	2927 4055 0	Board Gangplank 59832				1200	Sailing: Wyrmscraig → Grimstone
+2569 2295 0	2996 2287 0	Board Gangplank 59832				239	Sailing: Wyrmscraig → The Onyx Crest
+2569 2295 0	2965 2608 0	Board Gangplank 59832				277	Sailing: Wyrmscraig → 2965,2608
+2569 2295 0	1922 2759 0	Board Gangplank 59832				422	Sailing: Wyrmscraig → Deepfin Point
+2569 2295 0	1958 3113 0	Board Gangplank 59832				541	Sailing: Wyrmscraig → Minotaurs' Rest
+2569 2295 0	2960 3146 0	Board Gangplank 59832				523	Sailing: Wyrmscraig → Mudskipper Point
+2569 2295 0	1953 4056 0	Board Gangplank 59832				1002	Sailing: Wyrmscraig → Brittle Isle
+2569 2295 0	3060 2638 0	Board Gangplank 59832				324	Sailing: Wyrmscraig → Dognose Island
+2569 2295 0	3069 2986 0	Board Gangplank 59832				454	Sailing: Wyrmscraig → The Pandemonium (ship)
+2569 2295 0	3050 3192 0	Board Gangplank 59832				546	Sailing: Wyrmscraig → Bay of Sarim
 1555 2772 0	2059 2605 0	Board Mooring point 59834				291	Sailing: Shimmering Atoll → Wintumber Island
 1555 2772 0	2095 3188 0	Board Mooring point 59834				384	Sailing: Shimmering Atoll → Lledrith Island
 1555 2772 0	2079 3689 0	Board Mooring point 59834				608	Sailing: Shimmering Atoll → Buccaneers' Haven
@@ -1564,7 +1564,7 @@
 1555 2772 0	1513 2973 0	Board Mooring point 59834				132	Sailing: Shimmering Atoll → Sunset Coast
 1555 2772 0	1506 3402 0	Board Mooring point 59834				518	Sailing: Shimmering Atoll → Lands End
 1555 2772 0	2542 3764 0	Board Mooring point 59834				770	Sailing: Shimmering Atoll → Waterbirth Island
-1555 2772 0	2575 2291 0	Board Mooring point 59834				583	Sailing: Shimmering Atoll → 2575,2291
+1555 2772 0	2569 2295 0	Board Mooring point 59834				583	Sailing: Shimmering Atoll → Wyrmscraig
 1555 2772 0	2579 2843 0	Board Mooring point 59834				547	Sailing: Shimmering Atoll → Corsair Cove
 1555 2772 0	2612 3841 0	Board Mooring point 59834				813	Sailing: Shimmering Atoll → Etceteria
 1555 2772 0	2660 2392 0	Board Mooring point 59834				626	Sailing: Shimmering Atoll → Charred Island
@@ -1623,7 +1623,7 @@
 2579 2843 0	1513 2973 0	Board Gangplank 59832				598	Sailing: Corsair Cove → Sunset Coast
 2579 2843 0	1506 3402 0	Board Gangplank 59832				659	Sailing: Corsair Cove → Lands End
 2579 2843 0	2542 3764 0	Board Gangplank 59832				771	Sailing: Corsair Cove → Waterbirth Island
-2579 2843 0	2575 2291 0	Board Gangplank 59832				296	Sailing: Corsair Cove → 2575,2291
+2579 2843 0	2569 2295 0	Board Gangplank 59832				296	Sailing: Corsair Cove → Wyrmscraig
 2579 2843 0	1555 2772 0	Board Gangplank 59832				547	Sailing: Corsair Cove → Shimmering Atoll
 2579 2843 0	2612 3841 0	Board Gangplank 59832				814	Sailing: Corsair Cove → Etceteria
 2579 2843 0	2660 2392 0	Board Gangplank 59832				255	Sailing: Corsair Cove → Charred Island
@@ -1682,7 +1682,7 @@
 2612 3841 0	1513 2973 0	Board Gangplank 59832				822	Sailing: Etceteria → Sunset Coast
 2612 3841 0	1506 3402 0	Board Gangplank 59832				634	Sailing: Etceteria → Lands End
 2612 3841 0	2542 3764 0	Board Gangplank 59832				72	Sailing: Etceteria → Waterbirth Island
-2612 3841 0	2575 2291 0	Board Gangplank 59832				1007	Sailing: Etceteria → 2575,2291
+2612 3841 0	2569 2295 0	Board Gangplank 59832				1007	Sailing: Etceteria → Wyrmscraig
 2612 3841 0	1555 2772 0	Board Gangplank 59832				813	Sailing: Etceteria → Shimmering Atoll
 2612 3841 0	2579 2843 0	Board Gangplank 59832				814	Sailing: Etceteria → Corsair Cove
 2612 3841 0	2660 2392 0	Board Gangplank 59832				981	Sailing: Etceteria → Charred Island
@@ -1741,7 +1741,7 @@
 2660 2392 0	1513 2973 0	Board Mooring point 59834				680	Sailing: Charred Island → Sunset Coast
 2660 2392 0	1506 3402 0	Board Mooring point 59834				813	Sailing: Charred Island → Lands End
 2660 2392 0	2542 3764 0	Board Mooring point 59834				939	Sailing: Charred Island → Waterbirth Island
-2660 2392 0	2575 2291 0	Board Mooring point 59834				91	Sailing: Charred Island → 2575,2291
+2660 2392 0	2569 2295 0	Board Mooring point 59834				91	Sailing: Charred Island → Wyrmscraig
 2660 2392 0	1555 2772 0	Board Mooring point 59834				626	Sailing: Charred Island → Shimmering Atoll
 2660 2392 0	2579 2843 0	Board Mooring point 59834				255	Sailing: Charred Island → Corsair Cove
 2660 2392 0	2612 3841 0	Board Mooring point 59834				981	Sailing: Charred Island → Etceteria
@@ -1800,7 +1800,7 @@
 2651 2677 0	1513 2973 0	Board Gangplank 59832				633	Sailing: Void Knights' Outpost → Sunset Coast
 2651 2677 0	1506 3402 0	Board Gangplank 59832				712	Sailing: Void Knights' Outpost → Lands End
 2651 2677 0	2542 3764 0	Board Gangplank 59832				824	Sailing: Void Knights' Outpost → Waterbirth Island
-2651 2677 0	2575 2291 0	Board Gangplank 59832				225	Sailing: Void Knights' Outpost → 2575,2291
+2651 2677 0	2569 2295 0	Board Gangplank 59832				225	Sailing: Void Knights' Outpost → Wyrmscraig
 2651 2677 0	1555 2772 0	Board Gangplank 59832				579	Sailing: Void Knights' Outpost → Shimmering Atoll
 2651 2677 0	2579 2843 0	Board Gangplank 59832				112	Sailing: Void Knights' Outpost → Corsair Cove
 2651 2677 0	2612 3841 0	Board Gangplank 59832				866	Sailing: Void Knights' Outpost → Etceteria
@@ -1859,7 +1859,7 @@
 2685 3162 0	1513 2973 0	Board Gangplank 59832				775	Sailing: Port Khazard → Sunset Coast
 2685 3162 0	1506 3402 0	Board Gangplank 59832				837	Sailing: Port Khazard → Lands End
 2685 3162 0	2542 3764 0	Board Gangplank 59832				949	Sailing: Port Khazard → Waterbirth Island
-2685 3162 0	2575 2291 0	Board Gangplank 59832				468	Sailing: Port Khazard → 2575,2291
+2685 3162 0	2569 2295 0	Board Gangplank 59832				468	Sailing: Port Khazard → Wyrmscraig
 2685 3162 0	1555 2772 0	Board Gangplank 59832				724	Sailing: Port Khazard → Shimmering Atoll
 2685 3162 0	2579 2843 0	Board Gangplank 59832				199	Sailing: Port Khazard → Corsair Cove
 2685 3162 0	2612 3841 0	Board Gangplank 59832				991	Sailing: Port Khazard → Etceteria
@@ -1918,7 +1918,7 @@
 2670 3266 0	1513 2973 0	Board Gangplank 59832				829	Sailing: Necromancer Tower → Sunset Coast
 2670 3266 0	1506 3402 0	Board Gangplank 59832				890	Sailing: Necromancer Tower → Lands End
 2670 3266 0	2542 3764 0	Board Gangplank 59832				1002	Sailing: Necromancer Tower → Waterbirth Island
-2670 3266 0	2575 2291 0	Board Gangplank 59832				521	Sailing: Necromancer Tower → 2575,2291
+2670 3266 0	2569 2295 0	Board Gangplank 59832				521	Sailing: Necromancer Tower → Wyrmscraig
 2670 3266 0	1555 2772 0	Board Gangplank 59832				778	Sailing: Necromancer Tower → Shimmering Atoll
 2670 3266 0	2579 2843 0	Board Gangplank 59832				253	Sailing: Necromancer Tower → Corsair Cove
 2670 3266 0	2612 3841 0	Board Gangplank 59832				1044	Sailing: Necromancer Tower → Etceteria
@@ -1977,7 +1977,7 @@
 2629 3704 0	1513 2973 0	Board Gangplank 59832				814	Sailing: Fremensund → Sunset Coast
 2629 3704 0	1506 3402 0	Board Gangplank 59832				626	Sailing: Fremensund → Lands End
 2629 3704 0	2542 3764 0	Board Gangplank 59832				74	Sailing: Fremensund → Waterbirth Island
-2629 3704 0	2575 2291 0	Board Gangplank 59832				999	Sailing: Fremensund → 2575,2291
+2629 3704 0	2569 2295 0	Board Gangplank 59832				999	Sailing: Fremensund → Wyrmscraig
 2629 3704 0	1555 2772 0	Board Gangplank 59832				805	Sailing: Fremensund → Shimmering Atoll
 2629 3704 0	2579 2843 0	Board Gangplank 59832				806	Sailing: Fremensund → Corsair Cove
 2629 3704 0	2612 3841 0	Board Gangplank 59832				90	Sailing: Fremensund → Etceteria
@@ -2036,7 +2036,7 @@
 2751 2951 0	1513 2973 0	Board Gangplank 59832				699	Sailing: Cairn Isle → Sunset Coast
 2751 2951 0	1506 3402 0	Board Gangplank 59832				761	Sailing: Cairn Isle → Lands End
 2751 2951 0	2542 3764 0	Board Gangplank 59832				873	Sailing: Cairn Isle → Waterbirth Island
-2751 2951 0	2575 2291 0	Board Gangplank 59832				370	Sailing: Cairn Isle → 2575,2291
+2751 2951 0	2569 2295 0	Board Gangplank 59832				370	Sailing: Cairn Isle → Wyrmscraig
 2751 2951 0	1555 2772 0	Board Gangplank 59832				648	Sailing: Cairn Isle → Shimmering Atoll
 2751 2951 0	2579 2843 0	Board Gangplank 59832				123	Sailing: Cairn Isle → Corsair Cove
 2751 2951 0	2612 3841 0	Board Gangplank 59832				915	Sailing: Cairn Isle → Etceteria
@@ -2095,7 +2095,7 @@
 2746 3304 0	1513 2973 0	Board Gangplank 59832				858	Sailing: Witchaven church → Sunset Coast
 2746 3304 0	1506 3402 0	Board Gangplank 59832				920	Sailing: Witchaven church → Lands End
 2746 3304 0	2542 3764 0	Board Gangplank 59832				1032	Sailing: Witchaven church → Waterbirth Island
-2746 3304 0	2575 2291 0	Board Gangplank 59832				551	Sailing: Witchaven church → 2575,2291
+2746 3304 0	2569 2295 0	Board Gangplank 59832				551	Sailing: Witchaven church → Wyrmscraig
 2746 3304 0	1555 2772 0	Board Gangplank 59832				807	Sailing: Witchaven church → Shimmering Atoll
 2746 3304 0	2579 2843 0	Board Gangplank 59832				282	Sailing: Witchaven church → Corsair Cove
 2746 3304 0	2612 3841 0	Board Gangplank 59832				1074	Sailing: Witchaven church → Etceteria
@@ -2154,7 +2154,7 @@
 1726 3453 0	1513 2973 0	Board Gangplank 59832				470	Sailing: Charcoal Burners → Sunset Coast
 1726 3453 0	1506 3402 0	Board Gangplank 59832				136	Sailing: Charcoal Burners → Lands End
 1726 3453 0	2542 3764 0	Board Gangplank 59832				477	Sailing: Charcoal Burners → Waterbirth Island
-1726 3453 0	2575 2291 0	Board Gangplank 59832				745	Sailing: Charcoal Burners → 2575,2291
+1726 3453 0	2569 2295 0	Board Gangplank 59832				745	Sailing: Charcoal Burners → Wyrmscraig
 1726 3453 0	1555 2772 0	Board Gangplank 59832				461	Sailing: Charcoal Burners → Shimmering Atoll
 1726 3453 0	2579 2843 0	Board Gangplank 59832				585	Sailing: Charcoal Burners → Corsair Cove
 1726 3453 0	2612 3841 0	Board Gangplank 59832				519	Sailing: Charcoal Burners → Etceteria
@@ -2213,7 +2213,7 @@
 2808 2509 0	1513 2973 0	Board Gangplank 59832				737	Sailing: Red Rock → Sunset Coast
 2808 2509 0	1506 3402 0	Board Gangplank 59832				834	Sailing: Red Rock → Lands End
 2808 2509 0	2542 3764 0	Board Gangplank 59832				946	Sailing: Red Rock → Waterbirth Island
-2808 2509 0	2575 2291 0	Board Gangplank 59832				184	Sailing: Red Rock → 2575,2291
+2808 2509 0	2569 2295 0	Board Gangplank 59832				184	Sailing: Red Rock → Wyrmscraig
 2808 2509 0	1555 2772 0	Board Gangplank 59832				683	Sailing: Red Rock → Shimmering Atoll
 2808 2509 0	2579 2843 0	Board Gangplank 59832				230	Sailing: Red Rock → Corsair Cove
 2808 2509 0	2612 3841 0	Board Gangplank 59832				988	Sailing: Red Rock → Etceteria
@@ -2272,7 +2272,7 @@
 1758 2655 0	1513 2973 0	Board Mooring point 59834				228	Sailing: The Crown Jewel → Sunset Coast
 1758 2655 0	1506 3402 0	Board Mooring point 59834				505	Sailing: The Crown Jewel → Lands End
 1758 2655 0	2542 3764 0	Board Mooring point 59834				744	Sailing: The Crown Jewel → Waterbirth Island
-1758 2655 0	2575 2291 0	Board Mooring point 59834				465	Sailing: The Crown Jewel → 2575,2291
+1758 2655 0	2569 2295 0	Board Mooring point 59834				465	Sailing: The Crown Jewel → Wyrmscraig
 1758 2655 0	1555 2772 0	Board Mooring point 59834				147	Sailing: The Crown Jewel → Shimmering Atoll
 1758 2655 0	2579 2843 0	Board Mooring point 59834				451	Sailing: The Crown Jewel → Corsair Cove
 1758 2655 0	2612 3841 0	Board Mooring point 59834				786	Sailing: The Crown Jewel → Etceteria
@@ -2331,7 +2331,7 @@
 1776 3141 0	1513 2973 0	Board Gangplank 59832				385	Sailing: Fortis Cothon → Sunset Coast
 1776 3141 0	1506 3402 0	Board Gangplank 59832				230	Sailing: Fortis Cothon → Lands End
 1776 3141 0	2542 3764 0	Board Gangplank 59832				551	Sailing: Fortis Cothon → Waterbirth Island
-1776 3141 0	2575 2291 0	Board Gangplank 59832				663	Sailing: Fortis Cothon → 2575,2291
+1776 3141 0	2569 2295 0	Board Gangplank 59832				663	Sailing: Fortis Cothon → Wyrmscraig
 1776 3141 0	1555 2772 0	Board Gangplank 59832				376	Sailing: Fortis Cothon → Shimmering Atoll
 1776 3141 0	2579 2843 0	Board Gangplank 59832				526	Sailing: Fortis Cothon → Corsair Cove
 1776 3141 0	2612 3841 0	Board Gangplank 59832				593	Sailing: Fortis Cothon → Etceteria
@@ -2390,7 +2390,7 @@
 2759 3229 0	1513 2973 0	Board Gangplank 59832				849	Sailing: North Brimhaven mine → Sunset Coast
 2759 3229 0	1506 3402 0	Board Gangplank 59832				910	Sailing: North Brimhaven mine → Lands End
 2759 3229 0	2542 3764 0	Board Gangplank 59832				1022	Sailing: North Brimhaven mine → Waterbirth Island
-2759 3229 0	2575 2291 0	Board Gangplank 59832				542	Sailing: North Brimhaven mine → 2575,2291
+2759 3229 0	2569 2295 0	Board Gangplank 59832				542	Sailing: North Brimhaven mine → Wyrmscraig
 2759 3229 0	1555 2772 0	Board Gangplank 59832				798	Sailing: North Brimhaven mine → Shimmering Atoll
 2759 3229 0	2579 2843 0	Board Gangplank 59832				273	Sailing: North Brimhaven mine → Corsair Cove
 2759 3229 0	2612 3841 0	Board Gangplank 59832				1065	Sailing: North Brimhaven mine → Etceteria
@@ -2449,7 +2449,7 @@
 2796 3413 0	1513 2973 0	Board Gangplank 59832				918	Sailing: Keep Le Faye → Sunset Coast
 2796 3413 0	1506 3402 0	Board Gangplank 59832				979	Sailing: Keep Le Faye → Lands End
 2796 3413 0	2542 3764 0	Board Gangplank 59832				1091	Sailing: Keep Le Faye → Waterbirth Island
-2796 3413 0	2575 2291 0	Board Gangplank 59832				610	Sailing: Keep Le Faye → 2575,2291
+2796 3413 0	2569 2295 0	Board Gangplank 59832				610	Sailing: Keep Le Faye → Wyrmscraig
 2796 3413 0	1555 2772 0	Board Gangplank 59832				867	Sailing: Keep Le Faye → Shimmering Atoll
 2796 3413 0	2579 2843 0	Board Gangplank 59832				342	Sailing: Keep Le Faye → Corsair Cove
 2796 3413 0	2612 3841 0	Board Gangplank 59832				1133	Sailing: Keep Le Faye → Etceteria
@@ -2508,7 +2508,7 @@
 2849 2325 0	1513 2973 0	Board Mooring point 59834				774	Sailing: Last Light → Sunset Coast
 2849 2325 0	1506 3402 0	Board Mooring point 59834				904	Sailing: Last Light → Lands End
 2849 2325 0	2542 3764 0	Board Mooring point 59834				1018	Sailing: Last Light → Waterbirth Island
-2849 2325 0	2575 2291 0	Board Mooring point 59834				165	Sailing: Last Light → 2575,2291
+2849 2325 0	2569 2295 0	Board Mooring point 59834				165	Sailing: Last Light → Wyrmscraig
 2849 2325 0	1555 2772 0	Board Mooring point 59834				720	Sailing: Last Light → Shimmering Atoll
 2849 2325 0	2579 2843 0	Board Mooring point 59834				314	Sailing: Last Light → Corsair Cove
 2849 2325 0	2612 3841 0	Board Mooring point 59834				1061	Sailing: Last Light → Etceteria
@@ -2567,7 +2567,7 @@
 2878 3335 0	1513 2973 0	Board Gangplank 59832				918	Sailing: Entrana church → Sunset Coast
 2878 3335 0	1506 3402 0	Board Gangplank 59832				979	Sailing: Entrana church → Lands End
 2878 3335 0	2542 3764 0	Board Gangplank 59832				1091	Sailing: Entrana church → Waterbirth Island
-2878 3335 0	2575 2291 0	Board Gangplank 59832				611	Sailing: Entrana church → 2575,2291
+2878 3335 0	2569 2295 0	Board Gangplank 59832				611	Sailing: Entrana church → Wyrmscraig
 2878 3335 0	1555 2772 0	Board Gangplank 59832				867	Sailing: Entrana church → Shimmering Atoll
 2878 3335 0	2579 2843 0	Board Gangplank 59832				342	Sailing: Entrana church → Corsair Cove
 2878 3335 0	2612 3841 0	Board Gangplank 59832				1134	Sailing: Entrana church → Etceteria
@@ -2626,7 +2626,7 @@
 1844 3688 0	1513 2973 0	Board Gangplank 59832				580	Sailing: Port Piscarilius → Sunset Coast
 1844 3688 0	1506 3402 0	Board Gangplank 59832				333	Sailing: Port Piscarilius → Lands End
 1844 3688 0	2542 3764 0	Board Gangplank 59832				381	Sailing: Port Piscarilius → Waterbirth Island
-1844 3688 0	2575 2291 0	Board Gangplank 59832				832	Sailing: Port Piscarilius → 2575,2291
+1844 3688 0	2569 2295 0	Board Gangplank 59832				832	Sailing: Port Piscarilius → Wyrmscraig
 1844 3688 0	1555 2772 0	Board Gangplank 59832				571	Sailing: Port Piscarilius → Shimmering Atoll
 1844 3688 0	2579 2843 0	Board Gangplank 59832				638	Sailing: Port Piscarilius → Corsair Cove
 1844 3688 0	2612 3841 0	Board Gangplank 59832				423	Sailing: Port Piscarilius → Etceteria
@@ -2685,7 +2685,7 @@
 2860 3970 0	1513 2973 0	Board Mooring point 59834				964	Sailing: Weiss → Sunset Coast
 2860 3970 0	1506 3402 0	Board Mooring point 59834				776	Sailing: Weiss → Lands End
 2860 3970 0	2542 3764 0	Board Mooring point 59834				212	Sailing: Weiss → Waterbirth Island
-2860 3970 0	2575 2291 0	Board Mooring point 59834				1149	Sailing: Weiss → 2575,2291
+2860 3970 0	2569 2295 0	Board Mooring point 59834				1149	Sailing: Weiss → Wyrmscraig
 2860 3970 0	1555 2772 0	Board Mooring point 59834				955	Sailing: Weiss → Shimmering Atoll
 2860 3970 0	2579 2843 0	Board Mooring point 59834				955	Sailing: Weiss → Corsair Cove
 2860 3970 0	2612 3841 0	Board Mooring point 59834				162	Sailing: Weiss → Etceteria
@@ -2744,7 +2744,7 @@
 1873 2983 0	1513 2973 0	Board Mooring point 59834				234	Sailing: Vatrachos Island → Sunset Coast
 1873 2983 0	1506 3402 0	Board Mooring point 59834				330	Sailing: Vatrachos Island → Lands End
 1873 2983 0	2542 3764 0	Board Mooring point 59834				572	Sailing: Vatrachos Island → Waterbirth Island
-1873 2983 0	2575 2291 0	Board Mooring point 59834				510	Sailing: Vatrachos Island → 2575,2291
+1873 2983 0	2569 2295 0	Board Mooring point 59834				510	Sailing: Vatrachos Island → Wyrmscraig
 1873 2983 0	1555 2772 0	Board Mooring point 59834				224	Sailing: Vatrachos Island → Shimmering Atoll
 1873 2983 0	2579 2843 0	Board Mooring point 59834				423	Sailing: Vatrachos Island → Corsair Cove
 1873 2983 0	2612 3841 0	Board Mooring point 59834				615	Sailing: Vatrachos Island → Etceteria
@@ -2803,7 +2803,7 @@
 2907 3225 0	1513 2973 0	Board Gangplank 59832				920	Sailing: Lone oak island → Sunset Coast
 2907 3225 0	1506 3402 0	Board Gangplank 59832				981	Sailing: Lone oak island → Lands End
 2907 3225 0	2542 3764 0	Board Gangplank 59832				1093	Sailing: Lone oak island → Waterbirth Island
-2907 3225 0	2575 2291 0	Board Gangplank 59832				572	Sailing: Lone oak island → 2575,2291
+2907 3225 0	2569 2295 0	Board Gangplank 59832				572	Sailing: Lone oak island → Wyrmscraig
 2907 3225 0	1555 2772 0	Board Gangplank 59832				869	Sailing: Lone oak island → Shimmering Atoll
 2907 3225 0	2579 2843 0	Board Gangplank 59832				344	Sailing: Lone oak island → Corsair Cove
 2907 3225 0	2612 3841 0	Board Gangplank 59832				1135	Sailing: Lone oak island → Etceteria
@@ -2862,7 +2862,7 @@
 1862 3307 0	1513 2973 0	Board Gangplank 59832				382	Sailing: Port Roberts bank → Sunset Coast
 1862 3307 0	1506 3402 0	Board Gangplank 59832				209	Sailing: Port Roberts bank → Lands End
 1862 3307 0	2542 3764 0	Board Gangplank 59832				448	Sailing: Port Roberts bank → Waterbirth Island
-1862 3307 0	2575 2291 0	Board Gangplank 59832				649	Sailing: Port Roberts bank → 2575,2291
+1862 3307 0	2569 2295 0	Board Gangplank 59832				649	Sailing: Port Roberts bank → Wyrmscraig
 1862 3307 0	1555 2772 0	Board Gangplank 59832				373	Sailing: Port Roberts bank → Shimmering Atoll
 1862 3307 0	2579 2843 0	Board Gangplank 59832				488	Sailing: Port Roberts bank → Corsair Cove
 1862 3307 0	2612 3841 0	Board Gangplank 59832				490	Sailing: Port Roberts bank → Etceteria
@@ -2921,7 +2921,7 @@
 1892 3428 0	1513 2973 0	Board Mooring point 59834				448	Sailing: Chinchompa Island → Sunset Coast
 1892 3428 0	1506 3402 0	Board Mooring point 59834				221	Sailing: Chinchompa Island → Lands End
 1892 3428 0	2542 3764 0	Board Mooring point 59834				399	Sailing: Chinchompa Island → Waterbirth Island
-1892 3428 0	2575 2291 0	Board Mooring point 59834				703	Sailing: Chinchompa Island → 2575,2291
+1892 3428 0	2569 2295 0	Board Mooring point 59834				703	Sailing: Chinchompa Island → Wyrmscraig
 1892 3428 0	1555 2772 0	Board Mooring point 59834				439	Sailing: Chinchompa Island → Shimmering Atoll
 1892 3428 0	2579 2843 0	Board Mooring point 59834				516	Sailing: Chinchompa Island → Corsair Cove
 1892 3428 0	2612 3841 0	Board Mooring point 59834				441	Sailing: Chinchompa Island → Etceteria
@@ -2980,7 +2980,7 @@
 2927 4055 0	1513 2973 0	Board Mooring point 59834				1015	Sailing: Grimstone → Sunset Coast
 2927 4055 0	1506 3402 0	Board Mooring point 59834				827	Sailing: Grimstone → Lands End
 2927 4055 0	2542 3764 0	Board Mooring point 59834				264	Sailing: Grimstone → Waterbirth Island
-2927 4055 0	2575 2291 0	Board Mooring point 59834				1200	Sailing: Grimstone → 2575,2291
+2927 4055 0	2569 2295 0	Board Mooring point 59834				1200	Sailing: Grimstone → Wyrmscraig
 2927 4055 0	1555 2772 0	Board Mooring point 59834				1006	Sailing: Grimstone → Shimmering Atoll
 2927 4055 0	2579 2843 0	Board Mooring point 59834				1007	Sailing: Grimstone → Corsair Cove
 2927 4055 0	2612 3841 0	Board Mooring point 59834				214	Sailing: Grimstone → Etceteria
@@ -3039,7 +3039,7 @@
 2996 2287 0	1513 2973 0	Board Mooring point 59834				853	Sailing: The Onyx Crest → Sunset Coast
 2996 2287 0	1506 3402 0	Board Mooring point 59834				969	Sailing: The Onyx Crest → Lands End
 2996 2287 0	2542 3764 0	Board Mooring point 59834				1081	Sailing: The Onyx Crest → Waterbirth Island
-2996 2287 0	2575 2291 0	Board Mooring point 59834				239	Sailing: The Onyx Crest → 2575,2291
+2996 2287 0	2569 2295 0	Board Mooring point 59834				239	Sailing: The Onyx Crest → Wyrmscraig
 2996 2287 0	1555 2772 0	Board Mooring point 59834				799	Sailing: The Onyx Crest → Shimmering Atoll
 2996 2287 0	2579 2843 0	Board Mooring point 59834				371	Sailing: The Onyx Crest → Corsair Cove
 2996 2287 0	2612 3841 0	Board Mooring point 59834				1123	Sailing: The Onyx Crest → Etceteria
@@ -3098,7 +3098,7 @@
 2965 2608 0	1513 2973 0	Board Mooring point 59834				804	Sailing: 2965,2608 → Sunset Coast
 2965 2608 0	1506 3402 0	Board Mooring point 59834				877	Sailing: 2965,2608 → Lands End
 2965 2608 0	2542 3764 0	Board Mooring point 59834				989	Sailing: 2965,2608 → Waterbirth Island
-2965 2608 0	2575 2291 0	Board Mooring point 59834				277	Sailing: 2965,2608 → 2575,2291
+2965 2608 0	2569 2295 0	Board Mooring point 59834				277	Sailing: 2965,2608 → Wyrmscraig
 2965 2608 0	1555 2772 0	Board Mooring point 59834				750	Sailing: 2965,2608 → Shimmering Atoll
 2965 2608 0	2579 2843 0	Board Mooring point 59834				264	Sailing: 2965,2608 → Corsair Cove
 2965 2608 0	2612 3841 0	Board Mooring point 59834				1031	Sailing: 2965,2608 → Etceteria
@@ -3157,7 +3157,7 @@
 1922 2759 0	1513 2973 0	Board Gangplank 59832				259	Sailing: Deepfin Point → Sunset Coast
 1922 2759 0	1506 3402 0	Board Gangplank 59832				449	Sailing: Deepfin Point → Lands End
 1922 2759 0	2542 3764 0	Board Gangplank 59832				677	Sailing: Deepfin Point → Waterbirth Island
-1922 2759 0	2575 2291 0	Board Gangplank 59832				422	Sailing: Deepfin Point → 2575,2291
+1922 2759 0	2569 2295 0	Board Gangplank 59832				422	Sailing: Deepfin Point → Wyrmscraig
 1922 2759 0	1555 2772 0	Board Gangplank 59832				207	Sailing: Deepfin Point → Shimmering Atoll
 1922 2759 0	2579 2843 0	Board Gangplank 59832				362	Sailing: Deepfin Point → Corsair Cove
 1922 2759 0	2612 3841 0	Board Gangplank 59832				719	Sailing: Deepfin Point → Etceteria
@@ -3216,7 +3216,7 @@
 1958 3113 0	1513 2973 0	Board Mooring point 59834				308	Sailing: Minotaurs' Rest → Sunset Coast
 1958 3113 0	1506 3402 0	Board Mooring point 59834				294	Sailing: Minotaurs' Rest → Lands End
 1958 3113 0	2542 3764 0	Board Mooring point 59834				493	Sailing: Minotaurs' Rest → Waterbirth Island
-1958 3113 0	2575 2291 0	Board Mooring point 59834				541	Sailing: Minotaurs' Rest → 2575,2291
+1958 3113 0	2569 2295 0	Board Mooring point 59834				541	Sailing: Minotaurs' Rest → Wyrmscraig
 1958 3113 0	1555 2772 0	Board Mooring point 59834				298	Sailing: Minotaurs' Rest → Shimmering Atoll
 1958 3113 0	2579 2843 0	Board Mooring point 59834				392	Sailing: Minotaurs' Rest → Corsair Cove
 1958 3113 0	2612 3841 0	Board Mooring point 59834				535	Sailing: Minotaurs' Rest → Etceteria
@@ -3275,7 +3275,7 @@
 2960 3146 0	1513 2973 0	Board Gangplank 59832				935	Sailing: Mudskipper Point → Sunset Coast
 2960 3146 0	1506 3402 0	Board Gangplank 59832				996	Sailing: Mudskipper Point → Lands End
 2960 3146 0	2542 3764 0	Board Gangplank 59832				1108	Sailing: Mudskipper Point → Waterbirth Island
-2960 3146 0	2575 2291 0	Board Gangplank 59832				523	Sailing: Mudskipper Point → 2575,2291
+2960 3146 0	2569 2295 0	Board Gangplank 59832				523	Sailing: Mudskipper Point → Wyrmscraig
 2960 3146 0	1555 2772 0	Board Gangplank 59832				884	Sailing: Mudskipper Point → Shimmering Atoll
 2960 3146 0	2579 2843 0	Board Gangplank 59832				359	Sailing: Mudskipper Point → Corsair Cove
 2960 3146 0	2612 3841 0	Board Gangplank 59832				1151	Sailing: Mudskipper Point → Etceteria
@@ -3334,7 +3334,7 @@
 1953 4056 0	1513 2973 0	Board Mooring point 59834				764	Sailing: Brittle Isle → Sunset Coast
 1953 4056 0	1506 3402 0	Board Mooring point 59834				521	Sailing: Brittle Isle → Lands End
 1953 4056 0	2542 3764 0	Board Mooring point 59834				363	Sailing: Brittle Isle → Waterbirth Island
-1953 4056 0	2575 2291 0	Board Mooring point 59834				1002	Sailing: Brittle Isle → 2575,2291
+1953 4056 0	2569 2295 0	Board Mooring point 59834				1002	Sailing: Brittle Isle → Wyrmscraig
 1953 4056 0	1555 2772 0	Board Mooring point 59834				754	Sailing: Brittle Isle → Shimmering Atoll
 1953 4056 0	2579 2843 0	Board Mooring point 59834				808	Sailing: Brittle Isle → Corsair Cove
 1953 4056 0	2612 3841 0	Board Mooring point 59834				380	Sailing: Brittle Isle → Etceteria
@@ -3393,7 +3393,7 @@
 3060 2638 0	1513 2973 0	Board Mooring point 59834				846	Sailing: Dognose Island → Sunset Coast
 3060 2638 0	1506 3402 0	Board Mooring point 59834				919	Sailing: Dognose Island → Lands End
 3060 2638 0	2542 3764 0	Board Mooring point 59834				1031	Sailing: Dognose Island → Waterbirth Island
-3060 2638 0	2575 2291 0	Board Mooring point 59834				324	Sailing: Dognose Island → 2575,2291
+3060 2638 0	2569 2295 0	Board Mooring point 59834				324	Sailing: Dognose Island → Wyrmscraig
 3060 2638 0	1555 2772 0	Board Mooring point 59834				791	Sailing: Dognose Island → Shimmering Atoll
 3060 2638 0	2579 2843 0	Board Mooring point 59834				299	Sailing: Dognose Island → Corsair Cove
 3060 2638 0	2612 3841 0	Board Mooring point 59834				1073	Sailing: Dognose Island → Etceteria
@@ -3452,7 +3452,7 @@
 3069 2986 0	1513 2973 0	Board Gangplank 59832				868	Sailing: The Pandemonium (ship) → Sunset Coast
 3069 2986 0	1506 3402 0	Board Gangplank 59832				930	Sailing: The Pandemonium (ship) → Lands End
 3069 2986 0	2542 3764 0	Board Gangplank 59832				1042	Sailing: The Pandemonium (ship) → Waterbirth Island
-3069 2986 0	2575 2291 0	Board Gangplank 59832				454	Sailing: The Pandemonium (ship) → 2575,2291
+3069 2986 0	2569 2295 0	Board Gangplank 59832				454	Sailing: The Pandemonium (ship) → Wyrmscraig
 3069 2986 0	1555 2772 0	Board Gangplank 59832				818	Sailing: The Pandemonium (ship) → Shimmering Atoll
 3069 2986 0	2579 2843 0	Board Gangplank 59832				293	Sailing: The Pandemonium (ship) → Corsair Cove
 3069 2986 0	2612 3841 0	Board Gangplank 59832				1084	Sailing: The Pandemonium (ship) → Etceteria
@@ -3511,7 +3511,7 @@
 3050 3192 0	1513 2973 0	Board Gangplank 59832				959	Sailing: Bay of Sarim → Sunset Coast
 3050 3192 0	1506 3402 0	Board Gangplank 59832				1020	Sailing: Bay of Sarim → Lands End
 3050 3192 0	2542 3764 0	Board Gangplank 59832				1132	Sailing: Bay of Sarim → Waterbirth Island
-3050 3192 0	2575 2291 0	Board Gangplank 59832				546	Sailing: Bay of Sarim → 2575,2291
+3050 3192 0	2569 2295 0	Board Gangplank 59832				546	Sailing: Bay of Sarim → Wyrmscraig
 3050 3192 0	1555 2772 0	Board Gangplank 59832				908	Sailing: Bay of Sarim → Shimmering Atoll
 3050 3192 0	2579 2843 0	Board Gangplank 59832				383	Sailing: Bay of Sarim → Corsair Cove
 3050 3192 0	2612 3841 0	Board Gangplank 59832				1174	Sailing: Bay of Sarim → Etceteria

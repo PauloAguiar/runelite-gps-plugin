@@ -6,7 +6,7 @@ type	landX	landY	waterX	waterY	reachable	name
 mooring	2059	2605	2057	2605	false	Wintumber Island
 mooring	2095	3188	2098	3187	false	Lledrith Island
 mooring	2079	3689	2080	3691	true	Buccaneers' Haven
-gangplank	3173	2368	3174	2367	false	The Summer Shore
+gangplank	3173	2368	3174	2367	true	The Summer Shore
 gangplank	3145	2824	3144	2825	true	Sea Spirit Dock
 gangplank	2143	3121	2144	3120	true	Port Tyras
 gangplank	2157	3325	2158	3324	true	Tirannwn Bight
@@ -28,8 +28,8 @@ mooring	2532	2531	2533	2530	false	Isle of Bones
 gangplank	1513	2973	1512	2974	true	Sunset Coast
 gangplank	1506	3402	1507	3403	true	Lands End
 mooring	2542	3764	2543	3766	true	Waterbirth Island
-gangplank	2575	2291	2568	2295	false	2575,2291
-gangplank	2575	2291	2568	2296	false	2575,2291
+gangplank	2569	2295	2568	2295	false	Wyrmscraig
+gangplank	2569	2295	2568	2296	false	Wyrmscraig
 mooring	1555	2772	1557	2770	false	Shimmering Atoll
 gangplank	2579	2843	2580	2844	true	Corsair Cove
 gangplank	2612	3841	2613	3840	true	Etceteria
@@ -49,7 +49,7 @@ gangplank	2796	3413	2796	3412	true	Keep Le Faye
 mooring	2849	2325	2848	2326	false	Last Light
 gangplank	2878	3335	2879	3336	true	Entrana church
 gangplank	1844	3688	1845	3687	true	Port Piscarilius
-mooring	2860	3970	2860	3972	false	Weiss
+mooring	2860	3970	2860	3972	true	Weiss
 mooring	1873	2983	1872	2984	true	Vatrachos Island
 gangplank	2907	3225	2906	3225	true	Lone oak island
 gangplank	1862	3307	1861	3307	false	Port Roberts bank
