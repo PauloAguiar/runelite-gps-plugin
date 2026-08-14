@@ -75,7 +75,7 @@ public interface ShortestPathConfig extends Config
 	)
 	default boolean useGrappleShortcuts()
 	{
-		return false;
+		return true;
 	}
 
 	@ConfigItem(
@@ -102,7 +102,7 @@ public interface ShortestPathConfig extends Config
 	)
 	default boolean useCanoes()
 	{
-		return false;
+		return true;
 	}
 
 	@ConfigItem(
@@ -115,7 +115,7 @@ public interface ShortestPathConfig extends Config
 	)
 	default boolean useCharterShips()
 	{
-		return false;
+		return true;
 	}
 
 	@ConfigItem(
@@ -143,7 +143,7 @@ public interface ShortestPathConfig extends Config
 	)
 	default boolean useSailing()
 	{
-		return false;
+		return true;
 	}
 
 	@ConfigItem(
@@ -211,7 +211,7 @@ public interface ShortestPathConfig extends Config
 	)
 	default boolean useHotAirBalloons()
 	{
-		return false;
+		return true;
 	}
 
 	@ConfigItem(
@@ -762,7 +762,7 @@ public interface ShortestPathConfig extends Config
 	)
 	default boolean usePoh()
 	{
-		return false;
+		return true;
 	}
 
 	@ConfigItem(
@@ -776,7 +776,7 @@ public interface ShortestPathConfig extends Config
 	)
 	default boolean usePohFairyRing()
 	{
-		return false;
+		return true;
 	}
 
 	@ConfigItem(
@@ -790,7 +790,7 @@ public interface ShortestPathConfig extends Config
 	)
 	default boolean usePohSpiritTree()
 	{
-		return false;
+		return true;
 	}
 
 	@ConfigItem(
@@ -845,7 +845,7 @@ public interface ShortestPathConfig extends Config
 	)
 	default boolean usePohObelisk()
 	{
-		return false;
+		return true;
 	}
 
 	@ConfigSection(
