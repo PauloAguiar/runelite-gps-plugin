@@ -2055,34 +2055,42 @@ public class ShortestPathPanel extends PluginPanel
 		body.add(summon);
 
 		// Latest known berths: live varbits once seen this session, the stored snapshot
-		// from the last one before that.
+		// from the last one before that. One two-column row per boat — no glyphs (the
+		// panel font has no boat, it fell back to a warning triangle) and no wrapping:
+		// the name clips with a tooltip, the port keeps its own column and its color.
 		List<String[]> banner = plugin.getBoatBanner();
-		String berths;
-		if (banner == null)
+		if (banner == null || banner.isEmpty())
 		{
-			berths = "No boat seen yet — berths appear after login.";
-		}
-		else if (banner.isEmpty())
-		{
-			berths = "No owned boat detected.";
+			JLabel none = wrappedLabel(banner == null
+				? "No boat seen yet — berths appear after login."
+				: "No owned boat detected.");
+			none.setBorder(new EmptyBorder(4, 18, 2, 0));
+			body.add(none);
 		}
 		else
 		{
-			StringBuilder sb = new StringBuilder();
 			for (String[] row : banner)
 			{
-				sb.append(sb.length() > 0 ? "<br>" : "").append("⛵ ").append(row[0])
-					.append(" <font color='#9E9E9E'>— ").append(row[1]).append("</font>");
+				JPanel berthRow = new JPanel(new BorderLayout(8, 0));
+				berthRow.setOpaque(false);
+				berthRow.setBorder(new EmptyBorder(3, 18, 0, 0));
+				JLabel name = new JLabel(row[0]);
+				name.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+				name.setToolTipText(row[0] + " — moored at " + row[1]);
+				berthRow.add(name, BorderLayout.CENTER);
+				JLabel port = new JLabel(row[1]);
+				port.setForeground(ColorScheme.PROGRESS_COMPLETE_COLOR);
+				port.setToolTipText(name.getToolTipText());
+				berthRow.add(port, BorderLayout.EAST);
+				body.add(berthRow);
 			}
 			if (!plugin.isBoatBannerLive())
 			{
-				sb.append("<br><font color='#9E9E9E'>(from last session)</font>");
+				JLabel stale = wrappedLabel("(berths from last session)");
+				stale.setBorder(new EmptyBorder(1, 18, 2, 0));
+				body.add(stale);
 			}
-			berths = sb.toString();
 		}
-		JLabel berthLabel = wrappedLabel(berths);
-		berthLabel.setBorder(new EmptyBorder(4, 18, 2, 0));
-		body.add(berthLabel);
 
 		section.add(body);
 		return section;

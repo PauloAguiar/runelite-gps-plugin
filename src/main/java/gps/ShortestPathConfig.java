@@ -157,7 +157,7 @@ public interface ShortestPathConfig extends Config
 	)
 	default boolean sailingTeleportAbandon()
 	{
-		return true;
+		return false;
 	}
 
 	@ConfigItem(
@@ -171,7 +171,7 @@ public interface ShortestPathConfig extends Config
 	)
 	default boolean sailingAssumeSummon()
 	{
-		return true;
+		return false;
 	}
 
 	@ConfigItem(
