@@ -656,7 +656,23 @@ public interface ShortestPathConfig extends Config
 	)
 	default int reachedDistance()
 	{
-		return 3;
+		return 5;
+	}
+
+	@Range(
+		max = 30
+	)
+	@ConfigItem(
+		keyName = "seaReachedDistance",
+		name = "Sea finish distance",
+		description = "Distance from a water destination at which parking the boat counts as arrival.<br>" +
+			"A hull is wide and moors a few tiles off the mark, so this is wider than the land finish distance",
+		position = 29,
+		section = sectionSettings
+	)
+	default int seaReachedDistance()
+	{
+		return 12;
 	}
 
 	@Range(

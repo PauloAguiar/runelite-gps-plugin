@@ -925,13 +925,14 @@ public class ShortestPathPlugin extends Plugin
 		{
 			// Wet arrival: the arrival zone floods over WALKABLE tiles and the ocean is
 			// sealed, so a water pin's zone is empty and on-foot arrival can never fire at
-			// sea. A boat parked within the sea arrival radius of a sailable target IS
-			// arrival — the same 8-tile radius the route tracker stamps with (hull anchor,
-			// parking clearance).
+			// sea. A boat parked within the sea finish distance of a sailable target IS
+			// arrival — wider than the land radius because a hull is several tiles of
+			// entity and moors off the mark (configurable, default 12).
 			for (int target : pathTargets)
 			{
 				if (SailingSea.isSailable(target)
-					&& WorldPointUtil.distanceBetween(currentLocation, target) <= 8)
+					&& WorldPointUtil.distanceBetween(currentLocation, target)
+						<= config.seaReachedDistance())
 				{
 					inZone = true;
 					break;
