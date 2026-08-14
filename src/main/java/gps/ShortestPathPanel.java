@@ -567,7 +567,22 @@ public class ShortestPathPanel extends PluginPanel
 				plugin.setPanelConfig(dismissedConfigKey, true);
 			}
 		});
+		// The x eats ~18px of the CENTER label's fixed HTML width — renarrow the text or
+		// its last word clips under the button (screenshot report: 'plugin' -> 'plu').
+		for (Component comp : banner.getComponents())
+		{
+			if (comp instanceof JLabel && ((JLabel) comp).getText() != null
+				&& ((JLabel) comp).getText().startsWith("<html>"))
+			{
+				JLabel text = (JLabel) comp;
+				text.setText(text.getText().replace(
+					"width:" + BANNER_TEXT_WIDTH + "px",
+					"width:" + (BANNER_TEXT_WIDTH - 18) + "px"));
+			}
+		}
 		banner.add(verticallyCentered(close), BorderLayout.EAST);
+		// The narrower text may wrap one line further: recompute the height cap.
+		banner.setMaximumSize(new Dimension(Integer.MAX_VALUE, banner.getPreferredSize().height));
 		return banner;
 	}
 
