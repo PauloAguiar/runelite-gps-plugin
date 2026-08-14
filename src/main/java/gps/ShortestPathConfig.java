@@ -137,7 +137,7 @@ public interface ShortestPathConfig extends Config
 		keyName = "useSailing",
 		name = "Use sailing (beta)",
 		description = "Whether to include sailing your own boat in the path.<br>" +
-			"Assumes you own a boat; ETAs are provisional until calibration",
+			"Assumes you own a boat; ETAs assume a mid-tier hull speed",
 		position = 158,
 		section = sectionSettings
 	)

@@ -1141,7 +1141,7 @@ public class ShortestPathPanel extends PluginPanel
 		JLabel text = wrappedLabel("Sail <font color='#9E9E9E'>" + tiles + " tiles</font>");
 		text.setVerticalAlignment(SwingConstants.CENTER);
 		text.setToolTipText("Total open-sea distance across this route's sailing legs"
-			+ " (provisional speed model until calibration)");
+			+ " (ETAs assume a mid-tier hull speed)");
 		row.add(text, BorderLayout.CENTER);
 		return row;
 	}
@@ -2029,8 +2029,7 @@ public class ShortestPathPanel extends PluginPanel
 		JCheckBox master = configCheckBox("Use sailing routes", sailingOn,
 			"<html><body style='width:220px'>Master switch: include sailing your own boat between"
 				+ " mooring points and port berths.<br><br>Assumes you own a boat and can summon it"
-				+ " at the departure point; travel times are provisional estimates until the speed"
-				+ " calibration pass.</body></html>",
+				+ " at the departure point; travel times assume a mid-tier hull speed.</body></html>",
 			v -> plugin.setPanelConfig("useSailing", v));
 		body.add(master);
 		JCheckBox abandon = configCheckBox("Teleports may abandon the boat",

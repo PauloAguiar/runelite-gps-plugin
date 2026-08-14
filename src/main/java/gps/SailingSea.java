@@ -21,6 +21,9 @@ import java.util.zip.InflaterInputStream;
 @lombok.extern.slf4j.Slf4j
 public final class SailingSea
 {
+	/** Deliberate fixed approximation, not a placeholder: hulls cruise 1.5 (wooden) to 3.0
+	 * (rosewood) tiles/tick per the wiki hull table, so the mid-table 2.0 keeps every ETA
+	 * within ~33% without per-boat calibration machinery. */
 	private static final double TILES_PER_TICK = 2.0;
 	/** Board + cast off + moor + disembark, in ticks — every sailing edge's fixed cost.
 	 * Shared with RouteDirections, which splits a leg into embark + sail steps. */
@@ -1169,8 +1172,8 @@ public final class SailingSea
 	/**
 	 * Sea tiles covered by a sailing leg of the given duration — the inverse of the duration
 	 * model every sailing edge (static rows and synthetic legs) is generated with:
-	 * OVERHEAD_TICKS + tiles / TILES_PER_TICK. COUPLED to that provisional model: when the
-	 * calibration campaign replaces the constants, this inverts whatever replaces them.
+	 * OVERHEAD_TICKS + tiles / TILES_PER_TICK. COUPLED to that model: if the constants ever
+	 * change, this must keep inverting whatever replaces them.
 	 */
 	public static int tilesFromDuration(int durationTicks)
 	{
