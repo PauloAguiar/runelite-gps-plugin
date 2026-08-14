@@ -4,6 +4,7 @@ import gps.pathfinder.PathfinderConfig;
 import gps.pathfinder.TestPathfinderConfig;
 import gps.transport.TransportType;
 import java.lang.reflect.Proxy;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -38,6 +39,9 @@ public class SailingGenerationTest
 	private static final int CAIRN_PIN = WorldPointUtil.packWorldPoint(2692, 2941, 0);
 	/** Land on a sailing-only island: every route must sail, so boarding rules are visible. */
 	private static final int DOGNOSE_PIN = WorldPointUtil.packWorldPoint(3048, 2648, 0);
+	/** Grimstone's mooring land tile — the far north-east ocean, sailing-only and far beyond
+	 * the wet flood's settle horizon: only matrix-composed aboard legs reach it directly. */
+	private static final int GRIMSTONE_PIN = WorldPointUtil.packWorldPoint(2927, 4055, 0);
 	private static final int PORT_ID_PANDEMONIUM = 1;
 	private static final int PORT_ID_WINTUMBER = 46;
 
@@ -268,6 +272,30 @@ public class SailingGenerationTest
 		}
 		assertTrue("assuming Summon Boat, boardings must not be pinned to the boat's berth",
 			otherPort);
+	}
+
+	/**
+	 * Findings 6-7 at the service level: a far sailing-only pin generates cleanly — routes
+	 * exist, and any disembark→re-board chain uses DIFFERENT ports (the same-port farce
+	 * stays dead; assertRouteShapes lints every generation). The far continuous sail itself
+	 * is pinned as a unit property in {@link DirectSeaLegTest} — for Grimstone the router
+	 * rightly prefers the Weiss teleport + 30-tile hop over a 1,000-tile ocean crossing.
+	 */
+	@Test
+	public void farSailingOnlyPinGeneratesCleanly() throws Exception
+	{
+		List<RouteOption> routes = generate(PANDEMONIUM_WATER, GRIMSTONE_PIN, true);
+		assertTrue("routes must exist", !routes.isEmpty());
+		boolean sailsToGrimstone = false;
+		for (RouteOption route : routes)
+		{
+			for (TeleportMethod method : route.getMethods())
+			{
+				sailsToGrimstone |= isSailing(method) && method.getDisplayInfo() != null
+					&& method.getDisplayInfo().contains("Grimstone");
+			}
+		}
+		assertTrue("every path to the sailing-only rock ends under sail", sailsToGrimstone);
 	}
 
 	@Test

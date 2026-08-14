@@ -231,7 +231,7 @@ public class AlternativeRoutesService
 		// tiles a player stands on afoot, and offering "sail from here" there was wrong.
 		if (planningConfig.isOnSailingBoat())
 		{
-			seaLegs.addAll(SailingSea.aboardLegTransports(start, wetTargets, 6));
+			seaLegs.addAll(SailingSea.aboardLegTransports(start, wetTargets));
 		}
 		planningConfig.setExtraTransports(seaLegs);
 

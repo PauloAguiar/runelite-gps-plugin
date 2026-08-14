@@ -110,7 +110,7 @@ public class SailingSeaTargetTest
 		PathfinderConfig planning = planning(true);
 		java.util.List<gps.transport.Transport> extras = new java.util.ArrayList<>();
 		extras.addAll(SailingSea.seaLegTransports(SEA_PIN, 6));
-		extras.addAll(SailingSea.aboardLegTransports(aboard, java.util.Set.of(SEA_PIN), 6));
+		extras.addAll(SailingSea.aboardLegTransports(aboard, java.util.Set.of(SEA_PIN)));
 		planning.setExtraTransports(extras);
 		planning.rebuildAvailabilityWithExclusions(java.util.Set.of());
 		Pathfinder toWater = new Pathfinder(planning, aboard, java.util.Set.of(SEA_PIN));

@@ -54,6 +54,10 @@ public final class SailingSea
 	/** Packed land tiles of every mooring — the origins of boarding legs, for the
 	 * boat-location gate to tell "boards a boat here" from "already under way". */
 	private final java.util.Set<Integer> mooringLandTiles;
+	/** Port-to-port sea distances in centitiles (shipped matrix, MAX_VALUE = unconnected),
+	 * indexed like {@link #moorings} — lets partial wet floods reach EVERY port by
+	 * composing through a settled near one. Null when the resource is absent. */
+	private int[][] portMatrix;
 
 	private SailingSea(int minX, int minY, int width, int height, byte[] bits,
 		List<int[]> moorings, List<String> mooringNames)
@@ -80,6 +84,82 @@ public final class SailingSea
 	public static boolean isMooringLand(int packed)
 	{
 		return get().mooringLandTiles.contains(packed);
+	}
+
+	/** The shipped port-to-port matrix, re-keyed from land tiles to mooring indices; null
+	 * (composition disabled, floods stand alone) when the resource is missing. */
+	private static int[][] loadPortMatrix(List<int[]> moorings)
+	{
+		java.util.Map<Long, Integer> byLand = new java.util.HashMap<>();
+		for (int i = 0; i < moorings.size(); i++)
+		{
+			byLand.put((long) moorings.get(i)[0] << 16 | moorings.get(i)[1], i);
+		}
+		try (InputStream tsv = SailingSea.class.getResourceAsStream("/sailing-sea-matrix.tsv");
+			Scanner scanner = new Scanner(tsv, "UTF-8"))
+		{
+			int[][] matrix = new int[moorings.size()][moorings.size()];
+			for (int[] row : matrix)
+			{
+				java.util.Arrays.fill(row, Integer.MAX_VALUE);
+			}
+			for (int i = 0; i < matrix.length; i++)
+			{
+				matrix[i][i] = 0;
+			}
+			while (scanner.hasNextLine())
+			{
+				String[] fields = scanner.nextLine().split("\t");
+				if (fields.length < 5 || fields[0].startsWith("#") || "fromLandX".equals(fields[0]))
+				{
+					continue;
+				}
+				Integer from = byLand.get(Long.parseLong(fields[0]) << 16 | Long.parseLong(fields[1]));
+				Integer to = byLand.get(Long.parseLong(fields[2]) << 16 | Long.parseLong(fields[3]));
+				if (from != null && to != null)
+				{
+					matrix[from][to] = Integer.parseInt(fields[4]);
+				}
+			}
+			return matrix;
+		}
+		catch (IOException | RuntimeException e)
+		{
+			return null;
+		}
+	}
+
+	/**
+	 * Sea distance from {@code packed} to EVERY mooring: the partial wet flood's exact
+	 * values where it settled, and flood + port-matrix composition everywhere else — so far
+	 * ports get honest (slightly conservative: the join is a settled endpoint, not the true
+	 * merge point) distances instead of MAX_VALUE. This is what lets aboard starts offer a
+	 * single continuous sail to ANY port rather than a disembark/re-embark chain.
+	 */
+	private static int[] composedPortDistances(int packed)
+	{
+		int[] flood = seaDistances(packed);
+		int[][] matrix = get().portMatrix;
+		if (matrix == null)
+		{
+			return flood;
+		}
+		int[] out = flood.clone();
+		for (int far = 0; far < out.length; far++)
+		{
+			if (flood[far] != Integer.MAX_VALUE)
+			{
+				continue;
+			}
+			for (int near = 0; near < flood.length; near++)
+			{
+				if (flood[near] != Integer.MAX_VALUE && matrix[near][far] != Integer.MAX_VALUE)
+				{
+					out[far] = Math.min(out[far], flood[near] + matrix[near][far]);
+				}
+			}
+		}
+		return out;
 	}
 
 	private static SailingSea get()
@@ -129,7 +209,9 @@ public final class SailingSea
 					mooringNames.add(fields.length > 6 ? fields[6].trim() : "");
 				}
 			}
-			return new SailingSea(minX, minY, width, height, bits, moorings, mooringNames);
+			SailingSea loaded = new SailingSea(minX, minY, width, height, bits, moorings, mooringNames);
+			loaded.portMatrix = loadPortMatrix(moorings);
+			return loaded;
 		}
 		catch (IOException | RuntimeException e)
 		{
@@ -163,14 +245,16 @@ public final class SailingSea
 	 * islands and coastlines are respected. Gated like any SAILING transport (master toggle).
 	 */
 	/**
-	 * Legs for a search STARTING on the water (player aboard): sail from the start to each of
-	 * the {@code count} closest moorings and disembark — the start-side twin of
-	 * {@link #seaLegTransports} — plus, when a target is itself sailable water, one direct
-	 * sail-to-the-pin leg. Without these, a search from aboard dies on its sealed start tile
-	 * ("unreachable" the moment the player boards and drops a pin).
+	 * Legs for a search STARTING on the water (player aboard): sail from the start to EVERY
+	 * sea-connected mooring and disembark — the start-side twin of {@link #seaLegTransports},
+	 * matrix-composed so far ports get one continuous sail instead of the field's
+	 * disembark/re-embark chains (findings 6-7) — plus, when a target is itself sailable
+	 * water, one direct sail-to-the-pin leg (staged-box exact, matrix-composed when the pin
+	 * is beyond the boxes). Without these, a search from aboard dies on its sealed start
+	 * tile ("unreachable" the moment the player boards and drops a pin).
 	 */
 	public static List<Transport> aboardLegTransports(int startPacked,
-		java.util.Set<Integer> targets, int count)
+		java.util.Set<Integer> targets)
 	{
 		if (!isSailable(startPacked))
 		{
@@ -178,7 +262,7 @@ public final class SailingSea
 		}
 		List<Transport> legs = new ArrayList<>();
 		SailingSea sea = get();
-		int[] distances = seaDistances(startPacked);
+		int[] distances = composedPortDistances(startPacked);
 		List<Integer> order = new ArrayList<>();
 		for (int i = 0; i < distances.length; i++)
 		{
@@ -187,8 +271,9 @@ public final class SailingSea
 				order.add(i);
 			}
 		}
+		// Nearest-first so the service's port seeding keeps its ranking for free.
 		order.sort(Comparator.comparingInt(i -> distances[i]));
-		for (int i : order.subList(0, Math.min(count, order.size())))
+		for (int i : order)
 		{
 			int[] mooring = sea.moorings.get(i);
 			// Moor + step off only (~8 ticks): the player is already aboard and under way;
@@ -207,6 +292,25 @@ public final class SailingSea
 		for (int target : targets)
 		{
 			int centitiles = seaDistanceBetween(startPacked, target);
+			if (centitiles < 0)
+			{
+				// Beyond the staged boxes: sail via the cheapest port join — the composed
+				// start-side distances plus the target's own composed distances share every
+				// mooring as a meeting point.
+				int[] toTarget = composedPortDistances(target);
+				long best = Long.MAX_VALUE;
+				for (int i = 0; i < distances.length; i++)
+				{
+					if (distances[i] != Integer.MAX_VALUE && toTarget[i] != Integer.MAX_VALUE)
+					{
+						best = Math.min(best, (long) distances[i] + toTarget[i]);
+					}
+				}
+				if (best < Long.MAX_VALUE)
+				{
+					centitiles = (int) Math.min(Integer.MAX_VALUE, best);
+				}
+			}
 			if (centitiles >= 0)
 			{
 				legs.add(new Transport.TransportBuilder()
@@ -318,7 +422,7 @@ public final class SailingSea
 		}
 		int tx = WorldPointUtil.unpackWorldX(targetPacked);
 		int ty = WorldPointUtil.unpackWorldY(targetPacked);
-		int[] distances = seaDistances(targetPacked);
+		int[] distances = composedPortDistances(targetPacked);
 		List<int[]> moorings = get().moorings;
 		List<Integer> order = new ArrayList<>();
 		for (int i = 0; i < moorings.size(); i++)
