@@ -1011,10 +1011,23 @@ public class ShortestPathPanel extends PluginPanel
 		if (route.isViaBank())
 		{
 			// The bank detour as a compact header chip; the coin glyph on the method row below
-			// marks WHICH method the detour is for.
+			// marks WHICH method the detour is for. The tooltip states WHAT gets withdrawn.
 			JLabel bankChip = new JLabel(RouteIcons.IN_BANK);
-			bankChip.setToolTipText("<html>Walks to a bank first — withdraws the item for: <b>"
-				+ escapeHtml(joinLabels(route.getBankMethods())) + "</b></html>");
+			List<String> pickups = RouteDirections.pickupLines(plugin, route);
+			if (pickups.isEmpty())
+			{
+				bankChip.setToolTipText("<html>Walks to a bank first — withdraws the item for: <b>"
+					+ escapeHtml(joinLabels(route.getBankMethods())) + "</b></html>");
+			}
+			else
+			{
+				StringBuilder tip = new StringBuilder("<html>Withdraws at a bank:");
+				for (String pickup : pickups)
+				{
+					tip.append("<br>• <b>").append(escapeHtml(pickup)).append("</b>");
+				}
+				bankChip.setToolTipText(tip.append("</html>").toString());
+			}
 			right.add(bankChip);
 		}
 		topRow.add(right, BorderLayout.EAST);
@@ -1033,7 +1046,7 @@ public class ShortestPathPanel extends PluginPanel
 		// that row — see buildMethodRow.
 		for (int m = 0; m < route.getMethods().size(); m++)
 		{
-			methods.add(buildMethodRow(route.getMethods().get(m), route.getBankMethods(),
+			methods.add(buildMethodRow(route.getMethods().get(m), route,
 				route.walkBefore(m)));
 		}
 		// One walking row for the WHOLE route: every leg between methods plus the trailing leg —
@@ -1223,7 +1236,7 @@ public class ShortestPathPanel extends PluginPanel
 	 * method the route's bank detour is for. {@code walkBefore} tiles of walking to reach the method
 	 * are shown as a "(N)" prefix on the label.
 	 */
-	private JPanel buildMethodRow(TeleportMethod method, Set<TeleportMethod> bankMethods, int walkBefore)
+	private JPanel buildMethodRow(TeleportMethod method, RouteOption route, int walkBefore)
 	{
 		JPanel row = new JPanel(new BorderLayout(5, 0));
 		row.setOpaque(false);
@@ -1234,7 +1247,7 @@ public class ShortestPathPanel extends PluginPanel
 			? (method.isConsumable() ? "Item (charged — consumes a charge or the item)" : "Item (permanent — reusable)")
 			: method.category());
 		MethodAvailability status = cachedUnavailable.get(method);
-		boolean bankGated = bankMethods.contains(method);
+		boolean bankGated = route.getBankMethods().contains(method);
 		// The dot and any inline glyphs form a left-to-right box, centred against each other; the
 		// whole box is then centred vertically against the (possibly two-line) label.
 		JPanel west = new JPanel();
@@ -1258,7 +1271,10 @@ public class ShortestPathPanel extends PluginPanel
 			JLabel bankMarker = new JLabel(RouteIcons.IN_BANK);
 			bankMarker.setAlignmentY(Component.CENTER_ALIGNMENT);
 			bankMarker.setBorder(new EmptyBorder(0, 3, 0, 0));
-			bankMarker.setToolTipText("This method needs an item from your bank — the route walks to a bank to withdraw it first");
+			String pickup = RouteDirections.pickupLineFor(plugin, route, method);
+			bankMarker.setToolTipText(pickup != null
+				? "<html>From your bank: <b>" + escapeHtml(pickup) + "</b></html>"
+				: "This method needs an item from your bank — the route withdraws it first");
 			west.add(bankMarker);
 		}
 		// The availability map now records IN_BANK in every mode; on a route it's already shown by

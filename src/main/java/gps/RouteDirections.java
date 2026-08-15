@@ -410,18 +410,51 @@ final class RouteDirections
 	private static Step withdrawStep(ShortestPathPlugin plugin, RouteOption route,
 		List<PathStep> path, int pathIndex)
 	{
-		List<String> details = new ArrayList<>();
-		List<TeleportMethod> methods = route.getMethods();
-		List<Integer> edges = route.getMethodEdgeIndexes();
-		for (int m = 0; m < methods.size() && m < edges.size(); m++)
+		List<String> details = pickupLines(plugin, route);
+		int ticks = bankWithdrawTicks(plugin.getGpsConfig().costBankPickup());
+		if (details.isEmpty())
 		{
-			TeleportMethod method = methods.get(m);
+			return new Step(withdrawText(plugin, route, path, pathIndex), pathIndex, pathIndex, ticks);
+		}
+		return new Step("Withdraw item(s):", pathIndex, pathIndex, ticks, details);
+	}
+
+	/**
+	 * All pickup lines of a via-bank route, in method order — shared by the withdraw step
+	 * and the panel's bank tooltips.
+	 */
+	static List<String> pickupLines(ShortestPathPlugin plugin, RouteOption route)
+	{
+		List<String> details = new ArrayList<>();
+		for (TeleportMethod method : route.getMethods())
+		{
 			if (!route.getBankMethods().contains(method))
 			{
 				continue;
 			}
+			String line = pickupLineFor(plugin, route, method);
+			if (line != null && !details.contains(line))
+			{
+				details.add(line);
+			}
+		}
+		return details;
+	}
+
+	/** The pickup line for ONE of a route's bank methods, or null when it can't resolve. */
+	static String pickupLineFor(ShortestPathPlugin plugin, RouteOption route, TeleportMethod method)
+	{
+		List<TeleportMethod> methods = route.getMethods();
+		List<Integer> edges = route.getMethodEdgeIndexes();
+		List<PathStep> path = route.getPath();
+		for (int m = 0; m < methods.size() && m < edges.size(); m++)
+		{
+			if (!methods.get(m).equals(method))
+			{
+				continue;
+			}
 			int edge = edges.get(m);
-			if (edge <= 0 || edge >= path.size())
+			if (path == null || edge <= 0 || edge >= path.size())
 			{
 				continue;
 			}
@@ -433,17 +466,12 @@ final class RouteDirections
 					path.get(edge).getPackedPosition(), method.getDisplayInfo());
 			}
 			String line = pickupLine(plugin, rows, joinLabels(java.util.Set.of(method)));
-			if (line != null && !details.contains(line))
+			if (line != null)
 			{
-				details.add(line);
+				return line;
 			}
 		}
-		int ticks = bankWithdrawTicks(plugin.getGpsConfig().costBankPickup());
-		if (details.isEmpty())
-		{
-			return new Step(withdrawText(plugin, route, path, pathIndex), pathIndex, pathIndex, ticks);
-		}
-		return new Step("Withdraw item(s):", pathIndex, pathIndex, ticks, details);
+		return null;
 	}
 
 	/** One pickup line for a bank method: its fare attributed, else its items by name. */
