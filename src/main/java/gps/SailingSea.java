@@ -898,6 +898,9 @@ public final class SailingSea
 		java.util.Arrays.fill(parent, -1);
 		int boxStart = (start / sea.width - y0) * boxWidth + (start % sea.width - x0);
 		int boxGoal = (goal / sea.width - y0) * boxWidth + (goal % sea.width - x0);
+		byte[] shore = shoreDistances(sea, x0, y0, boxWidth, boxHeight);
+		byte[] parentMove = new byte[boxWidth * boxHeight];
+		java.util.Arrays.fill(parentMove, (byte) -1);
 		LongHeap queue = new LongHeap();
 		dist[boxStart] = 0;
 		queue.push(boxStart);
@@ -915,8 +918,9 @@ public final class SailingSea
 			}
 			int x = index % boxWidth;
 			int y = index / boxWidth;
-			for (int[] move : MOVES)
+			for (int m = 0; m < MOVES.length; m++)
 			{
+				int[] move = MOVES[m];
 				int nx = x + move[0];
 				int ny = y + move[1];
 				if (nx < 0 || ny < 0 || nx >= boxWidth || ny >= boxHeight
@@ -929,17 +933,19 @@ public final class SailingSea
 				{
 					continue;
 				}
-				// Distance-optimal paths GRAZE obstacles (tangents are shortest), so pure
-				// Dijkstra hugs every coastline. A soft near-land penalty makes the track
-				// stand off wherever open water is free while still threading channels and
-				// port approaches. Track aesthetics only: durations come from the
-				// un-penalised wet flood and boxDistance.
-				int step = move[2] + (nearLand(sea, x0 + nx, y0 + ny) ? SHORE_PENALTY : 0);
+				// Distance-optimal paths GRAZE obstacles (tangents are shortest) and
+				// stair-step for free, so pure Dijkstra hugs every coastline and wiggles.
+				// The graded shore penalty pushes tracks into open water wherever it is
+				// free; the turn tax makes straight runs win every tie. Track aesthetics
+				// only: durations come from the un-penalised wet flood and boxDistance.
 				int next = ny * boxWidth + nx;
+				int step = move[2] + SHORE_PENALTIES[shore[next]]
+					+ (parentMove[index] >= 0 && parentMove[index] != m ? TURN_PENALTY : 0);
 				if (dist[index] + step < dist[next])
 				{
 					dist[next] = dist[index] + step;
 					parent[next] = index;
+					parentMove[next] = (byte) m;
 					queue.push((long) dist[next] << 32 | next);
 				}
 			}
@@ -958,8 +964,74 @@ public final class SailingSea
 		return smoothTrack(sea, waypoints);
 	}
 
-	/** Penalty per near-land step: ~0.6 tiles equivalent — stand off shore when open water is free. */
-	private static final int SHORE_PENALTY = 60;
+	/**
+	 * Graded near-land penalty, indexed by tiles-from-land (capped): hugging (≤2) stays
+	 * expensive, the 3–5 band is mildly taxed so open water wins whenever it is free, and
+	 * beyond that the sea is flat. Replaces the old single-radius check — tracks sat at
+	 * exactly radius 2 because one tile past the cliff was already "free".
+	 */
+	private static final int[] SHORE_PENALTIES = {200, 200, 140, 40, 20, 10, 0};
+	/**
+	 * Per direction-change tax (~1.5 tiles): distance-optimal 16-move paths stair-step for
+	 * free, and the smoothing could only partially clean the resulting wiggle (screenshot
+	 * report 2026-08-14). Straightness now wins every tie at the search itself; real turns
+	 * (channels, headlands) cost one small constant each.
+	 */
+	private static final int TURN_PENALTY = 150;
+
+	/**
+	 * Tiles-from-land for every box cell (8-dir BFS from land, capped at the penalty
+	 * table) — one linear pass instead of a 5x5 scan per relaxation.
+	 */
+	private static byte[] shoreDistances(SailingSea sea, int x0, int y0, int boxWidth, int boxHeight)
+	{
+		byte[] shore = new byte[boxWidth * boxHeight];
+		java.util.Arrays.fill(shore, (byte) (SHORE_PENALTIES.length - 1));
+		java.util.ArrayDeque<Integer> queue = new java.util.ArrayDeque<>();
+		for (int y = 0; y < boxHeight; y++)
+		{
+			for (int x = 0; x < boxWidth; x++)
+			{
+				int gx = x0 + x;
+				int gy = y0 + y;
+				if (gx >= sea.width || gy >= sea.height || !bit(sea, gx, gy))
+				{
+					shore[y * boxWidth + x] = 0;
+					queue.add(y * boxWidth + x);
+				}
+			}
+		}
+		while (!queue.isEmpty())
+		{
+			int index = queue.poll();
+			int depth = shore[index];
+			if (depth >= SHORE_PENALTIES.length - 1)
+			{
+				continue;
+			}
+			int x = index % boxWidth;
+			int y = index / boxWidth;
+			for (int dy = -1; dy <= 1; dy++)
+			{
+				for (int dx = -1; dx <= 1; dx++)
+				{
+					int nx = x + dx;
+					int ny = y + dy;
+					if (nx < 0 || ny < 0 || nx >= boxWidth || ny >= boxHeight)
+					{
+						continue;
+					}
+					int next = ny * boxWidth + nx;
+					if (shore[next] > depth + 1)
+					{
+						shore[next] = (byte) (depth + 1);
+						queue.add(next);
+					}
+				}
+			}
+		}
+		return shore;
+	}
 	/** Re-densified waypoint spacing: progress tracking and off-route bands need dense points. */
 	private static final int TRACK_POINT_SPACING = 4;
 
@@ -1095,7 +1167,7 @@ public final class SailingSea
 	 * gracefully instead of failing.
 	 */
 	/** Dogleg turn positions along the first bearing run, tried in order. */
-	private static final double[] DOGLEG_FRACTIONS = {0.7, 0.5, 0.3};
+	private static final double[] DOGLEG_FRACTIONS = {0.8, 0.65, 0.5, 0.35, 0.2};
 
 	private static java.util.List<Integer> snapCornersToBearings(SailingSea sea,
 		java.util.List<Integer> corners, int trackStart, int trackGoal)
@@ -1106,13 +1178,13 @@ public final class SailingSea
 		{
 			int from = snapped.get(snapped.size() - 1);
 			int to = corners.get(c);
-			// Clearance staging: full standoff first; when hulls or headlands block every
-			// on-bearing shape, retry requiring only sailable water — the OLD fallback (a
-			// raw off-grid chord) threaded the same tight corridor anyway, so staying on
-			// the 16 headings at reduced clearance is a strict improvement. The chord
-			// remains the true last resort.
-			if (!snapLeg(sea, snapped, from, to, trackStart, trackGoal, true)
-				&& !snapLeg(sea, snapped, from, to, trackStart, trackGoal, false))
+			// Strict standoff only: the corner chord already passed the standoff gates in
+			// simplification, so when no on-bearing shape holds the same clearance, the
+			// off-grid chord is the HONEST fallback — a relaxed on-bearing shape would
+			// trade real shore clearance for grid purity (it legalized a hugging departure
+			// at the Pandemonium; hulls gain nothing from relaxing, they are hard line
+			// blockers with no clearance band).
+			if (!snapLeg(sea, snapped, from, to, trackStart, trackGoal, 0))
 			{
 				snapped.add(to);
 			}
@@ -1126,22 +1198,28 @@ public final class SailingSea
 	 * hull the single corner cannot). False when no shape fits at this clearance.
 	 */
 	private static boolean snapLeg(SailingSea sea, java.util.List<Integer> snapped,
-		int from, int to, int trackStart, int trackGoal, boolean fullClearance)
+		int from, int to, int trackStart, int trackGoal, int depth)
 	{
 		int dx = WorldPointUtil.unpackWorldX(to) - WorldPointUtil.unpackWorldX(from);
 		int dy = WorldPointUtil.unpackWorldY(to) - WorldPointUtil.unpackWorldY(from);
 		int mid = bearingMidpoint(from, dx, dy, false);
 		if (mid == from || mid == to)
 		{
-			// Already a single bearing run (or no cone contains it): nothing to rewrite.
+			// Already (nearly) a single bearing run: nothing to rewrite. Inside a split
+			// that IS the half's answer — the chord was standoff-checked by the caller.
+			if (depth > 0)
+			{
+				snapped.add(to);
+				return true;
+			}
 			return false;
 		}
 		int alt = bearingMidpoint(from, dx, dy, true);
 		int[] mids = alt == from || alt == to ? new int[]{mid} : new int[]{mid, alt};
 		for (int full : mids)
 		{
-			if (lineKeepsStandoff(sea, from, full, trackStart, trackGoal, fullClearance)
-				&& lineKeepsStandoff(sea, full, to, trackStart, trackGoal, fullClearance))
+			if (lineKeepsStandoff(sea, from, full, trackStart, trackGoal)
+				&& lineKeepsStandoff(sea, full, to, trackStart, trackGoal))
 			{
 				snapped.add(full);
 				snapped.add(to);
@@ -1169,14 +1247,36 @@ public final class SailingSea
 				{
 					continue;
 				}
-				if (lineKeepsStandoff(sea, from, mid1, trackStart, trackGoal, fullClearance)
-					&& lineKeepsStandoff(sea, mid1, mid2, trackStart, trackGoal, fullClearance)
-					&& lineKeepsStandoff(sea, mid2, to, trackStart, trackGoal, fullClearance))
+				if (lineKeepsStandoff(sea, from, mid1, trackStart, trackGoal)
+					&& lineKeepsStandoff(sea, mid1, mid2, trackStart, trackGoal)
+					&& lineKeepsStandoff(sea, mid2, to, trackStart, trackGoal))
 				{
 					snapped.add(mid1);
 					snapped.add(mid2);
 					snapped.add(to);
 					return true;
+				}
+			}
+		}
+		// A gap too narrow for any two-corner shape (hull channels): split at the chord's
+		// midpoint — it lies ON the standoff-true chord, so it is sailable — and give each
+		// half its own, smaller maneuver. Bounded: two levels, legs no shorter than 8.
+		if (depth < 2 && Math.max(Math.abs(dx), Math.abs(dy)) >= 8)
+		{
+			int half = WorldPointUtil.packWorldPoint(
+				WorldPointUtil.unpackWorldX(from) + dx / 2,
+				WorldPointUtil.unpackWorldY(from) + dy / 2, 0);
+			if (half != from && half != to && isSailable(half))
+			{
+				int mark = snapped.size();
+				if (snapLeg(sea, snapped, from, half, trackStart, trackGoal, depth + 1)
+					&& snapLeg(sea, snapped, half, to, trackStart, trackGoal, depth + 1))
+				{
+					return true;
+				}
+				while (snapped.size() > mark)
+				{
+					snapped.remove(snapped.size() - 1);
 				}
 			}
 		}
