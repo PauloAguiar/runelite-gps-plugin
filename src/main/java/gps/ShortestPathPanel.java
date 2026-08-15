@@ -2280,9 +2280,15 @@ public class ShortestPathPanel extends PluginPanel
 	private JCheckBox configCheckBox(String label, boolean value, String tooltip,
 		java.util.function.Consumer<Boolean> onChange)
 	{
-		JCheckBox box = new JCheckBox(label, value);
+		// HTML label so long names WRAP instead of ellipsizing ("Teleports may a…" in the
+		// sailing section) — width leaves room for the glyph and the sub-toggle indent.
+		JCheckBox box = new JCheckBox(
+			"<html><body style='width:168px'>" + label + "</body></html>", value);
 		box.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		box.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		// HTML text ignores the look-and-feel's disabled dimming — mirror it by hand.
+		box.addPropertyChangeListener("enabled", e -> box.setForeground(
+			box.isEnabled() ? ColorScheme.LIGHT_GRAY_COLOR : ColorScheme.MEDIUM_GRAY_COLOR));
 		box.setToolTipText(tooltip);
 		box.setAlignmentX(Component.LEFT_ALIGNMENT);
 		box.setFocusPainted(false);
