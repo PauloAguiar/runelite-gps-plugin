@@ -48,10 +48,19 @@ final class RouteDirections
 		// finish it — only actually being aboard (the BOARDED varbit) does, else the step
 		// greyed out while the player was still on the dock.
 		private final boolean embark;
+		// Sub-lines rendered indented under the step's own line (the withdraw step's
+		// per-item list). Empty for ordinary steps.
+		private List<String> details = List.of();
 
 		private Step(String text, int startIndex, int endIndex, int ticks)
 		{
 			this(text, startIndex, endIndex, ticks, false, false, false, false);
+		}
+
+		private Step(String text, int startIndex, int endIndex, int ticks, List<String> details)
+		{
+			this(text, startIndex, endIndex, ticks, false, false, false, false);
+			this.details = details;
 		}
 
 		private Step(String text, int startIndex, int endIndex, int ticks, boolean transport)
@@ -135,8 +144,7 @@ final class RouteDirections
 					steps.add(new Step(walkText("the bank"), legStart, i, walkTicks(walk)));
 					walk = 0;
 					legStart = i;
-					steps.add(new Step(withdrawText(plugin, route, path, i), i, i,
-						bankWithdrawTicks(plugin.getGpsConfig().costBankPickup())));
+					steps.add(withdrawStep(plugin, route, path, i));
 				}
 			}
 
@@ -393,10 +401,95 @@ final class RouteDirections
 	}
 
 	/**
-	 * The withdraw step names the ACTUAL pickups when the live bank is known — the same
-	 * phrases as the bank-tile overlay hint ("Coins (30)", "Air rune (3) or Varrock
-	 * teleport") — falling back to the method list when it is not. The singleton location
-	 * set stands in for the bank-destination guard: this call site already KNOWS index
+	 * The withdraw step as a titled per-item LIST — one indented line per bank method,
+	 * fares attributed ("30 gp — Brimhaven fare"), plain items by name — resolved from the
+	 * UNFILTERED edge rows like {@link #fareText} (availability drops rows whose
+	 * requirement is banked, which is every row this step exists for). Falls back to the
+	 * single-line text when nothing resolves.
+	 */
+	private static Step withdrawStep(ShortestPathPlugin plugin, RouteOption route,
+		List<PathStep> path, int pathIndex)
+	{
+		List<String> details = new ArrayList<>();
+		List<TeleportMethod> methods = route.getMethods();
+		List<Integer> edges = route.getMethodEdgeIndexes();
+		for (int m = 0; m < methods.size() && m < edges.size(); m++)
+		{
+			TeleportMethod method = methods.get(m);
+			if (!route.getBankMethods().contains(method))
+			{
+				continue;
+			}
+			int edge = edges.get(m);
+			if (edge <= 0 || edge >= path.size())
+			{
+				continue;
+			}
+			List<Transport> rows = plugin.getPathfinderConfig().transportsOnEdge(
+				path.get(edge - 1).getPackedPosition(), path.get(edge).getPackedPosition());
+			if (rows.isEmpty())
+			{
+				rows = plugin.getPathfinderConfig().teleportsOnEdge(
+					path.get(edge).getPackedPosition(), method.getDisplayInfo());
+			}
+			String line = pickupLine(plugin, rows, joinLabels(java.util.Set.of(method)));
+			if (line != null && !details.contains(line))
+			{
+				details.add(line);
+			}
+		}
+		int ticks = bankWithdrawTicks(plugin.getGpsConfig().costBankPickup());
+		if (details.isEmpty())
+		{
+			return new Step(withdrawText(plugin, route, path, pathIndex), pathIndex, pathIndex, ticks);
+		}
+		return new Step("Withdraw item(s):", pathIndex, pathIndex, ticks, details);
+	}
+
+	/** One pickup line for a bank method: its fare attributed, else its items by name. */
+	private static String pickupLine(ShortestPathPlugin plugin, List<Transport> rows, String label)
+	{
+		for (Transport row : rows)
+		{
+			int coins = coinsOf(row);
+			if (coins > 0)
+			{
+				return coins + " gp — " + label + " fare";
+			}
+			if (row.getItemRequirements() == null)
+			{
+				continue;
+			}
+			List<String> names = new ArrayList<>();
+			for (gps.transport.requirement.ItemRequirement requirement
+				: row.getItemRequirements().getRequirements())
+			{
+				int[] ids = requirement.getItemIds();
+				if (ids.length == 0)
+				{
+					continue;
+				}
+				// The first alternative is the data's canonical choice for this slot.
+				String name = plugin.getClient().getItemDefinition(ids[0]).getName();
+				if (name == null || name.isEmpty() || "null".equals(name))
+				{
+					continue;
+				}
+				names.add(requirement.getQuantity() > 1
+					? name + " (" + requirement.getQuantity() + ")" : name);
+			}
+			if (!names.isEmpty())
+			{
+				return String.join(", ", names) + " — " + label;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * The single-line fallback: the same pickup phrases as the bank-tile overlay hint,
+	 * then the bare method list when even those are unknown. The singleton location set
+	 * stands in for the bank-destination guard: this call site already KNOWS index
 	 * {@code pathIndex} is the tile where the path flips banked.
 	 */
 	private static String withdrawText(ShortestPathPlugin plugin, RouteOption route,

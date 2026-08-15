@@ -626,6 +626,24 @@ public class PathfinderConfig
 		return matches;
 	}
 
+	/** The committed-edge lookup's teleport twin: origin-less rows landing on the
+	 * destination whose display matches the route's method — same unfiltered rationale
+	 * as {@link #transportsOnEdge}. */
+	public List<Transport> teleportsOnEdge(int destinationPacked, String displayInfo)
+	{
+		List<Transport> matches = new ArrayList<>();
+		for (Transport transport : allTransports)
+		{
+			if (transport.getOrigin() == Transport.UNDEFINED_ORIGIN
+				&& transport.getDestination() == destinationPacked
+				&& displayInfo != null && displayInfo.equals(transport.getDisplayInfo()))
+			{
+				matches.add(transport);
+			}
+		}
+		return matches;
+	}
+
 	/**
 	 * The full teleport-method catalog: every distinct travel method (teleports + networks, never plain
 	 * walking connectors) that structurally exists in the world, regardless of whether the current mode

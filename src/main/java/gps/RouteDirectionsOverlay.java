@@ -251,6 +251,16 @@ public class RouteDirectionsOverlay extends OverlayPanel
 			}
 			lines.add(new Line(text, font, colour,
 				formatTime((int) Math.ceil(step.getTicks() * RouteDirections.SECONDS_PER_TICK)), colour));
+			// The withdraw step's per-item list: indented, un-numbered, no own time.
+			for (String detail : step.getDetails())
+			{
+				if (shown + 1 >= MAX_LINES)
+				{
+					break;
+				}
+				lines.add(new Line("      • " + detail, fontOther, colour, null, null));
+				shown++;
+			}
 		}
 		if (i < steps.size())
 		{
