@@ -1790,9 +1790,28 @@ public class AlternativeRoutesService
 			return "<walk-only>";
 		}
 		StringBuilder sb = new StringBuilder();
-		for (TeleportMethod method : methods)
+		// Parking-variant collapse (capture 233931): when a LATER method re-embarks under
+		// the summon assumption, the boat gets summoned away from wherever the route just
+		// disembarked — the parking port has zero lasting effect, and five routes differing
+		// only in it crowded out real alternatives. The leading disembark becomes a
+		// wildcard so one such route represents the family. Abandon-off overland
+		// continuations (finding 5) have no later embark: their ports stay distinct.
+		boolean laterEmbark = false;
+		for (int i = 1; i < methods.size(); i++)
 		{
-			sb.append(method.toString()).append('|');
+			TeleportMethod method = methods.get(i);
+			laterEmbark |= gps.transport.TransportType.SAILING.equals(method.getType())
+				&& method.getDisplayInfo() != null
+				&& method.getDisplayInfo().startsWith("Embark at ");
+		}
+		TeleportMethod first = methods.get(0);
+		boolean parkingFirst = gps.transport.TransportType.SAILING.equals(first.getType())
+			&& first.getDisplayInfo() != null
+			&& first.getDisplayInfo().startsWith("Disembark at ");
+		for (int i = 0; i < methods.size(); i++)
+		{
+			sb.append(i == 0 && parkingFirst && laterEmbark
+				? "Disembark at *" : methods.get(i).toString()).append('|');
 		}
 		return sb.toString();
 	}

@@ -249,9 +249,35 @@ public class SailingGenerationTest
 		}
 	}
 
-	/** Finding 7's lint: no route may disembark at a port and re-board at the same port. */
+	/** Finding 7's lint: no route may disembark at a port and re-board at the same port.
+	 * Plus capture 233931's: parking variants (disembark somewhere, then summon the boat
+	 * away to a later embark) must be collapsed — one route per distinct continuation. */
 	private static void assertRouteShapes(List<RouteOption> routes)
 	{
+		java.util.Set<String> parkingTails = new java.util.HashSet<>();
+		for (RouteOption route : routes)
+		{
+			List<TeleportMethod> methods = route.getMethods();
+			if (methods.size() < 2 || !isSailing(methods.get(0))
+				|| methods.get(0).getDisplayInfo() == null
+				|| !methods.get(0).getDisplayInfo().startsWith("Disembark at "))
+			{
+				continue;
+			}
+			boolean laterEmbark = false;
+			StringBuilder tail = new StringBuilder();
+			for (int i = 1; i < methods.size(); i++)
+			{
+				laterEmbark |= isSailing(methods.get(i)) && methods.get(i).getDisplayInfo() != null
+					&& methods.get(i).getDisplayInfo().startsWith("Embark at ");
+				tail.append(methods.get(i)).append('|');
+			}
+			if (laterEmbark)
+			{
+				assertTrue("parking variants must collapse (capture 233931): " + methods,
+					parkingTails.add(tail.toString()));
+			}
+		}
 		for (RouteOption route : routes)
 		{
 			List<TeleportMethod> methods = route.getMethods();
