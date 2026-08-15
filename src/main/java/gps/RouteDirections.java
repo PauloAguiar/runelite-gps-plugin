@@ -244,7 +244,10 @@ final class RouteDirections
 	private static String fareText(ShortestPathPlugin plugin, PathStep from, PathStep to)
 	{
 		int fare = Integer.MAX_VALUE;
-		for (Transport transport : plugin.transportsForEdge(from, to))
+		// UNFILTERED edge rows: the route already committed to this edge, and the
+		// availability-filtered sets drop a row whose fare is banked (capture 205518).
+		for (Transport transport : plugin.getPathfinderConfig()
+			.transportsOnEdge(from.getPackedPosition(), to.getPackedPosition()))
 		{
 			int coins = coinsOf(transport);
 			if (coins > 0)

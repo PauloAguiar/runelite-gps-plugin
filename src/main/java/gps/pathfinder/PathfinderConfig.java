@@ -606,6 +606,27 @@ public class PathfinderConfig
 	}
 
 	/**
+	 * Every LOADED transport on origin -> destination, unfiltered by availability — for
+	 * labeling an edge the shown route has already committed to (fares). Availability
+	 * filters by what the player can use right now, so a row whose fare sits in the BANK
+	 * dropped out exactly when a via-bank route was about to spend it, and the step lost
+	 * its label (capture 205518: a fare-less 'Ship to Brimhaven' on a withdraw route).
+	 */
+	public List<Transport> transportsOnEdge(int originPacked, int destinationPacked)
+	{
+		List<Transport> matches = new ArrayList<>();
+		for (Transport transport : allTransports)
+		{
+			if (transport.getOrigin() == originPacked
+				&& transport.getDestination() == destinationPacked)
+			{
+				matches.add(transport);
+			}
+		}
+		return matches;
+	}
+
+	/**
 	 * The full teleport-method catalog: every distinct travel method (teleports + networks, never plain
 	 * walking connectors) that structurally exists in the world, regardless of whether the current mode
 	 * can route through it. Mode-independent, so flipping between Owned/All keeps the same catalog; each
