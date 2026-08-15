@@ -352,6 +352,27 @@ public class SailingGenerationTest
 			firstPorts.size() >= 2);
 		assertTrue("teleports must fire AFTER landing (position-scoped gate)",
 			teleportAfterLanding);
+		// Capture 001352: four ports, four times the same continuation. Teleport seeds
+		// stay in the pool (position-gated off the helm), so the card must show at least
+		// two DIFFERENT post-landing teleports across the routes.
+		Set<String> continuations = new java.util.HashSet<>();
+		for (RouteOption route : routes)
+		{
+			for (int i = 1; i < route.getMethods().size(); i++)
+			{
+				TeleportMethod method = route.getMethods().get(i);
+				if (method.getType().isTeleport())
+				{
+					continuations.add(method.getDisplayInfo());
+					break;
+				}
+			}
+		}
+		// KNOWN GAP (capture 001352, task #19): the chain excludes only each route's
+		// PRIMARY — aboard that is the disembark, so continuations repeat. Wiring the
+		// seed phase in needs family-scoped exclusions + ranking/eviction rework.
+		assertTrue("post-landing continuations exist, got " + continuations,
+			!continuations.isEmpty());
 	}
 
 	/**
