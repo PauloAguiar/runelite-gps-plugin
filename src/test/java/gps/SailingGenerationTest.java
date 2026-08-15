@@ -132,7 +132,13 @@ public class SailingGenerationTest
 			return null;
 		}).when(ct).invokeLater(Mockito.any(Runnable.class));
 		service = new AlternativeRoutesService(ct, config);
+		return runGeneration(start, target, mode);
+	}
 
+	/** One generation on the CURRENT service — lets a test run several against one service. */
+	private List<RouteOption> runGeneration(int start, int target, AlternativeRoutesMode mode)
+		throws Exception
+	{
 		CountDownLatch latch = new CountDownLatch(1);
 		AtomicReference<List<RouteOption>> out = new AtomicReference<>();
 		service.generate(start, Set.of(target), Set.of(),
@@ -149,6 +155,89 @@ public class SailingGenerationTest
 		List<RouteOption> routes = out.get();
 		assertRouteShapes(routes);
 		return routes;
+	}
+
+	private static ClientThread inlineClientThread()
+	{
+		ClientThread ct = Mockito.mock(ClientThread.class, Mockito.withSettings().stubOnly());
+		Mockito.doAnswer(i ->
+		{
+			((Runnable) i.getArgument(0)).run();
+			return null;
+		}).when(ct).invokeLater(Mockito.any(Runnable.class));
+		return ct;
+	}
+
+	/**
+	 * Capture 211433: flip Summon Boat off, refresh — the Khazard water pin routed to
+	 * "closest point" Brimhaven; a second refresh fixed it. The sea legs were synthesized
+	 * from the PREVIOUS generation's snapshot, so the first post-flip generation had
+	 * neither near-mooring legs (gated off) nor the berth must-include (not yet visible).
+	 * One service, two generations, the toggle flipped between: the first post-flip
+	 * generation must already reach.
+	 */
+	@Test
+	public void summonFlipTakesEffectOnTheNextGeneration() throws Exception
+	{
+		final boolean[] summon = {true};
+		final Thread clientThread = Thread.currentThread();
+		Client client = (Client) Proxy.newProxyInstance(Client.class.getClassLoader(),
+			new Class<?>[]{Client.class}, (proxy, method, args) ->
+			{
+				switch (method.getName())
+				{
+					case "getGameState":
+						return GameState.LOGGED_IN;
+					case "getClientThread":
+						return clientThread;
+					case "getBoostedSkillLevel":
+						return 99;
+					case "getVarbitValue":
+						int id = (int) args[0];
+						if (id == VarbitID.SAILING_BOAT_1_OWNED)
+						{
+							return 1;
+						}
+						if (id == VarbitID.SAILING_BOAT_1_PORT)
+						{
+							return PORT_ID_PANDEMONIUM;
+						}
+						return 0;
+					default:
+						return HybridPageFillTest.defaultValue(method.getReturnType());
+				}
+			});
+		ShortestPathConfig cfg = Mockito.mock(ShortestPathConfig.class,
+			Mockito.withSettings().stubOnly());
+		Mockito.when(cfg.calculationCutoff()).thenReturn(120);
+		Mockito.when(cfg.useSailing()).thenReturn(true);
+		// Lenient: a LAND start never consults the abandon toggle.
+		Mockito.lenient().when(cfg.sailingTeleportAbandon()).thenReturn(true);
+		Mockito.when(cfg.sailingAssumeSummon()).thenAnswer(i -> summon[0]);
+		PathfinderConfig config = new TestPathfinderConfig(client, cfg).copyForPlanning();
+		config.refresh();
+		service = new AlternativeRoutesService(inlineClientThread(), config);
+
+		int ardougne = WorldPointUtil.packWorldPoint(2610, 3222, 0);
+		int khazardWater = WorldPointUtil.packWorldPoint(2693, 3152, 0);
+		assertTrue("summon-on generation must reach the water pin",
+			anyReaches(runGeneration(ardougne, khazardWater, AlternativeRoutesMode.OWNED_INVENTORY)));
+		summon[0] = false;
+		assertTrue("the FIRST generation after flipping summon off must already reach"
+				+ " (capture 211433: it took a second refresh)",
+			anyReaches(runGeneration(ardougne, khazardWater, AlternativeRoutesMode.OWNED_INVENTORY)));
+	}
+
+	private static boolean anyReaches(List<RouteOption> routes)
+	{
+		for (RouteOption route : routes)
+		{
+			if (route.isReached())
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@After

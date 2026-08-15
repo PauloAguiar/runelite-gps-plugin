@@ -219,24 +219,35 @@ public class AlternativeRoutesService
 				wetTargets.add(target);
 			}
 		}
-		for (int target : wetTargets)
+		// Synthesis must run against the CURRENT snapshot: the gated must-include berths
+		// and the BOARDED varbit both come from planningConfig state that the client-thread
+		// refresh rewrites, and synthesizing before it used the PREVIOUS generation's
+		// toggles — flipping Summon Boat off then refreshing routed a Khazard water pin
+		// toward Brimhaven as its "closest point" until a second refresh (capture 211433).
+		// Resumed generations keep the prior snapshot ON PURPOSE (no refresh), so each
+		// branch synthesizes at its own right moment.
+		Runnable synthesizeSeaLegs = () ->
 		{
-			seaLegs.addAll(SailingSea.seaLegTransports(target, 6,
-				planningConfig.gatedBoatMoorings()));
-		}
-		// Player aboard: the start tile is sealed ocean with no walk edges — without legs
-		// FROM it (disembark at nearby ports, or sail straight to a water pin), every search
-		// dies on the start node and the whole generation reports unreachable. Gated on the
-		// BOARDED varbit, not tile wateriness: stilt decks (the Pandemonium) are sailable
-		// tiles a player stands on afoot, and offering "sail from here" there was wrong.
-		if (planningConfig.isOnSailingBoat())
-		{
-			seaLegs.addAll(SailingSea.aboardLegTransports(start, wetTargets));
-		}
-		planningConfig.setExtraTransports(seaLegs);
+			for (int target : wetTargets)
+			{
+				seaLegs.addAll(SailingSea.seaLegTransports(target, 6,
+					planningConfig.gatedBoatMoorings()));
+			}
+			// Player aboard: the start tile is sealed ocean with no walk edges — without legs
+			// FROM it (disembark at nearby ports, or sail straight to a water pin), every search
+			// dies on the start node and the whole generation reports unreachable. Gated on the
+			// BOARDED varbit, not tile wateriness: stilt decks (the Pandemonium) are sailable
+			// tiles a player stands on afoot, and offering "sail from here" there was wrong.
+			if (planningConfig.isOnSailingBoat())
+			{
+				seaLegs.addAll(SailingSea.aboardLegTransports(start, wetTargets));
+			}
+			planningConfig.setExtraTransports(seaLegs);
+		};
 
 		if (resumed)
 		{
+			synthesizeSeaLegs.run();
 			// No client-thread refresh: the cached routes were computed against the previous snapshot,
 			// and mixing a fresh one into a continued chain would make the page inconsistent. A real
 			// re-read happens on any non-widening regeneration (new target, Find routes, recompute).
@@ -268,6 +279,8 @@ public class AlternativeRoutesService
 				emit(gen, listener, List.of(), List.of(), Map.of(), true);
 				return;
 			}
+			// Now the snapshot is current — the sea legs see THIS generation's toggles.
+			synthesizeSeaLegs.run();
 			catalog = new ArrayList<>(planningConfig.getMethodCatalog());
 			// The catalog is the full method universe in every mode; this maps each entry the player can't
 			// use straight from the inventory to WHY (missing item/level/quest, in the bank, not unlocked),
