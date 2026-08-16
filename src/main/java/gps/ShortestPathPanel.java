@@ -1011,23 +1011,26 @@ public class ShortestPathPanel extends PluginPanel
 		if (route.isViaBank())
 		{
 			// The bank detour as a compact header chip; the coin glyph on the method row below
-			// marks WHICH method the detour is for. The tooltip states WHAT gets withdrawn.
+			// marks WHICH method the detour is for. The tooltip states WHAT gets withdrawn —
+			// resolved on the CLIENT thread (item names come from getItemDefinition, which
+			// asserts it; the EDT crash of 2026-08-15) and swapped in when ready.
 			JLabel bankChip = new JLabel(RouteIcons.IN_BANK);
-			List<String> pickups = RouteDirections.pickupLines(plugin, route);
-			if (pickups.isEmpty())
+			bankChip.setToolTipText("<html>Walks to a bank first — withdraws the item for: <b>"
+				+ escapeHtml(joinLabels(route.getBankMethods())) + "</b></html>");
+			plugin.getClientThread().invokeLater(() ->
 			{
-				bankChip.setToolTipText("<html>Walks to a bank first — withdraws the item for: <b>"
-					+ escapeHtml(joinLabels(route.getBankMethods())) + "</b></html>");
-			}
-			else
-			{
-				StringBuilder tip = new StringBuilder("<html>Withdraws at a bank:");
-				for (String pickup : pickups)
+				List<String> pickups = RouteDirections.pickupLines(plugin, route);
+				if (!pickups.isEmpty())
 				{
-					tip.append("<br>• <b>").append(escapeHtml(pickup)).append("</b>");
+					StringBuilder tip = new StringBuilder("<html>Withdraws at a bank:");
+					for (String pickup : pickups)
+					{
+						tip.append("<br>• <b>").append(escapeHtml(pickup)).append("</b>");
+					}
+					SwingUtilities.invokeLater(() ->
+						bankChip.setToolTipText(tip.append("</html>").toString()));
 				}
-				bankChip.setToolTipText(tip.append("</html>").toString());
-			}
+			});
 			right.add(bankChip);
 		}
 		topRow.add(right, BorderLayout.EAST);
@@ -1271,10 +1274,18 @@ public class ShortestPathPanel extends PluginPanel
 			JLabel bankMarker = new JLabel(RouteIcons.IN_BANK);
 			bankMarker.setAlignmentY(Component.CENTER_ALIGNMENT);
 			bankMarker.setBorder(new EmptyBorder(0, 3, 0, 0));
-			String pickup = RouteDirections.pickupLineFor(plugin, route, method);
-			bankMarker.setToolTipText(pickup != null
-				? "<html>From your bank: <b>" + escapeHtml(pickup) + "</b></html>"
-				: "This method needs an item from your bank — the route withdraws it first");
+			// Client-thread resolution, same as the header chip: item names assert it.
+			bankMarker.setToolTipText(
+				"This method needs an item from your bank — the route withdraws it first");
+			plugin.getClientThread().invokeLater(() ->
+			{
+				String pickup = RouteDirections.pickupLineFor(plugin, route, method);
+				if (pickup != null)
+				{
+					SwingUtilities.invokeLater(() -> bankMarker.setToolTipText(
+						"<html>From your bank: <b>" + escapeHtml(pickup) + "</b></html>"));
+				}
+			});
 			west.add(bankMarker);
 		}
 		// The availability map now records IN_BANK in every mode; on a route it's already shown by
