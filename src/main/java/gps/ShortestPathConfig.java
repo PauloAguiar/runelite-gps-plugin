@@ -836,6 +836,58 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigItem(
 		hidden = true,
+		keyName = "pohMountGlory",
+		name = "POH mounted glory",
+		description = "Whether the mounted Amulet of glory in your house may be used",
+		position = 42,
+		section = sectionSettings
+	)
+	default boolean pohMountGlory()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		hidden = true,
+		keyName = "pohMountXerics",
+		name = "POH mounted Xeric's talisman",
+		description = "Whether the mounted Xeric's talisman in your house may be used",
+		position = 43,
+		section = sectionSettings
+	)
+	default boolean pohMountXerics()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		hidden = true,
+		keyName = "pohMountDigsite",
+		name = "POH mounted digsite pendant",
+		description = "Whether the mounted Digsite pendant in your house may be used",
+		position = 44,
+		section = sectionSettings
+	)
+	default boolean pohMountDigsite()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		hidden = true,
+		keyName = "pohMountMythical",
+		name = "POH mounted mythical cape",
+		description = "Whether the mounted Mythical cape in your house may be used",
+		position = 45,
+		section = sectionSettings
+	)
+	default boolean pohMountMythical()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		hidden = true,
 		keyName = "usePohObelisk",
 		name = "POH wilderness obelisk",
 		description = "Whether to include the POH wilderness obelisk in the path.<br>" +

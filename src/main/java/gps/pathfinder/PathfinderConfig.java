@@ -165,6 +165,11 @@ public class PathfinderConfig
 	private boolean usePohFairyRing,
 		usePohSpiritTree,
 		usePohMountedItems,
+		// Per-mount assumptions under 'Mounted items': the mounts can't be scene-detected.
+		pohMountGlory,
+		pohMountXerics,
+		pohMountDigsite,
+		pohMountMythical,
 		usePoh,
 		useSailing,
 		usePohObelisk,
@@ -701,6 +706,10 @@ public class PathfinderConfig
 		usePohFairyRing = ShortestPathPlugin.override("usePohFairyRing", config.usePohFairyRing());
 		usePohSpiritTree = ShortestPathPlugin.override("usePohSpiritTree", config.usePohSpiritTree());
 		usePohMountedItems = ShortestPathPlugin.override("usePohMountedItems", config.usePohMountedItems());
+		pohMountGlory = ShortestPathPlugin.override("pohMountGlory", config.pohMountGlory());
+		pohMountXerics = ShortestPathPlugin.override("pohMountXerics", config.pohMountXerics());
+		pohMountDigsite = ShortestPathPlugin.override("pohMountDigsite", config.pohMountDigsite());
+		pohMountMythical = ShortestPathPlugin.override("pohMountMythical", config.pohMountMythical());
 		usePohObelisk = ShortestPathPlugin.override("usePohObelisk", config.usePohObelisk());
 		pohJewelleryBoxTier = ShortestPathPlugin.override("pohJewelleryBoxTier", config.pohJewelleryBoxTier());
 
@@ -1753,7 +1762,25 @@ public class PathfinderConfig
 			{
 				return false;
 			}
-			return usePohMountedItems;
+			// Each mount is its own assumption under the master toggle — only the ones the
+			// player says are built exist for routing, in every mode (furniture is structural).
+			if (!usePohMountedItems)
+			{
+				return false;
+			}
+			if (isMountedGlory)
+			{
+				return pohMountGlory;
+			}
+			if (objectInfo.contains("Xeric's Talisman"))
+			{
+				return pohMountXerics;
+			}
+			if (objectInfo.contains("Digsite"))
+			{
+				return pohMountDigsite;
+			}
+			return pohMountMythical;
 		}
 
 		// Filter jewellery boxes by tier

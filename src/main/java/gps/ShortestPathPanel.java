@@ -1814,6 +1814,29 @@ public class ShortestPathPanel extends PluginPanel
 		{
 			boxes[i].setEnabled(pohOn);
 			body.add(iconRow(icons[i], 18, boxes[i]));
+			if (boxes[i] == mounted)
+			{
+				// The mounts can't be scene-detected (no stable object ids), so each is its own
+				// assumption — pick exactly the ones built in your house.
+				boolean mountsOn = pohOn && plugin.getGpsConfig().usePohMountedItems();
+				String[][] mounts = {
+					{"pohMountGlory", "Amulet of glory", "Mounted Amulet of glory (Edgeville, Karamja, Draynor, Al Kharid)"},
+					{"pohMountXerics", "Xeric's talisman", "Mounted Xeric's talisman (Lookout, Glade, Inferno, Heart, Honour)"},
+					{"pohMountDigsite", "Digsite pendant", "Mounted Digsite pendant (Digsite, Fossil Island, Lithkren)"},
+					{"pohMountMythical", "Mythical cape", "Mounted Mythical cape (Myths' Guild)"},
+				};
+				boolean[] values = {plugin.getGpsConfig().pohMountGlory(), plugin.getGpsConfig().pohMountXerics(),
+					plugin.getGpsConfig().pohMountDigsite(), plugin.getGpsConfig().pohMountMythical()};
+				for (int m = 0; m < mounts.length; m++)
+				{
+					final String key = mounts[m][0];
+					JCheckBox mount = configCheckBox(mounts[m][1], values[m], mounts[m][2],
+						v -> plugin.setPanelConfig(key, v));
+					mount.setEnabled(mountsOn);
+					mount.setBorder(new EmptyBorder(2, 36, 2, 0));
+					body.add(mount);
+				}
+			}
 		}
 
 		section.add(body);
