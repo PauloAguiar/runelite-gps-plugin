@@ -146,7 +146,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 			if (plugin.isFindingRoute())
 			{
 				arrivalShowing = false;
-				return renderFinding(graphics, now);
+				return renderFinding(graphics);
 			}
 			// The route just ended: if progress was at the destination moments ago, this is an
 			// arrival — linger with a farewell instead of vanishing mid-glance.
@@ -297,8 +297,10 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		int contentWidth = minWidth;
 		for (Line line : lines)
 		{
+			// A centred line (arrival, finding) reads as a label, not a list row: give it the
+			// margin on both sides, or the text hugs the panel edges.
 			int width = graphics.getFontMetrics(line.font).stringWidth(line.left)
-				+ rightWidth(graphics, line) + PANEL_PADDING;
+				+ rightWidth(graphics, line) + (line.centred ? 2 * PANEL_PADDING : PANEL_PADDING);
 			contentWidth = Math.max(contentWidth, width);
 		}
 		int panelWidth = Math.min(contentWidth, maxWidth);
@@ -359,6 +361,13 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		for (int i = lines.size() - 1; i >= first; i--)
 		{
 			Line line = lines.get(i);
+			if (line.left.isBlank())
+			{
+				// A blank centred line is vertical air: its row is reserved in the panel, and the
+				// text above it moves up by half that row (a full row would leave it floating).
+				bottom -= line.font.getSize() / 2f + 5;
+				continue;
+			}
 			TextLayout layout = new TextLayout(line.left, line.font, graphics.getFontRenderContext());
 			Rectangle2D bounds = layout.getBounds();
 			float x = (float) ((panelSize.width - bounds.getWidth()) / 2 - bounds.getX());
@@ -614,8 +623,12 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	 * wall time the journey took. The whole panel is the dismiss button (see
 	 * {@link #dismissArrivalAt}).
 	 */
-	/** The HUD while a fresh destination's routes compute: a breathing ellipsis, no route yet. */
-	private Dimension renderFinding(Graphics2D graphics, long now)
+	/**
+	 * The HUD while a fresh destination's routes compute: no route yet, just the label with a row
+	 * of air above and below it. Static text on purpose — animated dots shift the centred label
+	 * and the panel width a few pixels every beat, which reads as jitter, not progress.
+	 */
+	private Dimension renderFinding(Graphics2D graphics)
 	{
 		List<Line> lines = new ArrayList<>();
 		String source = plugin.getTargetSource();
@@ -623,8 +636,9 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		{
 			lines.add(new Line("Destination set by " + source, fontOther, UPCOMING, null, null));
 		}
-		lines.add(new Line("Finding the best route" + ".".repeat(1 + (int) ((now / 400) % 3)),
-			fontCurrent, NEXT, null, null, true));
+		lines.add(new Line(" ", fontOther, UPCOMING, null, null));
+		lines.add(new Line("Finding the best route...", fontCurrent, NEXT, null, null, true));
+		lines.add(new Line(" ", fontOther, NEXT, null, null, true));
 		return renderPanel(graphics, lines);
 	}
 
