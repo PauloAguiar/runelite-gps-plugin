@@ -136,7 +136,10 @@ public class MethodAvailabilityCatalogTest
 	public void fairyRingsClassifyMissingQuestWithoutQuestProgress()
 	{
 		// The fairy-ring network is gated on Fairytale II progress (varbit, unstubbed = 0). The type-level
-		// classifier must report MISSING_QUEST for every fairy-ring method.
+		// classifier must report MISSING_QUEST for every fairy-ring method. The house ring (D I Q)
+		// is also a structural question — house and its fairy ring on — else it locks first.
+		when(config.usePoh()).thenReturn(true);
+		when(config.usePohFairyRing()).thenReturn(true);
 		Map<TeleportMethod, MethodAvailability> catalog =
 			refreshedPlanningCopy(new TestPathfinderConfig(client, config)).getMethodAvailability();
 

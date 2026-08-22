@@ -985,7 +985,7 @@ public class PathfinderConfig
 			// why the player can (or can't) use it. Runs before the mode/possession/unlock filter below so
 			// the catalog is the same full set in every mode; user exclusions are intentionally ignored
 			// here (excluded methods still appear in the catalog, flagged separately).
-			if (catalog != null && TeleportMethod.isMethodType(transport.getType()) && passesStructuralGates(transport))
+			if (catalog != null && TeleportMethod.isMethodType(transport.getType()) && passesCatalogGates(transport))
 			{
 				// Keep the BEST status among the transports sharing a method identity, and the
 				// missing-unlock detail of that best transport (its requirements are the mildest).
@@ -1071,7 +1071,7 @@ public class PathfinderConfig
 				return items == null ? null : "In your bank: " + items;
 			}
 			case LOCKED:
-				return mountBuilt(transport) ? null : "Not built in your house (House section)";
+				return structuralLockDetail(transport);
 			default:
 				return null;
 		}
@@ -1193,6 +1193,13 @@ public class PathfinderConfig
 	private MethodAvailability classifyAvailability(Transport transport)
 	{
 		TransportType type = transport.getType();
+		// Rows never leave the catalog for a structural reason (house off, box tier, a
+		// planted tree not detected, no boat at a berth...): they stay, locked, with the
+		// rule named in the tooltip. Only the seasonal rules remove rows (passesCatalogGates).
+		if (!passesStructuralGates(transport))
+		{
+			return MethodAvailability.LOCKED;
+		}
 
 		// Type-level unlock gates: these networks are gated by a quest/quest-progress at the transport-type
 		// level (via disableUnless above), not by per-transport requirements, so classify them explicitly.
@@ -1584,6 +1591,63 @@ public class PathfinderConfig
 	 * character unlocks, so they gate the main path, the "All" planning modes, and the method catalog
 	 * alike. Deliberately excludes the user's alt-routes exclusions (the catalog lists excluded methods).
 	 */
+	/**
+	 * The ONLY rules allowed to remove a method from the catalog: seasonal content off a
+	 * seasonal world, and league regions the player hasn't unlocked. Everything else a
+	 * structural gate rejects stays listed with a lock (the user's rule: rows never vanish).
+	 */
+	private boolean passesCatalogGates(Transport transport)
+	{
+		if (TransportType.SEASONAL_TRANSPORTS.equals(transport.getType())
+			&& !transportTypeConfig.isEnabled(TransportType.SEASONAL_TRANSPORTS))
+		{
+			return false;
+		}
+		return isTransportRegionAllowed(transport);
+	}
+
+	/** Why a structurally gated method is locked — the rule, in the words of the panel section that owns it. */
+	private String structuralLockDetail(Transport transport)
+	{
+		TransportType type = transport.getType();
+		if (transport.getDisplayInfo() != null && transport.getDisplayInfo().startsWith("Teleport to Boat"))
+		{
+			return !useSailing ? "Sailing is off (Travel options)"
+				: !boatSeen ? "No boat seen yet (Sailing section)" : "Your boat isn't moored at this port";
+		}
+		boolean inHouse = ShortestPathPlugin.isInsidePoh(WorldPointUtil.unpackWorldX(transport.getOrigin()),
+			WorldPointUtil.unpackWorldY(transport.getOrigin()))
+			|| ShortestPathPlugin.isInsidePoh(WorldPointUtil.unpackWorldX(transport.getDestination()),
+			WorldPointUtil.unpackWorldY(transport.getDestination()));
+		if (inHouse && !usePoh)
+		{
+			return "House is off (House section)";
+		}
+		if (inHouse && !checkPohVariant(transport, type))
+		{
+			return (TransportType.FAIRY_RING.equals(type) ? "Fairy ring"
+				: TransportType.SPIRIT_TREE.equals(type) ? "Spirit tree" : "Wilderness obelisk")
+				+ " is off in the House section";
+		}
+		if (TransportType.TELEPORTATION_BOX.equals(type) && !checkJewelleryBoxTier(transport))
+		{
+			String objectInfo = transport.getObjectInfo() == null ? "" : transport.getObjectInfo();
+			boolean mount = objectInfo.contains("Amulet of Glory") || objectInfo.contains("Xeric's Talisman")
+				|| objectInfo.contains("Digsite") || objectInfo.contains("Mythical cape");
+			return mount ? "Mounted items are off (House section)"
+				: "Not built at your jewellery box tier (House section)";
+		}
+		if (TransportType.SPIRIT_TREE.equals(type) && !checkPlantedSpiritTrees(transport))
+		{
+			return "Planted spirit tree not detected (Planted spirit trees section)";
+		}
+		if (!mountBuilt(transport))
+		{
+			return "Not built in your house (House section)";
+		}
+		return null;
+	}
+
 	private boolean passesStructuralGates(Transport transport)
 	{
 		TransportType type = transport.getType();
