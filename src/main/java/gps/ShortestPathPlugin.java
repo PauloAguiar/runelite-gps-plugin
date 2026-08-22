@@ -328,6 +328,10 @@ public class ShortestPathPlugin extends Plugin
 	private volatile List<TeleportMethod> teleportCatalog = new ArrayList<>();
 	// Catalog methods the player can't use in the current mode, mapped to why (for the panel markers).
 	private volatile Map<TeleportMethod, MethodAvailability> unavailableMethods = Map.of();
+	// Inventory / equipment changed since the catalog was last classified (issue #5): the
+	// usable count and per-method reasons were a per-generation snapshot — consumed on the
+	// next tick by a catalog-only refresh, never during a generation.
+	private volatile boolean catalogDirty;
 	private volatile RouteOption selectedRoute;
 	// The route the overlays draw, committed ONLY when a generation settles (its "done" update) —
 	// never mid-stream. While alternatives are still generating and re-ranking, the overlays hold
@@ -1594,6 +1598,7 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
+		maybeRefreshCatalog();
 		// Tick-cached position for Swing-thread consumers (the panel's destination search):
 		// live resolution walks player.getWorldView(), a client-thread-only call since the
 		// boat-position fix — the EDT reads this cache instead and can never trip it.
@@ -1830,6 +1835,11 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onItemContainerChanged(ItemContainerChanged event)
 	{
+		if (event.getContainerId() == InventoryID.INV || event.getContainerId() == InventoryID.WORN)
+		{
+			catalogDirty = true;
+			return;
+		}
 		if (event.getContainerId() != InventoryID.BANK)
 		{
 			return;
@@ -4384,6 +4394,27 @@ public class ShortestPathPlugin extends Plugin
 		return null;
 	}
 
+
+	/**
+	 * Catalog-only re-classification after an inventory/equipment change (issue #5). Skipped
+	 * while a generation is in flight — that generation re-snapshots anyway — and with no
+	 * service or panel to inform.
+	 */
+	private void maybeRefreshCatalog()
+	{
+		if (!catalogDirty || altGenerationInFlight || altRoutesService == null || altPanel == null
+			|| !GameState.LOGGED_IN.equals(client.getGameState()))
+		{
+			return;
+		}
+		catalogDirty = false;
+		altRoutesService.refreshCatalog(routesMode, (catalog, unavailable) ->
+		{
+			teleportCatalog = catalog;
+			unavailableMethods = unavailable;
+			refreshPanel(altGenerationInFlight);
+		});
+	}
 
 	private void refreshPanel(boolean calculating)
 	{

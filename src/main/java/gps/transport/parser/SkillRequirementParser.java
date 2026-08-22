@@ -47,6 +47,7 @@ public class SkillRequirementParser implements FieldParser<int[]>
 				if (levelAndSkill.length != 2)
 				{
 					log.error("Invalid level and skill: '{}'", requirement);
+					ParseErrors.record("skill", requirement);
 					continue;
 				}
 
@@ -81,6 +82,7 @@ public class SkillRequirementParser implements FieldParser<int[]>
 		catch (NumberFormatException e)
 		{
 			log.error("Invalid level and skill: {}", value);
+			ParseErrors.record("skill", value);
 		}
 
 		return skillLevels;

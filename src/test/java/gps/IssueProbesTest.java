@@ -143,8 +143,11 @@ public class IssueProbesTest
 		PathfinderConfig config = new TestPathfinderConfig(client(), cfg).copyForPlanning();
 		config.refresh();
 		ClientThread ct = Mockito.mock(ClientThread.class, Mockito.withSettings().stubOnly());
-		Mockito.doAnswer(i -> { ((Runnable) i.getArgument(0)).run(); return null; })
-			.when(ct).invokeLater(Mockito.any(Runnable.class));
+		Mockito.doAnswer(i ->
+		{
+			((Runnable) i.getArgument(0)).run();
+			return null;
+		}).when(ct).invokeLater(Mockito.any(Runnable.class));
 		AlternativeRoutesService service = new AlternativeRoutesService(ct, config);
 		CountDownLatch latch = new CountDownLatch(1);
 		AtomicReference<List<RouteOption>> out = new AtomicReference<>();
@@ -152,7 +155,14 @@ public class IssueProbesTest
 		service.generate(WorldPointUtil.packWorldPoint(2936, 3281, 0),
 			Set.of(WorldPointUtil.packWorldPoint(1947, 4067, 0)), Set.of(),
 			AlternativeRoutesMode.ALL_EVERYTHING, 10, 3, false,
-			(routes, catalog, unavailable, done) -> { if (done) { out.set(routes); latch.countDown(); } });
+			(routes, catalog, unavailable, done) ->
+			{
+				if (done)
+				{
+					out.set(routes);
+					latch.countDown();
+				}
+			});
 		boolean finished = latch.await(180, TimeUnit.SECONDS);
 		long ms = (System.nanoTime() - start) / 1_000_000;
 		System.out.println("PROBE #15 brittle isle finished=" + finished + " in " + ms + " ms, routes="

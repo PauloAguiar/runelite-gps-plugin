@@ -24,24 +24,63 @@ public final class TeleportMethod
 	// item itself (teleport tabs, charged jewellery) versus being permanent/unlimited. Only
 	// meaningful for item methods; defaults false for methods built without a transport.
 	private final boolean consumable;
+	// Carried metadata (NOT identity): for the jewellery-box transport type, WHICH piece of
+	// furniture the row is — the same type covers the box itself and the mounted Xeric's
+	// talisman / glory / digsite pendant / mythical cape (issue #19: a Xeric's route read
+	// "Jewellery box to 2: Glade"). Null for every other type.
+	private final String mount;
 
 	public TeleportMethod(TransportType type, String displayInfo, int destination)
 	{
-		this(type, displayInfo, destination, false);
+		this(type, displayInfo, destination, false, null);
 	}
 
 	public TeleportMethod(TransportType type, String displayInfo, int destination, boolean consumable)
+	{
+		this(type, displayInfo, destination, consumable, null);
+	}
+
+	public TeleportMethod(TransportType type, String displayInfo, int destination, boolean consumable,
+		String objectInfo)
 	{
 		this.type = type;
 		this.displayInfo = (displayInfo == null || displayInfo.isEmpty()) ? null : displayInfo;
 		this.destination = destination;
 		this.consumable = consumable;
+		this.mount = TransportType.TELEPORTATION_BOX.equals(type) ? mountOf(objectInfo) : null;
 	}
 
 	public static TeleportMethod fromTransport(Transport transport)
 	{
 		return new TeleportMethod(transport.getType(), transport.getDisplayInfo(),
-			transport.getDestination(), transport.isConsumable());
+			transport.getDestination(), transport.isConsumable(), transport.getObjectInfo());
+	}
+
+	/** The furniture a jewellery-box-type row belongs to, from its "menuOption menuTarget id". */
+	static String mountOf(String objectInfo)
+	{
+		if (objectInfo == null)
+		{
+			return null;
+		}
+		String lower = objectInfo.toLowerCase(java.util.Locale.ROOT);
+		if (lower.contains("xeric"))
+		{
+			return "Xeric's talisman";
+		}
+		if (lower.contains("glory"))
+		{
+			return "Amulet of glory";
+		}
+		if (lower.contains("digsite"))
+		{
+			return "Digsite pendant";
+		}
+		if (lower.contains("mythical"))
+		{
+			return "Mythical cape";
+		}
+		return null;
 	}
 
 	/**
@@ -60,7 +99,9 @@ public final class TeleportMethod
 	{
 		if (displayInfo != null)
 		{
-			return displayInfo;
+			// A mounted item under the jewellery-box type names its furniture, or the catalog
+			// shows "2: Glade" under a "Jewellery box" heading it never belonged to.
+			return mount != null ? mount + ": " + displayInfo : displayInfo;
 		}
 		int x = WorldPointUtil.unpackWorldX(destination);
 		int y = WorldPointUtil.unpackWorldY(destination);
@@ -75,7 +116,7 @@ public final class TeleportMethod
 	 */
 	public String routeLabel()
 	{
-		String vehicle = displayInfo == null ? null : vehiclePhrase(type);
+		String vehicle = displayInfo == null ? null : (mount != null ? mount : vehiclePhrase(type));
 		return vehicle == null ? label() : vehicle + " to " + displayInfo;
 	}
 

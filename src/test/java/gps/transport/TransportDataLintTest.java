@@ -1,5 +1,9 @@
 package gps.transport;
 
+import net.runelite.api.Quest;
+
+import gps.transport.parser.ParseErrors;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -108,5 +112,48 @@ public class TransportDataLintTest
 		// If we get here, no exact duplicates were found
 		System.out.printf("Successfully validated %d unique transport signatures across all transport data files.\n",
 			transportSignatures.size());
+	}
+	/**
+	 * The data must parse CLEANLY: a requirement the parser cannot read is dropped, and the
+	 * transport becomes usable without its gate. For weeks that was log noise only — an
+	 * Underground Pass dig spelled "Spade" (free without one), the Motherlode ladders put their
+	 * duration in the varbit column. Now it fails the build.
+	 */
+	@Test
+	public void everyRequirementParses()
+	{
+		ParseErrors.drain();
+		HashMap<Integer, Set<Transport>> all = TransportLoader.loadAllFromResources();
+		Assert.assertTrue("transports must load", !all.isEmpty());
+		List<String> errors = ParseErrors.drain();
+		Assert.assertTrue("requirements that failed to parse (the gate is DROPPED for each):\n  "
+			+ String.join("\n  ", errors), errors.isEmpty());
+	}
+
+	/**
+	 * Issue #17: the house Respawn Portal's Prifddinas row had no gate at all — every other
+	 * respawn row carries its unlock varbit. Song of the Elves is the Prifddinas unlock.
+	 */
+	@Test
+	public void prifddinasRespawnPortalIsQuestGated()
+	{
+		boolean found = false;
+		for (Set<Transport> set : TransportLoader.loadAllFromResources().values())
+		{
+			for (Transport transport : set)
+			{
+				if ("Respawn Portal (Prifddinas)".equals(transport.getDisplayInfo()))
+				{
+					found = true;
+					Assert.assertTrue("Prifddinas respawn must require Song of the Elves, got "
+						+ transport.getQuests(), transport.getQuests().contains(Quest.SONG_OF_THE_ELVES));
+				}
+				if ("Respawn Portal (Lumbridge)".equals(transport.getDisplayInfo()))
+				{
+					Assert.assertTrue("the default respawn has no quest gate", transport.getQuests().isEmpty());
+				}
+			}
+		}
+		Assert.assertTrue("the Prifddinas respawn row must exist", found);
 	}
 }

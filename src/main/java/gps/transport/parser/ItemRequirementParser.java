@@ -62,6 +62,7 @@ public class ItemRequirementParser implements FieldParser<TransportItems>
 		catch (NumberFormatException e)
 		{
 			log.error("Invalid item or quantity: {}", value);
+			ParseErrors.record("item", value);
 			return null;
 		}
 	}

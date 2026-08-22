@@ -79,6 +79,7 @@ public class VarRequirementParser implements FieldParser<Set<VarRequirement>>
 		catch (NumberFormatException e)
 		{
 			log.error("Invalid var requirement: {}", value);
+			ParseErrors.record("var", value);
 		}
 		return result;
 	}
@@ -96,6 +97,7 @@ public class VarRequirementParser implements FieldParser<Set<VarRequirement>>
 			}
 		}
 		log.error("Invalid var requirement: '{}'", requirement);
+		ParseErrors.record("var", requirement);
 		return null;
 	}
 }

@@ -163,6 +163,60 @@ public class AlternativeRoutesService
 		generation.incrementAndGet();
 	}
 
+	/** What the panel shows beside the catalog: the catalog and who can't use what. */
+	public interface CatalogListener
+	{
+		void onCatalog(List<TeleportMethod> catalog, Map<TeleportMethod, MethodAvailability> unavailable);
+	}
+
+	/**
+	 * Re-snapshots the game state and re-classifies the method catalog WITHOUT generating routes
+	 * (issue #5: the "usable/total" count and the per-method reasons were a per-generation
+	 * snapshot — opening the bank, equipping runes or gaining a level changed nothing until the
+	 * next route computation). Serialized on the generation executor so it never overlaps a
+	 * generation; the listener runs there too.
+	 */
+	public void refreshCatalog(AlternativeRoutesMode mode, CatalogListener listener)
+	{
+		executor.submit(() ->
+		{
+			try
+			{
+				if (!refreshOnClientThread(Collections.emptySet(), null, mode))
+				{
+					return;
+				}
+				List<TeleportMethod> catalog = new ArrayList<>(planningConfig.getMethodCatalog());
+				listener.onCatalog(catalog, notUsable(catalog));
+			}
+			catch (Exception e)
+			{
+				log.warn("Catalog refresh failed", e);
+			}
+		});
+	}
+
+	/**
+	 * The catalog is the full method universe in every mode; this maps each entry the player can't
+	 * use straight from the inventory to WHY (missing item/level/quest, in the bank, not unlocked),
+	 * mode-independently — the panel decides usability per mode (a banked item is usable in the
+	 * "Inventory + bank" mode, whose route walks to a bank) and filters by these reasons.
+	 */
+	private Map<TeleportMethod, MethodAvailability> notUsable(List<TeleportMethod> catalog)
+	{
+		final Map<TeleportMethod, MethodAvailability> statuses = planningConfig.getMethodAvailability();
+		final Map<TeleportMethod, MethodAvailability> notUsable = new HashMap<>();
+		for (TeleportMethod method : catalog)
+		{
+			MethodAvailability status = statuses.getOrDefault(method, MethodAvailability.AVAILABLE);
+			if (status != MethodAvailability.AVAILABLE)
+			{
+				notUsable.put(method, status);
+			}
+		}
+		return Collections.unmodifiableMap(notUsable);
+	}
+
 	public void shutdown()
 	{
 		executor.shutdownNow();
@@ -282,22 +336,7 @@ public class AlternativeRoutesService
 			// Now the snapshot is current — the sea legs see THIS generation's toggles.
 			synthesizeSeaLegs.run();
 			catalog = new ArrayList<>(planningConfig.getMethodCatalog());
-			// The catalog is the full method universe in every mode; this maps each entry the player can't
-			// use straight from the inventory to WHY (missing item/level/quest, in the bank, not unlocked),
-			// mode-independently — the panel decides usability per mode (a banked item is usable in the
-			// "Inventory + bank" mode, whose route walks to a bank) and filters by these reasons.
-			final Map<TeleportMethod, MethodAvailability> statuses = planningConfig.getMethodAvailability();
-			final Map<TeleportMethod, MethodAvailability> notUsable = new HashMap<>();
-			for (TeleportMethod method : catalog)
-			{
-				MethodAvailability status = statuses.getOrDefault(method, MethodAvailability.AVAILABLE);
-				if (status == MethodAvailability.AVAILABLE)
-				{
-					continue;
-				}
-				notUsable.put(method, status);
-			}
-			unavailable = Collections.unmodifiableMap(notUsable);
+			unavailable = notUsable(catalog);
 			if (ends.isEmpty())
 			{
 				resumeState = null;
