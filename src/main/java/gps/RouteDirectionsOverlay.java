@@ -205,6 +205,13 @@ public class RouteDirectionsOverlay extends OverlayPanel
 				? "Off route — recomputing if you drift further"
 				: "Off route", fontNext, OFF_ROUTE, null, null));
 		}
+		// While the generation settles, the route on screen is the first one found — say so, with
+		// a breathing ellipsis, instead of letting a line that may still change pass as final.
+		if (plugin.isDisplayedRouteProvisional())
+		{
+			lines.add(new Line("Finding the best route" + ".".repeat(1 + (int) ((now / 400) % 3)),
+				fontOther, UPCOMING, null, null));
+		}
 
 		// Window: collapse all but the most recent completed step into one summary line, then show
 		// the current step and what follows, capped.

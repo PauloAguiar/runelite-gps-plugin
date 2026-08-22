@@ -336,19 +336,22 @@ public class ShortestPathPlugin extends Plugin
 	// The route the overlays draw, committed ONLY when a generation settles (its "done" update) —
 	// never mid-stream. While alternatives are still generating and re-ranking, the overlays hold
 	// this instead of flipping through the streaming top result (which flashed a route then instantly
-	// replaced it right after a search). Null for a fresh destination, so the overlay stays clear
-	// until the routes settle rather than showing a soon-to-change front-runner.
+	// replaced it right after a search). Null for a fresh destination; the overlay then
+	// shows the provisional route (below) in the Calculating colour until the routes settle.
 	private volatile RouteOption committedDisplayRoute;
+	// The first route a fresh-destination generation streamed in, shown in the Calculating colour
+	// while the rest of the list computes — held steady (never swapped for a later front-runner)
+	// so the overlay moves at most once: provisional -> settled. Null when nothing is provisional.
+	private volatile RouteOption provisionalDisplayRoute;
 	// Start/targets the alternatives were last generated from, reused by exclusion/mode/show-more edits
 	// so they re-run against the same destination. Volatile: read/written from client thread + Swing EDT.
 	private volatile int lastAltStart = WorldPointUtil.UNDEFINED;
 	private volatile Set<Integer> lastAltTargets = Set.of();
-	// The route limit the last generation ran with, so opening the panel can tell a primary-only
-	// generation (panel was hidden) from a full one and catch up.
+	// The route limit the last generation ran with, so a generation that ran under a smaller
+	// budget than wanted now (the budget grew meanwhile) is widened by the auto-compute check.
 	private volatile int lastAltLimit = 0;
-	// Whether the GPS side panel is currently shown (sidebar tab selected). While hidden, auto-compute
-	// only finds the primary route (the overlay needs it); the extra alternatives are searched
-	// automatically when the panel opens. Written from the Swing EDT, read on the client thread.
+	// Whether the GPS side panel is currently shown (sidebar tab selected). It no longer changes how
+	// much a generation does (see routeLimitFor); opening the panel re-checks the auto-compute decision.
 	private volatile boolean altPanelVisible = false;
 	// Whether the client knows the bank's contents this session (the bank container is only populated
 	// once the bank has been opened). Used by the panel to explain why Bank mode finds nothing.
@@ -1028,9 +1031,20 @@ public class ShortestPathPlugin extends Plugin
 		RouteOption displayed = getDisplayedRoute();
 		if (displayed != null)
 		{
+			if (isDisplayedRouteProvisional())
+			{
+				return colourPathCalculating;
+			}
 			return isRouteEndTooFar(displayed) ? colourPathUnreachable : colourPath;
 		}
 		return altGenerationInFlight ? colourPathCalculating : colourPath;
+	}
+
+	/** Whether the overlay's route is the provisional first route of a generation still settling. */
+	public boolean isDisplayedRouteProvisional()
+	{
+		return altGenerationInFlight && selectedRoute == null && committedDisplayRoute == null
+			&& provisionalDisplayRoute != null;
 	}
 
 	/**
@@ -1764,7 +1778,7 @@ public class ShortestPathPlugin extends Plugin
 	{
 		selectedRoute = null;
 		routeCostMultiple = DEFAULT_COST_MULTIPLE;
-		routeLimit = altPanelVisible ? defaultRouteLimit() : 1;
+		routeLimit = defaultRouteLimit();
 		Set<Integer> ends = new HashSet<>(targets);
 		pathStart = start;
 		triggerAlternatives(start, ends);
@@ -2891,13 +2905,15 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return route;
 		}
-		// While a generation is still streaming/re-ranking, hold the last committed route (null for a
-		// fresh destination) rather than flip the overlay through the changing top result — that flash
-		// of one route immediately replaced by another is the "glitchy" search behaviour. The final
-		// top route is committed once the generation settles (see onAlternativeRoutesUpdate).
+		// While a generation is still streaming/re-ranking, hold the last committed route — or, for
+		// a fresh destination, the FIRST route it streamed — rather than flip the overlay through
+		// the changing top result: that flash of one route immediately replaced by another is the
+		// "glitchy" search behaviour. The final top route is committed once the generation settles
+		// (see onAlternativeRoutesUpdate), so the line moves at most once.
 		if (altGenerationInFlight)
 		{
-			return committedDisplayRoute;
+			RouteOption committed = committedDisplayRoute;
+			return committed != null ? committed : provisionalDisplayRoute;
 		}
 		List<RouteOption> routes = alternativeRoutes;
 		if (routes.isEmpty())
@@ -3650,7 +3666,20 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	private int defaultRouteLimit()
 	{
-		int configured = override("defaultRouteCount", config.defaultRouteCount());
+		return routeLimitFor(altPanelVisible, override("defaultRouteCount", config.defaultRouteCount()));
+	}
+
+	/**
+	 * The route budget a generation runs with — the SAME whether the side panel is shown or
+	 * hidden. A panel-hidden run used to search only the primary route (one search, a handful of
+	 * seeds) and found a different "best" often enough that opening the panel visibly changed
+	 * the overlay's route (issue #18, field reports). A full run costs tens to a few hundred
+	 * milliseconds more and streams its first route at the same moment, so the overlay shows that
+	 * one provisionally and settles once — consistently, with or without the panel. The panel
+	 * flag is taken only to state the rule where it is decided. Pure, unit-tested.
+	 */
+	static int routeLimitFor(boolean panelVisible, int configured)
+	{
 		return Math.max(1, Math.min(configured, 25));
 	}
 
@@ -4218,10 +4247,8 @@ public class ShortestPathPlugin extends Plugin
 			return;
 		}
 		Set<Integer> targets = pathTargets;
-		// With the panel hidden, only the primary route is computed — one search; the GPS overlay
-		// needs it. The extra alternatives are searched automatically once the panel is opened
-		// (see setAltPanelVisible).
-		int desiredLimit = altPanelVisible ? defaultRouteLimit() : 1;
+		// The full route budget, panel shown or hidden (see routeLimitFor).
+		int desiredLimit = defaultRouteLimit();
 		if (!shouldAutoCompute(targets, lastAltTargets, lastAltLimit, desiredLimit))
 		{
 			return;
@@ -4233,7 +4260,7 @@ public class ShortestPathPlugin extends Plugin
 	/**
 	 * Whether a new alternatives generation is needed: there is a target, and either it changed since
 	 * the last generation or the last generation was allowed fewer routes than wanted now (a
-	 * primary-only run while the panel was hidden, caught up when it opens). Pure decision, unit-tested.
+	 * generation that ran under a smaller budget than the current one). Pure decision, unit-tested.
 	 */
 	static boolean shouldAutoCompute(Set<Integer> targets, Set<Integer> lastTargets, int lastLimit, int desiredLimit)
 	{
@@ -4241,9 +4268,9 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	/**
-	 * Called by the panel when the GPS sidebar tab is shown or hidden. Opening the panel catches up:
-	 * if the current destination only got its primary route while the panel was hidden, the extra
-	 * alternatives are searched now.
+	 * Called by the panel when the GPS sidebar tab is shown or hidden. Every generation runs with
+	 * the full route budget regardless (see routeLimitFor); opening the panel only re-checks the
+	 * auto-compute decision, so a generation that ran under a smaller budget is widened.
 	 */
 	void setAltPanelVisible(boolean visible)
 	{
@@ -4268,6 +4295,8 @@ public class ShortestPathPlugin extends Plugin
 		{
 			committedDisplayRoute = null;
 		}
+		// A provisional route never outlives its generation: the new one streams its own.
+		provisionalDisplayRoute = null;
 		lastAltStart = start;
 		lastAltTargets = Set.copyOf(ends);
 		lastAltLimit = routeLimit;
@@ -4302,6 +4331,13 @@ public class ShortestPathPlugin extends Plugin
 		alternativeRoutes = ordered;
 		teleportCatalog = catalog;
 		unavailableMethods = unavailable;
+		if (!done && committedDisplayRoute == null && provisionalDisplayRoute == null
+			&& selectedRoute == null && !ordered.isEmpty())
+		{
+			// A fresh destination: put the first route on the overlay now (Calculating colour)
+			// rather than leave it blank for the whole generation; the done-branch settles it.
+			provisionalDisplayRoute = ordered.get(0);
+		}
 		if (done)
 		{
 			// "More" is available while the last generation left routes unshown (cost cap or count
@@ -4337,6 +4373,9 @@ public class ShortestPathPlugin extends Plugin
 				// streaming front-runner.
 				committedDisplayRoute = routes.isEmpty() ? null : routes.get(0);
 			}
+			// Settled route in place: drop the provisional one, then clear the in-flight flag —
+			// the overlay steps provisional -> settled exactly once.
+			provisionalDisplayRoute = null;
 			altGenerationInFlight = false;
 			// The displayed route just settled: publish it to other plugins (postTransports) — this
 			// replaces the classic search's completion callback.

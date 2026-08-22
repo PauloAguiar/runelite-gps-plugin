@@ -410,7 +410,7 @@ public class AlternativeRoutesService
 		// node above walk cost is provably useless — this keeps a dead-end seed teleport from
 		// flooding the map), and its path is the last-resort route appended when the chain doesn't
 		// derive it. Polled non-blockingly so route 1's latency is unchanged. Skipped for
-		// primary-only generations (limit 1, panel hidden): one search, a cap can't pay for itself.
+		// single-route generations (limit 1): one search, a cap can't pay for itself.
 		// Live ceiling for the walk search: unbounded until the chain finds its (cheapest) route, then
 		// dropped to that route's cost band so the walk stops flooding the map when walking is
 		// uncompetitive — which is most queries, since a teleport route usually wins.

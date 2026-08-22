@@ -1,6 +1,7 @@
 package gps;
 
 import java.util.Set;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
@@ -8,7 +9,8 @@ import org.junit.Test;
 /**
  * Covers the auto-compute decision ({@link ShortestPathPlugin#shouldAutoCompute}): alternatives are
  * (re)generated when the target changes or when the last generation was allowed fewer routes than
- * wanted now — the panel-hidden primary-only run is caught up with a full one when the panel opens.
+ * wanted now (its budget grew meanwhile). The route budget itself never depends on whether the
+ * side panel is shown ({@link ShortestPathPlugin#routeLimitFor}).
  */
 public class AutoComputeDecisionTest
 {
@@ -16,6 +18,18 @@ public class AutoComputeDecisionTest
 	private static final Set<Integer> OTHER_TARGETS = Set.of(WorldPointUtil.packWorldPoint(3300, 3300, 0));
 	private static final int FULL = 5;
 	private static final int PRIMARY_ONLY = 1;
+
+	@Test
+	public void routeBudgetDoesNotDependOnThePanel()
+	{
+		// The overlay's route must be the same with the panel open or hidden: both states run the
+		// configured budget, never a primary-only search (the "different route once the panel
+		// opens" experience).
+		assertEquals(ShortestPathPlugin.routeLimitFor(true, 10), ShortestPathPlugin.routeLimitFor(false, 10));
+		assertEquals(10, ShortestPathPlugin.routeLimitFor(false, 10));
+		assertEquals(1, ShortestPathPlugin.routeLimitFor(false, 0));
+		assertEquals(25, ShortestPathPlugin.routeLimitFor(true, 99));
+	}
 
 	@Test
 	public void noTargetsNeverComputes()

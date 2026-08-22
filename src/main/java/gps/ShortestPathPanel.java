@@ -206,8 +206,9 @@ public class ShortestPathPanel extends PluginPanel
 	}
 
 	/**
-	 * Sidebar visibility drives how much work the route generator does: while this panel is hidden
-	 * only the primary route is computed; opening it searches the extra alternatives automatically.
+	 * Sidebar visibility does NOT change how much the route generator does — every generation runs
+	 * the full route budget, so the overlay's route is the same with the panel open or hidden.
+	 * Opening it re-checks the auto-compute decision (a budget that grew meanwhile is widened).
 	 */
 	@Override
 	public void onActivate()
