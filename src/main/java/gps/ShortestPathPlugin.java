@@ -336,13 +336,10 @@ public class ShortestPathPlugin extends Plugin
 	// The route the overlays draw, committed ONLY when a generation settles (its "done" update) —
 	// never mid-stream. While alternatives are still generating and re-ranking, the overlays hold
 	// this instead of flipping through the streaming top result (which flashed a route then instantly
-	// replaced it right after a search). Null for a fresh destination; the overlay then
-	// shows the provisional route (below) in the Calculating colour until the routes settle.
+	// replaced it right after a search). Null for a fresh destination, so the overlay stays clear
+	// — the HUD shows "Finding the best route" (isFindingRoute) — until the routes settle: the
+	// line appears once, as the best route, never as a front-runner that may still change.
 	private volatile RouteOption committedDisplayRoute;
-	// The first route a fresh-destination generation streamed in, shown in the Calculating colour
-	// while the rest of the list computes — held steady (never swapped for a later front-runner)
-	// so the overlay moves at most once: provisional -> settled. Null when nothing is provisional.
-	private volatile RouteOption provisionalDisplayRoute;
 	// Start/targets the alternatives were last generated from, reused by exclusion/mode/show-more edits
 	// so they re-run against the same destination. Volatile: read/written from client thread + Swing EDT.
 	private volatile int lastAltStart = WorldPointUtil.UNDEFINED;
@@ -1031,20 +1028,19 @@ public class ShortestPathPlugin extends Plugin
 		RouteOption displayed = getDisplayedRoute();
 		if (displayed != null)
 		{
-			if (isDisplayedRouteProvisional())
-			{
-				return colourPathCalculating;
-			}
 			return isRouteEndTooFar(displayed) ? colourPathUnreachable : colourPath;
 		}
 		return altGenerationInFlight ? colourPathCalculating : colourPath;
 	}
 
-	/** Whether the overlay's route is the provisional first route of a generation still settling. */
-	public boolean isDisplayedRouteProvisional()
+	/**
+	 * Whether a destination is set and its routes are still computing with nothing on the overlay
+	 * yet — the HUD's "Finding the best route" state. False as soon as a route is displayed (a
+	 * same-destination regeneration keeps the previous route on screen instead).
+	 */
+	public boolean isFindingRoute()
 	{
-		return altGenerationInFlight && selectedRoute == null && committedDisplayRoute == null
-			&& provisionalDisplayRoute != null;
+		return altGenerationInFlight && !pathTargets.isEmpty() && getDisplayedRoute() == null;
 	}
 
 	/**
@@ -2905,15 +2901,14 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return route;
 		}
-		// While a generation is still streaming/re-ranking, hold the last committed route — or, for
-		// a fresh destination, the FIRST route it streamed — rather than flip the overlay through
-		// the changing top result: that flash of one route immediately replaced by another is the
-		// "glitchy" search behaviour. The final top route is committed once the generation settles
-		// (see onAlternativeRoutesUpdate), so the line moves at most once.
+		// While a generation is still streaming/re-ranking, hold the last committed route (null for a
+		// fresh destination: the HUD shows "Finding the best route" and the ground stays clear)
+		// rather than flip the overlay through the changing top result — that flash of one route
+		// immediately replaced by another is the "glitchy" search behaviour. The final top route is
+		// committed once the generation settles (see onAlternativeRoutesUpdate).
 		if (altGenerationInFlight)
 		{
-			RouteOption committed = committedDisplayRoute;
-			return committed != null ? committed : provisionalDisplayRoute;
+			return committedDisplayRoute;
 		}
 		List<RouteOption> routes = alternativeRoutes;
 		if (routes.isEmpty())
@@ -4295,8 +4290,6 @@ public class ShortestPathPlugin extends Plugin
 		{
 			committedDisplayRoute = null;
 		}
-		// A provisional route never outlives its generation: the new one streams its own.
-		provisionalDisplayRoute = null;
 		lastAltStart = start;
 		lastAltTargets = Set.copyOf(ends);
 		lastAltLimit = routeLimit;
@@ -4331,13 +4324,6 @@ public class ShortestPathPlugin extends Plugin
 		alternativeRoutes = ordered;
 		teleportCatalog = catalog;
 		unavailableMethods = unavailable;
-		if (!done && committedDisplayRoute == null && provisionalDisplayRoute == null
-			&& selectedRoute == null && !ordered.isEmpty())
-		{
-			// A fresh destination: put the first route on the overlay now (Calculating colour)
-			// rather than leave it blank for the whole generation; the done-branch settles it.
-			provisionalDisplayRoute = ordered.get(0);
-		}
 		if (done)
 		{
 			// "More" is available while the last generation left routes unshown (cost cap or count
@@ -4373,9 +4359,6 @@ public class ShortestPathPlugin extends Plugin
 				// streaming front-runner.
 				committedDisplayRoute = routes.isEmpty() ? null : routes.get(0);
 			}
-			// Settled route in place: drop the provisional one, then clear the in-flight flag —
-			// the overlay steps provisional -> settled exactly once.
-			provisionalDisplayRoute = null;
 			altGenerationInFlight = false;
 			// The displayed route just settled: publish it to other plugins (postTransports) — this
 			// replaces the classic search's completion callback.

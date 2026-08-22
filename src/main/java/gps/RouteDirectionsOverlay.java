@@ -141,6 +141,13 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		RouteOption route = plugin.getDisplayedRoute();
 		if (route == null)
 		{
+			// A fresh destination whose routes are still computing: the ground stays clear, the
+			// HUD says so — a line that may still change is never shown as the route.
+			if (plugin.isFindingRoute())
+			{
+				arrivalShowing = false;
+				return renderFinding(graphics, now);
+			}
 			// The route just ended: if progress was at the destination moments ago, this is an
 			// arrival — linger with a farewell instead of vanishing mid-glance.
 			if (!arrivalShowing && now - nearEndAtMillis < NEAR_END_GRACE_MILLIS)
@@ -204,13 +211,6 @@ public class RouteDirectionsOverlay extends OverlayPanel
 			lines.add(new Line(plugin.isAutoRecalculateEnabled()
 				? "Off route — recomputing if you drift further"
 				: "Off route", fontNext, OFF_ROUTE, null, null));
-		}
-		// While the generation settles, the route on screen is the first one found — say so, with
-		// a breathing ellipsis, instead of letting a line that may still change pass as final.
-		if (plugin.isDisplayedRouteProvisional())
-		{
-			lines.add(new Line("Finding the best route" + ".".repeat(1 + (int) ((now / 400) % 3)),
-				fontOther, UPCOMING, null, null));
 		}
 
 		// Window: collapse all but the most recent completed step into one summary line, then show
@@ -614,6 +614,20 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	 * wall time the journey took. The whole panel is the dismiss button (see
 	 * {@link #dismissArrivalAt}).
 	 */
+	/** The HUD while a fresh destination's routes compute: a breathing ellipsis, no route yet. */
+	private Dimension renderFinding(Graphics2D graphics, long now)
+	{
+		List<Line> lines = new ArrayList<>();
+		String source = plugin.getTargetSource();
+		if (source != null)
+		{
+			lines.add(new Line("Destination set by " + source, fontOther, UPCOMING, null, null));
+		}
+		lines.add(new Line("Finding the best route" + ".".repeat(1 + (int) ((now / 400) % 3)),
+			fontCurrent, NEXT, null, null, true));
+		return renderPanel(graphics, lines);
+	}
+
 	private Dimension renderArrival(Graphics2D graphics)
 	{
 		List<Line> lines = new ArrayList<>();
