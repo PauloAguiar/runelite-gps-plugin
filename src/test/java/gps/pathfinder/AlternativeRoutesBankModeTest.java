@@ -135,8 +135,10 @@ public class AlternativeRoutesBankModeTest
 
 		Pathfinder charged = runWithBankCost(50);
 		assertTrue("a modest modifier still banks", charged.getPath().stream().anyMatch(PathStep::isBankVisited));
+		// A modifier of 0 is clamped to the one-tick floor (MIN_BANK_PICKUP_COST): the rise from
+		// the "free" run is the modifier less that floor.
 		assertEquals("the modifier must add exactly its value to the banking route's cost",
-			freeCost + 50, charged.getResult().getTotalCost());
+			freeCost + 50 - PathfinderConfig.MIN_BANK_PICKUP_COST, charged.getResult().getTotalCost());
 
 		Pathfinder prohibitive = runWithBankCost(100000);
 		assertFalse("a modifier larger than banking saves must suppress the bank detour",
