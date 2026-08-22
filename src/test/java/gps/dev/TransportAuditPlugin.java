@@ -373,6 +373,13 @@ public class TransportAuditPlugin extends Plugin
 	private net.runelite.client.ui.ClientToolbar clientToolbar;
 
 	private TransportAuditPanel panel;
+	// Varbit heatmap: its own sidebar tab, fed by onVarbitChanged, redrawn each tick.
+	private final VarbitWatch varbitWatch = new VarbitWatch();
+	private VarbitWatchPanel varbitPanel;
+	private net.runelite.client.ui.NavigationButton varbitNavButton;
+	/** Last value seen per varbit / varp, so a change can report old -> new. */
+	private final java.util.Map<Integer, Integer> lastVarbitValues = new java.util.HashMap<>();
+	private final java.util.Map<Integer, Integer> lastVarpValues = new java.util.HashMap<>();
 	private net.runelite.client.ui.NavigationButton navButton;
 
 	// Keyed by packed template tile + id so re-spawns don't duplicate; cleared per scene load.
@@ -600,6 +607,17 @@ public class TransportAuditPlugin extends Plugin
 				.build();
 		}
 		clientToolbar.addNavigation(navButton);
+		if (varbitPanel == null)
+		{
+			varbitPanel = new VarbitWatchPanel(varbitWatch, this::resolveVarbitComposition, this::dumpVarbitWatch);
+			varbitNavButton = net.runelite.client.ui.NavigationButton.builder()
+				.tooltip("GPS varbit watch (dev)")
+				.icon(navIcon())
+				.priority(72)
+				.panel(varbitPanel)
+				.build();
+		}
+		clientToolbar.addNavigation(varbitNavButton);
 		// Plugin toggled on with a scene already loaded: sweep it once (spawn events only cover
 		// objects loaded after this point).
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
@@ -616,7 +634,94 @@ public class TransportAuditPlugin extends Plugin
 		{
 			clientToolbar.removeNavigation(navButton);
 		}
+		if (varbitNavButton != null)
+		{
+			clientToolbar.removeNavigation(varbitNavButton);
+		}
 		findings.clear();
+	}
+
+	@Subscribe
+	public void onVarbitChanged(net.runelite.api.events.VarbitChanged event)
+	{
+		if (varbitWatch.isPaused())
+		{
+			return;
+		}
+		int tick = client.getTickCount();
+		long now = System.currentTimeMillis();
+		int x = 0;
+		int y = 0;
+		int plane = 0;
+		if (client.getLocalPlayer() != null)
+		{
+			net.runelite.api.coords.WorldPoint at = client.getLocalPlayer().getWorldLocation();
+			x = at.getX();
+			y = at.getY();
+			plane = at.getPlane();
+		}
+		// A varp event carries varbitId -1; the varbits cut from that varp arrive as their own
+		// events, so both the container and its bits get rows.
+		if (event.getVarbitId() >= 0)
+		{
+			Integer old = lastVarbitValues.put(event.getVarbitId(), event.getValue());
+			varbitWatch.record(true, event.getVarbitId(), old == null ? VarbitWatch.UNKNOWN : old,
+				event.getValue(), tick, now, x, y, plane);
+		}
+		else if (event.getVarpId() >= 0)
+		{
+			int value = client.getVarpValue(event.getVarpId());
+			Integer old = lastVarpValues.put(event.getVarpId(), value);
+			varbitWatch.record(false, event.getVarpId(), old == null ? VarbitWatch.UNKNOWN : old,
+				value, tick, now, x, y, plane);
+		}
+	}
+
+	/** The selected varbit's varp and bit range, read on the client thread, handed back to the panel. */
+	private void resolveVarbitComposition(VarbitWatchPanel.Detail detail)
+	{
+		if (!detail.varbit)
+		{
+			detail.composition = "varp " + detail.id + " (whole player variable)";
+			varbitPanel.showComposition(detail);
+			return;
+		}
+		clientThread.invokeLater(() ->
+		{
+			try
+			{
+				net.runelite.api.VarbitComposition composition = client.getVarbit(detail.id);
+				detail.composition = composition == null ? "no composition in the cache"
+					: "varp " + composition.getIndex() + " bits " + composition.getLeastSignificantBit()
+					+ "-" + composition.getMostSignificantBit() + " · now " + client.getVarbitValue(detail.id);
+			}
+			catch (RuntimeException e)
+			{
+				detail.composition = "composition lookup failed: " + e.getMessage();
+			}
+			varbitPanel.showComposition(detail);
+		});
+	}
+
+	/** Everything the watch holds, with histories, to gps-debug/varbit-watch-<stamp>.tsv. */
+	private void dumpVarbitWatch()
+	{
+		try
+		{
+			java.io.File dir = new java.io.File(net.runelite.client.RuneLite.RUNELITE_DIR, "gps-debug");
+			dir.mkdirs();
+			String stamp = new java.text.SimpleDateFormat("yyyyMMdd-HHmmss").format(new java.util.Date());
+			java.io.File out = new java.io.File(dir, "varbit-watch-" + stamp + ".tsv");
+			try (java.io.FileWriter writer = new java.io.FileWriter(out))
+			{
+				writer.write(varbitWatch.dump(client.getTickCount()));
+			}
+			varbitPanel.setStatus("wrote " + out.getName());
+		}
+		catch (java.io.IOException e)
+		{
+			varbitPanel.setStatus("dump failed: " + e.getMessage());
+		}
 	}
 
 	/** A 16px warning-triangle sidebar icon, drawn here so the dev plugin needs no resources. */
@@ -1375,6 +1480,11 @@ public class TransportAuditPlugin extends Plugin
 			return;
 		}
 		pushPanelSnapshot();
+		if (varbitPanel != null)
+		{
+			final int tick = client.getTickCount();
+			javax.swing.SwingUtilities.invokeLater(() -> varbitPanel.refresh(tick));
+		}
 		refreshCollisionCells();
 		sampleBoatWake();
 		if (durationWatch != null)
