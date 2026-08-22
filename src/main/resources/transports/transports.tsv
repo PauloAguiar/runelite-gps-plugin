@@ -2453,8 +2453,8 @@
 3061 3376 0	3058 9776 0	Climb-down Staircase 16664							
 3728 5692 0	3060 9766 0	Exit Tunnel 26655							
 3060 9766 0	3728 5692 0	Enter Cave 26654							
-3755 5673 0	3755 5674 1	Climb Ladder 19047				4					~geometry ~duration
-3755 5674 1	3755 5673 0	Climb Ladder 19049				2					~geometry ~duration
+3755 5673 0	3755 5674 1	Climb Ladder 19047						4			~geometry ~duration
+3755 5674 1	3755 5673 0	Climb Ladder 19049						2			~geometry ~duration
 									
 # Mining Guild									
 # Two entrances, both require 60 Mining									
@@ -7172,7 +7172,7 @@
 2423 9660 0	2418 9674 0	Climb Rockpile 3307						4	
 2418 9676 0	2423 9660 0	Climb-down Well 3264						4	
 2392 9646 0	2393 9651 0	Enter Cave 3217						2	
-2393 9651 0	2392 9646 0	Loose Mud 3216		Spade				1	Use Spade
+2393 9651 0	2392 9646 0	Loose Mud 3216		SPADE=1				1	Use Spade
 2374 9638 0	2375 9644 0	Cross Ledge 3238						8	
 2375 9644 0	2374 9638 0	Cross Ledge 3238						8	
 2398 9632 0	2399 9634 0	Cross Stone bridge 3276						6	
