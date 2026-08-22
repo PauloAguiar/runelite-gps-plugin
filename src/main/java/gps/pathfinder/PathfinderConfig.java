@@ -1070,6 +1070,8 @@ public class PathfinderConfig
 				String items = itemRequirementNames(transport.getItemRequirements());
 				return items == null ? null : "In your bank: " + items;
 			}
+			case LOCKED:
+				return mountBuilt(transport) ? null : "Not built in your house (House section)";
 			default:
 				return null;
 		}
@@ -1215,6 +1217,11 @@ public class PathfinderConfig
 			return MethodAvailability.MISSING_QUEST;
 		}
 
+		// A mount the player says isn't built: present in the catalog, locked.
+		if (!mountBuilt(transport))
+		{
+			return MethodAvailability.LOCKED;
+		}
 		// Per-transport unlock gates.
 		if (!hasRequiredLevels(transport))
 		{
@@ -1542,6 +1549,10 @@ public class PathfinderConfig
 		// planning mode ("Everything"); the "All available" variant keeps them.
 		if (!planningMode)
 		{
+			if (!mountBuilt(transport))
+			{
+				return false;
+			}
 			if (!hasRequiredLevels(transport))
 			{
 				return false;
@@ -1736,6 +1747,37 @@ public class PathfinderConfig
 	}
 
 	/**
+	 * False for a mounted-item row (glory / Xeric's / digsite / mythical cape) whose House
+	 * toggle says it isn't built; true for everything else. An unlock-class gate: the row
+	 * keeps its catalog entry with a lock and the 'Everything' planning mode ignores it.
+	 */
+	private boolean mountBuilt(Transport transport)
+	{
+		String objectInfo = transport.getObjectInfo();
+		if (!TransportType.TELEPORTATION_BOX.equals(transport.getType()) || objectInfo == null)
+		{
+			return true;
+		}
+		if (objectInfo.contains("Amulet of Glory"))
+		{
+			return pohMountGlory;
+		}
+		if (objectInfo.contains("Xeric's Talisman"))
+		{
+			return pohMountXerics;
+		}
+		if (objectInfo.contains("Digsite"))
+		{
+			return pohMountDigsite;
+		}
+		if (objectInfo.contains("Mythical cape"))
+		{
+			return pohMountMythical;
+		}
+		return true;
+	}
+
+	/**
 	 * Checks if a TELEPORTATION_BOX transport should be used based on POH settings.
 	 * Handles jewellery box tiers and mounted items.
 	 */
@@ -1762,25 +1804,9 @@ public class PathfinderConfig
 			{
 				return false;
 			}
-			// Each mount is its own assumption under the master toggle — only the ones the
-			// player says are built exist for routing, in every mode (furniture is structural).
-			if (!usePohMountedItems)
-			{
-				return false;
-			}
-			if (isMountedGlory)
-			{
-				return pohMountGlory;
-			}
-			if (objectInfo.contains("Xeric's Talisman"))
-			{
-				return pohMountXerics;
-			}
-			if (objectInfo.contains("Digsite"))
-			{
-				return pohMountDigsite;
-			}
-			return pohMountMythical;
+			// Per-mount choice is an UNLOCK, not structure: the row stays in the catalog with a
+			// lock (see mountBuilt), so nothing vanishes when a mount is unticked.
+			return usePohMountedItems;
 		}
 
 		// Filter jewellery boxes by tier
