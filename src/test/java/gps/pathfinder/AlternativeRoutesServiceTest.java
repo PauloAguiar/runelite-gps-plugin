@@ -367,7 +367,8 @@ public class AlternativeRoutesServiceTest
 		// Run the same bank-pickup scenario twice: first with no bank-pickup weight, then with a
 		// 60-step weight (small enough that banking still beats the ~147-tile walk, so the route isn't
 		// dropped by the stop-at-walk rule). The banked route's cost must rise by exactly the weight —
-		// charged once on entering the banked state, not per edge.
+		// charged once on entering the banked state, not per edge. The zero run is clamped to the
+		// one-tick floor (MIN_BANK_PICKUP_COST), so the rise is the weight less that floor.
 		when(config.costBankPickup()).thenReturn(0, 60);
 		int varrockCentre = WorldPointUtil.packWorldPoint(3213, 3424, 0);
 		int cowbellDestination = WorldPointUtil.packWorldPoint(3259, 3277, 0);
@@ -386,7 +387,7 @@ public class AlternativeRoutesServiceTest
 		assertTrue("Baseline banked route should cost something, got " + baseline, baseline > 0);
 		assertTrue("Banked route must carry the 60-step bank-pickup weight exactly once ("
 				+ baseline + " -> " + weighted + ")",
-			weighted == baseline + 60);
+			weighted == baseline + 60 - PathfinderConfig.MIN_BANK_PICKUP_COST);
 	}
 
 	/**

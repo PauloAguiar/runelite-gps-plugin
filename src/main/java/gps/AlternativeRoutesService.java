@@ -558,8 +558,8 @@ public class AlternativeRoutesService
 				chainExhausted = true;
 				break;
 			}
-			routes.add(new RouteOption(path, methods, scan.methodEdges, scan.methodDurations,
-				totalCost, scan.rawCost, reached, scan.bankGated, scan.walkBefore, scan.trailingWalk));
+			routes.add(new RouteOption(withoutIdleBankFlip(path, scan), methods, scan.methodEdges, scan.methodDurations,
+				totalCost, scan.rawCost, reached, scan.bankGated, scan.bankGatedTransports, scan.walkBefore, scan.trailingWalk));
 			// The chain's first route is the cheapest; drop the concurrent walk search's ceiling to the
 			// search sanity ceiling (twice the display band). A walk costlier than that can never be
 			// shown, so a walk to an unreachable/far target stops instead of flooding the map. Only when
@@ -1034,7 +1034,8 @@ public class AlternativeRoutesService
 					}
 					routes.remove(evict);
 				}
-				routes.add(new RouteOption(seedResult.path, seedResult.scan.methods, seedResult.scan.methodEdges,
+				routes.add(new RouteOption(withoutIdleBankFlip(seedResult.path, seedResult.scan),
+					seedResult.scan.methods, seedResult.scan.methodEdges,
 					seedResult.scan.methodDurations, seedResult.totalCost, seedResult.scan.rawCost,
 					seedResult.reached, seedResult.scan.bankGated, seedResult.scan.walkBefore,
 					seedResult.scan.trailingWalk));
@@ -1310,8 +1311,8 @@ public class AlternativeRoutesService
 			return null;
 		}
 		boolean reached = result.isReached();
-		RouteOption route = new RouteOption(path, scan.methods, scan.methodEdges, scan.methodDurations,
-			result.getTotalCost(), scan.rawCost, reached, scan.bankGated, scan.walkBefore, scan.trailingWalk);
+		RouteOption route = new RouteOption(withoutIdleBankFlip(path, scan), scan.methods, scan.methodEdges, scan.methodDurations,
+			result.getTotalCost(), scan.rawCost, reached, scan.bankGated, scan.bankGatedTransports, scan.walkBefore, scan.trailingWalk);
 		// Only a walk that actually reaches the target is a valid cost ceiling; a closest-tile
 		// partial walk (island target) must not constrain teleport routes that can truly get there.
 		int cap = reached ? result.getTotalCost() : Integer.MAX_VALUE;
@@ -1383,9 +1384,9 @@ public class AlternativeRoutesService
 			}
 			// The turnaround is the outbound path's last tile (the destination); the return leg's
 			// duplicated first step was dropped, so outbound indexes are unshifted in fullPath.
-			merged.add(new RouteOption(fullPath, scan.methods, scan.methodEdges, scan.methodDurations,
+			merged.add(new RouteOption(withoutIdleBankFlip(fullPath, scan), scan.methods, scan.methodEdges, scan.methodDurations,
 				oneWay.getTotalCost() + result.getTotalCost(), scan.rawCost, oneWay.isReached(),
-				scan.bankGated, scan.walkBefore, scan.trailingWalk, outPath.size() - 1));
+				scan.bankGated, scan.bankGatedTransports, scan.walkBefore, scan.trailingWalk, outPath.size() - 1));
 			merged.sort(Comparator.comparingInt(RouteOption::getTotalCost));
 			emit(gen, listener, new ArrayList<>(merged), catalog, unavailable, false);
 		}
@@ -1629,9 +1630,13 @@ public class AlternativeRoutesService
 		List<Integer> methodEdges = new ArrayList<>();
 		List<Integer> methodDurations = new ArrayList<>();
 		Set<TeleportMethod> bankGated = new LinkedHashSet<>();
+		// Plain connectors (jungle bushes, a dig, a locked door) that ALSO only became usable
+		// after the bank: not methods, so never on the card - but the withdraw step must name
+		// their item or the route silently assumes a bank stop (issue #21: the machete).
+		List<Transport> bankGatedTransports = new ArrayList<>();
 		if (path == null)
 		{
-			return new MethodScan(methods, methodEdges, methodDurations, bankGated, 0, new ArrayList<>(), 0);
+			return new MethodScan(methods, methodEdges, methodDurations, bankGated, bankGatedTransports, 0, new ArrayList<>(), 0);
 		}
 		int rawCost = 0;
 		// Walking-leg lengths: tiles walked before each method (parallel to `methods`), and after the
@@ -1665,6 +1670,12 @@ public class AlternativeRoutesService
 			Transport edgeTransport = chosen != null
 				? chosen
 				: matchAnyTransport(config, from.getPackedPosition(), to.getPackedPosition(), bankVisited);
+			if (chosen == null && edgeTransport != null && bankVisited
+				&& edgeTransport.getItemRequirements() != null
+				&& !availableWithoutBank(config, from.getPackedPosition(), edgeTransport))
+			{
+				bankGatedTransports.add(edgeTransport);
+			}
 			int edgeCost = edgeTransport != null
 				? CostUnits.fromTicks(edgeTransport.getDuration())
 				: WorldPointUtil.distanceBetween(from.getPackedPosition(), to.getPackedPosition());
@@ -1674,7 +1685,42 @@ public class AlternativeRoutesService
 				legSteps += edgeCost;
 			}
 		}
-		return new MethodScan(methods, methodEdges, methodDurations, bankGated, rawCost, walkBefore, legSteps);
+		return new MethodScan(methods, methodEdges, methodDurations, bankGated, bankGatedTransports, rawCost, walkBefore, legSteps);
+	}
+
+	/**
+	 * A bank flip that unlocked nothing is not a bank stop (issues #20 / #7). The search may
+	 * enter the banked state on a bank tile the path merely crosses; when no method and no
+	 * connector after it needed a banked item, the flip is noise — and downstream a banked step
+	 * READS as a withdrawal (the overlay's pickup hint and bank glyph, the capture JSON). The
+	 * flags are cleared in place of the steps; no step is dropped, so the scan's edge indexes
+	 * still line up with the path.
+	 */
+	static List<PathStep> withoutIdleBankFlip(List<PathStep> path, MethodScan scan)
+	{
+		if (path == null || !scan.bankGated.isEmpty() || !scan.bankGatedTransports.isEmpty())
+		{
+			return path;
+		}
+		boolean flipped = false;
+		for (PathStep step : path)
+		{
+			if (step.isBankVisited())
+			{
+				flipped = true;
+				break;
+			}
+		}
+		if (!flipped)
+		{
+			return path;
+		}
+		List<PathStep> plain = new ArrayList<>(path.size());
+		for (PathStep step : path)
+		{
+			plain.add(step.isBankVisited() ? new PathStep(step.getPackedPosition(), false) : step);
+		}
+		return plain;
 	}
 
 	private static boolean availableWithoutBank(PathfinderConfig config, int origin, Transport transport)
@@ -1707,6 +1753,7 @@ public class AlternativeRoutesService
 		// Travel time of each method's transport in game ticks (parallel to methods), for ETAs.
 		private final List<Integer> methodDurations;
 		private final Set<TeleportMethod> bankGated;
+		private final List<Transport> bankGatedTransports;
 		// Path cost without any configured weights, in CostUnits (run-tiles, 0.3s each): walk
 		// distance plus time-normalized transport travel times. This is the route's ETA.
 		private final int rawCost;
@@ -1715,12 +1762,14 @@ public class AlternativeRoutesService
 		private final int trailingWalk;
 
 		MethodScan(List<TeleportMethod> methods, List<Integer> methodEdges, List<Integer> methodDurations,
-			Set<TeleportMethod> bankGated, int rawCost, List<Integer> walkBefore, int trailingWalk)
+			Set<TeleportMethod> bankGated, List<Transport> bankGatedTransports, int rawCost,
+			List<Integer> walkBefore, int trailingWalk)
 		{
 			this.methods = methods;
 			this.methodEdges = methodEdges;
 			this.methodDurations = methodDurations;
 			this.bankGated = bankGated;
+			this.bankGatedTransports = bankGatedTransports;
 			this.rawCost = rawCost;
 			this.walkBefore = walkBefore;
 			this.trailingWalk = trailingWalk;

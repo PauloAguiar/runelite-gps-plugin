@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Set;
 import lombok.Getter;
 import gps.pathfinder.PathStep;
+import gps.transport.Transport;
 
 /**
  * One alternative route to the target, produced by {@link AlternativeRoutesService}. Each route is a
@@ -54,6 +55,11 @@ public final class RouteOption
 	 * bank visit. Lets the panel say <em>which</em> method the bank detour is for.
 	 */
 	private final Set<TeleportMethod> bankMethods;
+	/**
+	 * Plain connectors (not methods) the route can only use after the bank - a jungle bush
+	 * needing a banked machete. Named in the withdraw step; never on the card.
+	 */
+	private final List<Transport> bankTransports;
 	/**
 	 * Tiles walked before each method, parallel to {@link #methods} (walking to a minecart, a fairy
 	 * ring, a bank, ...). Plain connectors along the way (doors, stairs, shortcuts) count into the leg.
@@ -107,12 +113,28 @@ public final class RouteOption
 		List<Integer> walkBeforeSteps, int trailingWalkSteps)
 	{
 		this(path, methods, methodEdgeIndexes, methodDurations, totalCost, rawCost, reached, bankMethods,
-			walkBeforeSteps, trailingWalkSteps, -1);
+			List.of(), walkBeforeSteps, trailingWalkSteps, -1);
+	}
+
+	public RouteOption(List<PathStep> path, List<TeleportMethod> methods, List<Integer> methodEdgeIndexes,
+		List<Integer> methodDurations, int totalCost, int rawCost, boolean reached, Set<TeleportMethod> bankMethods,
+		List<Transport> bankTransports, List<Integer> walkBeforeSteps, int trailingWalkSteps)
+	{
+		this(path, methods, methodEdgeIndexes, methodDurations, totalCost, rawCost, reached, bankMethods,
+			bankTransports, walkBeforeSteps, trailingWalkSteps, -1);
 	}
 
 	public RouteOption(List<PathStep> path, List<TeleportMethod> methods, List<Integer> methodEdgeIndexes,
 		List<Integer> methodDurations, int totalCost, int rawCost, boolean reached, Set<TeleportMethod> bankMethods,
 		List<Integer> walkBeforeSteps, int trailingWalkSteps, int turnaroundIndex)
+	{
+		this(path, methods, methodEdgeIndexes, methodDurations, totalCost, rawCost, reached, bankMethods,
+			List.of(), walkBeforeSteps, trailingWalkSteps, turnaroundIndex);
+	}
+
+	public RouteOption(List<PathStep> path, List<TeleportMethod> methods, List<Integer> methodEdgeIndexes,
+		List<Integer> methodDurations, int totalCost, int rawCost, boolean reached, Set<TeleportMethod> bankMethods,
+		List<Transport> bankTransports, List<Integer> walkBeforeSteps, int trailingWalkSteps, int turnaroundIndex)
 	{
 		this.path = path;
 		this.methods = methods;
@@ -122,6 +144,7 @@ public final class RouteOption
 		this.rawCost = rawCost;
 		this.reached = reached;
 		this.bankMethods = bankMethods;
+		this.bankTransports = bankTransports == null ? List.of() : bankTransports;
 		this.walkBeforeSteps = walkBeforeSteps;
 		this.trailingWalkSteps = trailingWalkSteps;
 		this.turnaroundIndex = turnaroundIndex;
@@ -146,7 +169,7 @@ public final class RouteOption
 	 */
 	public boolean isViaBank()
 	{
-		return !bankMethods.isEmpty();
+		return !bankMethods.isEmpty() || !bankTransports.isEmpty();
 	}
 
 	public boolean isWalkOnly()

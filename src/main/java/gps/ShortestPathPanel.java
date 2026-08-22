@@ -55,6 +55,7 @@ import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.ui.components.IconTextField;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.LinkBrowser;
+import gps.transport.Transport;
 import gps.transport.TransportType;
 
 /**
@@ -1015,8 +1016,19 @@ public class ShortestPathPanel extends PluginPanel
 			// resolved on the CLIENT thread (item names come from getItemDefinition, which
 			// asserts it; the EDT crash of 2026-08-15) and swapped in when ready.
 			JLabel bankChip = new JLabel(RouteIcons.IN_BANK);
+			// Connectors (a jungle bush, a dig) are bank-gated too but have no method row — the
+			// placeholder names them by object so the chip never reads "for: <nothing>".
+			StringBuilder needs = new StringBuilder(joinLabels(route.getBankMethods()));
+			for (Transport connector : route.getBankTransports())
+			{
+				String text = RouteDirections.objectText(connector);
+				if (text != null && needs.indexOf(text) < 0)
+				{
+					needs.append(needs.length() == 0 ? "" : ", ").append(text);
+				}
+			}
 			bankChip.setToolTipText("<html>Walks to a bank first — withdraws the item for: <b>"
-				+ escapeHtml(joinLabels(route.getBankMethods())) + "</b></html>");
+				+ escapeHtml(needs.toString()) + "</b></html>");
 			plugin.getClientThread().invokeLater(() ->
 			{
 				List<String> pickups = RouteDirections.pickupLines(plugin, route);

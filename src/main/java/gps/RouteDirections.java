@@ -411,7 +411,7 @@ final class RouteDirections
 		List<PathStep> path, int pathIndex)
 	{
 		List<String> details = pickupLines(plugin, route);
-		int ticks = bankWithdrawTicks(plugin.getGpsConfig().costBankPickup());
+		int ticks = bankWithdrawTicks(plugin.getPathfinderConfig().getBankPickupCost());
 		if (details.isEmpty())
 		{
 			return new Step(withdrawText(plugin, route, path, pathIndex), pathIndex, pathIndex, ticks);
@@ -426,6 +426,16 @@ final class RouteDirections
 	static List<String> pickupLines(ShortestPathPlugin plugin, RouteOption route)
 	{
 		List<String> details = new ArrayList<>();
+		// Connectors first: they are the ones nobody would otherwise know about.
+		for (Transport connector : route.getBankTransports())
+		{
+			String label = objectText(connector);
+			String line = pickupLine(plugin, List.of(connector), label == null ? "the way" : label);
+			if (line != null && !details.contains(line))
+			{
+				details.add(line);
+			}
+		}
 		for (TeleportMethod method : route.getMethods())
 		{
 			if (!route.getBankMethods().contains(method))

@@ -187,6 +187,15 @@ public class PathfinderConfig
 	 */
 	@Getter
 	private int bankPickupCost;
+	/**
+	 * Floor for a non-negative bank pickup cost: one game tick. Entering the banked state is a
+	 * same-tile edge on every bank tile a path crosses; at a cost of 0 it TIES with staying
+	 * un-banked and the tie can land on the banked side — a bank stop the route never needed,
+	 * which the overlay then reads as a withdrawal (issues #20 / #7). A tick is below any real
+	 * withdraw and only settles the tie. A negative cost is the user asking to favour banking
+	 * and is left alone.
+	 */
+	public static final int MIN_BANK_PICKUP_COST = CostUnits.fromTicks(1);
 	@Getter
 	private boolean isOnSailingBoat;
 
@@ -719,7 +728,9 @@ public class PathfinderConfig
 
 		// Note: Transport type costs are now managed by transportTypeConfig.getCost()
 		costConsumableTeleportationItems = ShortestPathPlugin.override("costConsumableTeleportationItems", config.costConsumableTeleportationItems());
-		bankPickupCost = ShortestPathPlugin.override("costBankPickup", config.costBankPickup());
+		int configuredBankPickup = ShortestPathPlugin.override("costBankPickup", config.costBankPickup());
+		bankPickupCost = configuredBankPickup < 0
+			? configuredBankPickup : Math.max(MIN_BANK_PICKUP_COST, configuredBankPickup);
 
 		// Balloon log storage counts (chat-parsed by the plugin; see BalloonLogStorage). Outside
 		// smart mode the storage is not tracked, so flights fall back to inventory checks only.
