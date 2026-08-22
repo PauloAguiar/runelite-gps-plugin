@@ -151,6 +151,11 @@ public class TransportDataLintTest
 				if ("Respawn Portal (Lumbridge)".equals(transport.getDisplayInfo()))
 				{
 					Assert.assertTrue("the default respawn has no quest gate", transport.getQuests().isEmpty());
+					// The *_SPAWN varbits are SELECTION flags (one per respawn point, field-verified
+					// 2026-08-16: setting Falador flips FALADOR_SPAWN 0 -> 1); Lumbridge is the
+					// default when none is set, so its row must require every known flag to be 0.
+					Assert.assertEquals("Lumbridge must be gated on all six selection flags", 6,
+						transport.getVarbits().size());
 				}
 			}
 		}
