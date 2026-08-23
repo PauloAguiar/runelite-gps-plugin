@@ -561,6 +561,7 @@ public class ShortestPathPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
+		clearUnsurfacedTypeToggles();
 		cacheConfigValues();
 
 		pathfinderConfig = new PathfinderConfig(client, config);
@@ -2875,6 +2876,34 @@ public class ShortestPathPlugin extends Plugin
 	public long getJourneyStartMillis()
 	{
 		return journeyStartMillis;
+	}
+
+	/**
+	 * Hidden type-toggle keys with NO control in the panel: a value stored by an old build (or by
+	 * upstream Shortest Path's visible config, pre-fork) is unreachable and silently overrides the
+	 * on-by-default decision — a field report had "useCharterShips=false" with no checkbox
+	 * anywhere to see or undo it, and charters simply never appeared. Cleared at startup so the
+	 * defaults apply; per-method control is the catalog's exclusions. Panel-backed toggles
+	 * (sailing, balloons, POH and its variants, spirit trees) and the deliberate seasonal master
+	 * switch are NOT listed here.
+	 */
+	static final String[] UNSURFACED_TYPE_TOGGLES = {
+		"useAgilityShortcuts", "useGrappleShortcuts", "useBoats", "useCanoes", "useCharterShips",
+		"useShips", "useFairyRings", "useGnomeGliders", "useMagicCarpets", "useMagicMushtrees",
+		"useMinecarts", "useMountainGuides", "useQuetzals", "useTeleportationLevers",
+		"useTeleportationPortals", "useTeleportationSpells", "useTeleportationMinigames",
+		"useWildernessObelisks"};
+
+	private void clearUnsurfacedTypeToggles()
+	{
+		for (String key : UNSURFACED_TYPE_TOGGLES)
+		{
+			if (configManager.getConfiguration(CONFIG_GROUP, key) != null)
+			{
+				log.info("clearing stranded hidden toggle {} (no panel control; the default applies)", key);
+				configManager.unsetConfiguration(CONFIG_GROUP, key);
+			}
+		}
 	}
 
 	/** Re-arms the journey timer so it recounts from the player's next movement. */

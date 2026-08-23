@@ -101,7 +101,17 @@ public final class TeleportMethod
 		{
 			// A mounted item under the jewellery-box type names its furniture, or the catalog
 			// shows "2: Glade" under a "Jewellery box" heading it never belonged to.
-			return mount != null ? mount + ": " + displayInfo : displayInfo;
+			if (mount != null)
+			{
+				return mount + ": " + displayInfo;
+			}
+			// Charters share the "Boats & ships" bucket with ships to the same towns — two bare
+			// "Port Sarim" rows were indistinguishable, and searching "charter" found nothing.
+			if (TransportType.CHARTER_SHIP.equals(type))
+			{
+				return "Charter: " + displayInfo;
+			}
+			return displayInfo;
 		}
 		int x = WorldPointUtil.unpackWorldX(destination);
 		int y = WorldPointUtil.unpackWorldY(destination);

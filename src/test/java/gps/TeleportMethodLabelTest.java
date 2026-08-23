@@ -42,6 +42,21 @@ public class TeleportMethodLabelTest
 	}
 
 	@Test
+	public void charterNamesItself()
+	{
+		Transport charter = new Transport.TransportBuilder()
+			.origin(WorldPointUtil.packWorldPoint(1743, 3136, 0))
+			.destination(WorldPointUtil.packWorldPoint(3038, 3192, 0))
+			.type(TransportType.CHARTER_SHIP)
+			.objectInfo("Charter Trader Crewmember 1330")
+			.displayInfo("Port Sarim")
+			.build();
+		TeleportMethod method = TeleportMethod.fromTransport(charter);
+		assertEquals("Charter: Port Sarim", method.label());
+		assertEquals("Charter ship to Port Sarim", method.routeLabel());
+	}
+
+	@Test
 	public void mountIsMetadataNotIdentity()
 	{
 		TeleportMethod a = TeleportMethod.fromTransport(box("Glade Xeric's Talisman 33412", "2: Glade"));
