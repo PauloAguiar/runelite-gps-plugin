@@ -161,4 +161,51 @@ public class TransportDataLintTest
 		}
 		Assert.assertTrue("the Prifddinas respawn row must exist", found);
 	}
+	/**
+	 * The Monkey Madness I chain to Ape Atoll (Daero -> Waydar's glider -> Lumdo's boat) was
+	 * ungated and its two flights were plain rows, so anyone got routed through it and the legs
+	 * showed as "Travel Waydar" / "Travel Lumdo" instead of a glider and a boat. Quest Helper's
+	 * varbits gate it (MM_DAERO >= 7 after the hangar puzzle, MM_LUMDO >= 3 after Waydar's
+	 * Crash Island briefing), and the flights/boat are method-typed so they have catalog entries
+	 * and "Glider to Crash Island" / "Boat to Ape Atoll" wording.
+	 */
+	@Test
+	public void monkeyMadnessChainIsGatedAndTyped()
+	{
+		Map<String, List<Transport>> byObject = new HashMap<>();
+		for (Set<Transport> set : TransportLoader.loadAllFromResources().values())
+		{
+			for (Transport transport : set)
+			{
+				String info = transport.getObjectInfo();
+				if (info != null && (info.startsWith("Travel Daero") || info.startsWith("Travel Waydar")
+					|| info.startsWith("Travel Lumdo")))
+				{
+					byObject.computeIfAbsent(info.substring(0, info.lastIndexOf(' ')), k -> new ArrayList<>()).add(transport);
+				}
+			}
+		}
+		Assert.assertEquals("Daero's ride", 1, byObject.getOrDefault("Travel Daero", List.of()).size());
+		Assert.assertEquals("Waydar's two flights", 2, byObject.getOrDefault("Travel Waydar", List.of()).size());
+		Assert.assertEquals("Lumdo's boat both ways", 2, byObject.getOrDefault("Travel Lumdo", List.of()).size());
+		for (Transport t : byObject.get("Travel Daero"))
+		{
+			Assert.assertEquals(1, t.getVarbits().size());
+		}
+		for (Transport t : byObject.get("Travel Waydar"))
+		{
+			Assert.assertEquals("a glider flight, not a plain row", TransportType.GNOME_GLIDER, t.getType());
+			Assert.assertTrue("named destination: " + t.getDisplayInfo(),
+				"Crash Island".equals(t.getDisplayInfo()) || "Gnome Stronghold (Waydar)".equals(t.getDisplayInfo()));
+			Assert.assertEquals(1, t.getVarbits().size());
+		}
+		for (Transport t : byObject.get("Travel Lumdo"))
+		{
+			Assert.assertEquals(TransportType.BOAT, t.getType());
+			Assert.assertTrue("named destination: " + t.getDisplayInfo(),
+				"Ape Atoll".equals(t.getDisplayInfo()) || "Crash Island".equals(t.getDisplayInfo()));
+			Assert.assertEquals(1, t.getVarbits().size());
+		}
+	}
 }
+

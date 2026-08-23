@@ -1,4 +1,4 @@
-# Origin	Destination	menuOption menuTarget objectID	Quests	Duration	Display info
+# Origin	Destination	menuOption menuTarget objectID	Quests	Duration	Display info	Varbits
 # Ta Quir Priw (Gnome Stronghold)					
 2465 3501 3		Glider Captain Errdo 10467	The Grand Tree		
 					
@@ -40,3 +40,8 @@
 	2550 2970 0		The Grand Tree;One Small Favour	4	Lemantolly Undri
 # Ookookolly Undri (Ape Atoll)					
 	2711 2803 0		The Grand Tree;Monkey Madness II	4	Ookookolly Undri
+						
+# Waydar (Monkey Madness I): the hangar glider to Crash Island and the flight back to the Stronghold,						
+# once Daero's puzzle is done (MM_DAERO >= 7). Explicit rows: not part of the glider network.						
+2649 4518 0	2894 2726 0	Travel Waydar 1446		4	Crash Island	123>6
+2896 2727 0	2393 3465 0	Travel Waydar 1446		4	Gnome Stronghold (Waydar)	123>6

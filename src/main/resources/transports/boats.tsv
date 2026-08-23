@@ -86,8 +86,8 @@
 1779 3417 0	1784 3458 0	Travel Sandicrahb 7484					5	Hosidius
 								
 # Crash Island, Ape Atoll								
-2892 2724 0	2803 2706 0	Travel Lumdo 1454					5	Ape Atoll
-2803 2706 0	2892 2724 0	Travel Lumdo 1454					5	Crash Island
+2892 2724 0	2803 2706 0	Travel Lumdo 1454				125>2	5	Ape Atoll
+2803 2706 0	2892 2724 0	Travel Lumdo 1454				125>2	5	Crash Island
 								
 # Al Kharid, Tempoross								
 3271 3144 0	3148 2843 0	Board Ferry 41311					8	Ruins of Unkah

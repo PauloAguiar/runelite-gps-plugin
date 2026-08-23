@@ -5167,11 +5167,9 @@
 2786 3772 0	2794 3719 0	Slide Slope 5015		4084=1				30	
 2785 3772 0	2794 3719 0	Slide Slope 5015		4084=1				30	
 									
-# Daero									
-2484 3486 1	2649 4516 0	Travel Daero 1445						6	
-2649 4518 0	2894 2726 0	Travel Waydar 1446						4	
+# Daero (Monkey Madness I): the blindfolded ride to the glider hangar, once Daero's puzzle is done (MM_DAERO >= 7). Waydar's flights are in gnome_gliders.tsv.									
+2484 3486 1	2649 4516 0	Travel Daero 1445				123>6		6	
 2654 4495 0	2393 3466 0	Operate Teleportation Device 4869						6	
-2896 2727 0	2393 3465 0	Travel Waydar 1446						4	
 2724 2747 0	2770 2793 0							10	
 									
 # Marim									

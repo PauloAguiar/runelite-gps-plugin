@@ -63,9 +63,11 @@ public class TransportCountingTest
 		 * + 2 * 6 // Sindarpos (White Wolf Mountain)
 		 * + 3 * 6 // Lemantolly Undri (Feldip Hills)
 		 * + 3 * 6 // Ookookolly Undri (Ape Atoll)
-		 * = 90
+		 * = 90 network permutations
+		 * + 2 // Waydar's Monkey Madness flights: explicit rows in gnome_gliders.tsv, not network
+		 * = 92
 		 */
-		assertEquals(90, actualCount);
+		assertEquals(92, actualCount);
 	}
 
 	@Test
