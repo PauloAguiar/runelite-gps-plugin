@@ -10,6 +10,7 @@ import static org.junit.Assert.assertNotNull;
 import org.junit.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 import gps.MethodAvailability;
 import gps.ShortestPathConfig;
@@ -40,6 +41,8 @@ public class MethodAvailabilityDetailTest
 		}
 		ShortestPathConfig config = mock(ShortestPathConfig.class);
 		when(config.calculationCutoff()).thenReturn(30);
+		// The classifier now locks switched-off travel options first; balloons are the subject here.
+		lenient().when(config.useHotAirBalloons()).thenReturn(true);
 		PathfinderConfig planning = new TestPathfinderConfig(client, config).copyForPlanning();
 		planning.refresh();
 		return planning;

@@ -1212,6 +1212,17 @@ public class PathfinderConfig
 			return MethodAvailability.LOCKED;
 		}
 
+		// A travel option the user switched OFF: the method stays listed, locked, with the toggle
+		// named — otherwise the catalog shows it as usable while routing never picks it (field
+		// report 2026-08-23: the Civitas charter, crew member in reach, Charter ships off). The
+		// teleport-item/box "types" are governed by the teleportation-item setting, which this
+		// classification deliberately ignores (see the javadoc).
+		if (!TransportType.TELEPORTATION_ITEM.equals(type) && !TransportType.TELEPORTATION_BOX.equals(type)
+			&& !transportTypeConfig.isEnabledInConfig(type))
+		{
+			return MethodAvailability.LOCKED;
+		}
+
 		// Type-level unlock gates: these networks are gated by a quest/quest-progress at the transport-type
 		// level (via disableUnless above), not by per-transport requirements, so classify them explicitly.
 		if (TransportType.GNOME_GLIDER.equals(type)
@@ -1626,6 +1637,13 @@ public class PathfinderConfig
 			return !useSailing ? "Sailing is off (Travel options)"
 				: !boatSeen ? "No boat seen yet (Sailing section)" : "Your boat isn't moored at this port";
 		}
+		if (!TransportType.TELEPORTATION_ITEM.equals(type) && !TransportType.TELEPORTATION_BOX.equals(type)
+			&& !transportTypeConfig.isEnabledInConfig(type))
+		{
+			return TransportType.TELEPORTATION_PORTAL_POH.equals(type)
+				? "Teleport portals & nexus are off (House section)"
+				: travelOptionName(type) + " are off (Travel options)";
+		}
 		boolean inHouse = ShortestPathPlugin.isInsidePoh(WorldPointUtil.unpackWorldX(transport.getOrigin()),
 			WorldPointUtil.unpackWorldY(transport.getOrigin()))
 			|| ShortestPathPlugin.isInsidePoh(WorldPointUtil.unpackWorldX(transport.getDestination()),
@@ -1657,6 +1675,37 @@ public class PathfinderConfig
 			return "Not built in your house (House section)";
 		}
 		return null;
+	}
+
+	/** The Travel-options checkbox that owns this type, for lock reasons. */
+	private static String travelOptionName(TransportType type)
+	{
+		switch (type)
+		{
+			case AGILITY_SHORTCUT: return "Agility shortcuts";
+			case GRAPPLE_SHORTCUT: return "Grapple shortcuts";
+			case BOAT: return "Boats";
+			case CANOE: return "Canoes";
+			case CHARTER_SHIP: return "Charter ships";
+			case SHIP: return "Ships";
+			case FAIRY_RING: return "Fairy rings";
+			case GNOME_GLIDER: return "Gnome gliders";
+			case HOT_AIR_BALLOON: return "Hot air balloons";
+			case MAGIC_CARPET: return "Magic carpets";
+			case MAGIC_MUSHTREE: return "Magic mushtrees";
+			case MINECART: return "Minecarts";
+			case MOUNTAIN_GUIDE: return "Mountain guides";
+			case QUETZAL:
+			case QUETZAL_WHISTLE: return "Quetzals";
+			case SPIRIT_TREE: return "Spirit trees";
+			case TELEPORTATION_LEVER: return "Teleportation levers";
+			case TELEPORTATION_PORTAL: return "Teleportation portals";
+			case TELEPORTATION_SPELL: return "Teleportation spells";
+			case TELEPORTATION_MINIGAME: return "Teleportation minigames";
+			case WILDERNESS_OBELISK: return "Wilderness obelisks";
+			case SEASONAL_TRANSPORTS: return "Seasonal transports";
+			default: return "That travel option";
+		}
 	}
 
 	private boolean passesStructuralGates(Transport transport)

@@ -112,6 +112,25 @@ public class CatalogNeverShrinksTest
 	}
 
 	@Test
+	public void travelOptionOffLocksItsMethodsInsteadOfRemovingThem()
+	{
+		// The charter network with its toggle off (the mock's default): listed, locked, named.
+		PathfinderConfig off = planning();
+		TeleportMethod charter = first(off.getMethodAvailability(), TransportType.CHARTER_SHIP, null);
+		assertTrue("a charter method is still listed", charter != null);
+		assertEquals(MethodAvailability.LOCKED, off.getMethodAvailability().get(charter));
+		assertEquals("Charter ships are off (Travel options)",
+			off.getMethodAvailabilityDetail().get(charter));
+		int total = off.getMethodCatalog().size();
+
+		when(config.useCharterShips()).thenReturn(true);
+		PathfinderConfig on = planning();
+		assertEquals("the catalog is the same size either way", total, on.getMethodCatalog().size());
+		assertTrue("with the toggle on the charter is no longer locked",
+			on.getMethodAvailability().get(charter) != MethodAvailability.LOCKED);
+	}
+
+	@Test
 	public void seasonalContentIsTheOneException()
 	{
 		when(config.useSeasonalTransports()).thenReturn(false);

@@ -164,6 +164,16 @@ public class TransportTypeConfig
 	 * changed).
 	 * Useful for quest/item requirements that can only restrict, not enable.
 	 */
+	/**
+	 * The user's checkbox alone: the raw config value for this type, WITHOUT the quest-progress
+	 * {@link #disableUnless} overlay. The catalog's "switched off in Travel options" lock reason
+	 * must not fire for a type that is merely quest-locked (that classifies MISSING_QUEST).
+	 */
+	public boolean isEnabledInConfig(TransportType type)
+	{
+		return getEnabledState(type);
+	}
+
 	public void disableUnless(TransportType type, boolean condition)
 	{
 		if (!condition)
