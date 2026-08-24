@@ -2,6 +2,7 @@ package gps;
 
 import gps.pathfinder.PathfinderConfig;
 import gps.pathfinder.TestPathfinderConfig;
+import gps.transport.Transport;
 import gps.transport.TransportType;
 import java.lang.reflect.Proxy;
 import java.util.List;
@@ -19,11 +20,12 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Capture 20260823-213943: six of ten routes were "Quetzal whistle to some site, quetzal back to
- * Civitas, charter to Port Tyras" — pointless variants of the direct "Whistle to Civitas, charter"
- * (the whistle already lands at any built site). The service filters such candidates: a teleport
- * immediately followed by a flight of the network sharing its destinations, landing where the
- * teleport could already go, never reaches the route list.
+ * Captures 20260823-213943 and -215617: most routes were "Quetzal whistle to some site, quetzal
+ * back to Civitas, charter to Port Tyras" — pointless variants of the direct "Whistle to Civitas,
+ * charter" (the whistle already lands at any built site), one per whistle destination the
+ * exclusion chain tried. The filter's baseline is captured before the chain's own exclusion
+ * rebuilds: the chain removes the direct whistle right before generating its hop variants, so a
+ * live-availability check found nothing (the second capture, on the first cut of this filter).
  */
 public class RedundantTeleportHopTest
 {
@@ -71,8 +73,12 @@ public class RedundantTeleportHopTest
 	public void whistleThenQuetzalBackIsRedundantButPrimioIsNot()
 	{
 		PathfinderConfig planning = planning(config());
+		List<Transport> baseline = AlternativeRoutesService.teleportHopBaseline(planning, Set.of());
+		assertTrue("the baseline must hold the whistle teleports", !baseline.isEmpty());
 		TeleportMethod whistleToQuetzacalli = new TeleportMethod(
 			TransportType.QUETZAL_WHISTLE, "Quetzal whistle: Quetzacalli Gorge", QUETZACALLI_LANDING);
+		TeleportMethod whistleToCivitas = new TeleportMethod(
+			TransportType.QUETZAL_WHISTLE, "Quetzal whistle: Civitas illa Fortis", CIVITAS_LANDING);
 		TeleportMethod quetzalToCivitas = new TeleportMethod(
 			TransportType.QUETZAL, "Civitas illa Fortis", CIVITAS_LANDING);
 		TeleportMethod primioToVarrock = new TeleportMethod(
@@ -81,21 +87,33 @@ public class RedundantTeleportHopTest
 			TransportType.CHARTER_SHIP, "Port Tyras", WorldPointUtil.packWorldPoint(2142, 3122, 0));
 
 		assertTrue("whistle -> quetzal back to a whistle-reachable site is the hop to drop",
-			AlternativeRoutesService.hasRedundantTeleportHop(planning,
+			AlternativeRoutesService.hasRedundantTeleportHop(baseline,
 				List.of(whistleToQuetzacalli, quetzalToCivitas, charter)));
 		assertFalse("Varrock has no whistle landing: the Primio flight is a REAL leg",
-			AlternativeRoutesService.hasRedundantTeleportHop(planning,
+			AlternativeRoutesService.hasRedundantTeleportHop(baseline,
 				List.of(whistleToQuetzacalli, primioToVarrock)));
 		assertFalse("unrelated method pairs are untouched",
-			AlternativeRoutesService.hasRedundantTeleportHop(planning,
+			AlternativeRoutesService.hasRedundantTeleportHop(baseline,
 				List.of(quetzalToCivitas, charter)));
+
+		// A USER exclusion of the direct whistle makes its hop variants legitimate alternatives.
+		List<Transport> withoutCivitas =
+			AlternativeRoutesService.teleportHopBaseline(planning, Set.of(whistleToCivitas));
+		assertFalse("with the direct whistle excluded by the user, the hop is a real route",
+			AlternativeRoutesService.hasRedundantTeleportHop(withoutCivitas,
+				List.of(whistleToQuetzacalli, quetzalToCivitas, charter)));
 	}
 
-	/** The capture's exact query: no emitted route may carry a redundant whistle hop. */
+	/**
+	 * Capture 20260823-215617's exact query (Grand Exchange -> Zul-Andra): from the GE the whistle
+	 * is the cheapest entry to Varlamore, so the chain excludes it and, before the baseline fix,
+	 * emitted one whistle-hop variant per landing site. No emitted route may carry the hop.
+	 */
 	@Test
 	public void capturedQueryNoLongerEmitsWhistleHopVariants() throws Exception
 	{
 		PathfinderConfig planning = planning(config());
+		List<Transport> baseline = AlternativeRoutesService.teleportHopBaseline(planning, Set.of());
 		ClientThread ct = Mockito.mock(ClientThread.class, Mockito.withSettings().stubOnly());
 		Mockito.doAnswer(i ->
 		{
@@ -105,7 +123,7 @@ public class RedundantTeleportHopTest
 		AlternativeRoutesService service = new AlternativeRoutesService(ct, planning);
 		CountDownLatch latch = new CountDownLatch(1);
 		AtomicReference<List<RouteOption>> out = new AtomicReference<>();
-		service.generate(WorldPointUtil.packWorldPoint(1453, 3173, 0),
+		service.generate(WorldPointUtil.packWorldPoint(3162, 3486, 0),
 			Set.of(WorldPointUtil.packWorldPoint(2207, 3159, 0)), Set.of(),
 			AlternativeRoutesMode.ALL_EVERYTHING, 10, 3, false,
 			(routes, catalog, unavailable, done) ->
@@ -120,14 +138,11 @@ public class RedundantTeleportHopTest
 		service.shutdown();
 		List<RouteOption> routes = out.get();
 		assertTrue("routes expected", routes != null && !routes.isEmpty());
-		// This harness starts 16 tiles from The Teomat landing, so walking to the local quetzal
-		// outranks casting the whistle: routes need not START with a whistle here — the guarantee
-		// is that no emitted route carries the pointless whistle-then-quetzal-back hop.
 		boolean reached = false;
 		for (RouteOption route : routes)
 		{
 			assertFalse("no route may keep a redundant whistle hop: " + route.getMethods(),
-				AlternativeRoutesService.hasRedundantTeleportHop(planning, route.getMethods()));
+				AlternativeRoutesService.hasRedundantTeleportHop(baseline, route.getMethods()));
 			reached |= route.isReached();
 		}
 		assertTrue("the target stays reachable with the junk variants filtered", reached);

@@ -335,6 +335,11 @@ public class AlternativeRoutesService
 			}
 			// Now the snapshot is current — the sea legs see THIS generation's toggles.
 			synthesizeSeaLegs.run();
+			// The hop filter's baseline is captured HERE, before the chain's own exclusion
+			// rebuilds: the chain removes the direct teleport right before its hop variants
+			// are generated (that removal is WHY they appear), so a live-availability check
+			// found nothing (capture 20260823-215617, on the first cut of this filter).
+			hopBaselineTeleports = teleportHopBaseline(planningConfig, userExclusions);
 			catalog = new ArrayList<>(planningConfig.getMethodCatalog());
 			unavailable = notUsable(catalog);
 			if (ends.isEmpty())
@@ -554,7 +559,7 @@ public class AlternativeRoutesService
 			// A whistle-hop variant of a direct teleport (see hasRedundantTeleportHop): skip it
 			// WITHOUT burning its signature, excluding its primary like any accepted route so the
 			// chain moves on to genuinely different methods.
-			if (hasRedundantTeleportHop(planningConfig, methods))
+			if (hasRedundantTeleportHop(hopBaselineTeleports, methods))
 			{
 				excluded.add(methods.get(0));
 				continue;
@@ -1010,7 +1015,7 @@ public class AlternativeRoutesService
 				{
 					continue;
 				}
-				if (hasRedundantTeleportHop(planningConfig, seedResult.scan.methods))
+				if (hasRedundantTeleportHop(hopBaselineTeleports, seedResult.scan.methods))
 				{
 					continue;
 				}
@@ -1392,7 +1397,7 @@ public class AlternativeRoutesService
 			fullPath.addAll(returnPath.subList(Math.min(1, returnPath.size()), returnPath.size()));
 			MethodScan scan = scanMethods(planningConfig, fullPath);
 			if (!signatures.add(signature(scan.methods))
-				|| hasRedundantTeleportHop(planningConfig, scan.methods))
+				|| hasRedundantTeleportHop(hopBaselineTeleports, scan.methods))
 			{
 				continue;
 			}
@@ -1877,7 +1882,7 @@ public class AlternativeRoutesService
 	 * its own signature and its own slot). Bankless usability is checked: if the direct teleport
 	 * only works from the bank, the hop variant is a genuinely different (bankless) route.
 	 */
-	static boolean hasRedundantTeleportHop(PathfinderConfig config, List<TeleportMethod> methods)
+	static boolean hasRedundantTeleportHop(List<Transport> baselineTeleports, List<TeleportMethod> methods)
 	{
 		for (int i = 0; i + 1 < methods.size(); i++)
 		{
@@ -1888,7 +1893,7 @@ public class AlternativeRoutesService
 			{
 				continue;
 			}
-			for (Transport candidate : config.getUsableTeleports(false))
+			for (Transport candidate : baselineTeleports)
 			{
 				if (teleport.getType().equals(candidate.getType())
 					&& WorldPointUtil.distanceBetween(candidate.getDestination(), flight.getDestination())
@@ -1903,6 +1908,30 @@ public class AlternativeRoutesService
 
 	/** How close a same-kind teleport must land to a flight's destination to make the hop pointless. */
 	private static final int SHARED_DESTINATION_RADIUS = 10;
+
+	/**
+	 * The teleports the hop filter treats as "already available": bankless-usable, of a kind
+	 * paired with a flight network (sharesDestinationsWith), minus the USER's exclusions — an
+	 * excluded direct teleport is genuinely unavailable, so its hop variants are then legitimate
+	 * alternatives. Captured once per generation (see computeRoutes) because the chain's own
+	 * exclusion rebuilds must not blind the filter to the direct teleport they just removed.
+	 */
+	static List<Transport> teleportHopBaseline(PathfinderConfig config, Set<TeleportMethod> userExclusions)
+	{
+		List<Transport> baseline = new ArrayList<>();
+		for (Transport teleport : config.getUsableTeleports(false))
+		{
+			if (teleport.getType() != null && teleport.getType().sharesDestinationsWith() != null
+				&& !userExclusions.contains(TeleportMethod.fromTransport(teleport)))
+			{
+				baseline.add(teleport);
+			}
+		}
+		return baseline;
+	}
+
+	/** The current generation's hop-filter baseline; set per generation, read by chain/seed/merge filters. */
+	private volatile List<Transport> hopBaselineTeleports = List.of();
 
 	static boolean nestsAKeptRoute(List<TeleportMethod> candidate, boolean candidateViaBank,
 		List<RouteOption> kept)
