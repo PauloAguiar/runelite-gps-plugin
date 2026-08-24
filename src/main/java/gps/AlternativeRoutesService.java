@@ -557,11 +557,14 @@ public class AlternativeRoutesService
 			}
 
 			// A whistle-hop variant of a direct teleport (see hasRedundantTeleportHop): skip it
-			// WITHOUT burning its signature, excluding its primary like any accepted route so the
-			// chain moves on to genuinely different methods.
+			// WITHOUT burning its signature or a route slot (the loop is iteration-bounded, and
+			// one filtered variant per whistle site would eat the whole budget - the probe run
+			// came back with 2 routes of 10). Excluding its primary keeps the chain moving to
+			// genuinely different methods; the growing exclusion set bounds the extra turns.
 			if (hasRedundantTeleportHop(hopBaselineTeleports, methods))
 			{
 				excluded.add(methods.get(0));
+				i--;
 				continue;
 			}
 
