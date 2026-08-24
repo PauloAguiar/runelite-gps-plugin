@@ -551,6 +551,15 @@ public class AlternativeRoutesService
 				continue;
 			}
 
+			// A whistle-hop variant of a direct teleport (see hasRedundantTeleportHop): skip it
+			// WITHOUT burning its signature, excluding its primary like any accepted route so the
+			// chain moves on to genuinely different methods.
+			if (hasRedundantTeleportHop(planningConfig, methods))
+			{
+				excluded.add(methods.get(0));
+				continue;
+			}
+
 			// Distinct method-signature gate: if this route uses the same ordered methods as a previous
 			// one, excluding more would only reshuffle, so stop.
 			if (!seenSignatures.add(signature(methods)))
@@ -1001,6 +1010,10 @@ public class AlternativeRoutesService
 				{
 					continue;
 				}
+				if (hasRedundantTeleportHop(planningConfig, seedResult.scan.methods))
+				{
+					continue;
+				}
 				if (!seenSignatures.add(signature(seedResult.scan.methods)))
 				{
 					continue;
@@ -1378,7 +1391,8 @@ public class AlternativeRoutesService
 			List<PathStep> fullPath = new ArrayList<>(outPath);
 			fullPath.addAll(returnPath.subList(Math.min(1, returnPath.size()), returnPath.size()));
 			MethodScan scan = scanMethods(planningConfig, fullPath);
-			if (!signatures.add(signature(scan.methods)))
+			if (!signatures.add(signature(scan.methods))
+				|| hasRedundantTeleportHop(planningConfig, scan.methods))
 			{
 				continue;
 			}
@@ -1852,6 +1866,44 @@ public class AlternativeRoutesService
 	 * far teleport chain stays available inside every seed's search. Bank-fetching candidates
 	 * are spared when the kept route isn't via-bank: withdrawing the item IS their point.
 	 */
+	/**
+	 * Two shared-destination networks reached the same tile as one (capture 20260823-213943): the
+	 * quetzal whistle lands at any built site, so "Whistle to Quetzacalli, quetzal to Civitas,
+	 * charter on" is "Whistle to Civitas, charter on" with extra steps — six of ten routes were
+	 * such variants, one per whistle destination the exclusion chain tried. A teleport followed
+	 * IMMEDIATELY by a flight of the network that shares its destinations
+	 * ({@link gps.transport.TransportType#sharesDestinationsWith}), landing where a usable
+	 * teleport of the same kind could already go, adds nothing over the direct form (which has
+	 * its own signature and its own slot). Bankless usability is checked: if the direct teleport
+	 * only works from the bank, the hop variant is a genuinely different (bankless) route.
+	 */
+	static boolean hasRedundantTeleportHop(PathfinderConfig config, List<TeleportMethod> methods)
+	{
+		for (int i = 0; i + 1 < methods.size(); i++)
+		{
+			TeleportMethod teleport = methods.get(i);
+			TeleportMethod flight = methods.get(i + 1);
+			if (teleport.getType() == null || flight.getType() == null
+				|| !flight.getType().equals(teleport.getType().sharesDestinationsWith()))
+			{
+				continue;
+			}
+			for (Transport candidate : config.getUsableTeleports(false))
+			{
+				if (teleport.getType().equals(candidate.getType())
+					&& WorldPointUtil.distanceBetween(candidate.getDestination(), flight.getDestination())
+						<= SHARED_DESTINATION_RADIUS)
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/** How close a same-kind teleport must land to a flight's destination to make the hop pointless. */
+	private static final int SHARED_DESTINATION_RADIUS = 10;
+
 	static boolean nestsAKeptRoute(List<TeleportMethod> candidate, boolean candidateViaBank,
 		List<RouteOption> kept)
 	{
