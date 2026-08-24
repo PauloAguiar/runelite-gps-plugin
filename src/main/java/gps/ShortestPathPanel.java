@@ -1425,7 +1425,14 @@ public class ShortestPathPanel extends PluginPanel
 			javax.swing.JMenuItem entry = new javax.swing.JMenuItem(text, priorityRestIcon(tier));
 			entry.setFont(tier == current
 				? FontManager.getRunescapeBoldFont() : FontManager.getRunescapeSmallFont());
-			entry.addActionListener(e -> plugin.setMethodPriority(method, tier));
+			// The catalog slot only rebuilds when catalog/exclusions/availability change (see
+			// render's catalogDirty) - a tier change alters none of them, so refresh here or
+			// the row keeps showing the old tier until something else re-renders the panel.
+			entry.addActionListener(e ->
+			{
+				plugin.setMethodPriority(method, tier);
+				refreshCatalog();
+			});
 			menu.add(entry);
 		}
 		menu.addSeparator();
@@ -1433,7 +1440,11 @@ public class ShortestPathPanel extends PluginPanel
 			MethodPriority.EXCLUDED.label, RouteIcons.CROSS);
 		exclude.setFont(current == MethodPriority.EXCLUDED
 			? FontManager.getRunescapeBoldFont() : FontManager.getRunescapeSmallFont());
-		exclude.addActionListener(e -> plugin.setMethodPriority(method, MethodPriority.EXCLUDED));
+		exclude.addActionListener(e ->
+		{
+			plugin.setMethodPriority(method, MethodPriority.EXCLUDED);
+			refreshCatalog();
+		});
 		menu.add(exclude);
 		menu.show(anchor, 0, anchor.getHeight());
 	}
