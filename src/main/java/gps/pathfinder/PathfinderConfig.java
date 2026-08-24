@@ -2137,8 +2137,14 @@ public class PathfinderConfig
 			}
 		}
 
-		boolean usingStaff = false;
-		boolean usingOffhand = false;
+		// One staff is wielded per cast, but a COMBO staff covers both its elements at once: the
+		// old one-credit-only flag let a lava staff satisfy EARTH and then barred it from FIRE,
+		// sending the Civitas spell to the bank for runes the player provably had (field capture
+		// 20260823-232830). Each rune requirement a staff must cover collects the staff ids the
+		// player HAS; a single staff must sit in every such set (you cast with one staff), and
+		// likewise a single offhand (tome) across the offhand-covered requirements.
+		List<int[]> staffNeeds = new ArrayList<>();
+		List<int[]> offhandNeeds = new ArrayList<>();
 		for (ItemRequirement req : transportItems.getRequirements())
 		{
 			boolean missing = true;
@@ -2159,30 +2165,28 @@ public class PathfinderConfig
 					}
 				}
 			}
-			if (missing && !usingStaff && req.getStaffIds() != null)
+			if (missing && req.getStaffIds() != null)
 			{
-				for (int itemId : req.getStaffIds())
+				int[] present = presentIds(req.getStaffIds(), requiredQuantity);
+				if (requiredQuantity == 0 ? present.length == req.getStaffIds().length : present.length > 0)
 				{
-					int quantity = itemsAndQuantities.getOrDefault(itemId, 0);
-					if (requiredQuantity > 0 && quantity >= 1 || requiredQuantity == 0 && quantity == 0)
+					if (requiredQuantity > 0)
 					{
-						usingStaff = true;
-						missing = false;
-						break;
+						staffNeeds.add(present);
 					}
+					missing = false;
 				}
 			}
-			if (missing && !usingOffhand && req.getOffhandIds() != null)
+			if (missing && req.getOffhandIds() != null)
 			{
-				for (int itemId : req.getOffhandIds())
+				int[] present = presentIds(req.getOffhandIds(), requiredQuantity);
+				if (requiredQuantity == 0 ? present.length == req.getOffhandIds().length : present.length > 0)
 				{
-					int quantity = itemsAndQuantities.getOrDefault(itemId, 0);
-					if (requiredQuantity > 0 && quantity >= 1 || requiredQuantity == 0 && quantity == 0)
+					if (requiredQuantity > 0)
 					{
-						usingOffhand = true;
-						missing = false;
-						break;
+						offhandNeeds.add(present);
 					}
+					missing = false;
 				}
 			}
 			if (missing)
@@ -2190,7 +2194,58 @@ public class PathfinderConfig
 				return false;
 			}
 		}
-		return true;
+		return coveredByOneItem(staffNeeds) && coveredByOneItem(offhandNeeds);
+	}
+
+	/**
+	 * The subset of {@code ids} the player can produce: for a positive requirement, the ids held
+	 * (any quantity — a staff/tome is not consumed); for a forbidden (=0) requirement, the ids NOT
+	 * held (preserving the old branch's "absence satisfies" semantics).
+	 */
+	private int[] presentIds(int[] ids, int requiredQuantity)
+	{
+		int n = 0;
+		int[] out = new int[ids.length];
+		for (int itemId : ids)
+		{
+			int quantity = itemsAndQuantities.getOrDefault(itemId, 0);
+			if (requiredQuantity > 0 ? quantity >= 1 : quantity == 0)
+			{
+				out[n++] = itemId;
+			}
+		}
+		return java.util.Arrays.copyOf(out, n);
+	}
+
+	/** Whether one single item id appears in every set — one wielded staff / one offhand tome. */
+	private static boolean coveredByOneItem(List<int[]> needs)
+	{
+		if (needs.size() <= 1)
+		{
+			return true;
+		}
+		outer:
+		for (int candidate : needs.get(0))
+		{
+			for (int i = 1; i < needs.size(); i++)
+			{
+				boolean found = false;
+				for (int id : needs.get(i))
+				{
+					if (id == candidate)
+					{
+						found = true;
+						break;
+					}
+				}
+				if (!found)
+				{
+					continue outer;
+				}
+			}
+			return true;
+		}
+		return false;
 	}
 
 	/**
