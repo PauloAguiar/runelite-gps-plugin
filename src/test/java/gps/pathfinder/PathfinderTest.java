@@ -871,8 +871,8 @@ public class PathfinderTest
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 
 		// Start 1 tile from Aldarin platform (1389, 2901), going to Hunter Guild (1585, 3053)
-		// Platform path: walk 1 tile + 6 tick flight = cost 7, path length 3 (start, platform, dest)
-		// Whistle path: 4 tick teleport + 0 additional = cost 4, path length 2 (start, dest)
+		// Platform path: walk 1 tile + 10 tick flight = cost 21 units, path length 3
+		// Whistle path: 10 tick teleport + 0 additional = cost 20 units, path length 2
 		// Whistle is cheaper here, so it should be used with cost 0
 		// But with cost > 0, platform should win
 		int nearAldarinPlatform = WorldPointUtil.packWorldPoint(1390, 2901, 0); // 1 tile away
@@ -887,7 +887,7 @@ public class PathfinderTest
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 
 		pathLength = calculatePathLength(nearAldarinPlatform, hunterGuild);
-		// Whistle cost: 4 + 10 = 14, Platform cost: 1 walk + 6 flight = 7
+		// Whistle cost: 20 + 10 = 30, Platform cost: 1 walk + 10-tick flight = 21
 		// Platform wins, path = start -> platform -> dest = 3
 		assertEquals("Platform should be used when whistle cost threshold makes it more expensive", 3, pathLength);
 	}
@@ -939,10 +939,10 @@ public class PathfinderTest
 	 * time-normalized units (1 unit = 1 run-tile, a game tick = 2 units, see CostUnits).
 	 * The modifier is REAL cost on the whistle edge (an ordering-only term would break the
 	 * search's first-settle-is-optimal invariant).
-	 * From 1 tile away: platform cost = 1 walk + 6-tick flight (12) = 13.
-	 * Whistle base cost = 4 ticks (8 units), total = 8 + modifier.
-	 * With modifier=6: whistle 14 > platform 13, platform wins (path=3).
-	 * With modifier=4: whistle 12 < platform 13, whistle wins (path=2).
+	 * From 1 tile away: platform cost = 1 walk + 10-tick flight (20) = 21.
+	 * Whistle base cost = 10 ticks (20 units), total = 20 + modifier.
+	 * With modifier=6: whistle 26 > platform 21, platform wins (path=3).
+	 * With modifier=0: whistle 20 < platform 21, whistle wins (path=2); a modifier of 1 would TIE.
 	 */
 	@Test
 	public void testQuetzalWhistleCostBoundary()
@@ -953,15 +953,15 @@ public class PathfinderTest
 		int nearAldarinPlatform = WorldPointUtil.packWorldPoint(1390, 2901, 0); // 1 tile away
 		int hunterGuild = WorldPointUtil.packWorldPoint(1585, 3053, 0);
 
-		// Modifier=6: whistle cost 14 > platform 13, platform should win
+		// Modifier=6: whistle cost 26 > platform 21, platform should win
 		when(config.costQuetzalWhistle()).thenReturn(6);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 
 		int pathLength = calculatePathLength(nearAldarinPlatform, hunterGuild);
 		assertEquals("Platform should win when whistle differential makes it more expensive", 3, pathLength);
 
-		// Modifier=4: whistle cost 12 < platform 13, whistle should win
-		when(config.costQuetzalWhistle()).thenReturn(4);
+		// Modifier=0: whistle cost 20 < platform 21, whistle should win
+		when(config.costQuetzalWhistle()).thenReturn(0);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
 
 		pathLength = calculatePathLength(nearAldarinPlatform, hunterGuild);
@@ -989,7 +989,7 @@ public class PathfinderTest
 		int hunterGuild = WorldPointUtil.packWorldPoint(1585, 3053, 0);
 
 		int pathLength = calculatePathLength(faladorCenter, hunterGuild);
-		// Whistle teleport (4 ticks) is cheapest: path = start -> dest = 2
+		// Whistle teleport (10 ticks) is cheapest: path = start -> dest = 2
 		assertEquals("Whistle should be used when far from any platform", 2, pathLength);
 	}
 
@@ -1000,11 +1000,11 @@ public class PathfinderTest
 	 * make a bank-detour route appear cheaper than a direct teleportation tab.
 	 * <p>
 	 * Verified via the Aldarin platform cost boundary, in time-normalized units (2 per tick):
-	 * from 1 tile away the platform cost is 13 (1 walk + 6-tick flight = 12). With
-	 * costConsumableTeleportationItems=6 the whistle's actual cost becomes 8+6=14, strictly
-	 * past the platform, so the platform wins (path length 3). (A penalty of 5 would TIE at
-	 * 13, leaving the winner to heap-order luck.) Before the fix the whistle paid no
-	 * consumable penalty (cost 8) and won (path 2).
+	 * from 1 tile away the platform cost is 21 (1 walk + 10-tick flight = 20). With
+	 * costConsumableTeleportationItems=6 the whistle's actual cost becomes 20+6=26, strictly
+	 * past the platform, so the platform wins (path length 3). (A penalty of 1 would TIE at
+	 * 21, leaving the winner to heap-order luck.) Before the fix the whistle paid no
+	 * consumable penalty (cost 20) and won (path 2).
 	 */
 	@Test
 	public void testConsumableCostPenaltyAppliedToQuetzalWhistle()
