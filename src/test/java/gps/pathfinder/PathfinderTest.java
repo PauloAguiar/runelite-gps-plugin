@@ -148,7 +148,8 @@ public class PathfinderTest
 
 		assertScenarioPathLength(
 			"Catherby charter tile reuse -> bank -> Musa Point with banked coins",
-			79,
+			// 80: charter arrivals land on the deck, the gangplank down is one extra step.
+			80,
 			catherbyCharter,
 			musaPointCharter);
 	}
@@ -167,7 +168,8 @@ public class PathfinderTest
 
 		assertScenarioPathLength(
 			"Catherby bank branch should not leak coins to charter branch",
-			47,
+			// 48: charter arrivals land on the deck, the gangplank down is one extra step.
+			48,
 			WorldPointUtil.packWorldPoint(2807, 3435, 0),
 			WorldPointUtil.packWorldPoint(2954, 3158, 0));
 	}

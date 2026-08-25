@@ -207,5 +207,38 @@ public class TransportDataLintTest
 			Assert.assertEquals(1, t.getVarbits().size());
 		}
 	}
+	/**
+	 * Charter arrivals land ON THE DECK (plane 1): the game leaves you on the ship and the
+	 * paired Cross Gangplank row is the step down to the dock. With dockside destinations the
+	 * path skipped the gangplank entirely and drew nothing while the player stood on plane 1
+	 * (field report 2026-08-24, Port Tyras). Land's End is the one port with no gangplank pair
+	 * in the data yet, so it still lands dockside.
+	 */
+	@Test
+	public void charterArrivalsLandOnTheDeck()
+	{
+		int deckArrivals = 0;
+		for (Set<Transport> set : TransportLoader.loadAllFromResources().values())
+		{
+			for (Transport transport : set)
+			{
+				if (!TransportType.CHARTER_SHIP.equals(transport.getType()))
+				{
+					continue;
+				}
+				int plane = WorldPointUtil.unpackWorldPlane(transport.getDestination());
+				boolean landsEnd = WorldPointUtil.unpackWorldX(transport.getDestination()) == 1496
+					&& WorldPointUtil.unpackWorldY(transport.getDestination()) == 3403;
+				Assert.assertTrue("charter to " + transport.getDisplayInfo()
+					+ " must arrive on the ship's deck (plane 1)", plane == 1 || landsEnd);
+				if (plane == 1)
+				{
+					deckArrivals++;
+				}
+			}
+		}
+		Assert.assertTrue("deck arrivals expected", deckArrivals > 100);
+	}
 }
+
 
