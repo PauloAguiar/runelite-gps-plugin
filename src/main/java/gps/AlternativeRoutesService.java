@@ -628,6 +628,15 @@ public class AlternativeRoutesService
 				seedCandidates, routes, seenSignatures, catalog, unavailable, roundTrip ? null : listener,
 				bestRemaining, cappedByBestCost(capOf(walkFuture), routes, 2 * costMultiple), field, timer);
 		}
+		// Tail-diversity pass: when the page is dominated by one shared method TAIL, surface a
+		// variant with a different middle. Runs after seeds so eviction sees the full page.
+		if (gen == generation.get())
+		{
+			diversifySharedTails(gen, start, ends, userExclusions, limit, costMultiple, routes,
+				seenSignatures, catalog, unavailable, roundTrip ? null : listener, bestRemaining,
+				cappedByBestCost(capOf(walkFuture), routes, 2 * costMultiple), field, timer);
+		}
+
 		// More routes are worth polling for when the count budget was the binding limit (the chain kept
 		// finding distinct routes and simply ran out of slots), or the cost cap held routes back — the
 		// latter only while it sat below the walk ceiling, since once it reaches walking there's nothing
@@ -1185,6 +1194,151 @@ public class AlternativeRoutesService
 			}
 		}
 		return false;
+	}
+
+	/** A tail shared by this many kept routes triggers the diversity pass. */
+	private static final int TAIL_DOMINANCE = 3;
+	/** At most this many extra searches per generation, one per shared-tail method. */
+	private static final int TAIL_DIVERSITY_SEARCHES = 2;
+
+	/** The signature of everything after the primary, or null when there is no tail. */
+	private static String tailSignature(List<TeleportMethod> methods)
+	{
+		return methods.size() < 2 ? null : signature(methods.subList(1, methods.size()));
+	}
+
+	/**
+	 * Tail-diversity pass (captures 20260823-230534, 20260824-183101): the exclusion chain only
+	 * varies each route's PRIMARY method, and exclusions accumulate — so when every cheap route
+	 * shares a tail (bank teleport + "Salve graveyard tablet + fairy ring", with the staff banked),
+	 * the page fills with first-leg variants, and a route that shares a kept PRIMARY but differs in
+	 * the middle (Ardougne cloak to the monastery ring) can never be generated: its primary is
+	 * already spent. When one tail dominates the page, this pass runs a couple of fresh searches
+	 * with ONLY the user's exclusions plus one shared-tail method — primaries deliberately come
+	 * back — and feeds any distinct result through the exact acceptance the seeds use, evicting
+	 * the costliest member of the dominant family when the page is full.
+	 */
+	private void diversifySharedTails(int gen, int start, Set<Integer> ends,
+		Set<TeleportMethod> userExclusions, int limit, int costMultiple, List<RouteOption> routes,
+		Set<String> seenSignatures, List<TeleportMethod> catalog,
+		Map<TeleportMethod, MethodAvailability> unavailable, ResultListener listener,
+		int bestRemaining, int costCap, DistanceField field, GenTimer timer)
+	{
+		// The dominant tail among the kept routes.
+		Map<String, List<RouteOption>> byTail = new LinkedHashMap<>();
+		for (RouteOption route : routes)
+		{
+			String tail = tailSignature(route.getMethods());
+			if (tail != null)
+			{
+				byTail.computeIfAbsent(tail, k -> new ArrayList<>()).add(route);
+			}
+		}
+		String dominantTail = null;
+		List<RouteOption> family = null;
+		for (Map.Entry<String, List<RouteOption>> entry : byTail.entrySet())
+		{
+			if (family == null || entry.getValue().size() > family.size())
+			{
+				dominantTail = entry.getKey();
+				family = entry.getValue();
+			}
+		}
+		if (family == null || family.size() < TAIL_DOMINANCE)
+		{
+			return;
+		}
+
+		List<TeleportMethod> sharedTail = family.get(0).getMethods();
+		sharedTail = sharedTail.subList(1, sharedTail.size());
+		int searches = 0;
+		for (TeleportMethod shared : sharedTail)
+		{
+			if (searches >= TAIL_DIVERSITY_SEARCHES || gen != generation.get())
+			{
+				break;
+			}
+			if (userExclusions.contains(shared))
+			{
+				continue;
+			}
+			searches++;
+			PathfinderConfig config = planningConfig.copyForParallelSearch();
+			Set<TeleportMethod> exclusions = new HashSet<>(userExclusions);
+			exclusions.add(shared);
+			long rebuildStart = System.nanoTime();
+			config.rebuildAvailabilityWithExclusions(exclusions);
+			long searchStart = System.nanoTime();
+			SearchHeuristic heuristic = SearchHeuristic.buildWithField(config, field, start);
+			Pathfinder pathfinder = new Pathfinder(config, start, ends, costCap, heuristic);
+			pathfinder.run();
+			long searchEnd = System.nanoTime();
+			synchronized (timer)
+			{
+				timer.rebuildNanos += searchStart - rebuildStart;
+				timer.searchNanos += searchEnd - searchStart;
+				timer.searches++;
+			}
+			record(timer, "tail:" + shared.label(), searchEnd - searchStart, pathfinder, costCap);
+
+			PathfinderResult result = pathfinder.getResult();
+			List<PathStep> path = (result != null) ? result.getPathSteps() : List.of();
+			if (result == null || path.isEmpty())
+			{
+				continue;
+			}
+			boolean reached = result.isReached();
+			if (!reached && bestRemaining == 0)
+			{
+				continue;
+			}
+			int remaining = reached ? 0 : remainingDistance(path, ends);
+			if (bestRemaining >= 0 && remaining > bestRemaining + CLOSEST_DISTANCE_TOLERANCE)
+			{
+				continue;
+			}
+			final int totalCost = result.getTotalCost();
+			if (costMultiple > 0 && routes.size() >= MIN_PAGE_ROUTES
+				&& totalCost > (long) Math.max(routes.get(0).getTotalCost(), MIN_BEST_FOR_BAND) * costMultiple
+				&& totalCost > pageFillCeiling(routes.get(0).getTotalCost(), maxAcceptedCost(routes), costMultiple))
+			{
+				continue;
+			}
+			MethodScan scan = scanMethods(config, path);
+			if (scan.methods.isEmpty()
+				|| nestsAKeptRoute(scan.methods, !scan.bankGated.isEmpty(), routes)
+				|| hasRedundantTeleportHop(hopBaselineTeleports, scan.methods)
+				|| !seenSignatures.add(signature(scan.methods)))
+			{
+				continue;
+			}
+			if (routes.size() >= limit)
+			{
+				// The whole point: the slot comes out of the over-represented family.
+				int evict = -1;
+				int maxCost = -1;
+				for (int r = 0; r < routes.size(); r++)
+				{
+					RouteOption kept = routes.get(r);
+					if (!kept.isWalkOnly() && r != solePortFirstIndex(routes)
+						&& dominantTail.equals(tailSignature(kept.getMethods()))
+						&& kept.getTotalCost() > maxCost)
+					{
+						maxCost = kept.getTotalCost();
+						evict = r;
+					}
+				}
+				if (evict < 0)
+				{
+					continue;
+				}
+				routes.remove(evict);
+			}
+			routes.add(new RouteOption(withoutIdleBankFlip(path, scan), scan.methods, scan.methodEdges,
+				scan.methodDurations, totalCost, scan.rawCost, reached, scan.bankGated,
+				scan.bankGatedTransports, scan.walkBefore, scan.trailingWalk));
+			emit(gen, listener, new ArrayList<>(routes), catalog, unavailable, false);
+		}
 	}
 
 	private SeedResult runSeedSearch(int gen, AtomicBoolean stop, int start, Set<Integer> ends,
