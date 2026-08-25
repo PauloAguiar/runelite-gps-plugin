@@ -448,7 +448,60 @@ final class RouteDirections
 				details.add(line);
 			}
 		}
+		// The fairy-ring staff is a SPECIAL requirement (hasRequiredItems' Dramen/Lunar case),
+		// carried on no ring row — so the loops above name nothing for a bank-gated ring and
+		// the withdraw step listed everything BUT the staff (field capture 20260824-183101:
+		// "Withdraw: Salve graveyard tablet" while the ring needed the banked Dramen staff).
+		TeleportMethod bankedRing = null;
+		for (TeleportMethod method : route.getBankMethods())
+		{
+			if (TransportType.FAIRY_RING.equals(method.getType()))
+			{
+				bankedRing = method;
+				break;
+			}
+		}
+		for (int i = 0; bankedRing == null && i < route.getBankTransports().size(); i++)
+		{
+			if (TransportType.FAIRY_RING.equals(route.getBankTransports().get(i).getType()))
+			{
+				bankedRing = TeleportMethod.fromTransport(route.getBankTransports().get(i));
+			}
+		}
+		if (bankedRing != null && plugin.getClient()
+			.getVarbitValue(net.runelite.api.gameval.VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1)
+		{
+			String line = bankedStaffName(plugin) + " — " + joinLabels(java.util.Set.of(bankedRing));
+			if (!details.contains(line))
+			{
+				details.add(line);
+			}
+		}
 		return details;
+	}
+
+	/** The banked Dramen/Lunar staff's proper name, or the generic pair when unresolvable. */
+	private static String bankedStaffName(ShortestPathPlugin plugin)
+	{
+		net.runelite.api.Item[] bank = plugin.getPathfinderConfig().getBankSnapshot();
+		if (bank != null)
+		{
+			for (int staffId : ItemVariations.DRAMEN_STAFF.getIds())
+			{
+				for (net.runelite.api.Item item : bank)
+				{
+					if (item.getId() == staffId && item.getQuantity() > 0)
+					{
+						String name = plugin.getClient().getItemDefinition(staffId).getName();
+						if (name != null && !name.isEmpty() && !"null".equals(name))
+						{
+							return name;
+						}
+					}
+				}
+			}
+		}
+		return "Dramen or Lunar staff";
 	}
 
 	/** The pickup line for ONE of a route's bank methods, or null when it can't resolve. */
