@@ -160,6 +160,24 @@ public final class Destinations
 		java.util.function.IntPredicate transportOrigin)
 	{
 		packed = remapTemplateOnlyZones(packed);
+		Set<Integer> land = walkableLandTargets(map, packed, transportOrigin);
+		// A pin on SAILABLE water is a sea destination (a wreck, a fishing spot, an ocean
+		// label): the water tile itself stays in the target set - aboard, the sea legs settle
+		// it exactly (seaLegTransports + wet arrival) - alongside the land ring, which serves
+		// the same pin on foot. Dropping the water tile disarmed the entire boat route: the
+		// search only ever saw the shore (capture 20260827-220818).
+		if (SailingSea.isSailable(packed) && !land.contains(packed))
+		{
+			Set<Integer> both = new HashSet<>(land);
+			both.add(packed);
+			return both;
+		}
+		return land;
+	}
+
+	private static Set<Integer> walkableLandTargets(gps.pathfinder.CollisionMap map, int packed,
+		java.util.function.IntPredicate transportOrigin)
+	{
 		final int x = WorldPointUtil.unpackWorldX(packed);
 		final int y = WorldPointUtil.unpackWorldY(packed);
 		final int plane = WorldPointUtil.unpackWorldPlane(packed);
