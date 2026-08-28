@@ -1318,7 +1318,7 @@ public class PathfinderTest
 
 		Pathfinder pathfinder = assertScenarioPathLengthAndGet(
 			"Wizards' Guild -> Edgeville with no items and wilderness allowed",
-			770, // was 769: one-tile geometry shift in the 2026-07-30 cache refresh (rev 2644)
+			769 /* one tile shorter: the decor phantom-block fix opened a straighter line */, // was 769: one-tile geometry shift in the 2026-07-30 cache refresh (rev 2644)
 			origin,
 			destination);
 
