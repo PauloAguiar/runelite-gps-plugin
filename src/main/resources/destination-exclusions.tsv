@@ -6,3 +6,5 @@
 # minX	minY	maxX	maxY	plane	label
 3775	2935	3845	3007	0	Trouble Brewing arena grounds (Mos Le'Harmless): minigame-only water sources
 3790	3008	3845	3015	0	Trouble Brewing north dock: two more arena water pumps (the landmark pin at 3776,3008 stays)
+
+2115	2875	2300	2945	0	Soul Wars arena (Isle of Souls): battle-interior pins (avatars, bases, graveyards, obelisk); the Lobby pin south of the box stays searchable

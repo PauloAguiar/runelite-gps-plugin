@@ -174,7 +174,11 @@ public class DestinationsReachableTest
 	// 709 -> 705 on 2026-08-27: the Trouble Brewing arena's water-source pins are
 	// minigame-only interiors, excluded from every destination surface (destination-
 	// exclusions.tsv) rather than treated as unreachable places.
-	private static final int RATCHET = 705;
+	// 705 -> 694 on 2026-08-27: MLM rockfall rows reconnected the bank quadrant, the
+	// Fairytale I wall gap opened the Tanglefoot lair (both silent band offenders, now
+	// asserted at zero below), Soul Wars' battle-interior pins are excluded and the Pest
+	// Control pin adopts its Void-outpost remap anchor.
+	private static final int RATCHET = 694;
 
 	/**
 	 * Real content living inside the instance template band, enforced by the invariant like
@@ -292,9 +296,12 @@ public class DestinationsReachableTest
 				bandOffenders.add(entry);
 			}
 		}
-		assertTrue("BAND-CONTENT offenders (" + bandOffenders.size() + "): "
-			+ String.join("; ", bandOffenders) + " ||| "
-			+ unreachable.size() + " of " + checked + " imported destinations are unreachable"
+		// Band boxes are explicit content declarations, so an unreachable pin inside one is a
+		// hard failure on its own - not just a unit inside the ratchet (two offenders sat here
+		// silently for weeks: the MLM bank quadrant and the Tanglefoot lair).
+		assertTrue("BAND-CONTENT offenders: " + String.join("; ", bandOffenders),
+			bandOffenders.isEmpty());
+		assertTrue(unreachable.size() + " of " + checked + " imported destinations are unreachable"
 			+ " (ratchet: " + RATCHET + "). New unreachable pins are not acceptable; the existing"
 			+ " backlog is being worked down. First offenders:\n  "
 			+ String.join("\n  ", unreachable.subList(0, Math.min(40, unreachable.size()))),

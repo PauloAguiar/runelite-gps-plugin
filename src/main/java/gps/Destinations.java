@@ -505,6 +505,18 @@ public final class Destinations
 		entries.addAll(loadResource(CURATED_PATH));
 		entries.addAll(loadResource(WIKI_PATH));
 		entries.removeIf(entry -> insideExcludedZone(entry.packedPosition));
+		// Entries inside a template-only/minigame-arena remap zone adopt their anchor at load,
+		// so search results and the reachability audits both see the real-world stand-in
+		// ("Pest Control" lands on the Void outpost, not inside the lander-only arena).
+		for (int i = 0; i < entries.size(); i++)
+		{
+			Entry entry = entries.get(i);
+			int remapped = remapTemplateOnlyZones(entry.packedPosition);
+			if (remapped != entry.packedPosition)
+			{
+				entries.set(i, new Entry(entry.category, entry.name, remapped));
+			}
+		}
 		return entries;
 	}
 

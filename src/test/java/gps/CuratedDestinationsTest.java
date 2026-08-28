@@ -94,13 +94,13 @@ public class CuratedDestinationsTest
 			}
 		}
 		assertTrue("Iban's Temple must be a curated destination", temple != null);
-		assertTrue("pin must sit at 2135,4648,1",
-			temple.packedPosition == WorldPointUtil.packWorldPoint(2135, 4648, 1));
+		assertTrue("pin adopts its remap anchor at load (template interior 2135,4648 snaps to the doors)",
+			temple.packedPosition == WorldPointUtil.packWorldPoint(2145, 4647, 1));
 
 		PathfinderConfig planning = new TestPathfinderConfig(client, config).copyForPlanning();
 		planning.refresh();
 		assertFalse("pin tile must be walkable (not the well structure itself)",
-			planning.getMap().isBlocked(2135, 4648, 1));
+			planning.getMap().isBlocked(2145, 4647, 1));
 		assertFalse("search-box targeting must find walkable tiles around the pin",
 			Destinations.walkableTargets(planning.getMap(), temple.packedPosition).isEmpty());
 	}

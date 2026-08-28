@@ -5,3 +5,4 @@
 # these regularly.
 # minX	minY	maxX	maxY	plane	anchorX	anchorY	anchorPlane	label
 2130	4639	2143	4656	1	2145	4647	1	Iban's Temple interior (the real one is instanced; enter by the doors)
+2615	2550	2695	2630	0	2661	2655	0	Pest Control arena: entered only through the minigame lander - targets snap to the Void Knights' Outpost
