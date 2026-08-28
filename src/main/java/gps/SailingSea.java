@@ -718,6 +718,7 @@ public final class SailingSea
 			synchronized (trackCache)
 			{
 				trackCache.clear();
+			failedTracks.clear();
 			}
 			cachedTarget = WorldPointUtil.UNDEFINED;
 			cachedDistances = null;
@@ -756,6 +757,7 @@ public final class SailingSea
 		synchronized (trackCache)
 		{
 			trackCache.clear();
+			failedTracks.clear();
 		}
 		cachedTarget = WorldPointUtil.UNDEFINED;
 		cachedDistances = null;
@@ -802,6 +804,10 @@ public final class SailingSea
 		{
 			return cached;
 		}
+		if (failureCoolingDown(key))
+		{
+			return null;
+		}
 		if (tracksInFlight.add(key))
 		{
 			trackExecutor.submit(() ->
@@ -818,7 +824,7 @@ public final class SailingSea
 						fromPacked, toPacked, e);
 					synchronized (trackCache)
 					{
-						trackCache.put(key, null);
+						failedTracks.put(key, System.currentTimeMillis());
 					}
 				}
 				finally
@@ -842,7 +848,14 @@ public final class SailingSea
 		int[] track = computeSeaPath(fromPacked, toPacked);
 		synchronized (trackCache)
 		{
-			trackCache.put(key, track);
+			if (track != null && track.length > 1)
+			{
+				trackCache.put(key, track);
+			}
+			else
+			{
+				failedTracks.put(key, System.currentTimeMillis());
+			}
 		}
 		return track;
 	}
@@ -1383,6 +1396,43 @@ public final class SailingSea
 			}
 		}
 		return true;
+	}
+
+	/**
+	 * Failed or uncomputable tracks RETRY after a cooldown instead of poisoning the cache
+	 * forever: an early computation (water grid mid-load, a transient failure) permanently
+	 * dashed its leg - capture 20260827-223426's direct-sail track computed fine offline yet
+	 * never rendered in the client. Genuine no-track pairs just re-verify every cooldown while
+	 * a route keeps asking; the BFS is bounded.
+	 */
+	private static final long TRACK_RETRY_MS = 10_000;
+	private static final java.util.HashMap<Long, Long> failedTracks = new java.util.HashMap<>();
+
+	private static boolean failureCoolingDown(long key)
+	{
+		synchronized (trackCache)
+		{
+			Long at = failedTracks.get(key);
+			if (at == null)
+			{
+				return false;
+			}
+			if (System.currentTimeMillis() - at < TRACK_RETRY_MS)
+			{
+				return true;
+			}
+			failedTracks.remove(key);
+			return false;
+		}
+	}
+
+	/** Test visibility: whether a SUCCESSFUL track sits in the cache for this pair. */
+	static boolean trackPermanentlyCached(int fromPacked, int toPacked)
+	{
+		synchronized (trackCache)
+		{
+			return trackCache.get(trackKey(fromPacked, toPacked)) != null;
+		}
 	}
 
 	private static long trackKey(int fromPacked, int toPacked)
