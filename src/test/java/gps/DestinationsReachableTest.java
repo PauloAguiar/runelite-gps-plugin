@@ -178,7 +178,9 @@ public class DestinationsReachableTest
 	// Fairytale I wall gap opened the Tanglefoot lair (both silent band offenders, now
 	// asserted at zero below), Soul Wars' battle-interior pins are excluded and the Pest
 	// Control pin adopts its Void-outpost remap anchor.
-	private static final int RATCHET = 694;
+	// 694 -> 569 on 2026-08-27: pins on sailable water count as reachable by sea (the
+	// 125 ocean-region landmarks are sailing destinations, not land gaps).
+	private static final int RATCHET = 569;
 
 	/**
 	 * Real content living inside the instance template band, enforced by the invariant like
@@ -206,8 +208,43 @@ public class DestinationsReachableTest
 		return false;
 	}
 
+	private Boolean oceanReachable;
+
+	/**
+	 * A pin on sailable water is a SAILING destination: the router reaches open water through
+	 * the sea matrix once any mooring is boardable - motion the land flood cannot model. The
+	 * sailable ocean is one connected body (the water-map invariant), so one reachable mooring
+	 * makes every sailable tile attainable. 125 sea-region landmarks ("Kharidian Sea", "Lunar
+	 * Bay") were counted unreachable for want of this rule.
+	 */
+	private boolean seaReachable(int packed)
+	{
+		if (!gps.SailingSea.isSailable(packed))
+		{
+			return false;
+		}
+		if (oceanReachable == null)
+		{
+			boolean any = false;
+			for (int tile : reachable)
+			{
+				if (gps.SailingSea.isMooringLand(tile))
+				{
+					any = true;
+					break;
+				}
+			}
+			oceanReachable = any;
+		}
+		return oceanReachable;
+	}
+
 	private boolean anyReachable(int packed)
 	{
+		if (seaReachable(packed))
+		{
+			return true;
+		}
 		for (int target : Destinations.walkableTargets(map, packed))
 		{
 			if (reachable.contains(target))
