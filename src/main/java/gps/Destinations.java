@@ -419,11 +419,92 @@ public final class Destinations
 		return name.trim();
 	}
 
+	/** Minigame-only interior boxes (destination-exclusions.tsv): pins inside them are dropped. */
+	private static final String EXCLUSIONS_PATH = "/destination-exclusions.tsv";
+
+	private static final class ExclusionZone
+	{
+		final int minX, minY, maxX, maxY, plane;
+
+		ExclusionZone(int minX, int minY, int maxX, int maxY, int plane)
+		{
+			this.minX = minX;
+			this.minY = minY;
+			this.maxX = maxX;
+			this.maxY = maxY;
+			this.plane = plane;
+		}
+	}
+
+	private static volatile List<ExclusionZone> exclusionZones;
+
+	/**
+	 * Whether a destination pin sits inside a minigame-only interior (Trouble Brewing's water
+	 * sources): such amenities serve the activity, not overworld routing, so the pin is dropped
+	 * from search, amenity sets and the reachability audits alike (field call 2026-08-27:
+	 * "there is no point in routing to it").
+	 */
+	static boolean insideExcludedZone(int packed)
+	{
+		final int x = WorldPointUtil.unpackWorldX(packed);
+		final int y = WorldPointUtil.unpackWorldY(packed);
+		final int plane = WorldPointUtil.unpackWorldPlane(packed);
+		for (ExclusionZone zone : loadExclusionZones())
+		{
+			if (plane == zone.plane && x >= zone.minX && x <= zone.maxX
+				&& y >= zone.minY && y <= zone.maxY)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static synchronized List<ExclusionZone> loadExclusionZones()
+	{
+		if (exclusionZones != null)
+		{
+			return exclusionZones;
+		}
+		List<ExclusionZone> loaded = new ArrayList<>();
+		try (InputStream in = ShortestPathPlugin.class.getResourceAsStream(EXCLUSIONS_PATH))
+		{
+			if (in != null)
+			{
+				try (java.util.Scanner scanner = new java.util.Scanner(in, "UTF-8"))
+				{
+					while (scanner.hasNextLine())
+					{
+						String line = scanner.nextLine();
+						if (line.isEmpty() || line.startsWith("#"))
+						{
+							continue;
+						}
+						String[] f = line.split("	");
+						if (f.length < 5)
+						{
+							continue;
+						}
+						loaded.add(new ExclusionZone(Integer.parseInt(f[0].trim()), Integer.parseInt(f[1].trim()),
+							Integer.parseInt(f[2].trim()), Integer.parseInt(f[3].trim()), Integer.parseInt(f[4].trim())));
+					}
+				}
+			}
+		}
+		catch (IOException e)
+		{
+			log.error("Failed to load destination exclusions", e);
+		}
+		exclusionZones = loaded;
+		return loaded;
+	}
+
 	private static List<Entry> load()
 	{
 		List<Entry> entries = loadResource(RESOURCE_PATH);
 		entries.addAll(loadResource(CURATED_PATH));
 		entries.addAll(loadResource(WIKI_PATH));
+		entries.removeIf(entry -> insideExcludedZone(entry.packedPosition));
 		return entries;
 	}
 

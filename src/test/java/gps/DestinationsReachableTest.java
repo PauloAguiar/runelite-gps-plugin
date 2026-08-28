@@ -171,7 +171,10 @@ public class DestinationsReachableTest
 	// 738 -> 709 on 2026-08-27: the dumper stopped blocking interact-2 ground decor
 	// (bloodsplatters, droppings - walkable live), freeing 12 pins incl. the West
 	// Ardougne chaos altar graveyard (live dump 1787883744264 was the arbiter).
-	private static final int RATCHET = 709;
+	// 709 -> 705 on 2026-08-27: the Trouble Brewing arena's water-source pins are
+	// minigame-only interiors, excluded from every destination surface (destination-
+	// exclusions.tsv) rather than treated as unreachable places.
+	private static final int RATCHET = 705;
 
 	/**
 	 * Real content living inside the instance template band, enforced by the invariant like
