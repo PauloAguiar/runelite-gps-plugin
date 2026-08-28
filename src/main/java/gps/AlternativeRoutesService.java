@@ -230,6 +230,7 @@ public class AlternativeRoutesService
 		final int limit = Math.max(1, Math.min(maxRoutes, MAX_ROUTES_CAP));
 		final Set<Integer> rawTargets = new HashSet<>(targets);
 		final Set<Integer> ends = new HashSet<>(targets);
+		final Map<String, Integer> chainTailCounts;
 		final GenTimer timer = new GenTimer();
 		final long wallStart = System.nanoTime();
 
@@ -313,6 +314,7 @@ public class AlternativeRoutesService
 			seedCandidates = prior.seedCandidates;
 			routes = new ArrayList<>(prior.routes);
 			seenSignatures = new HashSet<>(prior.seenSignatures);
+			chainTailCounts = new java.util.HashMap<>(prior.chainTailCounts);
 			bestRemaining = prior.bestRemaining;
 			// First update: the routes the user is already looking at, unchanged.
 			emit(gen, listener, new ArrayList<>(routes), catalog, unavailable, false);
@@ -350,6 +352,7 @@ public class AlternativeRoutesService
 			}
 			routes = new ArrayList<>();
 			seenSignatures = new HashSet<>();
+			chainTailCounts = new java.util.HashMap<>();
 			bestRemaining = -1;
 			// Show the catalog right away while the routes are still computing.
 			emit(gen, listener, List.of(), catalog, unavailable, false);
@@ -567,6 +570,16 @@ public class AlternativeRoutesService
 				i--;
 				continue;
 			}
+			// Prefix twin of a saturated tail: same treatment as a hop variant. Counted over
+			// CHAIN acceptances only (resumable), so a widened resume replays the exact
+			// saturation sequence of a from-scratch run.
+			if (methods.size() >= 2
+				&& chainTailCounts.getOrDefault(tailSignature(methods), 0) >= TAIL_DOMINANCE)
+			{
+				excluded.add(methods.get(0));
+				i--;
+				continue;
+			}
 
 			// Distinct method-signature gate: if this route uses the same ordered methods as a previous
 			// one, excluding more would only reshuffle, so stop.
@@ -576,7 +589,11 @@ public class AlternativeRoutesService
 				break;
 			}
 			routes.add(new RouteOption(withoutIdleBankFlip(path, scan), methods, scan.methodEdges, scan.methodDurations,
-				totalCost, scan.rawCost, reached, scan.bankGated, scan.bankGatedTransports, scan.walkBefore, scan.trailingWalk));
+				totalCost, scan.rawCost, reached, scan.bankGated, scan.bankGatedTransports, scan.walkBefore, scan.trailingWalk));
+			if (methods.size() >= 2)
+			{
+				chainTailCounts.merge(tailSignature(methods), 1, Integer::sum);
+			}
 			// The chain's first route is the cheapest; drop the concurrent walk search's ceiling to the
 			// search sanity ceiling (twice the display band). A walk costlier than that can never be
 			// shown, so a walk to an unreachable/far target stops instead of flooding the map. Only when
@@ -745,7 +762,8 @@ public class AlternativeRoutesService
 			}
 			resumeState = new ResumeState(start, rawTargets, Set.copyOf(ends), Set.copyOf(userExclusions),
 				mode, limit, costMultiple, Set.copyOf(excluded), shownSignatures,
-				List.copyOf(routes), bestRemaining, catalog, unavailable, seedCandidates);
+				List.copyOf(routes), bestRemaining, catalog, unavailable, seedCandidates,
+				java.util.Map.copyOf(chainTailCounts));
 		}
 		// A superseded run leaves the previous state alone: the newer generation overwrites it when it
 		// completes, and the eligibility check (start/targets/mode/exclusions) guards staleness anyway.
@@ -774,13 +792,18 @@ public class AlternativeRoutesService
 		final List<TeleportMethod> catalog;
 		final Map<TeleportMethod, MethodAvailability> unavailable;
 		final List<Transport> seedCandidates;
+		// Chain-only tail counts, so a widened resume saturates tails in the exact sequence the
+		// from-scratch run would (seed routes must not shift the counts between the two paths).
+		final Map<String, Integer> chainTailCounts;
 
 		ResumeState(int start, Set<Integer> rawTargets, Set<Integer> filteredEnds,
 			Set<TeleportMethod> userExclusions, AlternativeRoutesMode mode, int limit, int costMultiple,
 			Set<TeleportMethod> excluded, Set<String> seenSignatures, List<RouteOption> routes,
 			int bestRemaining, List<TeleportMethod> catalog,
-			Map<TeleportMethod, MethodAvailability> unavailable, List<Transport> seedCandidates)
+			Map<TeleportMethod, MethodAvailability> unavailable, List<Transport> seedCandidates,
+			Map<String, Integer> chainTailCounts)
 		{
+			this.chainTailCounts = chainTailCounts;
 			this.start = start;
 			this.rawTargets = rawTargets;
 			this.filteredEnds = filteredEnds;
@@ -1197,6 +1220,7 @@ public class AlternativeRoutesService
 	}
 
 	/** A tail shared by this many kept routes triggers the diversity pass. */
+
 	private static final int TAIL_DOMINANCE = 3;
 	/** At most this many extra searches per generation, one per shared-tail method. */
 	private static final int TAIL_DIVERSITY_SEARCHES = 2;
