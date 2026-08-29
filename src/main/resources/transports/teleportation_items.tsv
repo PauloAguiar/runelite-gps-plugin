@@ -395,7 +395,8 @@
 # Sailors' amulet (Charged)										
 # Port Roberts and Deepfin Point unlock on inspecting their Sailors' Marker: gameval										
 # SAILORS_AMULET_ROBERTS=19540 / _DEEPFIN=19543 (field-verified 2026-08-28: 19543 flips										
-# 0->1 at the Deepfin marker, varbit watch). Red Rock lands at 2797,2521 (wiki maplink,										
+# 0->1 at the Deepfin marker, varbit watch). Red Rock lands at 2797,2521 (wiki maplink										
+# 2026-08-29; its marker 2803,2523 matches the cache dump). Barracuda (19542) has no content yet.										
 # Confirmed from cache dump (see SailingAmenityVarbitDumperTest):										
 #   Item 32398 Sailors amulet (inert)   interfaceOptions: [null, Wear, null, Inspect, Destroy]										
 #   Item 32399 Sailors amulet (charged) interfaceOptions: [null, Wear, Teleport, Check, Destroy]										
