@@ -239,6 +239,46 @@ public class TransportDataLintTest
 		}
 		Assert.assertTrue("deck arrivals expected", deckArrivals > 100);
 	}
+	/**
+	 * Sailors' amulet destinations unlock by inspecting their Sailors' Marker (gameval
+	 * SAILORS_AMULET_*, field-verified via the varbit watch 2026-08-28): Port Roberts and
+	 * Deepfin Point carry their unlock varbit; The Pandemonium is the amulet's home port and
+	 * needs none.
+	 */
+	@Test
+	public void sailorsAmuletDestinationsCarryTheirUnlockVarbits()
+	{
+		int roberts = 0, deepfin = 0, pandemonium = 0;
+		for (Set<Transport> set : TransportLoader.loadAllFromResources().values())
+		{
+			for (Transport transport : set)
+			{
+				String info = transport.getDisplayInfo();
+				if (info == null || !info.startsWith("Sailors' amulet:"))
+				{
+					continue;
+				}
+				if (info.endsWith("Port Roberts"))
+				{
+					roberts++;
+					Assert.assertEquals("Port Roberts needs its marker varbit", 1, transport.getVarbits().size());
+				}
+				else if (info.endsWith("Deepfin Point"))
+				{
+					deepfin++;
+					Assert.assertEquals("Deepfin needs its marker varbit", 1, transport.getVarbits().size());
+				}
+				else if (info.endsWith("The Pandemonium"))
+				{
+					pandemonium++;
+					Assert.assertEquals("the home port has no unlock", 0, transport.getVarbits().size());
+				}
+			}
+		}
+		Assert.assertTrue("all three amulet rows must exist",
+			roberts == 1 && deepfin == 1 && pandemonium == 1);
+	}
 }
+
 
 
