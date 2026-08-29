@@ -248,7 +248,7 @@ public class TransportDataLintTest
 	@Test
 	public void sailorsAmuletDestinationsCarryTheirUnlockVarbits()
 	{
-		int roberts = 0, deepfin = 0, pandemonium = 0;
+		int roberts = 0, deepfin = 0, redRock = 0, pandemonium = 0;
 		for (Set<Transport> set : TransportLoader.loadAllFromResources().values())
 		{
 			for (Transport transport : set)
@@ -268,6 +268,11 @@ public class TransportDataLintTest
 					deepfin++;
 					Assert.assertEquals("Deepfin needs its marker varbit", 1, transport.getVarbits().size());
 				}
+				else if (info.endsWith("Red Rock"))
+				{
+					redRock++;
+					Assert.assertEquals("Red Rock needs its marker varbit", 1, transport.getVarbits().size());
+				}
 				else if (info.endsWith("The Pandemonium"))
 				{
 					pandemonium++;
@@ -275,8 +280,8 @@ public class TransportDataLintTest
 				}
 			}
 		}
-		Assert.assertTrue("all three amulet rows must exist",
-			roberts == 1 && deepfin == 1 && pandemonium == 1);
+		Assert.assertTrue("all four amulet rows must exist",
+			roberts == 1 && deepfin == 1 && redRock == 1 && pandemonium == 1);
 	}
 }
 

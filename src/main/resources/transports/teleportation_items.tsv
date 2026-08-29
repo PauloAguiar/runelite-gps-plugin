@@ -395,7 +395,7 @@
 # Sailors' amulet (Charged)										
 # Port Roberts and Deepfin Point unlock on inspecting their Sailors' Marker: gameval										
 # SAILORS_AMULET_ROBERTS=19540 / _DEEPFIN=19543 (field-verified 2026-08-28: 19543 flips										
-# 0->1 at the Deepfin marker, varbit watch). Red Rock=19541, Barracuda=19542 await rows.										
+# 0->1 at the Deepfin marker, varbit watch). Red Rock lands at 2797,2521 (wiki maplink,										
 # Confirmed from cache dump (see SailingAmenityVarbitDumperTest):										
 #   Item 32398 Sailors amulet (inert)   interfaceOptions: [null, Wear, null, Inspect, Destroy]										
 #   Item 32399 Sailors amulet (charged) interfaceOptions: [null, Wear, Teleport, Check, Destroy]										
@@ -410,6 +410,7 @@
 3058 2975 0			32399=1		4	Sailors' amulet: The Pandemonium	T	20		
 1889 3292 0			32399=1		4	Sailors' amulet: Port Roberts	T	20	19540=1	
 1943 2757 0			32399=1		4	Sailors' amulet: Deepfin Point	T	20	19543=1	
+2797 2521 0			32399=1		4	Sailors' amulet: Red Rock	T	20	19541=1	
 
 # Cowbell amulet										
 3259 3277 0			33104=1		4	Cowbell amulet	T	20		
