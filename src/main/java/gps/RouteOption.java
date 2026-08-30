@@ -172,6 +172,23 @@ public final class RouteOption
 		return !bankMethods.isEmpty() || !bankTransports.isEmpty();
 	}
 
+	/** Whether every method is a sailing leg: the route never leaves the water system. */
+	public boolean isPureSail()
+	{
+		if (methods.isEmpty())
+		{
+			return false;
+		}
+		for (TeleportMethod method : methods)
+		{
+			if (method.getType() != gps.transport.TransportType.SAILING)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
 	public boolean isWalkOnly()
 	{
 		return methods.isEmpty();

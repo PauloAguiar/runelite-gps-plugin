@@ -639,11 +639,14 @@ public class AlternativeRoutesService
 		// cheaper seed evicts the costliest route — the safety net for anything the chain missed must not
 		// be silenced by a low route limit (the exact failure a user capture showed at limit 10).
 		boolean hasWalkOnly = routes.stream().anyMatch(RouteOption::isWalkOnly);
+		java.util.concurrent.atomic.AtomicReference<RouteOption> bestSail =
+			new java.util.concurrent.atomic.AtomicReference<>();
 		if (!hasWalkOnly && !routes.isEmpty())
 		{
 			seedTeleportRoutes(gen, start, ends, userExclusions, mode, limit, costMultiple,
 				seedCandidates, routes, seenSignatures, catalog, unavailable, roundTrip ? null : listener,
-				bestRemaining, cappedByBestCost(capOf(walkFuture), routes, 2 * costMultiple), field, timer);
+				bestRemaining, cappedByBestCost(capOf(walkFuture), routes, 2 * costMultiple), field, timer,
+				bestSail);
 		}
 		// Tail-diversity pass: when the page is dominated by one shared method TAIL, surface a
 		// variant with a different middle. Runs after seeds so eviction sees the full page.
@@ -674,7 +677,13 @@ public class AlternativeRoutesService
 		if (walk != null && walk.cap != Integer.MAX_VALUE)
 		{
 			final int walkCost = walk.cap;
-			routes.removeIf(r -> !r.isWalkOnly() && r.getTotalCost() >= walkCost);
+			// When the baseline itself is the keep-sailing route (aboard), an equal-cost
+			// pure-sail route IS that baseline - culling it here and letting the signature
+			// dedupe block the re-add below would empty the page (close water pins: the
+			// direct sail ties its own ceiling).
+			final boolean sailWalk = walk.route.isPureSail();
+			routes.removeIf(r -> !r.isWalkOnly() && r.getTotalCost() >= walkCost
+				&& !(sailWalk && r.isPureSail() && r.getTotalCost() == walkCost));
 		}
 		// Always surface walking as the baseline option (when the target is reachable on foot and the
 		// chain didn't already derive it), even at the route limit — the player should always see
@@ -692,6 +701,36 @@ public class AlternativeRoutesService
 				for (int r = 0; r < routes.size(); r++)
 				{
 					if (!routes.get(r).isWalkOnly() && r != solePortFirstIndex(routes)
+						&& routes.get(r).getTotalCost() > maxCost)
+					{
+						maxCost = routes.get(r).getTotalCost();
+						drop = r;
+					}
+				}
+				if (drop < 0)
+				{
+					break;
+				}
+				routes.remove(drop);
+			}
+		}
+
+		// The keep-sailing baseline joins the page when aboard and no pure-sail route survived
+		// the band: signature-deduped, evicting the costliest teleport chain when full - the
+		// walk baseline's exact shape. The plugin ranks it first at the helm.
+		RouteOption sailBaseline = bestSail.get();
+		if (sailBaseline != null && routes.stream().noneMatch(RouteOption::isPureSail)
+			&& seenSignatures.add(signature(sailBaseline.getMethods())))
+		{
+			routes.add(sailBaseline);
+			while (routes.size() > limit)
+			{
+				int drop = -1;
+				int maxCost = -1;
+				for (int r = 0; r < routes.size(); r++)
+				{
+					if (!routes.get(r).isWalkOnly() && !routes.get(r).isPureSail()
+						&& r != solePortFirstIndex(routes)
 						&& routes.get(r).getTotalCost() > maxCost)
 					{
 						maxCost = routes.get(r).getTotalCost();
@@ -938,7 +977,8 @@ public class AlternativeRoutesService
 	private void seedTeleportRoutes(int gen, int start, Set<Integer> ends, Set<TeleportMethod> userExclusions,
 		AlternativeRoutesMode mode, int limit, int costMultiple, List<Transport> seedCandidates, List<RouteOption> routes,
 		Set<String> seenSignatures, List<TeleportMethod> catalog, Map<TeleportMethod, MethodAvailability> unavailable,
-		ResultListener listener, int bestRemaining, int costCap, DistanceField field, GenTimer timer)
+		ResultListener listener, int bestRemaining, int costCap, DistanceField field, GenTimer timer,
+		java.util.concurrent.atomic.AtomicReference<RouteOption> bestSail)
 	{
 		// Every global teleport is excluded from each seed search except the seed itself, so the
 		// exclusion universe must span ALL candidates — including ones that don't get an attempt.
@@ -1037,6 +1077,23 @@ public class AlternativeRoutesService
 					&& !seedResult.scan.methods.isEmpty()
 					&& nearestPortRetained.equals(seedResult.scan.methods.get(0).getDisplayInfo())
 					&& !hasPortFirstRoute(routes);
+				// At the helm the cheapest PURE-SAIL continuation is a protected baseline (the
+				// walk route's sibling): the cost band otherwise culls every keep-sailing option
+				// while cheap disembark-teleport chains fill the page (capture 20260829-204334),
+				// leaving a sailor mid-task with no sea route at all.
+				if (planningConfig.isOnSailingBoat() && seedResult.reached
+					&& isPureSail(seedResult.scan.methods))
+				{
+					RouteOption prior = bestSail.get();
+					if (prior == null || seedResult.totalCost < prior.getTotalCost())
+					{
+						bestSail.set(new RouteOption(withoutIdleBankFlip(seedResult.path, seedResult.scan),
+							seedResult.scan.methods, seedResult.scan.methodEdges,
+							seedResult.scan.methodDurations, seedResult.totalCost, seedResult.scan.rawCost,
+							true, seedResult.scan.bankGated, seedResult.scan.walkBefore,
+							seedResult.scan.trailingWalk));
+					}
+				}
 				if (!portPromise && costMultiple > 0 && routes.size() >= MIN_PAGE_ROUTES
 					&& seedResult.totalCost > (long) Math.max(routes.get(0).getTotalCost(), MIN_BEST_FOR_BAND) * costMultiple
 					&& seedResult.totalCost > pageFillCeiling(routes.get(0).getTotalCost(), maxAcceptedCost(routes), costMultiple))
@@ -1505,9 +1562,17 @@ public class AlternativeRoutesService
 		MethodScan scan = scanMethods(config, path);
 		if (!scan.methods.isEmpty())
 		{
-			// Defensive: with the whole catalog excluded no method should appear; if one does,
-			// this isn't a pure walk and must not serve as the walk cap or route.
-			return null;
+			// Aboard, the catalog-wide exclusion leaves the SAILING legs untouched (sea legs are
+			// not catalog methods), so this search naturally yields the KEEP-SAILING route: sail
+			// to the port nearest the target and walk ashore. That is the baseline a sailor
+			// wants surfaced (capture 20260829-204334: every page slot was a disembark-teleport
+			// chain and the band culled all keep-sailing options), not a defect - return it,
+			// and its cost still serves as the universal ceiling. Any NON-sailing method here
+			// remains a defect and must not become the walk cap or route.
+			if (!(planningConfig.isOnSailingBoat() && isPureSail(scan.methods)))
+			{
+				return null;
+			}
 		}
 		boolean reached = result.isReached();
 		RouteOption route = new RouteOption(withoutIdleBankFlip(path, scan), scan.methods, scan.methodEdges, scan.methodDurations,
@@ -2063,6 +2128,23 @@ public class AlternativeRoutesService
 	 * its own signature and its own slot). Bankless usability is checked: if the direct teleport
 	 * only works from the bank, the hop variant is a genuinely different (bankless) route.
 	 */
+	/** Whether every method is a sailing leg (see RouteOption#isPureSail). */
+	static boolean isPureSail(List<TeleportMethod> methods)
+	{
+		if (methods.isEmpty())
+		{
+			return false;
+		}
+		for (TeleportMethod method : methods)
+		{
+			if (method.getType() != gps.transport.TransportType.SAILING)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
 	static boolean hasRedundantTeleportHop(List<Transport> baselineTeleports, List<TeleportMethod> methods)
 	{
 		for (int i = 0; i + 1 < methods.size(); i++)

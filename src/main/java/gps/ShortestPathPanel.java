@@ -2169,6 +2169,14 @@ public class ShortestPathPanel extends PluginPanel
 		abandon.setEnabled(sailingOn);
 		abandon.setBorder(new EmptyBorder(2, 18, 2, 0));
 		body.add(abandon);
+		JCheckBox helm = configCheckBox("Keep sailing while at the helm",
+			config.sailingKeepSailing(),
+			"<html><body style='width:220px'>Aboard, routes that stay on the water rank first;"
+				+ " disembark-and-teleport chains stay listed below as alternatives.</body></html>",
+			v -> plugin.setPanelConfig("sailingKeepSailing", v));
+		helm.setEnabled(sailingOn);
+		helm.setBorder(new EmptyBorder(2, 18, 2, 0));
+		body.add(helm);
 
 		JCheckBox summon = configCheckBox("Assume Summon Boat spell",
 			plugin.getGpsConfig().sailingAssumeSummon(),

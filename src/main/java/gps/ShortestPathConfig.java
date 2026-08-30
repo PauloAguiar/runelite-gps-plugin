@@ -174,6 +174,20 @@ public interface ShortestPathConfig extends Config
 		return false;
 	}
 
+@ConfigItem(
+		hidden = true,
+		keyName = "sailingKeepSailing",
+		name = "Keep sailing while at the helm",
+		description = "Aboard, routes that stay on the water rank first; disembark-and-teleport" +
+			" chains stay listed below as alternatives.",
+		position = 160,
+		section = sectionSettings
+	)
+	default boolean sailingKeepSailing()
+	{
+		return true;
+	}
+
 	@ConfigItem(
 		hidden = true,
 		keyName = "useFairyRings",

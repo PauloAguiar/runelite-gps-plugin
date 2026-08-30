@@ -2636,8 +2636,12 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 
+	// The helm-preference toggle, cached for the comparator (read on the service thread).
+	private volatile boolean cachedKeepSailing = true;
+
 	private void cacheConfigValues()
 	{
+		cachedKeepSailing = override("sailingKeepSailing", config.sailingKeepSailing());
 		drawMap = override("drawMap", config.drawMap());
 		drawMinimap = override("drawMinimap", config.drawMinimap());
 		drawTiles = override("drawTiles", config.drawTiles());
@@ -3093,7 +3097,18 @@ public class ShortestPathPlugin extends Plugin
 	{
 		return java.util.Comparator
 			.comparingInt((RouteOption r) -> r.isReached() ? 0 : 1)
+			// At the helm, routes that STAY ON THE WATER outrank disembark-and-teleport chains
+			// (capture 20260829-204334: every offer abandoned the boat at the nearest mooring
+			// because the tick math favors teleports; a sailor mid-task wants the sea route
+			// first, the land chains listed below). Sailing-section toggle, on by default.
+			.thenComparingInt(r -> keepSailingFirst() && !r.isPureSail() ? 1 : 0)
 			.thenComparingInt(r -> r.getTotalCost() + MethodPriority.unitsFromSeconds(routeAdjustmentSeconds(r)));
+	}
+
+	boolean keepSailingFirst()
+	{
+		PathfinderConfig pathConfig = pathfinderConfig;
+		return cachedKeepSailing && pathConfig != null && pathConfig.isOnSailingBoat();
 	}
 
 	/** Stable re-sort of the current list (tiers changed) — display-only, no regeneration. */
