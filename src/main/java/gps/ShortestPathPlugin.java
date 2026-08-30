@@ -335,6 +335,9 @@ public class ShortestPathPlugin extends Plugin
 	/** Earliest tick the next inventory-driven catalog refresh may run (see maybeRefreshCatalog). */
 	private int catalogRefreshBackoffTick;
 	private static final int CATALOG_REFRESH_COOLDOWN_TICKS = 5;
+	/** Fingerprint of the routing-relevant inventory/equipment slice at the last dirty mark. */
+	private long routingItemsFingerprint;
+	private boolean routingItemsFingerprintValid;
 	private volatile RouteOption selectedRoute;
 	// The route the overlays draw, committed ONLY when a generation settles (its "done" update) —
 	// never mid-stream. While alternatives are still generating and re-ranking, the overlays hold
@@ -1851,7 +1854,23 @@ public class ShortestPathPlugin extends Plugin
 	{
 		if (event.getContainerId() == InventoryID.INV || event.getContainerId() == InventoryID.WORN)
 		{
-			catalogDirty = true;
+			// Only mark the catalog dirty when the routing-relevant slice of the inventory and
+			// equipment actually changed: the dependency index knows every item id (and quantity
+			// threshold) any transport requirement can read, so logs, ore, food and loot pass
+			// through without ever scheduling a refresh (issues #23/#24).
+			if (pathfinderConfig == null)
+			{
+				catalogDirty = true;
+				return;
+			}
+			long fingerprint = pathfinderConfig.getRoutingItemDependencies().fingerprint(
+				client.getItemContainer(InventoryID.INV), client.getItemContainer(InventoryID.WORN));
+			if (!routingItemsFingerprintValid || fingerprint != routingItemsFingerprint)
+			{
+				routingItemsFingerprint = fingerprint;
+				routingItemsFingerprintValid = true;
+				catalogDirty = true;
+			}
 			return;
 		}
 		if (event.getContainerId() != InventoryID.BANK)
