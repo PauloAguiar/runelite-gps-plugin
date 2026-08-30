@@ -332,6 +332,9 @@ public class ShortestPathPlugin extends Plugin
 	// usable count and per-method reasons were a per-generation snapshot — consumed on the
 	// next tick by a catalog-only refresh, never during a generation.
 	private volatile boolean catalogDirty;
+	/** Earliest tick the next inventory-driven catalog refresh may run (see maybeRefreshCatalog). */
+	private int catalogRefreshBackoffTick;
+	private static final int CATALOG_REFRESH_COOLDOWN_TICKS = 5;
 	private volatile RouteOption selectedRoute;
 	// The route the overlays draw, committed ONLY when a generation settles (its "done" update) —
 	// never mid-stream. While alternatives are still generating and re-ranking, the overlays hold
@@ -4458,6 +4461,17 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return;
 		}
+		// The catalog exists for the sidebar; while the panel is hidden the dirty flag just waits
+		// (issues #23/#24: every pickup, drop and gear switch ran a full planning refresh -
+		// hundreds of quest clientscripts - on the client thread, a per-action micro stutter for
+		// players who never open the panel). Route generations rebuild the catalog themselves, so
+		// routing never sees this deferral. Bursts while the panel IS open coalesce through a
+		// short cooldown; the flag stays set, so no change is lost, only delayed a few ticks.
+		if (!altPanelVisible || client.getTickCount() < catalogRefreshBackoffTick)
+		{
+			return;
+		}
+		catalogRefreshBackoffTick = client.getTickCount() + CATALOG_REFRESH_COOLDOWN_TICKS;
 		catalogDirty = false;
 		altRoutesService.refreshCatalog(routesMode, (catalog, unavailable) ->
 		{

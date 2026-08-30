@@ -945,6 +945,9 @@ public class PathfinderConfig
 			return; // Has to run on the client thread; data will be refreshed when path finding commences
 		}
 
+		// Fresh quest progress for this pass: getQuestState memoizes per refresh (see there).
+		questStates.clear();
+
 		// Fairy ring staff/diary requirements are enforced later in hasRequiredItems().
 		transportTypeConfig.disableUnless(TransportType.FAIRY_RING,
 			client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST) > 39);
@@ -973,6 +976,8 @@ public class PathfinderConfig
 			{
 				try
 				{
+					// The explicit put also covers getQuestState overrides (the test harness);
+					// with the base memo it is a redundant self-assignment, repeats are map hits.
 					questStates.put(quest, getQuestState(quest));
 				}
 				catch (NullPointerException ignored)
@@ -1487,7 +1492,19 @@ public class PathfinderConfig
 
 	public QuestState getQuestState(Quest quest)
 	{
-		return quest.getState(client);
+		// Memoized for the duration of a refresh pass: every call runs a clientscript (4029),
+		// and the transport loop repeats the same quests hundreds of times per refresh - at one
+		// script per row that is a visible client-thread stall on every inventory change
+		// (issues #23/#24, micro stutters). refreshTransports() clears the memo at the top of
+		// each pass so quest progress is still re-read live.
+		QuestState cached = questStates.get(quest);
+		if (cached != null)
+		{
+			return cached;
+		}
+		QuestState state = quest.getState(client);
+		questStates.put(quest, state);
+		return state;
 	}
 
 	private boolean completedQuests(Transport transport)
