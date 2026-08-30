@@ -35,6 +35,7 @@ import gps.MethodAvailability;
 import gps.PrimitiveIntHashMap;
 import gps.ShortestPathConfig;
 import gps.ShortestPathPlugin;
+import gps.RoutingItemDependencies;
 import gps.TeleportMethod;
 import gps.TeleportationItem;
 import gps.WorldPointUtil;
@@ -1488,6 +1489,22 @@ public class PathfinderConfig
 				}
 			}
 		}
+	}
+
+	private RoutingItemDependencies routingItemDependencies;
+
+	/**
+	 * The precomputed item-dependency index over every loaded transport, built once on first
+	 * use. The plugin consults it on inventory/equipment changes to skip catalog refreshes for
+	 * items no transport cares about (issues #23/#24).
+	 */
+	public RoutingItemDependencies getRoutingItemDependencies()
+	{
+		if (routingItemDependencies == null)
+		{
+			routingItemDependencies = RoutingItemDependencies.build(allTransports);
+		}
+		return routingItemDependencies;
 	}
 
 	public QuestState getQuestState(Quest quest)
