@@ -2080,9 +2080,8 @@ public class ShortestPathPanel extends PluginPanel
 				+ " carrying logs.<br><br>When off, GPS ignores the Log storage: a flight is only"
 				+ " routed while you carry its log type (the All modes assume flights are available"
 				+ " either way).</body></html>",
-			v -> plugin.setPanelConfig("balloonSmartMode", v));
+			v -> plugin.setPanelConfig("balloonSmartMode", v), 18);
 		smartBox.setEnabled(balloonsOn);
-		smartBox.setBorder(new EmptyBorder(2, 18, 2, 0));
 		body.add(smartBox);
 
 		JPanel warnRow = new JPanel(new BorderLayout(5, 0));
@@ -2165,17 +2164,15 @@ public class ShortestPathPanel extends PluginPanel
 			"<html><body style='width:220px'>Aboard, teleport routes leave the boat where it"
 				+ " floats.<br><br>Off: routes from the water only disembark at moorings and port"
 				+ " berths — the boat is never left at sea.</body></html>",
-			v -> plugin.setPanelConfig("sailingTeleportAbandon", v));
+			v -> plugin.setPanelConfig("sailingTeleportAbandon", v), 18);
 		abandon.setEnabled(sailingOn);
-		abandon.setBorder(new EmptyBorder(2, 18, 2, 0));
 		body.add(abandon);
 		JCheckBox helm = configCheckBox("Keep sailing while at the helm",
 			config.sailingKeepSailing(),
 			"<html><body style='width:220px'>Aboard, routes that stay on the water rank first;"
 				+ " disembark-and-teleport chains stay listed below as alternatives.</body></html>",
-			v -> plugin.setPanelConfig("sailingKeepSailing", v));
+			v -> plugin.setPanelConfig("sailingKeepSailing", v), 18);
 		helm.setEnabled(sailingOn);
-		helm.setBorder(new EmptyBorder(2, 18, 2, 0));
 		body.add(helm);
 
 		JCheckBox summon = configCheckBox("Assume Summon Boat spell",
@@ -2184,9 +2181,8 @@ public class ShortestPathPanel extends PluginPanel
 				+ " summoned there first (56 Magic, Pandemonium, teleport focus).<br><br>Off:"
 				+ " sailing legs start only where a boat is actually moored, and Teleport to"
 				+ " Boat (67 Magic, greater focus) covers the distance.</body></html>",
-			v -> plugin.setPanelConfig("sailingAssumeSummon", v));
+			v -> plugin.setPanelConfig("sailingAssumeSummon", v), 18);
 		summon.setEnabled(sailingOn);
-		summon.setBorder(new EmptyBorder(2, 18, 2, 0));
 		body.add(summon);
 
 		// Latest known berths: live varbits once seen this session, the stored snapshot
@@ -2362,10 +2358,26 @@ public class ShortestPathPanel extends PluginPanel
 	private JCheckBox configCheckBox(String label, boolean value, String tooltip,
 		java.util.function.Consumer<Boolean> onChange)
 	{
-		// HTML label so long names WRAP instead of ellipsizing ("Teleports may a…" in the
-		// sailing section) — width leaves room for the glyph and the sub-toggle indent.
+		return configCheckBox(label, value, tooltip, onChange, 0);
+	}
+
+	/**
+	 * As above, indented {@code indent} px as a sub-toggle — the border is set here so the HTML
+	 * wrap width can shrink by the same amount. The section body offers ~177px of text beside
+	 * the glyph, so the old fixed 168px body fit top-level boxes but CLIPPED indented ones (the
+	 * sailing sub-toggles rendered as "Teleports may aban": a fixed-width HTML view never
+	 * reflows, it just loses its right edge, with no ellipsis). Indent-aware width makes a long
+	 * label wrap onto a second line instead.
+	 */
+	private JCheckBox configCheckBox(String label, boolean value, String tooltip,
+		java.util.function.Consumer<Boolean> onChange, int indent)
+	{
 		JCheckBox box = new JCheckBox(
-			"<html><body style='width:168px'>" + label + "</body></html>", value);
+			"<html><body style='width:" + (168 - indent) + "px'>" + label + "</body></html>", value);
+		if (indent > 0)
+		{
+			box.setBorder(new EmptyBorder(2, indent, 2, 0));
+		}
 		box.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		box.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 		// HTML text ignores the look-and-feel's disabled dimming — mirror it by hand.
