@@ -77,6 +77,11 @@
 2561 3108 0	2561 3111 0	Climb-up Climbing rocks 23543	5 Agility				2
 3246 3179 0	3259 3179 0	Grapple Broken Raft 17068	8 Agility;37 Ranged;19 Strength	CROSSBOW=1&MITH_GRAPPLE=1			
 3259 3179 0	3246 3179 0	Grapple Broken Raft 17068	8 Agility;37 Ranged;19 Strength	CROSSBOW=1&MITH_GRAPPLE=1			
+# Summer Sweep Up (Aug 2026): the raft can be crossed barehanded at 48 Agility - Jump-to ops
+# on the deck halves (17069 west, 17070 east; cache-verified). Capture 20260830-172137: Quest
+# Helper's Lumbridge medium diary step targets the deck tiles themselves.
+3246 3179 0	3259 3179 0	Jump-to Broken Raft 17069	48 Agility				
+3259 3179 0	3246 3179 0	Jump-to Broken Raft 17070	48 Agility				
 2546 2873 0	2546 2871 0	Climb Rocks 31757	10 Agility				
 2546 2871 0	2546 2873 0	Climb Rocks 31757	10 Agility				
 2766 3665 0	2766 3663 0	Use Rope -> Boulder 5842	10 Agility	ROPE=1	260>0		10
