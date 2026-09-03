@@ -2205,6 +2205,10 @@ public class ShortestPathPanel extends PluginPanel
 				JPanel berthRow = new JPanel(new BorderLayout(8, 0));
 				berthRow.setOpaque(false);
 				berthRow.setBorder(new EmptyBorder(3, 18, 0, 0));
+				// A raw JPanel defaults to CENTER alignmentX (0.5); one such row in a vertical
+				// BoxLayout shifts every LEFT-aligned sibling toward mid-column - the sailing
+				// checkboxes rendered half-indented AND clipped off the right edge.
+				berthRow.setAlignmentX(Component.LEFT_ALIGNMENT);
 				JLabel name = new JLabel(row[0]);
 				name.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 				name.setToolTipText(row[0] + " — moored at " + row[1]);
