@@ -2163,7 +2163,7 @@ public class ShortestPathPanel extends PluginPanel
 			config.sailingTeleportAbandon(),
 			"<html><body style='width:220px'>Aboard, teleport routes leave the boat where it"
 				+ " floats.<br><br>Off: routes from the water only disembark at moorings and port"
-				+ " berths — the boat is never left at sea.</body></html>",
+				+ " berths; the boat is never left at sea.</body></html>",
 			v -> plugin.setPanelConfig("sailingTeleportAbandon", v), 18);
 		abandon.setEnabled(sailingOn);
 		body.add(abandon);
@@ -2177,7 +2177,7 @@ public class ShortestPathPanel extends PluginPanel
 
 		JCheckBox summon = configCheckBox("Assume Summon Boat spell",
 			plugin.getGpsConfig().sailingAssumeSummon(),
-			"<html><body style='width:220px'>Routes may board at ANY mooring — the boat is"
+			"<html><body style='width:220px'>Routes may board at ANY mooring: the boat is"
 				+ " summoned there first (56 Magic, Pandemonium, teleport focus).<br><br>Off:"
 				+ " sailing legs start only where a boat is actually moored, and Teleport to"
 				+ " Boat (67 Magic, greater focus) covers the distance.</body></html>",
@@ -2193,7 +2193,7 @@ public class ShortestPathPanel extends PluginPanel
 		if (banner == null || banner.isEmpty())
 		{
 			JLabel none = wrappedLabel(banner == null
-				? "No boat seen yet — berths appear after login."
+				? "No boat seen yet. Berths appear after login."
 				: "No owned boat detected.");
 			none.setBorder(new EmptyBorder(4, 18, 2, 0));
 			body.add(none);
@@ -2209,9 +2209,26 @@ public class ShortestPathPanel extends PluginPanel
 				// BoxLayout shifts every LEFT-aligned sibling toward mid-column - the sailing
 				// checkboxes rendered half-indented AND clipped off the right edge.
 				berthRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+				String type = row.length > 2 ? row[2] : "";
 				JLabel name = new JLabel(row[0]);
 				name.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-				name.setToolTipText(row[0] + " — moored at " + row[1]);
+				switch (type)
+				{
+					case "Raft":
+						name.setIcon(RouteIcons.BOAT_RAFT);
+						break;
+					case "Skiff":
+						name.setIcon(RouteIcons.BOAT_SKIFF);
+						break;
+					case "Sloop":
+						name.setIcon(RouteIcons.BOAT_SLOOP);
+						break;
+					default:
+						break;
+				}
+				name.setIconTextGap(6);
+				name.setToolTipText(row[0] + (type.isEmpty() ? "" : " (" + type + ")")
+					+ ", moored at " + row[1]);
 				berthRow.add(name, BorderLayout.CENTER);
 				JLabel port = new JLabel(row[1]);
 				port.setForeground(ColorScheme.PROGRESS_COMPLETE_COLOR);

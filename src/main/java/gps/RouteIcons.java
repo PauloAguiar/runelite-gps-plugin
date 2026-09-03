@@ -48,6 +48,11 @@ final class RouteIcons
 	static final ImageIcon EXCLUDE_DIM = new ImageIcon(ban(new Color(0x45, 0x45, 0x45)));
 	// Marks the route card's ETA.
 	static final ImageIcon CLOCK = new ImageIcon(clock(GREY));
+	// Hull-type glyphs for the sailing section's berth rows: drawn, not font glyphs (the panel
+	// font has no boat character and falls back to a warning triangle).
+	static final ImageIcon BOAT_RAFT = new ImageIcon(raft(GREY));
+	static final ImageIcon BOAT_SKIFF = new ImageIcon(skiff(GREY));
+	static final ImageIcon BOAT_SLOOP = new ImageIcon(sloop(GREY));
 	// Re-include an excluded method (plus).
 	// Recompute routes (circular refresh arrow).
 	// Clear all exclusions (trash can).
@@ -634,6 +639,73 @@ final class RouteIcons
 			g.draw(new Line2D.Double(6.6, 6.4, 6.9, 12.0));
 			g.draw(new Line2D.Double(8.0, 6.4, 8.0, 12.0));
 			g.draw(new Line2D.Double(9.4, 6.4, 9.1, 12.0));
+		});
+	}
+
+	/** Raft: two lashed planks and a stubby mast with a pennant. */
+	private static BufferedImage raft(Color colour)
+	{
+		return render(g ->
+		{
+			g.setColor(colour);
+			g.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+			g.draw(new Line2D.Double(3, 10.5, 13, 10.5));
+			g.draw(new Line2D.Double(3.5, 12.5, 12.5, 12.5));
+			g.draw(new Line2D.Double(8, 10.5, 8, 5));
+			Path2D pennant = new Path2D.Double();
+			pennant.moveTo(8, 5);
+			pennant.lineTo(11.5, 6.2);
+			pennant.lineTo(8, 7.4);
+			pennant.closePath();
+			g.draw(pennant);
+		});
+	}
+
+	/** Skiff: a shallow hull under a single triangular sail. */
+	private static BufferedImage skiff(Color colour)
+	{
+		return render(g ->
+		{
+			g.setColor(colour);
+			g.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+			Path2D hull = new Path2D.Double();
+			hull.moveTo(2.5, 10);
+			hull.quadTo(8, 13.8, 13.5, 10);
+			g.draw(hull);
+			g.draw(new Line2D.Double(7.5, 10, 7.5, 3));
+			Path2D sail = new Path2D.Double();
+			sail.moveTo(7.5, 3);
+			sail.lineTo(12.5, 8.8);
+			sail.lineTo(7.5, 8.8);
+			sail.closePath();
+			g.draw(sail);
+		});
+	}
+
+	/** Sloop: the bigger hull carries a main sail and a jib. */
+	private static BufferedImage sloop(Color colour)
+	{
+		return render(g ->
+		{
+			g.setColor(colour);
+			g.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+			Path2D hull = new Path2D.Double();
+			hull.moveTo(2, 10.5);
+			hull.quadTo(8, 14.2, 14, 10.5);
+			g.draw(hull);
+			g.draw(new Line2D.Double(8.5, 10.5, 8.5, 2));
+			Path2D main = new Path2D.Double();
+			main.moveTo(8.5, 2);
+			main.lineTo(13.2, 9);
+			main.lineTo(8.5, 9);
+			main.closePath();
+			g.draw(main);
+			Path2D jib = new Path2D.Double();
+			jib.moveTo(7.2, 4);
+			jib.lineTo(7.2, 9);
+			jib.lineTo(3.2, 9);
+			jib.closePath();
+			g.draw(jib);
 		});
 	}
 

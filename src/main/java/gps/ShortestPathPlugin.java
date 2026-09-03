@@ -287,15 +287,15 @@ public class ShortestPathPlugin extends Plugin
 
 	private static final int[][] BOAT_BANNER_VARBITS = {
 		{VarbitID.SAILING_BOAT_1_OWNED, VarbitID.SAILING_BOAT_1_PORT, VarbitID.SAILING_BOAT_1_NAME_1,
-			VarbitID.SAILING_BOAT_1_NAME_2, VarbitID.SAILING_BOAT_1_NAME_3},
+			VarbitID.SAILING_BOAT_1_NAME_2, VarbitID.SAILING_BOAT_1_NAME_3, VarbitID.SAILING_BOAT_1_TYPE},
 		{VarbitID.SAILING_BOAT_2_OWNED, VarbitID.SAILING_BOAT_2_PORT, VarbitID.SAILING_BOAT_2_NAME_1,
-			VarbitID.SAILING_BOAT_2_NAME_2, VarbitID.SAILING_BOAT_2_NAME_3},
+			VarbitID.SAILING_BOAT_2_NAME_2, VarbitID.SAILING_BOAT_2_NAME_3, VarbitID.SAILING_BOAT_2_TYPE},
 		{VarbitID.SAILING_BOAT_3_OWNED, VarbitID.SAILING_BOAT_3_PORT, VarbitID.SAILING_BOAT_3_NAME_1,
-			VarbitID.SAILING_BOAT_3_NAME_2, VarbitID.SAILING_BOAT_3_NAME_3},
+			VarbitID.SAILING_BOAT_3_NAME_2, VarbitID.SAILING_BOAT_3_NAME_3, VarbitID.SAILING_BOAT_3_TYPE},
 		{VarbitID.SAILING_BOAT_4_OWNED, VarbitID.SAILING_BOAT_4_PORT, VarbitID.SAILING_BOAT_4_NAME_1,
-			VarbitID.SAILING_BOAT_4_NAME_2, VarbitID.SAILING_BOAT_4_NAME_3},
+			VarbitID.SAILING_BOAT_4_NAME_2, VarbitID.SAILING_BOAT_4_NAME_3, VarbitID.SAILING_BOAT_4_TYPE},
 		{VarbitID.SAILING_BOAT_5_OWNED, VarbitID.SAILING_BOAT_5_PORT, VarbitID.SAILING_BOAT_5_NAME_1,
-			VarbitID.SAILING_BOAT_5_NAME_2, VarbitID.SAILING_BOAT_5_NAME_3},
+			VarbitID.SAILING_BOAT_5_NAME_2, VarbitID.SAILING_BOAT_5_NAME_3, VarbitID.SAILING_BOAT_5_TYPE},
 	};
 	private static final Set<Integer> BOAT_BANNER_VARBIT_IDS = Arrays.stream(BOAT_BANNER_VARBITS)
 		.flatMapToInt(Arrays::stream).boxed().collect(java.util.stream.Collectors.toSet());
@@ -2036,12 +2036,14 @@ public class ShortestPathPlugin extends Plugin
 				continue;
 			}
 			rows.add(new String[]{decodeBoatName(slot, varbits),
-				SailingPorts.portName(client.getVarbitValue(varbits[1]))});
+				SailingPorts.portName(client.getVarbitValue(varbits[1])),
+				boatTypeName(client.getVarbitValue(varbits[5]))});
 		}
 		boatBanner = rows;
 		boatBannerLive = true;
 		configManager.setRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_BOAT_PORTS,
-			rows.stream().map(r -> r[0] + "|" + r[1]).collect(java.util.stream.Collectors.joining(";")));
+			rows.stream().map(r -> r[0] + "|" + r[1] + "|" + r[2])
+				.collect(java.util.stream.Collectors.joining(";")));
 		if (altPanel != null)
 		{
 			SwingUtilities.invokeLater(altPanel::refreshConfigSections);
@@ -2050,6 +2052,22 @@ public class ShortestPathPlugin extends Plugin
 
 	/** The three name varbits index the game's own name-part tables (prefix, descriptor,
 	 * noun) — the same decode Where's My Boat ships. Any surprise falls back to a slot label. */
+	/**
+	 * The hull type varbit in acquisition-tier order: the Pandemonium quest raft is 0, the
+	 * level-15 skiff 1, the level-50 sloop 2 (verified against a capture with all three owned).
+	 * Unknown future tiers return "" and the panel simply shows no type.
+	 */
+	private static String boatTypeName(int type)
+	{
+		switch (type)
+		{
+			case 0: return "Raft";
+			case 1: return "Skiff";
+			case 2: return "Sloop";
+			default: return "";
+		}
+	}
+
 	private String decodeBoatName(int slot, int[] varbits)
 	{
 		try
@@ -2127,10 +2145,11 @@ public class ShortestPathPlugin extends Plugin
 				List<String[]> rows = new ArrayList<>();
 				for (String row : raw.split(";"))
 				{
-					int split = row.indexOf('|');
-					if (split > 0)
+					// name|port, with |type appended since the hull glyphs; old snapshots lack it.
+					String[] parts = row.split("\\|", 3);
+					if (parts.length >= 2 && !parts[0].isEmpty())
 					{
-						rows.add(new String[]{row.substring(0, split), row.substring(split + 1)});
+						rows.add(new String[]{parts[0], parts[1], parts.length > 2 ? parts[2] : ""});
 					}
 				}
 				boatBanner = rows;
