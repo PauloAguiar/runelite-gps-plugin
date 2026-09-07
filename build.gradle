@@ -1,3 +1,5 @@
+import java.time.Duration
+
 plugins {
     id 'java'
     id 'jacoco'
@@ -87,12 +89,22 @@ tasks.withType(Checkstyle).configureEach {
 // --- Testing ---
 
 test {
-    jvmArgs = ['-Xms1g', '-Xmx8g']
-    // Dev data tools living in the test sources (e.g. the wiki location dump) are gated and
-    // configured by wikiLocations.* system properties — forward them into the test JVM.
+    // One fork per two cores: the suite is ~28 full route generations plus world-scale floods,
+    // all CPU-bound and independent; each fork re-pays the one-time data load, so don't over-shard.
+    maxParallelForks = Math.max(1, (Runtime.runtime.availableProcessors() / 2) as int)
+    jvmArgs = ['-Xms1g', '-Xmx4g']
+    testLogging {
+        events 'failed'
+        exceptionFormat 'full'
+    }
+    // A hung generation latch used to block the build indefinitely.
+    timeout = Duration.ofMinutes(20)
+    // Gated probes and dev data tools read -D flags; forward the recognised families.
     System.properties.each { key, value ->
-        if (key.toString().startsWith('wikiLocations.') || key.toString().equals('altarProbe') || key.toString().equals('keldaProbe') || key.toString().equals('karuulmPipeProbe') || key.toString().equals('snapReport') || key.toString().equals('snapFix') || key.toString().startsWith('gps.') || key.toString().equals('kebosMineProbe') || key.toString().startsWith('collisionDiff.')) {
-            systemProperty key.toString(), value
+        String k = key.toString()
+        if (k ==~ /^(gps|wikiLocations|collisionDiff|floors)\..*/
+            || k in ['altarProbe', 'keldaProbe', 'karuulmPipeProbe', 'snapReport', 'snapFix', 'kebosMineProbe']) {
+            systemProperty k, value
         }
     }
 }

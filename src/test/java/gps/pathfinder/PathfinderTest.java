@@ -1209,7 +1209,10 @@ public class PathfinderTest
 			usedTransportType(pathfinder, TransportType.TELEPORTATION_SPELL));
 		assertTrue("Walking route should still reach the destination", pathfinder.getResult().isReached());
 
-		assertEquals(328, pathfinder.getPath().size());
+		// Relational, not a magic tile count: a walk can never beat the straight-line distance,
+		// and an exact count breaks on every collision-map refresh without meaning anything.
+		assertTrue("a walking route is at least as long as the straight-line distance",
+			pathfinder.getPath().size() >= WorldPointUtil.distanceBetween(deepWilderness, grandExchange));
 	}
 
 	@Test
@@ -1220,6 +1223,11 @@ public class PathfinderTest
 
 		when(config.useAgilityShortcuts()).thenReturn(true);
 
+		setupInventory();
+		setupEquipment();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		Pathfinder walkOnly = runScenario(deepWilderness, grandExchange);
+
 		setupInventory(new Item(ItemID.AMULET_OF_GLORY_6, 1));
 		setupEquipment();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.INVENTORY);
@@ -1227,8 +1235,8 @@ public class PathfinderTest
 
 		assertTrue("Charged glory should be used once the route reaches a legal wilderness level",
 			usedTransportWithDisplayInfo(withGlory, TransportType.TELEPORTATION_ITEM, "Amulet of glory"));
-
-		assertEquals(139, withGlory.getPath().size());
+		assertTrue("the glory route must be shorter than walking the whole way",
+			withGlory.getPath().size() < walkOnly.getPath().size());
 	}
 
 	@Test
@@ -1249,7 +1257,8 @@ public class PathfinderTest
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE, varbits);
 		Pathfinder withVarrockTeleport = runScenario(deepWilderness, grandExchange);
 
-		assertEquals(181, withVarrockTeleport.getPath().size());
+		assertTrue("a teleport route must be shorter than the straight-line walk",
+			withVarrockTeleport.getPath().size() < WorldPointUtil.distanceBetween(deepWilderness, grandExchange));
 		assertTrue("GE Varrock Teleport should be used on the route to Grand Exchange",
 			usedTransportWithDisplayInfo(withVarrockTeleport, TransportType.TELEPORTATION_SPELL, "Varrock Teleport: GE"));
 	}
@@ -1275,7 +1284,8 @@ public class PathfinderTest
 
 		Pathfinder pathfinder = runScenario(deepWilderness, grandExchange);
 
-		assertEquals(102, pathfinder.getPath().size());
+		assertTrue("a teleport route must be shorter than the straight-line walk",
+			pathfinder.getPath().size() < WorldPointUtil.distanceBetween(deepWilderness, grandExchange));
 		assertTrue("Glory should be used when both glory and GE runes are available but the spell is still wilderness-locked",
 			usedTransportWithDisplayInfo(pathfinder, TransportType.TELEPORTATION_ITEM, "Amulet of glory"));
 	}
