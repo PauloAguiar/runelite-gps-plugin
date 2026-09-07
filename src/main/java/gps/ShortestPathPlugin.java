@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Collections;
 import java.util.HashSet;
 import java.io.File;
 import java.util.LinkedHashMap;
@@ -168,7 +169,40 @@ public class ShortestPathPlugin extends Plugin
 	private static final String FLASH_ICONS = "Flash icons";
 	private static final String TARGET = ColorUtil.wrapWithColorTag("GPS Target", JagexColors.MENU_TARGET);
 	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
-	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|pohJewelleryBoxTier|balloonSmartMode|balloonStored\\w+|spiritTreeSmartMode|use\\w+|cost\\w+)$");
+	// Every config key the routing engine reads (PathfinderConfig.refresh / TransportTypeConfig):
+	// a change to one of these regenerates the routes. RouteAffectingKeysTest scans the engine's
+	// sources and fails when a key it reads is missing here - the pohMount*/sailing* toggles were
+	// silently inert because this list was maintained by hand.
+	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|calculationCutoff|pohJewelleryBoxTier|pohMount\\w+|sailingAssumeSummon|sailingTeleportAbandon|balloonSmartMode|balloonStored\\w+|spiritTreeSmartMode|use\\w+|cost\\w+)$");
+
+	private static volatile Set<String> knownConfigKeysCache;
+
+	/** Every @ConfigItem key ShortestPathConfig declares - the only keys a plugin message may override. */
+	static Set<String> knownConfigKeys()
+	{
+		Set<String> keys = knownConfigKeysCache;
+		if (keys == null)
+		{
+			keys = new HashSet<>();
+			for (java.lang.reflect.Method method : ShortestPathConfig.class.getMethods())
+			{
+				net.runelite.client.config.ConfigItem item =
+					method.getAnnotation(net.runelite.client.config.ConfigItem.class);
+				if (item != null)
+				{
+					keys.add(item.keyName());
+				}
+			}
+			knownConfigKeysCache = Collections.unmodifiableSet(keys);
+		}
+		return keys;
+	}
+
+	/** Whether a change to this config key changes what the routing engine computes. */
+	static boolean affectsRouting(String key)
+	{
+		return key != null && TRANSPORT_OPTIONS_REGEX.matcher(key).find();
+	}
 	private static final Map<String, Object> configOverride = new HashMap<>(50);
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
 	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
@@ -282,8 +316,9 @@ public class ShortestPathPlugin extends Plugin
 	 * session, the persisted snapshot before that, null when never collected. Routing does
 	 * NOT read this: PathfinderConfig reads the boat varbits itself at refresh. */
 	private volatile List<String[]> boatBanner;
-	private boolean boatBannerLive;
-	private boolean boatBannerDirty;
+	// Written on the client thread, read from the Swing EDT (the panel's berth section).
+	private volatile boolean boatBannerLive;
+	private volatile boolean boatBannerDirty;
 
 	private static final int[][] BOAT_BANNER_VARBITS = {
 		{VarbitID.SAILING_BOAT_1_OWNED, VarbitID.SAILING_BOAT_1_PORT, VarbitID.SAILING_BOAT_1_NAME_1,
@@ -837,9 +872,23 @@ public class ShortestPathPlugin extends Plugin
 
 	// The arrival zone, cached per (path end, finish distance): recomputed only when the displayed
 	// route's end or the config changes, then read every tick (arrival check) and frame (debug render).
-	private volatile Set<Integer> arrivalZone = Set.of();
-	private int arrivalZoneEnd = WorldPointUtil.UNDEFINED;
-	private int arrivalZoneRadius = Integer.MIN_VALUE;
+	// One immutable holder for the zone and its key (see DirectionsCache for why).
+	private static final class ArrivalZoneCache
+	{
+		final int end;
+		final int radius;
+		final Set<Integer> zone;
+
+		ArrivalZoneCache(int end, int radius, Set<Integer> zone)
+		{
+			this.end = end;
+			this.radius = radius;
+			this.zone = zone;
+		}
+	}
+
+	private volatile ArrivalZoneCache arrivalZoneCache =
+		new ArrivalZoneCache(WorldPointUtil.UNDEFINED, Integer.MIN_VALUE, Set.of());
 
 	/**
 	 * The arrival zone: every tile within the finish distance of the destination in WALKING steps — a
@@ -857,15 +906,13 @@ public class ShortestPathPlugin extends Plugin
 			return Set.of();
 		}
 		int end = path.get(path.size() - 1).getPackedPosition();
-		Set<Integer> zone = arrivalZone;
-		if (end != arrivalZoneEnd || radius != arrivalZoneRadius)
+		ArrivalZoneCache cached = arrivalZoneCache;
+		if (end != cached.end || radius != cached.radius)
 		{
-			zone = floodArrivalZone(end, radius);
-			arrivalZone = zone;
-			arrivalZoneEnd = end;
-			arrivalZoneRadius = radius;
+			cached = new ArrivalZoneCache(end, radius, floodArrivalZone(end, radius));
+			arrivalZoneCache = cached;
 		}
-		return zone;
+		return cached.zone;
 	}
 
 	/**
@@ -1145,7 +1192,13 @@ public class ShortestPathPlugin extends Plugin
 			routeLimit = defaultRouteLimit();
 		}
 
-		if (TRANSPORT_OPTIONS_REGEX.matcher(event.getKey()).find())
+		// Display-order only: the keep-sailing preference re-ranks the routes it already has.
+		if ("sailingKeepSailing".equals(event.getKey()))
+		{
+			resortRoutesByPriority();
+		}
+
+		if (affectsRouting(event.getKey()))
 		{
 			if (hasPathTargets())
 			{
@@ -1190,7 +1243,7 @@ public class ShortestPathPlugin extends Plugin
 		if (altPanel != null
 			&& (event.getKey().startsWith("balloon") || "pohSmartDetect".equals(event.getKey())
 			|| "rememberBank".equals(event.getKey())
-			|| TRANSPORT_OPTIONS_REGEX.matcher(event.getKey()).find()))
+			|| affectsRouting(event.getKey())))
 		{
 			SwingUtilities.invokeLater(altPanel::refreshConfigSections);
 		}
@@ -1413,6 +1466,13 @@ public class ShortestPathPlugin extends Plugin
 				ShortestPathPlugin.configOverride.clear();
 				for (String key : configOverride.keySet())
 				{
+					// An unknown key would sit in the override map forever and never be
+					// diagnosable from either side: reject it loudly instead.
+					if (!knownConfigKeys().contains(key))
+					{
+						log.warn("Plugin message config override ignored: unknown key '{}'", key);
+						continue;
+					}
 					ShortestPathPlugin.configOverride.put(key, configOverride.get(key));
 				}
 				cacheConfigValues();
@@ -3057,6 +3117,11 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	public void setMethodPriority(TeleportMethod method, MethodPriority priority)
 	{
+		clientThread.invoke(() -> setMethodPriorityOnClientThread(method, priority));
+	}
+
+	private void setMethodPriorityOnClientThread(TeleportMethod method, MethodPriority priority)
+	{
 		if (priority == MethodPriority.EXCLUDED)
 		{
 			// Exclusion is a MASK over the stored tier, not a replacement: the tier stays in the
@@ -3548,6 +3613,11 @@ public class ShortestPathPlugin extends Plugin
 
 	public void selectRoute(int index)
 	{
+		clientThread.invoke(() -> selectRouteOnClientThread(index));
+	}
+
+	private void selectRouteOnClientThread(int index)
+	{
 		List<RouteOption> routes = alternativeRoutes;
 		if (index >= 0 && index < routes.size())
 		{
@@ -3569,6 +3639,11 @@ public class ShortestPathPlugin extends Plugin
 
 	public void excludeMethod(TeleportMethod method)
 	{
+		clientThread.invoke(() -> excludeMethodOnClientThread(method));
+	}
+
+	private void excludeMethodOnClientThread(TeleportMethod method)
+	{
 		if (method != null && userExclusions.add(method))
 		{
 			saveExclusions();
@@ -3579,6 +3654,11 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	public void includeMethod(TeleportMethod method)
+	{
+		clientThread.invoke(() -> includeMethodOnClientThread(method));
+	}
+
+	private void includeMethodOnClientThread(TeleportMethod method)
 	{
 		if (method != null && userExclusions.remove(method))
 		{
@@ -3682,6 +3762,11 @@ public class ShortestPathPlugin extends Plugin
 
 	public void clearExclusions()
 	{
+		clientThread.invoke(this::clearExclusionsOnClientThread);
+	}
+
+	private void clearExclusionsOnClientThread()
+	{
 		if (!userExclusions.isEmpty())
 		{
 			// Seasonal (Leagues) methods are gated by their own "Enable seasonal transports" toggle,
@@ -3770,6 +3855,11 @@ public class ShortestPathPlugin extends Plugin
 
 	public void loadMoreRoutes()
 	{
+		clientThread.invoke(this::loadMoreRoutesOnClientThread);
+	}
+
+	private void loadMoreRoutesOnClientThread()
+	{
 		if (lastAltTargets.isEmpty() || !moreRoutesLikely)
 		{
 			return;
@@ -3784,21 +3874,35 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	// Directions for the currently displayed route, built once per route (the overlay renders every
-	// frame; the path scan only reruns when the displayed route object changes).
-	private RouteOption directionsRoute;
-	private List<RouteDirections.Step> directions = List.of();
+	// frame; the path scan only reruns when the displayed route object changes). One immutable
+	// holder, not two fields: the render thread and the client thread both read this, and a
+	// two-field cache could publish route A's key beside route B's steps.
+	private static final class DirectionsCache
+	{
+		final RouteOption route;
+		final List<RouteDirections.Step> steps;
+
+		DirectionsCache(RouteOption route, List<RouteDirections.Step> steps)
+		{
+			this.route = route;
+			this.steps = steps;
+		}
+	}
+
+	private volatile DirectionsCache directionsCache = new DirectionsCache(null, List.of());
 
 	/**
 	 * The step-by-step directions for {@code route}, cached per route instance.
 	 */
 	public List<RouteDirections.Step> getRouteDirections(RouteOption route)
 	{
-		if (route != directionsRoute)
+		DirectionsCache cached = directionsCache;
+		if (route != cached.route)
 		{
-			directions = RouteDirections.build(this, route);
-			directionsRoute = route;
+			cached = new DirectionsCache(route, RouteDirections.build(this, route));
+			directionsCache = cached;
 		}
-		return directions;
+		return cached.steps;
 	}
 
 	/**
@@ -4304,13 +4408,18 @@ public class ShortestPathPlugin extends Plugin
 
 	public void setRoutesMode(AlternativeRoutesMode mode)
 	{
-		if (mode == null || this.routesMode == mode)
+		// Panel (EDT) entry point: routing state is client-thread owned, so hop over - invoke()
+		// runs inline when already there.
+		clientThread.invoke(() ->
 		{
-			return;
-		}
-		this.routesMode = mode;
-		saveRoutesMode();
-		triggerAlternatives(lastAltStart, new HashSet<>(lastAltTargets));
+			if (mode == null || this.routesMode == mode)
+			{
+				return;
+			}
+			this.routesMode = mode;
+			saveRoutesMode();
+			triggerAlternatives(lastAltStart, new HashSet<>(lastAltTargets));
+		});
 	}
 
 	/**
