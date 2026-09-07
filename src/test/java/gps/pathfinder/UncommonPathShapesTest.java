@@ -35,6 +35,8 @@ public class UncommonPathShapesTest
 	// Entrana: no walking connection, no teleports land there — the only way in is the Port Sarim
 	// ferry (which lands on the ship's deck at plane 1, then the gangplank down).
 	private static final int ENTRANA = WorldPointUtil.packWorldPoint(2830, 3335, 0);
+	/** Broken Raft deck: open tiles ringed by the River Lum, unreachable on foot by design. */
+	private static final int LUM_RAFT_DECK = WorldPointUtil.packWorldPoint(3253, 3180, 0);
 	// The Wilderness Agility Course entrance, ~level 52: far deeper than any global teleport's band,
 	// so a route must enter at a legal band (or via obelisks) and traverse from there.
 	private static final int DEEP_WILDERNESS = WorldPointUtil.packWorldPoint(3004, 3937, 0);
@@ -133,15 +135,19 @@ public class UncommonPathShapesTest
 	@Test
 	public void islandHonestlyUnreachableWithEveryMethodExcluded()
 	{
+		// Entrana used to be the island here - until the Mage of Zamorak Abyss row parsed again
+		// (review 2026-09-06) and the law altar's exit portal made it reachable on foot. The
+		// Broken Raft deck in the River Lum is provably isolated: open tiles ringed by water
+		// that no transport lands on (field-verified 2026-08-30, nobody can stand there).
 		PathfinderConfig cfg = walkOnlyConfig();
-		PathfinderResult result = assertParity(cfg, LUMBRIDGE, Set.of(ENTRANA));
-		assertFalse("with ships excluded nothing can reach Entrana", result.isReached());
-		// The closest-tile path must honestly end on the mainland (near the coast), not on the island.
+		PathfinderResult result = assertParity(cfg, LUMBRIDGE, Set.of(LUM_RAFT_DECK));
+		assertFalse("nothing can reach the raft deck", result.isReached());
+		// The closest-tile path must honestly end on a bank, not on the deck.
 		List<PathStep> path = result.getPathSteps();
 		assertFalse("a closest-tile path must still be produced", path.isEmpty());
 		int end = path.get(path.size() - 1).getPackedPosition();
-		assertTrue("the walk must end on the mainland side, not on Entrana",
-			WorldPointUtil.distanceBetween(end, ENTRANA) > 20);
+		assertTrue("the walk must end on the river bank, not on the deck",
+			WorldPointUtil.distanceBetween(end, LUM_RAFT_DECK) >= 3);
 	}
 
 	@Test

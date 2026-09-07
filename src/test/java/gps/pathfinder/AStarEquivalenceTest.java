@@ -37,6 +37,7 @@ public class AStarEquivalenceTest
 	private static final int DRAYNOR = WorldPointUtil.packWorldPoint(3093, 3245, 0);
 	private static final int BARROWS = WorldPointUtil.packWorldPoint(3566, 3291, 0);
 	private static final int ENTRANA = WorldPointUtil.packWorldPoint(2830, 3335, 0);
+	private static final int LUM_RAFT_DECK = WorldPointUtil.packWorldPoint(3253, 3180, 0);
 	private static final int COWBELL_DESTINATION = WorldPointUtil.packWorldPoint(3259, 3277, 0);
 	private static final int COWBELL_AMULET = 33104;
 
@@ -187,12 +188,14 @@ public class AStarEquivalenceTest
 	@Test
 	public void fieldModeUnreachableTargetYieldsTheSameClosestTile()
 	{
+		// The Broken Raft deck, not Entrana: Entrana is reachable via the Abyss law altar exit
+		// now that the Mage of Zamorak row parses (review 2026-09-06).
 		PathfinderConfig config = walkOnlyConfig();
-		Pathfinder dijkstra = run(config, LUMBRIDGE, Set.of(ENTRANA), null);
-		DistanceField distanceField = DistanceField.build(config, Set.of(ENTRANA));
+		Pathfinder dijkstra = run(config, LUMBRIDGE, Set.of(LUM_RAFT_DECK), null);
+		DistanceField distanceField = DistanceField.build(config, Set.of(LUM_RAFT_DECK));
 		SearchHeuristic heuristic = SearchHeuristic.buildWithField(config, distanceField);
 		assertNotNull(heuristic);
-		Pathfinder astar = run(config, LUMBRIDGE, Set.of(ENTRANA), heuristic);
+		Pathfinder astar = run(config, LUMBRIDGE, Set.of(LUM_RAFT_DECK), heuristic);
 
 		assertEquals("neither search may reach the island (field mode)",
 			false, dijkstra.getResult().isReached() || astar.getResult().isReached());

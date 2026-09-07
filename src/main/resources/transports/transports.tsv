@@ -805,7 +805,7 @@
 2560 3222 0	2561 9621 0	Climb-down Ladder 16680						2	
 									
 # Edgeville									
-3077 3493 0	3077 9893 0	Open trapdoor 12267			Shadows of the Storm			1	
+3077 3493 0	3077 9893 0	Open trapdoor 12267			Shadow of the Storm			1	
 3077 9893 0	3077 3493 0	Climb Cellar stairs 12265						1	
 3097 3511 0	3097 3511 1	Climb-up Ladder 16683							
 3097 3511 1	3097 3511 0	Climb-down Ladder 16679							
@@ -2462,10 +2462,8 @@
 3046 9757 0	3046 9756 0	Open Door 30364	60 Mining					1	
 3046 9756 0	3046 9757 0	Open Door 30364						1	
 # Surface entrance:									
-3019 9741 0	3019 9741 0 	Climb-down Ladder 30367	60 Mining					2	
-3019 9741 0	3019 9741 0	Climb-up Ladder 17386						2	
-3021 3339 0	3021 9739 0 	Climb-down Ladder 30367	60 Mining					2	
-3021 9739 0	3021 3339 0 	Climb-up Ladder 17386						2	
+3021 3339 0	3021 9739 0	Climb-down Ladder 30367	60 Mining					2	
+3021 9739 0	3021 3339 0	Climb-up Ladder 17386						2	
 3019 3337 0	3019 9737 0	Climb-down Ladder 30367	60 Mining					2	
 3019 9737 0	3019 3337 0	Climb-up Ladder 17386						2	
 3017 3339 0	3017 9739 0	Climb-down Ladder 30367	60 Mining					2	
@@ -3323,7 +3321,7 @@
 3217 10058 0	3102 3655 0	Climb-up Stairs 31558						2	
 3246 10215 0	3124 3805 0	Climb-up Stairs 43868						2	
 3184 3944 0	3184 3945 0	Open Gate 26760						2	
-3184 3945 0	3184 3944 0	Open Gate 26760		COINS=7500		4469=0;4468=0;4467=0;		2	
+3184 3945 0	3184 3944 0	Open Gate 26760		COINS=7500		4469=0;4468=0;4467=0		2	
 3184 3945 0	3184 3944 0	Open Gate 26760		COINS=6000		4469=0;4468=0;4467=1		2	
 3184 3945 0	3184 3944 0	Open Gate 26760		COINS=3750		4469=0;4468=1		2	
 3184 3945 0	3184 3944 0	Open Gate 26760				4469=1		2	
@@ -4980,10 +4978,10 @@
 1658 3504 0	1657 3504 0	Open Gate 28851	60 Woodcutting					2	
 1657 3504 0	1658 3504 0	Open Gate 28851						2	
 # West gate:									
-1562 3488 0	1563 3488 0 	Open Gate 28852	60 Woodcutting					2	
-1563 3488 0	1562 3488 0 	Open Gate 28852						2	
-1562 3487 0	1563 3487 0 	Open Gate 28852	60 Woodcutting					2	
-1563 3487 0	1562 3487 0 	Open Gate 28852						2	
+1562 3488 0	1563 3488 0	Open Gate 28852	60 Woodcutting					2	
+1563 3488 0	1562 3488 0	Open Gate 28852						2	
+1562 3487 0	1563 3487 0	Open Gate 28852	60 Woodcutting					2	
+1563 3487 0	1562 3487 0	Open Gate 28852						2	
 									
 # Jiggig									
 2455 3049 0	2457 3049 0	Climb-over Crushed barricade 6881				496=1		2	
@@ -5317,7 +5315,7 @@
 # Abyss									
 									
 # there are multiple destination and one is picked at random when used									
-3106 3559 0	 3035 4852 0	Teleport Mage of Zamorak 2581			Enter the Abyss				
+3106 3559 0	3035 4852 0	Teleport Mage of Zamorak 2581			Enter the Abyss				
 									
 3039 4805 0	3039 4800 0	Enter Passage 27054							
 									

@@ -1,6 +1,8 @@
 # Destination	Skills	Quests	Display info	Duration	Wilderness level	Varbits	VarPlayers
 # Barbarian Assault - Barbarian Outpost							
-2531 3569 0		Barbarian Assault tutorial	Barbarian Assault Minigame Teleport	23	0	3264=11	888@20
+# The Barbarian Assault tutorial is not a quest (no Quest enum entry): the gate below
+# never applied, so the row is left ungated rather than pretending.
+2531 3569 0			Barbarian Assault Minigame Teleport	23	0	3264=11	888@20
 							
 # Blast Furnace - East Keldagrim							
 2934 10184 0		The Giant Dwarf	Blast Furnace Minigame Teleport	23	0		888@20
