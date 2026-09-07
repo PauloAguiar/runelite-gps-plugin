@@ -6,6 +6,7 @@ import java.util.Locale;
 import java.util.Set;
 import lombok.Getter;
 import gps.pathfinder.PathStep;
+import gps.pathfinder.PathfinderConfig;
 import gps.transport.Transport;
 import gps.transport.TransportType;
 
@@ -179,7 +180,7 @@ final class RouteDirections
 				// mapped doors ("Open Door" — flagged so the door progress gate applies), ...
 				flushWalk(steps, walk, legStart, i - 1);
 				walk = 0;
-				String text = objectText(object) + fareOf(object);
+				String text = objectText(object) + fareOf(plugin, object);
 				boolean isDoor = text.startsWith("Open ");
 				// Advisory note from the transport data ("fire arrow needed", "can fail") — the
 				// route is offered regardless; the player just gets told what to expect.
@@ -257,7 +258,7 @@ final class RouteDirections
 		for (Transport transport : plugin.getPathfinderConfig()
 			.transportsOnEdge(from.getPackedPosition(), to.getPackedPosition()))
 		{
-			int coins = coinsOf(transport);
+			int coins = coinsOf(plugin, transport);
 			if (coins > 0)
 			{
 				fare = Math.min(fare, coins);
@@ -266,10 +267,22 @@ final class RouteDirections
 		return fare == Integer.MAX_VALUE ? "" : " — " + fare + " gp fare";
 	}
 
-	private static String fareOf(Transport transport)
+	private static String fareOf(ShortestPathPlugin plugin, Transport transport)
 	{
-		int coins = coinsOf(transport);
+		int coins = coinsOf(plugin, transport);
 		return coins > 0 ? " — " + coins + " gp fare" : "";
+	}
+
+	/** The fare the player actually pays: the listed coins scaled by the charter discount. */
+	private static int coinsOf(ShortestPathPlugin plugin, Transport transport)
+	{
+		int base = coinsOf(transport);
+		if (base <= 0 || plugin == null || plugin.getPathfinderConfig() == null)
+		{
+			return base;
+		}
+		// A mocked config answers 0: treat anything outside 1..99 as no discount.
+		return PathfinderConfig.scaleCoins(base, plugin.getPathfinderConfig().farePercent(transport));
 	}
 
 	private static int coinsOf(Transport transport)
@@ -542,7 +555,7 @@ final class RouteDirections
 	{
 		for (Transport row : rows)
 		{
-			int coins = coinsOf(row);
+			int coins = coinsOf(plugin, row);
 			if (coins > 0)
 			{
 				return coins + " gp — " + label + " fare";

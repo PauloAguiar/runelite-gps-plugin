@@ -153,7 +153,7 @@ public final class BankPickupRequirements
 			boolean satisfied = false;
 			for (Transport t : nonFairy)
 			{
-				if (transportSatisfiedBy(t, playerHas))
+				if (transportSatisfiedBy(t, playerHas, pathfinderConfig.farePercent(t)))
 				{
 					satisfied = true;
 					break;
@@ -169,7 +169,8 @@ public final class BankPickupRequirements
 			LinkedHashSet<String> altStrings = new LinkedHashSet<>();
 			for (Transport t : nonFairy)
 			{
-				Map<Integer, Long> pickups = computeBankPickups(t, playerHas, bankHas, bankPouchRunes);
+				Map<Integer, Long> pickups = computeBankPickups(t, playerHas, bankHas, bankPouchRunes,
+					pathfinderConfig.farePercent(t));
 				if (pickups == null || pickups.isEmpty())
 				{
 					continue; // bank can't satisfy this alternative
@@ -282,13 +283,19 @@ public final class BankPickupRequirements
 	 */
 	public static boolean transportSatisfiedBy(Transport transport, Map<Integer, Integer> playerHas)
 	{
+		return transportSatisfiedBy(transport, playerHas, 100);
+	}
+
+	/** As above with the charter fare discount ({@code coinPercent}) applied to coin requirements. */
+	public static boolean transportSatisfiedBy(Transport transport, Map<Integer, Integer> playerHas, int coinPercent)
+	{
 		if (transport.getItemRequirements() == null)
 		{
 			return true;
 		}
 		for (ItemRequirement req : transport.getItemRequirements().getRequirements())
 		{
-			int qty = req.getQuantity() > 0 ? req.getQuantity() : 1;
+			int qty = requiredQuantity(req, coinPercent);
 			if (hasAnyItem(playerHas, req.getItemIds(), qty)
 				|| hasAnyItem(playerHas, req.getStaffIds(), 1)
 				|| hasAnyItem(playerHas, req.getOffhandIds(), 1))
@@ -306,10 +313,30 @@ public final class BankPickupRequirements
 	 * When a required rune is only available via a bank rune pouch, the pouch itself is
 	 * returned as the pickup item (qty 1, deduped across multiple rune requirements).
 	 */
+	/** A requirement's quantity with the coin discount applied when it is a coin requirement. */
+	private static int requiredQuantity(ItemRequirement req, int coinPercent)
+	{
+		int qty = req.getQuantity() > 0 ? req.getQuantity() : 1;
+		if (coinPercent > 0 && coinPercent < 100 && req.getItemIds() != null)
+		{
+			for (int itemId : req.getItemIds())
+			{
+				if (itemId == COINS_ID)
+				{
+					return Math.max(1, qty * coinPercent / 100);
+				}
+			}
+		}
+		return qty;
+	}
+
+	private static final int COINS_ID = 995;
+
 	private static Map<Integer, Long> computeBankPickups(Transport transport,
 		Map<Integer, Integer> playerHas,
 		Map<Integer, Integer> bankHas,
-		Map<Integer, Integer> bankPouchRunes)
+		Map<Integer, Integer> bankPouchRunes,
+		int coinPercent)
 	{
 		Map<Integer, Long> pickups = new LinkedHashMap<>();
 		Set<Integer> addedPouches = new HashSet<>(); // tracks pouch IDs already added to pickups
@@ -319,7 +346,7 @@ public final class BankPickupRequirements
 		}
 		for (ItemRequirement req : transport.getItemRequirements().getRequirements())
 		{
-			int qty = req.getQuantity() > 0 ? req.getQuantity() : 1;
+			int qty = requiredQuantity(req, coinPercent);
 			// Already satisfied by player?
 			if (hasAnyItem(playerHas, req.getItemIds(), qty)
 				|| hasAnyItem(playerHas, req.getStaffIds(), 1)

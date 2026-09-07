@@ -177,6 +177,68 @@ public class PathfinderConfig
 	private JewelleryBoxTier pohJewelleryBoxTier;
 	private int costConsumableTeleportationItems;
 	private int currencyThreshold;
+	// Charter fares: Cabin Fever halves every crew's price and the Ring of charos (a) halves
+	// again (they stack to a quarter). Rows carry the BASE fare; possession checks, bank
+	// pickups and the "N gp fare" label all scale by this (capture 20260907-114507: the crew
+	// charged half the row). 100 = no discount.
+	private int charterFarePercent = 100;
+
+	public int getCharterFarePercent()
+	{
+		return charterFarePercent;
+	}
+
+	/** The percentage of a transport's listed coin fare the player actually pays (100 unless charter). */
+	public int farePercent(Transport transport)
+	{
+		return transport != null && TransportType.CHARTER_SHIP.equals(transport.getType()) ? charterFarePercent : 100;
+	}
+
+	/** The coin fare a transport actually charges: its listed COINS requirement scaled by farePercent. */
+	public int effectiveCoinFare(Transport transport)
+	{
+		if (transport == null || transport.getItemRequirements() == null)
+		{
+			return 0;
+		}
+		for (ItemRequirement requirement : transport.getItemRequirements().getRequirements())
+		{
+			if (requirement.getItemIds() != null)
+			{
+				for (int itemId : requirement.getItemIds())
+				{
+					if (itemId == ItemID.COINS)
+					{
+						return scaleCoins(requirement.getQuantity(), farePercent(transport));
+					}
+				}
+			}
+		}
+		return 0;
+	}
+
+	public static int scaleCoins(int coins, int percent)
+	{
+		return coins <= 0 || percent >= 100 || percent <= 0 ? coins : Math.max(1, coins * percent / 100);
+	}
+
+	/** A requirement's quantity with the coin discount applied when it is a coin requirement. */
+	private static int scaledQuantity(ItemRequirement requirement, int coinPercent)
+	{
+		int quantity = requirement.getQuantity();
+		if (coinPercent >= 100 || quantity <= 0 || requirement.getItemIds() == null)
+		{
+			return quantity;
+		}
+		for (int itemId : requirement.getItemIds())
+		{
+			if (itemId == ItemID.COINS)
+			{
+				return scaleCoins(quantity, coinPercent);
+			}
+		}
+		return quantity;
+	}
 	// Balloon log storage (chat-parsed, config-persisted): item id -> stored count. A balloon
 	// flight's log requirement is satisfiable from this storage as well as from the inventory.
 	private final Map<Integer, Integer> balloonStoredLogs = new HashMap<>();
@@ -436,6 +498,7 @@ public class PathfinderConfig
 		copy.leagueModeState = leagueModeState;
 		copy.costConsumableTeleportationItems = costConsumableTeleportationItems;
 		copy.currencyThreshold = currencyThreshold;
+		copy.charterFarePercent = charterFarePercent;
 		copy.balloonStoredLogs.putAll(balloonStoredLogs);
 		copy.bankPickupCost = bankPickupCost;
 		copy.bank = bank;
@@ -767,6 +830,18 @@ public class PathfinderConfig
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
 			isOnSailingBoat = client.getVarbitValue(VarbitID.SAILING_BOARDED_BOAT) != 0;
+
+			int farePercent = 100;
+			if (QuestState.FINISHED.equals(getQuestState(Quest.CABIN_FEVER)))
+			{
+				farePercent /= 2;
+			}
+			ItemContainer worn = client.getItemContainer(InventoryID.WORN);
+			if (worn != null && worn.contains(ItemID.RING_OF_CHAROS_UNLOCKED))
+			{
+				farePercent /= 2;
+			}
+			charterFarePercent = farePercent;
 
 			int i = 0;
 			for (; i < Skill.values().length; i++)
@@ -1281,7 +1356,7 @@ public class PathfinderConfig
 		if (TransportType.FAIRY_RING.equals(type)
 			&& varbitValues.getOrDefault(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE, 0) != 1)
 		{
-			return classifyItems(DRAMEN_STAFF);
+			return classifyItems(DRAMEN_STAFF, 100);
 		}
 		// Balloon flights payable from the log storage are available without carrying logs.
 		if (TransportType.HOT_AIR_BALLOON.equals(type)
@@ -1289,7 +1364,7 @@ public class PathfinderConfig
 		{
 			return MethodAvailability.AVAILABLE;
 		}
-		return classifyItems(transport.getItemRequirements());
+		return classifyItems(transport.getItemRequirements(), farePercent(transport));
 	}
 
 	/**
@@ -1330,17 +1405,17 @@ public class PathfinderConfig
 	 * MISSING_ITEM. The bank read here always consults the bank (unlike the routing checks, which gate it
 	 * on the teleportation-item setting) so a banked item is reported the same way in every mode.
 	 */
-	private MethodAvailability classifyItems(TransportItems items)
+	private MethodAvailability classifyItems(TransportItems items, int coinPercent)
 	{
 		if (items == null)
 		{
 			return MethodAvailability.AVAILABLE;
 		}
-		if (hasRequiredItems(items, true, true, false, true))
+		if (hasRequiredItems(items, true, true, false, true, false, coinPercent))
 		{
 			return MethodAvailability.AVAILABLE;
 		}
-		if (hasRequiredItems(items, true, true, true, true, true))
+		if (hasRequiredItems(items, true, true, true, true, true, coinPercent))
 		{
 			return MethodAvailability.IN_BANK;
 		}
@@ -2075,7 +2150,7 @@ public class PathfinderConfig
 		}
 
 		return hasRequiredItems(transport.getItemRequirements(),
-			checkInventory, checkEquipment, checkBank, checkRunePouch);
+			checkInventory, checkEquipment, checkBank, checkRunePouch, false, farePercent(transport));
 	}
 
 	private boolean hasRequiredItems(
@@ -2217,6 +2292,19 @@ public class PathfinderConfig
 		boolean checkRunePouch,
 		boolean forceBank)
 	{
+		return hasRequiredItems(transportItems, checkInventory, checkEquipment, checkBank, checkRunePouch, forceBank, 100);
+	}
+
+	/** The core possession check; {@code coinPercent} discounts coin requirements (charter fares). */
+	private boolean hasRequiredItems(
+		TransportItems transportItems,
+		boolean checkInventory,
+		boolean checkEquipment,
+		boolean checkBank,
+		boolean checkRunePouch,
+		boolean forceBank,
+		int coinPercent)
+	{
 		if (transportItems == null)
 		{
 			return true;
@@ -2234,7 +2322,7 @@ public class PathfinderConfig
 		for (ItemRequirement req : transportItems.getRequirements())
 		{
 			boolean missing = true;
-			int requiredQuantity = req.getQuantity();
+			int requiredQuantity = scaledQuantity(req, coinPercent);
 			if (req.getItemIds() != null)
 			{
 				for (int itemId : req.getItemIds())

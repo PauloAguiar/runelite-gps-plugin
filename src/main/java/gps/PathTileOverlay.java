@@ -835,7 +835,7 @@ public class PathTileOverlay extends Overlay
 		List<Transport> usableTransports = new ArrayList<>();
 		for (Transport t : candidateTransports)
 		{
-			if (BankPickupRequirements.transportSatisfiedBy(t, playerHas))
+			if (BankPickupRequirements.transportSatisfiedBy(t, playerHas, plugin.getPathfinderConfig().farePercent(t)))
 			{
 				usableTransports.add(t);
 			}
