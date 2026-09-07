@@ -58,6 +58,8 @@ public class AlternativeRoutesService
 	// live limit toward this; it exists only so a runaway query can't enumerate without bound, not as a
 	// user-facing ceiling — in practice the walk-cost cap ends enumeration long before this.
 	public static final int MAX_ROUTES_CAP = 250;
+	/** Closest-approach routes kept for a provably unreachable target (each is a full-world flood). */
+	static final int UNREACHABLE_ESCAPE_ROUTES = 3;
 	private static final long CLIENT_THREAD_TIMEOUT_SECONDS = 10;
 	/**
 	 * When the exact target is unreachable, routes are accepted while their endpoint stays within this
@@ -415,6 +417,22 @@ public class AlternativeRoutesService
 		// past the band edge still gets exact heuristic guidance.
 		final DistanceField field = DistanceField.buildIfCompact(planningConfig, ends, 2 * costMultiple);
 		timer.fieldNanos = System.nanoTime() - fieldStart;
+		// A complete reverse field that never reached the start, with no usable teleport landing
+		// inside its flooded pocket, proves the target unreachable for EVERY search of this
+		// generation (exclusions only shrink availability) - exactly the condition under which
+		// SearchHeuristic already discards the field. Capture 20260830-172137 then ran seven
+		// full-world floods (~2M nodes, ~400 ms each) to rediscover that verdict seven times.
+		// The chain then keeps a SHORT escape menu (UNREACHABLE_ESCAPE_ROUTES distinct closest-
+		// approach routes - a sealed-cell capture wants several ways out, see HybridPageFillTest)
+		// and skips the walk, seed and tail passes entirely. Not in "+ Bank" mode: the reverse
+		// flood uses the inventory-only availability, so a route that needs a banked item (coins
+		// for a ship) looks unreachable to the field while a blind search finds it.
+		final boolean targetProvablyUnreachable = mode != AlternativeRoutesMode.OWNED_WITH_BANK
+			&& field != null
+			&& field.horizon() == Integer.MAX_VALUE
+			&& field.distance(start) == DistanceField.UNREACHED
+			&& SearchHeuristic.buildWithField(planningConfig, field) != null
+			&& SearchHeuristic.buildWithField(planningConfig, field, start) == null;
 		// Walk-only search, run concurrently on the seed pool (its own config copy — the chain
 		// mutates planningConfig per iteration): its cost is a rigorous expansion cap for every
 		// search that starts after it finishes (routes costlier than walking are never shown, so a
@@ -434,7 +452,7 @@ public class AlternativeRoutesService
 			walkCeiling.set((int) Math.min(Integer.MAX_VALUE,
 				(long) routes.get(0).getTotalCost() * 2 * costMultiple));
 		}
-		final Future<WalkResult> walkFuture = limit > 1
+		final Future<WalkResult> walkFuture = limit > 1 && !targetProvablyUnreachable
 			? seedExecutor.submit(() -> runWalkSearch(gen, start, ends, userExclusions, catalog, field, timer, walkCeiling))
 			: null;
 
@@ -452,6 +470,13 @@ public class AlternativeRoutesService
 			if (gen != generation.get())
 			{
 				return;
+			}
+			if (targetProvablyUnreachable && routes.size() >= UNREACHABLE_ESCAPE_ROUTES)
+			{
+				// The escape menu is full; every further search would flood the same world to
+				// the same verdict.
+				chainExhausted = true;
+				break;
 			}
 			// Rebuild availability for the current exclusion set — pure computation over the base lists
 			// captured by the client-thread pass above, so no client-thread round-trip per search.
@@ -644,7 +669,7 @@ public class AlternativeRoutesService
 		boolean hasWalkOnly = routes.stream().anyMatch(RouteOption::isWalkOnly);
 		java.util.concurrent.atomic.AtomicReference<RouteOption> bestSail =
 			new java.util.concurrent.atomic.AtomicReference<>();
-		if (!hasWalkOnly && !routes.isEmpty())
+		if (!hasWalkOnly && !routes.isEmpty() && !targetProvablyUnreachable)
 		{
 			seedTeleportRoutes(gen, start, ends, userExclusions, mode, limit, costMultiple,
 				seedCandidates, routes, seenSignatures, catalog, unavailable, roundTrip ? null : listener,
@@ -653,7 +678,7 @@ public class AlternativeRoutesService
 		}
 		// Tail-diversity pass: when the page is dominated by one shared method TAIL, surface a
 		// variant with a different middle. Runs after seeds so eviction sees the full page.
-		if (gen == generation.get())
+		if (gen == generation.get() && !targetProvablyUnreachable)
 		{
 			diversifySharedTails(gen, start, ends, userExclusions, limit, costMultiple, routes,
 				seenSignatures, catalog, unavailable, roundTrip ? null : listener, bestRemaining,
