@@ -592,7 +592,7 @@ public class AlternativeRoutesService
 				break;
 			}
 			routes.add(new RouteOption(withoutIdleBankFlip(path, scan), methods, scan.methodEdges, scan.methodDurations,
-				totalCost, scan.rawCost, reached, scan.bankGated, scan.bankGatedTransports, scan.walkBefore, scan.trailingWalk));
+				totalCost, scan.rawCost, reached, scan.bankGated, scan.bankGatedTransports, scan.walkBefore, scan.trailingWalk));
 			if (methods.size() >= 2)
 			{
 				chainTailCounts.merge(tailSignature(methods), 1, Integer::sum);
