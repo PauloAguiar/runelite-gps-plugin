@@ -2550,14 +2550,27 @@ public class ShortestPathPlugin extends Plugin
 			return Set.of();
 		}
 		boolean bankVisited = currentStep.isBankVisited() || nextStep.isBankVisited();
-		// Get the transports which start from the position of starting step.
-		Set<Transport> stepTransports = new HashSet<>(Arrays.asList(
-			pathfinderConfig.getTransportsPacked(bankVisited)
-				.getOrDefault(currentStep.getPackedPosition(), TransportAvailability.EMPTY_TRANSPORTS)));
-		// Add the teleports, which might be used from anywhere.
-		stepTransports.addAll(Arrays.asList(pathfinderConfig.getUsableTeleports(bankVisited)));
-		// Remove transports which do not target the correct location.
-		stepTransports.removeIf(transport -> transport.getDestination() != nextStep.getPackedPosition());
+		// Only the transports that land on the next step - filtered while collecting, because this
+		// runs per edge per frame from the overlays and used to copy EVERY usable teleport into a
+		// fresh set first.
+		final int landing = nextStep.getPackedPosition();
+		Set<Transport> stepTransports = new HashSet<>();
+		for (Transport transport : pathfinderConfig.getTransportsPacked(bankVisited)
+			.getOrDefault(currentStep.getPackedPosition(), TransportAvailability.EMPTY_TRANSPORTS))
+		{
+			if (transport.getDestination() == landing)
+			{
+				stepTransports.add(transport);
+			}
+		}
+		// The teleports, which might be used from anywhere.
+		for (Transport transport : pathfinderConfig.getUsableTeleports(bankVisited))
+		{
+			if (transport.getDestination() == landing)
+			{
+				stepTransports.add(transport);
+			}
+		}
 		// Remove teleports that share destinations with a local transport type on this edge.
 		// For example, if the path uses a QUETZAL (local) transport, suppress QUETZAL_WHISTLE hints.
 		// Also suppress them when the edge distance is within the shared type's radius threshold,

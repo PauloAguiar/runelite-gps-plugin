@@ -99,6 +99,20 @@ public class PathTileOverlay extends Overlay
 			double waveOffset = ((System.currentTimeMillis() % 600_000L) / 1000.0 * WAVE_TILES_PER_SECOND)
 				% WAVE_SPACING;
 			java.util.Set<Integer> sailingEdges = plugin.getDisplaySailingEdges();
+			// Per-frame context hoisted out of the per-edge loop: this used to rebuild the
+			// player's item map and a teleport set for EVERY edge of the route, every frame
+			// (~1M short-lived objects per second on a long route). Edges with neither end
+			// near the loaded scene draw nothing and are skipped; sea tracks cross the scene
+			// between far endpoints, so they are handled before the cull. Instances map
+			// template coordinates, so they are never culled by world bounds.
+			final net.runelite.api.WorldView worldView = client.getTopLevelWorldView();
+			final boolean cullByScene = !worldView.isInstance();
+			final int sceneMinX = worldView.getBaseX() - 2;
+			final int sceneMinY = worldView.getBaseY() - 2;
+			final int sceneMaxX = worldView.getBaseX() + worldView.getSizeX() + 2;
+			final int sceneMaxY = worldView.getBaseY() + worldView.getSizeY() + 2;
+			final Map<Integer, Integer> playerHas = plugin.showTransportInfo
+				? BankPickupRequirements.collectPlayerItems(client) : Map.of();
 			for (int i = 1; i < path.size(); i++)
 			{
 				PathStep currentStep = path.get(i - 1);
@@ -153,7 +167,7 @@ public class PathTileOverlay extends Overlay
 							drawLine(graphics, track[s - 1], track[s], segment,
 								s == track.length - 1, 0, false);
 						}
-						drawTransportInfo(graphics, currentStep, nextStep, path, i - 1);
+						drawTransportInfo(graphics, currentStep, nextStep, path, i - 1, playerHas);
 						continue;
 					}
 				}
@@ -167,13 +181,19 @@ public class PathTileOverlay extends Overlay
 					phase += WAVE_SPACING;
 				}
 				double waveDistance = Math.min(phase, WAVE_SPACING - phase);
+				if (cullByScene
+					&& !nearScene(currentStep.getPackedPosition(), sceneMinX, sceneMinY, sceneMaxX, sceneMaxY)
+					&& !nearScene(nextStep.getPackedPosition(), sceneMinX, sceneMinY, sceneMaxX, sceneMaxY))
+				{
+					continue;
+				}
 				// Edge i covers path[i-1]->path[i]; it's done once progress has reached path[i].
 				boolean done = i <= progress;
 				double glow = jump || done ? 0 : Math.max(0, 1 - waveDistance / WAVE_HALF_WIDTH);
 				Color edgeColor = done ? doneColor : (i >= blockedFrom ? blockedColor : color);
 				drawLine(graphics, currentStep.getPackedPosition(), nextStep.getPackedPosition(),
 					edgeColor, head, glow, jump);
-				drawTransportInfo(graphics, currentStep, nextStep, path, i - 1);
+				drawTransportInfo(graphics, currentStep, nextStep, path, i - 1, playerHas);
 			}
 
 			// GPS decorations for the displayed route: a small waypoint dot where each section ends
@@ -488,6 +508,13 @@ public class PathTileOverlay extends Overlay
 		return dx1 != dx2 || dy1 != dy2;
 	}
 
+	// Immutable strokes shared by every edge (BasicStroke is immutable; allocating three per edge
+	// per frame was pure garbage).
+	private static final BasicStroke JUMP_STROKE = new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND,
+		10f, new float[]{8, 8}, 0);
+	private static final BasicStroke LINE_STROKE = new BasicStroke(5, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
+	private static final BasicStroke GLOW_STROKE = new BasicStroke(3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
+
 	private void drawLine(Graphics2D graphics, int startLoc, int endLoc, Color color, boolean arrowHead,
 		double glow, boolean jump)
 	{
@@ -534,12 +561,11 @@ public class PathTileOverlay extends Overlay
 		{
 			// Teleport/transport jumps: a thin dashed hint, like the world map draws them —
 			// a full solid beam across the scene reads as a walkable line, which it isn't.
-			graphics.setStroke(new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND,
-				10f, new float[]{8, 8}, 0));
+			graphics.setStroke(JUMP_STROKE);
 		}
 		else
 		{
-			graphics.setStroke(new BasicStroke(5, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+			graphics.setStroke(LINE_STROKE);
 		}
 		graphics.draw(line);
 		if (arrowHead)
@@ -555,7 +581,7 @@ public class PathTileOverlay extends Overlay
 				color.getGreen() + (int) ((255 - color.getGreen()) * glow * 0.18),
 				color.getBlue() + (int) ((255 - color.getBlue()) * glow * 0.18),
 				color.getAlpha()));
-			graphics.setStroke(new BasicStroke(3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+			graphics.setStroke(GLOW_STROKE);
 			graphics.draw(line);
 		}
 	}
@@ -681,7 +707,15 @@ public class PathTileOverlay extends Overlay
 		return drawLabelAtCanvasPoint(graphics, playerPoint, text, verticalOffset);
 	}
 
-	private void drawTransportInfo(Graphics2D graphics, PathStep currentStep, PathStep nextStep, List<PathStep> path, int pathIndex)
+	private static boolean nearScene(int packed, int minX, int minY, int maxX, int maxY)
+	{
+		int x = WorldPointUtil.unpackWorldX(packed);
+		int y = WorldPointUtil.unpackWorldY(packed);
+		return x >= minX && x <= maxX && y >= minY && y <= maxY;
+	}
+
+	private void drawTransportInfo(Graphics2D graphics, PathStep currentStep, PathStep nextStep, List<PathStep> path,
+		int pathIndex, Map<Integer, Integer> playerHas)
 	{
 		int location = currentStep.getPackedPosition();
 		if (nextStep == null || !plugin.showTransportInfo ||
@@ -798,7 +832,6 @@ public class PathTileOverlay extends Overlay
 		}
 
 		// Only show transports the player can currently use; fall back to all if none are usable.
-		Map<Integer, Integer> playerHas = BankPickupRequirements.collectPlayerItems(client);
 		List<Transport> usableTransports = new ArrayList<>();
 		for (Transport t : candidateTransports)
 		{
