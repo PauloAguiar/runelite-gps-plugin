@@ -28,13 +28,14 @@ public class TransportCountingTest
 		}
 		/*
 		 * Info:
-		 * There are currently 16 unique charter ship origin/destinations.
-		 * If every combination was possible then it would be 16^2 = 256.
-		 * It is impossible to travel from and to the same place, so subtract 16.
-		 * It is also impossible to travel between certain places, presumably
-		 * because the distance between them is too small. Currently 12 of these.
+		 * There are currently 17 unique charter ship origin/destinations (The Pandemonium
+		 * joined 2026-09-07). If every combination was possible then it would be 17^2 = 289.
+		 * It is impossible to travel from and to the same place, so subtract 17.
+		 * It is also impossible to travel between certain places, presumably because the
+		 * distance between them is too small: 12 of these among the original 16, plus the
+		 * Pandemonium's two ferry neighbours (Musa Point and Port Sarim) in both directions.
 		 */
-		assertEquals(16 * 16 - 16 - 12, actualCount);
+		assertEquals(17 * 17 - 17 - 12 - 4, actualCount);
 	}
 
 	@Test

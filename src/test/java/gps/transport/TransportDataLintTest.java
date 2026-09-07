@@ -229,8 +229,12 @@ public class TransportDataLintTest
 				int plane = WorldPointUtil.unpackWorldPlane(transport.getDestination());
 				boolean landsEnd = WorldPointUtil.unpackWorldX(transport.getDestination()) == 1496
 					&& WorldPointUtil.unpackWorldY(transport.getDestination()) == 3403;
+				// The Pandemonium also lands dockside until its charter gangplank pair is field-verified
+				// (two ships share the east dock; see charter_ships.tsv).
+				boolean pandemonium = WorldPointUtil.unpackWorldX(transport.getDestination()) == 3063
+					&& WorldPointUtil.unpackWorldY(transport.getDestination()) == 2999;
 				Assert.assertTrue("charter to " + transport.getDisplayInfo()
-					+ " must arrive on the ship's deck (plane 1)", plane == 1 || landsEnd);
+					+ " must arrive on the ship's deck (plane 1)", plane == 1 || landsEnd || pandemonium);
 				if (plane == 1)
 				{
 					deckArrivals++;
