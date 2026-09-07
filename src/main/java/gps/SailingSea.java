@@ -116,7 +116,8 @@ public final class SailingSea
 				}
 				Integer from = byLand.get(Long.parseLong(fields[0]) << 16 | Long.parseLong(fields[1]));
 				Integer to = byLand.get(Long.parseLong(fields[2]) << 16 | Long.parseLong(fields[3]));
-				if (from != null && to != null)
+				// Self-pairs never carry information (a mooring is 0 from itself).
+				if (from != null && to != null && !from.equals(to))
 				{
 					matrix[from][to] = Integer.parseInt(fields[4]);
 				}
@@ -203,7 +204,25 @@ public final class SailingSea
 					{
 						continue;
 					}
-					moorings.add(new int[]{Integer.parseInt(fields[1]), Integer.parseInt(fields[2]),
+					int landX = Integer.parseInt(fields[1]);
+					int landY = Integer.parseInt(fields[2]);
+					// The port matrix is keyed by land tile, so two moorings sharing one landing
+					// tile are one mooring to routing: keep the first, or the second silently
+					// overwrites the first's matrix index and its rows are lost (Wyrmscraig).
+					boolean duplicateLand = false;
+					for (int[] existing : moorings)
+					{
+						if (existing[0] == landX && existing[1] == landY)
+						{
+							duplicateLand = true;
+							break;
+						}
+					}
+					if (duplicateLand)
+					{
+						continue;
+					}
+					moorings.add(new int[]{landX, landY,
 						Integer.parseInt(fields[3]), Integer.parseInt(fields[4]),
 						fields.length > 5 && "true".equals(fields[5].trim()) ? 1 : 0});
 					mooringNames.add(fields.length > 6 ? fields[6].trim() : "");
