@@ -917,6 +917,8 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 2526	Door	2539	9672	0	0	2	1	1	closed
 37321	Door	2540	3273	0	0	3	1	1	closed
 2002	Door	2540	9900	0	0	1	1	1	closed
+62368	Cathedral door	2541	2215	0	0	2	1	1	closed
+62369	Cathedral door	2541	2216	0	0	2	1	1	closed
 1535	Door	2541	3280	0	0	3	1	1	closed
 4247	Door	2542	3895	0	0	1	1	1	closed
 2002	Door	2542	9892	0	0	1	1	1	closed
@@ -945,21 +947,27 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 2439	Gate	2561	4578	0	0	0	1	1	closed
 1540	Door	2563	3082	0	0	2	1	1	closed
 1535	Door	2564	3310	0	0	0	1	1	closed
+61361	Gate	2564	7398	0	0	3	1	1	closed
 1521	Large door	2564	9881	0	0	1	1	1	closed
+58116	Door	2565	2280	0	0	2	1	1	closed
 1535	Door	2565	3188	0	0	2	1	1	closed
 1540	Door	2565	3272	0	0	3	1	1	closed
 1540	Door	2565	3320	0	0	0	1	1	closed
 11723	Door	2565	3356	0	0	0	1	1	closed
 1535	Door	2565	9612	0	0	1	1	1	closed
 1524	Large door	2565	9881	0	0	1	1	1	closed
+58116	Door	2566	2253	0	0	2	1	1	closed
+58116	Door	2566	2257	0	0	1	1	1	closed
 1540	Door	2566	3317	0	0	1	1	1	closed
 2002	Door	2566	9901	0	0	1	1	1	closed
+58116	Door	2567	2246	0	0	2	1	1	closed
 1535	Door	2567	3162	0	0	2	1	1	closed
 1535	Door	2567	3245	0	0	1	1	1	closed
 46863	Door	2567	3271	0	0	2	1	1	closed
 15604	Gate	2567	3456	0	0	3	1	1	closed
 15759	Door	2567	5192	0	0	0	1	1	closed
 15759	Door	2567	5198	0	0	0	1	1	closed
+61361	Gate	2567	7398	0	0	3	1	1	closed
 15605	Gate	2568	3456	0	0	3	1	1	closed
 2002	Door	2568	9893	0	0	1	1	1	closed
 1535	Door	2569	3150	0	0	1	1	1	closed
@@ -968,6 +976,7 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 1540	Door	2569	3322	0	0	0	1	1	closed
 46863	Door	2570	3271	0	0	0	1	1	closed
 1535	Door	2570	3333	0	0	2	1	1	closed
+61361	Gate	2570	7398	0	0	3	1	1	closed
 1540	Door	2571	3322	0	0	2	1	1	closed
 13094	Large door	2571	5204	0	0	3	1	1	closed
 1522	Large door	2572	3098	0	0	3	1	1	open
@@ -978,10 +987,12 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 46863	Door	2573	3271	0	0	3	1	1	closed
 1543	Door	2573	3295	0	0	3	1	1	closed
 1535	Door	2573	3302	0	0	3	1	1	closed
+61361	Gate	2573	7398	0	0	3	1	1	closed
 9563	Cell door	2573	9705	0	0	0	1	1	closed
 9563	Cell door	2573	9708	0	0	0	1	1	closed
 9563	Cell door	2573	9711	0	0	0	1	1	closed
 35795	Cell door	2573	9714	0	0	0	1	1	closed
+58116	Door	2574	2243	0	0	1	1	1	closed
 1535	Door	2574	3250	0	0	0	1	1	closed
 1535	Door	2574	3285	0	0	0	1	1	closed
 1535	Door	2574	3293	0	0	2	1	1	closed
@@ -996,6 +1007,7 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 1540	Door	2576	3320	0	0	0	1	1	closed
 15759	Door	2576	5192	0	0	2	1	1	closed
 15759	Door	2576	5198	0	0	2	1	1	closed
+61361	Gate	2576	7398	0	0	3	1	1	closed
 1521	Large door	2576	9882	0	0	1	1	1	closed
 1521	Large door	2576	9884	0	0	1	1	1	closed
 1535	Door	2577	3287	0	0	3	1	1	closed
@@ -1006,11 +1018,17 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 1535	Door	2578	3333	0	0	0	1	1	closed
 6108	Door	2578	3464	0	0	3	1	1	closed
 48267	Doors	2578	6388	0	0	3	1	1	closed
+58116	Door	2579	2269	0	0	0	1	1	closed
 1535	Door	2579	3285	0	0	2	1	1	closed
 1535	Door	2579	3308	0	0	2	1	1	closed
 1991	Door	2579	4455	0	0	1	1	1	closed
 48266	Doors	2579	6388	0	0	3	1	1	closed
+58116	Door	2580	2267	0	0	2	1	1	closed
+61821	Jovkai door	2580	7812	0	0	3	1	1	closed
+61854	Gate	2580	7832	0	0	3	1	1	closed
+61829	Myrmel door	2580	7835	0	0	1	1	1	closed
 48264	Door	2581	6384	0	0	1	1	1	open
+61847	Door	2581	7842	0	0	3	1	1	closed
 1535	Door	2582	9648	0	0	0	1	1	closed
 1535	Door	2582	9651	0	0	0	1	1	closed
 1521	Large door	2582	9875	0	0	0	1	1	closed
@@ -1020,22 +1038,30 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 1536	Door	2584	3193	0	0	1	1	1	open
 1535	Door	2584	3339	0	0	3	1	1	closed
 48262	Door	2584	6349	0	0	1	1	1	closed
+61823	Door	2584	7823	0	0	2	1	1	closed
 81	Door	2585	3141	0	0	0	1	1	closed
+61845	Door	2585	7860	0	0	0	1	1	closed
 48262	Door	2586	6373	0	0	1	1	1	closed
 48262	Door	2587	6346	0	0	2	1	1	closed
+61844	Door	2587	7857	0	0	3	1	1	closed
 48264	Door	2588	6380	0	0	2	1	1	open
 2815	Gate	2588	9408	0	0	3	1	1	closed
 79	Prison Gate	2589	3142	0	0	3	1	1	closed
+61846	Door	2589	7850	0	0	1	1	1	closed
 2814	Gate	2589	9408	0	0	3	1	1	closed
 1535	Door	2590	3192	0	0	3	1	1	closed
+61840	null	2590	7818	0	0	1	1	1	closed
+61843	Door	2591	7812	0	0	3	1	1	closed
 2054	Door	2592	3339	0	0	3	1	1	closed
 2155	Gate	2592	9490	0	0	3	1	1	closed
+61822	Jovkai door	2593	7806	0	0	1	1	1	closed
 2154	Gate	2593	9490	0	0	3	1	1	closed
 17089	Large door	2594	3102	0	0	1	1	1	closed
 1521	Large door	2594	3180	0	0	1	1	1	closed
 21243	Door	2594	3266	0	0	1	1	1	closed
 167	Gate	2594	3361	0	0	2	1	1	closed
 166	Gate	2594	3362	0	0	2	1	1	closed
+61826	Door	2594	7834	0	0	1	1	1	closed
 79	Prison Gate	2595	3142	0	0	3	1	1	closed
 1524	Large door	2595	3180	0	0	1	1	1	closed
 1540	Door	2595	3188	0	0	1	1	1	closed
@@ -1045,15 +1071,22 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 1733	Magic guild door	2597	3088	0	0	0	1	1	closed
 1536	Door	2598	3404	0	9	2	1	1	open
 48262	Door	2598	6388	0	0	2	1	1	closed
+61838	Vitur door	2598	7843	0	0	3	1	1	closed
 1535	Door	2598	9648	0	0	3	1	1	closed
 1535	Door	2599	3192	0	0	3	1	1	closed
+61825	Myrmel door	2599	7826	0	0	3	1	1	closed
 79	Prison Gate	2600	3142	0	0	3	1	1	closed
 48267	Doors	2600	6359	0	0	2	1	1	closed
 48266	Doors	2600	6360	0	0	2	1	1	closed
+61839	Door	2600	7847	0	0	2	1	1	closed
+61837	Door	2601	7815	0	0	3	1	1	closed
 11728	Door	2601	9482	0	0	3	1	1	closed
+61830	Shadum door	2602	7858	0	0	3	1	1	closed
 1535	Door	2602	9638	0	0	0	1	1	closed
 1540	Door	2603	3082	0	0	3	1	1	closed
 4696	Door	2603	3874	0	0	3	1	1	closed
+61836	Vitur door	2603	7817	0	0	2	1	1	closed
+61831	Shadum door	2603	7858	0	0	3	1	1	closed
 4696	Door	2604	3878	0	0	1	1	1	closed
 48262	Door	2604	6341	0	0	0	1	1	closed
 2002	Door	2604	9900	0	0	1	1	1	closed
@@ -1061,6 +1094,7 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 48262	Door	2605	6343	0	0	3	1	1	closed
 48262	Door	2605	6382	0	0	3	1	1	closed
 48262	Door	2605	6389	0	0	1	1	1	closed
+61824	Door	2605	7843	0	0	3	1	1	closed
 82	Door	2606	3152	0	9	0	1	1	closed
 48262	Door	2606	6341	0	0	2	1	1	closed
 48290	Doors	2606	6359	0	0	2	1	1	closed
@@ -1087,6 +1121,8 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 1535	Door	2612	3182	0	0	2	1	1	closed
 1540	Door	2612	3309	0	0	2	1	1	closed
 1524	Large door	2612	3481	0	0	3	1	1	closed
+61835	Vitur door	2612	7852	0	0	0	1	1	closed
+61834	Vitur door	2612	7853	0	0	0	1	1	closed
 1535	Door	2613	3150	0	0	0	1	1	closed
 1521	Large door	2613	3481	0	0	3	1	1	closed
 1517	Large door	2613	3864	0	0	1	1	1	closed
@@ -1095,14 +1131,18 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 4247	Door	2614	3897	0	0	1	1	1	closed
 48262	Door	2614	6357	0	0	3	1	1	closed
 48262	Door	2614	6362	0	0	1	1	1	closed
+61832	Shadum door	2614	7814	0	0	0	1	1	closed
 1517	Large door	2615	3870	0	0	1	1	1	closed
 1517	Large door	2615	3880	0	0	3	1	1	closed
+61827	Myrmel door	2615	7838	0	0	0	1	1	closed
 1540	Door	2616	3147	0	0	3	1	1	closed
 1535	Door	2616	3345	0	0	2	1	1	closed
 79	Prison Gate	2617	3159	0	0	0	1	1	closed
 79	Prison Gate	2617	3163	0	0	0	1	1	closed
 80	Prison Gate	2617	3167	0	0	0	1	1	closed
 81	Door	2617	3171	0	0	1	1	1	closed
+61820	Door	2618	7825	0	0	3	1	1	closed
+61833	Door	2619	7816	0	0	1	1	1	closed
 1541	Door	2621	3294	0	0	0	1	1	open
 4248	Door	2621	3666	0	0	1	1	1	open
 4250	Door	2627	3656	0	0	3	1	1	closed
@@ -1110,6 +1150,7 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 1540	Door	2628	3323	0	0	2	1	1	closed
 1535	Door	2629	4726	0	0	1	1	1	closed
 1535	Door	2630	4681	0	0	2	1	1	closed
+61828	Door	2630	7841	0	0	1	1	1	closed
 4165	Door	2631	3667	0	0	3	1	1	closed
 1535	Door	2632	3381	0	0	1	1	1	closed
 1535	Door	2633	3169	0	0	1	1	1	closed
@@ -1871,16 +1912,21 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 11775	Door	3151	3412	0	0	3	1	1	closed
 11773	Door	3151	3435	0	0	3	1	1	closed
 11778	Door	3152	3405	0	0	3	1	1	open
+61361	Gate	3152	7589	0	0	3	1	1	closed
 11780	Door	3154	3405	0	0	0	1	1	closed
 11780	Door	3154	3409	0	0	0	1	1	closed
 11773	Door	3155	3429	0	0	2	1	1	closed
 11773	Door	3155	3439	0	0	2	1	1	closed
+61361	Gate	3155	7589	0	0	3	1	1	closed
+61361	Gate	3158	7589	0	0	3	1	1	closed
 1535	Door	3158	9640	0	9	0	1	1	closed
 11773	Door	3159	3442	0	0	3	1	1	closed
 1535	Door	3159	9620	0	0	1	1	1	closed
 11773	Door	3160	3432	0	0	3	1	1	closed
+61361	Gate	3161	7589	0	0	3	1	1	closed
 1560	Gate	3162	3290	0	0	3	1	1	closed
 1558	Gate	3163	3290	0	0	3	1	1	closed
+61361	Gate	3164	7589	0	0	3	1	1	closed
 11773	Door	3165	3433	0	0	0	1	1	closed
 1521	Large door	3166	3302	0	0	1	1	1	closed
 1524	Large door	3167	3302	0	0	1	1	1	closed
@@ -2730,6 +2776,7 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 4545	Strange wall	2516	10003	1	0	3	1	1	closed
 1540	Door	2522	3495	1	0	3	1	1	closed
 1536	Door	2527	3293	1	0	3	1	1	open
+48301	Gate	2528	6287	1	0	1	1	1	closed
 28783	Door	2539	9097	1	0	0	1	1	closed
 28783	Door	2542	9126	1	0	3	1	1	closed
 2034	Door	2547	3325	1	0	0	1	1	closed
@@ -2747,6 +2794,7 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 1535	Door	2574	3285	1	0	0	1	1	closed
 1535	Door	2574	3308	1	0	0	1	1	closed
 1543	Door	2575	3293	1	0	0	1	1	closed
+1543	Door	2575	3303	1	0	2	1	1	closed
 1540	Door	2576	3336	1	0	3	1	1	closed
 1535	Door	2579	3285	1	0	2	1	1	closed
 1535	Door	2579	3308	1	0	2	1	1	closed
@@ -2754,8 +2802,10 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 48264	Door	2581	6342	1	0	1	1	1	open
 28783	Door	2582	9120	1	0	0	1	1	closed
 48262	Door	2585	6342	1	0	2	1	1	closed
+58116	Door	2586	2257	1	0	0	1	1	closed
 1540	Door	2586	3336	1	0	0	1	1	closed
 48262	Door	2586	6379	1	0	1	1	1	closed
+58116	Door	2587	2259	1	0	3	1	1	closed
 1540	Door	2587	3335	1	0	2	1	1	closed
 48264	Door	2587	6348	1	0	2	1	1	open
 48262	Door	2587	6382	1	0	0	1	1	closed
@@ -3116,20 +3166,28 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 5244	Door	3656	3514	1	0	0	1	1	closed
 42125	Door	3666	8685	1	0	2	1	1	open
 42125	Door	3666	8692	1	0	2	1	1	open
+42125	Door	3666	8715	1	0	2	1	1	open
+42125	Door	3666	8722	1	0	2	1	1	open
 42125	Door	3669	8685	1	0	0	1	1	open
 42125	Door	3669	8692	1	0	0	1	1	open
+42125	Door	3669	8715	1	0	0	1	1	open
+42125	Door	3669	8722	1	0	0	1	1	open
 42125	Door	3693	8658	1	0	1	1	1	open
 42125	Door	3693	8661	1	0	3	1	1	open
+42125	Door	3693	8746	1	0	1	1	1	open
+42125	Door	3693	8749	1	0	3	1	1	open
 42125	Door	3700	8658	1	0	1	1	1	open
 42125	Door	3700	8661	1	0	3	1	1	open
-37937	Door	3723	3367	1	0	3	1	1	closed
+42125	Door	3700	8746	1	0	1	1	1	open
+42125	Door	3700	8749	1	0	3	1	1	open
+37937	Doors	3723	3367	1	0	3	1	1	closed
 42125	Door	3723	8658	1	0	1	1	1	open
 42125	Door	3723	8661	1	0	3	1	1	open
 42125	Door	3723	8746	1	0	1	1	1	open
 42125	Door	3723	8749	1	0	3	1	1	open
-37938	Door	3724	3367	1	0	3	1	1	closed
-37938	Door	3725	3350	1	0	1	1	1	closed
-37937	Door	3726	3350	1	0	1	1	1	closed
+37938	Doors	3724	3367	1	0	3	1	1	closed
+37938	Doors	3725	3350	1	0	1	1	1	closed
+37937	Doors	3726	3350	1	0	1	1	1	closed
 39512	Gate	3728	9752	1	0	1	1	1	closed
 39510	Gate	3728	9766	1	0	3	1	1	closed
 39510	Gate	3728	9775	1	0	1	1	1	closed
@@ -3305,7 +3363,7 @@ id	name	x	y	plane	type	orientation	sizeX	sizeY	state
 50051	Gate	3205	3471	2	0	1	1	1	closed
 11773	Door	3218	3472	2	0	2	1	1	closed
 1534	Curtain	3356	2983	2	0	3	1	1	open
-3463	Cell door	3415	3489	2	0	2	1	1	closed
+3463	Cell gate	3415	3489	2	0	2	1	1	closed
 43963	Door	3421	9248	2	0	0	1	1	closed
 43960	Door	3432	9248	2	0	2	1	1	closed
 2100	Door	3445	3554	2	0	1	1	1	closed
