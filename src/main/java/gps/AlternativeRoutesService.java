@@ -154,6 +154,9 @@ public class AlternativeRoutesService
 			catch (Exception e)
 			{
 				log.warn("Alternative route generation failed", e);
+				// Without a terminal update the plugin keeps altGenerationInFlight forever and
+				// the panel sits on "Finding the best route". emit() itself drops stale gens.
+				emit(gen, listener, List.of(), List.of(), Map.of(), true);
 			}
 		});
 	}

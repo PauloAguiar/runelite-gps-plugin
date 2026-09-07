@@ -975,15 +975,9 @@ public class PathfinderConfig
 		{
 			for (Quest quest : transport.getQuests())
 			{
-				try
-				{
-					// The explicit put also covers getQuestState overrides (the test harness);
-					// with the base memo it is a redundant self-assignment, repeats are map hits.
-					questStates.put(quest, getQuestState(quest));
-				}
-				catch (NullPointerException ignored)
-				{
-				}
+				// The explicit put also covers getQuestState overrides (the test harness);
+				// with the base memo it is a redundant self-assignment, repeats are map hits.
+				questStates.put(quest, getQuestState(quest));
 			}
 
 			for (VarRequirement varRequirement : transport.getVarRequirements())
