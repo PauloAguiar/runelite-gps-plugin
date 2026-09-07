@@ -1,10 +1,14 @@
 name: Extract Collision Map
 
 on:
-  # This workflow is triggered manually or on Wednesdays at 2320 UTC
-  # This should be after Jagex updates the cache
-  schedule:
-    - cron: '20 23 * * 3' # Every Wednesday at 23:20 UTC
+  # Manual only. The weekly schedule is OFF on purpose (review 2026-09-06): this job pulls the
+  # tooling repo's public HEAD, which is months behind the local dumper (plane-0 floor
+  # exemption, optimistic multiloc, ground-decor fix), and no dumper carries the sea-sealing
+  # rule that lives in the tooling's SeaCollisionPatchTest. A run today would regress the map
+  # and un-seal the ocean. Re-enable once the tooling repo is pushed to a fork we own, both
+  # checkouts are pinned to SHAs, and the sea rule lives in the dumper.
+  # schedule:
+  #   - cron: '20 23 * * 3' # Every Wednesday at 23:20 UTC
   workflow_dispatch:
 
 jobs:
