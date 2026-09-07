@@ -93,7 +93,6 @@ public class PathfinderConfig
 	 * Per packed tile; only bank.tsv rows with Skills/Quests/Varbits/VarPlayers.
 	 */
 	private final Map<Integer, DestinationRequirements> bankRequirements;
-	private final Map<Integer, Integer> itemsAndQuantities = new HashMap<>(28 + 11 + 500);
 	private final List<Integer> filteredTargets = new ArrayList<>(4);
 	private final Client client;
 	private final ShortestPathConfig config;
@@ -784,6 +783,9 @@ public class PathfinderConfig
 
 		refreshDestinations();
 		rebuildAccessibleBankTiles();
+		// The pass is over: later possession checks read the live containers again.
+		refreshPassActive = false;
+		itemSnapshots.clear();
 	}
 
 	private void refreshDestinations()
@@ -948,6 +950,12 @@ public class PathfinderConfig
 
 		// Fresh quest progress for this pass: getQuestState memoizes per refresh (see there).
 		questStates.clear();
+		// Var requirements repeat the same ids hundreds of times per pass: one client read each.
+		varbitValues.clear();
+		varPlayerValues.clear();
+		// Item snapshots are per pass (see itemSnapshot); refresh() ends the pass.
+		itemSnapshots.clear();
+		refreshPassActive = true;
 
 		// Fairy ring staff/diary requirements are enforced later in hasRequiredItems().
 		transportTypeConfig.disableUnless(TransportType.FAIRY_RING,
@@ -984,9 +992,12 @@ public class PathfinderConfig
 			{
 				if (varRequirement.isVarbit())
 				{
-					varbitValues.put(varRequirement.getId(), client.getVarbitValue(varRequirement.getId()));
+					if (!varbitValues.containsKey(varRequirement.getId()))
+					{
+						varbitValues.put(varRequirement.getId(), client.getVarbitValue(varRequirement.getId()));
+					}
 				}
-				else
+				else if (!varPlayerValues.containsKey(varRequirement.getId()))
 				{
 					varPlayerValues.put(varRequirement.getId(), client.getVarpValue(varRequirement.getId()));
 				}
@@ -2084,19 +2095,17 @@ public class PathfinderConfig
 	 *                  (the normal routing checks only read the bank in an "inventory + bank" setting).
 	 *                  Used by availability classification to detect banked items in any mode.
 	 */
-	private boolean hasRequiredItems(
-		TransportItems transportItems,
-		boolean checkInventory,
-		boolean checkEquipment,
-		boolean checkBank,
-		boolean checkRunePouch,
-		boolean forceBank)
+	/**
+	 * The player's items as one id->quantity map for a given container selection. Built ONCE
+	 * per selection per refresh pass (see itemSnapshot): this used to run inside
+	 * hasRequiredItems, i.e. ~56,000 times per pass (four calls per item-bearing transport
+	 * row, each clearing a 1,024-slot map and re-inserting up to 816 bank items) - most of
+	 * the ~200 ms the refresh cost the client thread.
+	 */
+	private Map<Integer, Integer> buildItemSnapshot(boolean checkInventory, boolean checkEquipment,
+		boolean checkBank, boolean checkRunePouch, boolean forceBank)
 	{
-		if (transportItems == null)
-		{
-			return true;
-		}
-		itemsAndQuantities.clear();
+		Map<Integer, Integer> items = new HashMap<>(28 + 11 + 500);
 
 		if (checkInventory)
 		{
@@ -2107,7 +2116,7 @@ public class PathfinderConfig
 				{
 					if (item.getId() >= 0 && item.getQuantity() > 0)
 					{
-						itemsAndQuantities.put(item.getId(), item.getQuantity());
+						items.put(item.getId(), item.getQuantity());
 					}
 				}
 			}
@@ -2122,7 +2131,7 @@ public class PathfinderConfig
 				{
 					if (item.getId() >= 0 && item.getQuantity() > 0)
 					{
-						itemsAndQuantities.put(item.getId(), item.getQuantity());
+						items.put(item.getId(), item.getQuantity());
 					}
 				}
 			}
@@ -2141,7 +2150,7 @@ public class PathfinderConfig
 				{
 					if (item.getId() >= 0 && item.getQuantity() > 0)
 					{
-						itemsAndQuantities.put(item.getId(), item.getQuantity());
+						items.put(item.getId(), item.getQuantity());
 					}
 				}
 			}
@@ -2149,7 +2158,16 @@ public class PathfinderConfig
 
 		if (checkRunePouch)
 		{
-			if (RUNE_POUCHES.stream().anyMatch(itemsAndQuantities::containsKey))
+			boolean pouchCarried = false;
+			for (int pouch : RUNE_POUCHES)
+			{
+				if (items.containsKey(pouch))
+				{
+					pouchCarried = true;
+					break;
+				}
+			}
+			if (pouchCarried)
 			{
 				EnumComposition runePouchEnum = client.getEnum(EnumID.RUNEPOUCH_RUNE);
 				for (int i = 0; i < RUNE_POUCH_RUNE_VARBITS.length; i++)
@@ -2159,11 +2177,51 @@ public class PathfinderConfig
 					int runeAmount = client.getVarbitValue(RUNE_POUCH_AMOUNT_VARBITS[i]);
 					if (runeId > 0 && runeAmount > 0)
 					{
-						itemsAndQuantities.put(runeId, runeAmount);
+						items.put(runeId, runeAmount);
 					}
 				}
 			}
 		}
+
+		return items;
+	}
+
+	// Snapshots keyed by container selection, valid for the duration of one refresh pass.
+	private final Map<Integer, Map<Integer, Integer>> itemSnapshots = new HashMap<>();
+	private boolean refreshPassActive;
+
+	private Map<Integer, Integer> itemSnapshot(boolean checkInventory, boolean checkEquipment,
+		boolean checkBank, boolean checkRunePouch, boolean forceBank)
+	{
+		if (!refreshPassActive)
+		{
+			// Outside a pass the containers may have changed since: read them live, as before.
+			return buildItemSnapshot(checkInventory, checkEquipment, checkBank, checkRunePouch, forceBank);
+		}
+		int key = (checkInventory ? 1 : 0) | (checkEquipment ? 2 : 0) | (checkBank ? 4 : 0)
+			| (checkRunePouch ? 8 : 0) | (forceBank ? 16 : 0);
+		Map<Integer, Integer> snapshot = itemSnapshots.get(key);
+		if (snapshot == null)
+		{
+			snapshot = buildItemSnapshot(checkInventory, checkEquipment, checkBank, checkRunePouch, forceBank);
+			itemSnapshots.put(key, snapshot);
+		}
+		return snapshot;
+	}
+
+	private boolean hasRequiredItems(
+		TransportItems transportItems,
+		boolean checkInventory,
+		boolean checkEquipment,
+		boolean checkBank,
+		boolean checkRunePouch,
+		boolean forceBank)
+	{
+		if (transportItems == null)
+		{
+			return true;
+		}
+		Map<Integer, Integer> items = itemSnapshot(checkInventory, checkEquipment, checkBank, checkRunePouch, forceBank);
 
 		// One staff is wielded per cast, but a COMBO staff covers both its elements at once: the
 		// old one-credit-only flag let a lava staff satisfy EARTH and then barred it from FIRE,
@@ -2181,7 +2239,7 @@ public class PathfinderConfig
 			{
 				for (int itemId : req.getItemIds())
 				{
-					int quantity = itemsAndQuantities.getOrDefault(itemId, 0);
+					int quantity = items.getOrDefault(itemId, 0);
 					if (requiredQuantity > 0 && quantity >= requiredQuantity || requiredQuantity == 0 && quantity == 0)
 					{
 						if (CURRENCIES.contains(itemId) && requiredQuantity > currencyThreshold)
@@ -2195,7 +2253,7 @@ public class PathfinderConfig
 			}
 			if (missing && req.getStaffIds() != null)
 			{
-				int[] present = presentIds(req.getStaffIds(), requiredQuantity);
+				int[] present = presentIds(items, req.getStaffIds(), requiredQuantity);
 				if (requiredQuantity == 0 ? present.length == req.getStaffIds().length : present.length > 0)
 				{
 					if (requiredQuantity > 0)
@@ -2207,7 +2265,7 @@ public class PathfinderConfig
 			}
 			if (missing && req.getOffhandIds() != null)
 			{
-				int[] present = presentIds(req.getOffhandIds(), requiredQuantity);
+				int[] present = presentIds(items, req.getOffhandIds(), requiredQuantity);
 				if (requiredQuantity == 0 ? present.length == req.getOffhandIds().length : present.length > 0)
 				{
 					if (requiredQuantity > 0)
@@ -2230,13 +2288,13 @@ public class PathfinderConfig
 	 * (any quantity — a staff/tome is not consumed); for a forbidden (=0) requirement, the ids NOT
 	 * held (preserving the old branch's "absence satisfies" semantics).
 	 */
-	private int[] presentIds(int[] ids, int requiredQuantity)
+	private int[] presentIds(Map<Integer, Integer> items, int[] ids, int requiredQuantity)
 	{
 		int n = 0;
 		int[] out = new int[ids.length];
 		for (int itemId : ids)
 		{
-			int quantity = itemsAndQuantities.getOrDefault(itemId, 0);
+			int quantity = items.getOrDefault(itemId, 0);
 			if (requiredQuantity > 0 ? quantity >= 1 : quantity == 0)
 			{
 				out[n++] = itemId;
