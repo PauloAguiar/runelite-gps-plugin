@@ -399,3 +399,32 @@ deliberate deferrals (the harvest/compute split, and ETA-priced search results),
 above with their numbers. The Later tier (route acceptance extraction, services out of the
 plugin class, one config source of truth, type switches to data, the leagues decision, product
 features) is untouched and is a choice to make, not a list to run.
+
+## Later tier
+
+### Step L1: one copy of the route acceptance rule (2026-09-07)
+
+**Test first:** `RouteAcceptanceTest` pins the rule as pure functions: the band applies only
+once the page holds four routes and prices off max(best, 35) times the multiple; the page-fill
+ceiling ratchets with the costliest accepted route (168 for best 10, costliest 150, multiple
+3); the chain stops on a full page past the band while the evicting passes do not; closeness
+(an unreached result with the best route reaching is a cap truncation, an unreachable target
+accepts routes within ten tiles of the best approach, nothing is too far before the first
+route); eviction picks the costliest evictable route strictly costlier than the candidate and
+never the sole port-first route; the port-first helpers. The class and its test were written
+together (a characterization of code that existed, not a behavior change), and the generator's
+own tests (hybrid page fill, same-tail prefix cap, keep-sailing baseline, unreachable
+short-circuit, bank mode, round trips) stayed green as the behavioral guard.
+
+**Change:** `RouteAcceptance` holds the band, the page-fill ceiling, the best-cost cap, the
+closeness rule, the eviction index and the port-first, nested-route and redundant-hop
+predicates. The exclusion chain, the seed pass, the tail-diversity pass, the seed search's
+pre-filter and the two baseline appends call it; the three hand-written eviction loops became
+one call with a predicate each. The service went from 2,449 to 2,220 lines and no longer
+carries the four tuning constants.
+
+**Measured:** full suite 674 tests green. No timing change expected or measured: the rule is
+pure arithmetic over a page of at most ten routes.
+
+**Next:** the phase split (a generation context object instead of the ten-to-fifteen
+parameter signatures, then the chain, seed, tail and round-trip passes as separate units).

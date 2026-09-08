@@ -87,20 +87,20 @@ public class RedundantTeleportHopTest
 			TransportType.CHARTER_SHIP, "Port Tyras", WorldPointUtil.packWorldPoint(2142, 3122, 0));
 
 		assertTrue("whistle -> quetzal back to a whistle-reachable site is the hop to drop",
-			AlternativeRoutesService.hasRedundantTeleportHop(baseline,
+			RouteAcceptance.hasRedundantTeleportHop(baseline,
 				List.of(whistleToQuetzacalli, quetzalToCivitas, charter)));
 		assertFalse("Varrock has no whistle landing: the Primio flight is a REAL leg",
-			AlternativeRoutesService.hasRedundantTeleportHop(baseline,
+			RouteAcceptance.hasRedundantTeleportHop(baseline,
 				List.of(whistleToQuetzacalli, primioToVarrock)));
 		assertFalse("unrelated method pairs are untouched",
-			AlternativeRoutesService.hasRedundantTeleportHop(baseline,
+			RouteAcceptance.hasRedundantTeleportHop(baseline,
 				List.of(quetzalToCivitas, charter)));
 
 		// A USER exclusion of the direct whistle makes its hop variants legitimate alternatives.
 		List<Transport> withoutCivitas =
 			AlternativeRoutesService.teleportHopBaseline(planning, Set.of(whistleToCivitas));
 		assertFalse("with the direct whistle excluded by the user, the hop is a real route",
-			AlternativeRoutesService.hasRedundantTeleportHop(withoutCivitas,
+			RouteAcceptance.hasRedundantTeleportHop(withoutCivitas,
 				List.of(whistleToQuetzacalli, quetzalToCivitas, charter)));
 	}
 
@@ -142,7 +142,7 @@ public class RedundantTeleportHopTest
 		for (RouteOption route : routes)
 		{
 			assertFalse("no route may keep a redundant whistle hop: " + route.getMethods(),
-				AlternativeRoutesService.hasRedundantTeleportHop(baseline, route.getMethods()));
+				RouteAcceptance.hasRedundantTeleportHop(baseline, route.getMethods()));
 			reached |= route.isReached();
 		}
 		assertTrue("the target stays reachable with the junk variants filtered", reached);

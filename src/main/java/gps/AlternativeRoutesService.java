@@ -61,12 +61,6 @@ public class AlternativeRoutesService
 	/** Closest-approach routes kept for a provably unreachable target (each is a full-world flood). */
 	static final int UNREACHABLE_ESCAPE_ROUTES = 3;
 	private static final long CLIENT_THREAD_TIMEOUT_SECONDS = 10;
-	/**
-	 * When the exact target is unreachable, routes are accepted while their endpoint stays within this
-	 * many tiles of the best route's endpoint (they all converge on the closest reachable area).
-	 */
-	private static final int CLOSEST_DISTANCE_TOLERANCE = 10;
-
 
 	/**
 	 * Receives progressive updates for one generation: the catalog as soon as it's known, then the
@@ -518,7 +512,7 @@ public class AlternativeRoutesService
 			// no longer a hard cut — past it the page keeps FILLING while each next route stays within
 			// a modest gap of the acceptance region (see the accept check below), so the first page
 			// never stops mid-cluster (e.g. 105 shown, 107 hidden) the way a bare best*multiple cut did.
-			int chainCap = cappedByBestCost(walkCap, routes, 2 * costMultiple);
+			int chainCap = RouteAcceptance.cappedByBestCost(walkCap, routes, 2 * costMultiple);
 			// The cost ceiling is the binding one (tighter than the walk ceiling) — a search failing now
 			// was held back by cost, not by walking being cheaper or methods running out.
 			boolean costLimited = chainCap < walkCap;
@@ -546,34 +540,23 @@ public class AlternativeRoutesService
 			}
 
 			boolean reached = result.isReached();
-			// The best route reached the target, so an unreached result is NOT "the closest
-			// reachable area" — it is a search truncated by the cost cap a few tiles short of the
-			// goal. Accepting it through the closeness tolerance below showed a phantom
-			// "unreachable" route (user capture: the quetzal whistle at cost 28 under a 27 band,
-			// rendered unreachable while perfectly reachable). Stop instead: the truncation is
-			// exactly what "more routes" reveals by widening the band.
-			if (!reached && bestRemaining == 0)
-			{
-				cappedByCost |= costLimited;
-				chainExhausted = true;
-				break;
-			}
-			// Unreachable exact targets (e.g. NPC tiles) still have meaningful alternatives: different
-			// methods all ending at the closest reachable area. Keep enumerating while routes get
-			// equally close; stop once exclusions make the search end up meaningfully further away.
+			// Closeness (RouteAcceptance.tooFar): with the best route reaching, an unreached result
+			// is a cap truncation a few tiles short, not a route (a phantom "unreachable" quetzal
+			// route at cost 28 under a 27 band was shown once); with an unreachable target, routes
+			// are accepted while they end about as close as the best approach. Either way the
+			// route is beyond the band, and "more routes" reveals it by widening.
 			int remaining = reached ? 0 : remainingDistance(path, ends);
-			if (bestRemaining < 0)
-			{
-				bestRemaining = remaining;
-			}
-			else if (remaining > bestRemaining + CLOSEST_DISTANCE_TOLERANCE)
+			if (RouteAcceptance.tooFar(reached, remaining, bestRemaining))
 			{
 				log.debug("[alt-routes] search #{} ends {} tiles from target (best {}); stopping with {} route(s)",
 					i, remaining, bestRemaining, routes.size());
-				// The search couldn't reach within the cost band — that route is beyond the cap.
 				cappedByCost |= costLimited;
 				chainExhausted = true;
 				break;
+			}
+			if (bestRemaining < 0)
+			{
+				bestRemaining = remaining;
 			}
 
 			// Hybrid band edge: routes inside the display band are always accepted; past it the page
@@ -583,18 +566,12 @@ public class AlternativeRoutesService
 			// A minimum page overrides the cliff: one super-cheap route (a direct minigame teleport)
 			// otherwise produced a single-entry page with no alternatives at all (user capture).
 			final int totalCost = result.getTotalCost();
-			if (costMultiple > 0 && routes.size() >= MIN_PAGE_ROUTES)
+			if (RouteAcceptance.beyondBand(totalCost, routes, costMultiple, limit))
 			{
-				long band = (long) Math.max(routes.get(0).getTotalCost(), MIN_BEST_FOR_BAND) * costMultiple;
-				if (totalCost > band
-					&& (routes.size() >= limit
-					|| totalCost > pageFillCeiling(routes.get(0).getTotalCost(), maxAcceptedCost(routes), costMultiple)))
-				{
-					// A route exists beyond what this page shows — "+" (a wider band) can reveal it.
-					cappedByCost = true;
-					chainExhausted = true;
-					break;
-				}
+				// A route exists beyond what this page shows: "+" (a wider band) can reveal it.
+				cappedByCost = true;
+				chainExhausted = true;
+				break;
 			}
 
 			MethodScan scan = scanMethods(planningConfig, path);
@@ -603,7 +580,7 @@ public class AlternativeRoutesService
 			// A kept route nested inside this one (detour + same ending): skip it WITHOUT burning
 			// its signature, and keep the chain moving by excluding its primary like any accepted
 			// route — the next iteration can still find genuinely different endings.
-			if (nestsAKeptRoute(methods, !scan.bankGated.isEmpty(), routes))
+			if (RouteAcceptance.nestsAKeptRoute(methods, !scan.bankGated.isEmpty(), routes))
 			{
 				excluded.add(methods.get(0));
 				continue;
@@ -614,7 +591,7 @@ public class AlternativeRoutesService
 			// one filtered variant per whistle site would eat the whole budget - the probe run
 			// came back with 2 routes of 10). Excluding its primary keeps the chain moving to
 			// genuinely different methods; the growing exclusion set bounds the extra turns.
-			if (hasRedundantTeleportHop(hopBaselineTeleports, methods))
+			if (RouteAcceptance.hasRedundantTeleportHop(hopBaselineTeleports, methods))
 			{
 				excluded.add(methods.get(0));
 				i--;
@@ -695,7 +672,7 @@ public class AlternativeRoutesService
 		{
 			seedTeleportRoutes(gen, start, ends, userExclusions, mode, limit, costMultiple,
 				seedCandidates, routes, seenSignatures, catalog, unavailable, roundTrip ? null : listener,
-				bestRemaining, cappedByBestCost(capOf(walkFuture), routes, 2 * costMultiple), field, timer,
+				bestRemaining, RouteAcceptance.cappedByBestCost(capOf(walkFuture), routes, 2 * costMultiple), field, timer,
 				bestSail);
 		}
 		// Tail-diversity pass: when the page is dominated by one shared method TAIL, surface a
@@ -704,7 +681,7 @@ public class AlternativeRoutesService
 		{
 			diversifySharedTails(gen, start, ends, userExclusions, limit, costMultiple, routes,
 				seenSignatures, catalog, unavailable, roundTrip ? null : listener, bestRemaining,
-				cappedByBestCost(capOf(walkFuture), routes, 2 * costMultiple), field, timer);
+				RouteAcceptance.cappedByBestCost(capOf(walkFuture), routes, 2 * costMultiple), field, timer);
 		}
 
 		// More routes are worth polling for when the count budget was the binding limit (the chain kept
@@ -713,7 +690,7 @@ public class AlternativeRoutesService
 		// cheaper-than-walk left to reveal.
 		int moreWalkCap = capOf(walkFuture);
 		boolean costHeldBack = cappedByCost
-			&& cappedByBestCost(moreWalkCap, routes, costMultiple) < moreWalkCap;
+			&& RouteAcceptance.cappedByBestCost(moreWalkCap, routes, costMultiple) < moreWalkCap;
 		lastGenerationMoreLikely = !chainExhausted || costHeldBack;
 
 		// The walk-only route from the concurrent search is the last resort: append it when the
@@ -739,7 +716,7 @@ public class AlternativeRoutesService
 		// chain didn't already derive it), even at the route limit — the player should always see
 		// "…or just walk N tiles" as a complete-picture fallback, whatever teleports were found.
 		if (walk != null && walk.cap != Integer.MAX_VALUE
-			&& (bestRemaining < 0 || walk.remaining <= bestRemaining + CLOSEST_DISTANCE_TOLERANCE)
+			&& (bestRemaining < 0 || walk.remaining <= bestRemaining + RouteAcceptance.CLOSEST_DISTANCE_TOLERANCE)
 			&& seenSignatures.add(signature(walk.route.getMethods())))
 		{
 			routes.add(walk.route);
@@ -749,18 +726,7 @@ public class AlternativeRoutesService
 			// evicted the very route this block exists to surface (plan step N10).
 			while (routes.size() > limit)
 			{
-				int drop = -1;
-				int maxCost = -1;
-				for (int r = 0; r < routes.size(); r++)
-				{
-					if (routes.get(r) != walk.route
-						&& !routes.get(r).isWalkOnly() && r != solePortFirstIndex(routes)
-						&& routes.get(r).getTotalCost() > maxCost)
-					{
-						maxCost = routes.get(r).getTotalCost();
-						drop = r;
-					}
-				}
+				int drop = RouteAcceptance.evictionIndex(routes, -1, r -> r != walk.route && !r.isWalkOnly());
 				if (drop < 0)
 				{
 					break;
@@ -779,18 +745,7 @@ public class AlternativeRoutesService
 			routes.add(sailBaseline);
 			while (routes.size() > limit)
 			{
-				int drop = -1;
-				int maxCost = -1;
-				for (int r = 0; r < routes.size(); r++)
-				{
-					if (!routes.get(r).isWalkOnly() && !routes.get(r).isPureSail()
-						&& r != solePortFirstIndex(routes)
-						&& routes.get(r).getTotalCost() > maxCost)
-					{
-						maxCost = routes.get(r).getTotalCost();
-						drop = r;
-					}
-				}
+				int drop = RouteAcceptance.evictionIndex(routes, -1, r -> !r.isWalkOnly() && !r.isPureSail());
 				if (drop < 0)
 				{
 					break;
@@ -1263,7 +1218,7 @@ public class AlternativeRoutesService
 				boolean portPromise = nearestPortRetained != null
 					&& !seedResult.scan.methods.isEmpty()
 					&& nearestPortRetained.equals(seedResult.scan.methods.get(0).getDisplayInfo())
-					&& !hasPortFirstRoute(routes);
+					&& !RouteAcceptance.hasPortFirstRoute(routes);
 				// At the helm the cheapest PURE-SAIL continuation is a protected baseline (the
 				// walk route's sibling): the cost band otherwise culls every keep-sailing option
 				// while cheap disembark-teleport chains fill the page (capture 20260829-204334),
@@ -1281,20 +1236,18 @@ public class AlternativeRoutesService
 							seedResult.scan.trailingWalk));
 					}
 				}
-				if (!portPromise && costMultiple > 0 && routes.size() >= MIN_PAGE_ROUTES
-					&& seedResult.totalCost > (long) Math.max(routes.get(0).getTotalCost(), MIN_BEST_FOR_BAND) * costMultiple
-					&& seedResult.totalCost > pageFillCeiling(routes.get(0).getTotalCost(), maxAcceptedCost(routes), costMultiple))
+				if (!portPromise && RouteAcceptance.beyondBand(seedResult.totalCost, routes, costMultiple))
 				{
 					continue;
 				}
 				// The port promise IS a detour with the same ending (Disembark + the teleport
 				// the bare route uses) — the nesting filter would always drop it.
-				if (!portPromise && nestsAKeptRoute(seedResult.scan.methods,
+				if (!portPromise && RouteAcceptance.nestsAKeptRoute(seedResult.scan.methods,
 					!seedResult.scan.bankGated.isEmpty(), routes))
 				{
 					continue;
 				}
-				if (hasRedundantTeleportHop(hopBaselineTeleports, seedResult.scan.methods))
+				if (RouteAcceptance.hasRedundantTeleportHop(hopBaselineTeleports, seedResult.scan.methods))
 				{
 					continue;
 				}
@@ -1306,25 +1259,13 @@ public class AlternativeRoutesService
 				// teleport route — the seeds are the safety net for anything the chain missed.
 				if (routes.size() >= limit)
 				{
-					int evict = -1;
-					int maxCost = portPromise ? -1 : seedResult.totalCost;
-					for (int r = 0; r < routes.size(); r++)
-					{
-						// The walk baseline is evict-proof only when there is a LIST to anchor:
-						// in overlay-only mode (panel closed, limit 1) the single route must be
-						// the best route, or a slow walk permanently shadows a cheap sea leg
-						// (field report: 7-minute walk shown while a 131-cost sail existed).
-						// The sole port-first route is evict-proof like the walk baseline:
-						// the debug trail showed the promise accepted at cost 59 and then
-						// evicted by a later 17-cost teleport seed's arrival.
-						if ((limit == 1 || !routes.get(r).isWalkOnly())
-							&& r != solePortFirstIndex(routes)
-							&& routes.get(r).getTotalCost() > maxCost)
-						{
-							maxCost = routes.get(r).getTotalCost();
-							evict = r;
-						}
-					}
+					// The walk baseline is evict-proof only when there is a LIST to anchor: in
+					// overlay-only mode (panel closed, limit 1) the single route must be the best
+					// route, or a slow walk permanently shadows a cheap sea leg (field report:
+					// 7-minute walk shown while a 131-cost sail existed). The port promise may
+					// evict any cost; every other seed only a strictly costlier route.
+					int evict = RouteAcceptance.evictionIndex(routes, portPromise ? -1 : seedResult.totalCost,
+						r -> limit == 1 || !r.isWalkOnly());
 					if (evict < 0)
 					{
 						continue;
@@ -1420,49 +1361,6 @@ public class AlternativeRoutesService
 		return best;
 	}
 
-	/**
-	 * One parallel seed attempt: rebuild availability on a worker-owned config with every other
-	 * global teleport excluded, search, and pre-filter the result. Returns null when rejected.
-	 */
-	/** Index of the ONLY port-first route (evict-proof), or -1 when zero or several. */
-	private static int solePortFirstIndex(List<RouteOption> routes)
-	{
-		int found = -1;
-		for (int r = 0; r < routes.size(); r++)
-		{
-			List<TeleportMethod> methods = routes.get(r).getMethods();
-			if (!methods.isEmpty()
-				&& gps.transport.TransportType.SAILING.equals(methods.get(0).getType())
-				&& methods.get(0).getDisplayInfo() != null
-				&& methods.get(0).getDisplayInfo().startsWith("Disembark"))
-			{
-				if (found >= 0)
-				{
-					return -1;
-				}
-				found = r;
-			}
-		}
-		return found;
-	}
-
-	/** Whether any shown route already starts by disembarking at a port. */
-	private static boolean hasPortFirstRoute(List<RouteOption> routes)
-	{
-		for (RouteOption route : routes)
-		{
-			List<TeleportMethod> methods = route.getMethods();
-			if (!methods.isEmpty()
-				&& gps.transport.TransportType.SAILING.equals(methods.get(0).getType())
-				&& methods.get(0).getDisplayInfo() != null
-				&& methods.get(0).getDisplayInfo().startsWith("Disembark"))
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
 	/** A tail shared by this many kept routes triggers the diversity pass. */
 
 	private static final int TAIL_DOMINANCE = 3;
@@ -1556,26 +1454,20 @@ public class AlternativeRoutesService
 				continue;
 			}
 			boolean reached = result.isReached();
-			if (!reached && bestRemaining == 0)
-			{
-				continue;
-			}
 			int remaining = reached ? 0 : remainingDistance(path, ends);
-			if (bestRemaining >= 0 && remaining > bestRemaining + CLOSEST_DISTANCE_TOLERANCE)
+			if (RouteAcceptance.tooFar(reached, remaining, bestRemaining))
 			{
 				continue;
 			}
 			final int totalCost = result.getTotalCost();
-			if (costMultiple > 0 && routes.size() >= MIN_PAGE_ROUTES
-				&& totalCost > (long) Math.max(routes.get(0).getTotalCost(), MIN_BEST_FOR_BAND) * costMultiple
-				&& totalCost > pageFillCeiling(routes.get(0).getTotalCost(), maxAcceptedCost(routes), costMultiple))
+			if (RouteAcceptance.beyondBand(totalCost, routes, costMultiple))
 			{
 				continue;
 			}
 			MethodScan scan = scanMethods(config, path);
 			if (scan.methods.isEmpty()
-				|| nestsAKeptRoute(scan.methods, !scan.bankGated.isEmpty(), routes)
-				|| hasRedundantTeleportHop(hopBaselineTeleports, scan.methods)
+				|| RouteAcceptance.nestsAKeptRoute(scan.methods, !scan.bankGated.isEmpty(), routes)
+				|| RouteAcceptance.hasRedundantTeleportHop(hopBaselineTeleports, scan.methods)
 				|| !seenSignatures.add(signature(scan.methods)))
 			{
 				continue;
@@ -1583,19 +1475,9 @@ public class AlternativeRoutesService
 			if (routes.size() >= limit)
 			{
 				// The whole point: the slot comes out of the over-represented family.
-				int evict = -1;
-				int maxCost = -1;
-				for (int r = 0; r < routes.size(); r++)
-				{
-					RouteOption kept = routes.get(r);
-					if (!kept.isWalkOnly() && r != solePortFirstIndex(routes)
-						&& dominantTail.equals(tailSignature(kept.getMethods()))
-						&& kept.getTotalCost() > maxCost)
-					{
-						maxCost = kept.getTotalCost();
-						evict = r;
-					}
-				}
+				final String familyTail = dominantTail;
+				int evict = RouteAcceptance.evictionIndex(routes, -1,
+					kept -> !kept.isWalkOnly() && familyTail.equals(tailSignature(kept.getMethods())));
 				if (evict < 0)
 				{
 					continue;
@@ -1680,14 +1562,8 @@ public class AlternativeRoutesService
 				return null;
 			}
 			boolean reached = result.isReached();
-			// The best route reached the target: an unreached seed is a cost-cap truncation a few
-			// tiles short, not a route — dropping it keeps phantom "unreachable" entries out.
-			if (!reached && bestRemaining == 0)
-			{
-				return null;
-			}
 			int remaining = reached ? 0 : remainingDistance(path, ends);
-			if (bestRemaining >= 0 && remaining > bestRemaining + CLOSEST_DISTANCE_TOLERANCE)
+			if (RouteAcceptance.tooFar(reached, remaining, bestRemaining))
 			{
 				return null;
 			}
@@ -1836,7 +1712,7 @@ public class AlternativeRoutesService
 			}
 			MethodScan scan = scanMethods(planningConfig, fullPath);
 			if (!signatures.add(signature(scan.methods))
-				|| hasRedundantTeleportHop(hopBaselineTeleports, scan.methods))
+				|| RouteAcceptance.hasRedundantTeleportHop(hopBaselineTeleports, scan.methods))
 			{
 				continue;
 			}
@@ -1852,36 +1728,12 @@ public class AlternativeRoutesService
 	}
 
 	/**
-	 * The current search cap from the walk search, polled without blocking: MAX_VALUE (uncapped)
-	 * until the walk finishes — so the chain's first searches never wait on it — then the walk cost.
-	 */
-	/**
-	 * Tightens a search's cost cap to {@code best route cost * multiple} once a route is found, so
-	 * searches for far-worse alternatives don't flood the map. Routes are added in non-decreasing
-	 * cost order, so the first is the cheapest. No effect before the first route, when
-	 * {@code multiple <= 0} (uncapped), or when the product exceeds {@code cap}.
-	 */
-	// A super-cheap best route must not strangle the cost band: with the best route at cost 9 (a
-	// direct teleport), best x 3 = 27 hid every teleport+short-walk combination (a 28-cost quetzal
-	// whistle route) behind "more". The band prices off max(best, this), so the default band is
-	// never tighter than ~100 units (~30s of travel) and still grows with every "more" press.
-	private static final int MIN_BEST_FOR_BAND = 35;
-	// The band/cliff gates don't apply until this many routes are on the page: one direct teleport
-	// far cheaper than everything else otherwise made a one-entry page with no alternatives. The
-	// chain search's own sanity cap (2x the band) still bounds how far these fill routes may cost.
-	private static final int MIN_PAGE_ROUTES = 4;
-	/**
 	 * Search-CPU budget for UNREACHED targets (sealed cells, through-the-bars NPC tiles): with
 	 * the heuristic degenerate, every chain route and seed costs an uninformed sweep — the page
 	 * fills with whatever the budget affords (fast machines get more escapes, slow ones fewer)
 	 * instead of enumerating the whole teleport catalog. "+" resumes with a fresh budget.
 	 */
 	private static final long UNREACHED_SEARCH_BUDGET_NANOS = 4_000_000_000L;
-	// Page filling past the band accepts the next route while it is within this gap of the
-	// acceptance region (absolute floor; grows to ref/8 for pricier regions) — wide enough to keep a
-	// dense cluster together, small enough that a genuine cost cliff still ends the page.
-	private static final int PAGE_FILL_MIN_GAP = 10;
-
 	/** Cumulative search CPU spent this generation vs the unreached-target budget. */
 	private static boolean searchBudgetExhausted(GenTimer timer)
 	{
@@ -1889,41 +1741,6 @@ public class AlternativeRoutesService
 		{
 			return timer.searchNanos >= UNREACHED_SEARCH_BUDGET_NANOS;
 		}
-	}
-
-	private static int cappedByBestCost(int cap, List<RouteOption> routes, int multiple)
-	{
-		if (routes.isEmpty() || multiple <= 0)
-		{
-			return cap;
-		}
-		long byBest = (long) Math.max(routes.get(0).getTotalCost(), MIN_BEST_FOR_BAND) * multiple;
-		return byBest < cap ? (int) byBest : cap;
-	}
-
-	/**
-	 * The page-fill acceptance ceiling: past the display band a route is still shown while its cost
-	 * stays within a modest gap of {@code max(band, costliest accepted route)}. Referencing the band
-	 * (not just the last route) matters when a cluster STARTS just past the band edge — e.g. routes
-	 * at 32/86 with a 105 band and the next cluster at 106: measured from 86 the gap is 20 (a stop),
-	 * measured from the band it is 1 (the cluster the band edge landed in). The ceiling ratchets as
-	 * fill routes are accepted, so it follows a dense cluster and stops at the first real cliff.
-	 */
-	static long pageFillCeiling(int bestCost, int maxAcceptedCost, int multiple)
-	{
-		long ref = Math.max((long) Math.max(bestCost, MIN_BEST_FOR_BAND) * multiple, maxAcceptedCost);
-		return ref + Math.max(PAGE_FILL_MIN_GAP, ref / 8);
-	}
-
-	/** The costliest accepted route's cost (walk-only entries included — they bound the page too). */
-	private static int maxAcceptedCost(List<RouteOption> routes)
-	{
-		int max = 0;
-		for (RouteOption route : routes)
-		{
-			max = Math.max(max, route.getTotalCost());
-		}
-		return max;
 	}
 
 	private static int capOf(Future<WalkResult> walkFuture)
@@ -2344,33 +2161,6 @@ public class AlternativeRoutesService
 		return true;
 	}
 
-	static boolean hasRedundantTeleportHop(List<Transport> baselineTeleports, List<TeleportMethod> methods)
-	{
-		for (int i = 0; i + 1 < methods.size(); i++)
-		{
-			TeleportMethod teleport = methods.get(i);
-			TeleportMethod flight = methods.get(i + 1);
-			if (teleport.getType() == null || flight.getType() == null
-				|| !flight.getType().equals(teleport.getType().sharesDestinationsWith()))
-			{
-				continue;
-			}
-			for (Transport candidate : baselineTeleports)
-			{
-				if (teleport.getType().equals(candidate.getType())
-					&& WorldPointUtil.distanceBetween(candidate.getDestination(), flight.getDestination())
-						<= SHARED_DESTINATION_RADIUS)
-				{
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
-	/** How close a same-kind teleport must land to a flight's destination to make the hop pointless. */
-	private static final int SHARED_DESTINATION_RADIUS = 10;
-
 	/**
 	 * The teleports the hop filter treats as "already available": bankless-usable, of a kind
 	 * paired with a flight network (sharesDestinationsWith), minus the USER's exclusions — an
@@ -2394,25 +2184,6 @@ public class AlternativeRoutesService
 
 	/** The current generation's hop-filter baseline; set per generation, read by chain/seed/merge filters. */
 	private volatile List<Transport> hopBaselineTeleports = List.of();
-
-	static boolean nestsAKeptRoute(List<TeleportMethod> candidate, boolean candidateViaBank,
-		List<RouteOption> kept)
-	{
-		for (RouteOption route : kept)
-		{
-			List<TeleportMethod> base = route.getMethods();
-			if (base.isEmpty() || candidate.size() <= base.size()
-				|| (candidateViaBank && !route.isViaBank()))
-			{
-				continue;
-			}
-			if (candidate.subList(candidate.size() - base.size(), candidate.size()).equals(base))
-			{
-				return true;
-			}
-		}
-		return false;
-	}
 
 	private static String signature(List<TeleportMethod> methods)
 	{

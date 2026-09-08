@@ -35,9 +35,9 @@ public class RouteNestingTest
 	public void detourPlusKeptRouteIsNested()
 	{
 		List<RouteOption> kept = List.of(route(List.of(GLORY, CARTS), Set.of()));
-		assertTrue(AlternativeRoutesService.nestsAKeptRoute(
+		assertTrue(RouteAcceptance.nestsAKeptRoute(
 			List.of(DUELING, GLORY, CARTS), false, kept));
-		assertTrue("double-teleport prefix still nests", AlternativeRoutesService.nestsAKeptRoute(
+		assertTrue("double-teleport prefix still nests", RouteAcceptance.nestsAKeptRoute(
 			List.of(VARROCK, DUELING, GLORY, CARTS), false, kept));
 	}
 
@@ -46,10 +46,10 @@ public class RouteNestingTest
 	{
 		List<RouteOption> kept = List.of(route(List.of(GLORY, CARTS), Set.of()));
 		// Varrock -> carts: same carts, different opening — carts alone is not the kept SEQUENCE.
-		assertFalse(AlternativeRoutesService.nestsAKeptRoute(
+		assertFalse(RouteAcceptance.nestsAKeptRoute(
 			List.of(VARROCK, CARTS), false, kept));
 		// Same length = same signature territory, not nesting.
-		assertFalse(AlternativeRoutesService.nestsAKeptRoute(
+		assertFalse(RouteAcceptance.nestsAKeptRoute(
 			List.of(DUELING, CARTS), false, kept));
 	}
 
@@ -58,15 +58,15 @@ public class RouteNestingTest
 	{
 		// A walk-only kept route has an empty sequence — matching "every suffix" would kill all.
 		List<RouteOption> keptWalk = List.of(route(List.of(), Set.of()));
-		assertFalse(AlternativeRoutesService.nestsAKeptRoute(
+		assertFalse(RouteAcceptance.nestsAKeptRoute(
 			List.of(GLORY, CARTS), false, keptWalk));
 		// Bank-fetching candidate vs a non-bank kept route: the detour withdraws the item — real.
 		List<RouteOption> kept = List.of(route(List.of(GLORY, CARTS), Set.of()));
-		assertFalse(AlternativeRoutesService.nestsAKeptRoute(
+		assertFalse(RouteAcceptance.nestsAKeptRoute(
 			List.of(DUELING, GLORY, CARTS), true, kept));
 		// But bank candidate vs bank kept route: nested is nested.
 		List<RouteOption> keptBank = List.of(route(List.of(GLORY, CARTS), Set.of(GLORY)));
-		assertTrue(AlternativeRoutesService.nestsAKeptRoute(
+		assertTrue(RouteAcceptance.nestsAKeptRoute(
 			List.of(DUELING, GLORY, CARTS), true, keptBank));
 	}
 }

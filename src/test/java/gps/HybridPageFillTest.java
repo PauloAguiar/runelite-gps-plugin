@@ -33,18 +33,18 @@ public class HybridPageFillTest
 	{
 		// The user capture: best 27, band 105, next cluster starts at 107 — 2 past the band edge.
 		assertTrue("107 must be accepted (cluster straddles the band edge)",
-			107 <= AlternativeRoutesService.pageFillCeiling(27, 105, 3));
+			107 <= RouteAcceptance.pageFillCeiling(27, 105, 3));
 		// The Barrows shape: best 32, band 105, costliest accepted 86, next cluster at 106 — the gap
 		// from the last route is 20, but from the band edge it is 1.
 		assertTrue("106 must be accepted (cluster starts just past the band)",
-			106 <= AlternativeRoutesService.pageFillCeiling(32, 86, 3));
+			106 <= RouteAcceptance.pageFillCeiling(32, 86, 3));
 		// A genuine cliff is still a stop.
 		assertTrue("a far outlier must not be dragged onto the page",
-			400 > AlternativeRoutesService.pageFillCeiling(27, 112, 3));
+			400 > RouteAcceptance.pageFillCeiling(27, 112, 3));
 		// The ceiling ratchets with accepted fill routes, following a dense cluster.
 		assertTrue("the ceiling must ratchet as fill routes are accepted",
-			AlternativeRoutesService.pageFillCeiling(27, 134, 3)
-				> AlternativeRoutesService.pageFillCeiling(27, 107, 3));
+			RouteAcceptance.pageFillCeiling(27, 134, 3)
+				> RouteAcceptance.pageFillCeiling(27, 107, 3));
 	}
 
 	// --- End-to-end on the real map -----------------------------------------------------------
