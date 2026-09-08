@@ -63,6 +63,21 @@ public class TransportTypeConfig
 	}
 
 	/**
+	 * A copy carrying {@code source}'s state as refreshed and adjusted so far, without re-reading
+	 * the live config (plan step N8: a parallel-search sibling must see exactly the type states
+	 * its source's refresh produced, runtime adjustments included, and is built off the client
+	 * thread).
+	 */
+	public TransportTypeConfig(TransportTypeConfig source)
+	{
+		this.config = source.config;
+		this.teleportationItemSetting = source.teleportationItemSetting;
+		this.enabledStates.putAll(source.enabledStates);
+		this.configEnabledStates.putAll(source.configEnabledStates);
+		this.costThresholds.putAll(source.costThresholds);
+	}
+
+	/**
 	 * Refreshes all transport type enabled states and cost thresholds from config.
 	 * Uses the functional getters defined in TransportType to read config values.
 	 */

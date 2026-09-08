@@ -264,7 +264,7 @@ public final class DistanceField
 				}
 			}
 
-			field.expandWalking(packed, x, y, plane, distance, fifo, settled, config);
+			field.expandWalking(packed, x, y, plane, distance, fifo, settled, config, reverseTransports);
 
 			final Map<Integer, Integer> intoHere = reverseTransports.get(packed);
 			if (intoHere != null)
@@ -297,8 +297,10 @@ public final class DistanceField
 	 * inflates the floor itself, which skips unreached landings. Each such landing takes
 	 * {@code min(field(step-off neighbour)) + 1}, mirroring the forward blocked-tile step-off rules
 	 * exactly — a real forward edge, so the value stays a valid lower bound and h stays consistent.
-	 * No propagation is needed: blocked tiles have no walk edges into other blocked tiles, so a
-	 * patched value can never improve any other tile.
+	 * Transport landings adjacent to a flooded tile are already valued in the loop (see
+	 * {@link #expandWalking}), so their reverse edges propagate; this pass covers the rest:
+	 * origin-free teleport landings, which have no reverse edges, and landings whose step-off
+	 * neighbours settled only after the horizon cut the flood.
 	 */
 	private void patchBlockedLandings(PathfinderConfig config, int[] transportDestinations)
 	{
@@ -366,8 +368,10 @@ public final class DistanceField
 	 * platforms) with a superset bias — extra edges only shorten the field, which is safe.
 	 */
 	private void expandWalking(int packed, int x, int y, int plane, int distance,
-		IntDeque fifo, VisitedTiles settled, PathfinderConfig config)
+		IntDeque fifo, VisitedTiles settled, PathfinderConfig config,
+		PrimitiveIntHashMap<Map<Integer, Integer>> reverseTransports)
 	{
+		final boolean fromBlocked = map.isBlocked(x, y, plane);
 		if (map.isBlocked(x, y, plane))
 		{
 			final boolean westBlocked = map.isBlocked(x - 1, y, plane);
@@ -405,13 +409,31 @@ public final class DistanceField
 			final int nx = x + DX[i];
 			final int ny = y + DY[i];
 			boolean canStep = traversable[i];
-			if (!canStep && Math.abs(DX[i] + DY[i]) == 1 && map.isBlocked(nx, ny, plane))
+			if (!canStep && map.isBlocked(nx, ny, plane))
 			{
-				// Mirror of the forward rule that lets a path step onto a blocked tile hosting a
-				// transport origin (fairy ring platform). Superset bias: any transport there counts.
 				final int neighborPacked = WorldPointUtil.packWorldPoint(nx, ny, plane);
-				canStep = config.getTransportsPacked(true)
-					.getOrDefault(neighborPacked, TransportAvailability.EMPTY_TRANSPORTS).length > 0;
+				final boolean cardinal = Math.abs(DX[i] + DY[i]) == 1;
+				if (cardinal && config.getTransportsPacked(true)
+					.getOrDefault(neighborPacked, TransportAvailability.EMPTY_TRANSPORTS).length > 0)
+				{
+					// Mirror of the forward rule that lets a path step onto a blocked tile hosting
+					// a transport origin (fairy ring platform). Superset bias: any transport counts.
+					canStep = true;
+				}
+				else if (!fromBlocked && reverseTransports.get(neighborPacked) != null
+					&& (cardinal || (!map.isBlocked(x, ny, plane) && !map.isBlocked(nx, y, plane))))
+				{
+					// A transport LANDING on a blocked tile (a jetty, the Moss Giant Island rope
+					// landing): forward-occupiable, valued at step-off cost exactly like the
+					// post-flood patch, but flooded IN the loop so the reverse edges out of it
+					// (into the transport's origin) are followed. The post-flood patch valued the
+					// landing and stopped there, so everything behind the transport stayed
+					// unreached: a reachable island read as provably unreachable, and the
+					// heuristic sent the far side of every blocked landing to its floor
+					// (plan step N7). Step-off mirrors the forward blocked-tile rule: any
+					// unblocked cardinal, a diagonal only with both flanking cardinals open.
+					canStep = true;
+				}
 			}
 			if (!canStep || settled.get(nx, ny, plane, false))
 			{

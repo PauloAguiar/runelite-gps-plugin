@@ -444,7 +444,7 @@ public class PathfinderConfig
 	{
 		this.client = source.client;
 		this.config = source.config;
-		this.transportTypeConfig = new TransportTypeConfig(source.config);
+		this.transportTypeConfig = new TransportTypeConfig(source.transportTypeConfig);
 		this.mapData = source.mapData;
 		this.map = ThreadLocal.withInitial(() -> new CollisionMap(this.mapData));
 		this.allTransports = source.allTransports;
@@ -527,7 +527,13 @@ public class PathfinderConfig
 		copy.baseAvailabilityWithBank = baseAvailabilityWithBank;
 		copy.transportAvailabilityWithoutBank = transportAvailabilityWithoutBank;
 		copy.transportAvailabilityWithBank = transportAvailabilityWithBank;
-		copy.transportTypeConfig.setTeleportationItemSetting(transportTypeConfig.getTeleportationItemSetting());
+		// The type config was copied by value in the constructor (states as refreshed and adjusted).
+		// Unlock state the extras gate reads (skills), and the catalog views (plan step N8: the
+		// ParallelCopyFidelityTest audit found these missing).
+		System.arraycopy(boostedSkillLevelsAndMore, 0, copy.boostedSkillLevelsAndMore, 0, boostedSkillLevelsAndMore.length);
+		copy.usableFingerprint = usableFingerprint;
+		copy.methodAvailability = methodAvailability;
+		copy.methodAvailabilityDetail = methodAvailabilityDetail;
 		return copy;
 	}
 

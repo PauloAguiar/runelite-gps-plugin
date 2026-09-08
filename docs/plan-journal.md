@@ -171,3 +171,49 @@ client-thread time, paid once per generation, so it is the largest main-loop win
 far. The remaining profile is the row loop itself (the once-per-id varbit and quest reads, the
 availability builder, the primitive map puts); the harvest/compute split would move the loop
 off the client thread entirely and is still on the list, at a much smaller prize now.
+
+### Step N7: the field follows reverse edges out of blocked landings; the verdict in every mode (2026-09-07)
+
+**Red first, twice.** `BankModeUnreachableVerdictTest` asked the "+ Bank" mode for a sealed
+target (the Broken Raft deck) and expected the escape menu's short-circuit: no walk, seed or
+tail pass. It was red because the unreachable verdict excluded bank mode on the theory that the
+field floods the inventory-only availability. The field in fact floods both bank states in
+every index it builds, so the exclusion was stale; removing it turned that test green and
+`SameTailPrefixCapTest` red: Ardougne to Moss Giant Island, fare in the bank, lost its
+walk-to-bank ship route because the verdict fired on a reachable target. A probe of the field
+in that exact setup showed the flood never left the island: the rope swing's island landing
+(2704,3209) is a blocked tile, the walking flood only steps onto blocked tiles that host a
+transport origin, so the landing was valued by the post-flood patch after the loop had ended
+and its reverse edge into the rope's origin (2709,3209) was never followed. That is a general
+field bug, not a bank-mode one: for any target behind a transport that lands on a blocked tile
+(a jetty, a platform), everything past the landing read as unreached, so the heuristic sent it
+to the floor (overestimating, burying routes through it) and the verdict could call a reachable
+target unreachable in any mode. `BlockedLandingReverseEdgeTest` pins it: the rope origin and
+the Brimhaven dock must be flooded, and the dock's field value must not exceed the forward
+walking cost.
+
+**Change:** `DistanceField.expandWalking` floods a transport landing on a blocked tile in the
+loop, at step-off cost, when it is adjacent to a settled unblocked tile (cardinal, or diagonal
+with both flanking cardinals open, mirroring the forward blocked-tile rule), so its reverse
+edges propagate; the post-flood patch keeps origin-free teleport landings and the horizon
+edge. The unreachable verdict now applies in every mode.
+
+**Measured (test output):** Moss Giant Island field: rope origin 15, Brimhaven dock 87, equal
+to the forward walking cost from the dock (a tight bound where there was none). Bank mode on a
+sealed target: one chain flood instead of two (2.1M nodes instead of 4.2M), the escape menu
+instead of a page that skipped it. A* equivalence, hybrid page fill, multi-target field and
+uncommon path shape tests unchanged.
+
+### Step N8: parallel-search siblings carry everything the chain's config carries (2026-09-07)
+
+**Red first:** `ParallelCopyFidelityTest` compares every declared field of a refreshed planning
+config against its `copyForParallelSearch` sibling by content (reflection), with an explicit
+per-copy list that names the reason for each exception. It found five omissions: the type
+config's runtime state (the sibling rebuilt it from the live config off the client thread,
+losing the refresh's adjustments), the boosted skill levels (a fresh zeroed array on the
+sibling, read by the extras gate), the usable fingerprint and the two catalog maps.
+
+**Change:** `TransportTypeConfig` gained a copy constructor that carries states as refreshed and
+adjusted without touching the live config; the planning copy constructor uses it; the skill
+levels, fingerprint and catalog maps are copied. A new field now fails the build until it is
+either copied or listed as per-copy with a reason ("consistent over fast").

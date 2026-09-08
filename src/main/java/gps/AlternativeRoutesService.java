@@ -446,11 +446,11 @@ public class AlternativeRoutesService
 		// full-world floods (~2M nodes, ~400 ms each) to rediscover that verdict seven times.
 		// The chain then keeps a SHORT escape menu (UNREACHABLE_ESCAPE_ROUTES distinct closest-
 		// approach routes - a sealed-cell capture wants several ways out, see HybridPageFillTest)
-		// and skips the walk, seed and tail passes entirely. Not in "+ Bank" mode: the reverse
-		// flood uses the inventory-only availability, so a route that needs a banked item (coins
-		// for a ship) looks unreachable to the field while a blind search finds it.
-		final boolean targetProvablyUnreachable = mode != AlternativeRoutesMode.OWNED_WITH_BANK
-			&& field != null
+		// and skips the walk, seed and tail passes entirely. In every mode: the reverse flood
+		// runs over BOTH bank states (reverse transport index, teleport landings, blocked-landing
+		// patch), so a route that needs a banked item is part of the proof (plan step N7; the
+		// former "+ Bank" exclusion predated that and left bank mode with a one-route page).
+		final boolean targetProvablyUnreachable = field != null
 			&& field.horizon() == Integer.MAX_VALUE
 			&& field.distance(start) == DistanceField.UNREACHED
 			&& SearchHeuristic.buildWithField(planningConfig, field) != null
