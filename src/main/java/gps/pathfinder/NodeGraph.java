@@ -295,7 +295,8 @@ public class NodeGraph
 		final int[][] prev = previous;
 		final int[][] packed = packedPosition;
 		final byte[][] flg = flags;
-		if (prev == null || packed == null || flg == null || id == NO_NODE)
+		final int[][] cst = cost;
+		if (prev == null || packed == null || flg == null || cst == null || id == NO_NODE)
 		{
 			return new ArrayList<>();
 		}
@@ -325,7 +326,8 @@ public class NodeGraph
 			final int slot = node & PAGE_MASK;
 			if ((flg[page][slot] & FLAG_ABSTRACT) == 0)
 			{
-				pathSteps.set(--i, new PathStep(packed[page][slot], (flg[page][slot] & FLAG_BANK_VISITED) != 0));
+				pathSteps.set(--i, new PathStep(packed[page][slot], (flg[page][slot] & FLAG_BANK_VISITED) != 0,
+					cst[page][slot]));
 			}
 			node = prev[page][slot];
 		}

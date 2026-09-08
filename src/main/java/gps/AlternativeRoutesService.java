@@ -1750,7 +1750,13 @@ public class AlternativeRoutesService
 			// Concatenate, dropping the duplicated endpoint tile, and re-derive the method scan
 			// over the whole loop so edges/durations/legs are consistent for the overlay.
 			List<PathStep> fullPath = new ArrayList<>(outPath);
-			fullPath.addAll(returnPath.subList(Math.min(1, returnPath.size()), returnPath.size()));
+			// The return leg's cumulative costs continue from the outbound total, so the loop's
+			// steps carry one monotone cost line (the overlay's ETA table reads it).
+			for (PathStep step : returnPath.subList(Math.min(1, returnPath.size()), returnPath.size()))
+			{
+				fullPath.add(step.getCost() == PathStep.UNKNOWN_COST ? step
+					: new PathStep(step.getPackedPosition(), step.isBankVisited(), step.getCost() + oneWay.getTotalCost()));
+			}
 			MethodScan scan = scanMethods(planningConfig, fullPath);
 			if (!signatures.add(signature(scan.methods))
 				|| hasRedundantTeleportHop(hopBaselineTeleports, scan.methods))
@@ -2093,7 +2099,7 @@ public class AlternativeRoutesService
 		List<PathStep> plain = new ArrayList<>(path.size());
 		for (PathStep step : path)
 		{
-			plain.add(step.isBankVisited() ? new PathStep(step.getPackedPosition(), false) : step);
+			plain.add(step.isBankVisited() ? new PathStep(step.getPackedPosition(), false, step.getCost()) : step);
 		}
 		return plain;
 	}

@@ -703,7 +703,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		{
 			progressRoute = route;
 			reachedIndex = 0;
-			remainingTicksAt = buildRemainingTicks(steps, path.size());
+			remainingTicksAt = buildRemainingTicks(route, steps);
 			liveRemainingTicks = remainingTicksAt.length > 0 ? remainingTicksAt[0] : 0;
 		}
 		Player player = client.getLocalPlayer();
@@ -817,7 +817,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 					{
 						double completed = nearest / (double) (track.length - 1);
 						liveRemainingTicks = remainingTicksAt[ride.getEndIndex()]
-							+ ride.getTicks() * (1 - completed);
+							+ rideTicks(ride) * (1 - completed);
 					}
 				}
 				else if (WorldPointUtil.unpackWorldPlane(destination) == playerPlane)
@@ -828,7 +828,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 						double completed = Math.min(1,
 							1 - WorldPointUtil.distanceBetween(playerPacked, destination) / total);
 						liveRemainingTicks = remainingTicksAt[ride.getEndIndex()]
-							+ ride.getTicks() * (1 - Math.max(0, completed));
+							+ rideTicks(ride) * (1 - Math.max(0, completed));
 					}
 				}
 			}
@@ -1016,11 +1016,42 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	}
 
 	/**
-	 * Remaining route time (ticks) from each path index: total of all later steps plus the linear
-	 * remainder of the step spanning the index. Index 0 holds the whole journey.
+	 * Remaining route time (ticks) from each path index. When the path carries the search's
+	 * cumulative costs (plan step N9) the table is exact: {@code (cost[last] - cost[i]) / 2}, the
+	 * same number the route card shows in seconds. Otherwise: total of all later steps plus the
+	 * linear remainder of the step spanning the index. Index 0 holds the whole journey.
 	 */
-	private static double[] buildRemainingTicks(List<RouteDirections.Step> steps, int pathSize)
+	/** A ride's duration as the ETA table sees it, so mid-ride interpolation stays on the same line. */
+	private double rideTicks(RouteDirections.Step ride)
 	{
+		int start = Math.max(0, Math.min(ride.getStartIndex(), remainingTicksAt.length - 1));
+		int end = Math.max(start, Math.min(ride.getEndIndex(), remainingTicksAt.length - 1));
+		return Math.max(0, remainingTicksAt[start] - remainingTicksAt[end]);
+	}
+
+	static double[] buildRemainingTicks(RouteOption route, List<RouteDirections.Step> steps)
+	{
+		List<gps.pathfinder.PathStep> path = route.getPath();
+		int pathSize = path.size();
+		boolean costed = pathSize > 0;
+		for (gps.pathfinder.PathStep step : path)
+		{
+			if (step.getCost() == gps.pathfinder.PathStep.UNKNOWN_COST)
+			{
+				costed = false;
+				break;
+			}
+		}
+		if (costed)
+		{
+			double[] exact = new double[pathSize];
+			int end = path.get(pathSize - 1).getCost();
+			for (int i = 0; i < pathSize; i++)
+			{
+				exact[i] = Math.max(0, end - path.get(i).getCost()) / (double) gps.pathfinder.CostUnits.UNITS_PER_TICK;
+			}
+			return exact;
+		}
 		double[] remaining = new double[pathSize];
 		double after = 0;
 		for (int s = steps.size() - 1; s >= 0; s--)

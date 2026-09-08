@@ -64,6 +64,14 @@ final class RouteDirections
 			this.details = details;
 		}
 
+		/** The same step with another duration (see {@link RouteDirections#alignedToPathCosts}). */
+		Step withTicks(int newTicks)
+		{
+			Step copy = new Step(text, startIndex, endIndex, newTicks, transport, door, obstacle, embark);
+			copy.details = details;
+			return copy;
+		}
+
 		private Step(String text, int startIndex, int endIndex, int ticks, boolean transport)
 		{
 			this(text, startIndex, endIndex, ticks, transport, false, false, false);
@@ -220,7 +228,38 @@ final class RouteDirections
 			steps.add(new Step(reaches ? walkText("the destination") : "Walk as close as possible (can't reach the target)",
 				legStart, path.size() - 1, walkTicks(walk)));
 		}
-		return steps;
+		return alignedToPathCosts(steps, path);
+	}
+
+	/**
+	 * Re-derives each step's duration from the path's cumulative search costs when the path
+	 * carries them (plan step N9): a step spanning [start, end] takes {@code (cost[end] -
+	 * cost[start]) / 2} ticks, so the per-step times, the overlay's ETA and the route card all
+	 * read the one number the search computed. Paths without costs (hand-built, older captures)
+	 * keep the estimates above.
+	 */
+	private static List<Step> alignedToPathCosts(List<Step> steps, List<PathStep> path)
+	{
+		if (path.isEmpty())
+		{
+			return steps;
+		}
+		for (PathStep step : path)
+		{
+			if (step.getCost() == PathStep.UNKNOWN_COST)
+			{
+				return steps;
+			}
+		}
+		List<Step> aligned = new ArrayList<>(steps.size());
+		for (Step step : steps)
+		{
+			int start = Math.max(0, Math.min(step.getStartIndex(), path.size() - 1));
+			int end = Math.max(start, Math.min(step.getEndIndex(), path.size() - 1));
+			int units = Math.max(0, path.get(end).getCost() - path.get(start).getCost());
+			aligned.add(step.withTicks((int) Math.round(units / (double) gps.pathfinder.CostUnits.UNITS_PER_TICK)));
+		}
+		return aligned;
 	}
 
 	/**
