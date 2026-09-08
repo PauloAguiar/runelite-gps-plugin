@@ -743,14 +743,18 @@ public class AlternativeRoutesService
 			&& seenSignatures.add(signature(walk.route.getMethods())))
 		{
 			routes.add(walk.route);
-			// Keep it within the limit by dropping the costliest teleport route it displaces.
+			// Keep it within the limit by dropping the costliest teleport route it displaces. Never
+			// the baseline itself: at the helm it is a pure-sail route (not walk-only), and with a
+			// full page of port-first routes it was the costliest unprotected entry, so the page
+			// evicted the very route this block exists to surface (plan step N10).
 			while (routes.size() > limit)
 			{
 				int drop = -1;
 				int maxCost = -1;
 				for (int r = 0; r < routes.size(); r++)
 				{
-					if (!routes.get(r).isWalkOnly() && r != solePortFirstIndex(routes)
+					if (routes.get(r) != walk.route
+						&& !routes.get(r).isWalkOnly() && r != solePortFirstIndex(routes)
 						&& routes.get(r).getTotalCost() > maxCost)
 					{
 						maxCost = routes.get(r).getTotalCost();
@@ -1158,21 +1162,34 @@ public class AlternativeRoutesService
 
 		try
 		{
+			// Results are collected first and accepted in a DETERMINISTIC order (cost, then
+			// signature), not completion order: the page-fill ceiling ratchets as routes are
+			// accepted, so completion order (JIT warmth, load) decided which seeds made the page
+			// and the same query produced different pages run to run (plan step N10; the seeds
+			// take milliseconds each, so nothing is lost by waiting for all of them).
+			List<SeedResult> results = new ArrayList<>(futures.size());
 			for (int i = 0; i < futures.size() && gen == generation.get(); i++)
 			{
-				SeedResult seedResult;
 				try
 				{
-					seedResult = completion.take().get();
+					SeedResult seedResult = completion.take().get();
+					if (seedResult != null)
+					{
+						results.add(seedResult);
+					}
 				}
 				catch (ExecutionException e)
 				{
 					log.warn("Seed search failed", e);
-					continue;
 				}
-				if (seedResult == null)
+			}
+			results.sort(Comparator.comparingInt((SeedResult r) -> r.totalCost)
+				.thenComparing(r -> signature(r.scan.methods)));
+			for (SeedResult seedResult : results)
+			{
+				if (gen != generation.get())
 				{
-					continue;
+					break;
 				}
 				// Same hybrid acceptance as the chain: a seed beyond the page-fill ceiling isn't shown
 				// (skip, not stop — seeds complete in parallel, a later one can be cheaper). Checked

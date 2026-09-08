@@ -217,3 +217,52 @@ sibling, read by the extras gate), the usable fingerprint and the two catalog ma
 adjusted without touching the live config; the planning copy constructor uses it; the skill
 levels, fingerprint and catalog maps are copied. A new field now fails the build until it is
 either copied or listed as per-copy with a reason ("consistent over fast").
+
+### Step N9: one ETA for the card, the overlay and the step list (issue #4) (2026-09-07)
+
+**Red first:** `EtaConsistencyTest` builds a route whose path steps carry cumulative costs and
+asserts the overlay's remaining-time table is derived from them (24 units at the end, 7 ticks
+left at the step costing 10) and that the card's seconds equal the overlay's seconds at the
+start; a second test generates Lumbridge to Varrock and asserts, for every route, that each
+path step carries a cost, that the route's total cost is the last step's cost, that the card
+and the overlay agree at the start, and that the remaining time never increases along the
+path. Red at compile time: path steps had no cost and the overlay's table took only steps.
+
+**Why they disagreed:** the card showed the search's total cost in seconds; the overlay summed
+its own per-step estimates (walking legs rounded per leg, per-edge distance capped at ten
+tiles, no cost modifiers), then the two were shown side by side for the same route.
+
+**Change:** `PathStep` carries the search's cumulative cost (the graph emits it when the path is
+unpacked; -1 for hand-built steps). `RouteDirectionsOverlay.buildRemainingTicks` is exact per
+index from those costs and falls back to the step estimates only for cost-less paths; mid-ride
+interpolation reads the same table instead of the step's own ticks. `RouteDirections` re-derives
+each step's duration from the cost delta over its span, so the step list adds up to the same
+number. Round-trip return legs are re-based onto the outbound total; the idle-bank-flip rewrite
+preserves costs. The card is unchanged.
+
+**Observed while running the suite:** `KeepSailingTest.aboardGenerationAlwaysCarriesAPureSailRoute`
+fails intermittently, before and after this step (fails at the previous commit, passes on a
+rerun). It is the next step.
+
+### Step N10: the keep-sailing baseline is never evicted; seed acceptance is deterministic (2026-09-07)
+
+**Probe first:** a gated probe ran the flaky generation three times in one JVM, printing every
+search record. In every passing run the pure-sail route was the walk search's own result
+(Disembark at Port Khazard, cost 458), appended last as the baseline; the nine cheaper routes
+were port-then-teleport chains accepted from the seed pass in completion order.
+
+**Why it flaked:** with ten routes already accepted, the baseline append loop evicts the
+costliest unprotected route, and that was the baseline itself: it is not walk-only, and the
+sole-port-first protection never applies when every route is port-first. Whether the page held
+nine or ten routes before the append depended on the order the parallel seeds completed (the
+page-fill ceiling ratchets as routes are accepted), which varies with JIT warmth and load.
+
+**Red first:** `KeepSailingBaselineTest` runs the same generation with a limit of nine (more
+than nine cheaper routes exist, so the page is full every time) and asserts a reached pure-sail
+route survives, three runs in a row, and that the three pages are identical. Red: the first run
+lost the sail route.
+
+**Change:** the baseline append loop never evicts the route it just appended; the seed pass
+collects every result first and accepts them in cost-then-signature order instead of
+completion order (the seeds take milliseconds each, so nothing is lost by waiting for all of
+them, and "consistent over fast" is the standing rule). The original test is stable again.
