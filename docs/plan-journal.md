@@ -360,3 +360,17 @@ the loaders do. The three workflows now trigger on `main`.
 **Measured:** 40 of 40 files pass; the per-cell validators (coordinates, skills, items, var
 requirements, durations, wilderness levels, consumable flags) run on every transport row for
 the first time in weeks and found nothing to report.
+
+### Step N14: the unreachable-pin ratchet became a named list (2026-09-07)
+
+**Red first:** `DestinationsReachableTest.importedDestinationsDoNotRegress` now loads
+`src/test/resources/expected-unreachable.tsv` and fails when the file is missing; that was the
+red run. A gated run (`-Dgps.writeExpectedUnreachable=true`) wrote the list from the current
+audit: 569 pins, the exact number the ratchet held, one row per pin (category, name, x, y,
+plane), sorted. The plain run is green.
+
+**Why a list:** a number let any pin trade places with any other (a new data regression hidden
+by an unrelated fix), and never said which pins were the backlog. The list fails by name in
+both directions: a pin not on it that is unreachable is a regression (or a world update, in
+which case the list is regenerated deliberately), and a listed pin that has become reachable
+must be removed, so the backlog can only shrink honestly.

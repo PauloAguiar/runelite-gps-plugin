@@ -1,0 +1,572 @@
+# Imported destination pins known to be unreachable (DestinationsReachableTest). Generated with
+# -Dgps.writeExpectedUnreachable=true; drive the list down by mapping entrances, never add by hand.
+# category	name	x	y	plane
+altar	Altar (1683, 9686)	1683	9686	0
+altar	Altar (1684, 9687)	1684	9687	0
+altar	Altar (1685, 9687)	1685	9687	0
+altar	Altar (1686, 9687)	1686	9687	0
+altar	Altar (1687, 9686)	1687	9686	0
+altar	Altar (2368, 3128)	2368	3128	1
+altar	Altar (2368, 3131)	2368	3131	1
+altar	Altar (2369, 3129)	2369	3129	1
+altar	Altar (2369, 3130)	2369	3130	1
+altar	Altar (2430, 3077)	2430	3077	1
+altar	Altar (2430, 3078)	2430	3078	1
+altar	Altar (2431, 3076)	2431	3076	1
+altar	Altar (2431, 3079)	2431	3079	1
+altar	Altar (2889, 3509)	2889	3509	1
+altar	Altar (2889, 3512)	2889	3512	1
+altar	Altar (2890, 3510)	2890	3510	1
+altar	Altar (2890, 3511)	2890	3511	1
+anvil	Anvil (1472, 10095)	1472	10095	0
+anvil	Anvil (1473, 10094)	1473	10094	0
+anvil	Anvil (1473, 10096)	1473	10096	0
+anvil	Anvil (1474, 10095)	1474	10095	0
+anvil	Anvil (1514, 2995)	1514	2995	1
+anvil	Anvil (1515, 2994)	1515	2994	1
+anvil	Anvil (1515, 2996)	1515	2996	1
+anvil	Anvil (1516, 2995)	1516	2995	1
+anvil	Anvil (1517, 2994)	1517	2994	1
+anvil	Anvil (1517, 2996)	1517	2996	1
+anvil	Anvil (1518, 2995)	1518	2995	1
+anvil	Anvil (1666, 12505)	1666	12505	0
+anvil	Anvil (1666, 12507)	1666	12507	0
+anvil	Anvil (1667, 12504)	1667	12504	0
+anvil	Anvil (1667, 12506)	1667	12506	0
+anvil	Anvil (1667, 12508)	1667	12508	0
+anvil	Anvil (1668, 12505)	1668	12505	0
+anvil	Anvil (1668, 12507)	1668	12507	0
+anvil	Anvil (1674, 12505)	1674	12505	0
+anvil	Anvil (1674, 12507)	1674	12507	0
+anvil	Anvil (1675, 12504)	1675	12504	0
+anvil	Anvil (1675, 12506)	1675	12506	0
+anvil	Anvil (1675, 12508)	1675	12508	0
+anvil	Anvil (1676, 12505)	1676	12505	0
+anvil	Anvil (1676, 12507)	1676	12507	0
+anvil	Anvil (1765, 10158)	1765	10158	0
+anvil	Anvil (1766, 10157)	1766	10157	0
+anvil	Anvil (1766, 10159)	1766	10159	0
+anvil	Anvil (1767, 10158)	1767	10158	0
+anvil	Anvil (1948, 2761)	1948	2761	1
+anvil	Anvil (1949, 2760)	1949	2760	1
+anvil	Anvil (1949, 2762)	1949	2762	1
+anvil	Anvil (1950, 2761)	1950	2761	1
+anvil	Anvil (2067, 2718)	2067	2718	0
+anvil	Anvil (2067, 2720)	2067	2720	0
+anvil	Anvil (2068, 2719)	2068	2719	0
+anvil	Anvil (3074, 9497)	3074	9497	0
+anvil	Anvil (3074, 9499)	3074	9499	0
+anvil	Anvil (3075, 9496)	3075	9496	0
+anvil	Anvil (3075, 9498)	3075	9498	0
+anvil	Anvil (3075, 9500)	3075	9500	0
+anvil	Anvil (3076, 9497)	3076	9497	0
+anvil	Anvil (3076, 9499)	3076	9499	0
+anvil	Anvil (3082, 9497)	3082	9497	0
+anvil	Anvil (3082, 9499)	3082	9499	0
+anvil	Anvil (3083, 9496)	3083	9496	0
+anvil	Anvil (3083, 9498)	3083	9498	0
+anvil	Anvil (3083, 9500)	3083	9500	0
+anvil	Anvil (3084, 9497)	3084	9497	0
+anvil	Anvil (3084, 9499)	3084	9499	0
+anvil	Anvil (3115, 8780)	3115	8780	0
+anvil	Anvil (3116, 8779)	3116	8779	0
+anvil	Anvil (3116, 8781)	3116	8781	0
+anvil	Anvil (3117, 8780)	3117	8780	0
+anvil	Anvil (3179, 8780)	3179	8780	0
+anvil	Anvil (3180, 8779)	3180	8779	0
+anvil	Anvil (3180, 8781)	3180	8781	0
+anvil	Anvil (3181, 8780)	3181	8780	0
+anvil	Anvil (3243, 8780)	3243	8780	0
+anvil	Anvil (3244, 8779)	3244	8779	0
+anvil	Anvil (3244, 8781)	3244	8781	0
+anvil	Anvil (3245, 8780)	3245	8780	0
+anvil	Anvil (3307, 8780)	3307	8780	0
+anvil	Anvil (3308, 8779)	3308	8779	0
+anvil	Anvil (3308, 8781)	3308	8781	0
+anvil	Anvil (3309, 8780)	3309	8780	0
+anvil	Anvil (3371, 8780)	3371	8780	0
+anvil	Anvil (3372, 8779)	3372	8779	0
+anvil	Anvil (3372, 8781)	3372	8781	0
+anvil	Anvil (3373, 8780)	3373	8780	0
+anvil	Anvil (3405, 2834)	3405	2834	1
+anvil	Anvil (3406, 2833)	3406	2833	1
+anvil	Anvil (3406, 2835)	3406	2835	1
+anvil	Anvil (3407, 2834)	3407	2834	1
+anvil	Lumbridge Swamp Anvil	3106	3023	0
+anvil	Lumbridge Swamp Anvil	3107	3022	0
+anvil	Lumbridge Swamp Anvil	3107	3024	0
+anvil	Lumbridge Swamp Anvil	3108	3023	0
+bank	Bank (1398, 9313)	1398	9313	0
+bank	Bank (1399, 9312)	1399	9312	0
+bank	Bank (1399, 9314)	1399	9314	0
+bank	Bank (1550, 9872)	1550	9872	0
+bank	Bank (1551, 9871)	1551	9871	0
+bank	Bank (1551, 9873)	1551	9873	0
+bank	Bank (1552, 9872)	1552	9872	0
+bank	Bank (1880, 3316)	1880	3316	1
+bank	Bank (1881, 3315)	1881	3315	1
+bank	Bank (1881, 3316)	1881	3316	1
+bank	Bank (1881, 3317)	1881	3317	1
+bank	Bank (1882, 3315)	1882	3315	1
+bank	Bank (1882, 3316)	1882	3316	1
+bank	Bank (1882, 3317)	1882	3317	1
+bank	Bank (1883, 3315)	1883	3315	1
+bank	Bank (1883, 3316)	1883	3316	1
+bank	Bank (1883, 3317)	1883	3317	1
+bank	Bank (1884, 3315)	1884	3315	1
+bank	Bank (1884, 3316)	1884	3316	1
+bank	Bank (1884, 3317)	1884	3317	1
+bank	Bank (1885, 3316)	1885	3316	1
+bank	Bank (1935, 2754)	1935	2754	1
+bank	Bank (1936, 2755)	1936	2755	1
+bank	Bank (1937, 2754)	1937	2754	1
+bank	Bank (2731, 3378)	2731	3378	2
+bank	Bank (2731, 3380)	2731	3380	2
+bank	Bank (2731, 3382)	2731	3382	2
+bank	Bank (2732, 3379)	2732	3379	2
+bank	Bank (2732, 3381)	2732	3381	2
+bank	Bank (2733, 3378)	2733	3378	2
+bank	Bank (2733, 3380)	2733	3380	2
+bank	Bank (2733, 3382)	2733	3382	2
+bank	Bank (2808, 2521)	2808	2521	1
+bank	Bank (2809, 2522)	2809	2522	1
+bank	Bank (3161, 3489)	3161	3489	1
+bank	Bank (3162, 3488)	3162	3488	1
+bank	Bank (3162, 3490)	3162	3490	1
+bank	Bank (3163, 3489)	3163	3489	1
+bank	Bank (3166, 3489)	3166	3489	1
+bank	Bank (3166, 3490)	3166	3490	1
+bank	Bank (3167, 3488)	3167	3488	1
+bank	Bank (3167, 3489)	3167	3489	1
+bank	Bank (3167, 3490)	3167	3490	1
+bank	Bank (3167, 3491)	3167	3491	1
+bank	Bank (3168, 3489)	3168	3489	1
+bank	Bank (3168, 3490)	3168	3490	1
+bank	Bank (3374, 11493)	3374	11493	1
+bank	Bank (3374, 11494)	3374	11494	1
+bank	Bank (3419, 4057)	3419	4057	0
+bank	Bank (3420, 4058)	3420	4058	0
+bank	Bank (3421, 4057)	3421	4057	0
+bank	Bank (3425, 4070)	3425	4070	0
+bank	Bank (3426, 4069)	3426	4069	0
+bank	Bank (3427, 4070)	3427	4070	0
+bank	Bank (3512, 3478)	3512	3478	1
+bank	Bank (3512, 3479)	3512	3479	1
+bank	Bank (3512, 3480)	3512	3480	1
+bank	Bank (3512, 3481)	3512	3481	1
+bank	Bank (3512, 3482)	3512	3482	1
+bank	Bank (3512, 3483)	3512	3483	1
+bank	Bank (3513, 3477)	3513	3477	1
+bank	Bank (3513, 3478)	3513	3478	1
+bank	Bank (3513, 3479)	3513	3479	1
+bank	Bank (3513, 3480)	3513	3480	1
+bank	Bank (3513, 3481)	3513	3481	1
+bank	Bank (3513, 3482)	3513	3482	1
+bank	Bank (3513, 3483)	3513	3483	1
+bank	Bank (3514, 3478)	3514	3478	1
+bank	Bank (3514, 3479)	3514	3479	1
+bank	Bank (3514, 3480)	3514	3480	1
+bank	Bank (3514, 3481)	3514	3481	1
+bank	Bank (3514, 3482)	3514	3482	1
+bank	Bank (3514, 3483)	3514	3483	1
+bank	Lumbridge Swamp Bank	3096	3026	0
+bank	Lumbridge Swamp Bank	3096	3027	0
+bank	Lumbridge Swamp Bank	3097	3025	0
+bank	Lumbridge Swamp Bank	3097	3026	0
+bank	Lumbridge Swamp Bank	3097	3027	0
+bank	Lumbridge Swamp Bank	3097	3028	0
+bank	Lumbridge Swamp Bank	3098	3026	0
+bank	Lumbridge Swamp Bank	3098	3027	0
+dungeon	Ardougne Sewers	2644	9702	0
+dungeon	Charred Dungeon	2687	8865	0
+dungeon	Crypt	1685	9516	0
+dungeon	Deepfin Mine	2016	9194	0
+dungeon	Earthbound Cavern	1377	9700	0
+dungeon	Essence Mine	2339	10337	2
+dungeon	Ferox Enclave Dungeon	3168	10016	0
+dungeon	Ghorrock Dungeon	2919	10328	0
+dungeon	Grimstone Dungeon	2890	10467	0
+dungeon	Kendal's Lair	2809	3703	0
+dungeon	Kurask Lair	1182	9200	0
+dungeon	Lizardman Caves	1308	9963	0
+dungeon	Mogre Camp	2975	9507	0
+dungeon	Ruins of Mokhaiotl	1311	9520	0
+dungeon	Sourhog Cave	3168	9696	0
+dungeon	Streambound Cavern	1505	9700	0
+dungeon	Sunbleak Cave	2227	8738	0
+dungeon	Trahaearn Mine	3298	12453	0
+dungeon	Volcano Mine	3776	10176	3
+dungeon	Watermill cellar	3240	9704	0
+dungeon	Ynysdail Cavern	2271	9881	0
+furnace	Furnace (1472, 10092)	1472	10092	0
+furnace	Furnace (1472, 10093)	1472	10093	0
+furnace	Furnace (1472, 10094)	1472	10094	0
+furnace	Furnace (1473, 10091)	1473	10091	0
+furnace	Furnace (1473, 10095)	1473	10095	0
+furnace	Furnace (1474, 10091)	1474	10091	0
+furnace	Furnace (1474, 10095)	1474	10095	0
+furnace	Furnace (1475, 10092)	1475	10092	0
+furnace	Furnace (1475, 10093)	1475	10093	0
+furnace	Furnace (1475, 10094)	1475	10094	0
+furnace	Furnace (1669, 12503)	1669	12503	0
+furnace	Furnace (1669, 12504)	1669	12504	0
+furnace	Furnace (1670, 12505)	1670	12505	0
+furnace	Furnace (1671, 12505)	1671	12505	0
+furnace	Furnace (1672, 12505)	1672	12505	0
+furnace	Furnace (1673, 12503)	1673	12503	0
+furnace	Furnace (1673, 12504)	1673	12504	0
+furnace	Furnace (1948, 2754)	1948	2754	1
+furnace	Furnace (1948, 2755)	1948	2755	1
+furnace	Furnace (1948, 2756)	1948	2756	1
+furnace	Furnace (1949, 2757)	1949	2757	1
+furnace	Furnace (1950, 2757)	1950	2757	1
+furnace	Furnace (1951, 2757)	1951	2757	1
+furnace	Furnace (2927, 10461)	2927	10461	0
+furnace	Furnace (2927, 10462)	2927	10462	0
+furnace	Furnace (2929, 10459)	2929	10459	0
+furnace	Furnace (2929, 10464)	2929	10464	0
+furnace	Furnace (2930, 10459)	2930	10459	0
+furnace	Furnace (2930, 10464)	2930	10464	0
+furnace	Furnace (2931, 10460)	2931	10460	0
+furnace	Furnace (2931, 10461)	2931	10461	0
+furnace	Furnace (2931, 10462)	2931	10462	0
+furnace	Furnace (2931, 10463)	2931	10463	0
+furnace	Furnace (3034, 9233)	3034	9233	0
+furnace	Furnace (3035, 9234)	3035	9234	0
+furnace	Furnace (3036, 9234)	3036	9234	0
+furnace	Furnace (3037, 9232)	3037	9232	0
+furnace	Furnace (3037, 9233)	3037	9233	0
+furnace	Furnace (3043, 9232)	3043	9232	0
+furnace	Furnace (3043, 9233)	3043	9233	0
+furnace	Furnace (3044, 9234)	3044	9234	0
+furnace	Furnace (3045, 9234)	3045	9234	0
+furnace	Furnace (3046, 9233)	3046	9233	0
+furnace	Furnace (3077, 9495)	3077	9495	0
+furnace	Furnace (3077, 9496)	3077	9496	0
+furnace	Furnace (3078, 9497)	3078	9497	0
+furnace	Furnace (3079, 9497)	3079	9497	0
+furnace	Furnace (3080, 9497)	3080	9497	0
+furnace	Furnace (3081, 9495)	3081	9495	0
+furnace	Furnace (3081, 9496)	3081	9496	0
+furnace	Furnace (3116, 8777)	3116	8777	0
+furnace	Furnace (3117, 8778)	3117	8778	0
+furnace	Furnace (3118, 8777)	3118	8777	0
+furnace	Furnace (3180, 8777)	3180	8777	0
+furnace	Furnace (3181, 8778)	3181	8778	0
+furnace	Furnace (3182, 8777)	3182	8777	0
+furnace	Furnace (3244, 8777)	3244	8777	0
+furnace	Furnace (3245, 8778)	3245	8778	0
+furnace	Furnace (3246, 8777)	3246	8777	0
+furnace	Furnace (3308, 8777)	3308	8777	0
+furnace	Furnace (3309, 8778)	3309	8778	0
+furnace	Furnace (3310, 8777)	3310	8777	0
+furnace	Furnace (3372, 8777)	3372	8777	0
+furnace	Furnace (3373, 8778)	3373	8778	0
+furnace	Furnace (3374, 8777)	3374	8777	0
+furnace	Lumbridge Swamp Furnace	3107	3026	0
+furnace	Lumbridge Swamp Furnace	3107	3027	0
+furnace	Lumbridge Swamp Furnace	3108	3028	0
+landmark	A	3787	10156	0
+landmark	Alchemical Society	1394	9327	0
+landmark	Ancient Shrine	1514	9583	0
+landmark	Antechamber	1441	9633	1
+landmark	Araxxor	3632	9815	0
+landmark	B	3815	10172	0
+landmark	Baby green dragons	2669	9578	2
+landmark	Barracks	1641	9576	0
+landmark	Bats	2569	9753	0
+landmark	Blue dragons	2127	9306	0
+landmark	Brewery	3680	9960	0
+landmark	Bronze, iron & steel dragons	2656	9440	0
+landmark	Buccaneers' Laboratory	2081	10073	0
+landmark	C	3830	10157	0
+landmark	Castle Drakan	3553	3360	0
+landmark	Champions' Challenge	3168	9758	0
+landmark	Chinchompas	2522	9299	0
+landmark	Coral Nurseries	3298	8864	1
+landmark	Cursed Archipelago	3767	2581	0
+landmark	Daimon's Crater	3424	4088	0
+landmark	Dark beasts	3227	12397	0
+landmark	Dragon Nest	1247	9503	0
+landmark	Dramen Tree	2861	9737	0
+landmark	Drumstick Isle	2145	3547	0
+landmark	Elves	3184	12405	0
+landmark	Ents	1565	9891	0
+landmark	Fire giants	2121	9330	0
+landmark	Fortis Colosseum	1825	3109	0
+landmark	Frozen Temple	3424	4121	0
+landmark	Giant rock crabs	2523	10165	0
+landmark	Greater demons	2158	9336	0
+landmark	Gryphons	3232	8865	0
+landmark	Here be minotaurs	1951	9508	0
+landmark	Here be spiders	3667	9824	0
+landmark	Heroes' Guild mine	2917	9907	0
+landmark	Hespori	1248	10089	0
+landmark	Huntsman's Wood	3382	4053	0
+landmark	Iron dragons	2154	9296	0
+landmark	Isle of Serpents	1850	2413	0
+landmark	Jogres	2848	9504	0
+landmark	Kovac	3370	11487	0
+landmark	Lake Hemenster	2610	3444	0
+landmark	Legends' Guild bank	2733	3379	2
+landmark	Lizardman Temple	1312	10079	1
+landmark	Mage Arena	3107	3933	0
+landmark	Merwick Lake	2779	3553	0
+landmark	Obstacle course	3537	9889	0
+landmark	Pit scorpions	2719	9744	0
+landmark	Poison Waste	2241	3098	0
+landmark	Rock Island Prison	2898	2837	0
+landmark	Ruins of Ullek	3413	2832	0
+landmark	Shades	3488	9696	0
+landmark	Shadow warriors	2700	9774	0
+landmark	Shellbane  Gryphon	3179	8876	0
+landmark	Shipyard	2078	2720	0
+landmark	Sisterhood Sanctuary mine	3889	9749	0
+landmark	Skullball	3560	9866	0
+landmark	Smoke devils	2408	9438	0
+landmark	Stalker Den	1286	9775	0
+landmark	Sub-level 1	2496	10112	0
+landmark	Talon's Grasp	1173	3489	0
+landmark	Tar Swamp	3680	3781	0
+landmark	Tempestus	1284	3256	0
+landmark	The Blood Moon	1393	9635	0
+landmark	The Blue Moon	1441	9683	0
+landmark	The Eclipse Moon	1489	9635	0
+landmark	The Node	3109	3025	0
+landmark	The Warrens	1770	10143	0
+landmark	The White Cliffs of Lova	1503	3960	0
+landmark	The Wintertodt	1630	4011	0
+landmark	Thermonuclear Smoke Devil	2362	9456	0
+landmark	Tower of Bounty	3473	4036	0
+landmark	Underwater	3772	10288	1
+landmark	Villa Lucens	1448	2933	0
+landmark	Voice of Yama	1440	10084	0
+landmark	Wallasalki	2506	10145	0
+landmark	Wolf Den	1481	9506	1
+landmark	Wyverns	3616	10208	0
+landmark	Yama	1504	10084	0
+landmark	Zombies & rocks	2675	9682	0
+landmark	Zulrah's shrine	2270	3074	0
+place	Menaphos	3225	2775	0
+place	Moss Giant Island	2696	3208	0
+range	Cooking range (1187, 10271)	1187	10271	0
+range	Cooking range (1188, 10271)	1188	10271	0
+range	Cooking range (1189, 10272)	1189	10272	0
+range	Cooking range (1307, 2923)	1307	2923	1
+range	Cooking range (1308, 2924)	1308	2924	1
+range	Cooking range (1308, 2925)	1308	2925	1
+range	Cooking range (1348, 9580)	1348	9580	0
+range	Cooking range (1348, 9581)	1348	9581	0
+range	Cooking range (1349, 9579)	1349	9579	0
+range	Cooking range (1349, 9582)	1349	9582	0
+range	Cooking range (1350, 9579)	1350	9579	0
+range	Cooking range (1350, 9582)	1350	9582	0
+range	Cooking range (1351, 9580)	1351	9580	0
+range	Cooking range (1351, 9581)	1351	9581	0
+range	Cooking range (1373, 9710)	1373	9710	0
+range	Cooking range (1373, 9711)	1373	9711	0
+range	Cooking range (1374, 9709)	1374	9709	0
+range	Cooking range (1374, 9712)	1374	9712	0
+range	Cooking range (1375, 9709)	1375	9709	0
+range	Cooking range (1375, 9712)	1375	9712	0
+range	Cooking range (1376, 9710)	1376	9710	0
+range	Cooking range (1376, 9711)	1376	9711	0
+range	Cooking range (1422, 9558)	1422	9558	0
+range	Cooking range (1422, 9559)	1422	9559	0
+range	Cooking range (1423, 9557)	1423	9557	0
+range	Cooking range (1424, 9557)	1424	9557	0
+range	Cooking range (1436, 9964)	1436	9964	0
+range	Cooking range (1437, 9963)	1437	9963	0
+range	Cooking range (1438, 9963)	1438	9963	0
+range	Cooking range (1439, 9964)	1439	9964	0
+range	Cooking range (1449, 9554)	1449	9554	0
+range	Cooking range (1449, 9557)	1449	9557	0
+range	Cooking range (1450, 9554)	1450	9554	0
+range	Cooking range (1450, 9557)	1450	9557	0
+range	Cooking range (1451, 9555)	1451	9555	0
+range	Cooking range (1451, 9556)	1451	9556	0
+range	Cooking range (1509, 9693)	1509	9693	1
+range	Cooking range (1509, 9694)	1509	9694	1
+range	Cooking range (1510, 9692)	1510	9692	1
+range	Cooking range (1510, 9695)	1510	9695	1
+range	Cooking range (1511, 9692)	1511	9692	1
+range	Cooking range (1511, 9695)	1511	9695	1
+range	Cooking range (1512, 9693)	1512	9693	1
+range	Cooking range (1512, 9694)	1512	9694	1
+range	Cooking range (1516, 2985)	1516	2985	1
+range	Cooking range (1666, 9709)	1666	9709	0
+range	Cooking range (1666, 9711)	1666	9711	0
+range	Cooking range (1666, 9712)	1666	9712	0
+range	Cooking range (1666, 9714)	1666	9714	0
+range	Cooking range (1667, 9710)	1667	9710	0
+range	Cooking range (1667, 9711)	1667	9711	0
+range	Cooking range (1667, 9712)	1667	9712	0
+range	Cooking range (1667, 9713)	1667	9713	0
+range	Cooking range (1748, 3735)	1748	3735	1
+range	Cooking range (1749, 3734)	1749	3734	1
+range	Cooking range (1749, 3736)	1749	3736	1
+range	Cooking range (1750, 3735)	1750	3735	1
+range	Cooking range (1750, 3748)	1750	3748	1
+range	Cooking range (1751, 3747)	1751	3747	1
+range	Cooking range (1751, 3749)	1751	3749	1
+range	Cooking range (1752, 3748)	1752	3748	1
+range	Cooking range (1752, 3762)	1752	3762	1
+range	Cooking range (1763, 3735)	1763	3735	1
+range	Cooking range (1764, 10137)	1764	10137	0
+range	Cooking range (1764, 3734)	1764	3734	1
+range	Cooking range (1764, 3736)	1764	3736	1
+range	Cooking range (1765, 10136)	1765	10136	0
+range	Cooking range (1765, 3735)	1765	3735	1
+range	Cooking range (1766, 10137)	1766	10137	0
+range	Cooking range (1770, 3751)	1770	3751	1
+range	Cooking range (1775, 3735)	1775	3735	1
+range	Cooking range (1776, 3736)	1776	3736	1
+range	Cooking range (1777, 3735)	1777	3735	1
+range	Cooking range (1904, 3285)	1904	3285	1
+range	Cooking range (1905, 3284)	1905	3284	1
+range	Cooking range (1905, 3286)	1905	3286	1
+range	Cooking range (1905, 3300)	1905	3300	1
+range	Cooking range (1906, 3285)	1906	3285	1
+range	Cooking range (1906, 3299)	1906	3299	1
+range	Cooking range (1906, 3301)	1906	3301	1
+range	Cooking range (1907, 3300)	1907	3300	1
+range	Cooking range (1907, 3313)	1907	3313	1
+range	Cooking range (1908, 3312)	1908	3312	1
+range	Cooking range (1908, 3314)	1908	3314	1
+range	Cooking range (1909, 3313)	1909	3313	1
+range	Cooking range (1938, 2762)	1938	2762	1
+range	Cooking range (1939, 2762)	1939	2762	1
+range	Cooking range (1940, 2763)	1940	2763	1
+range	Cooking range (2538, 9698)	2538	9698	0
+range	Cooking range (2539, 9698)	2539	9698	0
+range	Cooking range (2540, 9699)	2540	9699	0
+range	Cooking range (2763, 3274)	2763	3274	1
+range	Cooking range (2764, 3273)	2764	3273	1
+range	Cooking range (3038, 9262)	3038	9262	0
+range	Cooking range (3039, 9261)	3039	9261	0
+range	Cooking range (3040, 9261)	3040	9261	0
+range	Cooking range (3041, 9262)	3041	9262	0
+spinning_wheel	Spinning wheel (2933, 3288)	2933	3288	1
+spinning_wheel	Spinning wheel (2934, 3287)	2934	3287	1
+spinning_wheel	Spinning wheel (2935, 3287)	2935	3287	1
+spinning_wheel	Spinning wheel (2935, 3288)	2935	3288	1
+spinning_wheel	Spinning wheel (2936, 3286)	2936	3286	1
+spinning_wheel	Spinning wheel (2936, 3288)	2936	3288	1
+water	Aldarin Water source	1449	2921	0
+water	Aldarin Water source	1449	2922	0
+water	Aldarin Water source	1450	2920	0
+water	Aldarin Water source	1450	2923	0
+water	Aldarin Water source	1451	2920	0
+water	Aldarin Water source	1451	2923	0
+water	Aldarin Water source	1452	2921	0
+water	Aldarin Water source	1452	2922	0
+water	Mort'ton Water source	3578	3354	0
+water	Mort'ton Water source	3578	3355	0
+water	Water source (1190, 10271)	1190	10271	0
+water	Water source (1190, 10272)	1190	10272	0
+water	Water source (1191, 10270)	1191	10270	0
+water	Water source (1435, 9961)	1435	9961	0
+water	Water source (1435, 9964)	1435	9964	0
+water	Water source (1436, 9962)	1436	9962	0
+water	Water source (1436, 9963)	1436	9963	0
+water	Water source (1437, 2929)	1437	2929	2
+water	Water source (1438, 2929)	1438	2929	2
+water	Water source (1439, 2930)	1439	2930	2
+water	Water source (1447, 2929)	1447	2929	1
+water	Water source (1448, 2929)	1448	2929	1
+water	Water source (1449, 2928)	1449	2928	1
+water	Water source (1653, 3047)	1653	3047	2
+water	Water source (1748, 3748)	1748	3748	1
+water	Water source (1749, 3735)	1749	3735	1
+water	Water source (1749, 3747)	1749	3747	1
+water	Water source (1749, 3749)	1749	3749	1
+water	Water source (1750, 3734)	1750	3734	1
+water	Water source (1750, 3736)	1750	3736	1
+water	Water source (1750, 3747)	1750	3747	1
+water	Water source (1750, 3749)	1750	3749	1
+water	Water source (1751, 3734)	1751	3734	1
+water	Water source (1751, 3736)	1751	3736	1
+water	Water source (1751, 3748)	1751	3748	1
+water	Water source (1752, 3735)	1752	3735	1
+water	Water source (1752, 3760)	1752	3760	1
+water	Water source (1753, 3759)	1753	3759	1
+water	Water source (1753, 3761)	1753	3761	1
+water	Water source (1754, 3759)	1754	3759	1
+water	Water source (1754, 3761)	1754	3761	1
+water	Water source (1755, 3760)	1755	3760	1
+water	Water source (1762, 3737)	1762	3737	1
+water	Water source (1763, 3736)	1763	3736	1
+water	Water source (1763, 3738)	1763	3738	1
+water	Water source (1764, 3736)	1764	3736	1
+water	Water source (1764, 3738)	1764	3738	1
+water	Water source (1765, 3737)	1765	3737	1
+water	Water source (1773, 3735)	1773	3735	1
+water	Water source (1774, 3736)	1774	3736	1
+water	Water source (1775, 3736)	1775	3736	1
+water	Water source (1776, 3735)	1776	3735	1
+water	Water source (1777, 3579)	1777	3579	2
+water	Water source (1778, 3577)	1778	3577	2
+water	Water source (1778, 3578)	1778	3578	2
+water	Water source (1902, 3288)	1902	3288	1
+water	Water source (1903, 3287)	1903	3287	1
+water	Water source (1903, 3289)	1903	3289	1
+water	Water source (1904, 3287)	1904	3287	1
+water	Water source (1904, 3289)	1904	3289	1
+water	Water source (1905, 3288)	1905	3288	1
+water	Water source (1905, 3313)	1905	3313	1
+water	Water source (1906, 3300)	1906	3300	1
+water	Water source (1906, 3312)	1906	3312	1
+water	Water source (1906, 3314)	1906	3314	1
+water	Water source (1907, 3299)	1907	3299	1
+water	Water source (1907, 3301)	1907	3301	1
+water	Water source (1907, 3312)	1907	3312	1
+water	Water source (1907, 3314)	1907	3314	1
+water	Water source (1908, 3299)	1908	3299	1
+water	Water source (1908, 3301)	1908	3301	1
+water	Water source (1908, 3313)	1908	3313	1
+water	Water source (1909, 3300)	1909	3300	1
+water	Water source (3032, 2850)	3032	2850	1
+water	Water source (3033, 2849)	3033	2849	1
+water	Water source (3033, 2851)	3033	2851	1
+water	Water source (3034, 2850)	3034	2850	1
+water	Water source (3041, 9262)	3041	9262	0
+water	Water source (3042, 9261)	3042	9261	0
+water	Water source (3043, 9262)	3043	9262	0
+water	Water source (3045, 2840)	3045	2840	1
+water	Water source (3046, 2839)	3046	2839	1
+water	Water source (3046, 2841)	3046	2841	1
+water	Water source (3047, 2840)	3047	2840	1
+water	Water source (3047, 2858)	3047	2858	1
+water	Water source (3048, 2857)	3048	2857	1
+water	Water source (3048, 2859)	3048	2859	1
+water	Water source (3049, 2858)	3049	2858	1
+water	Water source (3051, 2965)	3051	2965	1
+water	Water source (3052, 2966)	3052	2966	1
+water	Water source (3060, 2848)	3060	2848	1
+water	Water source (3061, 2847)	3061	2847	1
+water	Water source (3061, 2849)	3061	2849	1
+water	Water source (3062, 2848)	3062	2848	1
+water	Water source (3134, 2832)	3134	2832	1
+water	Water source (3135, 2831)	3135	2831	1
+water	Water source (3135, 2833)	3135	2833	1
+water	Water source (3136, 2832)	3136	2832	1
+water	Water source (3141, 3452)	3141	3452	2
+water	Water source (3142, 3451)	3142	3451	2
+water	Water source (3142, 3453)	3142	3453	2
+water	Water source (3143, 3452)	3143	3452	2
+water	Water source (3769, 8609)	3769	8609	0
+water	Water source (3769, 8610)	3769	8610	0
+water	Water source (3769, 8614)	3769	8614	0
+water	Water source (3769, 8615)	3769	8615	0
+water	Water source (3770, 8608)	3770	8608	0
+water	Water source (3770, 8611)	3770	8611	0
+water	Water source (3770, 8613)	3770	8613	0
+water	Water source (3770, 8616)	3770	8616	0
+water	Water source (3771, 8608)	3771	8608	0
+water	Water source (3771, 8611)	3771	8611	0
+water	Water source (3771, 8613)	3771	8613	0
+water	Water source (3771, 8616)	3771	8616	0
+water	Water source (3772, 8609)	3772	8609	0
+water	Water source (3772, 8610)	3772	8610	0
+water	Water source (3772, 8614)	3772	8614	0
+water	Water source (3772, 8615)	3772	8615	0

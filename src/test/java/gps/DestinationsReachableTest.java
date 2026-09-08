@@ -180,7 +180,55 @@ public class DestinationsReachableTest
 	// Control pin adopts its Void-outpost remap anchor.
 	// 694 -> 569 on 2026-08-27: pins on sailable water count as reachable by sea (the
 	// 125 ocean-region landmarks are sailing destinations, not land gaps).
-	private static final int RATCHET = 569;
+	// 569 -> a checked-in LIST on 2026-09-07 (plan step N14): a number let any pin trade places
+	// with any other; the list names each known-unreachable pin, so a new one fails by name and
+	// a listed pin that becomes reachable fails too, keeping the backlog honest in both directions.
+	private static final String EXPECTED_UNREACHABLE = "src/test/resources/expected-unreachable.tsv";
+
+	/** The listed pins in the same "category / name @x,y,plane" form the audit reports, or null when the file is missing. */
+	private static Set<String> loadExpectedUnreachable() throws java.io.IOException
+	{
+		java.nio.file.Path path = java.nio.file.Paths.get(EXPECTED_UNREACHABLE);
+		if (!java.nio.file.Files.exists(path))
+		{
+			return null;
+		}
+		Set<String> expected = new java.util.HashSet<>();
+		for (String line : java.nio.file.Files.readAllLines(path, java.nio.charset.StandardCharsets.UTF_8))
+		{
+			if (line.isEmpty() || line.startsWith("#"))
+			{
+				continue;
+			}
+			String[] f = line.split("\t");
+			if (f.length < 5)
+			{
+				continue;
+			}
+			expected.add(f[0] + " / " + f[1] + " @" + f[2] + "," + f[3] + "," + f[4]);
+		}
+		return expected;
+	}
+
+	/** Rewrites the list from the current audit (sorted), for a legitimate world update. */
+	private static void writeExpectedUnreachable(List<String> unreachable) throws java.io.IOException
+	{
+		java.util.TreeSet<String> rows = new java.util.TreeSet<>();
+		for (String entry : unreachable)
+		{
+			int at = entry.lastIndexOf('@');
+			String[] xyz = entry.substring(at + 1).split(",");
+			String head = entry.substring(0, at).trim();
+			int sep = head.indexOf(" / ");
+			rows.add(head.substring(0, sep) + "\t" + head.substring(sep + 3) + "\t" + xyz[0] + "\t" + xyz[1] + "\t" + xyz[2]);
+		}
+		List<String> lines = new ArrayList<>();
+		lines.add("# Imported destination pins known to be unreachable (DestinationsReachableTest). Generated with");
+		lines.add("# -Dgps.writeExpectedUnreachable=true; drive the list down by mapping entrances, never add by hand.");
+		lines.add("# category\tname\tx\ty\tplane");
+		lines.addAll(rows);
+		java.nio.file.Files.write(java.nio.file.Paths.get(EXPECTED_UNREACHABLE), lines, java.nio.charset.StandardCharsets.UTF_8);
+	}
 
 	/**
 	 * Real content living inside the instance template band, enforced by the invariant like
@@ -299,7 +347,7 @@ public class DestinationsReachableTest
 	 * hard zero, so imports can't quietly add unreachable pins while the backlog is worked down.
 	 */
 	@Test
-	public void importedDestinationsDoNotRegress()
+	public void importedDestinationsDoNotRegress() throws java.io.IOException
 	{
 		flood();
 		List<String> unreachable = new ArrayList<>();
@@ -338,10 +386,37 @@ public class DestinationsReachableTest
 		// silently for weeks: the MLM bank quadrant and the Tanglefoot lair).
 		assertTrue("BAND-CONTENT offenders: " + String.join("; ", bandOffenders),
 			bandOffenders.isEmpty());
-		assertTrue(unreachable.size() + " of " + checked + " imported destinations are unreachable"
-			+ " (ratchet: " + RATCHET + "). New unreachable pins are not acceptable; the existing"
-			+ " backlog is being worked down. First offenders:\n  "
-			+ String.join("\n  ", unreachable.subList(0, Math.min(40, unreachable.size()))),
-			unreachable.size() <= RATCHET);
+		if (Boolean.getBoolean("gps.writeExpectedUnreachable"))
+		{
+			writeExpectedUnreachable(unreachable);
+		}
+		Set<String> expected = loadExpectedUnreachable();
+		assertTrue("the expected-unreachable list is missing (" + EXPECTED_UNREACHABLE + "): generate it with"
+			+ " -Dgps.writeExpectedUnreachable=true and check it in", expected != null);
+		Set<String> unreachableSet = new java.util.HashSet<>(unreachable);
+		List<String> fresh = new ArrayList<>();
+		for (String entry : unreachable)
+		{
+			if (!expected.contains(entry))
+			{
+				fresh.add(entry);
+			}
+		}
+		List<String> stale = new ArrayList<>();
+		for (String entry : expected)
+		{
+			if (!unreachableSet.contains(entry))
+			{
+				stale.add(entry);
+			}
+		}
+		java.util.Collections.sort(stale);
+		assertTrue(fresh.size() + " NEW unreachable imported destinations (" + unreachable.size() + " of " + checked
+			+ " in total, " + expected.size() + " expected). Either a data regression to fix, or a world update:"
+			+ " then regenerate the list with -Dgps.writeExpectedUnreachable=true. First:\n  "
+			+ String.join("\n  ", fresh.subList(0, Math.min(40, fresh.size()))), fresh.isEmpty());
+		assertTrue(stale.size() + " listed pins are reachable now: remove them from " + EXPECTED_UNREACHABLE
+			+ " (regenerate with -Dgps.writeExpectedUnreachable=true). First:\n  "
+			+ String.join("\n  ", stale.subList(0, Math.min(40, stale.size()))), stale.isEmpty());
 	}
 }
