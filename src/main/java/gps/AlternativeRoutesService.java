@@ -410,6 +410,8 @@ public class AlternativeRoutesService
 		// previous chain's exclusions, and a field flooded over that smaller availability is not
 		// a lower bound for the seed and tail searches, which run with the user exclusions alone
 		// (a reverse flood over fewer transports can only overestimate).
+		final Generation g = new Generation(gen, start, ends, userExclusions, mode, limit, costMultiple, roundTrip,
+			listener, timer, catalog, unavailable, seedCandidates, routes, seenSignatures);
 		planningConfig.rebuildAvailabilityWithExclusions(userExclusions);
 		boolean availabilityCurrent = excluded.equals(userExclusions);
 		long fieldStart = System.nanoTime();
@@ -432,6 +434,7 @@ public class AlternativeRoutesService
 			cachedFieldKey = field != null ? fieldKey : null;
 		}
 		lastFieldReused = fieldReused;
+		g.field = field;
 		timer.fieldNanos = System.nanoTime() - fieldStart;
 		// A complete reverse field that never reached the start, with no usable teleport landing
 		// inside its flooded pocket, proves the target unreachable for EVERY search of this
@@ -469,7 +472,7 @@ public class AlternativeRoutesService
 				(long) routes.get(0).getTotalCost() * 2 * costMultiple));
 		}
 		final Future<WalkResult> walkFuture = limit > 1 && !targetProvablyUnreachable
-			? seedExecutor.submit(() -> runWalkSearch(gen, start, ends, userExclusions, catalog, field, timer, walkCeiling))
+			? seedExecutor.submit(() -> runWalkSearch(g, walkCeiling))
 			: null;
 
 		// Whether the cost cap (best * costMultiple, below the walk ceiling) held a route back — a
@@ -666,22 +669,17 @@ public class AlternativeRoutesService
 		// cheaper seed evicts the costliest route — the safety net for anything the chain missed must not
 		// be silenced by a low route limit (the exact failure a user capture showed at limit 10).
 		boolean hasWalkOnly = routes.stream().anyMatch(RouteOption::isWalkOnly);
-		java.util.concurrent.atomic.AtomicReference<RouteOption> bestSail =
-			new java.util.concurrent.atomic.AtomicReference<>();
 		if (!hasWalkOnly && !routes.isEmpty() && !targetProvablyUnreachable)
 		{
-			seedTeleportRoutes(gen, start, ends, userExclusions, mode, limit, costMultiple,
-				seedCandidates, routes, seenSignatures, catalog, unavailable, roundTrip ? null : listener,
-				bestRemaining, RouteAcceptance.cappedByBestCost(capOf(walkFuture), routes, 2 * costMultiple), field, timer,
-				bestSail);
+			g.bestRemaining = bestRemaining;
+			seedTeleportRoutes(g, RouteAcceptance.cappedByBestCost(capOf(walkFuture), routes, 2 * costMultiple));
 		}
 		// Tail-diversity pass: when the page is dominated by one shared method TAIL, surface a
 		// variant with a different middle. Runs after seeds so eviction sees the full page.
 		if (gen == generation.get() && !targetProvablyUnreachable)
 		{
-			diversifySharedTails(gen, start, ends, userExclusions, limit, costMultiple, routes,
-				seenSignatures, catalog, unavailable, roundTrip ? null : listener, bestRemaining,
-				RouteAcceptance.cappedByBestCost(capOf(walkFuture), routes, 2 * costMultiple), field, timer);
+			g.bestRemaining = bestRemaining;
+			diversifySharedTails(g, RouteAcceptance.cappedByBestCost(capOf(walkFuture), routes, 2 * costMultiple));
 		}
 
 		// More routes are worth polling for when the count budget was the binding limit (the chain kept
@@ -738,7 +736,7 @@ public class AlternativeRoutesService
 		// The keep-sailing baseline joins the page when aboard and no pure-sail route survived
 		// the band: signature-deduped, evicting the costliest teleport chain when full - the
 		// walk baseline's exact shape. The plugin ranks it first at the helm.
-		RouteOption sailBaseline = bestSail.get();
+		RouteOption sailBaseline = g.bestSail.get();
 		if (sailBaseline != null && routes.stream().noneMatch(RouteOption::isPureSail)
 			&& seenSignatures.add(signature(sailBaseline.getMethods())))
 		{
@@ -768,8 +766,7 @@ public class AlternativeRoutesService
 		// Round-trip mode: give every one-way route its return leg and re-rank by combined cost.
 		if (roundTrip && !routes.isEmpty() && gen == generation.get())
 		{
-			List<RouteOption> merged = buildRoundTrips(gen, start, userExclusions, routes,
-				catalog, unavailable, listener, timer);
+			List<RouteOption> merged = buildRoundTrips(g, routes);
 			routes.clear();
 			routes.addAll(merged);
 		}
@@ -975,6 +972,75 @@ public class AlternativeRoutesService
 	}
 
 	/**
+	 * One generation's shared state (plan step L2): the query, the page under construction and
+	 * the per-generation search inputs, handed to every pass instead of the ten-to-eighteen
+	 * parameter signatures that used to carry them, plus the one {@link #emit} that cannot forget
+	 * the staleness check. Mutable fields are written by the generation thread between passes.
+	 */
+	private final class Generation
+	{
+		final int gen;
+		final int start;
+		final Set<Integer> ends;
+		final Set<TeleportMethod> userExclusions;
+		final AlternativeRoutesMode mode;
+		final int limit;
+		final int costMultiple;
+		final boolean roundTrip;
+		final ResultListener listener;
+		final GenTimer timer;
+		final List<TeleportMethod> catalog;
+		final Map<TeleportMethod, MethodAvailability> unavailable;
+		final List<Transport> seedCandidates;
+		final List<RouteOption> routes;
+		final Set<String> seenSignatures;
+		/** The generation's distance field, once built (null for an empty target set). */
+		DistanceField field;
+		/** Remaining distance of the first route's endpoint; -1 until the chain knows it. */
+		int bestRemaining = -1;
+		/** The cheapest pure-sail continuation seen at the helm (the keep-sailing baseline). */
+		final java.util.concurrent.atomic.AtomicReference<RouteOption> bestSail =
+			new java.util.concurrent.atomic.AtomicReference<>();
+
+		Generation(int gen, int start, Set<Integer> ends, Set<TeleportMethod> userExclusions,
+			AlternativeRoutesMode mode, int limit, int costMultiple, boolean roundTrip, ResultListener listener,
+			GenTimer timer, List<TeleportMethod> catalog, Map<TeleportMethod, MethodAvailability> unavailable,
+			List<Transport> seedCandidates, List<RouteOption> routes, Set<String> seenSignatures)
+		{
+			this.gen = gen;
+			this.start = start;
+			this.ends = ends;
+			this.userExclusions = userExclusions;
+			this.mode = mode;
+			this.limit = limit;
+			this.costMultiple = costMultiple;
+			this.roundTrip = roundTrip;
+			this.listener = listener;
+			this.timer = timer;
+			this.catalog = catalog;
+			this.unavailable = unavailable;
+			this.seedCandidates = seedCandidates;
+			this.routes = routes;
+			this.seenSignatures = seenSignatures;
+		}
+
+		/** Whether a newer generation has superseded this one. */
+		boolean stale()
+		{
+			return gen != generation.get();
+		}
+
+		/**
+		 * The listener a one-way pass streams to: none in round-trip mode, which streams only
+		 * merged results (one-way costs would reorder once returns are added).
+		 */
+		ResultListener oneWayListener()
+		{
+			return roundTrip ? null : listener;
+		}
+	}
+
+	/**
 	 * One search's profile within a generation — which search ran, what it found, and how much it
 	 * explored — for the benchmark report and for pinpointing slow searches (the aggregate GenTimer
 	 * numbers can't tell a few expensive searches from many cheap ones).
@@ -1103,12 +1169,25 @@ public class AlternativeRoutesService
 	 * result is "the best route if you use this teleport". Routes with an already-seen method
 	 * signature, walk-only results, or endpoints meaningfully further than the best route are skipped.
 	 */
-	private void seedTeleportRoutes(int gen, int start, Set<Integer> ends, Set<TeleportMethod> userExclusions,
-		AlternativeRoutesMode mode, int limit, int costMultiple, List<Transport> seedCandidates, List<RouteOption> routes,
-		Set<String> seenSignatures, List<TeleportMethod> catalog, Map<TeleportMethod, MethodAvailability> unavailable,
-		ResultListener listener, int bestRemaining, int costCap, DistanceField field, GenTimer timer,
-		java.util.concurrent.atomic.AtomicReference<RouteOption> bestSail)
+	private void seedTeleportRoutes(Generation g, int costCap)
 	{
+		final int gen = g.gen;
+		final int start = g.start;
+		final Set<Integer> ends = g.ends;
+		final Set<TeleportMethod> userExclusions = g.userExclusions;
+		final AlternativeRoutesMode mode = g.mode;
+		final int limit = g.limit;
+		final int costMultiple = g.costMultiple;
+		final List<Transport> seedCandidates = g.seedCandidates;
+		final List<RouteOption> routes = g.routes;
+		final Set<String> seenSignatures = g.seenSignatures;
+		final List<TeleportMethod> catalog = g.catalog;
+		final Map<TeleportMethod, MethodAvailability> unavailable = g.unavailable;
+		final ResultListener listener = g.oneWayListener();
+		final int bestRemaining = g.bestRemaining;
+		final DistanceField field = g.field;
+		final GenTimer timer = g.timer;
+		final java.util.concurrent.atomic.AtomicReference<RouteOption> bestSail = g.bestSail;
 		// Every global teleport is excluded from each seed search except the seed itself, so the
 		// exclusion universe must span ALL candidates — including ones that don't get an attempt.
 		final Set<TeleportMethod> allSeedMethods = new HashSet<>();
@@ -1169,10 +1248,9 @@ public class AlternativeRoutesService
 		for (Transport seed : attempts)
 		{
 			futures.add(completion.submit(() ->
-				runSeedSearch(gen, stop, start, ends, userExclusions, allSeedMethods, seed,
+				runSeedSearch(g, stop, allSeedMethods, seed,
 					nearestPortRetained != null && nearestPortRetained.equals(seed.getDisplayInfo()),
-					bestRemaining, costCap,
-					field, configPool, timer)));
+					costCap, configPool)));
 		}
 
 		try
@@ -1384,12 +1462,22 @@ public class AlternativeRoutesService
 	 * back — and feeds any distinct result through the exact acceptance the seeds use, evicting
 	 * the costliest member of the dominant family when the page is full.
 	 */
-	private void diversifySharedTails(int gen, int start, Set<Integer> ends,
-		Set<TeleportMethod> userExclusions, int limit, int costMultiple, List<RouteOption> routes,
-		Set<String> seenSignatures, List<TeleportMethod> catalog,
-		Map<TeleportMethod, MethodAvailability> unavailable, ResultListener listener,
-		int bestRemaining, int costCap, DistanceField field, GenTimer timer)
+	private void diversifySharedTails(Generation g, int costCap)
 	{
+		final int gen = g.gen;
+		final int start = g.start;
+		final Set<Integer> ends = g.ends;
+		final Set<TeleportMethod> userExclusions = g.userExclusions;
+		final int limit = g.limit;
+		final int costMultiple = g.costMultiple;
+		final List<RouteOption> routes = g.routes;
+		final Set<String> seenSignatures = g.seenSignatures;
+		final List<TeleportMethod> catalog = g.catalog;
+		final Map<TeleportMethod, MethodAvailability> unavailable = g.unavailable;
+		final ResultListener listener = g.oneWayListener();
+		final int bestRemaining = g.bestRemaining;
+		final DistanceField field = g.field;
+		final GenTimer timer = g.timer;
 		// The dominant tail among the kept routes.
 		Map<String, List<RouteOption>> byTail = new LinkedHashMap<>();
 		for (RouteOption route : routes)
@@ -1491,11 +1579,16 @@ public class AlternativeRoutesService
 		}
 	}
 
-	private SeedResult runSeedSearch(int gen, AtomicBoolean stop, int start, Set<Integer> ends,
-		Set<TeleportMethod> userExclusions, Set<TeleportMethod> allSeedMethods, Transport seed,
-		boolean portPromiseSeed, int bestRemaining, int costCap, DistanceField field,
-		Queue<PathfinderConfig> configPool, GenTimer timer)
+	private SeedResult runSeedSearch(Generation g, AtomicBoolean stop, Set<TeleportMethod> allSeedMethods,
+		Transport seed, boolean portPromiseSeed, int costCap, Queue<PathfinderConfig> configPool)
 	{
+		final int gen = g.gen;
+		final int start = g.start;
+		final Set<Integer> ends = g.ends;
+		final Set<TeleportMethod> userExclusions = g.userExclusions;
+		final int bestRemaining = g.bestRemaining;
+		final DistanceField field = g.field;
+		final GenTimer timer = g.timer;
 		if (gen != generation.get() || stop.get())
 		{
 			return null;
@@ -1588,9 +1681,15 @@ public class AlternativeRoutesService
 	 * path is the last-resort route. Runs on the seed pool concurrently with the chain's first
 	 * searches, on its own config copy.
 	 */
-	private WalkResult runWalkSearch(int gen, int start, Set<Integer> ends, Set<TeleportMethod> userExclusions,
-		List<TeleportMethod> catalog, DistanceField field, GenTimer timer, AtomicInteger walkCeiling)
+	private WalkResult runWalkSearch(Generation g, AtomicInteger walkCeiling)
 	{
+		final int gen = g.gen;
+		final int start = g.start;
+		final Set<Integer> ends = g.ends;
+		final Set<TeleportMethod> userExclusions = g.userExclusions;
+		final List<TeleportMethod> catalog = g.catalog;
+		final DistanceField field = g.field;
+		final GenTimer timer = g.timer;
 		if (gen != generation.get())
 		{
 			return null;
@@ -1654,10 +1753,15 @@ public class AlternativeRoutesService
 	 * In bank mode the return leg naturally gets the banked-state teleports: the leg starts ON a
 	 * bank tile, so the engine flips into the banked state immediately.
 	 */
-	private List<RouteOption> buildRoundTrips(int gen, int start, Set<TeleportMethod> userExclusions,
-		List<RouteOption> oneWays, List<TeleportMethod> catalog,
-		Map<TeleportMethod, MethodAvailability> unavailable, ResultListener listener, GenTimer timer)
+	private List<RouteOption> buildRoundTrips(Generation g, List<RouteOption> oneWays)
 	{
+		final int gen = g.gen;
+		final int start = g.start;
+		final Set<TeleportMethod> userExclusions = g.userExclusions;
+		final List<TeleportMethod> catalog = g.catalog;
+		final Map<TeleportMethod, MethodAvailability> unavailable = g.unavailable;
+		final ResultListener listener = g.listener;
+		final GenTimer timer = g.timer;
 		final Set<Integer> home = Set.of(start);
 		long fieldStart = System.nanoTime();
 		// Return legs run uncapped, so keep the full flood here (a bounded one would stay correct

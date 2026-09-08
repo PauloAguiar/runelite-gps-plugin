@@ -428,3 +428,21 @@ pure arithmetic over a page of at most ten routes.
 
 **Next:** the phase split (a generation context object instead of the ten-to-fifteen
 parameter signatures, then the chain, seed, tail and round-trip passes as separate units).
+
+### Step L2: one generation context instead of parameter lists (2026-09-07)
+
+**Guard:** a pure refactor with no behavior change, so the test is the existing suite (674
+tests, every generation-level scenario included), run before and after.
+
+**Change:** `Generation` holds a generation's query (start, targets, exclusions, mode, limit,
+multiple, round trip, listener, timer), its page under construction (routes, seen signatures,
+catalog, unavailable methods, seed candidates) and its search inputs (the distance field, the
+closeness baseline, the keep-sailing baseline). The walk, seed, tail-diversity and round-trip
+passes take it (and their own one or two arguments) instead of 8 to 18 parameters each; the
+seed pass's own worker submission dropped from 13 arguments to 7. Each pass unpacks the context
+at its top so its logic reads exactly as before. `stale()` and `oneWayListener()` replace two
+idioms that were repeated by hand (the round-trip suppression of streaming, the generation
+guard).
+
+**Next:** split the 717-line `computeRoutes` into the prepare, chain, fill, baseline and finish
+phases over the same context.
