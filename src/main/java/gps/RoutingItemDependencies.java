@@ -148,7 +148,7 @@ public final class RoutingItemDependencies
 			if (met > 0)
 			{
 				// Commutative sum of well-mixed terms keeps the digest independent of slot order.
-				digest += mix(((long) tag << 40) ^ ((long) entry.getKey() << 8) ^ met);
+				digest += mix64(((long) tag << 40) ^ ((long) entry.getKey() << 8) ^ met);
 			}
 		}
 		return digest;
@@ -160,8 +160,8 @@ public final class RoutingItemDependencies
 		return idx >= 0 ? idx + 1 : -idx - 1;
 	}
 
-	/** splitmix64 finalizer. */
-	private static long mix(long z)
+	/** splitmix64 finalizer; also the mixer behind the refresh's usable-transport fingerprint. */
+	public static long mix64(long z)
 	{
 		z = (z ^ (z >>> 30)) * 0xbf58476d1ce4e5b9L;
 		z = (z ^ (z >>> 27)) * 0x94d049bb133111ebL;

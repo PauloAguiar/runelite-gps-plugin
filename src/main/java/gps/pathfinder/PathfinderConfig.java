@@ -137,6 +137,14 @@ public class PathfinderConfig
 	private TransportAvailability baseAvailabilityWithoutBank;
 	private TransportAvailability baseAvailabilityWithBank;
 	/**
+	 * Planning copies only: a content fingerprint of the usable transports admitted by the last
+	 * {@link #refresh()} (both bank states, with the destination each row resolved to). Two
+	 * refreshes that admit the same rows produce the same value, so a consumer of the availability
+	 * can tell "nothing changed" from a fresh object (plan step N4: the distance field is reused
+	 * across generations with the same inputs).
+	 */
+	private long usableFingerprint;
+	/**
 	 * Planning copies: every method-type transport that structurally exists in the world (independent of
 	 * item possession, character unlocks, config toggles and the user's own exclusions), mapped to
 	 * whether the player can use it right now and, if not, why. Built during the last client-thread
@@ -1069,8 +1077,10 @@ public class PathfinderConfig
 		// so the panel can show — and explain — the methods the player can't use right now in any mode.
 		Map<TeleportMethod, MethodAvailability> catalog = planningCopy ? new LinkedHashMap<>() : null;
 		Map<TeleportMethod, String> catalogDetail = planningCopy ? new HashMap<>() : null;
-		for (Transport transport : allTransports)
+		long fingerprint = 0;
+		for (int index = 0; index < allTransports.length; index++)
 		{
+			Transport transport = allTransports[index];
 			for (Quest quest : transport.getQuests())
 			{
 				// The explicit put also covers getQuestState overrides (the test harness);
@@ -1126,13 +1136,17 @@ public class PathfinderConfig
 
 			boolean usableWithoutBank = bypassItemPossession || hasRequiredItems(transport, true, true, false, true);
 			boolean usableWithBank = bypassItemPossession || hasRequiredItems(transport, true, true, includeBankPath, true);
+			// Commutative mix of (row index, resolved destination) per admitted row and bank state.
+			long rowKey = ((long) index << 32) ^ (transport.getDestination() & 0xffffffffL);
 			if (usableWithoutBank)
 			{
 				withoutBank.add(transport);
+				fingerprint += RoutingItemDependencies.mix64(rowKey);
 			}
 			if (usableWithBank)
 			{
 				withBank.add(transport);
+				fingerprint += RoutingItemDependencies.mix64(rowKey + 0x9E3779B97F4A7C15L);
 			}
 		}
 
@@ -1144,6 +1158,7 @@ public class PathfinderConfig
 		{
 			baseAvailabilityWithoutBank = transportAvailabilityWithoutBank;
 			baseAvailabilityWithBank = transportAvailabilityWithBank;
+			usableFingerprint = fingerprint;
 			methodAvailability = (catalog != null) ? Collections.unmodifiableMap(catalog) : Collections.emptyMap();
 			methodAvailabilityDetail = (catalogDetail != null)
 				? Collections.unmodifiableMap(catalogDetail) : Collections.emptyMap();
@@ -1448,6 +1463,12 @@ public class PathfinderConfig
 	 * copies only; no-op until a refresh has captured the base availability. With nothing to
 	 * remove or add the immutable base objects are shared as-is (plan step N3).
 	 */
+	/** See {@link #usableFingerprint}; 0 until a planning refresh has run. */
+	public long getUsableFingerprint()
+	{
+		return usableFingerprint;
+	}
+
 	public void rebuildAvailabilityWithExclusions(Set<TeleportMethod> excluded)
 	{
 		TransportAvailability baseWithoutBank = baseAvailabilityWithoutBank;

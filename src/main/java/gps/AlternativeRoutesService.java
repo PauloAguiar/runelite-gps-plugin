@@ -226,6 +226,8 @@ public class AlternativeRoutesService
 	{
 		executor.shutdownNow();
 		seedExecutor.shutdownNow();
+		cachedField = null;
+		cachedFieldKey = null;
 	}
 
 	private void computeRoutes(int gen, int start, Set<Integer> targets,
@@ -410,12 +412,32 @@ public class AlternativeRoutesService
 		// is built. Water pins therefore got an EMPTY field — production diagnostics showed 0
 		// guided / 19 blind searches and a 30s wall for a pin the direct probe (which rebuilt
 		// first) served a healthy field for.
-		planningConfig.rebuildAvailabilityWithExclusions(excluded);
-		boolean availabilityCurrent = true;
+		// Over the USER exclusions only: a resumed generation's chain set already holds the
+		// previous chain's exclusions, and a field flooded over that smaller availability is not
+		// a lower bound for the seed and tail searches, which run with the user exclusions alone
+		// (a reverse flood over fewer transports can only overestimate).
+		planningConfig.rebuildAvailabilityWithExclusions(userExclusions);
+		boolean availabilityCurrent = excluded.equals(userExclusions);
 		long fieldStart = System.nanoTime();
 		// The horizon matches the searches' sanity ceiling (2x the display band), so the fill region
-		// past the band edge still gets exact heuristic guidance.
-		final DistanceField field = DistanceField.buildIfCompact(planningConfig, ends, 2 * costMultiple);
+		// past the band edge still gets exact heuristic guidance. Same inputs as the last
+		// generation: the previous field is reused instead of flooded again (plan step N4).
+		final FieldKey fieldKey = new FieldKey(planningConfig.getUsableFingerprint(), userExclusions,
+			extrasFingerprint(seaLegs), ends, costMultiple);
+		final boolean fieldReused = cachedField != null
+			&& fieldKey.sameInputs(cachedFieldKey, cachedField.horizon() == Integer.MAX_VALUE);
+		final DistanceField field;
+		if (fieldReused)
+		{
+			field = cachedField;
+		}
+		else
+		{
+			field = DistanceField.buildIfCompact(planningConfig, ends, 2 * costMultiple);
+			cachedField = field;
+			cachedFieldKey = field != null ? fieldKey : null;
+		}
+		lastFieldReused = fieldReused;
 		timer.fieldNanos = System.nanoTime() - fieldStart;
 		// A complete reverse field that never reached the start, with no usable teleport landing
 		// inside its flooded pocket, proves the target unreachable for EVERY search of this
@@ -906,6 +928,66 @@ public class AlternativeRoutesService
 	// Whether the last generation's cost cap held routes back — a higher cost multiple ("show more")
 	// could surface them. False when walking is the binding ceiling (nothing cheaper-than-walk left).
 	private volatile boolean lastGenerationMoreLikely = false;
+
+	/**
+	 * The last built distance field and the inputs it was built from (plan step N4). A field is
+	 * immutable once built and a pure function of the target set, the usable transports (the
+	 * refresh fingerprint), the user exclusions, the synthesized sea legs and the flood horizon.
+	 * A player walking toward a pinned target regenerates every few tiles with all of those
+	 * unchanged, and used to flood the identical field each time (~200 ms per generation against
+	 * ~1 ms per guided search). Generation-thread only.
+	 */
+	private DistanceField cachedField;
+	private FieldKey cachedFieldKey;
+	private volatile boolean lastFieldReused;
+
+	/** Whether the last generation reused the previous generation's distance field. */
+	boolean lastFieldReused()
+	{
+		return lastFieldReused;
+	}
+
+	private static final class FieldKey
+	{
+		private final long usableFingerprint;
+		private final Set<TeleportMethod> userExclusions;
+		private final long extrasFingerprint;
+		private final Set<Integer> ends;
+		private final int costMultiple;
+
+		FieldKey(long usableFingerprint, Set<TeleportMethod> userExclusions, long extrasFingerprint,
+			Set<Integer> ends, int costMultiple)
+		{
+			this.usableFingerprint = usableFingerprint;
+			this.userExclusions = new HashSet<>(userExclusions);
+			this.extrasFingerprint = extrasFingerprint;
+			this.ends = new HashSet<>(ends);
+			this.costMultiple = costMultiple;
+		}
+
+		/** Same inputs; a complete field (horizon at MAX) serves any cost multiple. */
+		boolean sameInputs(FieldKey cached, boolean cachedComplete)
+		{
+			return cached != null
+				&& usableFingerprint == cached.usableFingerprint
+				&& extrasFingerprint == cached.extrasFingerprint
+				&& (costMultiple == cached.costMultiple || cachedComplete)
+				&& userExclusions.equals(cached.userExclusions)
+				&& ends.equals(cached.ends);
+		}
+	}
+
+	/** Commutative content fingerprint of the synthesized sea legs (fresh objects every generation). */
+	private static long extrasFingerprint(List<Transport> extras)
+	{
+		long fingerprint = 0;
+		for (Transport extra : extras)
+		{
+			long key = ((long) extra.getOrigin() << 32) ^ (extra.getDestination() & 0xffffffffL);
+			fingerprint += RoutingItemDependencies.mix64(key * 31 + extra.getDuration());
+		}
+		return fingerprint;
+	}
 
 	/** Whether raising the cost multiple and regenerating could surface more routes. */
 	public boolean wasMoreLikely()

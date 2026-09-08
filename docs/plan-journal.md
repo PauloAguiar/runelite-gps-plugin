@@ -98,3 +98,36 @@ instead of 76 MB of rebuild garbage.
 **Not changed:** the seed searches still run against a fixed cost ceiling snapshot rather than
 one that tightens as cheaper routes are accepted, and the distance field is still rebuilt for a
 generation with the same targets as the last. Both are the next step.
+
+### Step N4: the distance field survives across generations (2026-09-07)
+
+**Red first:** `FieldReuseTest` runs seven generations through one service and asserts, via a
+new package-private `lastFieldReused()`, that a generation whose inputs match the previous one
+reuses its field (same target from another start; same target and mode again) and that any
+changed input rebuilds it (a different target; a mode that admits a different usable set; a
+skill level drop in an owned mode). The accessor did not exist, so the test was red at compile
+time; with a first implementation the "changed usable set" case failed because the test tried
+to flip the fairy ring toggle in the all-everything mode, which bypasses every gate but the
+structural ones. The test now changes the mode and the skill level instead.
+
+**Change:** the refresh computes a content fingerprint of the usable transports (a commutative
+mix of row index and resolved destination per admitted row and bank state), exposed as
+`getUsableFingerprint()`. The generator keys its last field on that fingerprint, the user
+exclusions, a fingerprint of the synthesized sea legs, the filtered target set and the cost
+multiple (a complete field, horizon at MAX, serves any multiple), and reuses the field when the
+key matches. The field is immutable once built and only the generation thread touches the cache.
+
+**Correctness fix found on the way:** a resumed generation ("+ more routes") built its field
+over the chain's grown exclusion set from the previous generation. A reverse flood over fewer
+transports can only overestimate, so that field was not a valid lower bound for the seed and
+tail searches, which run with the user exclusions alone. The field is now always built over the
+user exclusions, and the chain's first iteration rebuilds its own availability when the two
+sets differ.
+
+**Measured (test output):** field builds of 33 to 65 ms in the all-everything mode and 205 to
+256 ms in the owned mode (a flood with no cheap teleport floor runs wider); a reused field
+costs 0 ms. In the field, a player walking toward a pin regenerates every few tiles with the
+same key, so this removes the largest fixed cost of those regenerations.
+
+**Not changed:** the round-trip return field is still built per generation; the seed cost
+ceiling is still a snapshot (next).
