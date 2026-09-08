@@ -228,6 +228,36 @@ public class AlternativeRoutesService
 		Set<TeleportMethod> userExclusions, AlternativeRoutesMode mode, int maxRoutes, int costMultiple,
 		boolean roundTrip, ResultListener listener)
 	{
+		// The generation as phases over one context (plan step L3): prepare the query (resume or
+		// refresh, sea legs), build the field and its verdict, start the concurrent walk search,
+		// run the exclusion chain, fill the page (seeds, tail diversity), append the baselines,
+		// finish (round trips, timing, resume state, the unreachable cause, the terminal update).
+		Generation g = prepare(gen, start, targets, userExclusions, mode, maxRoutes, costMultiple, roundTrip, listener);
+		if (g == null)
+		{
+			return;
+		}
+		buildField(g);
+		startWalkSearch(g);
+		if (!runChain(g))
+		{
+			return;
+		}
+		fillPage(g);
+		appendBaselines(g);
+		finish(g);
+	}
+
+	/**
+	 * Resolves the query into a generation context: a widened re-request resumes the previous
+	 * chain state, anything else refreshes the planning snapshot on the client thread and builds
+	 * the catalog; both synthesize the sea legs. Null when the generation ended here (the refresh
+	 * timed out, or no target survived filtering); the terminal update has then been emitted.
+	 */
+	private Generation prepare(int gen, int start, Set<Integer> targets,
+		Set<TeleportMethod> userExclusions, AlternativeRoutesMode mode, int maxRoutes, int costMultiple,
+		boolean roundTrip, ResultListener listener)
+	{
 		final int limit = Math.max(1, Math.min(maxRoutes, MAX_ROUTES_CAP));
 		final Set<Integer> rawTargets = new HashSet<>(targets);
 		final Set<Integer> ends = new HashSet<>(targets);
@@ -334,7 +364,7 @@ public class AlternativeRoutesService
 			if (!refreshed)
 			{
 				emit(gen, listener, List.of(), List.of(), Map.of(), true);
-				return;
+				return null;
 			}
 			// Now the snapshot is current — the sea legs see THIS generation's toggles.
 			synthesizeSeaLegs.run();
@@ -349,7 +379,7 @@ public class AlternativeRoutesService
 			{
 				resumeState = null;
 				emit(gen, listener, List.of(), catalog, unavailable, true);
-				return;
+				return null;
 			}
 			routes = new ArrayList<>();
 			seenSignatures = new HashSet<>();
@@ -397,6 +427,28 @@ public class AlternativeRoutesService
 			}
 		}
 
+		final Generation g = new Generation(gen, start, ends, userExclusions, mode, limit, costMultiple, roundTrip,
+			listener, timer, catalog, unavailable, seedCandidates, routes, seenSignatures);
+		g.excluded = excluded;
+		g.chainTailCounts = chainTailCounts;
+		g.bestRemaining = bestRemaining;
+		g.seaLegs = seaLegs;
+		g.rawTargets = rawTargets;
+		g.resumed = resumed;
+		g.wallStart = wallStart;
+		return g;
+	}
+
+	/** Builds (or reuses) the generation's distance field and its unreachable verdict. */
+	private void buildField(Generation g)
+	{
+		final int start = g.start;
+		final Set<Integer> ends = g.ends;
+		final Set<TeleportMethod> userExclusions = g.userExclusions;
+		final int costMultiple = g.costMultiple;
+		final GenTimer timer = g.timer;
+		final List<Transport> seaLegs = g.seaLegs;
+		final Set<TeleportMethod> excluded = g.excluded;
 		// Per-generation preprocessing: one multi-source reverse flood from the target set builds a
 		// walking+transport distance field — the near-exact A* heuristic every search of this
 		// generation shares (chain, walk, seeds). Compact target sets only; a map-wide nearest-X
@@ -410,8 +462,6 @@ public class AlternativeRoutesService
 		// previous chain's exclusions, and a field flooded over that smaller availability is not
 		// a lower bound for the seed and tail searches, which run with the user exclusions alone
 		// (a reverse flood over fewer transports can only overestimate).
-		final Generation g = new Generation(gen, start, ends, userExclusions, mode, limit, costMultiple, roundTrip,
-			listener, timer, catalog, unavailable, seedCandidates, routes, seenSignatures);
 		planningConfig.rebuildAvailabilityWithExclusions(userExclusions);
 		boolean availabilityCurrent = excluded.equals(userExclusions);
 		long fieldStart = System.nanoTime();
@@ -452,6 +502,18 @@ public class AlternativeRoutesService
 			&& field.distance(start) == DistanceField.UNREACHED
 			&& SearchHeuristic.buildWithField(planningConfig, field) != null
 			&& SearchHeuristic.buildWithField(planningConfig, field, start) == null;
+		g.availabilityCurrent = availabilityCurrent;
+		g.targetProvablyUnreachable = targetProvablyUnreachable;
+	}
+
+	/** Starts the concurrent walk-only search (none for single-route pages or a sealed target). */
+	private void startWalkSearch(Generation g)
+	{
+		final boolean resumed = g.resumed;
+		final List<RouteOption> routes = g.routes;
+		final int costMultiple = g.costMultiple;
+		final int limit = g.limit;
+		final boolean targetProvablyUnreachable = g.targetProvablyUnreachable;
 		// Walk-only search, run concurrently on the seed pool (its own config copy — the chain
 		// mutates planningConfig per iteration): its cost is a rigorous expansion cap for every
 		// search that starts after it finishes (routes costlier than walking are never shown, so a
@@ -474,7 +536,37 @@ public class AlternativeRoutesService
 		final Future<WalkResult> walkFuture = limit > 1 && !targetProvablyUnreachable
 			? seedExecutor.submit(() -> runWalkSearch(g, walkCeiling))
 			: null;
+		g.walkCeiling = walkCeiling;
+		g.walkFuture = walkFuture;
+	}
 
+	/**
+	 * The exclusion chain: each accepted route excludes its primary method for the next search,
+	 * so the page walks down the distinct ways in. False when a newer generation superseded this
+	 * one mid-chain (nothing more is emitted for it).
+	 */
+	private boolean runChain(Generation g)
+	{
+		final int gen = g.gen;
+		final int start = g.start;
+		final Set<Integer> ends = g.ends;
+		final int limit = g.limit;
+		final int costMultiple = g.costMultiple;
+		final boolean roundTrip = g.roundTrip;
+		final ResultListener listener = g.listener;
+		final List<TeleportMethod> catalog = g.catalog;
+		final Map<TeleportMethod, MethodAvailability> unavailable = g.unavailable;
+		final List<RouteOption> routes = g.routes;
+		final Set<String> seenSignatures = g.seenSignatures;
+		final GenTimer timer = g.timer;
+		final Set<TeleportMethod> excluded = g.excluded;
+		final Map<String, Integer> chainTailCounts = g.chainTailCounts;
+		final DistanceField field = g.field;
+		final boolean targetProvablyUnreachable = g.targetProvablyUnreachable;
+		final Future<WalkResult> walkFuture = g.walkFuture;
+		final AtomicInteger walkCeiling = g.walkCeiling;
+		boolean availabilityCurrent = g.availabilityCurrent;
+		int bestRemaining = g.bestRemaining;
 		// Whether the cost cap (best * costMultiple, below the walk ceiling) held a route back — a
 		// search couldn't reach within the band. If so, "show more" (a higher multiple) can surface
 		// it. Set only for cost-cap truncations, not method exhaustion or the walk ceiling.
@@ -488,7 +580,7 @@ public class AlternativeRoutesService
 		{
 			if (gen != generation.get())
 			{
-				return;
+				return false;
 			}
 			if (targetProvablyUnreachable && routes.size() >= UNREACHABLE_ESCAPE_ROUTES)
 			{
@@ -661,7 +753,23 @@ public class AlternativeRoutesService
 			}
 			excluded.add(primary);
 		}
+		g.bestRemaining = bestRemaining;
+		g.availabilityCurrent = availabilityCurrent;
+		g.cappedByCost = cappedByCost;
+		g.chainExhausted = chainExhausted;
+		return true;
+	}
 
+	/** The seed and tail-diversity passes, and whether a wider request could show more. */
+	private void fillPage(Generation g)
+	{
+		final int gen = g.gen;
+		final List<RouteOption> routes = g.routes;
+		final int costMultiple = g.costMultiple;
+		final boolean targetProvablyUnreachable = g.targetProvablyUnreachable;
+		final Future<WalkResult> walkFuture = g.walkFuture;
+		final boolean cappedByCost = g.cappedByCost;
+		final boolean chainExhausted = g.chainExhausted;
 		// Stop at the pure-walk option: once walking there is on the list, anything more expensive than
 		// just walking isn't worth showing. Seeding only ever surfaces teleports that lost to walking on
 		// cost (i.e. routes MORE expensive than walk-only), so skip it entirely when a walk-only route was
@@ -671,14 +779,12 @@ public class AlternativeRoutesService
 		boolean hasWalkOnly = routes.stream().anyMatch(RouteOption::isWalkOnly);
 		if (!hasWalkOnly && !routes.isEmpty() && !targetProvablyUnreachable)
 		{
-			g.bestRemaining = bestRemaining;
 			seedTeleportRoutes(g, RouteAcceptance.cappedByBestCost(capOf(walkFuture), routes, 2 * costMultiple));
 		}
 		// Tail-diversity pass: when the page is dominated by one shared method TAIL, surface a
 		// variant with a different middle. Runs after seeds so eviction sees the full page.
 		if (gen == generation.get() && !targetProvablyUnreachable)
 		{
-			g.bestRemaining = bestRemaining;
 			diversifySharedTails(g, RouteAcceptance.cappedByBestCost(capOf(walkFuture), routes, 2 * costMultiple));
 		}
 
@@ -690,7 +796,16 @@ public class AlternativeRoutesService
 		boolean costHeldBack = cappedByCost
 			&& RouteAcceptance.cappedByBestCost(moreWalkCap, routes, costMultiple) < moreWalkCap;
 		lastGenerationMoreLikely = !chainExhausted || costHeldBack;
+	}
 
+	/** The walk-only and keep-sailing baselines, the final ordering, and the cut at walking. */
+	private void appendBaselines(Generation g)
+	{
+		final List<RouteOption> routes = g.routes;
+		final int limit = g.limit;
+		final Set<String> seenSignatures = g.seenSignatures;
+		final int bestRemaining = g.bestRemaining;
+		final Future<WalkResult> walkFuture = g.walkFuture;
 		// The walk-only route from the concurrent search is the last resort: append it when the
 		// chain didn't derive it (signature dedup skips it when it did), under the same closeness
 		// guard as every other route. Blocking here is fine — the generation is finishing anyway.
@@ -762,7 +877,30 @@ public class AlternativeRoutesService
 				break;
 			}
 		}
+	}
 
+	/** Round trips, the timing summary, the resume state, the unreachable cause, the terminal update. */
+	private void finish(Generation g)
+	{
+		final int gen = g.gen;
+		final int start = g.start;
+		final Set<Integer> ends = g.ends;
+		final Set<TeleportMethod> userExclusions = g.userExclusions;
+		final AlternativeRoutesMode mode = g.mode;
+		final int limit = g.limit;
+		final int costMultiple = g.costMultiple;
+		final boolean roundTrip = g.roundTrip;
+		final ResultListener listener = g.listener;
+		final List<TeleportMethod> catalog = g.catalog;
+		final Map<TeleportMethod, MethodAvailability> unavailable = g.unavailable;
+		final List<Transport> seedCandidates = g.seedCandidates;
+		final List<RouteOption> routes = g.routes;
+		final GenTimer timer = g.timer;
+		final long wallStart = g.wallStart;
+		final Set<Integer> rawTargets = g.rawTargets;
+		final Set<TeleportMethod> excluded = g.excluded;
+		final Map<String, Integer> chainTailCounts = g.chainTailCounts;
+		final int bestRemaining = g.bestRemaining;
 		// Round-trip mode: give every one-way route its return leg and re-rank by combined cost.
 		if (roundTrip && !routes.isEmpty() && gen == generation.get())
 		{
@@ -994,6 +1132,28 @@ public class AlternativeRoutesService
 		final List<Transport> seedCandidates;
 		final List<RouteOption> routes;
 		final Set<String> seenSignatures;
+		// State written by one phase and read by the next (generation thread only).
+		/** The chain's exclusion set: the user's, grown by one primary per accepted route. */
+		Set<TeleportMethod> excluded;
+		/** Chain acceptances per shared tail, for the saturation filter (resumable). */
+		Map<String, Integer> chainTailCounts;
+		/** The synthesized sea legs of this generation (water pins, the helm). */
+		List<Transport> seaLegs;
+		/** The caller's targets before wilderness filtering (the resume key). */
+		Set<Integer> rawTargets;
+		/** Whether this generation continues a previous one ("+ more routes"). */
+		boolean resumed;
+		long wallStart;
+		/** Whether the availability already matches {@link #excluded} for the chain's first search. */
+		boolean availabilityCurrent;
+		/** A complete field that never reached the start: every search would find nothing. */
+		boolean targetProvablyUnreachable;
+		AtomicInteger walkCeiling;
+		Future<WalkResult> walkFuture;
+		/** The cost cap held a route back (a wider band can reveal it). */
+		boolean cappedByCost;
+		/** The chain stopped on its own terms rather than on the route-count budget. */
+		boolean chainExhausted;
 		/** The generation's distance field, once built (null for an empty target set). */
 		DistanceField field;
 		/** Remaining distance of the first route's endpoint; -1 until the chain knows it. */

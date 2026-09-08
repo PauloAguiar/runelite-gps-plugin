@@ -446,3 +446,22 @@ guard).
 
 **Next:** split the 717-line `computeRoutes` into the prepare, chain, fill, baseline and finish
 phases over the same context.
+
+### Step L3: the generation as phases (2026-09-07)
+
+**Guard:** the existing suite again (674 tests), a pure restructuring with no behavior change.
+
+**Change:** `computeRoutes` is now eleven lines: `prepare` (resume or refresh, sea legs; null
+when the generation ended there), `buildField` (the field, its reuse, the unreachable verdict),
+`startWalkSearch`, `runChain` (false when superseded mid-chain), `fillPage` (seeds and tail
+diversity, the "more routes likely" flag), `appendBaselines` (walk and keep-sailing baselines,
+ordering, the cut at walking) and `finish` (round trips, timing summary, resume state, the
+unreachable cause, the terminal update). Each phase is the former text sliced at its comment
+boundary with an unpack prologue, and the state that crosses phases (the chain's exclusion
+set, the tail counts, the closeness baseline, the field and its verdict, the walk search and
+its ceiling, the two chain outcome flags) lives on the context. The largest method in the
+service is now the seed pass at 223 lines; the chain is 216.
+
+**Not done:** the passes still unpack the context into locals rather than reading it directly
+(a readability follow-up with no behavior at stake), and the seed pass itself could split into
+attempt selection, the parallel run and acceptance.
