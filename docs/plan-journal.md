@@ -465,3 +465,28 @@ service is now the seed pass at 223 lines; the chain is 216.
 **Not done:** the passes still unpack the context into locals rather than reading it directly
 (a readability follow-up with no behavior at stake), and the seed pass itself could split into
 attempt selection, the parallel run and acceptance.
+
+### Step L4, attempted and reverted: the eighteen hidden type toggles (2026-09-07)
+
+**Intent:** remove the eighteen transport-type toggles that exist as hidden config items with no
+panel control (the owner asked what the startup line "clearing stranded hidden toggle ..." is
+for), and with them the clearing routine, keeping the plugin-message override under the same
+keys.
+
+**Red first:** a test asserting no unsurfaced type toggle is a config item, that an override
+still gates a type, that the keys stay declared, and that the clearing routine is gone.
+
+**What stopped it, with numbers:** RuneLite's config proxy (client 1.12.35,
+`ConfigInvocationHandler.invoke`) returns null for any interface method without `@ConfigItem`
+before it considers default methods, so the toggles cannot become plain interface defaults (a
+primitive getter would throw). Deleting the methods instead compiles, but the suite encodes
+"type disabled unless this test enables it" through Mockito's default `false` for unstubbed
+getters: 13 tests in 5 classes changed meaning (routes that used to avoid gliders, spells and
+levers now take them), behind 150 stub lines in 29 files. Making those tests say what they mean
+(explicit overrides per class) is a suite-wide rewrite for the prize of eighteen dead items and
+one log line.
+
+**Decision:** reverted in full. The startup clearing routine stays as the correct guard (it fires
+once per stale key and is silent afterwards). The right moment for this cleanup is the config
+model step proper: a surfaced flag on `TransportType`, and a shared test fixture that states
+each test's enabled types explicitly, so the mock default stops carrying meaning.
