@@ -131,3 +131,43 @@ same key, so this removes the largest fixed cost of those regenerations.
 
 **Not changed:** the round-trip return field is still built per generation; the seed cost
 ceiling is still a snapshot (next).
+
+### Step N5: a tightening seed cost ceiling, dropped on data (2026-09-07)
+
+**Probe first:** `SeedSearchProfileProbeTest` (gated, `-Dgps.seedProfile=true`) prints every
+search record of five typical generations. In the all-everything mode the six seed searches of
+a generation settle 290 to 476 nodes together, 0 to 1 ms each, already guided by the field and
+already capped; a ceiling that tightens as cheaper routes are accepted would save nothing
+measurable, so the step is dropped and the walk search keeps its dynamic ceiling alone.
+
+**Recorded for the Later tier (the same probe):** an unreachable exact target (the Broken Raft
+deck) still costs two blind floods of 1.4M nodes, ~500 ms each, to produce the escape menu's
+closest-approach routes: the field is complete and never reaches the start, so no heuristic
+applies and each closest-approach search must exhaust the start's component. And in the owned
+mode with nothing in the inventory, Lumbridge to Ardougne runs a 1.4 s generation whose later
+chain iterations settle 430k to 460k nodes each (routes at cost 640 to 767 against a best of
+261): the field's guidance is exact for the base availability and erodes as the chain excludes
+the cheap transports. Neither has a cheap fix; both are noted with numbers.
+
+### Step N6: the planning refresh stops re-reading the config per row (2026-09-07)
+
+**Red first:** `PlanningRefreshCostTest` counts the config and client reads one planning
+refresh makes (Mockito invocation counts, deterministic) and asserts budgets of 120 and 1,200.
+Baseline: 7,588 config reads and 3,637 client reads per refresh, 143 to 224 ms. The sampling
+probe `RefreshProfileProbeTest` (gated, `-Dgps.refreshCost=true`, a stack-trace histogram over
+forty refreshes) attributed 63% of the refresh to `TransportTypeConfig.isEnabledInConfig`,
+which asked the live config interface for the toggle on every one of the ~14,000 rows (a
+ConfigManager lookup each in the client), 25% to a direct fairy ring varbit read in the
+classification, and 7% to the detail strings resolving item definitions per requirement.
+
+**Change:** the type config snapshots the as-configured toggles once per refresh and answers
+`isEnabledInConfig` from the snapshot; the fairy ring varbit goes through the per-pass memo
+(`varbitValue`); item names are cached across refreshes (they never change, an empty string
+marks an unresolvable id).
+
+**Measured (test output):** config reads 7,588 to 70, client reads 3,637 to 221, planning
+refresh 143 to 224 ms down to 19 to 46 ms (the transport loop alone 12 to 17 ms). This is
+client-thread time, paid once per generation, so it is the largest main-loop win of the plan so
+far. The remaining profile is the row loop itself (the once-per-id varbit and quest reads, the
+availability builder, the primitive map puts); the harvest/compute split would move the loop
+off the client thread entirely and is still on the list, at a much smaller prize now.

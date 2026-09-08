@@ -101,6 +101,12 @@ public class PathfinderConfig
 	private final int[] boostedSkillLevelsAndMore = new int[Skill.values().length + 3];
 	private final Map<Quest, QuestState> questStates = new HashMap<>();
 	private final Map<Integer, Integer> varbitValues = new HashMap<>();
+	/**
+	 * Item names for the catalog's detail strings, kept across refreshes (names never change;
+	 * an empty string marks an id that could not be resolved). Plan step N5: the detail strings
+	 * asked the client for a definition per requirement per refresh.
+	 */
+	private final Map<Integer, String> itemNames = new HashMap<>();
 	private final Map<Integer, Integer> varPlayerValues = new HashMap<>();
 	// Not final: parallel-seed copies share the primary planning copy's (already refreshed) instance.
 	@Getter
@@ -1059,7 +1065,7 @@ public class PathfinderConfig
 
 		// Fairy ring staff/diary requirements are enforced later in hasRequiredItems().
 		transportTypeConfig.disableUnless(TransportType.FAIRY_RING,
-			client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST) > 39);
+			varbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST) > 39);
 		transportTypeConfig.disableUnless(TransportType.GNOME_GLIDER,
 			QuestState.FINISHED.equals(getQuestState(Quest.THE_GRAND_TREE)));
 		transportTypeConfig.disableUnless(TransportType.MAGIC_MUSHTREE,
@@ -1232,7 +1238,7 @@ public class PathfinderConfig
 			missing.add(typeQuest.getName());
 		}
 		if (TransportType.FAIRY_RING.equals(transport.getType())
-			&& client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST) <= 39)
+			&& varbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST) <= 39)
 		{
 			missing.add("Fairy Tale II (partial)");
 		}
@@ -1291,15 +1297,35 @@ public class PathfinderConfig
 
 	private String itemName(int itemId)
 	{
+		String cached = itemNames.get(itemId);
+		if (cached != null)
+		{
+			return cached.isEmpty() ? null : cached;
+		}
+		String name = null;
 		try
 		{
 			ItemComposition definition = client.getItemDefinition(itemId);
-			return definition != null ? definition.getName() : null;
+			name = definition != null ? definition.getName() : null;
 		}
 		catch (RuntimeException e)
 		{
-			return null;
+			// Unresolvable here (not the client thread, or no definition): remembered as such.
 		}
+		itemNames.put(itemId, name == null ? "" : name);
+		return name;
+	}
+
+	/** One varbit read per id per pass (see {@link #varbitValues}), for reads outside the row loop. */
+	private int varbitValue(int varbitId)
+	{
+		Integer value = varbitValues.get(varbitId);
+		if (value == null)
+		{
+			value = client.getVarbitValue(varbitId);
+			varbitValues.put(varbitId, value);
+		}
+		return value;
 	}
 
 	/**
@@ -1349,7 +1375,7 @@ public class PathfinderConfig
 			return MethodAvailability.MISSING_QUEST;
 		}
 		if (TransportType.FAIRY_RING.equals(type)
-			&& client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST) <= 39)
+			&& varbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST) <= 39)
 		{
 			return MethodAvailability.MISSING_QUEST;
 		}

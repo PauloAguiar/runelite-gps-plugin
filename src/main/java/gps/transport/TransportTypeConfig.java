@@ -44,6 +44,13 @@ import gps.TeleportationItem;
 public class TransportTypeConfig
 {
 	private final Map<TransportType, Boolean> enabledStates = new EnumMap<>(TransportType.class);
+	/**
+	 * The toggles as configured, before {@link #disableUnless}/{@link #setEnabled} adjust the
+	 * effective states. Snapshotted once per {@link #refresh()} (plan step N5): the catalog
+	 * classification asked the live config for every one of ~14,000 rows, and each read is a
+	 * ConfigManager lookup in the client.
+	 */
+	private final Map<TransportType, Boolean> configEnabledStates = new EnumMap<>(TransportType.class);
 	private final Map<TransportType, Integer> costThresholds = new EnumMap<>(TransportType.class);
 	private final ShortestPathConfig config;
 	@Getter
@@ -66,7 +73,9 @@ public class TransportTypeConfig
 
 		for (TransportType type : TransportType.values())
 		{
-			enabledStates.put(type, getEnabledState(type));
+			boolean enabled = getEnabledState(type);
+			enabledStates.put(type, enabled);
+			configEnabledStates.put(type, enabled);
 			int cost = getCostThreshold(type);
 			costThresholds.put(type, cost);
 		}
@@ -145,6 +154,8 @@ public class TransportTypeConfig
 		boolean enabled = setting != TeleportationItem.NONE;
 		enabledStates.put(TransportType.TELEPORTATION_ITEM, enabled);
 		enabledStates.put(TransportType.TELEPORTATION_BOX, enabled);
+		configEnabledStates.put(TransportType.TELEPORTATION_ITEM, enabled);
+		configEnabledStates.put(TransportType.TELEPORTATION_BOX, enabled);
 	}
 
 	/**
@@ -169,9 +180,10 @@ public class TransportTypeConfig
 	 * {@link #disableUnless} overlay. The catalog's "switched off in Travel options" lock reason
 	 * must not fire for a type that is merely quest-locked (that classifies MISSING_QUEST).
 	 */
+	/** The toggle as configured at the last {@link #refresh()}, ignoring later runtime adjustments. */
 	public boolean isEnabledInConfig(TransportType type)
 	{
-		return getEnabledState(type);
+		return configEnabledStates.getOrDefault(type, true);
 	}
 
 	public void disableUnless(TransportType type, boolean condition)
