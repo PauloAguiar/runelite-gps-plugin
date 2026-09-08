@@ -7,9 +7,9 @@ name: CSV Lint
 # csv-lint-comment.yml workflow_run workflow.
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
+    branches: [main]
   workflow_dispatch:
 
 jobs:

@@ -4,7 +4,7 @@ name: Lint
 # Non-blocking for now since the project is not conformant.
 on:
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:

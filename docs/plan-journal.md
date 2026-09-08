@@ -337,3 +337,26 @@ generations plus one all-mode generation complete in 2.9 s together.
 **Not done:** the menu entries still read "Set GPS Target" and "Clear Path" (a rename changes
 what players have learned to click; left for a deliberate decision), and "Travel options" still
 parents "Travel methods".
+
+### Step N13: the TSV lint gate is green and actually runs (2026-09-07)
+
+**Red first:** `scripts/check_tsv.py` against `src/main/resources`: 23 of 40 files failed. The
+checker knew one file family (a '#'-prefixed transport header, every row with exactly the
+header's column count) and none of the others: the `Meta` and `Note` columns, the plain
+headers of `destinations*.tsv`, `doors.tsv` and the generated sailing files, the free comment
+blocks before those headers, the two headerless box lists, and the fact that every loader
+splits without a limit so a row may omit its trailing empty cells (6,482 such rows in
+`transports.tsv` alone were "missing tabs"). And none of it mattered: the CSV lint, test and
+checkstyle workflows all trigger on a branch named `master` while the repository's default
+branch is `main`, so no gate has run on a push here.
+
+**Change:** the checker finds the header per family (comment lines without tabs are skipped; a
+'#'-prefixed or plain tab-separated line is the header; a one-column "# Destination" counts;
+`destination-exclusions.tsv` and `destination-remaps.tsv` are declared headerless with fixed
+column counts), knows every column the loaders read (with integer and plane validators for the
+coordinate tables), accepts omitted trailing cells but never extra ones, and skips '#' rows as
+the loaders do. The three workflows now trigger on `main`.
+
+**Measured:** 40 of 40 files pass; the per-cell validators (coordinates, skills, items, var
+requirements, durations, wilderness levels, consumable flags) run on every transport row for
+the first time in weeks and found nothing to report.
