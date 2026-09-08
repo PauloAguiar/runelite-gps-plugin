@@ -2112,20 +2112,11 @@ public class ShortestPathPlugin extends Plugin
 
 	/** The three name varbits index the game's own name-part tables (prefix, descriptor,
 	 * noun) — the same decode Where's My Boat ships. Any surprise falls back to a slot label. */
-	/**
-	 * The hull type varbit in acquisition-tier order: the Pandemonium quest raft is 0, the
-	 * level-15 skiff 1, the level-50 sloop 2 (verified against a capture with all three owned).
-	 * Unknown future tiers return "" and the panel simply shows no type.
-	 */
+	/** The hull tier's name for the boat banner (see {@link BoatHull}); "" for an unknown tier. */
 	private static String boatTypeName(int type)
 	{
-		switch (type)
-		{
-			case 0: return "Raft";
-			case 1: return "Skiff";
-			case 2: return "Sloop";
-			default: return "";
-		}
+		BoatHull hull = BoatHull.fromVarbit(type);
+		return hull == null ? "" : hull.displayName();
 	}
 
 	private String decodeBoatName(int slot, int[] varbits)

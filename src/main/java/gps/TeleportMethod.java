@@ -133,39 +133,7 @@ public final class TeleportMethod
 	/** The vehicle name for network methods whose data label is a bare destination; null otherwise. */
 	private static String vehiclePhrase(TransportType type)
 	{
-		switch (type)
-		{
-			case BOAT:
-				return "Boat";
-			case CANOE:
-				return "Canoe";
-			case CHARTER_SHIP:
-				return "Charter ship";
-			case SHIP:
-				return "Ship";
-			case GNOME_GLIDER:
-				return "Glider";
-			case HOT_AIR_BALLOON:
-				return "Balloon";
-			case MAGIC_CARPET:
-				return "Magic carpet";
-			case MAGIC_MUSHTREE:
-				return "Mushtree";
-			case MINECART:
-				return "Minecart";
-			case MOUNTAIN_GUIDE:
-				return "Mountain guide";
-			case QUETZAL:
-				return "Quetzal";
-			case SPIRIT_TREE:
-				return "Spirit tree";
-			case TELEPORTATION_BOX:
-				return "Jewellery box";
-			case WILDERNESS_OBELISK:
-				return "Obelisk";
-			default:
-				return null;
-		}
+		return gps.transport.TransportTypePresentation.vehicleOf(type);
 	}
 
 	/**
@@ -185,57 +153,7 @@ public final class TeleportMethod
 
 	public static String categoryOf(TransportType type)
 	{
-		if (type == null)
-		{
-			return "Other";
-		}
-		switch (type)
-		{
-			case TELEPORTATION_SPELL:
-				return "Spells";
-			case TELEPORTATION_ITEM:
-				return "Items";
-			case TELEPORTATION_BOX:
-				return "Jewellery box";
-			case TELEPORTATION_LEVER:
-				return "Levers";
-			case TELEPORTATION_MINIGAME:
-				return "Minigame teleports";
-			case TELEPORTATION_PORTAL:
-			case TELEPORTATION_PORTAL_POH:
-				return "Portals";
-			case FAIRY_RING:
-				return "Fairy rings";
-			case SPIRIT_TREE:
-				return "Spirit trees";
-			case GNOME_GLIDER:
-				return "Gnome gliders";
-			case HOT_AIR_BALLOON:
-				return "Hot air balloons";
-			case MAGIC_CARPET:
-				return "Magic carpets";
-			case MAGIC_MUSHTREE:
-				return "Mushtrees";
-			case MINECART:
-				return "Minecarts";
-			case MOUNTAIN_GUIDE:
-				return "Mountain guides";
-			case QUETZAL:
-			case QUETZAL_WHISTLE:
-				return "Quetzals";
-			case WILDERNESS_OBELISK:
-				return "Obelisks";
-			case BOAT:
-			case CHARTER_SHIP:
-			case SHIP:
-				return "Boats & ships";
-			case CANOE:
-				return "Canoes";
-			case SEASONAL_TRANSPORTS:
-				return "Seasonal";
-			default:
-				return "Other";
-		}
+		return gps.transport.TransportTypePresentation.categoryOf(type);
 	}
 
 	@Override

@@ -53,6 +53,21 @@ final class RouteIcons
 	static final ImageIcon BOAT_RAFT = new ImageIcon(raft(GREY));
 	static final ImageIcon BOAT_SKIFF = new ImageIcon(skiff(GREY));
 	static final ImageIcon BOAT_SLOOP = new ImageIcon(sloop(GREY));
+
+	/** The hull glyph for a tier. */
+	static ImageIcon hullIcon(BoatHull hull)
+	{
+		switch (hull)
+		{
+			case RAFT:
+				return BOAT_RAFT;
+			case SKIFF:
+				return BOAT_SKIFF;
+			case SLOOP:
+			default:
+				return BOAT_SLOOP;
+		}
+	}
 	// Re-include an excluded method (plus).
 	// Recompute routes (circular refresh arrow).
 	// Clear all exclusions (trash can).

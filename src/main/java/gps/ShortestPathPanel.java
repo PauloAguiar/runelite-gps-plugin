@@ -2225,19 +2225,10 @@ public class ShortestPathPanel extends PluginPanel
 				String type = row.length > 2 ? row[2] : "";
 				JLabel name = new JLabel(row[0]);
 				name.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-				switch (type)
+				BoatHull hull = BoatHull.fromName(type);
+				if (hull != null)
 				{
-					case "Raft":
-						name.setIcon(RouteIcons.BOAT_RAFT);
-						break;
-					case "Skiff":
-						name.setIcon(RouteIcons.BOAT_SKIFF);
-						break;
-					case "Sloop":
-						name.setIcon(RouteIcons.BOAT_SLOOP);
-						break;
-					default:
-						break;
+					name.setIcon(RouteIcons.hullIcon(hull));
 				}
 				name.setIconTextGap(6);
 				name.setToolTipText(row[0] + (type.isEmpty() ? "" : " (" + type + ")")

@@ -45,6 +45,7 @@ import gps.leagues.LeagueRegionChecker;
 import gps.transport.Transport;
 import gps.transport.TransportLoader;
 import gps.transport.TransportType;
+import gps.transport.TransportTypePresentation;
 import gps.transport.TransportTypeConfig;
 import gps.transport.parser.VarRequirement;
 import gps.transport.requirement.ItemRequirement;
@@ -1266,17 +1267,7 @@ public class PathfinderConfig
 
 	private static Quest typeGateQuest(TransportType type)
 	{
-		switch (type)
-		{
-			case GNOME_GLIDER:
-				return Quest.THE_GRAND_TREE;
-			case MAGIC_MUSHTREE:
-				return Quest.BONE_VOYAGE;
-			case SPIRIT_TREE:
-				return Quest.TREE_GNOME_VILLAGE;
-			default:
-				return null;
-		}
+		return TransportTypePresentation.gateQuestOf(type);
 	}
 
 	/**
@@ -1369,20 +1360,10 @@ public class PathfinderConfig
 			return MethodAvailability.LOCKED;
 		}
 
-		// Type-level unlock gates: these networks are gated by a quest/quest-progress at the transport-type
-		// level (via disableUnless above), not by per-transport requirements, so classify them explicitly.
-		if (TransportType.GNOME_GLIDER.equals(type)
-			&& !QuestState.FINISHED.equals(getQuestState(Quest.THE_GRAND_TREE)))
-		{
-			return MethodAvailability.MISSING_QUEST;
-		}
-		if (TransportType.MAGIC_MUSHTREE.equals(type)
-			&& !QuestState.FINISHED.equals(getQuestState(Quest.BONE_VOYAGE)))
-		{
-			return MethodAvailability.MISSING_QUEST;
-		}
-		if (TransportType.SPIRIT_TREE.equals(type)
-			&& !QuestState.FINISHED.equals(getQuestState(Quest.TREE_GNOME_VILLAGE)))
+		// Type-level unlock gates: these networks are gated by a quest at the transport-type level
+		// (via disableUnless above), not by per-transport requirements, so classify them explicitly.
+		Quest typeGate = typeGateQuest(type);
+		if (typeGate != null && !QuestState.FINISHED.equals(getQuestState(typeGate)))
 		{
 			return MethodAvailability.MISSING_QUEST;
 		}
@@ -1852,32 +1833,7 @@ public class PathfinderConfig
 	/** The Travel-options checkbox that owns this type, for lock reasons. */
 	private static String travelOptionName(TransportType type)
 	{
-		switch (type)
-		{
-			case AGILITY_SHORTCUT: return "Agility shortcuts";
-			case GRAPPLE_SHORTCUT: return "Grapple shortcuts";
-			case BOAT: return "Boats";
-			case CANOE: return "Canoes";
-			case CHARTER_SHIP: return "Charter ships";
-			case SHIP: return "Ships";
-			case FAIRY_RING: return "Fairy rings";
-			case GNOME_GLIDER: return "Gnome gliders";
-			case HOT_AIR_BALLOON: return "Hot air balloons";
-			case MAGIC_CARPET: return "Magic carpets";
-			case MAGIC_MUSHTREE: return "Magic mushtrees";
-			case MINECART: return "Minecarts";
-			case MOUNTAIN_GUIDE: return "Mountain guides";
-			case QUETZAL:
-			case QUETZAL_WHISTLE: return "Quetzals";
-			case SPIRIT_TREE: return "Spirit trees";
-			case TELEPORTATION_LEVER: return "Teleportation levers";
-			case TELEPORTATION_PORTAL: return "Teleportation portals";
-			case TELEPORTATION_SPELL: return "Teleportation spells";
-			case TELEPORTATION_MINIGAME: return "Teleportation minigames";
-			case WILDERNESS_OBELISK: return "Wilderness obelisks";
-			case SEASONAL_TRANSPORTS: return "Seasonal transports";
-			default: return "That travel option";
-		}
+		return TransportTypePresentation.travelOptionOf(type);
 	}
 
 	private boolean passesStructuralGates(Transport transport)

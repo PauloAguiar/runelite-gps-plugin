@@ -490,3 +490,27 @@ one log line.
 once per stale key and is silent afterwards). The right moment for this cleanup is the config
 model step proper: a surfaced flag on `TransportType`, and a shared test fixture that states
 each test's enabled types explicitly, so the mock default stops carrying meaning.
+
+### Step L5: the type switches became data (2026-09-07)
+
+**Red first:** `TransportTypePresentationTest` requires a presentation row for every
+`TransportType` constant and pins the values the switches produced (the catalog category, the
+vehicle word of a route label, the owning Travel-options name, the type-level gate quest) plus
+the hull tiers (raft 0, skiff 1, sloop 2, an unknown tier shows nothing). Written together with
+the table and green on the first run, which proved the row list complete.
+
+**Change:** `TransportTypePresentation` is one table, one row per type; `TeleportMethod`'s
+vehicle-phrase and category switches, `PathfinderConfig`'s gate-quest and travel-option switches
+and the three hand-written type-gate checks in the classification delegate to it. `BoatHull`
+replaces the hull-name switch in the plugin and the icon switch in the panel (the glyph mapping
+sits with the icons). Six switches became two data holders; a type added to the enum now fails
+the table test instead of falling through five defaults.
+
+**Deliberately not done:** `ItemVariations` stays an enum rather than a TSV. Its rows are
+`ItemID` constants from RuneLite's game values, which fail loudly at compile time when RuneLite
+renames them; a TSV of raw ids would lose that and gain nothing the code needs.
+
+**Later-tier status:** L1 to L3 (the acceptance rule, the generation context, the phases) and
+L5 are done; L4 (the hidden toggles) is recorded above as reverted with its reasons. What
+remains is the large structural item (the services out of the 4,800-line plugin class), the
+config model proper, the leagues decision (the owner's call), and the product features.
