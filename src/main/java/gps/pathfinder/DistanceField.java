@@ -154,8 +154,7 @@ public final class DistanceField
 
 	/**
 	 * Builds the field for the given targets over the config's current (base) availability, or
-	 * null when the targets span more than {@link SearchHeuristic#MAX_TARGET_SPAN} — a map-wide
-	 * "nearest X" set floods everything for searches that are already cheap.
+	 * null for an empty target set. A map-wide "nearest X" set gets a field too (plan step N1).
 	 * <p>
 	 * {@code costMultiple > 0} bounds the flood (see {@link #build(PathfinderConfig, Set, int)}):
 	 * pass the generation's cost multiple so the flood stops once nothing beyond it can matter to
@@ -167,23 +166,12 @@ public final class DistanceField
 		{
 			return null;
 		}
-		int minX = Integer.MAX_VALUE;
-		int maxX = Integer.MIN_VALUE;
-		int minY = Integer.MAX_VALUE;
-		int maxY = Integer.MIN_VALUE;
-		for (int target : targets)
-		{
-			final int x = WorldPointUtil.unpackWorldX(target);
-			final int y = WorldPointUtil.unpackWorldY(target);
-			minX = Math.min(minX, x);
-			maxX = Math.max(maxX, x);
-			minY = Math.min(minY, y);
-			maxY = Math.max(maxY, y);
-		}
-		if (Math.max(maxX - minX, maxY - minY) > SearchHeuristic.MAX_TARGET_SPAN)
-		{
-			return null;
-		}
+		// No span gate any more (plan step N1): a map-wide "nearest bank" set used to get NO field
+		// on the theory that such searches are cheap and h ~ 0 everywhere, so every search of
+		// the generation ran blind. They are cheap only when the nearest target is close; when it
+		// is far each blind search floods its whole cost ball (~1M nodes, ~400 ms measured). The
+		// multi-source flood costs the same as a single-target one, bounds itself the same way,
+		// and turns every search of the generation into a guided corridor.
 		return build(config, targets, costMultiple);
 	}
 

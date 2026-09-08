@@ -30,11 +30,6 @@ import gps.transport.Transport;
  */
 public final class SearchHeuristic
 {
-	/**
-	 * Widest target-set span the distance field is built for: a map-wide "nearest X" set would
-	 * flood everything for searches that are already cheap, and h ~ 0 everywhere regardless.
-	 */
-	static final int MAX_TARGET_SPAN = 256;
 	// The floor with no usable teleport at all (e.g. the walk-only search). Kept far below
 	// Integer.MAX_VALUE so orderCost = cost + h can never overflow.
 	static final int UNBOUNDED_FLOOR = 1 << 20;
