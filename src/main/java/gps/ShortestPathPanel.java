@@ -378,24 +378,24 @@ public class ShortestPathPanel extends PluginPanel
 		// A compact red button shows the routing context in a copy box below the header and opens
 		// GitHub's new-issue page (a bare link — nothing rides in the URL, no clipboard API).
 		// Occasional actions tuck into the burger.
-		// The support affordances (report, GitHub, Discord, snapshot) live in the burger: a new
-		// player's first sight of the panel is the search box and the routes, not a row of
-		// support buttons (plan step N12).
-		JPopupMenu actionsMenu = new JPopupMenu();
-		JMenuItem reportItem = new JMenuItem("Report an issue", RouteIcons.CLEAR);
-		reportItem.setForeground(ColorScheme.PROGRESS_ERROR_COLOR);
-		reportItem.setToolTipText("<html>Shows your routes and settings in a box to copy, and opens<br>"
+		// Report, GitHub and Discord stay in the header row by the owner's decision (the review
+		// had suggested tucking them into the burger; reverted 2026-09-07). Occasional actions
+		// (snapshot, reset) tuck into the burger.
+		JButton reportButton = new JButton("Report an issue");
+		reportButton.setFont(FontManager.getRunescapeSmallFont());
+		reportButton.setForeground(ColorScheme.PROGRESS_ERROR_COLOR);
+		reportButton.setMargin(new java.awt.Insets(2, 6, 2, 6));
+		reportButton.setFocusPainted(false);
+		reportButton.setToolTipText("<html>Shows your routes and settings in a box to copy, and opens<br>"
 			+ "GitHub: paste the context into the issue.<br>"
 			+ "First calculate the route that's misbehaving, so the report captures it.</html>");
-		reportItem.addActionListener(e -> plugin.reportIssue());
-		actionsMenu.add(reportItem);
-		JMenuItem githubItem = new JMenuItem("View the project on GitHub", RouteIcons.GITHUB);
-		githubItem.addActionListener(e -> LinkBrowser.browse(GITHUB_REPO_URL));
-		actionsMenu.add(githubItem);
-		JMenuItem discordItem = new JMenuItem("Join the GPS Discord", RouteIcons.DISCORD);
-		discordItem.addActionListener(e -> LinkBrowser.browse(DISCORD_URL));
-		actionsMenu.add(discordItem);
-		actionsMenu.addSeparator();
+		reportButton.addActionListener(e -> plugin.reportIssue());
+		actions.add(reportButton);
+		actions.add(control(new IconActionLabel(RouteIcons.GITHUB, RouteIcons.GITHUB,
+			"View the project on GitHub", () -> LinkBrowser.browse(GITHUB_REPO_URL))));
+		actions.add(control(new IconActionLabel(RouteIcons.DISCORD, RouteIcons.DISCORD,
+			"Join the GPS Discord", () -> LinkBrowser.browse(DISCORD_URL))));
+		JPopupMenu actionsMenu = new JPopupMenu();
 		JMenuItem debugItem = new JMenuItem("Save debug snapshot", RouteIcons.DEBUG);
 		debugItem.setToolTipText("Save a debug snapshot of the current routes to disk (for reproducing issues)");
 		debugItem.addActionListener(e -> plugin.captureDebugSnapshot());

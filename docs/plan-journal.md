@@ -323,8 +323,8 @@ items or unlocks you lack, switch to All to see it" or "No known route to this d
 spot may be sealed off, or the map may be missing a connection", instead of one sentence for
 both. The empty state lists the four ways to set a destination (search a place or amenity, a
 Nearest button, right-click on the world map, shift right-click a tile). The support
-affordances (report an issue, GitHub, Discord) moved from the header row into the burger next
-to the snapshot and reset items, so a first look at the panel is the search box and the routes.
+affordances (report an issue, GitHub, Discord) were moved into the burger and then put back in
+the header row the same day at the owner's request: they stay visible above the search box.
 The best route's card no longer promises "click to hide" (hiding the fallback shows the fallback
 again); it says "Showing on map (the best route)", other selected cards say "click to hide".
 The bank-mode tooltips name the button ("+ Bank") instead of a mode label that appears nowhere,
