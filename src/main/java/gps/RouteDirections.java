@@ -478,7 +478,7 @@ final class RouteDirections
 		{
 			if (TransportType.FAIRY_RING.equals(route.getBankTransports().get(i).getType()))
 			{
-				bankedRing = TeleportMethod.fromTransport(route.getBankTransports().get(i));
+				bankedRing = route.getBankTransports().get(i).method();
 			}
 		}
 		if (bankedRing != null && plugin.getClient()

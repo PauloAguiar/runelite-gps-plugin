@@ -1013,7 +1013,7 @@ public class AlternativeRoutesService
 		final Set<TeleportMethod> allSeedMethods = new HashSet<>();
 		for (Transport transport : seedCandidates)
 		{
-			allSeedMethods.add(TeleportMethod.fromTransport(transport));
+			allSeedMethods.add(transport.method());
 		}
 
 		// A floor of attempts even when the chain filled every slot: the best-ranked seeds are the
@@ -1232,7 +1232,7 @@ public class AlternativeRoutesService
 		final Map<Integer, Transport> byDestination = new LinkedHashMap<>();
 		for (Transport transport : ranked)
 		{
-			if (userExclusions.contains(TeleportMethod.fromTransport(transport)))
+			if (userExclusions.contains(transport.method()))
 			{
 				continue;
 			}
@@ -1475,7 +1475,7 @@ public class AlternativeRoutesService
 		{
 			// Exclude every other global teleport so the search is forced onto (at most) this one.
 			Set<TeleportMethod> seedExclusions = new HashSet<>(allSeedMethods);
-			seedExclusions.remove(TeleportMethod.fromTransport(seed));
+			seedExclusions.remove(seed.method());
 			seedExclusions.addAll(userExclusions);
 			// The port-promise seed forces its port by excluding only the OTHER sailing
 			// seeds; teleports stay usable but position-gated off the water start, so the
@@ -1944,7 +1944,7 @@ public class AlternativeRoutesService
 			Transport chosen = matchMethodTransport(config, from.getPackedPosition(), to.getPackedPosition(), bankVisited);
 			if (chosen != null)
 			{
-				TeleportMethod method = TeleportMethod.fromTransport(chosen);
+				TeleportMethod method = chosen.method();
 				methods.add(method);
 				methodEdges.add(i);
 				methodDurations.add(chosen.getDuration());
@@ -2213,7 +2213,7 @@ public class AlternativeRoutesService
 		for (Transport teleport : config.getUsableTeleports(false))
 		{
 			if (teleport.getType() != null && teleport.getType().sharesDestinationsWith() != null
-				&& !userExclusions.contains(TeleportMethod.fromTransport(teleport)))
+				&& !userExclusions.contains(teleport.method()))
 			{
 				baseline.add(teleport);
 			}

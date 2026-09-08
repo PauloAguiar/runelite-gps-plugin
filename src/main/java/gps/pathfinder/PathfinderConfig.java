@@ -128,13 +128,14 @@ public class PathfinderConfig
 	private TransportAvailability transportAvailabilityWithoutBank;
 	private TransportAvailability transportAvailabilityWithBank;
 	/**
-	 * Planning copies only: the transports that passed every gate in the last client-thread
-	 * {@link #refresh()}. Since alt-routes exclusions only ever REMOVE entries, per-exclusion
-	 * availability can be rebuilt from these off the client thread
-	 * ({@link #rebuildAvailabilityWithExclusions}) without re-reading any game state.
+	 * Planning copies only: the availability built by the last client-thread {@link #refresh()}
+	 * with no exclusions and no extras. Since alt-routes exclusions only ever REMOVE entries, a
+	 * per-search availability is a filtered view of these
+	 * ({@link #rebuildAvailabilityWithExclusions}) computed off the client thread without
+	 * re-reading any game state (plan step N3).
 	 */
-	private List<Transport> baseUsableWithoutBank;
-	private List<Transport> baseUsableWithBank;
+	private TransportAvailability baseAvailabilityWithoutBank;
+	private TransportAvailability baseAvailabilityWithBank;
 	/**
 	 * Planning copies: every method-type transport that structurally exists in the world (independent of
 	 * item possession, character unlocks, config toggles and the user's own exclusions), mapped to
@@ -508,8 +509,8 @@ public class PathfinderConfig
 		copy.bankSnapshot = bankSnapshot;
 		copy.planningSource = planningSource;
 		// Base availability lists (rebuild inputs) and the current availability as a starting point.
-		copy.baseUsableWithoutBank = baseUsableWithoutBank;
-		copy.baseUsableWithBank = baseUsableWithBank;
+		copy.baseAvailabilityWithoutBank = baseAvailabilityWithoutBank;
+		copy.baseAvailabilityWithBank = baseAvailabilityWithBank;
 		copy.transportAvailabilityWithoutBank = transportAvailabilityWithoutBank;
 		copy.transportAvailabilityWithBank = transportAvailabilityWithBank;
 		copy.transportTypeConfig.setTeleportationItemSetting(transportTypeConfig.getTeleportationItemSetting());
@@ -1063,8 +1064,6 @@ public class PathfinderConfig
 		// Planning copies capture the usable-transport base lists so per-exclusion rebuilds can run
 		// off the client thread. Valid because the alt-routes service always runs this client-thread
 		// refresh with an empty exclusion set (the catalog pass).
-		List<Transport> baseWithoutBank = planningCopy ? new ArrayList<>(allTransports.length / 4) : null;
-		List<Transport> baseWithBank = planningCopy ? new ArrayList<>(allTransports.length / 4) : null;
 		// Planning copies build the full teleport-method catalog (every structurally-possible method,
 		// independent of the current mode/possession/unlocks) alongside a per-method availability status,
 		// so the panel can show — and explain — the methods the player can't use right now in any mode.
@@ -1102,7 +1101,7 @@ public class PathfinderConfig
 			{
 				// Keep the BEST status among the transports sharing a method identity, and the
 				// missing-unlock detail of that best transport (its requirements are the mildest).
-				TeleportMethod method = TeleportMethod.fromTransport(transport);
+				TeleportMethod method = transport.method();
 				MethodAvailability status = classifyAvailability(transport);
 				MethodAvailability prior = catalog.get(method);
 				if (prior == null || status.ordinal() < prior.ordinal())
@@ -1130,18 +1129,10 @@ public class PathfinderConfig
 			if (usableWithoutBank)
 			{
 				withoutBank.add(transport);
-				if (baseWithoutBank != null)
-				{
-					baseWithoutBank.add(transport);
-				}
 			}
 			if (usableWithBank)
 			{
 				withBank.add(transport);
-				if (baseWithBank != null)
-				{
-					baseWithBank.add(transport);
-				}
 			}
 		}
 
@@ -1151,8 +1142,8 @@ public class PathfinderConfig
 		transportAvailabilityWithBank = withBank.build();
 		if (planningCopy)
 		{
-			baseUsableWithoutBank = baseWithoutBank;
-			baseUsableWithBank = baseWithBank;
+			baseAvailabilityWithoutBank = transportAvailabilityWithoutBank;
+			baseAvailabilityWithBank = transportAvailabilityWithBank;
 			methodAvailability = (catalog != null) ? Collections.unmodifiableMap(catalog) : Collections.emptyMap();
 			methodAvailabilityDetail = (catalogDetail != null)
 				? Collections.unmodifiableMap(catalogDetail) : Collections.emptyMap();
@@ -1439,12 +1430,6 @@ public class PathfinderConfig
 	}
 
 	/**
-	 * Rebuilds the transport availability from the base lists captured by the last client-thread
-	 * {@link #refresh()}, applying only the given exclusion filter. Pure computation over cached
-	 * data — safe to call from the alt-routes worker thread, eliminating a client-thread round-trip
-	 * per search. Planning copies only; no-op until a refresh has captured the base lists.
-	 */
-	/**
 	 * Per-generation synthetic transports (sailing sea legs to a water target). Applied during
 	 * {@link #rebuildAvailabilityWithExclusions} through the same {@link #useTransport} gates as
 	 * static rows, so the sailing master toggle governs them; carried onto parallel-search copies.
@@ -1456,47 +1441,45 @@ public class PathfinderConfig
 		extraTransports = extras == null ? List.of() : extras;
 	}
 
+	/**
+	 * Rebuilds the transport availability as a view of the base availability captured by the last
+	 * client-thread {@link #refresh()}, applying only the given exclusion filter and the extras.
+	 * Pure computation over cached data, safe to call from the alt-routes worker thread. Planning
+	 * copies only; no-op until a refresh has captured the base availability. With nothing to
+	 * remove or add the immutable base objects are shared as-is (plan step N3).
+	 */
 	public void rebuildAvailabilityWithExclusions(Set<TeleportMethod> excluded)
 	{
-		List<Transport> baseWithoutBank = baseUsableWithoutBank;
-		List<Transport> baseWithBank = baseUsableWithBank;
+		TransportAvailability baseWithoutBank = baseAvailabilityWithoutBank;
+		TransportAvailability baseWithBank = baseAvailabilityWithBank;
 		if (baseWithoutBank == null || baseWithBank == null)
 		{
 			return;
 		}
-		TransportAvailability.Builder withoutBank = new TransportAvailability.Builder(baseWithoutBank.size());
-		for (Transport transport : baseWithoutBank)
+		List<Transport> extras = List.of();
+		if (!extraTransports.isEmpty())
 		{
-			if (excluded.isEmpty() || !excluded.contains(TeleportMethod.fromTransport(transport)))
+			// The exclusion filter applies to extras exactly as to the base rows: seed searches
+			// exclude every OTHER seed to force diversity, and unfiltered extras made all six
+			// aboard port seeds find the same route (field capture 225226: six searches, six
+			// identical results).
+			extras = new ArrayList<>(extraTransports.size());
+			for (Transport transport : extraTransports)
 			{
-				withoutBank.add(transport);
+				if (useTransport(transport) && !excluded.contains(transport.method()))
+				{
+					extras.add(transport);
+				}
 			}
 		}
-		TransportAvailability.Builder withBank = new TransportAvailability.Builder(baseWithBank.size());
-		for (Transport transport : baseWithBank)
+		if (excluded.isEmpty() && extras.isEmpty())
 		{
-			if (excluded.isEmpty() || !excluded.contains(TeleportMethod.fromTransport(transport)))
-			{
-				withBank.add(transport);
-			}
+			transportAvailabilityWithoutBank = baseWithoutBank;
+			transportAvailabilityWithBank = baseWithBank;
+			return;
 		}
-		for (Transport transport : extraTransports)
-		{
-			// The exclusion filter applies to extras exactly as to the base lists: seed
-			// searches exclude every OTHER seed to force diversity, and unfiltered extras
-			// made all six aboard port seeds find the same route (field capture 225226 —
-			// six searches, six identical results).
-			if (useTransport(transport)
-				&& !excluded.contains(TeleportMethod.fromTransport(transport)))
-			{
-				withoutBank.add(transport);
-				withBank.add(transport);
-			}
-		}
-		withoutBank.remapPohTransports();
-		withBank.remapPohTransports();
-		transportAvailabilityWithoutBank = withoutBank.build();
-		transportAvailabilityWithBank = withBank.build();
+		transportAvailabilityWithoutBank = baseWithoutBank.filtered(excluded, extras);
+		transportAvailabilityWithBank = baseWithBank.filtered(excluded, extras);
 	}
 
 	public boolean avoidWilderness(int packedPosition, int packedNeighborPosition, boolean targetInWilderness)
@@ -1659,7 +1642,7 @@ public class PathfinderConfig
 	private boolean useTransport(Transport transport)
 	{
 		// Alternative-routes exclusion: the user switched this exact method off for the next search.
-		if (!excludedMethods.isEmpty() && excludedMethods.contains(TeleportMethod.fromTransport(transport)))
+		if (!excludedMethods.isEmpty() && excludedMethods.contains(transport.method()))
 		{
 			return false;
 		}

@@ -68,3 +68,33 @@ of the banks still land on a palace roof.
 
 **Not changed:** `IntDeque` / `IntMinHeap` still double by copy (a few bytes per node); the
 visited/tentative scratch is still allocated per search. Both are small next to the graph.
+
+### Step N3: the per-search availability rebuild stops re-grouping the world (2026-09-07)
+
+**Red first:** `RebuildAllocationTest` builds an "all teleports" planning copy, excludes eight
+catalog methods (four origin-less teleports, four origin-bound transports), and measures bytes
+allocated by one `rebuildAvailabilityWithExclusions` with and without exclusions. It also checks
+the semantics: excluded transports are gone from their origin, and the base availability is
+intact after a rebuild with nothing excluded. Baseline: 4,017,408 bytes per rebuild with
+exclusions and 3,040,336 with none, at roughly nineteen rebuilds per generation (every chain
+iteration, seed, tail and walk search). `TransportAvailabilityFilteredTest` pins the view
+semantics (touched origins get a new array, untouched ones share the base array, extras are
+appended, the method identity is cached and follows a remapped destination).
+
+**Change:** the refresh captures the two base `TransportAvailability` objects (no exclusions, no
+extras) instead of two base transport lists. A rebuild with nothing to remove or add shares those
+objects as-is. Otherwise it takes a copy-on-write `filtered` view: `PrimitiveIntHashMap` gained a
+clone constructor and an allocation-free `forEach`, only origins holding an excluded transport
+get a new array, a map is cloned only once an entry changes, and extras are appended per origin.
+`Transport.method()` caches the catalog identity (the old rebuild built a `TeleportMethod` per
+usable transport per search just to test set membership); `setDestination` is now explicit and
+resets the cache, since the POH remap is the only post-parse mutation of an identity input. All
+per-row `TeleportMethod.fromTransport` call sites use the cache.
+
+**Measured (test output):** with eight exclusions 4,017,408 to 535,472 bytes (the four map
+clones at 16K capacity); with none 3,040,336 to 0 bytes. Per generation that is roughly 10 MB
+instead of 76 MB of rebuild garbage.
+
+**Not changed:** the seed searches still run against a fixed cost ceiling snapshot rather than
+one that tightens as cheaper routes are accepted, and the distance field is still rebuilt for a
+generation with the same targets as the last. Both are the next step.

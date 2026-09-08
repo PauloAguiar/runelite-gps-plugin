@@ -6,10 +6,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Quest;
 import net.runelite.api.Skill;
+import gps.TeleportMethod;
 import gps.WorldPointUtil;
 import gps.leagues.LeagueRegion;
 import gps.transport.parser.FieldParser;
@@ -64,9 +64,33 @@ public class Transport
 	/**
 	 * The ending point of this transport
 	 */
-	@Setter
 	@Getter
 	private int destination = UNDEFINED_DESTINATION;
+
+	/**
+	 * Catalog identity of this row, computed once (plan step N3). Per-search availability rebuilds
+	 * test every usable transport for membership in the exclusion set, and building a fresh
+	 * {@link TeleportMethod} for each test was the bulk of a rebuild's allocation. Reset when the
+	 * destination is remapped, the only identity input that changes after parsing.
+	 */
+	private TeleportMethod method;
+
+	public void setDestination(int destination)
+	{
+		this.destination = destination;
+		this.method = null;
+	}
+
+	public TeleportMethod method()
+	{
+		TeleportMethod cached = method;
+		if (cached == null)
+		{
+			cached = TeleportMethod.fromTransport(this);
+			method = cached;
+		}
+		return cached;
+	}
 
 	/**
 	 * The quests required to use this transport

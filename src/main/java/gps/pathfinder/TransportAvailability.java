@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 
 import gps.PrimitiveIntHashMap;
+import gps.TeleportMethod;
 import gps.WorldPointUtil;
 import gps.transport.Transport;
 
@@ -56,6 +57,118 @@ public final class TransportAvailability
 	public Transport[] getTransportsAt(int origin)
 	{
 		return displayTransports.getOrDefault(origin, EMPTY_TRANSPORTS);
+	}
+
+	/**
+	 * A view of this availability with every transport whose {@link Transport#method() method}
+	 * is in {@code excluded} removed and {@code extras} appended to their origins (plan step N3).
+	 * Copy-on-write: an origin that holds no excluded transport keeps sharing this instance's
+	 * array, a map is cloned only once an entry changes, and with nothing to remove or add this
+	 * instance is returned. A per-search rebuild therefore costs a few array clones instead of
+	 * re-grouping every usable transport (which allocated ~4 MB per search).
+	 */
+	public TransportAvailability filtered(Set<TeleportMethod> excluded, List<Transport> extras)
+	{
+		Copy copy = new Copy();
+		if (!excluded.isEmpty())
+		{
+			transportsPacked.forEach((origin, transports) ->
+			{
+				Transport[] kept = without(transports, excluded);
+				if (kept != transports)
+				{
+					copy.packed().put(origin, kept);
+					if (displayTransports.get(origin) != null)
+					{
+						copy.display().put(origin, kept);
+					}
+				}
+			});
+		}
+		Transport[] teleports = without(usableTeleports, excluded);
+		for (Transport extra : extras)
+		{
+			int origin = extra.getOrigin();
+			if (origin == Transport.UNDEFINED_ORIGIN)
+			{
+				teleports = append(teleports, extra);
+				continue;
+			}
+			copy.packed().put(origin, append(copy.packed().getOrDefault(origin, EMPTY_TRANSPORTS), extra));
+			copy.display().put(origin, append(copy.display().getOrDefault(origin, EMPTY_TRANSPORTS), extra));
+		}
+		if (copy.packed == null && copy.display == null && teleports == usableTeleports)
+		{
+			return this;
+		}
+		return new TransportAvailability(
+			copy.packed == null ? transportsPacked : copy.packed,
+			copy.display == null ? displayTransports : copy.display,
+			teleports);
+	}
+
+	/** The maps a {@link #filtered} view has had to clone so far; none until an entry changes. */
+	private final class Copy
+	{
+		private PrimitiveIntHashMap<Transport[]> packed;
+		private PrimitiveIntHashMap<Transport[]> display;
+
+		PrimitiveIntHashMap<Transport[]> packed()
+		{
+			if (packed == null)
+			{
+				packed = new PrimitiveIntHashMap<>(transportsPacked);
+			}
+			return packed;
+		}
+
+		PrimitiveIntHashMap<Transport[]> display()
+		{
+			if (display == null)
+			{
+				display = new PrimitiveIntHashMap<>(displayTransports);
+			}
+			return display;
+		}
+	}
+
+	/** {@code transports} without the excluded methods, or the same array when nothing is excluded. */
+	private static Transport[] without(Transport[] transports, Set<TeleportMethod> excluded)
+	{
+		if (excluded.isEmpty())
+		{
+			return transports;
+		}
+		int kept = 0;
+		for (Transport transport : transports)
+		{
+			if (!excluded.contains(transport.method()))
+			{
+				kept++;
+			}
+		}
+		if (kept == transports.length)
+		{
+			return transports;
+		}
+		Transport[] result = new Transport[kept];
+		int index = 0;
+		for (Transport transport : transports)
+		{
+			if (!excluded.contains(transport.method()))
+			{
+				result[index++] = transport;
+			}
+		}
+		return result;
+	}
+
+	private static Transport[] append(Transport[] transports, Transport extra)
+	{
+		Transport[] result = new Transport[transports.length + 1];
+		System.arraycopy(transports, 0, result, 0, transports.length);
+		result[transports.length] = extra;
+		return result;
 	}
 
 	/*

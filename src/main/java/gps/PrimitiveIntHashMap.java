@@ -73,6 +73,44 @@ public class PrimitiveIntHashMap<V>
 	}
 
 	/**
+	 * A copy that shares no arrays with {@code source} (plan step N3: per-search availability
+	 * rebuilds are copy-on-write views of the base maps, so a copy must be two array clones and
+	 * nothing else).
+	 */
+	public PrimitiveIntHashMap(PrimitiveIntHashMap<V> source)
+	{
+		this.loadFactor = source.loadFactor;
+		this.size = source.size;
+		this.capacity = source.capacity;
+		this.maxSize = source.maxSize;
+		this.mask = source.mask;
+		this.keys = source.keys.clone();
+		this.values = source.values.clone();
+	}
+
+	/** Callback for {@link #forEach}: one primitive key and its value, no boxing. */
+	public interface IntObjConsumer<V>
+	{
+		void accept(int key, V value);
+	}
+
+	/**
+	 * Visits every entry without allocating (unlike {@link #keys()}). The map must not be
+	 * modified during the visit.
+	 */
+	@SuppressWarnings("unchecked")
+	public void forEach(IntObjConsumer<? super V> consumer)
+	{
+		for (int i = 0; i < values.length; ++i)
+		{
+			if (values[i] != null)
+			{
+				consumer.accept(keys[i], (V) values[i]);
+			}
+		}
+	}
+
+	/**
 	 * Hash function tuned for packed world point integer encodings. Mixes higher bits downward to
 	 * reduce clustering while remaining inexpensive.
 	 */
