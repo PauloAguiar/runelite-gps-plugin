@@ -671,6 +671,12 @@ public class PathfinderConfig
 	}
 
 	/** Whether any transport row (available or not) departs from this tile. */
+	/** Every loaded transport row, for the data lint tests. */
+	public Transport[] getAllTransports()
+	{
+		return allTransports;
+	}
+
 	public boolean isTransportOrigin(int packed)
 	{
 		return transportOriginTiles.contains(packed);

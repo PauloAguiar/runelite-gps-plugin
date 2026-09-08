@@ -374,3 +374,28 @@ by an unrelated fix), and never said which pins were the backlog. The list fails
 both directions: a pin not on it that is unreachable is a regression (or a world update, in
 which case the list is regenerated deliberately), and a listed pin that has become reachable
 must be removed, so the backlog can only shrink honestly.
+
+### Step N15: every transport endpoint must be standable (2026-09-07)
+
+**Red first:** `TransportEndpointLintTest` walks every loaded transport row (sea legs, sailable
+tiles and the instance template band excluded) and requires each origin to be unblocked or
+blocked with an unblocked cardinal neighbour (the forward rule for platform origins), and each
+destination to be unblocked or blocked with a step-off neighbour (the rule the distance field
+mirrors). First run: 218 of 26,961 endpoints fail. The bulk is 142 plain transport rows (Kourend
+staircases on plane 1, cave mouths, house portals such as Pollnivneach at 3339,3001 where every
+neighbour is blocked), 26 league-season shortcut landings, 11 agility shortcut ends, a few boat,
+canoe and ship tiles. Each is a row the search can never use.
+
+**Change:** the offenders live in `src/test/resources/expected-unstandable-endpoints.tsv` (one
+audit line each, 196 distinct), the same two-way contract as N14: a new one fails by name, a
+fixed one must be removed, `-Dgps.writeExpectedEndpoints=true` regenerates after a cache
+refresh. `PathfinderConfig.getAllTransports()` exposes the loaded rows for the lint.
+
+**Not done:** the rows themselves. Each entry needs a field check (is the tile really
+unstandable, or is the collision map wrong there); the list is the worklist.
+
+**Next tier status:** N1 to N15 close every item of the review's Next tier except two
+deliberate deferrals (the harvest/compute split, and ETA-priced search results), both recorded
+above with their numbers. The Later tier (route acceptance extraction, services out of the
+plugin class, one config source of truth, type switches to data, the leagues decision, product
+features) is untouched and is a choice to make, not a list to run.
