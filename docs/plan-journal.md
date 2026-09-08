@@ -306,3 +306,34 @@ and labels amenity rows with their category chip.
 ETA. An ETA per result needs a search per row on every keystroke (a field build per distinct
 target set, 30 to 250 ms each), and a cheaper proxy would be the misleading number the item
 warns about; deferred until results can be priced from one shared field.
+
+### Step N12: first-run guidance and honest states (2026-09-07)
+
+**Red first:** `UnreachableCauseTest` generates from Lumbridge in the owned-inventory mode to
+Varrock (reached), to the Mos Le'Harmless charter landing (charter ships only, which need coins
+the empty inventory lacks) and to the Broken Raft deck (sealed everywhere), then to the raft
+deck in the all mode, and asserts the generator reports NONE, MISSING_UNLOCKS, NO_KNOWN_ROUTE and
+NO_KNOWN_ROUTE. Red at compile time (no such verdict existed).
+
+**Change:** when every route of a page stops short and the mode is an owned one, the generator
+refreshes an all-everything planning copy on the client thread and floods its distance field
+from the targets; the target is "reachable with everything" when that field reaches the start or
+a teleport landing. The panel now says "Not reachable with what you have: a route exists with
+items or unlocks you lack, switch to All to see it" or "No known route to this destination: the
+spot may be sealed off, or the map may be missing a connection", instead of one sentence for
+both. The empty state lists the four ways to set a destination (search a place or amenity, a
+Nearest button, right-click on the world map, shift right-click a tile). The support
+affordances (report an issue, GitHub, Discord) moved from the header row into the burger next
+to the snapshot and reset items, so a first look at the panel is the search box and the routes.
+The best route's card no longer promises "click to hide" (hiding the fallback shows the fallback
+again); it says "Showing on map (the best route)", other selected cards say "click to hide".
+The bank-mode tooltips name the button ("+ Bank") instead of a mode label that appears nowhere,
+"more alternative routes" became "more routes", and two em dashes left user-visible text.
+
+**Measured:** the cause probe runs only for an unreached page in an owned mode: one planning
+refresh (13 to 23 ms on the client thread) and one full flood; the test's three owned-mode
+generations plus one all-mode generation complete in 2.9 s together.
+
+**Not done:** the menu entries still read "Set GPS Target" and "Clear Path" (a rename changes
+what players have learned to click; left for a deliberate decision), and "Travel options" still
+parents "Travel methods".

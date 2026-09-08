@@ -3041,6 +3041,13 @@ public class ShortestPathPlugin extends Plugin
 		return config != null ? config.getMap() : null;
 	}
 
+	/** Why every route of the current page stops short, for the panel's status (plan step N12). */
+	public AlternativeRoutesService.UnreachableCause getUnreachableCause()
+	{
+		AlternativeRoutesService service = altRoutesService;
+		return service != null ? service.lastUnreachableCause() : AlternativeRoutesService.UnreachableCause.NONE;
+	}
+
 	public RouteOption getDisplayedRoute()
 	{
 		RouteOption route = selectedRoute;

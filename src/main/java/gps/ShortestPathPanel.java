@@ -378,21 +378,24 @@ public class ShortestPathPanel extends PluginPanel
 		// A compact red button shows the routing context in a copy box below the header and opens
 		// GitHub's new-issue page (a bare link — nothing rides in the URL, no clipboard API).
 		// Occasional actions tuck into the burger.
-		JButton reportButton = new JButton("Report an issue");
-		reportButton.setFont(FontManager.getRunescapeSmallFont());
-		reportButton.setForeground(ColorScheme.PROGRESS_ERROR_COLOR);
-		reportButton.setMargin(new java.awt.Insets(2, 6, 2, 6));
-		reportButton.setFocusPainted(false);
-		reportButton.setToolTipText("<html>Shows your routes and settings in a box to copy, and opens<br>"
-			+ "GitHub — paste the context into the issue.<br>"
-			+ "First calculate the route that's misbehaving, so the report captures it.</html>");
-		reportButton.addActionListener(e -> plugin.reportIssue());
-		actions.add(reportButton);
-		actions.add(control(new IconActionLabel(RouteIcons.GITHUB, RouteIcons.GITHUB,
-			"View the project on GitHub", () -> LinkBrowser.browse(GITHUB_REPO_URL))));
-		actions.add(control(new IconActionLabel(RouteIcons.DISCORD, RouteIcons.DISCORD,
-			"Join the GPS Discord", () -> LinkBrowser.browse(DISCORD_URL))));
+		// The support affordances (report, GitHub, Discord, snapshot) live in the burger: a new
+		// player's first sight of the panel is the search box and the routes, not a row of
+		// support buttons (plan step N12).
 		JPopupMenu actionsMenu = new JPopupMenu();
+		JMenuItem reportItem = new JMenuItem("Report an issue", RouteIcons.CLEAR);
+		reportItem.setForeground(ColorScheme.PROGRESS_ERROR_COLOR);
+		reportItem.setToolTipText("<html>Shows your routes and settings in a box to copy, and opens<br>"
+			+ "GitHub: paste the context into the issue.<br>"
+			+ "First calculate the route that's misbehaving, so the report captures it.</html>");
+		reportItem.addActionListener(e -> plugin.reportIssue());
+		actionsMenu.add(reportItem);
+		JMenuItem githubItem = new JMenuItem("View the project on GitHub", RouteIcons.GITHUB);
+		githubItem.addActionListener(e -> LinkBrowser.browse(GITHUB_REPO_URL));
+		actionsMenu.add(githubItem);
+		JMenuItem discordItem = new JMenuItem("Join the GPS Discord", RouteIcons.DISCORD);
+		discordItem.addActionListener(e -> LinkBrowser.browse(DISCORD_URL));
+		actionsMenu.add(discordItem);
+		actionsMenu.addSeparator();
 		JMenuItem debugItem = new JMenuItem("Save debug snapshot", RouteIcons.DEBUG);
 		debugItem.setToolTipText("Save a debug snapshot of the current routes to disk (for reproducing issues)");
 		debugItem.addActionListener(e -> plugin.captureDebugSnapshot());
@@ -659,9 +662,14 @@ public class ShortestPathPanel extends PluginPanel
 		if (!cachedCalculating && !cachedRoutes.isEmpty()
 			&& cachedRoutes.stream().noneMatch(plugin::routeReachesTarget))
 		{
-			// Routes exist but every one stops short of the target — it can't actually be reached
-			// (e.g. a tile on an island with no connecting path or teleport). Say so, don't imply success.
-			status = "<b>Destination can't be reached.</b><br>Showing the route to the closest reachable point.";
+			// Routes exist but every one stops short of the target. Say WHY (plan step N12): the
+			// generator tells "reachable with everything, not with what you have" from "no known
+			// route" (a sealed tile, or a gap in the map data), and both from success.
+			status = plugin.getUnreachableCause() == AlternativeRoutesService.UnreachableCause.MISSING_UNLOCKS
+				? "<b>Not reachable with what you have.</b><br>A route exists with items or unlocks you lack: "
+					+ "switch to All to see it. Showing the closest reachable point."
+				: "<b>No known route to this destination.</b><br>The spot may be sealed off, or the map may be "
+					+ "missing a connection. Showing the closest reachable point.";
 			statusIcon = RouteIcons.BANNER_WARNING;
 			statusAccent = BANNER_WARN_ACCENT;
 		}
@@ -684,7 +692,8 @@ public class ShortestPathPanel extends PluginPanel
 		{
 			// GPS has no active target. (Quest Helper draws its own line for some steps and
 			// doesn't hand GPS a destination — set one on the map to find routes.)
-			status = "No destination set.";
+			status = "<b>No destination set.</b><br>Search a place or amenity above, pick a Nearest button, "
+				+ "right-click a spot on the world map, or shift right-click a tile in the game.";
 			statusIcon = RouteIcons.BANNER_INFO;
 			statusAccent = BANNER_INFO_ACCENT;
 		}
@@ -900,7 +909,7 @@ public class ShortestPathPanel extends PluginPanel
 		if (!calculating && !cachedRoutes.isEmpty() && plugin.canLoadMoreRoutes())
 		{
 			controls.add(controlButton(RouteIcons.SHOW_MORE, RouteIcons.SHOW_MORE_HOVER,
-				"Search for more alternative routes", plugin::loadMoreRoutes));
+				"Search for more routes", plugin::loadMoreRoutes));
 		}
 		if (!calculating)
 		{
@@ -1055,7 +1064,7 @@ public class ShortestPathPanel extends PluginPanel
 		methods.setBorder(new EmptyBorder(1, 8, 5, 5));
 		if (!reaches)
 		{
-			methods.add(noteRow("<font color='#FF981F'>Can't reach the target — ends at the closest point.</font>",
+			methods.add(noteRow("<font color='#FF981F'>Can't reach the target, ends at the closest point.</font>",
 				"This destination isn't reachable; the route stops at the nearest tile GPS can get to."));
 		}
 		// Each method row reveals its OWN exclude control (in red) only while the pointer is over
@@ -1093,7 +1102,11 @@ public class ShortestPathPanel extends PluginPanel
 		}
 		card.add(methods, BorderLayout.CENTER);
 
-		card.setToolTipText(selected ? "Showing on map — click to hide" : "Click to show this route on the map");
+		// The best route is the fallback whenever nothing else is selected, so hiding it never
+		// shows anything else: say what the click does, not what it cannot (plan step N12).
+		card.setToolTipText(selected
+			? (index == 0 ? "Showing on map (the best route)" : "Showing on map, click to hide")
+			: "Click to show this route on the map");
 		card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		makeSelectable(card, index);
 		return card;
@@ -2754,7 +2767,7 @@ public class ShortestPathPanel extends PluginPanel
 		else
 		{
 			label.setToolTipText(status == MethodAvailability.IN_BANK
-				? detail + " — switch to \"Inventory + bank\" or withdraw it"
+				? detail + " — switch to + Bank or withdraw it"
 				: detail);
 		}
 		return label;
@@ -2765,7 +2778,7 @@ public class ShortestPathPanel extends PluginPanel
 		switch (status)
 		{
 			case IN_BANK:
-				return "In your bank — switch to \"Inventory + bank\" or withdraw it";
+				return "In your bank — switch to + Bank or withdraw it";
 			case MISSING_ITEM:
 				return "You don't have the required item";
 			case MISSING_LEVEL:

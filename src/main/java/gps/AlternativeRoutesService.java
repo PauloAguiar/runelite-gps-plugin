@@ -858,6 +858,10 @@ public class AlternativeRoutesService
 				List.copyOf(routes), bestRemaining, catalog, unavailable, seedCandidates,
 				java.util.Map.copyOf(chainTailCounts));
 		}
+		if (gen == generation.get())
+		{
+			lastUnreachableCause = unreachableCause(routes, start, ends, mode);
+		}
 		// A superseded run leaves the previous state alone: the newer generation overwrites it when it
 		// completes, and the eligibility check (start/targets/mode/exclusions) guards staleness anyway.
 		emit(gen, listener, new ArrayList<>(routes), catalog, unavailable, true);
@@ -1081,6 +1085,62 @@ public class AlternativeRoutesService
 	}
 
 	private volatile List<SearchRecord> lastSearchRecords;
+
+	/** Why the last generation's routes all stop short of the target (plan step N12). */
+	public enum UnreachableCause
+	{
+		/** The page has a route that reaches the target (or there is no page). */
+		NONE,
+		/** Reachable with everything the game offers, not with this mode's items and unlocks. */
+		MISSING_UNLOCKS,
+		/** No known route in any mode: a sealed tile, or a gap in the map data. */
+		NO_KNOWN_ROUTE
+	}
+
+	private volatile UnreachableCause lastUnreachableCause = UnreachableCause.NONE;
+
+	public UnreachableCause lastUnreachableCause()
+	{
+		return lastUnreachableCause;
+	}
+
+	/**
+	 * Tells "not with what you have" from "no known route" for a page whose routes all stop
+	 * short: an all-everything planning copy is refreshed on the client thread and its distance
+	 * field flooded from the targets; the target is reachable with everything when that field
+	 * reaches the start or any teleport landing. Runs only for an unreached page in an owned
+	 * mode (the all mode already includes everything), so the probe costs nothing on a normal
+	 * generation.
+	 */
+	private UnreachableCause unreachableCause(List<RouteOption> routes, int start, Set<Integer> ends,
+		AlternativeRoutesMode mode)
+	{
+		if (routes.isEmpty() || ends.isEmpty())
+		{
+			return UnreachableCause.NONE;
+		}
+		for (RouteOption route : routes)
+		{
+			if (route.isReached())
+			{
+				return UnreachableCause.NONE;
+			}
+		}
+		if (mode == AlternativeRoutesMode.ALL_EVERYTHING)
+		{
+			return UnreachableCause.NO_KNOWN_ROUTE;
+		}
+		PathfinderConfig probe = planningConfig.copyForPlanning();
+		if (!refreshOnClientThread(probe, Collections.emptySet(), null, AlternativeRoutesMode.ALL_EVERYTHING))
+		{
+			return UnreachableCause.NO_KNOWN_ROUTE;
+		}
+		probe.rebuildAvailabilityWithExclusions(Collections.emptySet());
+		DistanceField everything = DistanceField.buildIfCompact(probe, ends, 0);
+		boolean reachableWithEverything = everything != null
+			&& SearchHeuristic.buildWithField(probe, everything, start) != null;
+		return reachableWithEverything ? UnreachableCause.MISSING_UNLOCKS : UnreachableCause.NO_KNOWN_ROUTE;
+	}
 
 	/**
 	 * Seeds additional routes when the exclusion loop ended early: for each candidate global teleport
@@ -1977,20 +2037,26 @@ public class AlternativeRoutesService
 	 */
 	private boolean refreshOnClientThread(Set<TeleportMethod> excluded, Set<Integer> endsToFilter, AlternativeRoutesMode mode)
 	{
+		return refreshOnClientThread(planningConfig, excluded, endsToFilter, mode);
+	}
+
+	private boolean refreshOnClientThread(PathfinderConfig target, Set<TeleportMethod> excluded,
+		Set<Integer> endsToFilter, AlternativeRoutesMode mode)
+	{
 		final Set<TeleportMethod> excludedSnapshot = new HashSet<>(excluded);
 		final CountDownLatch latch = new CountDownLatch(1);
 		clientThread.invokeLater(() ->
 		{
 			try
 			{
-				planningConfig.setPlanningMode(mode == AlternativeRoutesMode.ALL_EVERYTHING);
-				planningConfig.setBypassItemPossession(!mode.isOwned());
-				planningConfig.setConsiderBank(mode == AlternativeRoutesMode.OWNED_WITH_BANK);
-				planningConfig.setExcludedMethods(excludedSnapshot);
-				planningConfig.refresh();
+				target.setPlanningMode(mode == AlternativeRoutesMode.ALL_EVERYTHING);
+				target.setBypassItemPossession(!mode.isOwned());
+				target.setConsiderBank(mode == AlternativeRoutesMode.OWNED_WITH_BANK);
+				target.setExcludedMethods(excludedSnapshot);
+				target.refresh();
 				if (endsToFilter != null)
 				{
-					planningConfig.filterLocations(endsToFilter, true);
+					target.filterLocations(endsToFilter, true);
 				}
 			}
 			finally
