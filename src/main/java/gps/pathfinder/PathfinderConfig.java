@@ -117,6 +117,8 @@ public class PathfinderConfig
 	 * Bank tiles the player may use for path banking state (requirements satisfied). Rebuilt in {@link #refresh()}.
 	 */
 	private Set<Integer> accessibleBankTiles = Set.of();
+	// The same tiles keyed by primitive int for the per-expanded-tile hot-path check.
+	private PrimitiveIntHashMap<Boolean> accessibleBankIndex = new PrimitiveIntHashMap<>(16);
 	/**
 	 * Which transports are available for the current user configuration in the
 	 * unbanked/banked state.
@@ -494,6 +496,7 @@ public class PathfinderConfig
 		copy.isOnSailingBoat = isOnSailingBoat;
 		copy.includeBankPath = includeBankPath;
 		copy.accessibleBankTiles = accessibleBankTiles;
+		copy.accessibleBankIndex = accessibleBankIndex;
 		copy.destinations = destinations;
 		copy.leagueModeState = leagueModeState;
 		copy.costConsumableTeleportationItems = costConsumableTeleportationItems;
@@ -758,7 +761,7 @@ public class PathfinderConfig
 	 */
 	public boolean bankAccessible(int packedPosition)
 	{
-		return accessibleBankTiles.contains(packedPosition);
+		return accessibleBankIndex.get(packedPosition) != null;
 	}
 
 	public void refresh()
@@ -874,11 +877,13 @@ public class PathfinderConfig
 		if (bankLocs == null)
 		{
 			accessibleBankTiles = Set.of();
+			accessibleBankIndex = indexOf(accessibleBankTiles);
 			return;
 		}
 		if (!GameState.LOGGED_IN.equals(client.getGameState()))
 		{
 			accessibleBankTiles = Set.copyOf(bankLocs);
+			accessibleBankIndex = indexOf(accessibleBankTiles);
 			return;
 		}
 		Set<Integer> acc = new HashSet<>(bankLocs.size());
@@ -891,6 +896,17 @@ public class PathfinderConfig
 			}
 		}
 		accessibleBankTiles = Collections.unmodifiableSet(acc);
+		accessibleBankIndex = indexOf(accessibleBankTiles);
+	}
+
+	private static PrimitiveIntHashMap<Boolean> indexOf(Set<Integer> tiles)
+	{
+		PrimitiveIntHashMap<Boolean> index = new PrimitiveIntHashMap<>(Math.max(16, tiles.size() * 2));
+		for (int tile : tiles)
+		{
+			index.put(tile, Boolean.TRUE);
+		}
+		return index;
 	}
 
 	/**

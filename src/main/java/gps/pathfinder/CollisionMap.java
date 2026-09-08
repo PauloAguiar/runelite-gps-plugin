@@ -20,7 +20,7 @@ public class CollisionMap
 	// appended to the NodeGraph during the most recent getNeighbors call.
 	private final PrimitiveIntList neighbors = new PrimitiveIntList(16);
 	private final boolean[] traversable = new boolean[8];
-	private final java.util.Map<Integer, Integer> doorMasks = gps.ClosedDoors.edgeMasks();
+	private final gps.PrimitiveIntHashMap<Integer> doorMasks = gps.ClosedDoors.edgeMaskIndex();
 
 	public CollisionMap(SplitFlagMap collisionData)
 	{
@@ -273,7 +273,8 @@ public class CollisionMap
 		// One walking step costs 1 (Chebyshev-adjacent); stepping through a doorway adds the
 		// door's opening + reaction time on top.
 		final int walkStepCost = graph.cost(node) + 1;
-		final int doorMask = doorMasks.getOrDefault(packedPosition, 0);
+		final Integer doorMaskBoxed = doorMasks.get(packedPosition);
+		final int doorMask = doorMaskBoxed == null ? 0 : doorMaskBoxed;
 		for (int i = 0; i < traversable.length; i++)
 		{
 			OrdinalDirection d = ORDINAL_VALUES[i];

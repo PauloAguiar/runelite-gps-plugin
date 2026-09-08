@@ -1,5 +1,6 @@
 package gps.pathfinder;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -48,6 +49,7 @@ public class Pathfinder implements Runnable
 	private final VisitedTiles visited;
 	// The node the search ended on (the reached target, or the best closest-tile candidate).
 	private int bestLastNode = NodeGraph.NO_NODE;
+	private int clockCounter;
 	// Built once when the search finishes, before the node graph is released. The classic plugin
 	// flow used to read a partial path progressively DURING the search; that machinery is retired -
 	// every consumer now runs the search to completion and reads this snapshot.
@@ -107,7 +109,10 @@ public class Pathfinder implements Runnable
 		this.astar = heuristic != null;
 		this.heapMode = astar || anyTransportsUsable(config);
 		this.buckets = (heapMode && !astar) ? new IntBucketQueue() : null;
-		this.tentative = buckets != null ? new TentativeCosts(map) : null;
+		// Tentative-cost pruning in BOTH heap regimes: it drops a re-enqueue whose g did not
+		// improve, and with a tile-only heuristic a non-improving g is a non-improving f, so A*
+		// ordering is untouched while the graph stops holding 3-4x the settled count.
+		this.tentative = heapMode ? new TentativeCosts(map) : null;
 		this.graph = new NodeGraph(1 << 14, heuristic);
 		this.pending = new IntMinHeap(graph, astar ? 4096 : 256);
 		visited = new VisitedTiles(map);
@@ -120,6 +125,14 @@ public class Pathfinder implements Runnable
 		{
 			targetArray[i++] = target;
 		}
+		// Sorted so the per-node target check is a binary search over ints: Set<Integer>.contains
+		// boxed an Integer for every settled tile (plan step N2).
+		Arrays.sort(targetArray);
+	}
+
+	private boolean isTarget(int packed)
+	{
+		return Arrays.binarySearch(targetArray, packed) >= 0;
 	}
 
 	/** Whether this search runs with an A* heuristic (identical costs, smaller exploration). */
@@ -282,11 +295,12 @@ public class Pathfinder implements Runnable
 		boolean update = false;
 
 		final int travelledDistance = graph.cost(node);
+		// Loop-invariant: this runs once per explored node in the post-pass, times every target.
+		final int x = WorldPointUtil.unpackWorldX(packedPosition);
+		final int y = WorldPointUtil.unpackWorldY(packedPosition);
 		for (int target : targetArray)
 		{
 			int remainingDistance = WorldPointUtil.distanceBetween(target, packedPosition, WorldPointUtil.EUCLIDEAN_SQUARED_DISTANCE_METRIC);
-			int x = WorldPointUtil.unpackWorldX(packedPosition);
-			int y = WorldPointUtil.unpackWorldY(packedPosition);
 			if ((remainingDistance < bestRemainingDistance) ||
 				(remainingDistance == bestRemainingDistance && travelledDistance < bestTravelledDistance) ||
 				(remainingDistance == bestRemainingDistance && travelledDistance == bestTravelledDistance && x < bestX) ||
@@ -428,7 +442,7 @@ public class Pathfinder implements Runnable
 			{
 				updateWildernessLevel(nodePacked);
 
-				if (targets.contains(nodePacked))
+				if (isTarget(nodePacked))
 				{
 					bestLastNode = node;
 					reachedTarget = nodePacked;
@@ -447,7 +461,9 @@ public class Pathfinder implements Runnable
 				}
 			}
 
-			if (System.currentTimeMillis() > cutoffTimeMillis)
+			// One clock read per 1,024 settled nodes: a syscall per node was ~40 ms of a 2M-node
+			// search, and the cutoff is measured in tenths of seconds anyway.
+			if ((++clockCounter & 1023) == 0 && System.currentTimeMillis() > cutoffTimeMillis)
 			{
 				terminationReason = PathTerminationReason.CUTOFF_REACHED;
 				break;

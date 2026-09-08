@@ -43,3 +43,28 @@ guided, worst 9,429 nodes, 27k total.
 **Not changed:** the single-target unreachable case keeps the escape menu from the Now tier;
 "+ Bank" mode still gets a field, but the field's reverse flood ignores banked items (that gap
 is on the harvest/compute step's list).
+
+### Step N2: the search hot loop stops allocating (2026-09-07)
+
+**Red first:** `SearchAllocationTest` measures bytes allocated on the search thread per settled
+node (HotSpot's thread allocation counter) for a 660k-node blind walk and for a full flood with
+120 unreachable targets. Baseline: 131 bytes per node, 87 MB for one walk search.
+
+**Change:** `NodeGraph` is paged (16K nodes per page, no copy on growth; the old flat arrays
+copied ~36 MB a dozen times per big search and then released it all); the target check is a
+binary search over a sorted `int[]` instead of `Set<Integer>.contains`; door masks come from a
+primitive-keyed index (`ClosedDoors.edgeMaskIndex`); bank tiles from a primitive-keyed index;
+the cutoff clock is read once per 1,024 nodes; the closest-tile post-pass hoists its unpacks out
+of the target loop; tentative-cost pruning now runs in A* mode too (a tile-only heuristic keeps
+the ordering exact, and the graph stops holding 3-4x the settled count).
+
+**Measured:** 131 to 42 bytes per node (single target) and the same order with 120 targets.
+Search benchmark, blind Lumbridge to Ardougne: 169 ms / 334 ns per node before, 143 ms / 265
+ns per node after; the unreachable full flood 351 to 299 ms. A* equivalence tests unchanged.
+
+**Test-design lesson recorded:** an "unreachable" multi-target set must be genuinely unmapped;
+one reachable bank ends the search at Lumbridge castle's after ~1,800 nodes, and plane-3 copies
+of the banks still land on a palace roof.
+
+**Not changed:** `IntDeque` / `IntMinHeap` still double by copy (a few bytes per node); the
+visited/tentative scratch is still allocated per search. Both are small next to the graph.

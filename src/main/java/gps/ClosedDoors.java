@@ -98,6 +98,7 @@ public class ClosedDoors
 
 	private static volatile Map<Integer, List<Door>> doorsByTile;
 	private static volatile Map<Integer, Integer> edgeMasks;
+	private static volatile PrimitiveIntHashMap<Integer> edgeMaskIndex;
 
 	private ClosedDoors()
 	{
@@ -114,6 +115,27 @@ public class ClosedDoors
 	{
 		get();
 		return edgeMasks;
+	}
+
+	/**
+	 * The same masks keyed by primitive int: the search looks one up per expanded tile, and the
+	 * boxed map allocated an Integer per lookup (plan step N2). Mask values are small, so the
+	 * stored Integers are the cached ones and a hit allocates nothing.
+	 */
+	public static PrimitiveIntHashMap<Integer> edgeMaskIndex()
+	{
+		PrimitiveIntHashMap<Integer> index = edgeMaskIndex;
+		if (index == null)
+		{
+			Map<Integer, Integer> masks = edgeMasks();
+			index = new PrimitiveIntHashMap<>(Math.max(16, masks.size() * 2));
+			for (Map.Entry<Integer, Integer> entry : masks.entrySet())
+			{
+				index.put(entry.getKey(), entry.getValue());
+			}
+			edgeMaskIndex = index;
+		}
+		return index;
 	}
 
 	private static Map<Integer, Integer> buildEdgeMasks(Map<Integer, List<Door>> byTile)
