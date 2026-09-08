@@ -27,8 +27,16 @@ final class SearchMatcher
 
 	static int score(String name, String query)
 	{
+		final String literal = query.toLowerCase(Locale.ROOT).trim();
+		final String expanded = SearchAliases.expand(query);
+		final int direct = scoreLiteral(name, literal);
+		return expanded.equals(literal) ? direct : Math.max(direct, scoreLiteral(name, expanded));
+	}
+
+	private static int scoreLiteral(String name, String query)
+	{
 		final String n = name.toLowerCase(Locale.ROOT);
-		final String q = query.toLowerCase(Locale.ROOT).trim();
+		final String q = query;
 		if (q.isEmpty())
 		{
 			return 0;

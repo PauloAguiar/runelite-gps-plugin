@@ -3337,6 +3337,20 @@ public class ShortestPathPanel extends PluginPanel
 				coordinate), player);
 		}
 
+		// "nearest altar", or a bare category word: the category's nearest-of row comes first.
+		Destinations.NearestOption nearest = Destinations.parseNearest(query);
+		if (nearest != null)
+		{
+			java.util.Set<Integer> tiles = Destinations.tilesForCategory(nearest.id, plugin.getTransports());
+			if (!tiles.isEmpty())
+			{
+				String label = nearest.label;
+				addResultRow(new Destinations.Entry("bank_round_trip".equals(nearest.id) ? "bank" : nearest.id,
+					"Nearest " + Character.toLowerCase(label.charAt(0)) + label.substring(1),
+					WorldPointUtil.UNDEFINED, tiles, nearest), player);
+			}
+		}
+
 		// Fuzzy match, best first: the score tiers (exact > prefix > word prefixes > substring >
 		// subsequence) rank the list; proximity to the player breaks ties within a tier. Saved
 		// favourites are part of the pool, matched by their label.
@@ -3556,12 +3570,48 @@ public class ShortestPathPanel extends PluginPanel
 	/** Commits a destination selection (from a click or Enter): route to it, remember it, close. */
 	private void selectEntry(Destinations.Entry entry)
 	{
-		plugin.setDestination(entry.packedPosition, "search");
-		plugin.recordSearchSelection(entry);
+		Destinations.Entry resolved = withTiles(entry);
+		if (resolved.nearest != null)
+		{
+			plugin.setNearestCategory(resolved.tiles, resolved.name, "bank_round_trip".equals(resolved.nearest.id));
+		}
+		else if (resolved.tiles.size() > 1)
+		{
+			// A named amenity (Falador Bank: every booth): the nearest of its tiles, like "nearest X".
+			plugin.setNearestCategory(resolved.tiles, resolved.name);
+		}
+		else
+		{
+			plugin.setDestination(entry.packedPosition, "search");
+		}
+		if (entry.nearest == null)
+		{
+			plugin.recordSearchSelection(entry);
+		}
 		// Clearing the text re-renders the popup with the recent list; a selection should end the
 		// interaction instead.
 		destinationSearch.setText("");
 		destinationPopup.setVisible(false);
+	}
+
+	/**
+	 * History and favourite entries persist one tile; a named amenity's full tile set comes back
+	 * from the index by category and name.
+	 */
+	private Destinations.Entry withTiles(Destinations.Entry entry)
+	{
+		if (entry.tiles.size() > 1 || entry.nearest != null)
+		{
+			return entry;
+		}
+		for (Destinations.Entry indexed : destinationIndex())
+		{
+			if (indexed.tiles.size() > 1 && indexed.category.equals(entry.category) && indexed.name.equals(entry.name))
+			{
+				return indexed;
+			}
+		}
+		return entry;
 	}
 
 	/**
@@ -3600,7 +3650,15 @@ public class ShortestPathPanel extends PluginPanel
 
 		JPanel east = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
 		east.setOpaque(false);
-		if (player != WorldPointUtil.UNDEFINED)
+		if (entry.nearest == null && entry.tiles.size() > 1)
+		{
+			// A named amenity: say which kind, since "Falador Bank" and "Falador" sit side by side.
+			JLabel chip = new JLabel(Destinations.categoryLabel(entry.category));
+			chip.setForeground(Color.GRAY);
+			chip.setFont(FontManager.getRunescapeSmallFont());
+			east.add(chip);
+		}
+		if (player != WorldPointUtil.UNDEFINED && entry.packedPosition != WorldPointUtil.UNDEFINED)
 		{
 			int distance = WorldPointUtil.distanceBetween(player, entry.packedPosition);
 			if (distance != Integer.MAX_VALUE)

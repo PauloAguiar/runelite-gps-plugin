@@ -266,3 +266,43 @@ lost the sail route.
 collects every result first and accepts them in cost-then-signature order instead of
 completion order (the seeds take milliseconds each, so nothing is lost by waiting for all of
 them, and "consistent over fast" is the standing rule). The original test is stable again.
+
+### Deferred: the harvest/compute split of the planning refresh (2026-09-07)
+
+The review scheduled the split (client thread harvests game state; the row loop runs on the
+worker) for the ~150-230 ms the planning refresh cost per generation. After N6 the whole refresh
+is 13 to 23 ms of client-thread time per generation, of which the row loop is 12 to 17 ms, and
+the two correctness items bundled with it (the bank-mode field verdict and the parallel-copy
+omissions) are done as N7 and N8. The split would still touch every client read inside the row
+loop (quest states, varbits, item definitions, boat state) for a prize of roughly one frame
+per generation, so it is deferred until a capture shows the refresh in a stutter.
+
+### Step N11: amenities searchable by name, aliases, and "nearest X" in the search box (2026-09-07)
+
+**Red first:** `AmenitySearchTest` asserts that "Falador Bank" is one entry of the name index
+carrying every booth access tile (27), that amenity categories are grouped one entry per site,
+that "ge", "lumby", "wildy" and "fally bank" match what they mean without weakening literal
+matches, that "nearest altar", "Nearest Altar", a bare "bank" and "nearest bank and back"
+resolve to the nearest-of options while "falador bank" does not, and that category labels read
+like the panel's. Red at compile time (no tiles, no parser, no labels).
+
+**Why it was missing:** the index listed only places, landmarks, dungeons, minigames and training
+spots; banks (1,345 rows), altars, furnaces, anvils, ranges, water sources, spinning and potter's
+wheels were reachable only through the eleven fixed "Find nearest" buttons, while the search
+field's own hint promised "Falador bank". There were no aliases and no way to type "nearest".
+
+**Change:** `Destinations.Entry` carries a tile set (one tile for a place, every access tile for
+a named amenity) and an optional nearest option; `searchable` groups the eight amenity
+categories by site name and lists fairy rings and spirit trees by code; `parseNearest` reads a
+leading "nearest" or a bare category word; `categoryLabel` names a category as the panel does.
+`SearchAliases` holds the vocabulary (GE, Wildy, Lumby, Fally, Cammy, Ardy, Priff, PC, CW, GWD,
+CoX, ToB, ToA, SW, MTA, WT, BF, NMZ, KQ, ZMI) and the matcher scores the expanded query too,
+taking the better tier. The panel routes a multi-tile entry through the nearest-category flow
+(the route ends at the nearest booth), re-resolves history and favourite entries to their tile
+sets by name, prepends a "Nearest bank" row for nearest queries (round trip for "and back"),
+and labels amenity rows with their category chip.
+
+**Not done from the report's wording:** results still show straight-line tiles rather than an
+ETA. An ETA per result needs a search per row on every keystroke (a field build per distinct
+target set, 30 to 250 ms each), and a cheaper proxy would be the misleading number the item
+warns about; deferred until results can be priced from one shared field.

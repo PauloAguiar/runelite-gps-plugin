@@ -6,6 +6,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Locale;
+import java.util.LinkedHashMap;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import gps.transport.Transport;
@@ -28,20 +32,42 @@ public final class Destinations
 	// searchable places that have no in-game world-map label, deduplicated against the above.
 	private static final String WIKI_PATH = "/destinations-wiki.tsv";
 
-	/** One searchable destination: a category, a display name, and a packed world tile. */
+	/**
+	 * One searchable destination: a category, a display name, a representative packed world tile,
+	 * and every target tile it stands for (one for a place; all access tiles for a named amenity
+	 * such as "Falador Bank", which routes to the nearest of its booths).
+	 */
 	public static final class Entry
 	{
 		public final String category;
 		public final String name;
 		public final int packedPosition;
+		public final Set<Integer> tiles;
+		/** The "Nearest X" option a query row was synthesized from; null for ordinary entries. */
+		public final NearestOption nearest;
 
 		Entry(String category, String name, int packedPosition)
+		{
+			this(category, name, packedPosition, null, null);
+		}
+
+		Entry(String category, String name, int packedPosition, Set<Integer> tiles, NearestOption nearest)
 		{
 			this.category = category;
 			this.name = name;
 			this.packedPosition = packedPosition;
+			this.tiles = tiles != null ? tiles
+				: (packedPosition == WorldPointUtil.UNDEFINED ? Set.of() : Set.of(packedPosition));
+			this.nearest = nearest;
 		}
 	}
+
+	/** Categories the name search lists as-is (one tile each). */
+	private static final Set<String> NAMED_CATEGORIES = Set.of(
+		"place", "landmark", "dungeon", "minigame", "training", "fairy_ring", "spirit_tree");
+	/** Amenity categories the name search groups by site name (plan step N11). */
+	private static final Set<String> AMENITY_CATEGORIES = Set.of(
+		"bank", "altar", "water", "furnace", "anvil", "range", "spinning_wheel", "pottery");
 
 	/** A "nearest X" amenity category offered as a quick option: its id and its display label. */
 	public static final class NearestOption
@@ -89,23 +115,76 @@ public final class Destinations
 	}
 
 	/**
-	 * The entries offered by the name search: named places and dungeons (from the bundled resource)
-	 * plus minigames (from the live transport data). Amenities like banks and altars are reached via
-	 * "nearest X" instead, so they're left out here to keep results focused.
+	 * The entries offered by the name search: named places, landmarks, dungeons, minigames and
+	 * training spots as they are, fairy rings and spirit trees by their code, and every amenity
+	 * site ONCE under its name with all of its access tiles ("Falador Bank" is one entry whose
+	 * route ends at whichever booth is nearest). Before plan step N11 amenities were left out and
+	 * "Falador bank" found nothing.
 	 */
 	public static List<Entry> searchable(PrimitiveIntHashMap<Transport[]> transports)
 	{
 		List<Entry> out = new ArrayList<>();
+		Map<String, Entry> amenityFirst = new LinkedHashMap<>();
+		Map<String, List<Integer>> amenityTiles = new HashMap<>();
 		for (Entry entry : all(transports))
 		{
-			if ("place".equals(entry.category) || "landmark".equals(entry.category)
-				|| "dungeon".equals(entry.category) || "minigame".equals(entry.category)
-				|| "training".equals(entry.category))
+			if (NAMED_CATEGORIES.contains(entry.category))
 			{
 				out.add(entry);
 			}
+			else if (AMENITY_CATEGORIES.contains(entry.category))
+			{
+				String key = entry.category + "\t" + entry.name;
+				amenityFirst.putIfAbsent(key, entry);
+				amenityTiles.computeIfAbsent(key, k -> new ArrayList<>()).add(entry.packedPosition);
+			}
+		}
+		for (Map.Entry<String, Entry> grouped : amenityFirst.entrySet())
+		{
+			Entry first = grouped.getValue();
+			out.add(new Entry(first.category, first.name, first.packedPosition,
+				Set.copyOf(amenityTiles.get(grouped.getKey())), null));
 		}
 		return out;
+	}
+
+	/**
+	 * The "nearest X" option a query asks for: a leading "nearest" followed by an option's label
+	 * or id ("nearest altar", "nearest bank and back"), or a bare category word ("bank"). Null for
+	 * anything else, including named searches ("falador bank").
+	 */
+	public static NearestOption parseNearest(String query)
+	{
+		String q = query == null ? "" : query.toLowerCase(Locale.ROOT).trim().replaceAll("\\s+", " ");
+		String rest = q.startsWith("nearest ") ? q.substring("nearest ".length()).trim() : q;
+		if (rest.isEmpty())
+		{
+			return null;
+		}
+		for (NearestOption option : NEAREST_OPTIONS)
+		{
+			String label = option.label.toLowerCase(Locale.ROOT);
+			if (rest.equals(option.id.replace('_', ' ')) || rest.equals(label)
+				|| rest.equals(label.replace("(", "").replace(")", "")))
+			{
+				return option;
+			}
+		}
+		return null;
+	}
+
+	/** A category as the panel names it ("range" is "Cooking range"); title-cased otherwise. */
+	public static String categoryLabel(String category)
+	{
+		for (NearestOption option : NEAREST_OPTIONS)
+		{
+			if (option.id.equals(category))
+			{
+				return option.label;
+			}
+		}
+		String words = category.replace('_', ' ');
+		return words.isEmpty() ? words : Character.toUpperCase(words.charAt(0)) + words.substring(1);
 	}
 
 	/**
