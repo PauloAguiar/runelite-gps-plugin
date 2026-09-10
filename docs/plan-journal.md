@@ -928,3 +928,16 @@ initializer's lambda cannot name a field declared later in the class, even lazil
 qualifies it past the rule. One import went with the code. Plugin class: 2,331 to 2,271 lines.
 
 **Suite:** 766 tests, all green.
+
+### Step L27: SearchMemory (2026-09-09)
+
+**Red first:** `SearchMemoryTest`, over a real `ChoiceStore` on a mocked config manager: a
+favourite with the same label replaces the old one, removal matches label and position, the
+favourite list is capped, a selection goes to the front of the history (deduplicated), and
+every change persists. The class did not exist.
+
+**Change:** the history and favourite lists, their three mutators and the startup load became
+`SearchMemory`; the plugin keeps five one-line public delegates for the panel. Plugin class:
+2,271 to 2,246 lines.
+
+**Suite:** 766 tests, all green.

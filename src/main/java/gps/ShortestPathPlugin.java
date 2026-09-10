@@ -155,8 +155,8 @@ public class ShortestPathPlugin extends Plugin
 	// The persisted choices (exclusions, mode, history, favourites; see ChoiceStore). Suppliers:
 	// the injected services arrive after field initialisation.
 	private final ChoiceStore choices = new ChoiceStore(() -> configManager, () -> gson, CONFIG_GROUP);
-	private volatile List<Destinations.Entry> favoriteDestinations = new ArrayList<>();
-	private volatile List<Destinations.Entry> searchHistory = new ArrayList<>();
+	// The search box's recent selections and the saved favourites (see SearchMemory).
+	private final SearchMemory searchMemory = new SearchMemory(choices);
 	// The methods the user excluded (see MethodExclusions): a change persists and refreshes the panel.
 	private final MethodExclusions exclusions = new MethodExclusions(choices, () -> refreshPanel(this.session.inFlight()));
 	// Where the current destination came from, for the GPS header: "map pin" for manual targets, the
@@ -341,8 +341,7 @@ public class ShortestPathPlugin extends Plugin
 
 		exclusions.load();
 		preferences.load();
-		searchHistory = choices.loadSearchHistory();
-		favoriteDestinations = choices.loadFavorites();
+		searchMemory.load();
 		AlternativeRoutesMode savedMode = choices.loadRoutesMode();
 		if (savedMode != null)
 		{
@@ -1804,54 +1803,30 @@ public class ShortestPathPlugin extends Plugin
 	/** The search box's recent selections, most recent first. */
 	public List<Destinations.Entry> getSearchHistory()
 	{
-		return searchHistory;
+		return searchMemory.history();
 	}
 
 	/** Records a search selection at the front of the persisted history (deduplicated, capped). */
 	public void recordSearchSelection(Destinations.Entry entry)
 	{
-		List<Destinations.Entry> updated = SearchHistory.push(searchHistory, entry);
-		searchHistory = updated;
-		choices.saveSearchHistory(updated);
+		searchMemory.recordSelection(entry);
 	}
 
 	/** The player's saved favourite positions, in saved order. */
 	public List<Destinations.Entry> getFavoriteDestinations()
 	{
-		return favoriteDestinations;
+		return searchMemory.favorites();
 	}
 
 	/** Saves a favourite position; a favourite with the same label is replaced. */
 	public void addFavoriteDestination(String label, int packedPosition)
 	{
-		List<Destinations.Entry> updated = new ArrayList<>();
-		for (Destinations.Entry entry : favoriteDestinations)
-		{
-			if (!entry.name.equals(label))
-			{
-				updated.add(entry);
-			}
-		}
-		if (updated.size() < ChoiceStore.FAVORITES_LIMIT)
-		{
-			updated.add(new Destinations.Entry("favorite", label, packedPosition));
-		}
-		favoriteDestinations = updated;
-		choices.saveFavorites(updated);
+		searchMemory.addFavorite(label, packedPosition);
 	}
 
 	public void removeFavoriteDestination(Destinations.Entry favorite)
 	{
-		List<Destinations.Entry> updated = new ArrayList<>();
-		for (Destinations.Entry entry : favoriteDestinations)
-		{
-			if (!entry.name.equals(favorite.name) || entry.packedPosition != favorite.packedPosition)
-			{
-				updated.add(entry);
-			}
-		}
-		favoriteDestinations = updated;
-		choices.saveFavorites(updated);
+		searchMemory.removeFavorite(favorite);
 	}
 
 
