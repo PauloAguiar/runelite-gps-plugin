@@ -24,7 +24,7 @@ public class BankSnapshotPersistenceTest
 			new Item(19675, 1),     // arclight
 		};
 
-		Item[] decoded = ShortestPathPlugin.decodeBankSnapshot(ShortestPathPlugin.encodeBankSnapshot(items));
+		Item[] decoded = BankSnapshotService.decode(BankSnapshotService.encode(items));
 
 		assertArrayEquals(items, decoded);
 	}
@@ -39,7 +39,7 @@ public class BankSnapshotPersistenceTest
 			new Item(-1, 5),     // nonsense id
 		};
 
-		Item[] decoded = ShortestPathPlugin.decodeBankSnapshot(ShortestPathPlugin.encodeBankSnapshot(items));
+		Item[] decoded = BankSnapshotService.decode(BankSnapshotService.encode(items));
 
 		assertEquals(1, decoded.length);
 		assertEquals(new Item(995, 100), decoded[0]);
@@ -48,19 +48,19 @@ public class BankSnapshotPersistenceTest
 	@Test
 	public void nothingWorthSavingEncodesToNull()
 	{
-		assertNull(ShortestPathPlugin.encodeBankSnapshot(null));
-		assertNull(ShortestPathPlugin.encodeBankSnapshot(new Item[0]));
-		assertNull(ShortestPathPlugin.encodeBankSnapshot(new Item[]{new Item(-1, 0), new Item(4151, 0)}));
+		assertNull(BankSnapshotService.encode(null));
+		assertNull(BankSnapshotService.encode(new Item[0]));
+		assertNull(BankSnapshotService.encode(new Item[]{new Item(-1, 0), new Item(4151, 0)}));
 	}
 
 	@Test
 	public void missingOrMalformedStoredDataDecodesToNull()
 	{
-		assertNull(ShortestPathPlugin.decodeBankSnapshot(null));
-		assertNull(ShortestPathPlugin.decodeBankSnapshot(""));
-		assertNull(ShortestPathPlugin.decodeBankSnapshot("garbage"));
-		assertNull(ShortestPathPlugin.decodeBankSnapshot("995:100,2434")); // pair missing quantity
-		assertNull(ShortestPathPlugin.decodeBankSnapshot("995:abc"));      // non-numeric quantity
-		assertNull(ShortestPathPlugin.decodeBankSnapshot(":5"));           // pair missing id
+		assertNull(BankSnapshotService.decode(null));
+		assertNull(BankSnapshotService.decode(""));
+		assertNull(BankSnapshotService.decode("garbage"));
+		assertNull(BankSnapshotService.decode("995:100,2434")); // pair missing quantity
+		assertNull(BankSnapshotService.decode("995:abc"));      // non-numeric quantity
+		assertNull(BankSnapshotService.decode(":5"));           // pair missing id
 	}
 }

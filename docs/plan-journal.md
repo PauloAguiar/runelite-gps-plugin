@@ -721,3 +721,24 @@ five exclusion save sites, the mode change, the history and favourite writes, an
 loads (the saved mode applies only when one exists). Plugin class: 3,832 to 3,737 lines.
 
 **Suite:** 725 tests, all green.
+
+### Step L16: BankSnapshotService (2026-09-09)
+
+**Red first:** `BankSnapshotServiceTest`: the first sight of the live bank is reported once (a
+deposit is not a first sight); a save is staged with the profile key of the moment and written
+once, an empty bank dropping the stored snapshot instead; nothing is staged with the setting
+off; a restore fills in only before the live bank and is superseded by it; a restore is skipped
+with the setting off; logout persists then forgets (the pathfinder's bank cleared); turning the
+setting off drops the stored snapshot and, when this session's knowledge came from it, the
+knowledge too; turning it on saves a live bank at once. The class did not exist.
+`BankSnapshotPersistenceTest` (the id:quantity codec) re-targeted its calls.
+
+**Change:** the four bank fields (known, restored, save-dirty, profile key), the container
+event's bank branch, persist, restore, the logout forget, the two rememberBank branches and
+the codec became `BankSnapshotService`, constructed in `startUp` right after the pathfinder
+config it writes to. The plugin's handlers are now one call each: adopt the live bank at
+startup, `bankOpened` in the container event (its return value drives the first-sight
+regeneration), `persist` on bank close and shutdown, `forget` at logout, `rememberNow` and
+`forgetStored` on the setting. Plugin class: 3,737 to 3,591 lines.
+
+**Suite:** 733 tests, all green.

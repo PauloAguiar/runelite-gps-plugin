@@ -28,7 +28,6 @@ import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.GameObject;
 import net.runelite.api.Item;
-import net.runelite.api.ItemContainer;
 import net.runelite.api.KeyCode;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
@@ -280,8 +279,6 @@ public class ShortestPathPlugin extends Plugin
 	// button is shown while logged in and removed on the login screen.
 	private boolean navButtonShown = false;
 	private AlternativeRoutesService altRoutesService;
-	// RSProfile-scoped (per character, per world type): the bank snapshot persisted across sessions.
-	private static final String CONFIG_KEY_BANK_SNAPSHOT = "bankSnapshot";
 	// RSProfile-scoped: the planted spirit trees detected from the travel menu, comma-separated.
 	private static final String CONFIG_KEY_SPIRIT_TREES = "plantedSpiritTrees";
 	// The panel's boat banner (see BoatBannerService); constructed at startup, before the panel.
@@ -323,17 +320,9 @@ public class ShortestPathPlugin extends Plugin
 	// Whether the GPS side panel is currently shown (sidebar tab selected). It no longer changes how
 	// much a generation does (see routeLimitFor); opening the panel re-checks the auto-compute decision.
 	private volatile boolean altPanelVisible = false;
-	// Whether the client knows the bank's contents this session (the bank container is only populated
-	// once the bank has been opened). Used by the panel to explain why Bank mode finds nothing.
-	private volatile boolean bankContentsKnown = false;
-	// True when the known bank contents came from a previous session's saved snapshot rather than the
-	// bank being opened this session; cleared the moment the live bank is seen. Panel shows the source.
-	private volatile boolean bankRestored = false;
-	// The bank changed since it was last persisted; saved once when the bank closes (not per deposit).
-	private boolean bankSaveDirty = false;
-	// The RS profile key captured while the bank was seen, so the save still lands in the right
-	// profile if it happens after logout (when the current profile is no longer available).
-	private String bankSaveProfileKey;
+	// The bank knowledge and its cross-session snapshot (see BankSnapshotService); constructed at
+	// startup with the pathfinder config.
+	private BankSnapshotService bankSnapshots;
 	private Point lastMenuOpenedPoint;
 	private WorldMapPoint marker;
 	// Off-route bands, the transport-jump grace and the distance from the path (see OffRouteTracker).
@@ -542,6 +531,7 @@ public class ShortestPathPlugin extends Plugin
 		minimapClip = new MinimapClip(client, spriteManager);
 
 		pathfinderConfig = new PathfinderConfig(client, config);
+		bankSnapshots = new BankSnapshotService(configManager, CONFIG_GROUP, config::rememberBank, pathfinderConfig);
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
 			clientThread.invokeLater(pathfinderConfig::refresh);
@@ -581,13 +571,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			clientThread.invokeLater(() ->
 			{
-				ItemContainer liveBank = client.getItemContainer(InventoryID.BANK);
-				if (liveBank != null && liveBank.getItems().length > 0)
-				{
-					pathfinderConfig.bank = liveBank;
-					pathfinderConfig.setBankSnapshot(liveBank.getItems());
-					bankContentsKnown = true;
-				}
+				bankSnapshots.adoptLive(client.getItemContainer(InventoryID.BANK));
 				// Anything not visible live right now (bank, spirit trees, house furniture) falls
 				// back to the previous session's saved detections.
 				restoreDetectionsFromConfig();
@@ -606,7 +590,10 @@ public class ShortestPathPlugin extends Plugin
 	@Override
 	protected void shutDown()
 	{
-		persistBankSnapshot();
+		if (bankSnapshots != null)
+		{
+			bankSnapshots.persist();
+		}
 		overlayManager.remove(pathOverlay);
 		overlayManager.remove(pathMinimapOverlay);
 		overlayManager.remove(pathMapOverlay);
@@ -1156,27 +1143,14 @@ public class ShortestPathPlugin extends Plugin
 			if (config.rememberBank())
 			{
 				// Turned on with the bank already seen this session: save it right away, so the
-				// benefit doesn't depend on opening the bank again before logging out.
-				if (bankContentsKnown && !bankRestored && client.getGameState() == GameState.LOGGED_IN)
-				{
-					bankSaveDirty = true;
-					bankSaveProfileKey = configManager.getRSProfileKey();
-					persistBankSnapshot();
-				}
+				// benefit does not depend on opening the bank again before logging out.
+				bankSnapshots.rememberNow(client.getGameState() == GameState.LOGGED_IN);
 			}
-			else
+			else if (bankSnapshots.forgetStored())
 			{
-				// Turned off: forget the stored snapshot — and, if this session's bank knowledge
-				// came from it (rather than the bank being opened), drop that too.
-				configManager.unsetRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_BANK_SNAPSHOT);
-				bankSaveDirty = false;
-				if (bankRestored)
-				{
-					bankRestored = false;
-					bankContentsKnown = false;
-					pathfinderConfig.clearBank();
-					recomputeAlternatives();
-				}
+				// Turned off: the stored snapshot is gone, and so is this session's knowledge
+				// when it came from the snapshot rather than the bank being opened.
+				recomputeAlternatives();
 			}
 		}
 
@@ -1333,10 +1307,7 @@ public class ShortestPathPlugin extends Plugin
 		// character's snapshots are restored at the next login.
 		if (GameState.LOGIN_SCREEN.equals(event.getGameState()) && pathfinderConfig != null)
 		{
-			persistBankSnapshot();
-			bankContentsKnown = false;
-			bankRestored = false;
-			pathfinderConfig.clearBank();
+			bankSnapshots.forget();
 			pathfinderConfig.availableSpiritTrees = null;
 			spiritTreesParsedLive = false;
 			pohDetection.reset();
@@ -1770,21 +1741,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return;
 		}
-		pathfinderConfig.bank = event.getItemContainer();
-		// Snapshot the items now, while the bank is open: the client may empty the live container
-		// (and thereby every reference to it) once the interface closes.
-		pathfinderConfig.setBankSnapshot(event.getItemContainer().getItems());
-		boolean firstSight = !bankContentsKnown;
-		bankContentsKnown = true;
-		bankRestored = false;
-		// Stage a cross-session save (written once when the bank closes, not per deposit). The
-		// profile key is captured now, while it's guaranteed available.
-		if (config.rememberBank())
-		{
-			bankSaveDirty = true;
-			bankSaveProfileKey = configManager.getRSProfileKey();
-		}
-		if (firstSight)
+		if (bankSnapshots.bankOpened(event.getItemContainer()))
 		{
 			// First sight of the bank this session: regenerate so the availability map is rebuilt
 			// with the bank contents — banked teleports classify IN_BANK (usable in Inv + bank
@@ -1838,61 +1795,14 @@ public class ShortestPathPlugin extends Plugin
 		// reflected in the method availability (and the catalog counts) — recomputing on every
 		// in-bank container change would run a generation per deposit. NOT during a round trip:
 		// banking mid-trip is the whole point, and regenerating would discard the way back.
-		if (event.getGroupId() == InterfaceID.BANKMAIN && bankContentsKnown && !altRoundTrip)
+		if (event.getGroupId() == InterfaceID.BANKMAIN && bankSnapshots.isKnown() && !altRoundTrip)
 		{
 			recomputeAlternatives();
 		}
 		if (event.getGroupId() == InterfaceID.BANKMAIN)
 		{
-			persistBankSnapshot();
+			bankSnapshots.persist();
 		}
-	}
-
-	/**
-	 * Writes the staged bank snapshot to RSProfile-scoped config (per character, per world type) so
-	 * a later session can start with it. One write per bank session — called when the bank closes,
-	 * at logout, and at plugin shutdown.
-	 */
-	private void persistBankSnapshot()
-	{
-		if (!bankSaveDirty || bankSaveProfileKey == null || pathfinderConfig == null)
-		{
-			return;
-		}
-		String encoded = encodeBankSnapshot(pathfinderConfig.getBankSnapshot());
-		if (encoded == null)
-		{
-			// Bank seen but nothing in it: drop any stale saved snapshot rather than keeping it.
-			configManager.unsetConfiguration(CONFIG_GROUP, bankSaveProfileKey, CONFIG_KEY_BANK_SNAPSHOT);
-		}
-		else
-		{
-			configManager.setConfiguration(CONFIG_GROUP, bankSaveProfileKey, CONFIG_KEY_BANK_SNAPSHOT, encoded);
-		}
-		bankSaveDirty = false;
-	}
-
-	/**
-	 * Loads the previous session's bank snapshot for the current character, if one was saved and the
-	 * bank hasn't already been seen live. Runs at login (and plugin start) so "+ Bank" routes and the
-	 * catalog's in-bank availability work before the bank is opened; the snapshot is replaced by live
-	 * contents the first time the bank opens.
-	 */
-	private void restoreBankFromConfig()
-	{
-		if (!config.rememberBank() || bankContentsKnown)
-		{
-			return;
-		}
-		Item[] items = decodeBankSnapshot(
-			configManager.getRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_BANK_SNAPSHOT));
-		if (items == null)
-		{
-			return;
-		}
-		pathfinderConfig.setBankSnapshot(items);
-		bankContentsKnown = true;
-		bankRestored = true;
 	}
 
 	/**
@@ -1925,7 +1835,7 @@ public class ShortestPathPlugin extends Plugin
 
 	private void restoreDetectionsFromConfig()
 	{
-		restoreBankFromConfig();
+		bankSnapshots.restore();
 		if (pathfinderConfig.availableSpiritTrees == null)
 		{
 			String raw = configManager.getRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_SPIRIT_TREES);
@@ -1942,62 +1852,6 @@ public class ShortestPathPlugin extends Plugin
 		{
 			SwingUtilities.invokeLater(altPanel::refreshConfigSections);
 		}
-	}
-
-	/**
-	 * Serializes bank items as {@code id:quantity} pairs joined by commas. Empty slots and
-	 * placeholders (quantity 0) carry no information and are dropped. Null when there is nothing
-	 * worth saving.
-	 */
-	static String encodeBankSnapshot(Item[] items)
-	{
-		if (items == null)
-		{
-			return null;
-		}
-		StringBuilder sb = new StringBuilder(items.length * 10);
-		for (Item item : items)
-		{
-			if (item == null || item.getId() < 0 || item.getQuantity() <= 0)
-			{
-				continue;
-			}
-			if (sb.length() > 0)
-			{
-				sb.append(',');
-			}
-			sb.append(item.getId()).append(':').append(item.getQuantity());
-		}
-		return sb.length() > 0 ? sb.toString() : null;
-	}
-
-	/** Parses {@link #encodeBankSnapshot}'s format back into items. Null on missing or malformed data. */
-	static Item[] decodeBankSnapshot(String encoded)
-	{
-		if (encoded == null || encoded.isEmpty())
-		{
-			return null;
-		}
-		String[] pairs = encoded.split(",");
-		Item[] items = new Item[pairs.length];
-		try
-		{
-			for (int i = 0; i < pairs.length; i++)
-			{
-				int sep = pairs[i].indexOf(':');
-				if (sep <= 0)
-				{
-					return null;
-				}
-				items[i] = new Item(Integer.parseInt(pairs[i].substring(0, sep)),
-					Integer.parseInt(pairs[i].substring(sep + 1)));
-			}
-		}
-		catch (NumberFormatException e)
-		{
-			return null;
-		}
-		return items;
 	}
 
 	@Subscribe
@@ -3545,7 +3399,7 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	public boolean isBankContentsKnown()
 	{
-		return bankContentsKnown;
+		return bankSnapshots != null && bankSnapshots.isKnown();
 	}
 
 	/**
@@ -3554,7 +3408,7 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	public boolean isBankRestored()
 	{
-		return bankRestored;
+		return bankSnapshots != null && bankSnapshots.isRestored();
 	}
 
 	public void setRoutesMode(AlternativeRoutesMode mode)
