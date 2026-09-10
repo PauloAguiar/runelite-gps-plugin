@@ -12,7 +12,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import javax.swing.SwingUtilities;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -158,10 +157,8 @@ public class ShortestPathPlugin extends Plugin
 	private final ChoiceStore choices = new ChoiceStore(() -> configManager, () -> gson, CONFIG_GROUP);
 	private volatile List<Destinations.Entry> favoriteDestinations = new ArrayList<>();
 	private volatile List<Destinations.Entry> searchHistory = new ArrayList<>();
-	private final Set<TeleportMethod> userExclusions = ConcurrentHashMap.newKeySet();
-	// The exclusions the current route list was generated with; diverging from userExclusions means
-	// the list is stale until the user refreshes (method toggles no longer auto-recalculate).
-	private volatile Set<TeleportMethod> generatedExclusions = Set.of();
+	// The methods the user excluded (see MethodExclusions): a change persists and refreshes the panel.
+	private final MethodExclusions exclusions = new MethodExclusions(choices, () -> refreshPanel(this.session.inFlight()));
 	// Where the current destination came from, for the GPS header: "map pin" for manual targets, the
 	// sender's self-declared "source" for plugin messages (else "another plugin"), null when unset.
 	private volatile String targetSource;
@@ -342,7 +339,7 @@ public class ShortestPathPlugin extends Plugin
 		overlayManager.add(routeDirectionsOverlay);
 
 
-		userExclusions.addAll(choices.loadExclusions());
+		exclusions.load();
 		preferences.load();
 		searchHistory = choices.loadSearchHistory();
 		favoriteDestinations = choices.loadFavorites();
@@ -1552,14 +1549,14 @@ public class ShortestPathPlugin extends Plugin
 
 	public Set<TeleportMethod> getUserExclusions()
 	{
-		return new HashSet<>(userExclusions);
+		return exclusions.copy();
 	}
 
 	// --- Method priorities and preference biases (see RoutePreferences) ------------------------
 
 	// Suppliers: the plugin's injected services arrive after field initialisation, and tests
 	// drive the effective order on a bare plugin.
-	private final RoutePreferences preferences = new RoutePreferences(userExclusions, this::keepSailingFirst,
+	private final RoutePreferences preferences = new RoutePreferences(exclusions.live(), this::keepSailingFirst,
 		() -> configManager, () -> gson, CONFIG_GROUP);
 
 	/** The method's tier: EXCLUDED when in the exclusion set, else its stored tier or NORMAL. */
@@ -1589,7 +1586,7 @@ public class ShortestPathPlugin extends Plugin
 			excludeMethod(method);
 			return;
 		}
-		if (userExclusions.contains(method))
+		if (exclusions.contains(method))
 		{
 			includeMethod(method);
 		}
@@ -1779,74 +1776,29 @@ public class ShortestPathPlugin extends Plugin
 		}
 	}
 
+	// The exclusion API (see MethodExclusions). No recalculation on a change: exclusions apply on
+	// the next "Refresh routes to target" (or any other recompute); the panel refreshes so the
+	// catalog icons and counts update. Single changes hop to the client thread; the panel's bulk
+	// toggles mutate the concurrent set directly.
+
 	public void excludeMethod(TeleportMethod method)
 	{
-		clientThread.invoke(() -> excludeMethodOnClientThread(method));
-	}
-
-	private void excludeMethodOnClientThread(TeleportMethod method)
-	{
-		if (method != null && userExclusions.add(method))
-		{
-			choices.saveExclusions(userExclusions);
-			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
-			// other recompute); this just refreshes the panel so the catalog icons and counts update.
-			refreshPanel(session.inFlight());
-		}
+		clientThread.invoke(() -> exclusions.exclude(method));
 	}
 
 	public void includeMethod(TeleportMethod method)
 	{
-		clientThread.invoke(() -> includeMethodOnClientThread(method));
-	}
-
-	private void includeMethodOnClientThread(TeleportMethod method)
-	{
-		if (method != null && userExclusions.remove(method))
-		{
-			choices.saveExclusions(userExclusions);
-			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
-			// other recompute); this just refreshes the panel so the catalog icons and counts update.
-			refreshPanel(session.inFlight());
-		}
+		clientThread.invoke(() -> exclusions.include(method));
 	}
 
 	public void excludeMethods(Collection<TeleportMethod> methods)
 	{
-		boolean changed = false;
-		if (methods != null)
-		{
-			for (TeleportMethod method : methods)
-			{
-				changed |= userExclusions.add(method);
-			}
-		}
-		if (changed)
-		{
-			choices.saveExclusions(userExclusions);
-			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
-			// other recompute); this just refreshes the panel so the catalog icons and counts update.
-			refreshPanel(session.inFlight());
-		}
+		exclusions.excludeAll(methods);
 	}
 
 	public void includeMethods(Collection<TeleportMethod> methods)
 	{
-		boolean changed = false;
-		if (methods != null)
-		{
-			for (TeleportMethod method : methods)
-			{
-				changed |= userExclusions.remove(method);
-			}
-		}
-		if (changed)
-		{
-			choices.saveExclusions(userExclusions);
-			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
-			// other recompute); this just refreshes the panel so the catalog icons and counts update.
-			refreshPanel(session.inFlight());
-		}
+		exclusions.includeAll(methods);
 	}
 
 	/** The search box's recent selections, most recent first. */
@@ -1902,24 +1854,6 @@ public class ShortestPathPlugin extends Plugin
 		choices.saveFavorites(updated);
 	}
 
-	public void clearExclusions()
-	{
-		clientThread.invoke(this::clearExclusionsOnClientThread);
-	}
-
-	private void clearExclusionsOnClientThread()
-	{
-		if (!userExclusions.isEmpty())
-		{
-			// Seasonal (Leagues) methods are gated by their own "Enable seasonal transports" toggle,
-			// not the exclusion set, so clearing exclusions no longer needs to re-seed them.
-			userExclusions.clear();
-			choices.saveExclusions(userExclusions);
-			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
-			// other recompute); this just refreshes the panel so the catalog icons and counts update.
-			refreshPanel(session.inFlight());
-		}
-	}
 
 	/**
 	 * Manually (re)compute the alternative routes for whatever destination GPS currently has
@@ -2137,13 +2071,19 @@ public class ShortestPathPlugin extends Plugin
 		return gson;
 	}
 
+	/** Reset excluded methods (the burger menu). Seasonal methods are gated by their own toggle, not here. */
+	public void clearExclusions()
+	{
+		clientThread.invoke(exclusions::clear);
+	}
+
 	/**
 	 * Whether the displayed route list was generated with different method exclusions than are
 	 * currently selected — i.e. the user toggled methods since and hasn't pressed Refresh yet.
 	 */
 	public boolean isRouteListStale()
 	{
-		return !userExclusions.equals(generatedExclusions);
+		return exclusions.isStale();
 	}
 
 	public AlternativeRoutesMode getRoutesMode()
@@ -2238,7 +2178,7 @@ public class ShortestPathPlugin extends Plugin
 		session.begin(start, ends);
 		// Snapshot the exclusions this generation runs with, so the panel can flag the route list as
 		// stale once the user toggles methods afterwards (recalculation is manual via Refresh).
-		generatedExclusions = getUserExclusions();
+		exclusions.markGenerated();
 		final List<TeleportMethod> catalog = teleportCatalog;
 		final boolean hasTarget = !ends.isEmpty();
 		if (altPanel != null)
@@ -2247,7 +2187,7 @@ public class ShortestPathPlugin extends Plugin
 			SwingUtilities.invokeLater(() ->
 				altPanel.displayRoutes(List.of(), catalog, unavailable, getUserExclusions(), true, hasTarget));
 		}
-		altRoutesService.generate(start, ends, userExclusions, routesMode, session.limit(), session.costMultiple(),
+		altRoutesService.generate(start, ends, exclusions.live(), routesMode, session.limit(), session.costMultiple(),
 			altRoundTrip, this::onAlternativeRoutesUpdate);
 	}
 

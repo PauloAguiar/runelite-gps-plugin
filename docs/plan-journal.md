@@ -911,3 +911,20 @@ a static, the stored counts a static over the config). The plugin's tick step an
 getters are one line each. Plugin class: 2,362 to 2,331 lines.
 
 **Suite:** 761 tests, all green.
+
+### Step L26: MethodExclusions (2026-09-09)
+
+**Red first:** `MethodExclusionsTest`, over a real `ChoiceStore` on a mocked config manager:
+every real change persists once and notifies once, a no-op change (excluding an excluded
+method, clearing an empty set) does neither, and the route list is stale after a change until
+a generation marks the set as used. The class did not exist.
+
+**Change:** the live exclusion set, the generated-with snapshot and the five mutators (with
+their save-and-refresh) became `MethodExclusions`. The plugin keeps the public API as one-line
+delegates (single changes still hop to the client thread, the panel's bulk toggles still write
+the concurrent set directly), the stale check, the generated mark, and passes the live set by
+reference to the ranking preferences and the generation as before. One Java lesson: a field
+initializer's lambda cannot name a field declared later in the class, even lazily; `this.`
+qualifies it past the rule. One import went with the code. Plugin class: 2,331 to 2,271 lines.
+
+**Suite:** 766 tests, all green.
