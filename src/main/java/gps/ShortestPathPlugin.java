@@ -280,10 +280,6 @@ public class ShortestPathPlugin extends Plugin
 	// button is shown while logged in and removed on the login screen.
 	private boolean navButtonShown = false;
 	private AlternativeRoutesService altRoutesService;
-	private static final String CONFIG_KEY_EXCLUSIONS = "alternativeRoutesExclusions";
-	private static final String CONFIG_KEY_MODE = "alternativeRoutesMode";
-	// The search box's recent selections (most recent first), persisted across sessions.
-	private static final String CONFIG_KEY_SEARCH_HISTORY = "searchHistory";
 	// RSProfile-scoped (per character, per world type): the bank snapshot persisted across sessions.
 	private static final String CONFIG_KEY_BANK_SNAPSHOT = "bankSnapshot";
 	// RSProfile-scoped: the planted spirit trees detected from the travel menu, comma-separated.
@@ -293,8 +289,9 @@ public class ShortestPathPlugin extends Plugin
 	// Smart house furniture detection (see PohDetectionService); constructed at startup, before the panel.
 	private PohDetectionService pohDetection;
 
-	private static final String CONFIG_KEY_FAVORITES = "favoriteDestinations";
-	private static final int FAVORITES_LIMIT = 100;
+	// The persisted choices (exclusions, mode, history, favourites; see ChoiceStore). Suppliers:
+	// the injected services arrive after field initialisation.
+	private final ChoiceStore choices = new ChoiceStore(() -> configManager, () -> gson, CONFIG_GROUP);
 	private volatile List<Destinations.Entry> favoriteDestinations = new ArrayList<>();
 	private volatile List<Destinations.Entry> searchHistory = new ArrayList<>();
 	private final Set<TeleportMethod> userExclusions = ConcurrentHashMap.newKeySet();
@@ -557,13 +554,15 @@ public class ShortestPathPlugin extends Plugin
 		overlayManager.add(routeDirectionsOverlay);
 
 
-		loadExclusions();
+		userExclusions.addAll(choices.loadExclusions());
 		preferences.load();
-		searchHistory = SearchHistory.deserialize(
-			configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_SEARCH_HISTORY));
-		favoriteDestinations = SearchHistory.deserialize(
-			configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_FAVORITES), FAVORITES_LIMIT);
-		loadRoutesMode();
+		searchHistory = choices.loadSearchHistory();
+		favoriteDestinations = choices.loadFavorites();
+		AlternativeRoutesMode savedMode = choices.loadRoutesMode();
+		if (savedMode != null)
+		{
+			routesMode = savedMode;
+		}
 		session.setLimit(defaultRouteLimit());
 		altPanel = new ShortestPathPanel(this);
 		altRoutesService = new AlternativeRoutesService(clientThread, pathfinderConfig.copyForPlanning());
@@ -3176,7 +3175,7 @@ public class ShortestPathPlugin extends Plugin
 	{
 		if (method != null && userExclusions.add(method))
 		{
-			saveExclusions();
+			choices.saveExclusions(userExclusions);
 			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
 			// other recompute); this just refreshes the panel so the catalog icons and counts update.
 			refreshPanel(session.inFlight());
@@ -3192,7 +3191,7 @@ public class ShortestPathPlugin extends Plugin
 	{
 		if (method != null && userExclusions.remove(method))
 		{
-			saveExclusions();
+			choices.saveExclusions(userExclusions);
 			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
 			// other recompute); this just refreshes the panel so the catalog icons and counts update.
 			refreshPanel(session.inFlight());
@@ -3211,7 +3210,7 @@ public class ShortestPathPlugin extends Plugin
 		}
 		if (changed)
 		{
-			saveExclusions();
+			choices.saveExclusions(userExclusions);
 			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
 			// other recompute); this just refreshes the panel so the catalog icons and counts update.
 			refreshPanel(session.inFlight());
@@ -3230,7 +3229,7 @@ public class ShortestPathPlugin extends Plugin
 		}
 		if (changed)
 		{
-			saveExclusions();
+			choices.saveExclusions(userExclusions);
 			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
 			// other recompute); this just refreshes the panel so the catalog icons and counts update.
 			refreshPanel(session.inFlight());
@@ -3248,7 +3247,7 @@ public class ShortestPathPlugin extends Plugin
 	{
 		List<Destinations.Entry> updated = SearchHistory.push(searchHistory, entry);
 		searchHistory = updated;
-		configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_SEARCH_HISTORY, SearchHistory.serialize(updated));
+		choices.saveSearchHistory(updated);
 	}
 
 	/** The player's saved favourite positions, in saved order. */
@@ -3268,12 +3267,12 @@ public class ShortestPathPlugin extends Plugin
 				updated.add(entry);
 			}
 		}
-		if (updated.size() < FAVORITES_LIMIT)
+		if (updated.size() < ChoiceStore.FAVORITES_LIMIT)
 		{
 			updated.add(new Destinations.Entry("favorite", label, packedPosition));
 		}
 		favoriteDestinations = updated;
-		configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_FAVORITES, SearchHistory.serialize(updated));
+		choices.saveFavorites(updated);
 	}
 
 	public void removeFavoriteDestination(Destinations.Entry favorite)
@@ -3287,7 +3286,7 @@ public class ShortestPathPlugin extends Plugin
 			}
 		}
 		favoriteDestinations = updated;
-		configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_FAVORITES, SearchHistory.serialize(updated));
+		choices.saveFavorites(updated);
 	}
 
 	public void clearExclusions()
@@ -3302,7 +3301,7 @@ public class ShortestPathPlugin extends Plugin
 			// Seasonal (Leagues) methods are gated by their own "Enable seasonal transports" toggle,
 			// not the exclusion set, so clearing exclusions no longer needs to re-seed them.
 			userExclusions.clear();
-			saveExclusions();
+			choices.saveExclusions(userExclusions);
 			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
 			// other recompute); this just refreshes the panel so the catalog icons and counts update.
 			refreshPanel(session.inFlight());
@@ -3569,7 +3568,7 @@ public class ShortestPathPlugin extends Plugin
 				return;
 			}
 			this.routesMode = mode;
-			saveRoutesMode();
+			choices.saveRoutesMode(mode);
 			triggerAlternatives(session.lastStart(), session.lastTargetsCopy());
 		});
 	}
@@ -3713,100 +3712,6 @@ public class ShortestPathPlugin extends Plugin
 			SwingUtilities.invokeLater(() ->
 				altPanel.displayRoutes(session.routes(), teleportCatalog, unavailableMethods,
 					getUserExclusions(), calculating, hasTarget));
-		}
-	}
-
-	private void saveExclusions()
-	{
-		try
-		{
-			configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_EXCLUSIONS,
-				gson.toJson(new ArrayList<>(userExclusions)));
-		}
-		catch (Exception e)
-		{
-			log.warn("Failed to save alternative-route exclusions", e);
-		}
-	}
-
-	private void loadExclusions()
-	{
-		try
-		{
-			String json = configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_EXCLUSIONS);
-			if (json == null || json.isEmpty())
-			{
-				return;
-			}
-			TeleportMethod[] saved = gson.fromJson(json, TeleportMethod[].class);
-			if (saved != null)
-			{
-				boolean droppedSeasonal = false;
-				for (TeleportMethod method : saved)
-				{
-					if (method == null || method.getType() == null)
-					{
-						continue;
-					}
-					// Migration: seasonal methods used to be seeded into the exclusion set as the
-					// "disabled by default" mechanism. They're now gated by the "Enable seasonal
-					// transports" toggle instead, so drop any that a prior version persisted here —
-					// otherwise they'd linger in the set (and in debug captures) forever.
-					if (method.getType() == gps.transport.TransportType.SEASONAL_TRANSPORTS)
-					{
-						droppedSeasonal = true;
-						continue;
-					}
-					userExclusions.add(method);
-				}
-				if (droppedSeasonal)
-				{
-					saveExclusions();
-				}
-			}
-		}
-		catch (Exception e)
-		{
-			log.warn("Failed to load alternative-route exclusions", e);
-		}
-	}
-
-	private void saveRoutesMode()
-	{
-		configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_MODE, routesMode.name());
-	}
-
-	private void loadRoutesMode()
-	{
-		String value = configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_MODE);
-		if (value == null || value.isEmpty())
-		{
-			return;
-		}
-		try
-		{
-			routesMode = AlternativeRoutesMode.valueOf(value);
-		}
-		catch (IllegalArgumentException e)
-		{
-			// Legacy 3-mode names from before the Owned/All split.
-			switch (value)
-			{
-				case "AVAILABLE":
-					routesMode = AlternativeRoutesMode.OWNED_INVENTORY;
-					break;
-				case "AVAILABLE_WITH_BANK":
-					routesMode = AlternativeRoutesMode.OWNED_WITH_BANK;
-					break;
-				case "ALL_TELEPORTS":
-				case "ALL_UNLOCKED":
-					// Legacy names; the unlocked-only middle mode was folded into All.
-					routesMode = AlternativeRoutesMode.ALL_EVERYTHING;
-					break;
-				default:
-					log.warn("Unknown alternative-routes mode '{}'", value);
-					break;
-			}
 		}
 	}
 

@@ -704,3 +704,20 @@ re-sort that follows. `MethodPriorityTest` now holds only the enum's own arithme
 Plugin class: 3,939 to 3,832 lines.
 
 **Suite:** 721 tests, all green.
+
+### Step L15: ChoiceStore (2026-09-09)
+
+**Red first:** `ChoiceStoreTest`: the routes mode reloads by name, the three legacy 3-mode
+names map onto the Owned/All split, anything else means "keep the default"; the exclusion set
+reloads from JSON dropping typeless entries and the seasonal methods a prior version seeded
+there, rewriting the cleaned set once and only when something was dropped; the search history
+and favourites round-trip through their codec. The class did not exist. One test fix:
+destination entries carry no equals, so the round trip compares the three codec fields.
+
+**Change:** the four persisted choices (exclusions with their seasonal migration, routes mode
+with its legacy names, search history, favourites and its limit) became `ChoiceStore`, with the
+mode decoder a pure static. The plugin keeps the live copies and calls the store on change: the
+five exclusion save sites, the mode change, the history and favourite writes, and the startup
+loads (the saved mode applies only when one exists). Plugin class: 3,832 to 3,737 lines.
+
+**Suite:** 725 tests, all green.
