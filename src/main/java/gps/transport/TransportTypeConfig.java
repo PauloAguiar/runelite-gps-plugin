@@ -6,7 +6,7 @@ import java.util.Map;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import gps.ShortestPathConfig;
-import gps.ShortestPathPlugin;
+import gps.ConfigOverrides;
 import gps.TeleportationItem;
 
 /**
@@ -84,7 +84,7 @@ public class TransportTypeConfig
 	public void refresh()
 	{
 		// Cache the teleportation item setting
-		teleportationItemSetting = ShortestPathPlugin.override("useTeleportationItems", config.useTeleportationItems());
+		teleportationItemSetting = ConfigOverrides.override("useTeleportationItems", config.useTeleportationItems());
 
 		for (TransportType type : TransportType.values())
 		{
@@ -124,7 +124,7 @@ public class TransportTypeConfig
 		}
 
 		boolean configValue = type.getEnabledGetter().apply(config);
-		return ShortestPathPlugin.override(type, configValue);
+		return ConfigOverrides.override(type, configValue);
 	}
 
 	/**
@@ -140,7 +140,7 @@ public class TransportTypeConfig
 		}
 
 		int configValue = type.getCostGetter().apply(config);
-		return ShortestPathPlugin.override(type, configValue);
+		return ConfigOverrides.override(type, configValue);
 	}
 
 	/**

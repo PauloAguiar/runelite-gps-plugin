@@ -100,9 +100,9 @@ final class DebugSnapshot
 		// (see PathfinderConfig.refresh), so their config value is overridden and misleading;
 		// routesMode above is the effective control.
 		Map<String, Object> configValues = new LinkedHashMap<>();
-		configValues.put("avoidWilderness", ShortestPathPlugin.override("avoidWilderness", config.avoidWilderness()));
-		configValues.put("costBankPickup", ShortestPathPlugin.override("costBankPickup", config.costBankPickup()));
-		configValues.put("defaultRouteCount", ShortestPathPlugin.override("defaultRouteCount", config.defaultRouteCount()));
+		configValues.put("avoidWilderness", ConfigOverrides.override("avoidWilderness", config.avoidWilderness()));
+		configValues.put("costBankPickup", ConfigOverrides.override("costBankPickup", config.costBankPickup()));
+		configValues.put("defaultRouteCount", ConfigOverrides.override("defaultRouteCount", config.defaultRouteCount()));
 		snapshot.put("config", configValues);
 
 		RouteOption displayed = plugin.getDisplayedRoute();

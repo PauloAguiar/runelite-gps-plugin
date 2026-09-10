@@ -670,4 +670,36 @@ public final class Destinations
 		}
 		return entries;
 	}
+
+	/**
+	 * The target set for destinations another plugin sends. Quest Helper often targets an NPC's
+	 * or object's own tile, which is not walkable: a search targeting only it exhausts the
+	 * entire map and ends "closest tile" (captured: ~880 ms per search), so each tile expands to
+	 * its walkable ring like a manual pin. When any expanded tile is a mapped transport ORIGIN
+	 * (Quest Helper caves, stairs), that origin IS the interactable side: the rest is dropped,
+	 * or the search ends wherever the approach is cheapest, including BEHIND the object
+	 * (captured at the Troll Stronghold south cave).
+	 */
+	public static Set<Integer> externalTargets(Set<Integer> targets, gps.pathfinder.CollisionMap map,
+		java.util.function.IntPredicate transportOrigin)
+	{
+		Set<Integer> ends = new HashSet<>();
+		for (int target : targets)
+		{
+			ends.addAll(walkableTargets(map, target, transportOrigin));
+		}
+		if (transportOrigin == null)
+		{
+			return ends;
+		}
+		Set<Integer> origins = new HashSet<>();
+		for (int end : ends)
+		{
+			if (transportOrigin.test(end))
+			{
+				origins.add(end);
+			}
+		}
+		return origins.isEmpty() ? ends : origins;
+	}
 }

@@ -11,15 +11,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
 import javax.swing.SwingUtilities;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -108,41 +105,6 @@ public class ShortestPathPlugin extends Plugin
 	private static final String FLASH_ICONS = "Flash icons";
 	private static final String TARGET = ColorUtil.wrapWithColorTag("GPS Target", JagexColors.MENU_TARGET);
 	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
-	// Every config key the routing engine reads (PathfinderConfig.refresh / TransportTypeConfig):
-	// a change to one of these regenerates the routes. RouteAffectingKeysTest scans the engine's
-	// sources and fails when a key it reads is missing here - the pohMount*/sailing* toggles were
-	// silently inert because this list was maintained by hand.
-	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|calculationCutoff|pohJewelleryBoxTier|pohMount\\w+|sailingAssumeSummon|sailingTeleportAbandon|balloonSmartMode|balloonStored\\w+|spiritTreeSmartMode|use\\w+|cost\\w+)$");
-
-	private static volatile Set<String> knownConfigKeysCache;
-
-	/** Every @ConfigItem key ShortestPathConfig declares - the only keys a plugin message may override. */
-	static Set<String> knownConfigKeys()
-	{
-		Set<String> keys = knownConfigKeysCache;
-		if (keys == null)
-		{
-			keys = new HashSet<>();
-			for (java.lang.reflect.Method method : ShortestPathConfig.class.getMethods())
-			{
-				net.runelite.client.config.ConfigItem item =
-					method.getAnnotation(net.runelite.client.config.ConfigItem.class);
-				if (item != null)
-				{
-					keys.add(item.keyName());
-				}
-			}
-			knownConfigKeysCache = Collections.unmodifiableSet(keys);
-		}
-		return keys;
-	}
-
-	/** Whether a change to this config key changes what the routing engine computes. */
-	static boolean affectsRouting(String key)
-	{
-		return key != null && TRANSPORT_OPTIONS_REGEX.matcher(key).find();
-	}
-	private static final Map<String, Object> configOverride = new HashMap<>(50);
 	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
 	boolean drawMap;
 	boolean drawMinimap;
@@ -356,84 +318,6 @@ public class ShortestPathPlugin extends Plugin
 	// FairyRingHighlighter); constructed at startup with the pathfinder config.
 	private SpiritTreeSync spiritTrees;
 	private FairyRingHighlighter fairyRingLog;
-
-	public static boolean override(String configOverrideKey, boolean defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof Boolean)
-			{
-				return (boolean) value;
-			}
-		}
-		return defaultValue;
-	}
-
-	/**
-	 * Override for TransportType enabled state using the config key name stored in the enum.
-	 */
-	public static boolean override(TransportType type, boolean defaultValue)
-	{
-		String key = type.getEnabledKey();
-		return key != null ? override(key, defaultValue) : defaultValue;
-	}
-
-	/**
-	 * Override for TransportType cost threshold using the config key name stored in the enum.
-	 */
-	public static int override(TransportType type, int defaultValue)
-	{
-		String key = type.getCostKey();
-		return key != null ? override(key, defaultValue) : defaultValue;
-	}
-
-	public static int override(String configOverrideKey, int defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof Integer)
-			{
-				return (int) value;
-			}
-		}
-		return defaultValue;
-	}
-
-	public static TeleportationItem override(String configOverrideKey, TeleportationItem defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof String)
-			{
-				TeleportationItem teleportationItem = TeleportationItem.fromType((String) value);
-				if (teleportationItem != null)
-				{
-					return teleportationItem;
-				}
-			}
-		}
-		return defaultValue;
-	}
-
-	public static JewelleryBoxTier override(String configOverrideKey, JewelleryBoxTier defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof String)
-			{
-				JewelleryBoxTier tier = JewelleryBoxTier.fromType((String) value);
-				if (tier != null)
-				{
-					return tier;
-				}
-			}
-		}
-		return defaultValue;
-	}
 
 	@Provides
 	public ShortestPathConfig provideConfig(ConfigManager configManager)
@@ -886,7 +770,7 @@ public class ShortestPathPlugin extends Plugin
 			resortRoutesByPriority();
 		}
 
-		if (affectsRouting(event.getKey()))
+		if (ConfigOverrides.affectsRouting(event.getKey()))
 		{
 			if (hasPathTargets())
 			{
@@ -918,7 +802,7 @@ public class ShortestPathPlugin extends Plugin
 		if (altPanel != null
 			&& (event.getKey().startsWith("balloon") || "pohSmartDetect".equals(event.getKey())
 			|| "rememberBank".equals(event.getKey())
-			|| affectsRouting(event.getKey())))
+			|| ConfigOverrides.affectsRouting(event.getKey())))
 		{
 			SwingUtilities.invokeLater(altPanel::refreshConfigSections);
 		}
@@ -1020,21 +904,10 @@ public class ShortestPathPlugin extends Plugin
 		if (PluginMessageCodec.ACTION_PATH.equals(action))
 		{
 			Map<String, Object> data = event.getData();
-			Map<String, Object> configOverride = PluginMessageCodec.configOverrideOf(data);
-			if (!configOverride.isEmpty())
+			Map<String, Object> overrides = PluginMessageCodec.configOverrideOf(data);
+			if (!overrides.isEmpty())
 			{
-				ShortestPathPlugin.configOverride.clear();
-				for (String key : configOverride.keySet())
-				{
-					// An unknown key would sit in the override map forever and never be
-					// diagnosable from either side: reject it loudly instead.
-					if (!knownConfigKeys().contains(key))
-					{
-						log.warn("Plugin message config override ignored: unknown key '{}'", key);
-						continue;
-					}
-					ShortestPathPlugin.configOverride.put(key, configOverride.get(key));
-				}
+				ConfigOverrides.apply(overrides);
 				cacheConfigValues();
 			}
 
@@ -1069,41 +942,17 @@ public class ShortestPathPlugin extends Plugin
 				// journey timer here too — otherwise the arrival time carries over from whatever manual
 				// destination was last set. Reusing the previous target keeps the running journey.
 				armJourney();
-				// Quest Helper often targets an NPC's or object's own tile, which isn't walkable — a
-				// search targeting only it exhausts the entire map and ends 'closest tile' (captured:
-				// ~880ms per search). Expand to the nearest walkable ring, like manual pins.
-				ends = new HashSet<>();
-				for (int target : targets)
-				{
-					ends.addAll(Destinations.walkableTargets(
-						pathfinderConfig != null ? pathfinderConfig.getMap() : null, target,
-						pathfinderConfig != null ? pathfinderConfig::isTransportOrigin : null));
-				}
-				// Object targets from other plugins (Quest Helper caves, stairs): when any
-				// expanded tile is a mapped transport ORIGIN, that origin IS the interactable
-				// side — drop the rest, or the search ends wherever the approach is cheapest,
-				// including BEHIND the object (captured at the Troll Stronghold south cave).
-				if (pathfinderConfig != null)
-				{
-					Set<Integer> origins = new HashSet<>();
-					for (int end : ends)
-					{
-						if (pathfinderConfig.isTransportOrigin(end))
-						{
-							origins.add(end);
-						}
-					}
-					if (!origins.isEmpty())
-					{
-						ends = origins;
-					}
-				}
+				// An NPC's or object's own tile expands like a map pin; a transport origin among
+				// the expansion is the interactable side (see Destinations.externalTargets).
+				ends = Destinations.externalTargets(targets,
+					pathfinderConfig != null ? pathfinderConfig.getMap() : null,
+					pathfinderConfig != null ? pathfinderConfig::isTransportOrigin : null);
 			}
 			setDestination(start, ends, useOld);
 		}
 		else if (PluginMessageCodec.ACTION_CLEAR.equals(action))
 		{
-			configOverride.clear();
+			ConfigOverrides.clear();
 			cacheConfigValues();
 			targetSource = null;
 			setTarget(WorldPointUtil.UNDEFINED);
@@ -1121,7 +970,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return;
 		}
-		if (override("postTransports", config.postTransports()))
+		if (ConfigOverrides.override("postTransports", config.postTransports()))
 		{
 			List<PathStep> currentPath = getDisplayPath();
 			if (currentPath.isEmpty())
@@ -1636,53 +1485,40 @@ public class ShortestPathPlugin extends Plugin
 		return path.get(index + 1);
 	}
 
-	private Color override(String configOverrideKey, Color defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof Color)
-			{
-				return (Color) value;
-			}
-		}
-		return defaultValue;
-	}
-
 
 	// The helm-preference toggle, cached for the comparator (read on the service thread).
 	private volatile boolean cachedKeepSailing = true;
 
 	private void cacheConfigValues()
 	{
-		cachedKeepSailing = override("sailingKeepSailing", config.sailingKeepSailing());
-		drawMap = override("drawMap", config.drawMap());
-		drawMinimap = override("drawMinimap", config.drawMinimap());
-		drawTiles = override("drawTiles", config.drawTiles());
-		drawRecalculationRanges = override("drawRecalculationRanges", config.drawRecalculationRanges());
-		showTransportInfo = override("showTransportInfo", config.showTransportInfo());
-		showBankPickupInfo = override("showBankPickupInfo", config.showBankPickupInfo());
+		cachedKeepSailing = ConfigOverrides.override("sailingKeepSailing", config.sailingKeepSailing());
+		drawMap = ConfigOverrides.override("drawMap", config.drawMap());
+		drawMinimap = ConfigOverrides.override("drawMinimap", config.drawMinimap());
+		drawTiles = ConfigOverrides.override("drawTiles", config.drawTiles());
+		drawRecalculationRanges = ConfigOverrides.override("drawRecalculationRanges", config.drawRecalculationRanges());
+		showTransportInfo = ConfigOverrides.override("showTransportInfo", config.showTransportInfo());
+		showBankPickupInfo = ConfigOverrides.override("showBankPickupInfo", config.showBankPickupInfo());
 
-		colourPath = override("colourPath", config.colourPath());
-		colourPathSailing = override("colourPathSailing", config.colourPathSailing());
-		colourPathBlocked = override("colourPathBlocked", config.colourPathBlocked());
-		colourPathCalculating = override("colourPathCalculating", config.colourPathCalculating());
-		colourPathUnreachable = override("colourPathUnreachable", config.colourPathUnreachable());
-		colourText = override("colourText", config.colourText());
-		colourTeleportPulse = override("colourTeleportPulse", config.colourTeleportPulse());
-		colourOverlayAccent = override("colourOverlayAccent", config.colourOverlayAccent());
+		colourPath = ConfigOverrides.override("colourPath", config.colourPath());
+		colourPathSailing = ConfigOverrides.override("colourPathSailing", config.colourPathSailing());
+		colourPathBlocked = ConfigOverrides.override("colourPathBlocked", config.colourPathBlocked());
+		colourPathCalculating = ConfigOverrides.override("colourPathCalculating", config.colourPathCalculating());
+		colourPathUnreachable = ConfigOverrides.override("colourPathUnreachable", config.colourPathUnreachable());
+		colourText = ConfigOverrides.override("colourText", config.colourText());
+		colourTeleportPulse = ConfigOverrides.override("colourTeleportPulse", config.colourTeleportPulse());
+		colourOverlayAccent = ConfigOverrides.override("colourOverlayAccent", config.colourOverlayAccent());
 
-		unreachableTargetDistance = override("unreachableTargetDistanceThreshold", config.unreachableTargetDistance());
+		unreachableTargetDistance = ConfigOverrides.override("unreachableTargetDistanceThreshold", config.unreachableTargetDistance());
 		unreachableText = config.unreachableText();
 
-		showTeleportPulse = override("showTeleportPulse", config.showTeleportPulse());
-		showDirections = override("showDirections", config.showDirections());
-		overrideOverlayTransparency = override("overrideOverlayTransparency", config.overrideOverlayTransparency());
-		overlayTransparency = override("overlayTransparency", config.overlayTransparency());
+		showTeleportPulse = ConfigOverrides.override("showTeleportPulse", config.showTeleportPulse());
+		showDirections = ConfigOverrides.override("showDirections", config.showDirections());
+		overrideOverlayTransparency = ConfigOverrides.override("overrideOverlayTransparency", config.overrideOverlayTransparency());
+		overlayTransparency = ConfigOverrides.override("overlayTransparency", config.overlayTransparency());
 		// Display-only preference; not part of the capture-replay override set.
 		overlayFontSize = config.overlayFontSize();
-		arrivalAutoDismiss = override("arrivalAutoDismiss", config.arrivalAutoDismiss());
-		arrivalDismissSeconds = override("arrivalDismissSeconds", config.arrivalDismissSeconds());
+		arrivalAutoDismiss = ConfigOverrides.override("arrivalAutoDismiss", config.arrivalAutoDismiss());
+		arrivalDismissSeconds = ConfigOverrides.override("arrivalDismissSeconds", config.arrivalDismissSeconds());
 	}
 
 	private String simplify(String text)
@@ -2182,7 +2018,7 @@ public class ShortestPathPlugin extends Plugin
 	 * Writes a setting from the panel's configuration sections (POH, wilderness, balloons).
 	 * Persisting through the ConfigManager keeps the panel and the RuneLite config UI in sync (same
 	 * keys), and the resulting ConfigChanged event re-caches values and regenerates the routes
-	 * (route-affecting keys match TRANSPORT_OPTIONS_REGEX).
+	 * (route-affecting keys per ConfigOverrides.affectsRouting).
 	 */
 	public void setPanelConfig(String key, Object value)
 	{
@@ -2418,7 +2254,7 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	private int defaultRouteLimit()
 	{
-		return routeLimitFor(altPanelVisible, override("defaultRouteCount", config.defaultRouteCount()));
+		return routeLimitFor(altPanelVisible, ConfigOverrides.override("defaultRouteCount", config.defaultRouteCount()));
 	}
 
 	/**

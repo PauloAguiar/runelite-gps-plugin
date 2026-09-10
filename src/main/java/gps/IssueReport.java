@@ -53,8 +53,8 @@ final class IssueReport
 		// bankPickup weights the bank detour. The mode (above) already implies bank routing and the
 		// item scope, so those are not repeated (they would show the overridden config value).
 		body.append("- Config: avoidWilderness=")
-			.append(ShortestPathPlugin.override("avoidWilderness", config.avoidWilderness()))
-			.append(", bankPickup=").append(ShortestPathPlugin.override("costBankPickup", config.costBankPickup()))
+			.append(ConfigOverrides.override("avoidWilderness", config.avoidWilderness()))
+			.append(", bankPickup=").append(ConfigOverrides.override("costBankPickup", config.costBankPickup()))
 			.append('\n');
 
 		// Method availability at a glance: the full catalog is far too big, so counts per status

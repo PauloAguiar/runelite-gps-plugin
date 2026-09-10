@@ -35,7 +35,7 @@ import gps.MethodAvailability;
 import gps.PrimitiveIntHashMap;
 import gps.ShortestPathConfig;
 import gps.PlayerOwnedHouse;
-import gps.ShortestPathPlugin;
+import gps.ConfigOverrides;
 import gps.RoutingItemDependencies;
 import gps.TeleportMethod;
 import gps.TeleportationItem;
@@ -796,34 +796,34 @@ public class PathfinderConfig
 	public void refresh()
 	{
 		calculationCutoffMillis = (long) config.calculationCutoff() * Constants.GAME_TICK_LENGTH;
-		avoidWilderness = ShortestPathPlugin.override("avoidWilderness", config.avoidWilderness());
-		usePoh = ShortestPathPlugin.override("usePoh", config.usePoh());
-		useSailing = ShortestPathPlugin.override("useSailing", config.useSailing());
+		avoidWilderness = ConfigOverrides.override("avoidWilderness", config.avoidWilderness());
+		usePoh = ConfigOverrides.override("usePoh", config.usePoh());
+		useSailing = ConfigOverrides.override("useSailing", config.useSailing());
 		// Read before refreshTransports() below — passesStructuralGates() gates farmable spirit
 		// trees on it.
-		spiritTreeSmartMode = ShortestPathPlugin.override("spiritTreeSmartMode", config.spiritTreeSmartMode());
+		spiritTreeSmartMode = ConfigOverrides.override("spiritTreeSmartMode", config.spiritTreeSmartMode());
 		leagueModeState.refresh(client);
 
 		// Refresh transport type enabled states
 		transportTypeConfig.refresh();
 		// POH-specific settings
-		usePohFairyRing = ShortestPathPlugin.override("usePohFairyRing", config.usePohFairyRing());
-		usePohSpiritTree = ShortestPathPlugin.override("usePohSpiritTree", config.usePohSpiritTree());
-		usePohMountedItems = ShortestPathPlugin.override("usePohMountedItems", config.usePohMountedItems());
-		pohMountGlory = ShortestPathPlugin.override("pohMountGlory", config.pohMountGlory());
-		pohMountXerics = ShortestPathPlugin.override("pohMountXerics", config.pohMountXerics());
-		pohMountDigsite = ShortestPathPlugin.override("pohMountDigsite", config.pohMountDigsite());
-		pohMountMythical = ShortestPathPlugin.override("pohMountMythical", config.pohMountMythical());
-		usePohObelisk = ShortestPathPlugin.override("usePohObelisk", config.usePohObelisk());
-		pohJewelleryBoxTier = ShortestPathPlugin.override("pohJewelleryBoxTier", config.pohJewelleryBoxTier());
+		usePohFairyRing = ConfigOverrides.override("usePohFairyRing", config.usePohFairyRing());
+		usePohSpiritTree = ConfigOverrides.override("usePohSpiritTree", config.usePohSpiritTree());
+		usePohMountedItems = ConfigOverrides.override("usePohMountedItems", config.usePohMountedItems());
+		pohMountGlory = ConfigOverrides.override("pohMountGlory", config.pohMountGlory());
+		pohMountXerics = ConfigOverrides.override("pohMountXerics", config.pohMountXerics());
+		pohMountDigsite = ConfigOverrides.override("pohMountDigsite", config.pohMountDigsite());
+		pohMountMythical = ConfigOverrides.override("pohMountMythical", config.pohMountMythical());
+		usePohObelisk = ConfigOverrides.override("usePohObelisk", config.usePohObelisk());
+		pohJewelleryBoxTier = ConfigOverrides.override("pohJewelleryBoxTier", config.pohJewelleryBoxTier());
 
 		// Other settings (useTeleportationItems is now managed by transportTypeConfig)
-		currencyThreshold = ShortestPathPlugin.override("currencyThreshold", config.currencyThreshold());
-		includeBankPath = ShortestPathPlugin.override("includeBankPath", config.includeBankPath());
+		currencyThreshold = ConfigOverrides.override("currencyThreshold", config.currencyThreshold());
+		includeBankPath = ConfigOverrides.override("includeBankPath", config.includeBankPath());
 
 		// Note: Transport type costs are now managed by transportTypeConfig.getCost()
-		costConsumableTeleportationItems = ShortestPathPlugin.override("costConsumableTeleportationItems", config.costConsumableTeleportationItems());
-		int configuredBankPickup = ShortestPathPlugin.override("costBankPickup", config.costBankPickup());
+		costConsumableTeleportationItems = ConfigOverrides.override("costConsumableTeleportationItems", config.costConsumableTeleportationItems());
+		int configuredBankPickup = ConfigOverrides.override("costBankPickup", config.costBankPickup());
 		bankPickupCost = configuredBankPickup < 0
 			? configuredBankPickup : Math.max(MIN_BANK_PICKUP_COST, configuredBankPickup);
 

@@ -821,3 +821,27 @@ each) and the config-change hook. One import went with the code. Plugin class: 2
 lines.
 
 **Suite:** 745 tests, all green.
+
+### Step L21: ConfigOverrides, and the external-target expansion (2026-09-09)
+
+**Red first:** `ConfigOverridesTest`: an applied override answers instead of the config value
+by type (boolean, int, teleport-item and jewellery-tier names, colour), an unknown key is
+rejected, a key the message did not set keeps the config value, a value of the wrong type
+falls through, a new message replaces the previous set, clearing restores every config value,
+and the route-affecting test names the keys the engine reads. `ExternalTargetsTest`: a
+transport origin among another plugin's targets wins alone, otherwise every target stands. The
+class and the method did not exist.
+
+**Change:** the override map, its six typed reads (the colour one was an instance method for
+no reason), the known-key set and the route-affecting pattern became `ConfigOverrides`,
+public because the pathfinder config and the transport type config read it (twenty-one call
+sites re-pointed, plus the two reports and the keys test). The message handler applies a
+message's overrides in one call. The Quest Helper target expansion (walkable ring, then the
+transport origins alone when any) joined `Destinations` beside the pin expansion it builds on.
+Three imports went with the code. Plugin class: 2,795 to 2,631 lines.
+
+One tooling lesson: the patch script appended the Destinations method before its own checks
+ran, so two failed attempts left it three times over. Scripts now write nothing until every
+check passes.
+
+**Suite:** 750 tests, all green.

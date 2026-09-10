@@ -54,7 +54,7 @@ public class RouteAffectingKeysTest
 		Set<String> missing = new TreeSet<>();
 		for (String key : keys)
 		{
-			if (!NOT_ROUTING.contains(key) && !ShortestPathPlugin.affectsRouting(key))
+			if (!NOT_ROUTING.contains(key) && !ConfigOverrides.affectsRouting(key))
 			{
 				missing.add(key);
 			}
@@ -68,18 +68,18 @@ public class RouteAffectingKeysTest
 		for (String key : List.of("pohMountGlory", "pohMountXerics", "pohMountDigsite", "pohMountMythical",
 			"sailingAssumeSummon", "sailingTeleportAbandon", "useCharterShips", "costSailing", "avoidWilderness"))
 		{
-			assertTrue(key + " must regenerate routes", ShortestPathPlugin.affectsRouting(key));
+			assertTrue(key + " must regenerate routes", ConfigOverrides.affectsRouting(key));
 		}
 		// Display order only: handled by a re-sort, not a regeneration.
-		assertFalse(ShortestPathPlugin.affectsRouting("sailingKeepSailing"));
-		assertFalse(ShortestPathPlugin.affectsRouting("colourPath"));
-		assertFalse(ShortestPathPlugin.affectsRouting(null));
+		assertFalse(ConfigOverrides.affectsRouting("sailingKeepSailing"));
+		assertFalse(ConfigOverrides.affectsRouting("colourPath"));
+		assertFalse(ConfigOverrides.affectsRouting(null));
 	}
 
 	@Test
 	public void pluginMessageOverridesOnlyAcceptDeclaredKeys()
 	{
-		Set<String> known = ShortestPathPlugin.knownConfigKeys();
+		Set<String> known = ConfigOverrides.knownKeys();
 		assertTrue(known.contains("avoidWilderness"));
 		assertTrue(known.contains("useTeleportationItems"));
 		assertFalse("a typo must be rejected, not stored forever", known.contains("avoidWildernes"));
