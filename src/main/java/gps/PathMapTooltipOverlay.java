@@ -82,10 +82,10 @@ public class PathMapTooltipOverlay extends Overlay
 		List<PathStep> path, int pathIndex)
 	{
 		int offsetPoint = WorldPointUtil.dxdy(point, 1, -1);
-		int startX = plugin.mapWorldPointToGraphicsPointX(point);
-		int startY = plugin.mapWorldPointToGraphicsPointY(point);
-		int endX = plugin.mapWorldPointToGraphicsPointX(offsetPoint);
-		int endY = plugin.mapWorldPointToGraphicsPointY(offsetPoint);
+		int startX = plugin.worldMap().toGraphicsX(point);
+		int startY = plugin.worldMap().toGraphicsY(point);
+		int endX = plugin.worldMap().toGraphicsX(offsetPoint);
+		int endY = plugin.worldMap().toGraphicsY(offsetPoint);
 
 		if (startX == Integer.MIN_VALUE || startY == Integer.MIN_VALUE ||
 			endX == Integer.MIN_VALUE || endY == Integer.MIN_VALUE)

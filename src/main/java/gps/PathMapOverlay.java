@@ -142,10 +142,10 @@ public class PathMapOverlay extends Overlay
 
 	private void drawMapSegment(Graphics2D graphics, int from, int to, java.awt.Stroke stroke)
 	{
-		int x1 = plugin.mapWorldPointToGraphicsPointX(from);
-		int y1 = plugin.mapWorldPointToGraphicsPointY(from);
-		int x2 = plugin.mapWorldPointToGraphicsPointX(to);
-		int y2 = plugin.mapWorldPointToGraphicsPointY(to);
+		int x1 = plugin.worldMap().toGraphicsX(from);
+		int y1 = plugin.worldMap().toGraphicsY(from);
+		int x2 = plugin.worldMap().toGraphicsX(to);
+		int y2 = plugin.worldMap().toGraphicsY(to);
 		if (x1 == Integer.MIN_VALUE || y1 == Integer.MIN_VALUE
 			|| x2 == Integer.MIN_VALUE || y2 == Integer.MIN_VALUE)
 		{
@@ -167,10 +167,10 @@ public class PathMapOverlay extends Overlay
 
 	private void drawOnMap(Graphics2D graphics, int point, int offsetPoint, boolean checkHover, Point cursorPos)
 	{
-		int startX = plugin.mapWorldPointToGraphicsPointX(point);
-		int startY = plugin.mapWorldPointToGraphicsPointY(point);
-		int endX = plugin.mapWorldPointToGraphicsPointX(offsetPoint);
-		int endY = plugin.mapWorldPointToGraphicsPointY(offsetPoint);
+		int startX = plugin.worldMap().toGraphicsX(point);
+		int startY = plugin.worldMap().toGraphicsY(point);
+		int endX = plugin.worldMap().toGraphicsX(offsetPoint);
+		int endY = plugin.worldMap().toGraphicsY(offsetPoint);
 
 		if (startX == Integer.MIN_VALUE || startY == Integer.MIN_VALUE ||
 			endX == Integer.MIN_VALUE || endY == Integer.MIN_VALUE)

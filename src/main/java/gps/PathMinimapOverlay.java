@@ -54,15 +54,12 @@ public class PathMinimapOverlay extends Overlay
 			return null;
 		}
 
-		Shape minimapClipArea = plugin.getMinimapClipArea();
+		Shape minimapClipArea = plugin.minimapClip().area();
 		if (minimapClipArea == null)
 		{
 			return null;
 		}
-		else
-		{
-			graphics.setClip(plugin.getMinimapClipArea());
-		}
+		graphics.setClip(minimapClipArea);
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
 		java.util.List<PathStep> pathPoints = plugin.getDisplayPath();

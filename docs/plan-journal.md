@@ -662,3 +662,23 @@ EDT) and `captureDebugSnapshot` (one line). Three imports went with the code. Pl
 4,514 to 4,124 lines.
 
 **Suite:** 717 tests, all green.
+
+### Step L13: WorldMapProjection and MinimapClip (2026-09-09)
+
+**Red first:** `WorldMapProjectionTest` pins the projection with a mocked map (zoom 4, centre
+3200,3200, widget at 100,50 sized 800x600): the tile 3210,3210 lands at pixel 542,308 and that
+pixel maps back to the tile; without the map widget both directions return the sentinel.
+`MinimapClipTest` pins the mask-to-polygon walk: a 4x4 mask with a 2x2 opaque block yields four
+points running down the left edge and back up the right, offset to the widget position. The
+classes did not exist when the tests were written.
+
+**Change:** the three world-map pixel methods became `WorldMapProjection` (`toGraphicsX`,
+`toGraphicsY`, `worldPointAt`, sentinel `NONE`); the minimap draw widget, the two clip shapes,
+the cached sprites and rectangle and the polygon walk became `MinimapClip` (`area()`, static
+`polygonOf(image, offsetX, offsetY)` so the outline takes its offset as an argument instead of
+reading a field). Both are constructed in `startUp` and reached through two package-private
+accessors; the map and tooltip overlays call the projection, the minimap overlay clips to
+`minimapClip().area()` once instead of computing it twice. Five imports went with the code.
+Plugin class: 4,124 to 3,939 lines.
+
+**Suite:** 720 tests, all green.
