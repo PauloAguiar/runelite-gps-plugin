@@ -46,18 +46,40 @@ public class ProvisionalDisplayLiveTest
 			});
 	}
 
+	/** The plugin fields that moved onto the RouteSession (plan step L9), by their old names. */
+	private static final java.util.Map<String, String> SESSION_FIELDS = java.util.Map.of(
+		"alternativeRoutes", "routes", "selectedRoute", "selected", "committedDisplayRoute", "committed",
+		"altGenerationInFlight", "inFlight", "moreRoutesLikely", "moreLikely", "lastAltStart", "lastStart",
+		"lastAltTargets", "lastTargets", "lastAltLimit", "lastLimit", "routeLimit", "limit",
+		"routeCostMultiple", "costMultiple");
+
+	/** The object and field name to reflect on for {@code field}: the session for a moved field. */
+	private static Object[] resolve(Object plugin, String field) throws Exception
+	{
+		String mapped = SESSION_FIELDS.get(field);
+		if (mapped == null || !(plugin instanceof ShortestPathPlugin))
+		{
+			return new Object[]{plugin, field};
+		}
+		Field session = ShortestPathPlugin.class.getDeclaredField("session");
+		session.setAccessible(true);
+		return new Object[]{session.get(plugin), mapped};
+	}
+
 	private static void set(Object target, String field, Object value) throws Exception
 	{
-		Field f = target.getClass().getDeclaredField(field);
+		Object[] at = resolve(target, field);
+		Field f = at[0].getClass().getDeclaredField((String) at[1]);
 		f.setAccessible(true);
-		f.set(target, value);
+		f.set(at[0], value);
 	}
 
 	private static Object get(Object target, String field) throws Exception
 	{
-		Field f = target.getClass().getDeclaredField(field);
+		Object[] at = resolve(target, field);
+		Field f = at[0].getClass().getDeclaredField((String) at[1]);
 		f.setAccessible(true);
-		return f.get(target);
+		return f.get(at[0]);
 	}
 
 	private static List<String> sampleGeneration(int start, int target, AlternativeRoutesMode mode) throws Exception

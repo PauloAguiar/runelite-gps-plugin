@@ -7,7 +7,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 /**
- * Covers the auto-compute decision ({@link ShortestPathPlugin#shouldAutoCompute}): alternatives are
+ * Covers the auto-compute decision ({@link RouteSession#shouldAutoCompute}): alternatives are
  * (re)generated when the target changes or when the last generation was allowed fewer routes than
  * wanted now (its budget grew meanwhile). The route budget itself never depends on whether the
  * side panel is shown ({@link ShortestPathPlugin#routeLimitFor}).
@@ -35,45 +35,45 @@ public class AutoComputeDecisionTest
 	public void noTargetsNeverComputes()
 	{
 		assertFalse("No destination -> nothing to compute",
-			ShortestPathPlugin.shouldAutoCompute(Set.of(), Set.of(), 0, FULL));
+			RouteSession.shouldAutoCompute(Set.of(), Set.of(), 0, FULL));
 	}
 
 	@Test
 	public void newTargetComputes()
 	{
 		assertTrue("A destination the last generation didn't cover must compute",
-			ShortestPathPlugin.shouldAutoCompute(TARGETS, OTHER_TARGETS, FULL, FULL));
+			RouteSession.shouldAutoCompute(TARGETS, OTHER_TARGETS, FULL, FULL));
 		assertTrue("The first destination of the session must compute",
-			ShortestPathPlugin.shouldAutoCompute(TARGETS, Set.of(), 0, PRIMARY_ONLY));
+			RouteSession.shouldAutoCompute(TARGETS, Set.of(), 0, PRIMARY_ONLY));
 	}
 
 	@Test
 	public void sameTargetAlreadyGeneratedSkips()
 	{
 		assertFalse("Same destination, already generated at the wanted limit -> skip",
-			ShortestPathPlugin.shouldAutoCompute(TARGETS, TARGETS, FULL, FULL));
+			RouteSession.shouldAutoCompute(TARGETS, TARGETS, FULL, FULL));
 		assertFalse("Panel hidden after a primary-only run for the same destination -> skip",
-			ShortestPathPlugin.shouldAutoCompute(TARGETS, TARGETS, PRIMARY_ONLY, PRIMARY_ONLY));
+			RouteSession.shouldAutoCompute(TARGETS, TARGETS, PRIMARY_ONLY, PRIMARY_ONLY));
 	}
 
 	@Test
 	public void openingThePanelCatchesUpAPrimaryOnlyGeneration()
 	{
 		assertTrue("Panel opened after a hidden primary-only run -> full generation",
-			ShortestPathPlugin.shouldAutoCompute(TARGETS, TARGETS, PRIMARY_ONLY, FULL));
+			RouteSession.shouldAutoCompute(TARGETS, TARGETS, PRIMARY_ONLY, FULL));
 	}
 
 	@Test
 	public void closingThePanelDoesNotDiscardAFullGeneration()
 	{
 		assertFalse("Panel hidden after a full generation -> keep it, no primary-only redo",
-			ShortestPathPlugin.shouldAutoCompute(TARGETS, TARGETS, FULL, PRIMARY_ONLY));
+			RouteSession.shouldAutoCompute(TARGETS, TARGETS, FULL, PRIMARY_ONLY));
 	}
 
 	@Test
 	public void showMoreRoutesIsNotUndoneByTheAutoCompute()
 	{
 		assertFalse("A generation grown past the default (Show more) must not be regenerated smaller",
-			ShortestPathPlugin.shouldAutoCompute(TARGETS, TARGETS, FULL + 10, FULL));
+			RouteSession.shouldAutoCompute(TARGETS, TARGETS, FULL + 10, FULL));
 	}
 }

@@ -317,19 +317,10 @@ public class ShortestPathPlugin extends Plugin
 	private volatile String targetSource;
 	// Which methods the alternatives consider: carried (default), carried + bank, or every teleport.
 	private volatile AlternativeRoutesMode routesMode = AlternativeRoutesMode.OWNED_INVENTORY;
-	// How many alternative routes to generate; grows when the user asks for more.
-	// Initialised from config in startUp (config is not injected at field-init time).
-	private int routeLimit = AlternativeRoutesService.MAX_ROUTES;
-	// The cost cap for a generation, as a multiple of the best route's cost: only routes up to this
-	// many times the cheapest are computed (a cheap teleport otherwise floods the map searching for
-	// far-worse alternatives). "Show more" raises it; reset to the default on a new destination.
-	private static final int DEFAULT_COST_MULTIPLE = 3;
-	private static final int COST_MULTIPLE_STEP = 3;
-	private int routeCostMultiple = DEFAULT_COST_MULTIPLE;
-	// Whether the last generation left routes unshown — the cost cap held some back, or the route-count
-	// budget was the binding limit. Either way another "poll more" can surface more.
-	private volatile boolean moreRoutesLikely = false;
-	private volatile List<RouteOption> alternativeRoutes = new ArrayList<>();
+	// The alternative-routes session (see RouteSession): the page, the pick, the displayed route,
+	// the in-flight flag, the last generation's inputs and the "more" budget. The limit is
+	// initialised from config in startUp (config is not injected at field-init time).
+	private final RouteSession session = new RouteSession();
 	private volatile List<TeleportMethod> teleportCatalog = new ArrayList<>();
 	// Catalog methods the player can't use in the current mode, mapped to why (for the panel markers).
 	private volatile Map<TeleportMethod, MethodAvailability> unavailableMethods = Map.of();
@@ -343,21 +334,6 @@ public class ShortestPathPlugin extends Plugin
 	/** Fingerprint of the routing-relevant inventory/equipment slice at the last dirty mark. */
 	private long routingItemsFingerprint;
 	private boolean routingItemsFingerprintValid;
-	private volatile RouteOption selectedRoute;
-	// The route the overlays draw, committed ONLY when a generation settles (its "done" update) —
-	// never mid-stream. While alternatives are still generating and re-ranking, the overlays hold
-	// this instead of flipping through the streaming top result (which flashed a route then instantly
-	// replaced it right after a search). Null for a fresh destination, so the overlay stays clear
-	// — the HUD shows "Finding the best route" (isFindingRoute) — until the routes settle: the
-	// line appears once, as the best route, never as a front-runner that may still change.
-	private volatile RouteOption committedDisplayRoute;
-	// Start/targets the alternatives were last generated from, reused by exclusion/mode/show-more edits
-	// so they re-run against the same destination. Volatile: read/written from client thread + Swing EDT.
-	private volatile int lastAltStart = WorldPointUtil.UNDEFINED;
-	private volatile Set<Integer> lastAltTargets = Set.of();
-	// The route limit the last generation ran with, so a generation that ran under a smaller
-	// budget than wanted now (the budget grew meanwhile) is widened by the auto-compute check.
-	private volatile int lastAltLimit = 0;
 	// Whether the GPS side panel is currently shown (sidebar tab selected). It no longer changes how
 	// much a generation does (see routeLimitFor); opening the panel re-checks the auto-compute decision.
 	private volatile boolean altPanelVisible = false;
@@ -372,10 +348,6 @@ public class ShortestPathPlugin extends Plugin
 	// The RS profile key captured while the bank was seen, so the save still lands in the right
 	// profile if it happens after logout (when the current profile is no longer available).
 	private String bankSaveProfileKey;
-	// True while a generation is computing for the current target. Used to suppress the classic-path
-	// fallback on the map until the first alternative streams in, so the displayed path never flashes
-	// a route that the mode's list won't contain (the classic path follows the SP config, not the mode).
-	private volatile boolean altGenerationInFlight = false;
 	private Point lastMenuOpenedPoint;
 	private WorldMapPoint marker;
 	private int lastLocation = WorldPointUtil.packWorldPoint(0, 0, 0);
@@ -598,7 +570,7 @@ public class ShortestPathPlugin extends Plugin
 		favoriteDestinations = SearchHistory.deserialize(
 			configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_FAVORITES), FAVORITES_LIMIT);
 		loadRoutesMode();
-		routeLimit = defaultRouteLimit();
+		session.setLimit(defaultRouteLimit());
 		altPanel = new ShortestPathPanel(this);
 		altRoutesService = new AlternativeRoutesService(clientThread, pathfinderConfig.copyForPlanning());
 		navButton = NavigationButton.builder()
@@ -1057,7 +1029,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return isRouteEndTooFar(displayed) ? colourPathUnreachable : colourPath;
 		}
-		return altGenerationInFlight ? colourPathCalculating : colourPath;
+		return session.inFlight() ? colourPathCalculating : colourPath;
 	}
 
 	/**
@@ -1067,7 +1039,7 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	public boolean isFindingRoute()
 	{
-		return altGenerationInFlight && !pathTargets.isEmpty() && getDisplayedRoute() == null;
+		return session.inFlight() && !pathTargets.isEmpty() && getDisplayedRoute() == null;
 	}
 
 	/**
@@ -1083,7 +1055,7 @@ public class ShortestPathPlugin extends Plugin
 			return false;
 		}
 		List<PathStep> path = route.getPath();
-		Set<Integer> targets = lastAltTargets;
+		Set<Integer> targets = session.lastTargets();
 		if (path == null || path.isEmpty() || targets.isEmpty())
 		{
 			return false;
@@ -1162,7 +1134,7 @@ public class ShortestPathPlugin extends Plugin
 		// Transport option changed; rerun pathfinding
 		if ("defaultRouteCount".equals(event.getKey()))
 		{
-			routeLimit = defaultRouteLimit();
+			session.setLimit(defaultRouteLimit());
 		}
 
 		// Display-order only: the keep-sailing preference re-ranks the routes it already has.
@@ -1254,7 +1226,7 @@ public class ShortestPathPlugin extends Plugin
 		if (conflict != shortestPathConflict)
 		{
 			shortestPathConflict = conflict;
-			refreshPanel(altGenerationInFlight);
+			refreshPanel(session.inFlight());
 		}
 	}
 
@@ -1289,7 +1261,7 @@ public class ShortestPathPlugin extends Plugin
 		if (off != questHelperPathingOff)
 		{
 			questHelperPathingOff = off;
-			refreshPanel(altGenerationInFlight);
+			refreshPanel(session.inFlight());
 		}
 	}
 
@@ -1695,7 +1667,7 @@ public class ShortestPathPlugin extends Plugin
 				// restart) the generation every moved tick and it would never finish. While one is
 				// computing, keep walking; once the fresh path lands the band check re-evaluates
 				// against it and fires at most one follow-up.
-				if (!altGenerationInFlight)
+				if (!session.inFlight())
 				{
 					recalculateFrom(currentLocation, pathTargets);
 				}
@@ -1720,9 +1692,8 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	private void recalculateFrom(int start, Set<Integer> targets)
 	{
-		selectedRoute = null;
-		routeCostMultiple = DEFAULT_COST_MULTIPLE;
-		routeLimit = defaultRouteLimit();
+		session.clearSelection();
+		session.resetBudget(defaultRouteLimit());
 		Set<Integer> ends = new HashSet<>(targets);
 		pathStart = start;
 		triggerAlternatives(start, ends);
@@ -1841,7 +1812,7 @@ public class ShortestPathPlugin extends Plugin
 			// would discard the displayed route (and with it the way back).
 			if (altRoundTrip)
 			{
-				refreshPanel(altGenerationInFlight);
+				refreshPanel(session.inFlight());
 			}
 			else
 			{
@@ -2717,7 +2688,7 @@ public class ShortestPathPlugin extends Plugin
 		altRoundTrip = false;
 		// A fresh destination starts at the default cost band; "show more" widens it from there.
 		// (loadMoreRoutes bumps the multiple and regenerates without going through setTargets.)
-		routeCostMultiple = DEFAULT_COST_MULTIPLE;
+		session.resetCostMultiple();
 		if (targets == null || targets.isEmpty())
 		{
 			pathStart = WorldPointUtil.UNDEFINED;
@@ -2725,8 +2696,8 @@ public class ShortestPathPlugin extends Plugin
 
 			worldMapPointManager.removeIf(x -> x == marker);
 			marker = null;
-			selectedRoute = null;
-			routeLimit = defaultRouteLimit();
+			session.clearSelection();
+			session.setLimit(defaultRouteLimit());
 			// Keep the teleport-methods catalog visible with no target selected.
 			triggerAlternatives(WorldPointUtil.UNDEFINED, new HashSet<>());
 		}
@@ -2828,33 +2799,7 @@ public class ShortestPathPlugin extends Plugin
 
 	public RouteOption getDisplayedRoute()
 	{
-		RouteOption route = selectedRoute;
-		if (route != null)
-		{
-			return route;
-		}
-		// While a generation is still streaming/re-ranking, hold the last committed route (null for a
-		// fresh destination: the HUD shows "Finding the best route" and the ground stays clear)
-		// rather than flip the overlay through the changing top result — that flash of one route
-		// immediately replaced by another is the "glitchy" search behaviour. The final top route is
-		// committed once the generation settles (see onAlternativeRoutesUpdate).
-		if (altGenerationInFlight)
-		{
-			return committedDisplayRoute;
-		}
-		List<RouteOption> routes = alternativeRoutes;
-		if (routes.isEmpty())
-		{
-			return null;
-		}
-		// Only substitute the first alternative when it was computed for the current destination;
-		// a stale list (target changed since "Find routes") must not be displayed.
-		Set<Integer> targets = pathTargets;
-		if (targets.isEmpty() || !lastAltTargets.equals(targets))
-		{
-			return null;
-		}
-		return routes.get(0);
+		return session.displayed(pathTargets);
 	}
 
 	/**
@@ -3018,14 +2963,8 @@ public class ShortestPathPlugin extends Plugin
 	/** Stable re-sort of the current list (tiers changed) — display-only, no regeneration. */
 	private void resortRoutesByPriority()
 	{
-		List<RouteOption> routes = alternativeRoutes;
-		if (routes != null && !routes.isEmpty())
-		{
-			List<RouteOption> sorted = new ArrayList<>(routes);
-			sorted.sort(effectiveOrder());
-			alternativeRoutes = sorted;
-		}
-		refreshPanel(altGenerationInFlight);
+		session.resort(effectiveOrder());
+		refreshPanel(session.inFlight());
 	}
 
 	/** Applies the effective order to a freshly generated list (called from the update stream). */
@@ -3416,21 +3355,14 @@ public class ShortestPathPlugin extends Plugin
 
 	private void selectRouteOnClientThread(int index)
 	{
-		List<RouteOption> routes = alternativeRoutes;
-		if (index >= 0 && index < routes.size())
+		// Toggle: clicking the route that's already shown hides it (RouteSession.select).
+		if (session.select(index))
 		{
-			RouteOption route = routes.get(index);
-			RouteOption previous = selectedRoute;
-			// Toggle: clicking the route that's already shown hides it.
-			selectedRoute = (selectedRoute == route) ? null : route;
-			if (selectedRoute != previous)
-			{
-				// Picking a different path starts a new journey — time it from here, not from the
-				// original destination (re-arm; the timer restarts on the next movement).
-				armJourney();
-				// The displayed path changed: republish it to other plugins (postTransports).
-				postPluginMessages();
-			}
+			// Picking a different path starts a new journey: time it from here, not from the
+			// original destination (re-arm; the timer restarts on the next movement).
+			armJourney();
+			// The displayed path changed: republish it to other plugins (postTransports).
+			postPluginMessages();
 			refreshPanel(false);
 		}
 	}
@@ -3447,7 +3379,7 @@ public class ShortestPathPlugin extends Plugin
 			saveExclusions();
 			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
 			// other recompute); this just refreshes the panel so the catalog icons and counts update.
-			refreshPanel(altGenerationInFlight);
+			refreshPanel(session.inFlight());
 		}
 	}
 
@@ -3463,7 +3395,7 @@ public class ShortestPathPlugin extends Plugin
 			saveExclusions();
 			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
 			// other recompute); this just refreshes the panel so the catalog icons and counts update.
-			refreshPanel(altGenerationInFlight);
+			refreshPanel(session.inFlight());
 		}
 	}
 
@@ -3482,7 +3414,7 @@ public class ShortestPathPlugin extends Plugin
 			saveExclusions();
 			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
 			// other recompute); this just refreshes the panel so the catalog icons and counts update.
-			refreshPanel(altGenerationInFlight);
+			refreshPanel(session.inFlight());
 		}
 	}
 
@@ -3501,7 +3433,7 @@ public class ShortestPathPlugin extends Plugin
 			saveExclusions();
 			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
 			// other recompute); this just refreshes the panel so the catalog icons and counts update.
-			refreshPanel(altGenerationInFlight);
+			refreshPanel(session.inFlight());
 		}
 	}
 
@@ -3573,7 +3505,7 @@ public class ShortestPathPlugin extends Plugin
 			saveExclusions();
 			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
 			// other recompute); this just refreshes the panel so the catalog icons and counts update.
-			refreshPanel(altGenerationInFlight);
+			refreshPanel(session.inFlight());
 		}
 	}
 
@@ -3598,7 +3530,7 @@ public class ShortestPathPlugin extends Plugin
 				log.debug("[alt-routes] Find routes: target set, searchStart={}, target={}",
 					WorldPointUtil.unpackWorldPoint(start),
 					WorldPointUtil.unpackWorldPoint(targets.iterator().next()));
-				routeLimit = defaultRouteLimit();
+				session.setLimit(defaultRouteLimit());
 				triggerAlternatives(start, new HashSet<>(targets));
 			}
 			else
@@ -3648,7 +3580,7 @@ public class ShortestPathPlugin extends Plugin
 
 	public boolean canLoadMoreRoutes()
 	{
-		return moreRoutesLikely;
+		return session.canLoadMore();
 	}
 
 	public void loadMoreRoutes()
@@ -3658,17 +3590,14 @@ public class ShortestPathPlugin extends Plugin
 
 	private void loadMoreRoutesOnClientThread()
 	{
-		if (lastAltTargets.isEmpty() || !moreRoutesLikely)
+		// Each poll grows both dimensions of the cap so genuinely more routes surface (see
+		// RouteSession.widen): the cost band and the route-count budget, toward the service's
+		// runaway backstop. A new destination resets both.
+		if (!session.widen(defaultRouteLimit(), AlternativeRoutesService.MAX_ROUTES_CAP))
 		{
 			return;
 		}
-		// Each poll grows both dimensions of the cap so genuinely more routes surface: widen the cost
-		// band (reveal routes up to a higher multiple of the best cost) and raise the route-count budget
-		// by another page. There's no fixed ceiling — the walk cost bounds the band on its own, and the
-		// count grows toward the service's runaway backstop. A new destination resets both.
-		routeCostMultiple += COST_MULTIPLE_STEP;
-		routeLimit = Math.min(routeLimit + defaultRouteLimit(), AlternativeRoutesService.MAX_ROUTES_CAP);
-		triggerAlternatives(lastAltStart, new HashSet<>(lastAltTargets));
+		triggerAlternatives(session.lastStart(), session.lastTargetsCopy());
 	}
 
 	// Directions for the currently displayed route, built once per route (the overlay renders every
@@ -3825,11 +3754,11 @@ public class ShortestPathPlugin extends Plugin
 		body.append("*Auto-captured context — please keep:*\n");
 		body.append("- GPS ").append(pluginVersion()).append('\n');
 		body.append("- Build ").append(buildCommit()).append('\n');
-		body.append("- Mode: ").append(routesMode).append(" · limit ").append(routeLimit)
-			.append(" · band x").append(routeCostMultiple).append('\n');
-		body.append("- Start: ").append(issuePointText(lastAltStart)).append('\n');
+		body.append("- Mode: ").append(routesMode).append(" · limit ").append(session.limit())
+			.append(" · band x").append(session.costMultiple()).append('\n');
+		body.append("- Start: ").append(issuePointText(session.lastStart())).append('\n');
 		List<String> targets = new ArrayList<>();
-		for (int target : lastAltTargets)
+		for (int target : session.lastTargets())
 		{
 			targets.add(issuePointText(target));
 		}
@@ -3892,7 +3821,7 @@ public class ShortestPathPlugin extends Plugin
 		body.append("- Spirit trees synced: ").append(pathfinderConfig.availableSpiritTrees != null)
 			.append(spiritTreesParsedLive ? " (live)" : "").append('\n');
 
-		List<RouteOption> routes = alternativeRoutes;
+		List<RouteOption> routes = session.routes();
 		body.append("- Routes (").append(routes.size()).append("):\n");
 		int shown = Math.min(routes.size(), 12);
 		for (int i = 0; i < shown; i++)
@@ -4013,12 +3942,12 @@ public class ShortestPathPlugin extends Plugin
 				snapshot.put("player",
 					playerPacked != WorldPointUtil.UNDEFINED ? packedPointJson(playerPacked) : null);
 				snapshot.put("routesMode", String.valueOf(routesMode));
-				snapshot.put("routeLimit", routeLimit);
-			snapshot.put("routeCostMultiple", routeCostMultiple);
+				snapshot.put("routeLimit", session.limit());
+			snapshot.put("routeCostMultiple", session.costMultiple());
 				snapshot.put("targetSource", targetSource);
-				snapshot.put("altStart", packedPointJson(lastAltStart));
+				snapshot.put("altStart", packedPointJson(session.lastStart()));
 				List<Object> targets = new ArrayList<>();
-				for (int target : lastAltTargets)
+				for (int target : session.lastTargets())
 				{
 					targets.add(packedPointJson(target));
 				}
@@ -4048,7 +3977,7 @@ public class ShortestPathPlugin extends Plugin
 				snapshot.put("config", configValues);
 
 				RouteOption displayed = getDisplayedRoute();
-				List<RouteOption> routes = alternativeRoutes;
+				List<RouteOption> routes = session.routes();
 				snapshot.put("displayedRouteIndex", displayed != null ? routes.indexOf(displayed) : -1);
 				List<Object> routesJson = new ArrayList<>();
 				for (RouteOption route : routes)
@@ -4216,7 +4145,7 @@ public class ShortestPathPlugin extends Plugin
 			}
 			this.routesMode = mode;
 			saveRoutesMode();
-			triggerAlternatives(lastAltStart, new HashSet<>(lastAltTargets));
+			triggerAlternatives(session.lastStart(), session.lastTargetsCopy());
 		});
 	}
 
@@ -4236,22 +4165,12 @@ public class ShortestPathPlugin extends Plugin
 		Set<Integer> targets = pathTargets;
 		// The full route budget, panel shown or hidden (see routeLimitFor).
 		int desiredLimit = defaultRouteLimit();
-		if (!shouldAutoCompute(targets, lastAltTargets, lastAltLimit, desiredLimit))
+		if (!RouteSession.shouldAutoCompute(targets, session.lastTargets(), session.lastLimit(), desiredLimit))
 		{
 			return;
 		}
-		routeLimit = desiredLimit;
+		session.setLimit(desiredLimit);
 		triggerAlternatives(altStart(), new HashSet<>(targets));
-	}
-
-	/**
-	 * Whether a new alternatives generation is needed: there is a target, and either it changed since
-	 * the last generation or the last generation was allowed fewer routes than wanted now (a
-	 * generation that ran under a smaller budget than the current one). Pure decision, unit-tested.
-	 */
-	static boolean shouldAutoCompute(Set<Integer> targets, Set<Integer> lastTargets, int lastLimit, int desiredLimit)
-	{
-		return !targets.isEmpty() && (!targets.equals(lastTargets) || lastLimit < desiredLimit);
 	}
 
 	/**
@@ -4275,22 +4194,11 @@ public class ShortestPathPlugin extends Plugin
 			return;
 		}
 		Set<Integer> ends = (targets == null) ? new HashSet<>() : new HashSet<>(targets);
-		// A new destination clears the committed route so the overlay stays blank until the fresh
-		// routes settle; regenerating the SAME destination (off-route recalc, method toggle, "more")
-		// keeps it, so the overlay holds the current route steadily rather than blinking blank.
-		if (!ends.equals(lastAltTargets))
-		{
-			committedDisplayRoute = null;
-		}
-		lastAltStart = start;
-		lastAltTargets = Set.copyOf(ends);
-		lastAltLimit = routeLimit;
-
-		// Clear the previous routes immediately (the catalog stays); the new routes stream in one by
-		// one as they are found. With no target this still streams just the teleport-methods catalog.
-		alternativeRoutes = new ArrayList<>();
-		moreRoutesLikely = false;
-		altGenerationInFlight = !ends.isEmpty();
+		// The session clears the committed route for a NEW destination (so the overlay stays blank
+		// until the fresh routes settle) and keeps it for the same one; the previous routes go
+		// immediately (the catalog stays) and the new ones stream in as they are found. With no
+		// target this still streams just the teleport-methods catalog.
+		session.begin(start, ends);
 		// Snapshot the exclusions this generation runs with, so the panel can flag the route list as
 		// stale once the user toggles methods afterwards (recalculation is manual via Refresh).
 		generatedExclusions = getUserExclusions();
@@ -4302,7 +4210,7 @@ public class ShortestPathPlugin extends Plugin
 			SwingUtilities.invokeLater(() ->
 				altPanel.displayRoutes(List.of(), catalog, unavailable, getUserExclusions(), true, hasTarget));
 		}
-		altRoutesService.generate(start, ends, userExclusions, routesMode, routeLimit, routeCostMultiple,
+		altRoutesService.generate(start, ends, userExclusions, routesMode, session.limit(), session.costMultiple(),
 			altRoundTrip, this::onAlternativeRoutesUpdate);
 	}
 
@@ -4312,54 +4220,24 @@ public class ShortestPathPlugin extends Plugin
 		// Priorities re-rank the list (effective ETA = cost + tier adjustments) — everything
 		// downstream (panel, default display pick, rematch) sees the effective order.
 		final List<RouteOption> ordered = sortByEffectiveOrder(routes);
-		routes = ordered;
-		alternativeRoutes = ordered;
 		teleportCatalog = catalog;
 		unavailableMethods = unavailable;
 		if (done)
 		{
-			// "More" is available while the last generation left routes unshown (cost cap or count
-			// budget), until the route-count budget reaches the service's runaway backstop.
-			moreRoutesLikely = !routes.isEmpty() && altRoutesService.wasMoreLikely()
-				&& routeLimit < AlternativeRoutesService.MAX_ROUTES_CAP;
-			// A recalculation must not yank the player off the route they PICKED: when the fresh
-			// list contains an equivalent route, it stays selected — even if its rank moved. Only
-			// when the picked route genuinely no longer exists does the overlay fall back to the
-			// new best.
-			RouteOption rematched = rematchSelected(routes);
-			// ...unless the pick was never STARTED and the fresh list found something far
-			// better: keeping a 10x-costlier route the player is still standing at the start
-			// of is not stability, it is clinging to a stale result (field capture
-			// 20260729-220017: local 131-cost sail existed at rank 0 while a rematched
-			// 1473-cost detour stayed displayed).
-			if (rematched != null && !routes.isEmpty() && rematched != routes.get(0)
-				&& displayedRouteProgress() == 0
-				&& rematched.getTotalCost() > routes.get(0).getTotalCost() * 2)
-			{
-				rematched = null;
-			}
-			if (rematched != null)
-			{
-				selectedRoute = rematched;
-				committedDisplayRoute = rematched;
-			}
-			else
-			{
-				selectedRoute = null;
-				// Settle the overlay's route to the final top result BEFORE clearing the in-flight
-				// flag, so the overlay adopts the settled route in one step instead of the
-				// streaming front-runner.
-				committedDisplayRoute = routes.isEmpty() ? null : routes.get(0);
-			}
-			altGenerationInFlight = false;
-			// The displayed route just settled: publish it to other plugins (postTransports) — this
-			// replaces the classic search's completion callback.
+			// The session re-matches or drops the pick and commits the overlay's route in one step
+			// (see RouteSession.settle); the tracker's progress is the pick's progress.
+			session.settle(ordered, altRoutesService.wasMoreLikely(), AlternativeRoutesService.MAX_ROUTES_CAP,
+				this::displayedRouteProgress);
+			// The displayed route just settled: publish it to other plugins (postTransports).
 			postPluginMessages();
 		}
-		// NB: mid-stream updates deliberately do NOT clear a stale selection — the overlay keeps
-		// drawing the picked route steadily while the new list streams in; the done-branch above
-		// then re-matches or falls back in a single step.
-		final boolean hasTarget = !lastAltTargets.isEmpty();
+		else
+		{
+			// Mid-stream updates deliberately do NOT clear a stale selection: the overlay keeps
+			// drawing the picked route steadily while the new list streams in.
+			session.stream(ordered);
+		}
+		final boolean hasTarget = !session.lastTargets().isEmpty();
 		SwingUtilities.invokeLater(() ->
 		{
 			if (altPanel != null)
@@ -4367,45 +4245,6 @@ public class ShortestPathPlugin extends Plugin
 				altPanel.displayRoutes(ordered, catalog, unavailable, getUserExclusions(), !done, hasTarget);
 			}
 		});
-	}
-
-	/**
-	 * The route in the fresh list equivalent to the selected one — matching what is LEFT of the
-	 * plan, not its full history: methods whose edges the player has already crossed (per the
-	 * directions tracker) are consumed, so after riding the minecart the equivalent route is the
-	 * one continuing with the remaining methods (and once every method is behind, the plain-walk
-	 * remainder). TeleportMethod value identity; rank and exact tile path may differ. Bank-ness
-	 * only distinguishes routes while nothing is consumed yet — mid-journey, the remainder's
-	 * detour state is ambiguous. Null when no equivalent exists.
-	 */
-	private RouteOption rematchSelected(List<RouteOption> routes)
-	{
-		RouteOption previous = selectedRoute;
-		if (previous == null)
-		{
-			return null;
-		}
-		// Selected == displayed, so the tracker's progress is this route's progress (0 if the
-		// tracker isn't following it, degrading to a full-sequence match).
-		int progress = displayedRouteProgress();
-		List<TeleportMethod> methods = previous.getMethods();
-		List<Integer> edges = previous.getMethodEdgeIndexes();
-		int consumed = 0;
-		while (consumed < methods.size() && consumed < edges.size() && edges.get(consumed) <= progress)
-		{
-			consumed++;
-		}
-		List<TeleportMethod> remaining = methods.subList(consumed, methods.size());
-		boolean checkBank = consumed == 0;
-		for (RouteOption route : routes)
-		{
-			if ((!checkBank || route.isViaBank() == previous.isViaBank())
-				&& route.getMethods().equals(remaining))
-			{
-				return route;
-			}
-		}
-		return null;
 	}
 
 
@@ -4416,7 +4255,7 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	private void maybeRefreshCatalog()
 	{
-		if (!catalogDirty || altGenerationInFlight || altRoutesService == null || altPanel == null
+		if (!catalogDirty || session.inFlight() || altRoutesService == null || altPanel == null
 			|| !GameState.LOGGED_IN.equals(client.getGameState()))
 		{
 			return;
@@ -4437,17 +4276,17 @@ public class ShortestPathPlugin extends Plugin
 		{
 			teleportCatalog = catalog;
 			unavailableMethods = unavailable;
-			refreshPanel(altGenerationInFlight);
+			refreshPanel(session.inFlight());
 		});
 	}
 
 	private void refreshPanel(boolean calculating)
 	{
-		final boolean hasTarget = !lastAltTargets.isEmpty();
+		final boolean hasTarget = !session.lastTargets().isEmpty();
 		if (altPanel != null)
 		{
 			SwingUtilities.invokeLater(() ->
-				altPanel.displayRoutes(alternativeRoutes, teleportCatalog, unavailableMethods,
+				altPanel.displayRoutes(session.routes(), teleportCatalog, unavailableMethods,
 					getUserExclusions(), calculating, hasTarget));
 		}
 	}

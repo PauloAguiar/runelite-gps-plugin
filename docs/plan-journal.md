@@ -570,3 +570,24 @@ Plugin class: 4,843 to 4,762 lines.
 returns (the review called that a defect: "validate first, apply after"). Kept as-is here
 because this step is a refactor; the codec now makes the two steps separable when that call
 is made.
+
+### Step L9: RouteSession (2026-09-09)
+
+**Red first:** `RouteSessionTest` pins the session's contract with synthetic routes: a fresh
+destination shows nothing until its routes settle (a streaming front-runner is never drawn);
+selection toggles and falls back to the best; a same-destination regeneration keeps the picked
+route on screen while the fresh page computes and re-matches the pick afterwards (even at
+another cost); a never-started pick yields to a route more than twice cheaper but is kept once
+under way; the re-match matches what is LEFT of the plan (methods whose edges are behind the
+player are consumed); a new destination clears the display and a page generated for another
+destination is never shown; "more" widens the band and the count up to the cap and remembers
+the budget the generation ran with; resort and the auto-compute decision.
+
+**Change:** the eleven alternative-routes fields (the page, the pick, the committed display
+route, the in-flight flag, the last start, targets and limit, the "more" flag, the limit and
+the cost multiple) and the decisions over them (begin, stream, settle with the re-match rule,
+displayed, select, resort, widen, the auto-compute decision) are `RouteSession`, owned by the
+client thread and read by the overlays and the panel. The plugin keeps the side effects:
+panel refreshes, the journey timer, plugin messages, persistence, thread hops. Three existing
+tests that reached the old plugin fields by reflection now resolve them through the session.
+Plugin class: 4,762 to 4,601 lines.
