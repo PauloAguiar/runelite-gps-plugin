@@ -762,3 +762,22 @@ two panel getters and the diagnostics accessor delegate. Two imports went with t
 Plugin class: 3,591 to 3,377 lines.
 
 **Suite:** 736 tests, all green.
+
+### Step L18: PlayerOwnedHouse (2026-09-09)
+
+**Red first:** `PlayerOwnedHouseTest` pins the exit label as a pure function over the path and
+an edge-transport function (mocked transports): a fairy ring, a mounted glory, a plain
+jewellery box, the nexus, a spirit tree, the obelisk and a plain transport each get their
+label; a destination outside, an exit edge without a transport, an index already past the
+exit, and a null path yield nothing. The class did not exist. `PohSceneDetectionTest`
+re-targeted its calls.
+
+**Change:** the house bounds, the template regions, the scene test, the exit lookup (the
+113-line method split into the edge walk and a label function) and the two adapters the
+furniture detection reads the client through became `PlayerOwnedHouse`, public because the
+pathfinder package and its tests ask whether a tile is in the house. Eight call sites moved
+with it (the pathfinder config, the availability filter, two overlays, the debug snapshot and
+three tests); the overlays pass the plugin's edge-transport method to the static exit lookup.
+Two imports went with the code. Plugin class: 3,377 to 3,102 lines.
+
+**Suite:** 738 tests, all green.

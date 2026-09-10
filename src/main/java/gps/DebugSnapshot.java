@@ -90,7 +90,7 @@ final class DebugSnapshot
 		snapshot.put("bankContentsKnown", plugin.isBankContentsKnown());
 		snapshot.put("bankRestored", plugin.isBankRestored());
 		// Smart-detection state, for diagnosing "GPS didn't notice my house/trees" reports.
-		snapshot.put("pohSceneLoaded", ShortestPathPlugin.isPohScene(client.getTopLevelWorldView()));
+		snapshot.put("pohSceneLoaded", PlayerOwnedHouse.isHouseScene(client.getTopLevelWorldView()));
 		snapshot.put("pohScanned", plugin.isPohScanned());
 		snapshot.put("pohDetectedFurniture", PohScanner.encode(plugin.pohDetection().detected()));
 		snapshot.put("spiritTreesSynced", plugin.isSpiritTreeSynced());

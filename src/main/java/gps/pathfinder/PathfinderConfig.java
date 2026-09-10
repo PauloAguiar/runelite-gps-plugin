@@ -34,6 +34,7 @@ import gps.JewelleryBoxTier;
 import gps.MethodAvailability;
 import gps.PrimitiveIntHashMap;
 import gps.ShortestPathConfig;
+import gps.PlayerOwnedHouse;
 import gps.ShortestPathPlugin;
 import gps.RoutingItemDependencies;
 import gps.TeleportMethod;
@@ -1602,7 +1603,7 @@ public class PathfinderConfig
 				int destination = transport.getDestination();
 				int destX = WorldPointUtil.unpackWorldX(destination);
 				int destY = WorldPointUtil.unpackWorldY(destination);
-				if (destination != pohLanding && ShortestPathPlugin.isInsidePoh(destX, destY))
+				if (destination != pohLanding && PlayerOwnedHouse.isInside(destX, destY))
 				{
 					transport.setDestination(pohLanding);
 				}
@@ -1797,9 +1798,9 @@ public class PathfinderConfig
 				? "Teleport portals & nexus are off (House section)"
 				: travelOptionName(type) + " are off (Travel options)";
 		}
-		boolean inHouse = ShortestPathPlugin.isInsidePoh(WorldPointUtil.unpackWorldX(transport.getOrigin()),
+		boolean inHouse = PlayerOwnedHouse.isInside(WorldPointUtil.unpackWorldX(transport.getOrigin()),
 			WorldPointUtil.unpackWorldY(transport.getOrigin()))
-			|| ShortestPathPlugin.isInsidePoh(WorldPointUtil.unpackWorldX(transport.getDestination()),
+			|| PlayerOwnedHouse.isInside(WorldPointUtil.unpackWorldX(transport.getDestination()),
 			WorldPointUtil.unpackWorldY(transport.getDestination()));
 		if (inHouse && !usePoh)
 		{
@@ -1869,7 +1870,7 @@ public class PathfinderConfig
 			int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
 			int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
 			int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
-			if (ShortestPathPlugin.isInsidePoh(originX, originY) || ShortestPathPlugin.isInsidePoh(destX, destY))
+			if (PlayerOwnedHouse.isInside(originX, originY) || PlayerOwnedHouse.isInside(destX, destY))
 			{
 				return false;
 			}
@@ -1942,7 +1943,7 @@ public class PathfinderConfig
 		int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
 		int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
 
-		if (!ShortestPathPlugin.isInsidePoh(originX, originY) && !ShortestPathPlugin.isInsidePoh(destX, destY))
+		if (!PlayerOwnedHouse.isInside(originX, originY) && !PlayerOwnedHouse.isInside(destX, destY))
 		{
 			return true; // Not a POH transport
 		}

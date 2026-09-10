@@ -15,7 +15,7 @@ import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
 import gps.JewelleryBoxTier;
 import gps.ShortestPathConfig;
-import gps.ShortestPathPlugin;
+import gps.PlayerOwnedHouse;
 import gps.WorldPointUtil;
 import gps.transport.Transport;
 
@@ -70,7 +70,7 @@ public class PohGatingTest
 			{
 				int d = teleport.getDestination();
 				assertTrue("no teleport may land inside the POH with POH disabled: " + teleport,
-					d == WorldPointUtil.UNDEFINED || !ShortestPathPlugin.isInsidePoh(
+					d == WorldPointUtil.UNDEFINED || !PlayerOwnedHouse.isInside(
 						WorldPointUtil.unpackWorldX(d), WorldPointUtil.unpackWorldY(d)));
 			}
 		}

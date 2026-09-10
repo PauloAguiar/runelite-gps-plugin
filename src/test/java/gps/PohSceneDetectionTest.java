@@ -31,7 +31,7 @@ public class PohSceneDetectionTest
 		for (int region : new int[]{7534, 7535, 7790, 7791, 8046, 8047, 8302, 8303})
 		{
 			assertTrue(String.valueOf(region),
-				ShortestPathPlugin.isPohScene(instanceWithRegions(region)));
+				PlayerOwnedHouse.isHouseScene(instanceWithRegions(region)));
 		}
 	}
 
@@ -39,27 +39,27 @@ public class PohSceneDetectionTest
 	public void realHouseRegionSetIsDetected()
 	{
 		// The house whose chunk dump identified the band mapped entirely into region 7534.
-		assertTrue(ShortestPathPlugin.isPohScene(instanceWithRegions(7534)));
+		assertTrue(PlayerOwnedHouse.isHouseScene(instanceWithRegions(7534)));
 	}
 
 	@Test
 	public void nonHouseInstancesAreNotDetected()
 	{
 		// A raid or cutscene instance is assembled from other regions.
-		assertFalse(ShortestPathPlugin.isPohScene(instanceWithRegions(12889, 13136)));
+		assertFalse(PlayerOwnedHouse.isHouseScene(instanceWithRegions(12889, 13136)));
 		// The transport data's POH model band (region 7513, y 5696) is not a live house.
-		assertFalse(ShortestPathPlugin.isPohScene(instanceWithRegions(7513)));
-		assertFalse(ShortestPathPlugin.isPohScene(instanceWithRegions()));
-		assertFalse(ShortestPathPlugin.isPohScene(instanceWithRegions((int[]) null)));
+		assertFalse(PlayerOwnedHouse.isHouseScene(instanceWithRegions(7513)));
+		assertFalse(PlayerOwnedHouse.isHouseScene(instanceWithRegions()));
+		assertFalse(PlayerOwnedHouse.isHouseScene(instanceWithRegions((int[]) null)));
 	}
 
 	@Test
 	public void nonInstanceWorldsAreNeverAHouse()
 	{
-		assertFalse(ShortestPathPlugin.isPohScene(null));
+		assertFalse(PlayerOwnedHouse.isHouseScene(null));
 		// Standing OUTSIDE a house portal the overworld is not an instance, whatever its regions.
 		WorldView overworld = Mockito.mock(WorldView.class);
 		Mockito.when(overworld.isInstance()).thenReturn(false);
-		assertFalse(ShortestPathPlugin.isPohScene(overworld));
+		assertFalse(PlayerOwnedHouse.isHouseScene(overworld));
 	}
 }

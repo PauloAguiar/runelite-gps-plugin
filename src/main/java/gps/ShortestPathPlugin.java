@@ -25,14 +25,12 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
-import net.runelite.api.GameObject;
 import net.runelite.api.Item;
 import net.runelite.api.KeyCode;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
 import net.runelite.api.Player;
 import net.runelite.api.Point;
-import net.runelite.api.Tile;
 import net.runelite.api.WorldView;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameObjectSpawned;
@@ -103,46 +101,6 @@ public class ShortestPathPlugin extends Plugin
 	// so nothing double-processes; drop the legacy channel only if that ever changes).
 	protected static final String MESSAGE_NAMESPACE_LEGACY = PluginMessageCodec.NAMESPACE_LEGACY;
 
-	// POH (Player Owned House) bounds for detecting when path goes through POH
-	// Note: POH_MIN_X is 1856 to exclude the Daddy's Home miniquest area
-	private static final int POH_MIN_X = 1856;
-	private static final int POH_MAX_X = 2047;
-	private static final int POH_MIN_Y = 5696;
-	private static final int POH_MAX_Y = 5767;
-	// The map regions LIVE house instances are assembled from (rx 29-32, ry 110-111) — distinct
-	// from the transport data's POH model area above (y 5696 band), which is what route tiles use.
-	// Confirmed three ways (2026-07-17): a real house's chunk-dump log, a cache scan
-	// (PohTemplateScanTest in shortest-path-tooling; ~13 copies of every room hotspot, one per
-	// house STYLE), and the same region set hardcoded by other POH-aware plugins. Every style and
-	// house location resolves to these regions. Checking the wrong band here is why presence
-	// detection failed repeatedly.
-	private static final Set<Integer> POH_TEMPLATE_REGIONS =
-		Set.of(7534, 7535, 7790, 7791, 8046, 8047, 8302, 8303);
-
-	/**
-	 * Whether the given world view is a player-owned house: an instance whose loaded map regions
-	 * (which for instances are the TEMPLATE regions the scene is assembled from) include a POH
-	 * template region. Static and world-view-based for testability.
-	 */
-	static boolean isPohScene(WorldView worldView)
-	{
-		if (worldView == null || !worldView.isInstance())
-		{
-			return false;
-		}
-		int[] regions = worldView.getMapRegions();
-		if (regions != null)
-		{
-			for (int region : regions)
-			{
-				if (POH_TEMPLATE_REGIONS.contains(region))
-				{
-					return true;
-				}
-			}
-		}
-		return false;
-	}
 	private static final String CLEAR = "Clear";
 	private static final String PATH = ColorUtil.wrapWithColorTag("Path", JagexColors.MENU_TARGET);
 	private static final String SET = "Set";
@@ -401,18 +359,6 @@ public class ShortestPathPlugin extends Plugin
 	private SpiritTreeSync spiritTrees;
 	private FairyRingHighlighter fairyRingLog;
 
-	/**
-	 * Checks if the given coordinates are inside the POH (Player Owned House) area.
-	 *
-	 * @param x The world X coordinate
-	 * @param y The world Y coordinate
-	 * @return true if inside POH, false otherwise
-	 */
-	public static boolean isInsidePoh(int x, int y)
-	{
-		return x >= POH_MIN_X && x <= POH_MAX_X && y >= POH_MIN_Y && y <= POH_MAX_Y;
-	}
-
 	public static boolean override(String configOverrideKey, boolean defaultValue)
 	{
 		if (!configOverride.isEmpty())
@@ -510,9 +456,10 @@ public class ShortestPathPlugin extends Plugin
 			}
 		});
 		// (Named API constant: POH_BUILDING_MODE is 1 while building.)
-		pohDetection = new PohDetectionService(this::pohScene,
+		pohDetection = new PohDetectionService(() -> PlayerOwnedHouse.scene(client.getTopLevelWorldView()),
 			() -> client.getVarbitValue(net.runelite.api.gameval.VarbitID.POH_BUILDING_MODE) == 1,
-			() -> config.pohSmartDetect(), pohDeclarations(), configManager, CONFIG_GROUP, () ->
+			() -> config.pohSmartDetect(), PlayerOwnedHouse.declarations(config, this::setPanelConfig),
+			configManager, CONFIG_GROUP, () ->
 		{
 			if (altPanel != null)
 			{
@@ -1996,120 +1943,6 @@ public class ShortestPathPlugin extends Plugin
 		return path.get(index + 1);
 	}
 
-	/**
-	 * Checks if the destination is inside POH and looks ahead in the path to find the exit transport.
-	 * If the immediate exit leads to a fairy ring or other notable transport shortly after,
-	 * that information is included instead.
-	 *
-	 * @param destination  The destination point to check
-	 * @param path         The full path
-	 * @param currentIndex The current index in the path
-	 * @return The display info of the POH exit transport, or null if not applicable
-	 */
-	public String getPohExitInfo(int destination, List<PathStep> path, int currentIndex)
-	{
-		if (path == null || currentIndex < 0)
-		{
-			return null;
-		}
-
-		int destX = WorldPointUtil.unpackWorldX(destination);
-		int destY = WorldPointUtil.unpackWorldY(destination);
-
-		// Check if destination is inside POH
-		if (!isInsidePoh(destX, destY))
-		{
-			return null;
-		}
-
-		String immediateExitInfo = null;
-
-		// Look ahead in the path to find the next transport that exits POH
-		for (int i = currentIndex + 1; i < path.size() - 1; i++)
-		{
-			int stepLocation = path.get(i).getPackedPosition();
-			int nextLocation = path.get(i + 1).getPackedPosition();
-
-			int stepX = WorldPointUtil.unpackWorldX(stepLocation);
-			int stepY = WorldPointUtil.unpackWorldY(stepLocation);
-			int nextX = WorldPointUtil.unpackWorldX(nextLocation);
-			int nextY = WorldPointUtil.unpackWorldY(nextLocation);
-
-			// Check if this step is inside POH but next step is outside (exit transport)
-			boolean stepInsidePoh = isInsidePoh(stepX, stepY);
-			boolean nextInsidePoh = isInsidePoh(nextX, nextY);
-
-			if (stepInsidePoh && !nextInsidePoh)
-			{
-				// Found the exit transport - get its display info using bank-aware lookup
-				PathStep currentStep = path.get(i);
-				PathStep nextStep = path.get(i + 1);
-				for (Transport transport : transportsForEdge(currentStep, nextStep))
-				{
-					String exitInfo = transport.getDisplayInfo();
-					if (exitInfo != null && !exitInfo.isEmpty())
-					{
-						TransportType exitType = transport.getType();
-						if (TransportType.TELEPORTATION_BOX.equals(exitType))
-						{
-							String objInfo = transport.getObjectInfo();
-							if (objInfo != null && objInfo.contains("Amulet of Glory"))
-							{
-								immediateExitInfo = "Mounted Glory: " + exitInfo;
-							}
-							else if (objInfo != null && objInfo.contains("Mythical cape"))
-							{
-								immediateExitInfo = "Mythical Cape: " + exitInfo;
-							}
-							else if (objInfo != null && objInfo.contains("Xeric's Talisman"))
-							{
-								immediateExitInfo = "Xeric's Talisman: " + exitInfo;
-							}
-							else if (objInfo != null && objInfo.contains("Digsite"))
-							{
-								immediateExitInfo = "Digsite Pendant: " + exitInfo;
-							}
-							else
-							{
-								immediateExitInfo = "Jewelry Box: " + exitInfo;
-							}
-						}
-						else if (TransportType.TELEPORTATION_PORTAL_POH.equals(exitType))
-						{
-							immediateExitInfo = "Nexus: " + exitInfo;
-						}
-						else if (TransportType.FAIRY_RING.equals(exitType))
-						{
-							immediateExitInfo = "Fairy Ring " + exitInfo;
-						}
-						else if (TransportType.SPIRIT_TREE.equals(exitType))
-						{
-							immediateExitInfo = "Spirit Tree: " + exitInfo;
-						}
-						else if (TransportType.WILDERNESS_OBELISK.equals(exitType))
-						{
-							immediateExitInfo = "Obelisk: " + exitInfo;
-						}
-						else
-						{
-							immediateExitInfo = exitInfo;
-						}
-					}
-					break;
-				}
-				break;
-			}
-
-			// If we've left POH without finding a transport, stop looking
-			if (!stepInsidePoh)
-			{
-				break;
-			}
-		}
-
-		return immediateExitInfo;
-	}
-
 	private Color override(String configOverrideKey, Color defaultValue)
 	{
 		if (!configOverride.isEmpty())
@@ -2557,114 +2390,6 @@ public class ShortestPathPlugin extends Plugin
 	{
 		int id = houseLocationId;
 		return (id > 0 && id < HOUSE_LOCATIONS.length) ? HOUSE_LOCATIONS[id] : null;
-	}
-
-	// Smart house furniture detection lives in PohDetectionService; the plugin supplies what it
-	// reads (the loaded scene, building mode, the smart-detect switch) and what it raises.
-
-	/** What the detection service reads from the loaded scene. */
-	private PohDetectionService.Scene pohScene()
-	{
-		WorldView worldView = client.getTopLevelWorldView();
-		return new PohDetectionService.Scene()
-		{
-			@Override
-			public boolean isHouse()
-			{
-				return isPohScene(worldView);
-			}
-
-			@Override
-			public boolean isInstance()
-			{
-				return worldView != null && worldView.isInstance();
-			}
-
-			@Override
-			public String describeChunks()
-			{
-				return WorldPointUtil.describeInstanceChunks(worldView);
-			}
-
-			@Override
-			public Set<Integer> objectIds()
-			{
-				return sceneObjectIds(worldView);
-			}
-		};
-	}
-
-	/** Every game object id in the loaded scene: the tile walk behind the house scan. */
-	private static Set<Integer> sceneObjectIds(WorldView worldView)
-	{
-		Set<Integer> ids = new HashSet<>();
-		Tile[][][] tiles = worldView.getScene().getTiles();
-		for (Tile[][] plane : tiles)
-		{
-			if (plane == null)
-			{
-				continue;
-			}
-			for (Tile[] column : plane)
-			{
-				if (column == null)
-				{
-					continue;
-				}
-				for (Tile tile : column)
-				{
-					if (tile == null || tile.getGameObjects() == null)
-					{
-						continue;
-					}
-					for (GameObject object : tile.getGameObjects())
-					{
-						if (object != null)
-						{
-							ids.add(object.getId());
-						}
-					}
-				}
-			}
-		}
-		return ids;
-	}
-
-	/** The house declarations a scan may raise: read from the config, written as the panel would. */
-	private PohDetectionService.Declarations pohDeclarations()
-	{
-		return new PohDetectionService.Declarations()
-		{
-			@Override
-			public boolean fairyRing()
-			{
-				return config.usePohFairyRing();
-			}
-
-			@Override
-			public boolean spiritTree()
-			{
-				return config.usePohSpiritTree();
-			}
-
-			@Override
-			public boolean obelisk()
-			{
-				return config.usePohObelisk();
-			}
-
-			@Override
-			public JewelleryBoxTier jewelleryBoxTier()
-			{
-				return config.pohJewelleryBoxTier();
-			}
-
-			@Override
-			public void raise(String key, Object value)
-			{
-				setPanelConfig(key, value);
-			}
-		};
 	}
 
 	/**

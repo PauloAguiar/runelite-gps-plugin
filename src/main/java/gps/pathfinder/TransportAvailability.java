@@ -216,7 +216,7 @@ public final class TransportAvailability
 			{
 				int originX = WorldPointUtil.unpackWorldX(origin);
 				int originY = WorldPointUtil.unpackWorldY(origin);
-				if (gps.ShortestPathPlugin.isInsidePoh(originX, originY))
+				if (gps.PlayerOwnedHouse.isInside(originX, originY))
 				{
 					pohTransports.addAll(transportsByOrigin.get(origin));
 					// Kept in the pathfinding view, collapsed out of the display view.

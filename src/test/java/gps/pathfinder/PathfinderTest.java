@@ -34,7 +34,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import gps.ItemVariations;
 import gps.PrimitiveIntHashMap;
 import gps.ShortestPathConfig;
-import gps.ShortestPathPlugin;
+import gps.PlayerOwnedHouse;
 import gps.TeleportationItem;
 import gps.WorldPointUtil;
 import gps.transport.Transport;
@@ -1778,7 +1778,7 @@ public class PathfinderTest
 				}
 				int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
 				int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
-				if (ShortestPathPlugin.isInsidePoh(originX, originY))
+				if (PlayerOwnedHouse.isInside(originX, originY))
 				{
 					continue;
 				}

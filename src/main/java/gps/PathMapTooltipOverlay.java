@@ -114,7 +114,7 @@ public class PathMapTooltipOverlay extends Overlay
 					String displayInfo = transport.getDisplayInfo();
 					// Check if this transport goes to POH - if so, look ahead to find the exit
 					// transport
-					String pohExitInfo = plugin.getPohExitInfo(nextPoint, path, pathIndex);
+					String pohExitInfo = PlayerOwnedHouse.exitInfo(nextPoint, path, pathIndex, plugin::transportsForEdge);
 					if (pohExitInfo != null)
 					{
 						displayInfo = displayInfo + " (Exit: " + pohExitInfo + ")";

@@ -748,14 +748,14 @@ public class PathTileOverlay extends Overlay
 		int py = WorldPointUtil.unpackWorldY(playerPackedPoint);
 		int tx = WorldPointUtil.unpackWorldX(location);
 		int ty = WorldPointUtil.unpackWorldY(location);
-		boolean transportAndPlayerInsidePoh = ShortestPathPlugin.isInsidePoh(tx, ty)
-			&& ShortestPathPlugin.isInsidePoh(px, py);
+		boolean transportAndPlayerInsidePoh = PlayerOwnedHouse.isInside(tx, ty)
+			&& PlayerOwnedHouse.isInside(px, py);
 		Set<Transport> candidateTransports = plugin.transportsForEdge(currentStep, nextStep);
 
 		// When inside POH, only show the POH exit info once (not per-transport)
 		if (transportAndPlayerInsidePoh)
 		{
-			String pohExitInfo = plugin.getPohExitInfo(locationEnd, path, pathIndex);
+			String pohExitInfo = PlayerOwnedHouse.exitInfo(locationEnd, path, pathIndex, plugin::transportsForEdge);
 			if (pohExitInfo == null)
 			{
 				return;
@@ -895,7 +895,7 @@ public class PathTileOverlay extends Overlay
 
 			// Check if this transport goes to POH - if so, look ahead to find the exit
 			// transport
-			String pohExitInfo = plugin.getPohExitInfo(locationEnd, path, pathIndex);
+			String pohExitInfo = PlayerOwnedHouse.exitInfo(locationEnd, path, pathIndex, plugin::transportsForEdge);
 			if (pohExitInfo != null)
 			{
 				text = text + " (Exit: " + pohExitInfo + ")";
