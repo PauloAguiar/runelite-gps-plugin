@@ -882,3 +882,18 @@ tooltip overlay calls the static next-step directly. Three imports went with the
 class: 2,517 to 2,403 lines.
 
 **Suite:** 757 tests, all green.
+
+### Step L24: OverlaySettings (2026-09-09)
+
+**Red first:** `OverlaySettingsTest`: the snapshot copies the config (a mocked config), a
+plugin-message override wins over it, the font size is display-only and never overridden, and
+a snapshot taken earlier does not change under a later override. The class did not exist.
+
+**Change:** the twenty-three display fields the overlays read every frame, and the config
+cache that filled them, became `OverlaySettings`: one immutable snapshot per config change,
+overrides applied at snapshot time. The overlays read it through `plugin.display()` (thirty
+reads re-pointed across the five overlays); the plugin's own four reads (path colours, the
+unreachable threshold) do the same. `cacheConfigValues` is two lines. Plugin class: 2,403 to
+2,362 lines.
+
+**Suite:** 759 tests, all green.

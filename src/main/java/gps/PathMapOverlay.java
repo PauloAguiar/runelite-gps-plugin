@@ -36,7 +36,7 @@ public class PathMapOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!plugin.drawMap)
+		if (!plugin.display().drawMap)
 		{
 			return null;
 		}
@@ -63,7 +63,7 @@ public class PathMapOverlay extends Overlay
 			{
 				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
 				{
-					graphics.setColor(plugin.colourPathCalculating);
+					graphics.setColor(plugin.display().colourPathCalculating);
 					drawOnMap(graphics, target, true, cursorPos);
 				}
 			}

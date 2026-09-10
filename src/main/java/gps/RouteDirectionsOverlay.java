@@ -121,7 +121,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!plugin.showDirections)
+		if (!plugin.display().showDirections)
 		{
 			return null;
 		}
@@ -131,10 +131,10 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		// overrides or yields cleanly. The transparency spinner picks how see-through: the
 		// standard colour's tone with 100% = fully invisible, 0% = solid. Every text row draws
 		// with a shadow, so the panel stays readable on bare game background.
-		panelComponent.setBackgroundColor(plugin.overrideOverlayTransparency
-			? overriddenBackground(plugin.overlayTransparency)
+		panelComponent.setBackgroundColor(plugin.display().overrideOverlayTransparency
+			? overriddenBackground(plugin.display().overlayTransparency)
 			: ComponentConstants.STANDARD_BACKGROUND_COLOR);
-		accent = plugin.colourOverlayAccent;
+		accent = plugin.display().colourOverlayAccent;
 		accentEnding = lighten(accent, 0.35f);
 		refreshFonts();
 		long now = System.currentTimeMillis();
@@ -153,8 +153,8 @@ public class RouteDirectionsOverlay extends OverlayPanel
 			if (!arrivalShowing && now - nearEndAtMillis < NEAR_END_GRACE_MILLIS)
 			{
 				arrivalShowing = true;
-				arrivalUntilMillis = plugin.arrivalAutoDismiss
-					? now + plugin.arrivalDismissSeconds * 1000L : Long.MAX_VALUE;
+				arrivalUntilMillis = plugin.display().arrivalAutoDismiss
+					? now + plugin.display().arrivalDismissSeconds * 1000L : Long.MAX_VALUE;
 				long journeyStart = plugin.getJourneyStartMillis();
 				arrivalElapsedMillis = journeyStart == 0 ? 0 : Math.max(0, now - journeyStart);
 			}
@@ -402,8 +402,8 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	/** Rebuilds the three fonts when the text-size preset changes. */
 	private void refreshFonts()
 	{
-		final OverlayFontSize preset = plugin.overlayFontSize == null
-			? OverlayFontSize.NORMAL : plugin.overlayFontSize;
+		final OverlayFontSize preset = plugin.display().overlayFontSize == null
+			? OverlayFontSize.NORMAL : plugin.display().overlayFontSize;
 		if (preset == fontSize)
 		{
 			return;
@@ -685,8 +685,8 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		arrivalElapsedMillis = Math.max(0, elapsedMillis);
 		arrivalShowing = true;
 		long now = System.currentTimeMillis();
-		arrivalUntilMillis = plugin.arrivalAutoDismiss
-			? now + plugin.arrivalDismissSeconds * 1000L : Long.MAX_VALUE;
+		arrivalUntilMillis = plugin.display().arrivalAutoDismiss
+			? now + plugin.display().arrivalDismissSeconds * 1000L : Long.MAX_VALUE;
 	}
 
 	/**

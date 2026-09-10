@@ -86,29 +86,6 @@ public class ShortestPathPlugin extends Plugin
 
 	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
 	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
-	boolean drawMap;
-	boolean drawMinimap;
-	boolean drawTiles;
-	boolean drawRecalculationRanges;
-	boolean showTransportInfo;
-	boolean showBankPickupInfo;
-	Color colourPath;
-	Color colourPathSailing;
-	Color colourPathBlocked;
-	Color colourPathCalculating;
-	Color colourPathUnreachable;
-	Color colourText;
-	Color colourTeleportPulse;
-	Color colourOverlayAccent;
-	boolean showTeleportPulse;
-	boolean showDirections;
-	boolean overrideOverlayTransparency;
-	int overlayTransparency;
-	OverlayFontSize overlayFontSize = OverlayFontSize.NORMAL;
-	boolean arrivalAutoDismiss;
-	int arrivalDismissSeconds;
-	int unreachableTargetDistance;
-	String unreachableText;
 	@Getter
 	@Inject
 	private Client client;
@@ -627,7 +604,7 @@ public class ShortestPathPlugin extends Plugin
 	/** Colour for the sailed portions of the displayed route (world-map sea tracks). */
 	public Color getSailingPathColor()
 	{
-		return colourPathSailing;
+		return display.colourPathSailing;
 	}
 
 	public Color getPathColor()
@@ -636,9 +613,9 @@ public class ShortestPathPlugin extends Plugin
 		RouteOption displayed = getDisplayedRoute();
 		if (displayed != null)
 		{
-			return isRouteEndTooFar(displayed) ? colourPathUnreachable : colourPath;
+			return isRouteEndTooFar(displayed) ? display.colourPathUnreachable : display.colourPath;
 		}
-		return session.inFlight() ? colourPathCalculating : colourPath;
+		return session.inFlight() ? display.colourPathCalculating : display.colourPath;
 	}
 
 	/**
@@ -675,7 +652,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			closestTargetDistance = Math.min(closestTargetDistance, WorldPointUtil.distanceBetween(target, endPoint));
 		}
-		return closestTargetDistance > unreachableTargetDistance;
+		return closestTargetDistance > display.unreachableTargetDistance;
 	}
 
 	public boolean isPathUnreachable()
@@ -713,7 +690,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			closest = Math.min(closest, WorldPointUtil.distanceBetween(target, endPoint));
 		}
-		return closest <= unreachableTargetDistance;
+		return closest <= display.unreachableTargetDistance;
 	}
 
 	@Subscribe
@@ -1303,37 +1280,19 @@ public class ShortestPathPlugin extends Plugin
 
 	// The helm-preference toggle, cached for the comparator (read on the service thread).
 	private volatile boolean cachedKeepSailing = true;
+	// The overlays' display settings, one snapshot per config change (see OverlaySettings).
+	private volatile OverlaySettings display;
+
+	/** The display settings the overlays read; a fresh snapshot after every config change. */
+	OverlaySettings display()
+	{
+		return display;
+	}
 
 	private void cacheConfigValues()
 	{
 		cachedKeepSailing = ConfigOverrides.override("sailingKeepSailing", config.sailingKeepSailing());
-		drawMap = ConfigOverrides.override("drawMap", config.drawMap());
-		drawMinimap = ConfigOverrides.override("drawMinimap", config.drawMinimap());
-		drawTiles = ConfigOverrides.override("drawTiles", config.drawTiles());
-		drawRecalculationRanges = ConfigOverrides.override("drawRecalculationRanges", config.drawRecalculationRanges());
-		showTransportInfo = ConfigOverrides.override("showTransportInfo", config.showTransportInfo());
-		showBankPickupInfo = ConfigOverrides.override("showBankPickupInfo", config.showBankPickupInfo());
-
-		colourPath = ConfigOverrides.override("colourPath", config.colourPath());
-		colourPathSailing = ConfigOverrides.override("colourPathSailing", config.colourPathSailing());
-		colourPathBlocked = ConfigOverrides.override("colourPathBlocked", config.colourPathBlocked());
-		colourPathCalculating = ConfigOverrides.override("colourPathCalculating", config.colourPathCalculating());
-		colourPathUnreachable = ConfigOverrides.override("colourPathUnreachable", config.colourPathUnreachable());
-		colourText = ConfigOverrides.override("colourText", config.colourText());
-		colourTeleportPulse = ConfigOverrides.override("colourTeleportPulse", config.colourTeleportPulse());
-		colourOverlayAccent = ConfigOverrides.override("colourOverlayAccent", config.colourOverlayAccent());
-
-		unreachableTargetDistance = ConfigOverrides.override("unreachableTargetDistanceThreshold", config.unreachableTargetDistance());
-		unreachableText = config.unreachableText();
-
-		showTeleportPulse = ConfigOverrides.override("showTeleportPulse", config.showTeleportPulse());
-		showDirections = ConfigOverrides.override("showDirections", config.showDirections());
-		overrideOverlayTransparency = ConfigOverrides.override("overrideOverlayTransparency", config.overrideOverlayTransparency());
-		overlayTransparency = ConfigOverrides.override("overlayTransparency", config.overlayTransparency());
-		// Display-only preference; not part of the capture-replay override set.
-		overlayFontSize = config.overlayFontSize();
-		arrivalAutoDismiss = ConfigOverrides.override("arrivalAutoDismiss", config.arrivalAutoDismiss());
-		arrivalDismissSeconds = ConfigOverrides.override("arrivalDismissSeconds", config.arrivalDismissSeconds());
+		display = OverlaySettings.from(config);
 	}
 
 	/** "Set GPS Target" from the map menu: the pick is attributed to the map pin. */

@@ -49,7 +49,7 @@ public class PathMinimapOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!plugin.drawMinimap || !plugin.hasPathTargets())
+		if (!plugin.display().drawMinimap || !plugin.hasPathTargets())
 		{
 			return null;
 		}
@@ -78,14 +78,14 @@ public class PathMinimapOverlay extends Overlay
 			}
 
 			Color color = i <= progress ? doneColor
-				: (i >= blockedFrom ? plugin.colourPathBlocked : pathColor);
+				: (i >= blockedFrom ? plugin.display().colourPathBlocked : pathColor);
 			drawOnMinimap(graphics, pathPoint, color);
 		}
 		for (int target : plugin.getPathTargets())
 		{
 			if (!pathPoints.isEmpty() && target != pathPoints.get(pathPoints.size() - 1).getPackedPosition())
 			{
-				drawOnMinimap(graphics, target, plugin.colourPathCalculating);
+				drawOnMinimap(graphics, target, plugin.display().colourPathCalculating);
 			}
 		}
 

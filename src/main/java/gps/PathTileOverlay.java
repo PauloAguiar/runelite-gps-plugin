@@ -66,13 +66,13 @@ public class PathTileOverlay extends Overlay
 		playerTileLabelOffset = 0;
 		hintedDoorTiles.clear();
 
-		if (plugin.drawRecalculationRanges)
+		if (plugin.display().drawRecalculationRanges)
 		{
 			drawArrivalTiles(graphics);
 			drawRecalculationRanges(graphics);
 		}
 
-		if (plugin.drawTiles && !plugin.getDisplayPath().isEmpty())
+		if (plugin.display().drawTiles && !plugin.getDisplayPath().isEmpty())
 		{
 			Color pathColor = plugin.getPathColor();
 			Color color = new Color(
@@ -81,10 +81,10 @@ public class PathTileOverlay extends Overlay
 				pathColor.getBlue(),
 				pathColor.getAlpha() / 2);
 			Color blockedColor = new Color(
-				plugin.colourPathBlocked.getRed(),
-				plugin.colourPathBlocked.getGreen(),
-				plugin.colourPathBlocked.getBlue(),
-				plugin.colourPathBlocked.getAlpha() / 2);
+				plugin.display().colourPathBlocked.getRed(),
+				plugin.display().colourPathBlocked.getGreen(),
+				plugin.display().colourPathBlocked.getBlue(),
+				plugin.display().colourPathBlocked.getAlpha() / 2);
 			// The stretch the player has already covered is greyed out — the live part is what's ahead.
 			Color doneColor = new Color(0x80, 0x80, 0x80, pathColor.getAlpha() / 2);
 
@@ -111,7 +111,7 @@ public class PathTileOverlay extends Overlay
 			final int sceneMinY = worldView.getBaseY() - 2;
 			final int sceneMaxX = worldView.getBaseX() + worldView.getSizeX() + 2;
 			final int sceneMaxY = worldView.getBaseY() + worldView.getSizeY() + 2;
-			final Map<Integer, Integer> playerHas = plugin.showTransportInfo
+			final Map<Integer, Integer> playerHas = plugin.display().showTransportInfo
 				? BankPickupRequirements.collectPlayerItems(client) : Map.of();
 			for (int i = 1; i < path.size(); i++)
 			{
@@ -199,14 +199,14 @@ public class PathTileOverlay extends Overlay
 			// GPS decorations for the displayed route: a small waypoint dot where each section ends
 			// (walk up to here, then do the next step) and a growing green pulse on the destination.
 			RouteOption displayedRoute = plugin.getDisplayedRoute();
-			if (displayedRoute != null && plugin.showDirections)
+			if (displayedRoute != null && plugin.display().showDirections)
 			{
 				drawGpsMarkers(graphics, displayedRoute);
 			}
 
 			if (plugin.isPathUnreachable())
 			{
-				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, plugin.unreachableText, playerTileLabelOffset);
+				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, plugin.display().unreachableText, playerTileLabelOffset);
 			}
 		}
 
@@ -646,7 +646,7 @@ public class PathTileOverlay extends Overlay
 
 			final long period = 1400L;
 			final int rings = 2;
-			final Color base = plugin.colourTeleportPulse;
+			final Color base = plugin.display().colourTeleportPulse;
 			final Stroke previousStroke = graphics.getStroke();
 			graphics.setStroke(new BasicStroke(2.2f));
 			for (int r = 0; r < rings; r++)
@@ -691,7 +691,7 @@ public class PathTileOverlay extends Overlay
 		int y = (int) (point.getY() - height) - verticalOffset;
 		graphics.setColor(Color.BLACK);
 		graphics.drawString(text, x + 1, y + 1);
-		graphics.setColor(plugin.colourText);
+		graphics.setColor(plugin.display().colourText);
 		graphics.drawString(text, x, y);
 		return height;
 	}
@@ -718,7 +718,7 @@ public class PathTileOverlay extends Overlay
 		int pathIndex, Map<Integer, Integer> playerHas)
 	{
 		int location = currentStep.getPackedPosition();
-		if (nextStep == null || !plugin.showTransportInfo ||
+		if (nextStep == null || !plugin.display().showTransportInfo ||
 			WorldPointUtil.unpackWorldPlane(location) != client.getTopLevelWorldView().getPlane())
 		{
 			return;
@@ -824,7 +824,7 @@ public class PathTileOverlay extends Overlay
 
 				// By default, bank pickup info replaces the default transport hint text;
 				// enable the option to show both
-				if (!plugin.showBankPickupInfo)
+				if (!plugin.display().showBankPickupInfo)
 				{
 					return;
 				}
@@ -859,7 +859,7 @@ public class PathTileOverlay extends Overlay
 		{
 			teleportEdge = plugin.displayedRouteTeleportsAt(pathIndex);
 		}
-		if (teleportEdge && plugin.showTeleportPulse)
+		if (teleportEdge && plugin.display().showTeleportPulse)
 		{
 			drawTeleportPulse(graphics, location);
 		}

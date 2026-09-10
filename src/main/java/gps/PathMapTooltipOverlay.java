@@ -45,7 +45,7 @@ public class PathMapTooltipOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!plugin.drawMap || client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) == null)
+		if (!plugin.display().drawMap || client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) == null)
 		{
 			return null;
 		}
