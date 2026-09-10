@@ -983,7 +983,7 @@ public class ShortestPathPlugin extends Plugin
 		seaObstacles.onTick();
 		runPendingTasks();
 		maybeAutoComputeAlternatives();
-		cacheHouseAndBalloonVarbits();
+		panelVarbits.onTick(client);
 		Player localPlayer = client.getLocalPlayer();
 		if (localPlayer == null)
 		{
@@ -1021,19 +1021,6 @@ public class ShortestPathPlugin extends Plugin
 				pendingTasks.remove(i--).run();
 			}
 		}
-	}
-
-	/**
-	 * The house-location varbit (2187: 0 = no house, 1-9 = the owned location) and the balloon
-	 * route unlock varbits (ZEP_MULTI_*), cached on the client thread for the panel's house
-	 * section and its low-log warning (only unlocked routes' log types are worth warning about).
-	 */
-	private void cacheHouseAndBalloonVarbits()
-	{
-		houseLocationId = client.getVarbitValue(2187);
-		balloonUnlockVarbits = new int[]{
-			client.getVarbitValue(2867), client.getVarbitValue(2868), client.getVarbitValue(2869),
-			client.getVarbitValue(2870), client.getVarbitValue(2871), client.getVarbitValue(2872)};
 	}
 
 	/**
@@ -1659,16 +1646,13 @@ public class ShortestPathPlugin extends Plugin
 		return preferences.sorted(routes);
 	}
 
-	private volatile int houseLocationId;
-	private static final String[] HOUSE_LOCATIONS = {
-		null, "Rimmington", "Taverley", "Pollnivneach", "Rellekka", "Brimhaven",
-		"Yanille", "Prifddinas", "Hosidius", "Aldarin"};
+	// The house location and balloon unlock varbits the panel shows (see PanelVarbits), cached each tick.
+	private final PanelVarbits panelVarbits = new PanelVarbits();
 
 	/** The player's house location name (varbit 2187), or null when no house is detected. */
 	public String getHouseLocationName()
 	{
-		int id = houseLocationId;
-		return (id > 0 && id < HOUSE_LOCATIONS.length) ? HOUSE_LOCATIONS[id] : null;
+		return panelVarbits.houseLocationName();
 	}
 
 	/**
@@ -1693,10 +1677,6 @@ public class ShortestPathPlugin extends Plugin
 		return pohDetection == null ? List.of() : pohDetection.detectedNames();
 	}
 
-	// ZEP_MULTI_* values in {2867 Entrana, 2868 Taverley, 2869 Castle Wars, 2870 Grand Tree,
-	// 2871 Crafting Guild, 2872 Varrock} order; cached each game tick for the panel (EDT).
-	private volatile int[] balloonUnlockVarbits = new int[6];
-
 	/**
 	 * The balloon log types that warrant a low-storage warning: routes the player has unlocked
 	 * (per the cached varbits) whose stored count sits below the configured threshold. Empty when
@@ -1704,24 +1684,13 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	public List<String> getBalloonLowLogTypes()
 	{
-		if (!config.useHotAirBalloons() || !config.balloonSmartMode() || !config.balloonStorageSynced())
-		{
-			return List.of();
-		}
-		int[] unlocks = balloonUnlockVarbits;
-		// Entrana/Taverley (normal logs) unlock at quest completion (=2); the rest on first flight (=1).
-		boolean[] unlocked = {
-			unlocks[0] >= 2 || unlocks[1] >= 2, unlocks[4] >= 1, unlocks[5] >= 1,
-			unlocks[2] >= 1, unlocks[3] >= 1};
-		return BalloonLogStorage.lowTypes(getBalloonStoredCounts(), unlocked,
-			config.balloonLogWarningThreshold());
+		return panelVarbits.balloonLowLogTypes(config);
 	}
 
 	/** The chat-parsed stored log counts, in {@link BalloonLogStorage#TYPE_NAMES} order. */
 	public int[] getBalloonStoredCounts()
 	{
-		return new int[]{config.balloonStoredLogs(), config.balloonStoredOakLogs(),
-			config.balloonStoredWillowLogs(), config.balloonStoredYewLogs(), config.balloonStoredMagicLogs()};
+		return PanelVarbits.balloonStoredCounts(config);
 	}
 
 	/** Item images for the panel's Log storage icons. */

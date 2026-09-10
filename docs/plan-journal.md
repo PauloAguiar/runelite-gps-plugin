@@ -897,3 +897,17 @@ unreachable threshold) do the same. `cacheConfigValues` is two lines. Plugin cla
 2,362 lines.
 
 **Suite:** 759 tests, all green.
+
+### Step L25: PanelVarbits (2026-09-09)
+
+**Red first:** `PanelVarbitsTest` pins the two pure mappings: the house varbit to a location
+name (none without a house or past the table) and the six balloon unlock varbits to the log
+types that have a route (normal logs need the quest at 2, the rest a first flight at 1, in
+the log-storage order). The class did not exist.
+
+**Change:** the house-location id, the location table, the balloon unlock array, the per-tick
+cache and the two balloon getters became `PanelVarbits` (the varbit ids named, the unlock rule
+a static, the stored counts a static over the config). The plugin's tick step and three panel
+getters are one line each. Plugin class: 2,362 to 2,331 lines.
+
+**Suite:** 761 tests, all green.
