@@ -609,3 +609,28 @@ refresh the catalog if due, cache the player location, the boat banner, sea-obst
 every ten ticks, pending tasks, auto-compute, the house and balloon varbits, the house scan,
 then for a set destination the journey and arrival, then the off-route bands. Plugin class:
 4,601 to 4,587 lines (the steps' javadocs replaced inline comments).
+
+### Step L11: PohDetectionService (2026-09-09)
+
+**Red first:** `PohDetectionServiceTest`: outside a house nothing is scanned; inside, the
+first find raises only the declarations that were off or lower (the fairy ring on, the
+jewellery tier from Basic to Fancy), persists the encoded result once, notifies the panel once,
+and stops rescanning for the visit; a bare house is scanned six times then left alone, with
+one persisted empty result; spawned furniture alone counts as being inside and joins the scan;
+leaving building mode re-arms the scan, a fresh visit rescans, and an unchanged result does not
+persist again; smart detect off means no scan; restore reads the snapshot only when nothing was
+scanned this session, and reset forgets it. The class did not exist. Two test corrections along
+the way: the jewellery tier prints as its display name (Fancy, not FANCY), and the fake
+declarations had to take effect on a raise the way the real config does, otherwise the second
+scan raised the fairy ring again.
+
+**Change:** the eight detection fields, the tick cadence, the scan, the raise-only
+declarations, the persistence, the restore and the two resets became `PohDetectionService`.
+It reads the world through two small interfaces the plugin implements against the client: a
+Scene (is it a house, is it an instance, the chunk description for the debug log, the object
+ids of the tile walk) and the Declarations (the four config reads, and a raise that writes
+through the panel path). The plugin keeps the client-bound parts only: the template-region
+test, the tile walk, the spawn event handler (one line), and the two panel getters. The
+config key moved with the service. Plugin class: 4,587 to 4,514 lines.
+
+**Suite:** 714 tests, all green (707 plus the seven new ones).

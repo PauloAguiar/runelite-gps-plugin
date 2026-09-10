@@ -299,10 +299,10 @@ public class ShortestPathPlugin extends Plugin
 	private static final String CONFIG_KEY_BANK_SNAPSHOT = "bankSnapshot";
 	// RSProfile-scoped: the planted spirit trees detected from the travel menu, comma-separated.
 	private static final String CONFIG_KEY_SPIRIT_TREES = "plantedSpiritTrees";
-	// RSProfile-scoped: the last house scan's furniture (see PohScanner.encode); present = scanned.
-	private static final String CONFIG_KEY_POH_FURNITURE = "pohFurniture";
 	// The panel's boat banner (see BoatBannerService); constructed at startup, before the panel.
 	private BoatBannerService boatBannerService;
+	// Smart house furniture detection (see PohDetectionService); constructed at startup, before the panel.
+	private PohDetectionService pohDetection;
 
 	private static final String CONFIG_KEY_FAVORITES = "favoriteDestinations";
 	private static final int FAVORITES_LIMIT = 100;
@@ -536,6 +536,16 @@ public class ShortestPathPlugin extends Plugin
 		clearUnsurfacedTypeToggles();
 		cacheConfigValues();
 		boatBannerService = new BoatBannerService(client, configManager, CONFIG_GROUP, () ->
+		{
+			if (altPanel != null)
+			{
+				SwingUtilities.invokeLater(altPanel::refreshConfigSections);
+			}
+		});
+		// (Named API constant: POH_BUILDING_MODE is 1 while building.)
+		pohDetection = new PohDetectionService(this::pohScene,
+			() -> client.getVarbitValue(net.runelite.api.gameval.VarbitID.POH_BUILDING_MODE) == 1,
+			() -> config.pohSmartDetect(), pohDeclarations(), configManager, CONFIG_GROUP, () ->
 		{
 			if (altPanel != null)
 			{
@@ -1324,8 +1334,7 @@ public class ShortestPathPlugin extends Plugin
 		// new scene's object spawns), and the once-per-scene chunk-dump log re-arms.
 		if (GameState.LOADING.equals(event.getGameState()))
 		{
-			pohSpawnedFurniture.clear();
-			pohChunksLogged = false;
+			pohDetection.onSceneLoading();
 		}
 
 		// Logout: save any unsaved bank snapshot (with the profile key captured while logged in) and
@@ -1340,11 +1349,7 @@ public class ShortestPathPlugin extends Plugin
 			pathfinderConfig.clearBank();
 			pathfinderConfig.availableSpiritTrees = null;
 			spiritTreesParsedLive = false;
-			pohScanned = false;
-			detectedPohFurniture = null;
-			pohFurnitureFoundThisVisit = false;
-			pohScanAttempts = 0;
-			pohSpawnedFurniture.clear();
+			pohDetection.reset();
 			boatBannerService.reset();
 		}
 
@@ -1554,7 +1559,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return;
 		}
-		maybeScanPoh();
+		pohDetection.onTick();
 		if (!hasPathTargets())
 		{
 			return;
@@ -1940,16 +1945,7 @@ public class ShortestPathPlugin extends Plugin
 					? new HashSet<>() : new HashSet<>(Arrays.asList(raw.split(",")));
 			}
 		}
-		if (!pohScanned)
-		{
-			PohScanner.Detected detected = PohScanner.decode(
-				configManager.getRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_POH_FURNITURE));
-			if (detected != null)
-			{
-				detectedPohFurniture = detected;
-				pohScanned = true;
-			}
-		}
+		pohDetection.restore();
 		boatBannerService.restore();
 		// The panel's sections label their sync state — reflect what was just restored.
 		if (altPanel != null)
@@ -3025,100 +3021,46 @@ public class ShortestPathPlugin extends Plugin
 		return (id > 0 && id < HOUSE_LOCATIONS.length) ? HOUSE_LOCATIONS[id] : null;
 	}
 
-	// Smart house furniture detection: scan the scene while the player is inside their POH.
-	private volatile boolean pohScanned = false;
-	private volatile PohScanner.Detected detectedPohFurniture;
-	// Reset when the player leaves the house, so the next visit re-scans (catching new furniture).
-	private boolean pohFurnitureFoundThisVisit = false;
-	// Bounds the "scene still loading" retries so a bare house doesn't rescan every tick forever.
-	private int pohScanAttempts = 0;
-	private static final int POH_SCAN_MAX_ATTEMPTS = 6;
-	// Recognised POH furniture ids seen spawning in the current scene (cleared on every scene
-	// load). A second, independent in-house signal: these object ids only exist inside player-owned
-	// houses, so a spawn is proof of being in one even if the template-chunk check somehow isn't.
-	private final Set<Integer> pohSpawnedFurniture = new HashSet<>();
-	// One decoded chunk dump per scene when an instance is judged NOT a house — the data needed to
-	// diagnose a missed house from the client log.
-	private boolean pohChunksLogged = false;
-	// Tracks building mode so leaving it re-arms the scan: furniture built mid-visit is then
-	// detected without having to exit and re-enter the house.
-	private boolean pohBuildingMode = false;
+	// Smart house furniture detection lives in PohDetectionService; the plugin supplies what it
+	// reads (the loaded scene, building mode, the smart-detect switch) and what it raises.
 
-	/**
-	 * While inside the POH, scan the loaded scene for the furniture GPS can recognise (jewellery
-	 * box, fairy ring, spirit tree, obelisk) and turn ON the matching declarations — never off, so
-	 * detection can only add routes, never silently drop one. The two coarse toggles (portals &
-	 * nexus, mounted items) bundle furniture GPS cannot verify and stay manual. Re-scans each tick
-	 * until something is found (the scene can still be populating on the entry tick), then stops.
-	 */
-	private void maybeScanPoh()
+	/** What the detection service reads from the loaded scene. */
+	private PohDetectionService.Scene pohScene()
 	{
-		// In-the-house detection, two independent signals (prior single-signal attempts failed in
-		// the field — varbit 4744 and player-tile template mapping against the wrong band):
-		// 1. The loaded instance's map regions are POH template regions — houses are instances
-		//    assembled from that dedicated template area (see POH_TEMPLATE_REGIONS).
-		// 2. Recognised POH furniture spawned in this scene — those object ids only exist inside
-		//    player-owned houses (the official POH plugin's approach).
-		boolean sceneIsHouse = isPohScene(client.getTopLevelWorldView());
-		boolean inside = sceneIsHouse || !pohSpawnedFurniture.isEmpty();
-		if (!inside)
+		WorldView worldView = client.getTopLevelWorldView();
+		return new PohDetectionService.Scene()
 		{
-			// Diagnosability: when an instance is judged not-a-house, log its decoded template
-			// chunks once per scene — if a real house is ever missed, the client log shows exactly
-			// what its chunks mapped to.
-			if (!pohChunksLogged && log.isDebugEnabled()
-				&& client.getTopLevelWorldView() != null && client.getTopLevelWorldView().isInstance())
+			@Override
+			public boolean isHouse()
 			{
-				pohChunksLogged = true;
-				log.debug("[poh] instance not judged a house; template chunks: {}",
-					WorldPointUtil.describeInstanceChunks(client.getTopLevelWorldView()));
+				return isPohScene(worldView);
 			}
-			pohFurnitureFoundThisVisit = false; // reset so the next visit re-scans
-			pohScanAttempts = 0;
-			return;
-		}
-		// Leaving building mode re-arms the scan: furniture built this visit gets detected without
-		// exiting the house. (Named API constant — POH_BUILDING_MODE is 1 while building.)
-		boolean building = client.getVarbitValue(net.runelite.api.gameval.VarbitID.POH_BUILDING_MODE) == 1;
-		if (pohBuildingMode && !building)
-		{
-			pohFurnitureFoundThisVisit = false;
-			pohScanAttempts = 0;
-		}
-		pohBuildingMode = building;
-		// Scan each tick until furniture is found (the scene can still be populating on the entry
-		// tick), then stop for this visit — the furniture doesn't change while standing here. The
-		// attempt cap stops a bare house (or undetectable-only furniture) rescanning forever.
-		if (!config.pohSmartDetect() || pohFurnitureFoundThisVisit || pohScanAttempts >= POH_SCAN_MAX_ATTEMPTS)
-		{
-			return;
-		}
-		pohScanAttempts++;
-		log.debug("[poh] scan attempt {} (sceneIsHouse={}, spawned={})",
-			pohScanAttempts, sceneIsHouse, pohSpawnedFurniture);
-		scanPohFurniture();
-		pohFurnitureFoundThisVisit = detectedPohFurniture != null && detectedPohFurniture.any();
+
+			@Override
+			public boolean isInstance()
+			{
+				return worldView != null && worldView.isInstance();
+			}
+
+			@Override
+			public String describeChunks()
+			{
+				return WorldPointUtil.describeInstanceChunks(worldView);
+			}
+
+			@Override
+			public Set<Integer> objectIds()
+			{
+				return sceneObjectIds(worldView);
+			}
+		};
 	}
 
-	/**
-	 * A recognised piece of POH furniture spawning is unambiguous "we're inside a house" evidence
-	 * (see {@link PohScanner#isRecognised}), independent of any coordinate math — collected here,
-	 * cleared on every scene load, and consumed by the next tick's {@link #maybeScanPoh()}.
-	 */
-	@Subscribe
-	public void onGameObjectSpawned(GameObjectSpawned event)
-	{
-		int id = event.getGameObject().getId();
-		if (PohScanner.isRecognised(id) && pohSpawnedFurniture.add(id))
-		{
-			log.debug("[poh] recognised furniture spawned: {}", id);
-		}
-	}
-
-	private void scanPohFurniture()
+	/** Every game object id in the loaded scene: the tile walk behind the house scan. */
+	private static Set<Integer> sceneObjectIds(WorldView worldView)
 	{
 		Set<Integer> ids = new HashSet<>();
-		Tile[][][] tiles = client.getTopLevelWorldView().getScene().getTiles();
+		Tile[][][] tiles = worldView.getScene().getTiles();
 		for (Tile[][] plane : tiles)
 		{
 			if (plane == null)
@@ -3147,81 +3089,66 @@ public class ShortestPathPlugin extends Plugin
 				}
 			}
 		}
+		return ids;
+	}
 
-		// Spawn-event evidence joins the tile scan: authoritative even if the tile walk missed it.
-		ids.addAll(pohSpawnedFurniture);
-		PohScanner.Detected detected = PohScanner.detect(ids);
-		log.debug("[poh] scanned {} object ids, detected: {}", ids.size(), PohScanner.encode(detected));
-		boolean firstScan = !pohScanned;
-		boolean changed = firstScan || !detected.sameAs(detectedPohFurniture);
-		pohScanned = true;
-		detectedPohFurniture = detected;
-		if (!changed)
+	/** The house declarations a scan may raise: read from the config, written as the panel would. */
+	private PohDetectionService.Declarations pohDeclarations()
+	{
+		return new PohDetectionService.Declarations()
 		{
-			return; // nothing new this scan — don't churn the config or the panel
-		}
-		// Persist per character, so next session's panel starts in the "scanned" state instead of
-		// asking for a house visit again.
-		configManager.setRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_POH_FURNITURE,
-			PohScanner.encode(detected));
+			@Override
+			public boolean fairyRing()
+			{
+				return config.usePohFairyRing();
+			}
 
-		// Only ever raise declarations (turn a feature on / raise the jewellery tier). A partial
-		// scene load that missed a piece therefore can never wipe an existing declaration.
-		if (detected.fairyRing && !config.usePohFairyRing())
-		{
-			setPanelConfig("usePohFairyRing", true);
-		}
-		if (detected.spiritTree && !config.usePohSpiritTree())
-		{
-			setPanelConfig("usePohSpiritTree", true);
-		}
-		if (detected.obelisk && !config.usePohObelisk())
-		{
-			setPanelConfig("usePohObelisk", true);
-		}
-		if (detected.jewelleryBox.ordinal() > config.pohJewelleryBoxTier().ordinal())
-		{
-			setPanelConfig("pohJewelleryBoxTier", detected.jewelleryBox);
-		}
+			@Override
+			public boolean spiritTree()
+			{
+				return config.usePohSpiritTree();
+			}
 
-		if (altPanel != null)
-		{
-			SwingUtilities.invokeLater(altPanel::refreshConfigSections);
-		}
+			@Override
+			public boolean obelisk()
+			{
+				return config.usePohObelisk();
+			}
+
+			@Override
+			public JewelleryBoxTier jewelleryBoxTier()
+			{
+				return config.pohJewelleryBoxTier();
+			}
+
+			@Override
+			public void raise(String key, Object value)
+			{
+				setPanelConfig(key, value);
+			}
+		};
+	}
+
+	/**
+	 * A recognised piece of POH furniture spawning is unambiguous "we're inside a house" evidence
+	 * (see {@link PohScanner#isRecognised}), independent of any coordinate math.
+	 */
+	@Subscribe
+	public void onGameObjectSpawned(GameObjectSpawned event)
+	{
+		pohDetection.furnitureSpawned(event.getGameObject().getId());
 	}
 
 	/** Whether the player's house has been scanned this session (its furniture is known). */
 	public boolean isPohScanned()
 	{
-		return pohScanned;
+		return pohDetection != null && pohDetection.isScanned();
 	}
 
 	/** The furniture the last house scan recognised, as display names (empty until scanned). */
 	public List<String> getDetectedPohFurniture()
 	{
-		PohScanner.Detected detected = detectedPohFurniture;
-		if (detected == null)
-		{
-			return List.of();
-		}
-		List<String> names = new ArrayList<>();
-		if (detected.jewelleryBox != JewelleryBoxTier.NONE)
-		{
-			names.add(detected.jewelleryBox + " jewellery box");
-		}
-		if (detected.fairyRing)
-		{
-			names.add("Fairy ring");
-		}
-		if (detected.spiritTree)
-		{
-			names.add("Spirit tree");
-		}
-		if (detected.obelisk)
-		{
-			names.add("Obelisk");
-		}
-		return names;
+		return pohDetection == null ? List.of() : pohDetection.detectedNames();
 	}
 
 	// ZEP_MULTI_* values in {2867 Entrana, 2868 Taverley, 2869 Castle Wars, 2870 Grand Tree,
@@ -3797,8 +3724,8 @@ public class ShortestPathPlugin extends Plugin
 		body.append("- Inventory: ").append(issueItemNames(net.runelite.api.gameval.InventoryID.INV)).append('\n');
 		body.append("- Bank contents known: ").append(bankContentsKnown)
 			.append(bankRestored ? " (restored from previous session)" : "").append('\n');
-		body.append("- House scanned: ").append(pohScanned);
-		String pohEncoded = PohScanner.encode(detectedPohFurniture);
+		body.append("- House scanned: ").append(isPohScanned());
+		String pohEncoded = PohScanner.encode(pohDetection.detected());
 		if (pohEncoded != null)
 		{
 			body.append(" (").append(pohEncoded).append(')');
@@ -3948,8 +3875,8 @@ public class ShortestPathPlugin extends Plugin
 				snapshot.put("bankRestored", bankRestored);
 				// Smart-detection state, for diagnosing "GPS didn't notice my house/trees" reports.
 				snapshot.put("pohSceneLoaded", isPohScene(client.getTopLevelWorldView()));
-				snapshot.put("pohScanned", pohScanned);
-				snapshot.put("pohDetectedFurniture", PohScanner.encode(detectedPohFurniture));
+				snapshot.put("pohScanned", isPohScanned());
+				snapshot.put("pohDetectedFurniture", PohScanner.encode(pohDetection.detected()));
 				snapshot.put("spiritTreesSynced", pathfinderConfig.availableSpiritTrees != null);
 				snapshot.put("spiritTreesParsedLive", spiritTreesParsedLive);
 
