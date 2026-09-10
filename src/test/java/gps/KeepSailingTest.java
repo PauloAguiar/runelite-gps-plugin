@@ -3,8 +3,6 @@ package gps;
 import gps.pathfinder.PathStep;
 import gps.pathfinder.PathfinderConfig;
 import gps.pathfinder.TestPathfinderConfig;
-import gps.transport.TransportType;
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -20,12 +18,10 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -58,32 +54,6 @@ public class KeepSailingTest
 		List<PathStep> path = List.of(new PathStep(WorldPointUtil.packWorldPoint(2746, 3216, 0), false),
 			new PathStep(WorldPointUtil.packWorldPoint(2638, 3009, 0), false));
 		return new RouteOption(path, list, edges, durations, cost, cost, true, Set.of(), List.of(0), 0);
-	}
-
-	@Test
-	public void atTheHelmPureSailRanksFirstDespiteCost() throws Exception
-	{
-		ShortestPathPlugin plugin = new ShortestPathPlugin();
-		PathfinderConfig pathConfig = mock(PathfinderConfig.class);
-		when(pathConfig.isOnSailingBoat()).thenReturn(true);
-		Field f = ShortestPathPlugin.class.getDeclaredField("pathfinderConfig");
-		f.setAccessible(true);
-		f.set(plugin, pathConfig);
-
-		TeleportMethod sail = new TeleportMethod(TransportType.SAILING,
-			"Disembark at Corsair Cove", WorldPointUtil.packWorldPoint(2589, 2851, 0));
-		TeleportMethod glory = new TeleportMethod(TransportType.TELEPORTATION_ITEM,
-			"Amulet of glory: Al Kharid", WorldPointUtil.packWorldPoint(3087, 3496, 0));
-		RouteOption sailRoute = route(666, sail);
-		RouteOption chain = route(182, sail, glory);
-
-		List<RouteOption> ordered = plugin.sortByEffectiveOrder(List.of(chain, sailRoute));
-		assertSame("at the helm the pure-sail route leads even at 3x the cost", sailRoute, ordered.get(0));
-
-		// Ashore (or with the toggle off) plain effective cost decides.
-		when(pathConfig.isOnSailingBoat()).thenReturn(false);
-		ordered = plugin.sortByEffectiveOrder(List.of(sailRoute, chain));
-		assertSame("ashore the cheaper chain leads", chain, ordered.get(0));
 	}
 
 	/** The capture's exact query: aboard west of Brimhaven, target on the Feldip coast. */

@@ -281,9 +281,6 @@ public class ShortestPathPlugin extends Plugin
 	private boolean navButtonShown = false;
 	private AlternativeRoutesService altRoutesService;
 	private static final String CONFIG_KEY_EXCLUSIONS = "alternativeRoutesExclusions";
-	// Method -> ranking-bias tier (MethodPriority). EXCLUDED never appears here — exclusion stays
-	// in the userExclusions set (it affects the search; priorities only re-rank the list).
-	private static final String CONFIG_KEY_PRIORITIES = "methodPriorities";
 	private static final String CONFIG_KEY_MODE = "alternativeRoutesMode";
 	// The search box's recent selections (most recent first), persisted across sessions.
 	private static final String CONFIG_KEY_SEARCH_HISTORY = "searchHistory";
@@ -561,7 +558,7 @@ public class ShortestPathPlugin extends Plugin
 
 
 		loadExclusions();
-		loadPriorities();
+		preferences.load();
 		searchHistory = SearchHistory.deserialize(
 			configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_SEARCH_HISTORY));
 		favoriteDestinations = SearchHistory.deserialize(
@@ -2808,30 +2805,22 @@ public class ShortestPathPlugin extends Plugin
 		return new HashSet<>(userExclusions);
 	}
 
-	// --- Method priorities (ranking bias; see MethodPriority) ---------------------------------
+	// --- Method priorities and preference biases (see RoutePreferences) ------------------------
 
-	private final Map<TeleportMethod, MethodPriority> methodPriorities = new ConcurrentHashMap<>();
-
-	/** One serialized priority entry (method identity + tier), for the config JSON. */
-	private static final class PriorityEntry
-	{
-		TeleportMethod method;
-		MethodPriority priority;
-	}
+	// Suppliers: the plugin's injected services arrive after field initialisation, and tests
+	// drive the effective order on a bare plugin.
+	private final RoutePreferences preferences = new RoutePreferences(userExclusions, this::keepSailingFirst,
+		() -> configManager, () -> gson, CONFIG_GROUP);
 
 	/** The method's tier: EXCLUDED when in the exclusion set, else its stored tier or NORMAL. */
 	public MethodPriority getMethodPriority(TeleportMethod method)
 	{
-		if (userExclusions.contains(method))
-		{
-			return MethodPriority.EXCLUDED;
-		}
-		return methodPriorities.getOrDefault(method, MethodPriority.NORMAL);
+		return preferences.priorityOf(method);
 	}
 
 	/**
 	 * Sets a method's tier. EXCLUDED delegates to the exclusion set (search-affecting, flags the
-	 * stale banner); every other tier is ranking-only — the current list re-sorts immediately.
+	 * stale banner); every other tier is ranking-only: the current list re-sorts immediately.
 	 * Choosing a non-EXCLUDED tier for an excluded method also un-excludes it.
 	 */
 	public void setMethodPriority(TeleportMethod method, MethodPriority priority)
@@ -2843,10 +2832,10 @@ public class ShortestPathPlugin extends Plugin
 	{
 		if (priority == MethodPriority.EXCLUDED)
 		{
-			// Exclusion is a MASK over the stored tier, not a replacement: the tier stays in the
-			// map (shadowed by the EXCLUDED read-back) so re-including — via this menu, the
-			// category toggle, or clearExclusions — restores the user's tuning. This matches the
-			// section-toggle path, which never touched the tier map in the first place.
+			// Exclusion is a MASK over the stored tier, not a replacement: the tier stays stored
+			// (shadowed by the EXCLUDED read-back) so re-including, via this menu, the category
+			// toggle, or clearExclusions, restores the user's tuning. This matches the
+			// section-toggle path, which never touched the tiers in the first place.
 			excludeMethod(method);
 			return;
 		}
@@ -2854,80 +2843,38 @@ public class ShortestPathPlugin extends Plugin
 		{
 			includeMethod(method);
 		}
-		if (priority == MethodPriority.NORMAL)
-		{
-			methodPriorities.remove(method);
-		}
-		else
-		{
-			methodPriorities.put(method, priority);
-		}
-		savePriorities();
+		preferences.setTier(method, priority);
 		resortRoutesByPriority();
 	}
 
 	/** The walk-preference bias in seconds (negative effective ETA for the pure-walk route). */
 	public int getWalkPreferenceSeconds()
 	{
-		return cachedWalkPreferenceSeconds;
+		return preferences.walkPreferenceSeconds();
 	}
 
 	public void setWalkPreferenceSeconds(int seconds)
 	{
-		configManager.setConfiguration(CONFIG_GROUP, "walkPreferenceSeconds", seconds);
-		cachedWalkPreferenceSeconds = seconds;
+		preferences.setWalkPreferenceSeconds(seconds);
 		resortRoutesByPriority();
 	}
-
-	private volatile int cachedWalkPreferenceSeconds;
-	private volatile int cachedBankPreferenceSeconds;
 
 	/** The bank-detour bias in seconds: positive prefers via-bank routes, negative avoids them. */
 	public int getBankPreferenceSeconds()
 	{
-		return cachedBankPreferenceSeconds;
+		return preferences.bankPreferenceSeconds();
 	}
 
 	public void setBankPreferenceSeconds(int seconds)
 	{
-		configManager.setConfiguration(CONFIG_GROUP, "bankPreferenceSeconds", seconds);
-		cachedBankPreferenceSeconds = seconds;
+		preferences.setBankPreferenceSeconds(seconds);
 		resortRoutesByPriority();
 	}
 
-	/**
-	 * The route's ranking adjustment in seconds: the sum of its methods' tiers — or, for the
-	 * pure-walk route, minus the walk preference (walking wins ties up to that many seconds).
-	 */
+	/** The route's ranking adjustment in seconds (see RoutePreferences.adjustmentSeconds). */
 	public int routeAdjustmentSeconds(RouteOption route)
 	{
-		if (route.getMethods().isEmpty())
-		{
-			return -cachedWalkPreferenceSeconds;
-		}
-		int seconds = 0;
-		for (TeleportMethod method : route.getMethods())
-		{
-			seconds += methodPriorities.getOrDefault(method, MethodPriority.NORMAL).adjustSeconds;
-		}
-		if (route.isViaBank())
-		{
-			seconds -= cachedBankPreferenceSeconds;
-		}
-		return seconds;
-	}
-
-	/** Effective sort key: reached routes first, then raw cost plus the priority adjustment. */
-	private java.util.Comparator<RouteOption> effectiveOrder()
-	{
-		return java.util.Comparator
-			.comparingInt((RouteOption r) -> r.isReached() ? 0 : 1)
-			// At the helm, routes that STAY ON THE WATER outrank disembark-and-teleport chains
-			// (capture 20260829-204334: every offer abandoned the boat at the nearest mooring
-			// because the tick math favors teleports; a sailor mid-task wants the sea route
-			// first, the land chains listed below). Sailing-section toggle, on by default.
-			.thenComparingInt(r -> keepSailingFirst() && !r.isPureSail() ? 1 : 0)
-			.thenComparingInt(r -> r.getTotalCost() + MethodPriority.unitsFromSeconds(routeAdjustmentSeconds(r)));
+		return preferences.adjustmentSeconds(route);
 	}
 
 	boolean keepSailingFirst()
@@ -2936,71 +2883,17 @@ public class ShortestPathPlugin extends Plugin
 		return cachedKeepSailing && pathConfig != null && pathConfig.isOnSailingBoat();
 	}
 
-	/** Stable re-sort of the current list (tiers changed) — display-only, no regeneration. */
+	/** Stable re-sort of the current list (tiers changed): display-only, no regeneration. */
 	private void resortRoutesByPriority()
 	{
-		session.resort(effectiveOrder());
+		session.resort(preferences.effectiveOrder());
 		refreshPanel(session.inFlight());
 	}
 
 	/** Applies the effective order to a freshly generated list (called from the update stream). */
 	List<RouteOption> sortByEffectiveOrder(List<RouteOption> routes)
 	{
-		List<RouteOption> sorted = new ArrayList<>(routes);
-		sorted.sort(effectiveOrder());
-		return sorted;
-	}
-
-	private void savePriorities()
-	{
-		try
-		{
-			List<PriorityEntry> entries = new ArrayList<>();
-			for (Map.Entry<TeleportMethod, MethodPriority> e : methodPriorities.entrySet())
-			{
-				PriorityEntry entry = new PriorityEntry();
-				entry.method = e.getKey();
-				entry.priority = e.getValue();
-				entries.add(entry);
-			}
-			configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_PRIORITIES, gson.toJson(entries));
-		}
-		catch (Exception e)
-		{
-			log.warn("Failed to save method priorities", e);
-		}
-	}
-
-	private void loadPriorities()
-	{
-		try
-		{
-			String json = configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_PRIORITIES);
-			if (json != null && !json.isEmpty())
-			{
-				PriorityEntry[] saved = gson.fromJson(json, PriorityEntry[].class);
-				if (saved != null)
-				{
-					for (PriorityEntry entry : saved)
-					{
-						if (entry != null && entry.method != null && entry.method.getType() != null
-							&& entry.priority != null && entry.priority != MethodPriority.NORMAL
-							&& entry.priority != MethodPriority.EXCLUDED)
-						{
-							methodPriorities.put(entry.method, entry.priority);
-						}
-					}
-				}
-			}
-		}
-		catch (Exception e)
-		{
-			log.warn("Failed to load method priorities", e);
-		}
-		Integer walk = configManager.getConfiguration(CONFIG_GROUP, "walkPreferenceSeconds", Integer.class);
-		cachedWalkPreferenceSeconds = walk != null ? walk : 0;
-		Integer bank = configManager.getConfiguration(CONFIG_GROUP, "bankPreferenceSeconds", Integer.class);
-		cachedBankPreferenceSeconds = bank != null ? bank : 0;
+		return preferences.sorted(routes);
 	}
 
 	private volatile int houseLocationId;

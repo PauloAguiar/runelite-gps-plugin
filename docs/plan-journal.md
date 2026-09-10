@@ -682,3 +682,25 @@ accessors; the map and tooltip overlays call the projection, the minimap overlay
 Plugin class: 4,124 to 3,939 lines.
 
 **Suite:** 720 tests, all green.
+
+### Step L14: RoutePreferences (2026-09-09)
+
+**Red first:** `RoutePreferencesTest` takes over the ranking cases that `MethodPriorityTest` and
+`KeepSailingTest` used to drive through a bare plugin by reflection (a preferred method outranks
+a raw faster route, an avoided one sinks, the walk preference gives the pure-walk route slack,
+the bank bias shifts via-bank routes, adjustments never promote an unreached route, at the helm
+pure sail leads, excluded methods read back as EXCLUDED, exclusion masks but does not erase the
+tier) and adds the persistence round trip: tiers, walk and bank seconds save through the config
+manager and reload; a tier set back to NORMAL does not persist. The class did not exist.
+
+**Change:** the tier map, the walk and bank seconds, the adjustment arithmetic, the effective
+order comparator and the save/load became `RoutePreferences`. It reads the plugin's live
+exclusion set for the EXCLUDED mask and takes the keep-sailing verdict as a supplier; the config
+manager and Gson arrive as suppliers too, because the plugin's injected services are not there
+at field initialisation and two tests drive the update stream on a bare plugin. The plugin
+keeps the public API the panel uses, one line each, plus the exclusion dance around a tier
+change (EXCLUDED delegates to the exclusion set, any other tier un-excludes first) and the
+re-sort that follows. `MethodPriorityTest` now holds only the enum's own arithmetic and labels.
+Plugin class: 3,939 to 3,832 lines.
+
+**Suite:** 721 tests, all green.
