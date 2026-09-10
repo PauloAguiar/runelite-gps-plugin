@@ -1,5 +1,7 @@
 package gps;
 
+import gps.pathfinder.PathStep;
+import java.util.List;
 import java.util.function.IntSupplier;
 
 /**
@@ -100,5 +102,49 @@ final class OffRouteTracker
 		}
 		warning = d >= warn;
 		return warning ? Verdict.WARNING : Verdict.ON_ROUTE;
+	}
+
+	/**
+	 * Chebyshev distance from {@code location} to the nearest tile of the displayed path, or -1
+	 * without a path. Measured against the DISPLAYED route (the line the player follows), not a
+	 * classic pathfinder path: when a search picked an alternative route those diverge, and
+	 * measuring off the invisible one made off-route and recalculation misfire. A sailing leg
+	 * contributes only its two endpoints to the path, so mid-sail the player would be hundreds
+	 * of tiles off route by node distance: the legs' SEA TRACKS count too (cached waypoints);
+	 * while a track is still computing the sailor is on route rather than measured against
+	 * incomplete geometry.
+	 */
+	static int distanceFromPath(int location, List<PathStep> path, RouteOption displayed)
+	{
+		if (path == null || path.isEmpty())
+		{
+			return -1;
+		}
+		int best = Integer.MAX_VALUE;
+		for (PathStep pathStep : path)
+		{
+			best = Math.min(best, WorldPointUtil.distanceBetween(location, pathStep.getPackedPosition()));
+		}
+		if (displayed != null && !displayed.sailingJumpDepartures().isEmpty() && SailingSea.isSailable(location))
+		{
+			for (int departure : displayed.sailingJumpDepartures())
+			{
+				if (departure < 0 || departure + 1 >= path.size())
+				{
+					continue;
+				}
+				int[] track = SailingSea.seaPath(path.get(departure).getPackedPosition(),
+					path.get(departure + 1).getPackedPosition());
+				if (track == null)
+				{
+					return 0;
+				}
+				for (int waypoint : track)
+				{
+					best = Math.min(best, WorldPointUtil.distanceBetween(location, waypoint));
+				}
+			}
+		}
+		return best;
 	}
 }

@@ -279,6 +279,8 @@ public class ShortestPathPlugin extends Plugin
 	private WorldMapPoint marker;
 	// Off-route bands, the transport-jump grace and the distance from the path (see OffRouteTracker).
 	private final OffRouteTracker offRoute = new OffRouteTracker();
+	// Passive sea-obstacle learning from live scene collision (see SeaObstacleLearner).
+	private SeaObstacleLearner seaObstacles;
 	// World-map pixel projection and the minimap clip shape (see WorldMapProjection, MinimapClip);
 	// constructed at startup (they read injected client services).
 	private WorldMapProjection worldMap;
@@ -469,6 +471,7 @@ public class ShortestPathPlugin extends Plugin
 
 		worldMap = new WorldMapProjection(client);
 		minimapClip = new MinimapClip(client, spriteManager);
+		seaObstacles = new SeaObstacleLearner(client, this::getLastKnownPlayerLocation);
 
 		pathfinderConfig = new PathfinderConfig(client, config);
 		bankSnapshots = new BankSnapshotService(configManager, CONFIG_GROUP, config::rememberBank, pathfinderConfig);
@@ -635,114 +638,6 @@ public class ShortestPathPlugin extends Plugin
 		return Math.max(0, Math.min(config.offRouteWarnDistance(), Math.max(0, config.recalculateDistance())));
 	}
 
-	/** Chebyshev distance from {@code location} to the nearest tile of the displayed path, or -1. */
-	private int seaObstacleScanCooldown;
-
-	/**
-	 * Scene scan for live sea blockers. A real obstacle carries BLOCK_MOVEMENT_OBJECT; scene
-	 * border padding reads 0xFFFFFF (everything blocked) and is skipped, as is a 3-tile edge
-	 * margin — the first field harvest showed the border bands dwarfing the actual galleon.
-	 */
-	private void scanSeaObstacles()
-	{
-		net.runelite.api.WorldView view = client.getTopLevelWorldView();
-		if (view == null || view.getCollisionMaps() == null || view.getPlane() != 0)
-		{
-			return;
-		}
-		net.runelite.api.CollisionData collision = view.getCollisionMaps()[0];
-		if (collision == null)
-		{
-			return;
-		}
-		int[][] flags = collision.getFlags();
-		int baseX = view.getBaseX();
-		int baseY = view.getBaseY();
-		List<Integer> found = null;
-		for (int sx = 3; sx < flags.length - 3; sx++)
-		{
-			for (int sy = 3; sy < flags[sx].length - 3; sy++)
-			{
-				int tileFlags = flags[sx][sy];
-				if (tileFlags == 0xFFFFFF
-					|| (tileFlags & net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_OBJECT) == 0)
-				{
-					continue;
-				}
-				int packed = WorldPointUtil.packWorldPoint(baseX + sx, baseY + sy, 0);
-				// NEVER learn near the player's own boat: the hull is itself a WorldEntity
-				// projecting live-blocked collision onto sailable water — without this
-				// exclusion every scan learned the boat's current footprint as a permanent
-				// obstacle, poisoning a breadcrumb trail along everywhere the player sails
-				// (field capture 232906: the direct channel home was sealed by the player's
-				// own wake, forcing a disembark/re-embark detour through Cairn Isle).
-				int playerAt = getLastKnownPlayerLocation();
-				if (playerAt != WorldPointUtil.UNDEFINED
-					&& Math.max(Math.abs(WorldPointUtil.unpackWorldX(playerAt) - (baseX + sx)),
-						Math.abs(WorldPointUtil.unpackWorldY(playerAt) - (baseY + sy))) <= 10)
-				{
-					continue;
-				}
-				if (SailingSea.isSailable(packed) && !SailingSea.obstacleAt(baseX + sx, baseY + sy))
-				{
-					if (found == null)
-					{
-						found = new ArrayList<>();
-					}
-					found.add(packed);
-				}
-			}
-		}
-		if (found != null)
-		{
-			SailingSea.learnObstacles(found);
-		}
-	}
-
-	public int distanceFromPath(int location)
-	{
-		// Measured against the DISPLAYED route (the line the player is actually following), not the
-		// classic pathfinder path: when a search picked an alternative route those two diverge, and
-		// measuring off the invisible classic path made off-route/recalc misfire.
-		List<PathStep> path = getDisplayPath();
-		if (path == null || path.isEmpty())
-		{
-			return -1;
-		}
-		int best = Integer.MAX_VALUE;
-		for (PathStep pathStep : path)
-		{
-			best = Math.min(best, WorldPointUtil.distanceBetween(location, pathStep.getPackedPosition()));
-		}
-		// A sailing leg contributes only its two endpoints to the path, so mid-sail the player
-		// is "hundreds of tiles off route" by node distance and auto-recalc wiped the route a
-		// few tiles out of port. Measure against the legs' SEA TRACKS too (cached waypoints,
-		// non-blocking); while a track is still computing, treat the sailor as on route rather
-		// than recalc against incomplete geometry.
-		RouteOption displayed = getDisplayedRoute();
-		if (displayed != null && SailingSea.isSailable(location))
-		{
-			for (int departure : displayed.sailingJumpDepartures())
-			{
-				if (departure < 0 || departure + 1 >= path.size())
-				{
-					continue;
-				}
-				int[] track = SailingSea.seaPath(path.get(departure).getPackedPosition(),
-					path.get(departure + 1).getPackedPosition());
-				if (track == null)
-				{
-					return 0;
-				}
-				for (int waypoint : track)
-				{
-					best = Math.min(best, WorldPointUtil.distanceBetween(location, waypoint));
-				}
-			}
-		}
-		return best;
-	}
-
 	/** How far the player is from the path (-1 = no path / unknown), updated each tick. */
 	public int getPathDistance()
 	{
@@ -755,104 +650,18 @@ public class ShortestPathPlugin extends Plugin
 		return offRoute.isWarning();
 	}
 
-	// The arrival zone, cached per (path end, finish distance): recomputed only when the displayed
-	// route's end or the config changes, then read every tick (arrival check) and frame (debug render).
-	// One immutable holder for the zone and its key (see DirectionsCache for why).
-	private static final class ArrivalZoneCache
-	{
-		final int end;
-		final int radius;
-		final Set<Integer> zone;
-
-		ArrivalZoneCache(int end, int radius, Set<Integer> zone)
-		{
-			this.end = end;
-			this.radius = radius;
-			this.zone = zone;
-		}
-	}
-
-	private volatile ArrivalZoneCache arrivalZoneCache =
-		new ArrivalZoneCache(WorldPointUtil.UNDEFINED, Integer.MIN_VALUE, Set.of());
+	// The arrival zone around the displayed path's end (see ArrivalZone); the map arrives with the
+	// pathfinder config at startup.
+	private final ArrivalZone arrivalZone = new ArrivalZone(() -> pathfinderConfig == null ? null : pathfinderConfig.getMap());
 
 	/**
-	 * The arrival zone: every tile within the finish distance of the destination in WALKING steps — a
-	 * flood from the displayed path's end over the collision map, using the same movement rules as the
-	 * pathfinder — so a tile across a wall or fence is not part of the zone. Standing on any of these
-	 * tiles completes the journey; the debug overlay renders exactly this set. Empty when there is no
-	 * path or the finish distance is negative (never finish).
+	 * The arrival zone: every tile within the finish distance of the destination in walking steps
+	 * (see ArrivalZone). Standing on any of these tiles completes the journey; the debug overlay
+	 * renders exactly this set.
 	 */
 	public Set<Integer> getArrivalTiles()
 	{
-		List<PathStep> path = getDisplayPath();
-		int radius = config.reachedDistance();
-		if (path == null || path.isEmpty() || radius < 0)
-		{
-			return Set.of();
-		}
-		int end = path.get(path.size() - 1).getPackedPosition();
-		ArrivalZoneCache cached = arrivalZoneCache;
-		if (end != cached.end || radius != cached.radius)
-		{
-			cached = new ArrivalZoneCache(end, radius, floodArrivalZone(end, radius));
-			arrivalZoneCache = cached;
-		}
-		return cached.zone;
-	}
-
-	/**
-	 * Breadth-first flood from {@code end} over walkable edges, up to {@code maxSteps} moves. Diagonal
-	 * moves mirror {@link gps.pathfinder.CollisionMap}'s corner rules (both cardinals of the corner
-	 * must be open on both sides), so the zone matches where the player can actually walk.
-	 */
-	private Set<Integer> floodArrivalZone(int end, int maxSteps)
-	{
-		Set<Integer> zone = new HashSet<>();
-		zone.add(end);
-		CollisionMap map = pathfinderConfig.getMap();
-		if (map == null || maxSteps <= 0)
-		{
-			return zone;
-		}
-		final int plane = WorldPointUtil.unpackWorldPlane(end);
-		List<Integer> frontier = new ArrayList<>();
-		frontier.add(end);
-		for (int depth = 0; depth < maxSteps && !frontier.isEmpty(); depth++)
-		{
-			List<Integer> next = new ArrayList<>();
-			for (int tile : frontier)
-			{
-				final int x = WorldPointUtil.unpackWorldX(tile);
-				final int y = WorldPointUtil.unpackWorldY(tile);
-				final boolean n = map.n(x, y, plane);
-				final boolean s = map.s(x, y, plane);
-				final boolean e = map.e(x, y, plane);
-				final boolean w = map.w(x, y, plane);
-				growZone(zone, next, x, y + 1, plane, n);
-				growZone(zone, next, x, y - 1, plane, s);
-				growZone(zone, next, x + 1, y, plane, e);
-				growZone(zone, next, x - 1, y, plane, w);
-				growZone(zone, next, x + 1, y + 1, plane, n && e && map.e(x, y + 1, plane) && map.n(x + 1, y, plane));
-				growZone(zone, next, x - 1, y + 1, plane, n && w && map.w(x, y + 1, plane) && map.n(x - 1, y, plane));
-				growZone(zone, next, x + 1, y - 1, plane, s && e && map.e(x, y - 1, plane) && map.s(x + 1, y, plane));
-				growZone(zone, next, x - 1, y - 1, plane, s && w && map.w(x, y - 1, plane) && map.s(x - 1, y, plane));
-			}
-			frontier = next;
-		}
-		return zone;
-	}
-
-	private static void growZone(Set<Integer> zone, List<Integer> next, int x, int y, int plane, boolean open)
-	{
-		if (!open)
-		{
-			return;
-		}
-		int packed = WorldPointUtil.packWorldPoint(x, y, plane);
-		if (zone.add(packed))
-		{
-			next.add(packed);
-		}
+		return arrivalZone.tiles(getDisplayPath(), config.reachedDistance());
 	}
 
 	/**
@@ -1466,7 +1275,7 @@ public class ShortestPathPlugin extends Plugin
 		maybeRefreshCatalog();
 		cachePlayerLocation();
 		boatBannerService.onTick();
-		learnSeaObstaclesEveryTenTicks();
+		seaObstacles.onTick();
 		runPendingTasks();
 		maybeAutoComputeAlternatives();
 		cacheHouseAndBalloonVarbits();
@@ -1496,20 +1305,6 @@ public class ShortestPathPlugin extends Plugin
 	private void cachePlayerLocation()
 	{
 		lastKnownPlayerLocation = getPlayerLocation();
-	}
-
-	/**
-	 * Passive sea-obstacle learning: every 10 ticks, harvest scene tiles that the shipped ocean
-	 * calls sailable but live collision blocks (moored vessels, harbour clutter). The offline map
-	 * plans; the client corrects itself as scenes reveal the truth.
-	 */
-	private void learnSeaObstaclesEveryTenTicks()
-	{
-		if (--seaObstacleScanCooldown <= 0)
-		{
-			seaObstacleScanCooldown = 10;
-			scanSeaObstacles();
-		}
 	}
 
 	private void runPendingTasks()
@@ -1572,7 +1367,8 @@ public class ShortestPathPlugin extends Plugin
 	private void trackOffRoute(int currentLocation)
 	{
 		boolean aboard = client.getVarbitValue(net.runelite.api.gameval.VarbitID.SAILING_BOARDED_BOAT) != 0;
-		OffRouteTracker.Verdict verdict = offRoute.tick(currentLocation, () -> distanceFromPath(currentLocation),
+		OffRouteTracker.Verdict verdict = offRoute.tick(currentLocation,
+			() -> OffRouteTracker.distanceFromPath(currentLocation, getDisplayPath(), getDisplayedRoute()),
 			config.recalculateDistance(), config.offRouteWarnDistance(), config.autoRecalculate(),
 			config.cancelInstead(), aboard);
 		switch (verdict)

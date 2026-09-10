@@ -100,4 +100,17 @@ public class OffRouteTrackerTest
 		assertFalse(tracker.isWarning());
 		assertEquals(-1, tracker.distance());
 	}
+
+	@Test
+	public void distanceIsMeasuredAgainstTheNearestPathTile()
+	{
+		java.util.List<gps.pathfinder.PathStep> path = java.util.List.of(
+			new gps.pathfinder.PathStep(at(0), false), new gps.pathfinder.PathStep(at(10), false),
+			new gps.pathfinder.PathStep(at(20), false));
+		assertEquals(0, OffRouteTracker.distanceFromPath(at(10), path, null));
+		assertEquals(3, OffRouteTracker.distanceFromPath(at(23), path, null));
+		assertEquals(4, OffRouteTracker.distanceFromPath(WorldPointUtil.packWorldPoint(3208, 3204, 0), path, null));
+		assertEquals(-1, OffRouteTracker.distanceFromPath(at(5), java.util.List.of(), null));
+		assertEquals(-1, OffRouteTracker.distanceFromPath(at(5), null, null));
+	}
 }

@@ -781,3 +781,23 @@ three tests); the overlays pass the plugin's edge-transport method to the static
 Two imports went with the code. Plugin class: 3,377 to 3,102 lines.
 
 **Suite:** 738 tests, all green.
+
+### Step L19: ArrivalZone, SeaObstacleLearner, and the path distance (2026-09-09)
+
+**Red first:** `ArrivalZoneTest` pins the flood against a mocked collision map: open ground
+gives the 3x3 block at one step, a wall to the east closes that tile and both diagonals beside
+it, no map or no steps is the end tile alone, and the zone is cached per path end and radius
+(the same set instance comes back for the same end, a wider radius recomputes, a negative
+radius or an empty path is empty). `OffRouteTrackerTest` gained the distance measure: zero on
+a path tile, Chebyshev to the nearest tile otherwise, -1 without a path. The classes did not
+exist.
+
+**Change:** the arrival cache, the flood and its corner rule became `ArrivalZone` (the plugin's
+`getArrivalTiles` is one line over the displayed path and the finish distance; `hasArrived`
+stays, it reads the session and the round-trip state). The ten-tick scene scan became
+`SeaObstacleLearner`, its magic numbers named (scan period, edge margin, own-boat radius). The
+distance from the displayed path joined `OffRouteTracker` as a static, and only consults the
+sea when the route has a sailing leg, so a land route never loads the ocean. Plugin class:
+3,102 to 2,898 lines.
+
+**Suite:** 742 tests, all green.
