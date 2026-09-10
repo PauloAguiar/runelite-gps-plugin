@@ -350,15 +350,8 @@ public class ShortestPathPlugin extends Plugin
 	private String bankSaveProfileKey;
 	private Point lastMenuOpenedPoint;
 	private WorldMapPoint marker;
-	private int lastLocation = WorldPointUtil.packWorldPoint(0, 0, 0);
-	// A single-tick displacement larger than running (2 tiles) means a transport is carrying the
-	// player — a boat cutscene, a teleport landing — not that they walked off route. While that
-	// resolves, off-route detection is suppressed (the player is legitimately far from the path).
-	private static final int TRANSPORT_STEP_TILES = 3;
-	// Ticks to keep suppressing after such a displacement (long enough to cover a boat cutscene);
-	// refreshed while the transport keeps moving the player, cleared once they settle near the path.
-	private static final int TRANSPORT_GRACE_TICKS = 20;
-	private int transportGraceTicks = 0;
+	// Off-route bands, the transport-jump grace and the distance from the path (see OffRouteTracker).
+	private final OffRouteTracker offRoute = new OffRouteTracker();
 	private Shape minimapClipFixed;
 	private Shape minimapClipResizeable;
 	private BufferedImage minimapSpriteFixed;
@@ -807,13 +800,17 @@ public class ShortestPathPlugin extends Plugin
 		return best;
 	}
 
-	// Off-route state, updated each tick the player moves: how far the player is from the path
-	// (-1 = no path / unknown), and whether that's into the warning band (>= warn, < recalculate),
-	// which the overlay shows in red. At/beyond the recalculate distance the route is recomputed.
-	@Getter
-	private volatile int pathDistance = -1;
-	@Getter
-	private volatile boolean offRouteWarning = false;
+	/** How far the player is from the path (-1 = no path / unknown), updated each tick. */
+	public int getPathDistance()
+	{
+		return offRoute.distance();
+	}
+
+	/** Whether the player is in the warning band (>= warn, < recalculate), shown in red. */
+	public boolean isOffRouteWarning()
+	{
+		return offRoute.isWarning();
+	}
 
 	// The arrival zone, cached per (path end, finish distance): recomputed only when the displayed
 	// route's end or the config changes, then read every tick (arrival check) and frame (debug render).
@@ -1544,20 +1541,58 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
+		// The tick as named steps (plan step L10), in the order they always ran.
 		maybeRefreshCatalog();
-		// Tick-cached position for Swing-thread consumers (the panel's destination search):
-		// live resolution walks player.getWorldView(), a client-thread-only call since the
-		// boat-position fix — the EDT reads this cache instead and can never trip it.
-		lastKnownPlayerLocation = getPlayerLocation();
+		cachePlayerLocation();
 		boatBannerService.onTick();
-		// Passive sea-obstacle learning: every 10 ticks, harvest scene tiles that the shipped
-		// ocean calls sailable but live collision blocks (moored vessels, harbour clutter).
-		// The offline map plans; the client corrects itself as scenes reveal the truth.
+		learnSeaObstaclesEveryTenTicks();
+		runPendingTasks();
+		maybeAutoComputeAlternatives();
+		cacheHouseAndBalloonVarbits();
+		Player localPlayer = client.getLocalPlayer();
+		if (localPlayer == null)
+		{
+			return;
+		}
+		maybeScanPoh();
+		if (!hasPathTargets())
+		{
+			return;
+		}
+		int currentLocation = WorldPointUtil.fromLocalInstance(client, localPlayer);
+		if (trackJourneyAndArrival(localPlayer, currentLocation))
+		{
+			return;
+		}
+		trackOffRoute(currentLocation);
+	}
+
+	/**
+	 * Tick-cached position for Swing-thread consumers (the panel's destination search): live
+	 * resolution walks player.getWorldView(), a client-thread-only call since the boat-position
+	 * fix; the EDT reads this cache instead and can never trip it.
+	 */
+	private void cachePlayerLocation()
+	{
+		lastKnownPlayerLocation = getPlayerLocation();
+	}
+
+	/**
+	 * Passive sea-obstacle learning: every 10 ticks, harvest scene tiles that the shipped ocean
+	 * calls sailable but live collision blocks (moored vessels, harbour clutter). The offline map
+	 * plans; the client corrects itself as scenes reveal the truth.
+	 */
+	private void learnSeaObstaclesEveryTenTicks()
+	{
 		if (--seaObstacleScanCooldown <= 0)
 		{
 			seaObstacleScanCooldown = 10;
 			scanSeaObstacles();
 		}
+	}
+
+	private void runPendingTasks()
+	{
 		for (int i = 0; i < pendingTasks.size(); i++)
 		{
 			if (pendingTasks.get(i).check(client.getTickCount()))
@@ -1565,122 +1600,73 @@ public class ShortestPathPlugin extends Plugin
 				pendingTasks.remove(i--).run();
 			}
 		}
+	}
 
-		maybeAutoComputeAlternatives();
-
-		// The house-location varbit (2187): 0 = no house, 1-9 = the owned location. Cached here (the
-		// client thread) for the panel's POH section, which runs on the EDT.
+	/**
+	 * The house-location varbit (2187: 0 = no house, 1-9 = the owned location) and the balloon
+	 * route unlock varbits (ZEP_MULTI_*), cached on the client thread for the panel's house
+	 * section and its low-log warning (only unlocked routes' log types are worth warning about).
+	 */
+	private void cacheHouseAndBalloonVarbits()
+	{
 		houseLocationId = client.getVarbitValue(2187);
-
-		// The balloon route unlock varbits (ZEP_MULTI_*), cached for the panel's low-log warning:
-		// only unlocked routes' log types are worth warning about.
 		balloonUnlockVarbits = new int[]{
 			client.getVarbitValue(2867), client.getVarbitValue(2868), client.getVarbitValue(2869),
 			client.getVarbitValue(2870), client.getVarbitValue(2871), client.getVarbitValue(2872)};
+	}
 
-		Player localPlayer = client.getLocalPlayer();
-		if (localPlayer == null)
-		{
-			return;
-		}
-
-		maybeScanPoh();
-
-		if (!hasPathTargets())
-		{
-			return;
-		}
-
-		int currentLocation = WorldPointUtil.fromLocalInstance(client, localPlayer);
+	/**
+	 * Advances the journey clock and handles arrival. True when the player reached the
+	 * destination (inside the arrival zone): the "Arrived!" panel is shown, including when the
+	 * destination was set while already there (a never-started journey reports 0 rather than a
+	 * stale duration), and the target is cleared.
+	 */
+	private boolean trackJourneyAndArrival(Player localPlayer, int currentLocation)
+	{
 		// The journey clock starts on the first move or animation after arming (JourneyTracker).
 		journey.tick(currentLocation, localPlayer.getAnimation() != -1, System.currentTimeMillis());
-		if (hasArrived(currentLocation))
+		if (!hasArrived(currentLocation))
 		{
-			// Reached the destination (inside the arrival zone). Show the "Arrived!" panel — including when
-			// the destination was set while already there (e.g. "nearest bank" at a bank), where
-			// the journey time is ~0 — then clear the target. A never-started journey (arrived without
-			// moving) reports 0 rather than a stale duration.
-			long elapsed = journey.elapsedMillis(System.currentTimeMillis());
-			if (routeDirectionsOverlay != null)
-			{
-				routeDirectionsOverlay.markArrived(targetSource, elapsed);
-			}
-			if (altPanel != null)
-			{
-				altPanel.markArrived(elapsed);
-			}
-			setTarget(WorldPointUtil.UNDEFINED);
-			return;
+			return false;
 		}
-
-		// Off-route handling, in three bands of distance from the path: on route (nothing), a
-		// warning band (the overlay shows a red "drifting off route" message), and — on a move that
-		// reaches the recalculate distance — a full recompute. Recalc fires only on movement so a
-		// stationary far position (e.g. just teleported off-path) doesn't loop. With
-		// auto-recalculate off, GPS keeps the original route and only ever warns.
-		int recalc = config.recalculateDistance();
-		if (recalc >= 0)
+		long elapsed = journey.elapsedMillis(System.currentTimeMillis());
+		if (routeDirectionsOverlay != null)
 		{
-			int step = WorldPointUtil.distanceBetween(lastLocation, currentLocation);
-			boolean moved = lastLocation != currentLocation;
-			lastLocation = currentLocation;
-			int d = distanceFromPath(currentLocation);
-			pathDistance = d;
-			int warn = Math.max(0, Math.min(config.offRouteWarnDistance(), recalc));
-			// At the helm the bands stretch: a boat's wide 16-bearing turning arcs swing off
-			// the decimated track line farther than a walker ever drifts off a path, and a
-			// land-tuned radius recalculated away perfectly good voyages mid-turn.
-			if (client.getVarbitValue(net.runelite.api.gameval.VarbitID.SAILING_BOARDED_BOAT) != 0)
-			{
-				// 2x, not 3x: field-tuned — 3x let the boat wander far off the track before
-				// a recalc rescued it; turning arcs fit comfortably inside 2x.
-				recalc *= 2;
-				warn *= 3;
-			}
-			// A boat cutscene / teleport landing carries the player far from the path in one leap;
-			// that isn't drifting off route. A jump bigger than running arms a grace window that
-			// refreshes while the transport keeps moving them, and clears once they're back within
-			// the warning band (landed on/near the path).
-			if (step > TRANSPORT_STEP_TILES)
-			{
-				transportGraceTicks = TRANSPORT_GRACE_TICKS;
-			}
-			else if (transportGraceTicks > 0)
-			{
-				transportGraceTicks = (d >= 0 && d < warn) ? 0 : transportGraceTicks - 1;
-			}
+			routeDirectionsOverlay.markArrived(targetSource, elapsed);
+		}
+		if (altPanel != null)
+		{
+			altPanel.markArrived(elapsed);
+		}
+		setTarget(WorldPointUtil.UNDEFINED);
+		return true;
+	}
 
-			if (d < 0 || transportGraceTicks > 0)
-			{
-				offRouteWarning = false;
-			}
-			else if (moved && d >= recalc && config.autoRecalculate())
-			{
-				offRouteWarning = false;
-				if (config.cancelInstead())
-				{
-					setTarget(WorldPointUtil.UNDEFINED);
-					return;
-				}
-				// One drift recalc at a time: distance is measured against the OLD path until the
-				// new routes land, so a player who keeps walking would otherwise re-trigger (and
-				// restart) the generation every moved tick and it would never finish. While one is
-				// computing, keep walking; once the fresh path lands the band check re-evaluates
-				// against it and fires at most one follow-up.
+	/**
+	 * The off-route bands (see OffRouteTracker): a warning the overlays show, a recalculation
+	 * from the player's current position (one at a time: distance is measured against the OLD
+	 * path until the new routes land, so a player who keeps walking would otherwise restart the
+	 * generation every moved tick), or cancelling the route when the player prefers that.
+	 */
+	private void trackOffRoute(int currentLocation)
+	{
+		boolean aboard = client.getVarbitValue(net.runelite.api.gameval.VarbitID.SAILING_BOARDED_BOAT) != 0;
+		OffRouteTracker.Verdict verdict = offRoute.tick(currentLocation, () -> distanceFromPath(currentLocation),
+			config.recalculateDistance(), config.offRouteWarnDistance(), config.autoRecalculate(),
+			config.cancelInstead(), aboard);
+		switch (verdict)
+		{
+			case CANCEL:
+				setTarget(WorldPointUtil.UNDEFINED);
+				break;
+			case RECALCULATE:
 				if (!session.inFlight())
 				{
 					recalculateFrom(currentLocation, pathTargets);
 				}
-				return;
-			}
-			else
-			{
-				offRouteWarning = d >= warn;
-			}
-		}
-		else
-		{
-			offRouteWarning = false;
+				break;
+			default:
+				break;
 		}
 	}
 
@@ -2724,7 +2710,7 @@ public class ShortestPathPlugin extends Plugin
 			}
 
 			int start = WorldPointUtil.fromLocalInstance(client, localPlayer);
-			lastLocation = start;
+			offRoute.reset(start);
 			Set<Integer> destinations = new HashSet<>(targets);
 			if (append)
 			{

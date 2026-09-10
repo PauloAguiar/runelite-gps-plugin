@@ -591,3 +591,21 @@ client thread and read by the overlays and the panel. The plugin keeps the side 
 panel refreshes, the journey timer, plugin messages, persistence, thread hops. Three existing
 tests that reached the old plugin fields by reflection now resolve them through the session.
 Plugin class: 4,762 to 4,601 lines.
+
+### Step L10: OffRouteTracker, and the tick as named steps (2026-09-09)
+
+**Red first:** `OffRouteTrackerTest`: recalculation disabled means no warning and no path scan
+(the scan is a supplier, consulted only when something can come of it); the three bands (on
+route, warning, recalculate); recalculation needs a move and the setting, and may cancel
+instead; the helm stretches the bands (recalc x2, warn x3); a transport jump arms a grace
+window that holds for its twenty ticks, clears at once back near the path, and lets the next
+far move recalculate; no same-plane tile means on route. The class did not exist.
+
+**Change:** the off-route state (last location, grace ticks, distance, warning) and the band
+decision became `OffRouteTracker`, with a verdict the plugin acts on (cancel the target, or
+recalculate from here when no generation is in flight). The two overlay getters delegate. The
+164-line tick handler is now the sequence it always was, as named steps in the original order:
+refresh the catalog if due, cache the player location, the boat banner, sea-obstacle learning
+every ten ticks, pending tasks, auto-compute, the house and balloon varbits, the house scan,
+then for a set destination the journey and arrival, then the off-route bands. Plugin class:
+4,601 to 4,587 lines (the steps' javadocs replaced inline comments).
