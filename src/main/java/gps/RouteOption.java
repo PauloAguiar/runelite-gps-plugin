@@ -193,4 +193,17 @@ public final class RouteOption
 	{
 		return methods.isEmpty();
 	}
+
+	/** The method whose edge arrives at path index {@code arriveIndex}, or null when that edge is walking. */
+	public TeleportMethod methodArrivingAt(int arriveIndex)
+	{
+		for (int m = 0; m < methodEdgeIndexes.size() && m < methods.size(); m++)
+		{
+			if (methodEdgeIndexes.get(m) == arriveIndex)
+			{
+				return methods.get(m);
+			}
+		}
+		return null;
+	}
 }

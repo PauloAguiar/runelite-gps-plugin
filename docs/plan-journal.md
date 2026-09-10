@@ -863,3 +863,22 @@ handler used to set inline. Eleven imports went with the code. Plugin class: 2,6
 lines.
 
 **Suite:** 751 tests, all green.
+
+### Step L23: EdgeTransports, and the route's own method edges (2026-09-09)
+
+**Red first:** `EdgeTransportsTest` pins the edge rule with a mocked pathfinder config and
+mocked transports: a local quetzal on the edge suppresses the whistle that shares its
+destinations but keeps a tablet; a far jump without the local type keeps both teleports;
+walking to the landing within the quetzal radius drops the whistle; an adjacent same-plane
+step hints no teleport; and the next-step lookup. `RouteMethodEdgesTest` pins the route's own
+"which method arrives at this index". Neither existed.
+
+**Change:** the per-edge transport derivation and the next-step lookup became `EdgeTransports`
+(the essay-length javadoc that had drifted onto a different method went with it); the method
+arriving at an index became `RouteOption.methodArrivingAt`, so the two overlay queries on the
+plugin are one line each. The plugin keeps `transportsForEdge` as a one-line public delegate
+(overlays, directions, the message codec and the house exit lookup all take it), and the
+tooltip overlay calls the static next-step directly. Three imports went with the code. Plugin
+class: 2,517 to 2,403 lines.
+
+**Suite:** 757 tests, all green.

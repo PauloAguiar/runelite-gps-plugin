@@ -8,7 +8,6 @@ import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -59,9 +58,7 @@ import net.runelite.client.util.ImageUtil;
 import gps.pathfinder.CollisionMap;
 import gps.pathfinder.PathStep;
 import gps.pathfinder.PathfinderConfig;
-import gps.pathfinder.TransportAvailability;
 import gps.transport.Transport;
-import gps.transport.TransportType;
 
 @Slf4j
 @SuppressWarnings("SameParameterValue")
@@ -1273,30 +1270,6 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	/**
-	 * This reconstructs the candidate transports for a rendered path edge from the current path state.
-	 * <p>
-	 * The important detail is that path display logic is edge-based, not node-based:
-	 * - origin position comes from currentStep
-	 * - destination position comes from nextStep
-	 * - the applicable transport set may depend on whether the edge transitions into banked state
-	 * <p>
-	 * That last point is the awkward one. Banking is not represented as its own explicit path edge;
-	 * instead the "becomes banked" state change is conflated into the movement/transport edge that
-	 * reaches the banked destination step. As a result, callers cannot safely resolve transports from
-	 * a single PathStep alone: using only currentStep can miss bank-gated transports, while using only
-	 * nextStep loses the origin tile of the edge. This helper therefore takes both steps and resolves
-	 * transports for the edge between them.
-	 * <p>
-	 * This is still only a fallback for display code and remains inherently ambiguous when multiple
-	 * valid transports share the same origin/destination pair under the same edge state. The more
-	 * structural fix would be to model reconstructed paths in terms of explicit edges, or otherwise
-	 * carry richer per-edge metadata, instead of repeatedly re-deriving transport candidates from
-	 * adjacent path steps.
-	 * <p>
-	 * Note that this function also performs filtering by the transport target, so callers of this
-	 * function can directly iterate over the returned transports.
-	 */
-	/**
 	 * Whether the DISPLAYED route uses a teleport method to reach the tile after {@code fromIndex}
 	 * (edge {@code fromIndex} → {@code fromIndex + 1}). Drives the teleport pulse straight from the
 	 * shown route's method edges — {@link #transportsForEdge} re-derives transports from the classic
@@ -1318,100 +1291,13 @@ public class ShortestPathPlugin extends Plugin
 	public TeleportMethod displayedRouteMethodAt(int fromIndex)
 	{
 		RouteOption route = getDisplayedRoute();
-		if (route == null)
-		{
-			return null;
-		}
-		int arriveIndex = fromIndex + 1;
-		List<Integer> edges = route.getMethodEdgeIndexes();
-		List<TeleportMethod> methods = route.getMethods();
-		for (int m = 0; m < edges.size() && m < methods.size(); m++)
-		{
-			if (edges.get(m) == arriveIndex)
-			{
-				return methods.get(m);
-			}
-		}
-		return null;
+		return route == null ? null : route.methodArrivingAt(fromIndex + 1);
 	}
 
+	/** The transports a rendered path edge rides (see EdgeTransports), for the overlays and directions. */
 	public Set<Transport> transportsForEdge(PathStep currentStep, PathStep nextStep)
 	{
-		if (currentStep == null || nextStep == null)
-		{
-			return Set.of();
-		}
-		boolean bankVisited = currentStep.isBankVisited() || nextStep.isBankVisited();
-		// Only the transports that land on the next step - filtered while collecting, because this
-		// runs per edge per frame from the overlays and used to copy EVERY usable teleport into a
-		// fresh set first.
-		final int landing = nextStep.getPackedPosition();
-		Set<Transport> stepTransports = new HashSet<>();
-		for (Transport transport : pathfinderConfig.getTransportsPacked(bankVisited)
-			.getOrDefault(currentStep.getPackedPosition(), TransportAvailability.EMPTY_TRANSPORTS))
-		{
-			if (transport.getDestination() == landing)
-			{
-				stepTransports.add(transport);
-			}
-		}
-		// The teleports, which might be used from anywhere.
-		for (Transport transport : pathfinderConfig.getUsableTeleports(bankVisited))
-		{
-			if (transport.getDestination() == landing)
-			{
-				stepTransports.add(transport);
-			}
-		}
-		// Remove teleports that share destinations with a local transport type on this edge.
-		// For example, if the path uses a QUETZAL (local) transport, suppress QUETZAL_WHISTLE hints.
-		// Also suppress them when the edge distance is within the shared type's radius threshold,
-		// which occurs when the path is simply walking to a landing site (not teleporting to it).
-		Set<TransportType> localTypes = EnumSet.noneOf(TransportType.class);
-		for (Transport t : stepTransports)
-		{
-			if (t.getOrigin() != Transport.UNDEFINED_ORIGIN && t.getType() != null)
-			{
-				localTypes.add(t.getType());
-			}
-		}
-		int edgeDistance = WorldPointUtil.distanceBetween2D(currentStep.getPackedPosition(), nextStep.getPackedPosition());
-		boolean samePlane = WorldPointUtil.unpackWorldPlane(currentStep.getPackedPosition())
-			== WorldPointUtil.unpackWorldPlane(nextStep.getPackedPosition());
-		stepTransports.removeIf(t ->
-		{
-			if (t.getOrigin() != Transport.UNDEFINED_ORIGIN || t.getType() == null)
-			{
-				return false; // keep local transports
-			}
-			// A same-plane adjacent edge is a plain walking step — the pathfinder never spends a
-			// teleport on a one-tile hop. Any anywhere-teleport matching it is the path merely
-			// walking across that teleport's landing tile, so it must not be hinted.
-			if (samePlane && edgeDistance <= 1)
-			{
-				return true;
-			}
-			TransportType sharedType = t.getType().sharesDestinationsWith();
-			if (sharedType == null)
-			{
-				return false; // not a shared-destination teleport, keep it
-			}
-			// Suppress if a local transport of the shared type is present on this edge (Issue 1),
-			// or if the edge is within the shared type's radius threshold, meaning the path is
-			// walking to the landing site rather than teleporting there (Issue 2).
-			return localTypes.contains(sharedType)
-				|| (sharedType.getRadiusThreshold() != null && edgeDistance <= sharedType.getRadiusThreshold());
-		});
-		return stepTransports;
-	}
-
-	public PathStep nextPathStep(List<PathStep> path, int index)
-	{
-		if (path == null || index < 0 || index + 1 >= path.size())
-		{
-			return null;
-		}
-		return path.get(index + 1);
+		return EdgeTransports.forEdge(pathfinderConfig, currentStep, nextStep);
 	}
 
 
