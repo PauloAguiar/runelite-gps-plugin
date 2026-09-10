@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.SwingUtilities;
 import lombok.Getter;
@@ -34,7 +33,6 @@ import net.runelite.api.MenuEntry;
 import net.runelite.api.Player;
 import net.runelite.api.Point;
 import net.runelite.api.Tile;
-import net.runelite.api.ScriptID;
 import net.runelite.api.WorldView;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameObjectSpawned;
@@ -187,8 +185,6 @@ public class ShortestPathPlugin extends Plugin
 		return key != null && TRANSPORT_OPTIONS_REGEX.matcher(key).find();
 	}
 	private static final Map<String, Object> configOverride = new HashMap<>(50);
-	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
-	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
 	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
 	boolean drawMap;
 	boolean drawMinimap;
@@ -279,8 +275,6 @@ public class ShortestPathPlugin extends Plugin
 	// button is shown while logged in and removed on the login screen.
 	private boolean navButtonShown = false;
 	private AlternativeRoutesService altRoutesService;
-	// RSProfile-scoped: the planted spirit trees detected from the travel menu, comma-separated.
-	private static final String CONFIG_KEY_SPIRIT_TREES = "plantedSpiritTrees";
 	// The panel's boat banner (see BoatBannerService); constructed at startup, before the panel.
 	private BoatBannerService boatBannerService;
 	// Smart house furniture detection (see PohDetectionService); constructed at startup, before the panel.
@@ -402,11 +396,10 @@ public class ShortestPathPlugin extends Plugin
 		{
 		}
 	};
-	private boolean fairyRingPanelOpen = false;
-	// Whether the spirit tree travel menu has been parsed THIS session. Distinct from the cache
-	// being non-null: a restored previous-session snapshot fills the cache but must not block the
-	// fresher live read when the menu opens.
-	private boolean spiritTreesParsedLive = false;
+	// The planted spirit trees (see SpiritTreeSync) and the fairy-ring log helper (see
+	// FairyRingHighlighter); constructed at startup with the pathfinder config.
+	private SpiritTreeSync spiritTrees;
+	private FairyRingHighlighter fairyRingLog;
 
 	/**
 	 * Checks if the given coordinates are inside the POH (Player Owned House) area.
@@ -532,6 +525,22 @@ public class ShortestPathPlugin extends Plugin
 
 		pathfinderConfig = new PathfinderConfig(client, config);
 		bankSnapshots = new BankSnapshotService(configManager, CONFIG_GROUP, config::rememberBank, pathfinderConfig);
+		spiritTrees = new SpiritTreeSync(client, clientThread, configManager, CONFIG_GROUP, pathfinderConfig, () ->
+		{
+			// The panel's Spirit trees section shows the detected planted trees / sync state.
+			if (altPanel != null)
+			{
+				SwingUtilities.invokeLater(altPanel::refreshConfigSections);
+			}
+			if (hasPathTargets())
+			{
+				// Spirit-tree availability just became known: refresh the live config and
+				// regenerate so the displayed route can use (or drop) spirit trees accordingly.
+				setDestination(pathStart, new HashSet<>(pathTargets));
+				recomputeAlternatives();
+			}
+		});
+		fairyRingLog = new FairyRingHighlighter(client, this::getDisplayPath, this::transportsForEdge);
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
 		{
 			clientThread.invokeLater(pathfinderConfig::refresh);
@@ -1308,8 +1317,7 @@ public class ShortestPathPlugin extends Plugin
 		if (GameState.LOGIN_SCREEN.equals(event.getGameState()) && pathfinderConfig != null)
 		{
 			bankSnapshots.forget();
-			pathfinderConfig.availableSpiritTrees = null;
-			spiritTreesParsedLive = false;
+			spiritTrees.reset();
 			pohDetection.reset();
 			boatBannerService.reset();
 		}
@@ -1762,35 +1770,14 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onWidgetLoaded(WidgetLoaded event)
 	{
-		if (hasPathTargets() && event.getGroupId() == InterfaceID.FAIRYRINGS_LOG)
-		{
-			fairyRingPanelOpen = true;
-		}
-
-		// Populate spirit tree cache, but only once per session. Gated on a live parse having
-		// happened (not on the cache being non-null): a snapshot restored from the previous session
-		// must not block the fresher live read — a newly planted tree only shows up in the menu.
-		if (!spiritTreesParsedLive)
-		{
-			switch (event.getGroupId())
-			{
-				case InterfaceID.MENU:
-					clientThread.invokeLater(() -> parseSpiritTreeWidget(false));
-					break;
-				case InterfaceID.MENU_NEW:
-					clientThread.invokeLater(() -> parseSpiritTreeWidget(true));
-					break;
-			}
-		}
+		fairyRingLog.widgetLoaded(event.getGroupId(), hasPathTargets());
+		spiritTrees.widgetLoaded(event.getGroupId());
 	}
 
 	@Subscribe
 	public void onWidgetClosed(WidgetClosed event)
 	{
-		if (event.getGroupId() == InterfaceID.FAIRYRINGS_LOG)
-		{
-			fairyRingPanelOpen = false;
-		}
+		fairyRingLog.widgetClosed(event.getGroupId());
 		// Bank closed: one regeneration per bank session, so items withdrawn or deposited are
 		// reflected in the method availability (and the catalog counts) — recomputing on every
 		// in-bank container change would run a generation per deposit. NOT during a round trip:
@@ -1836,15 +1823,7 @@ public class ShortestPathPlugin extends Plugin
 	private void restoreDetectionsFromConfig()
 	{
 		bankSnapshots.restore();
-		if (pathfinderConfig.availableSpiritTrees == null)
-		{
-			String raw = configManager.getRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_SPIRIT_TREES);
-			if (raw != null)
-			{
-				pathfinderConfig.availableSpiritTrees = raw.isEmpty()
-					? new HashSet<>() : new HashSet<>(Arrays.asList(raw.split(",")));
-			}
-		}
+		spiritTrees.restore();
 		pohDetection.restore();
 		boatBannerService.restore();
 		// The panel's sections label their sync state — reflect what was just restored.
@@ -1857,188 +1836,7 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onPostClientTick(PostClientTick event)
 	{
-		if (fairyRingPanelOpen && hasPathTargets())
-		{
-			scrollFairyRingPanel();
-		}
-	}
-
-	private void parseSpiritTreeWidget(boolean useNewMenu)
-	{
-		// Referencing
-		// https://github.com/trs/runelite-teleport-maps/blob/e006270494500ab8e4826903b377bb945ca9fc96/src/main/java/com/mjhylkema/TeleportMaps/components/adventureLog/SpiritTreeMap.java#L141
-
-		Widget container;
-		if (useNewMenu)
-		{
-			container = client.getWidget(InterfaceID.MENU_NEW, 9);
-		}
-		else
-		{
-			container = client.getWidget(InterfaceID.MENU, 3);
-		}
-
-		if (container == null)
-		{
-			return;
-		}
-
-		Widget[] children = container.getDynamicChildren();
-		if (children == null || children.length == 0)
-		{
-			return;
-		}
-
-		// Tree Gnome Village is always the first row and always available;
-		// quick length check before running the regex
-		// Expected (old): "<col=735a28>1</col>: Tree Gnome Village" (length 39)
-		// Expected (new): "<col=ffffff>1</col>: Tree Gnome Village" (length 39)
-		String firstText = children[0].getText();
-		if (firstText == null || firstText.length() != 39)
-		{
-			return;
-		}
-
-		Pattern pattern = useNewMenu ? SPIRIT_TREE_LABEL_PATTERN_MENU_NEW : SPIRIT_TREE_LABEL_PATTERN_MENU;
-
-		Set<String> available = new HashSet<>();
-
-		for (Widget child : children)
-		{
-			Matcher matcher = pattern.matcher(child.getText());
-			if (!matcher.matches())
-			{
-				continue;
-			}
-
-			// Group 2 is the disabled color tag; if present, the tree is unavailable
-			if (matcher.group(2) != null)
-			{
-				continue;
-			}
-
-			// Group 3 is spirit tree name
-			available.add(matcher.group(3));
-		}
-
-		pathfinderConfig.availableSpiritTrees = available;
-		spiritTreesParsedLive = true;
-		// Persist per character, so next session starts synced instead of asking for a travel-menu
-		// visit again. (Comma-safe: no spirit tree location name contains a comma.)
-		configManager.setRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_SPIRIT_TREES,
-			String.join(",", available));
-
-		// The panel's Spirit trees section shows the detected planted trees / sync state.
-		if (altPanel != null)
-		{
-			SwingUtilities.invokeLater(altPanel::refreshConfigSections);
-		}
-
-		if (hasPathTargets())
-		{
-			// Spirit-tree availability just became known: refresh the live config and regenerate
-			// so the displayed route can use (or drop) spirit trees accordingly.
-			setDestination(pathStart, new HashSet<>(pathTargets));
-			recomputeAlternatives();
-		}
-	}
-
-	private void scrollFairyRingPanel()
-	{
-		List<PathStep> path = getDisplayPath();
-		if (path.isEmpty())
-		{
-			return;
-		}
-
-		String fairyRingCode = null;
-
-		for (int i = 1; i < path.size(); i++)
-		{
-			PathStep currentStep = path.get(i - 1);
-			PathStep nextStep = path.get(i);
-			for (Transport transport : transportsForEdge(currentStep, nextStep))
-			{
-				if (TransportType.FAIRY_RING.equals(transport.getType()))
-				{
-					fairyRingCode = transport.getDisplayInfo();
-				}
-			}
-		}
-		if (fairyRingCode == null)
-		{
-			return;
-		}
-
-		Widget codeWidget = null;
-
-		Widget favesPanel = client.getWidget(InterfaceID.FairyringsLog.FAVES);
-		if (favesPanel != null)
-		{
-			for (Widget widget : favesPanel.getStaticChildren())
-			{
-				if (widget != null)
-				{
-					String widgetText = widget.getText();
-					if ((fairyRingCode.equals(widgetText)
-						|| ("(GPS) " + fairyRingCode).equals(widgetText)))
-					{
-						codeWidget = widget;
-						break;
-					}
-				}
-			}
-		}
-
-		Widget contentsList = client.getWidget(InterfaceID.FairyringsLog.CONTENTS);
-		if (contentsList != null && codeWidget == null)
-		{
-			for (Widget widget : contentsList.getDynamicChildren())
-			{
-				if (widget != null)
-				{
-					String widgetText = widget.getText();
-					if ((fairyRingCode.equals(widgetText)
-						|| ("(GPS) " + fairyRingCode).equals(widgetText)))
-					{
-						codeWidget = widget;
-						break;
-					}
-				}
-			}
-		}
-
-		if (codeWidget == null)
-		{
-			return;
-		}
-
-		codeWidget.setTextColor(0x00FF00);
-		String codeWidgetText = codeWidget.getText();
-		if (codeWidgetText != null && !codeWidgetText.contains("(GPS)"))
-		{
-			codeWidget.setText("(GPS) " + codeWidgetText);
-		}
-
-		if (contentsList == null)
-		{
-			return;
-		}
-
-		int panelScrollY = Math.min(
-			codeWidget.getRelativeY(),
-			contentsList.getScrollHeight() - contentsList.getHeight()
-		);
-
-		contentsList.setScrollY(panelScrollY);
-		contentsList.revalidateScroll();
-
-		client.runScript(
-			ScriptID.UPDATE_SCROLLBAR,
-			InterfaceID.FairyringsLog.SCROLLBAR,
-			InterfaceID.FairyringsLog.CONTENTS,
-			panelScrollY
-		);
+		fairyRingLog.onPostClientTick(hasPathTargets());
 	}
 
 	/**
@@ -2950,7 +2748,7 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	public boolean isSpiritTreeSynced()
 	{
-		return pathfinderConfig != null && pathfinderConfig.availableSpiritTrees != null;
+		return spiritTrees != null && spiritTrees.isSynced();
 	}
 
 	/**
@@ -2959,19 +2757,7 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	public List<String> getAvailablePlantedSpiritTrees()
 	{
-		if (pathfinderConfig == null || pathfinderConfig.availableSpiritTrees == null)
-		{
-			return List.of();
-		}
-		List<String> planted = new ArrayList<>();
-		for (String name : gps.pathfinder.PathfinderConfig.FARMABLE_SPIRIT_TREES)
-		{
-			if (pathfinderConfig.availableSpiritTrees.contains(name))
-			{
-				planted.add(name);
-			}
-		}
-		return planted;
+		return spiritTrees == null ? List.of() : spiritTrees.planted();
 	}
 
 	/**
@@ -3360,7 +3146,7 @@ public class ShortestPathPlugin extends Plugin
 
 	boolean spiritTreesParsedLive()
 	{
-		return spiritTreesParsedLive;
+		return spiritTrees != null && spiritTrees.isParsedLive();
 	}
 
 	AlternativeRoutesService altRoutesService()

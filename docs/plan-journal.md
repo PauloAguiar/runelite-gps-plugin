@@ -742,3 +742,23 @@ regeneration), `persist` on bank close and shutdown, `forget` at logout, `rememb
 `forgetStored` on the setting. Plugin class: 3,737 to 3,591 lines.
 
 **Suite:** 733 tests, all green.
+
+### Step L17: SpiritTreeSync and FairyRingHighlighter (2026-09-09)
+
+**Red first:** `SpiritTreeSyncTest` pins the travel-menu parse as a pure function over the row
+texts: old-menu rows yield the usable trees and skip the greyed ones, new-menu rows use the
+white number colour (and the old pattern reads nothing from them), another menu (first row
+not the 39-character Tree Gnome Village row, empty, null) is not parsed. The class did not
+exist.
+
+**Change:** the two label patterns, the config key, the parsed-live flag, the widget-loaded
+gate, the parse, the restore and the logout reset became `SpiritTreeSync`; the plugin passes
+what happens after a sync as a callback (refresh the panel section, regenerate when a
+destination is set). The fairy-ring log state and its 97-line scroll became
+`FairyRingHighlighter`, the row lookup written once instead of twice and the route's code a
+static over the path and an edge-transport function. Both are constructed in `startUp` with the
+pathfinder config; the three widget handlers and the post-client-tick are one call each, the
+two panel getters and the diagnostics accessor delegate. Two imports went with the code.
+Plugin class: 3,591 to 3,377 lines.
+
+**Suite:** 736 tests, all green.
