@@ -845,3 +845,21 @@ ran, so two failed attempts left it three times over. Scripts now write nothing 
 check passes.
 
 **Suite:** 750 tests, all green.
+
+### Step L22: MapMenu (2026-09-09)
+
+**Red first:** `MapMenuTest` pins the one pure piece, the icon-target-to-destination-key
+rule (colour tags stripped, lower case, letters and spaces only, words joined by underscores).
+The class did not exist. One expectation dropped: a target with a trailing digit leaves a
+trailing underscore, an artifact not worth pinning.
+
+**Change:** the six menu strings, the menu-opened point, the entry-added logic (shift-click
+tile, world map, minimap, floating-map controls, "Find closest" on a known icon), the click
+dispatch, the selected-tile resolution and the duplicate-safe entry insertion became `MapMenu`,
+built in `startUp` over the map projection and the minimap clip. The plugin keeps two one-line
+event handlers and gained three package-private actions the menu calls (`pinTarget`,
+`clearPinnedTarget`, `findClosest`), which also own the "map pin" attribution the click
+handler used to set inline. Eleven imports went with the code. Plugin class: 2,631 to 2,517
+lines.
+
+**Suite:** 751 tests, all green.

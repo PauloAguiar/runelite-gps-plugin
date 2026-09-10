@@ -4,15 +4,12 @@ import com.google.gson.Gson;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import java.awt.Color;
-import java.awt.Shape;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -23,11 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Item;
-import net.runelite.api.KeyCode;
-import net.runelite.api.MenuAction;
-import net.runelite.api.MenuEntry;
 import net.runelite.api.Player;
-import net.runelite.api.Point;
 import net.runelite.api.WorldView;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameObjectSpawned;
@@ -44,7 +37,6 @@ import net.runelite.api.events.WorldChanged;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.VarbitID;
-import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
@@ -59,14 +51,11 @@ import net.runelite.client.input.MouseManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
-import net.runelite.client.ui.JagexColors;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
-import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
-import net.runelite.client.util.Text;
 import gps.pathfinder.CollisionMap;
 import gps.pathfinder.PathStep;
 import gps.pathfinder.PathfinderConfig;
@@ -98,12 +87,6 @@ public class ShortestPathPlugin extends Plugin
 	// so nothing double-processes; drop the legacy channel only if that ever changes).
 	protected static final String MESSAGE_NAMESPACE_LEGACY = PluginMessageCodec.NAMESPACE_LEGACY;
 
-	private static final String CLEAR = "Clear";
-	private static final String PATH = ColorUtil.wrapWithColorTag("Path", JagexColors.MENU_TARGET);
-	private static final String SET = "Set";
-	private static final String FIND_CLOSEST = "Find closest";
-	private static final String FLASH_ICONS = "Flash icons";
-	private static final String TARGET = ColorUtil.wrapWithColorTag("GPS Target", JagexColors.MENU_TARGET);
 	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
 	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
 	boolean drawMap;
@@ -233,7 +216,8 @@ public class ShortestPathPlugin extends Plugin
 	// The bank knowledge and its cross-session snapshot (see BankSnapshotService); constructed at
 	// startup with the pathfinder config.
 	private BankSnapshotService bankSnapshots;
-	private Point lastMenuOpenedPoint;
+	// The right-click menu entries (see MapMenu); startup, after the map projection and minimap clip.
+	private MapMenu mapMenu;
 	private WorldMapPoint marker;
 	// Off-route bands, the transport-jump grace and the distance from the path (see OffRouteTracker).
 	private final OffRouteTracker offRoute = new OffRouteTracker();
@@ -352,6 +336,7 @@ public class ShortestPathPlugin extends Plugin
 		worldMap = new WorldMapProjection(client);
 		minimapClip = new MinimapClip(client, spriteManager);
 		seaObstacles = new SeaObstacleLearner(client, this::getLastKnownPlayerLocation);
+		mapMenu = new MapMenu(client, worldMap, minimapClip, this);
 
 		pathfinderConfig = new PathfinderConfig(client, config);
 		bankSnapshots = new BankSnapshotService(configManager, CONFIG_GROUP, config::rememberBank, pathfinderConfig);
@@ -986,7 +971,7 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onMenuOpened(MenuOpened event)
 	{
-		lastMenuOpenedPoint = client.getMouseCanvasPosition();
+		mapMenu.onMenuOpened();
 	}
 
 	/**
@@ -1151,63 +1136,7 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onMenuEntryAdded(MenuEntryAdded event)
 	{
-		if (client.isKeyPressed(KeyCode.KC_SHIFT)
-			&& event.getType() == MenuAction.WALK.getId())
-		{
-			addMenuEntry(event, SET, TARGET, 1);
-			if (hasPathTargets())
-			{
-				int selectedTile = getSelectedWorldPoint();
-				for (PathStep pathStep : getDisplayPath())
-				{
-					if (pathStep.getPackedPosition() == selectedTile)
-					{
-						addMenuEntry(event, CLEAR, PATH, 1);
-						break;
-					}
-				}
-			}
-		}
-
-		final Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
-
-		if (map != null)
-		{
-			if (map.getBounds().contains(
-				client.getMouseCanvasPosition().getX(),
-				client.getMouseCanvasPosition().getY()))
-			{
-				addMenuEntry(event, SET, TARGET, 0);
-				for (int target : pathTargets)
-				{
-					if (target != WorldPointUtil.UNDEFINED)
-					{
-						addMenuEntry(event, CLEAR, PATH, 0);
-					}
-				}
-			}
-			if (event.getOption().equals(FLASH_ICONS) && pathfinderConfig.hasDestination(simplify(event.getTarget())))
-			{
-				addMenuEntry(event, FIND_CLOSEST, event.getTarget(), 1);
-			}
-		}
-
-		final Shape minimap = minimapClip.area();
-
-		if (minimap != null && hasPathTargets()
-			&& minimap.contains(
-			client.getMouseCanvasPosition().getX(),
-			client.getMouseCanvasPosition().getY()))
-		{
-			addMenuEntry(event, CLEAR, PATH, 0);
-		}
-
-		if (minimap != null && hasPathTargets()
-			&& ("Floating World Map".equals(Text.removeTags(event.getOption()))
-			|| "Close Floating panel".equals(Text.removeTags(event.getOption()))))
-		{
-			addMenuEntry(event, CLEAR, PATH, 1);
-		}
+		mapMenu.onMenuEntryAdded(event);
 	}
 
 	@Subscribe
@@ -1521,49 +1450,25 @@ public class ShortestPathPlugin extends Plugin
 		arrivalDismissSeconds = ConfigOverrides.override("arrivalDismissSeconds", config.arrivalDismissSeconds());
 	}
 
-	private String simplify(String text)
+	/** "Set GPS Target" from the map menu: the pick is attributed to the map pin. */
+	void pinTarget(int packed)
 	{
-		return Text.removeTags(text).toLowerCase()
-			.replaceAll("[^a-zA-Z ]", "")
-			.replace(" ", "_")
-			.replace("__", "_");
+		targetSource = "map pin";
+		setTarget(packed);
 	}
 
-	private void onMenuOptionClicked(MenuEntry entry)
+	/** "Clear Path" from the map menu. */
+	void clearPinnedTarget()
 	{
-		if (entry.getOption().equals(SET) && entry.getTarget().equals(TARGET))
-		{
-			targetSource = "map pin";
-			setTarget(getSelectedWorldPoint());
-		}
-		else if (entry.getOption().equals(CLEAR) && entry.getTarget().equals(PATH))
-		{
-			targetSource = null;
-			setTarget(WorldPointUtil.UNDEFINED);
-		}
-		else if (entry.getOption().equals(FIND_CLOSEST))
-		{
-			targetSource = "map pin";
-			setTargets(pathfinderConfig.getDestinations(simplify(entry.getTarget())), true);
-		}
+		targetSource = null;
+		setTarget(WorldPointUtil.UNDEFINED);
 	}
 
-	private int getSelectedWorldPoint()
+	/** "Find closest" from a world-map icon: every destination of that kind, the nearest wins. */
+	void findClosest(String destinationType)
 	{
-		if (client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) == null)
-		{
-			if (client.getTopLevelWorldView().getSelectedSceneTile() != null)
-			{
-				return WorldPointUtil.fromLocalInstance(client, client.getTopLevelWorldView().getSelectedSceneTile().getLocalLocation());
-			}
-		}
-		else
-		{
-			return client.isMenuOpen()
-				? worldMap.worldPointAt(lastMenuOpenedPoint.getX(), lastMenuOpenedPoint.getY())
-				: worldMap.worldPointAt(client.getMouseCanvasPosition().getX(), client.getMouseCanvasPosition().getY());
-		}
-		return WorldPointUtil.UNDEFINED;
+		targetSource = "map pin";
+		setTargets(pathfinderConfig.getDestinations(destinationType), true);
 	}
 
 	private void setTarget(int target)
@@ -2607,25 +2512,6 @@ public class ShortestPathPlugin extends Plugin
 				altPanel.displayRoutes(session.routes(), teleportCatalog, unavailableMethods,
 					getUserExclusions(), calculating, hasTarget));
 		}
-	}
-
-	private void addMenuEntry(MenuEntryAdded event, String option, String target, int position)
-	{
-		List<MenuEntry> entries = new LinkedList<>(Arrays.asList(client.getMenu().getMenuEntries()));
-
-		if (entries.stream().anyMatch(e -> e.getOption().equals(option) && e.getTarget().equals(target)))
-		{
-			return;
-		}
-
-		client.getMenu().createMenuEntry(position)
-			.setOption(option)
-			.setTarget(target)
-			.setParam0(event.getActionParam0())
-			.setParam1(event.getActionParam1())
-			.setIdentifier(event.getIdentifier())
-			.setType(MenuAction.RUNELITE)
-			.onClick(this::onMenuOptionClicked);
 	}
 
 }
