@@ -15,11 +15,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Collections;
 import java.util.HashSet;
-import java.io.File;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -3554,463 +3551,76 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	/**
-	 * Writes a JSON snapshot of the current routing state to ~/.runelite/gps-debug/ — everything
-	 * needed to reproduce and debug the current path: routes with their full tile paths, methods and
-	 * edge data, mode/exclusions, player position, GPS progress state, and the relevant config.
-	 * Triggered by the panel's camera button; confirms via a game message.
-	 */
-	private static List<Object> stepsJson(List<RouteDirections.Step> steps)
-	{
-		List<Object> stepsJson = new ArrayList<>();
-		for (RouteDirections.Step step : steps)
-		{
-			Map<String, Object> stepJson = new LinkedHashMap<>();
-			stepJson.put("text", step.getText());
-			stepJson.put("startIndex", step.getStartIndex());
-			stepJson.put("endIndex", step.getEndIndex());
-			stepJson.put("ticks", step.getTicks());
-			stepJson.put("transport", step.isTransport());
-			stepJson.put("door", step.isDoor());
-			stepJson.put("obstacle", step.isObstacle());
-			stepsJson.add(stepJson);
-		}
-		return stepsJson;
-	}
-
-	// A BARE constant, browsed as-is: the hub review reads any dynamic URL construction (the old
-	// pre-filled ?title=&body=) as network I/O of player data. Context travels via the clipboard.
-	static final String GITHUB_NEW_ISSUE = "https://github.com/PauloAguiar/runelite-gps-plugin/issues/new";
-
-	/**
-	 * The running plugin's version, read from the bundled {@code runelite-plugin.properties} so it
-	 * always matches the release (no constant to keep in sync). "unknown" in a dev build where the
-	 * file isn't on the classpath.
-	 */
-	/** The build's git commit (stamped by processResources), or "unknown" in odd builds. */
-	public static String buildCommit()
-	{
-		try (java.io.InputStream in = ShortestPathPlugin.class.getResourceAsStream("/gps-build.properties"))
-		{
-			if (in != null)
-			{
-				java.util.Properties props = new java.util.Properties();
-				props.load(in);
-				String commit = props.getProperty("commit");
-				if (commit != null && !commit.isEmpty())
-				{
-					return commit;
-				}
-			}
-		}
-		catch (java.io.IOException ignored)
-		{
-			// Fall through to "unknown".
-		}
-		return "unknown";
-	}
-
-	public static String pluginVersion()
-	{
-		try (java.io.InputStream in = ShortestPathPlugin.class.getResourceAsStream("/runelite-plugin.properties"))
-		{
-			if (in != null)
-			{
-				java.util.Properties props = new java.util.Properties();
-				props.load(in);
-				String version = props.getProperty("version");
-				if (version != null && !version.isEmpty())
-				{
-					return version;
-				}
-			}
-		}
-		catch (java.io.IOException ignored)
-		{
-			// Fall through to "unknown".
-		}
-		return "unknown";
-	}
-
-	/**
 	 * Reports an issue WITHOUT sending or touching anything outside the panel: the routing
-	 * context — mode, start, target, config and the routes found — is shown in a text box at
-	 * the top of the panel for the player to copy BY HAND, and a plain, static GitHub
-	 * new-issue link opens (the repo's issue template says where to paste). No pre-filled URL,
-	 * no clipboard API — nothing for the hub review to flag, and the player sees exactly what
-	 * they're sharing.
+	 * context (see IssueReport) is shown in a text box at the top of the panel for the player to
+	 * copy BY HAND, and a plain, static GitHub new-issue link opens (the repo's issue template
+	 * says where to paste). No pre-filled URL, no clipboard API: nothing for the hub review to
+	 * flag, and the player sees exactly what they share.
 	 */
 	public void reportIssue()
 	{
-		// Item names come from the item definitions, which are client-thread-only — build the
+		// Item names come from the item definitions, which are client-thread-only: build the
 		// whole body there; the panel work then happens on the EDT.
 		clientThread.invokeLater(() ->
 		{
-			final String context = buildIssueBody();
-			javax.swing.SwingUtilities.invokeLater(() ->
+			final String context = new IssueReport(this).body();
+			SwingUtilities.invokeLater(() ->
 			{
 				if (altPanel != null)
 				{
 					altPanel.showReportContext(context);
 				}
-				// A bare constant on purpose: pre-filling the issue via query params reads as
-				// network I/O of player data to the hub review.
-				net.runelite.client.util.LinkBrowser.browse(GITHUB_NEW_ISSUE);
+				net.runelite.client.util.LinkBrowser.browse(BuildInfo.GITHUB_NEW_ISSUE);
 			});
 		});
 	}
 
-	private String buildIssueBody()
-	{
-		StringBuilder body = new StringBuilder();
-		// No "describe the issue" headings here: the GitHub issue template provides those; this
-		// block is what the player pastes under them.
-		body.append("*Auto-captured context — please keep:*\n");
-		body.append("- GPS ").append(pluginVersion()).append('\n');
-		body.append("- Build ").append(buildCommit()).append('\n');
-		body.append("- Mode: ").append(routesMode).append(" · limit ").append(session.limit())
-			.append(" · band x").append(session.costMultiple()).append('\n');
-		body.append("- Start: ").append(issuePointText(session.lastStart())).append('\n');
-		List<String> targets = new ArrayList<>();
-		for (int target : session.lastTargets())
-		{
-			targets.add(issuePointText(target));
-		}
-		body.append("- Target(s): ").append(targets.isEmpty() ? "(none)" : String.join("; ", targets)).append('\n');
-		// Only settings that genuinely affect routing here — avoidWilderness applies in every mode,
-		// bankPickup weights the bank detour. The mode (above) already implies bank routing and the
-		// item scope, so those aren't repeated (they'd show the overridden config value, not the mode's).
-		body.append("- Config: avoidWilderness=").append(override("avoidWilderness", config.avoidWilderness()))
-			.append(", bankPickup=").append(override("costBankPickup", config.costBankPickup())).append('\n');
-
-		// Method availability at a glance: the full catalog is far too big for a URL, so counts per
-		// status plus the user's own exclusions (the part that varies by choice, usually short).
-		List<TeleportMethod> catalog = teleportCatalog;
-		Map<TeleportMethod, MethodAvailability> unavailable = unavailableMethods;
-		if (!catalog.isEmpty())
-		{
-			Map<MethodAvailability, Integer> counts = new java.util.EnumMap<>(MethodAvailability.class);
-			for (MethodAvailability status : unavailable.values())
-			{
-				counts.merge(status, 1, Integer::sum);
-			}
-			body.append("- Methods: ").append(catalog.size() - unavailable.size()).append(" usable of ")
-				.append(catalog.size());
-			for (Map.Entry<MethodAvailability, Integer> entry : counts.entrySet())
-			{
-				body.append(" · ").append(entry.getValue()).append(' ')
-					.append(entry.getKey().name().toLowerCase(Locale.ROOT).replace('_', ' '));
-			}
-			body.append('\n');
-		}
-		if (!userExclusions.isEmpty())
-		{
-			List<String> excluded = new ArrayList<>();
-			for (TeleportMethod method : userExclusions)
-			{
-				excluded.add(method.routeLabel());
-			}
-			java.util.Collections.sort(excluded);
-			int cap = Math.min(excluded.size(), 10);
-			body.append("- Excluded by user: ").append(String.join("; ", excluded.subList(0, cap)));
-			if (excluded.size() > cap)
-			{
-				body.append(" … ").append(excluded.size() - cap).append(" more");
-			}
-			body.append('\n');
-		}
-		// What the player carries decides the Owned modes' teleports, so name it (user-reviewed
-		// before submitting — they can trim anything they'd rather not share).
-		body.append("- Equipped: ").append(issueItemNames(net.runelite.api.gameval.InventoryID.WORN)).append('\n');
-		body.append("- Inventory: ").append(issueItemNames(net.runelite.api.gameval.InventoryID.INV)).append('\n');
-		body.append("- Bank contents known: ").append(bankContentsKnown)
-			.append(bankRestored ? " (restored from previous session)" : "").append('\n');
-		body.append("- House scanned: ").append(isPohScanned());
-		String pohEncoded = PohScanner.encode(pohDetection.detected());
-		if (pohEncoded != null)
-		{
-			body.append(" (").append(pohEncoded).append(')');
-		}
-		body.append('\n');
-		body.append("- Spirit trees synced: ").append(pathfinderConfig.availableSpiritTrees != null)
-			.append(spiritTreesParsedLive ? " (live)" : "").append('\n');
-
-		List<RouteOption> routes = session.routes();
-		body.append("- Routes (").append(routes.size()).append("):\n");
-		int shown = Math.min(routes.size(), 12);
-		for (int i = 0; i < shown; i++)
-		{
-			RouteOption route = routes.get(i);
-			body.append("  ").append(i).append(". ").append(route.getTotalCost())
-				.append(route.isReached() ? "" : " (closest)").append(" · ").append(issueMethodSummary(route)).append('\n');
-		}
-		if (routes.size() > shown)
-		{
-			body.append("  … ").append(routes.size() - shown).append(" more\n");
-		}
-		body.append("\nFor a full reproduction, attach the newest file from your `.runelite/gps-debug/` folder"
-			+ " (use \"Save debug snapshot\" in the ⋯ menu first).\n");
-		return body.toString();
-	}
-
-	/**
-	 * The names of the items in a container, stacks as "xN", duplicates collapsed — CLIENT THREAD
-	 * (item definitions). "(empty)" when nothing is carried, "(unknown)" when not logged in.
-	 */
-	private String issueItemNames(int inventoryId)
-	{
-		ItemContainer container = client.getItemContainer(inventoryId);
-		if (container == null)
-		{
-			return "(unknown)";
-		}
-		Map<String, Integer> names = new LinkedHashMap<>();
-		for (Item item : container.getItems())
-		{
-			if (item == null || item.getId() <= 0)
-			{
-				continue;
-			}
-			String name;
-			try
-			{
-				net.runelite.api.ItemComposition definition = client.getItemDefinition(item.getId());
-				name = definition != null ? definition.getName() : "item " + item.getId();
-			}
-			catch (RuntimeException e)
-			{
-				name = "item " + item.getId();
-			}
-			names.merge(name, Math.max(1, item.getQuantity()), Integer::sum);
-		}
-		if (names.isEmpty())
-		{
-			return "(empty)";
-		}
-		List<String> parts = new ArrayList<>(names.size());
-		for (Map.Entry<String, Integer> entry : names.entrySet())
-		{
-			parts.add(entry.getValue() > 1 ? entry.getKey() + " x" + entry.getValue() : entry.getKey());
-		}
-		return String.join(", ", parts);
-	}
-
-	private static String issuePointText(int packed)
-	{
-		if (packed == WorldPointUtil.UNDEFINED)
-		{
-			return "(none)";
-		}
-		return WorldPointUtil.unpackWorldX(packed) + ", " + WorldPointUtil.unpackWorldY(packed)
-			+ ", " + WorldPointUtil.unpackWorldPlane(packed);
-	}
-
-	private static String issueMethodSummary(RouteOption route)
-	{
-		if (route.getMethods().isEmpty())
-		{
-			return "walk";
-		}
-		List<String> parts = new ArrayList<>();
-		for (TeleportMethod method : route.getMethods())
-		{
-			parts.add(method.routeLabel());
-		}
-		return String.join(" + ", parts);
-	}
-
+	/** Writes the routing-state snapshot (see DebugSnapshot); the panel's "Save debug snapshot". */
 	public void captureDebugSnapshot()
 	{
-		clientThread.invokeLater(() ->
-		{
-			try
-			{
-				Map<String, Object> snapshot = new LinkedHashMap<>();
-				snapshot.put("capturedAt", new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date()));
-				snapshot.put("pluginVersion", pluginVersion());
-				snapshot.put("buildCommit", buildCommit());
-				// Every non-zero varbit, for identifying state-dependent transport gates (mushtree
-				// discovery, balloon route unlocks): capture before and after the in-game action and
-				// diff the two files — the flipped id is the gate. Runs on the client thread; a few
-				// thousand entries, debug-file-sized only.
-				Map<String, Integer> varbitSnapshot = new LinkedHashMap<>();
-				for (int id = 0; id <= 20000; id++)
-				{
-					try
-					{
-						int value = client.getVarbitValue(id);
-						if (value != 0)
-						{
-							varbitSnapshot.put(Integer.toString(id), value);
-						}
-					}
-					catch (Exception ignored)
-					{
-						// Unknown varbit ids past the cache's definitions: skip.
-					}
-				}
-				snapshot.put("varbitSnapshot", varbitSnapshot);
-				Player local = client.getLocalPlayer();
-				int playerPacked = local != null
-					? WorldPointUtil.fromLocalInstance(client, local) : WorldPointUtil.UNDEFINED;
-				snapshot.put("player",
-					playerPacked != WorldPointUtil.UNDEFINED ? packedPointJson(playerPacked) : null);
-				snapshot.put("routesMode", String.valueOf(routesMode));
-				snapshot.put("routeLimit", session.limit());
-			snapshot.put("routeCostMultiple", session.costMultiple());
-				snapshot.put("targetSource", targetSource);
-				snapshot.put("altStart", packedPointJson(session.lastStart()));
-				List<Object> targets = new ArrayList<>();
-				for (int target : session.lastTargets())
-				{
-					targets.add(packedPointJson(target));
-				}
-				snapshot.put("targets", targets);
-				List<String> exclusions = new ArrayList<>();
-				for (TeleportMethod method : userExclusions)
-				{
-					exclusions.add(method.getType() + "|" + method.getDisplayInfo() + "|" + method.getDestination());
-				}
-				snapshot.put("userExclusions", exclusions);
-				snapshot.put("bankContentsKnown", bankContentsKnown);
-				snapshot.put("bankRestored", bankRestored);
-				// Smart-detection state, for diagnosing "GPS didn't notice my house/trees" reports.
-				snapshot.put("pohSceneLoaded", isPohScene(client.getTopLevelWorldView()));
-				snapshot.put("pohScanned", isPohScanned());
-				snapshot.put("pohDetectedFurniture", PohScanner.encode(pohDetection.detected()));
-				snapshot.put("spiritTreesSynced", pathfinderConfig.availableSpiritTrees != null);
-				snapshot.put("spiritTreesParsedLive", spiritTreesParsedLive);
-
-				// includeBankPath and useTeleportationItems are omitted: the Owned/All mode forces them
-				// (see PathfinderConfig.refresh), so their config value is overridden and misleading —
-				// routesMode above is the effective control.
-				Map<String, Object> configValues = new LinkedHashMap<>();
-				configValues.put("avoidWilderness", override("avoidWilderness", config.avoidWilderness()));
-				configValues.put("costBankPickup", override("costBankPickup", config.costBankPickup()));
-				configValues.put("defaultRouteCount", override("defaultRouteCount", config.defaultRouteCount()));
-				snapshot.put("config", configValues);
-
-				RouteOption displayed = getDisplayedRoute();
-				List<RouteOption> routes = session.routes();
-				snapshot.put("displayedRouteIndex", displayed != null ? routes.indexOf(displayed) : -1);
-				List<Object> routesJson = new ArrayList<>();
-				for (RouteOption route : routes)
-				{
-					Map<String, Object> routeJson = new LinkedHashMap<>();
-					routeJson.put("totalCost", route.getTotalCost());
-					routeJson.put("rawCost", route.getRawCost());
-					routeJson.put("reached", route.isReached());
-					routeJson.put("viaBank", route.isViaBank());
-					List<String> methods = new ArrayList<>();
-					for (TeleportMethod method : route.getMethods())
-					{
-						methods.add(method.getType() + "|" + method.getDisplayInfo() + "|" + method.getDestination());
-					}
-					routeJson.put("methods", methods);
-					routeJson.put("methodEdgeIndexes", route.getMethodEdgeIndexes());
-					routeJson.put("methodDurations", route.getMethodDurations());
-					routeJson.put("walkBeforeSteps", route.getWalkBeforeSteps());
-					routeJson.put("trailingWalkSteps", route.getTrailingWalkSteps());
-					List<Integer> packedPath = new ArrayList<>(route.getPath().size());
-					List<Integer> bankFlips = new ArrayList<>();
-					for (int i = 0; i < route.getPath().size(); i++)
-					{
-						packedPath.add(route.getPath().get(i).getPackedPosition());
-						if (route.getPath().get(i).isBankVisited()
-							&& (i == 0 || !route.getPath().get(i - 1).isBankVisited()))
-						{
-							bankFlips.add(i);
-						}
-					}
-					routeJson.put("packedPath", packedPath);
-					routeJson.put("bankVisitedFrom", bankFlips);
-					// Fresh directions build per route, timed — the dashboard renders the step
-					// list for every route and charts how long step derivation takes.
-					long buildStart = System.nanoTime();
-					List<RouteDirections.Step> routeSteps = RouteDirections.build(this, route);
-					routeJson.put("directionsBuildMicros", (System.nanoTime() - buildStart) / 1_000);
-					routeJson.put("directions", stepsJson(routeSteps));
-					routesJson.add(routeJson);
-				}
-				snapshot.put("routes", routesJson);
-				long[] genTiming = altRoutesService != null ? altRoutesService.getLastTimingSummary() : null;
-				if (genTiming != null)
-				{
-					Map<String, Object> timingJson = new LinkedHashMap<>();
-					timingJson.put("wallMs", genTiming[0]);
-					timingJson.put("clientMs", genTiming[1]);
-					timingJson.put("rebuildMs", genTiming[2]);
-					timingJson.put("searchCpuMs", genTiming[3]);
-					timingJson.put("searches", genTiming[4]);
-					if (genTiming.length > 5)
-					{
-						timingJson.put("fieldMs", genTiming[5]);
-					}
-					// Per-search profiles, slowest first: which searches the time went to and how much
-					// each explored (a flat A* heuristic shows up as a huge node count).
-					List<Object> searchDetails = new ArrayList<>();
-					for (AlternativeRoutesService.SearchRecord r : altRoutesService.getLastSearchRecords())
-					{
-						Map<String, Object> detail = new LinkedHashMap<>();
-						detail.put("label", r.label);
-						detail.put("cpuMs", r.cpuMs);
-						detail.put("cost", r.resultCost);
-						detail.put("reached", r.reached);
-						detail.put("termination", r.termination);
-						detail.put("nodes", r.nodesChecked);
-						detail.put("transports", r.transportsChecked);
-						detail.put("capped", r.capped);
-						detail.put("astar", r.astar);
-						searchDetails.add(detail);
-					}
-					timingJson.put("searchDetails", searchDetails);
-					snapshot.put("altGenTiming", timingJson);
-				}
-
-				if (displayed != null)
-				{
-					snapshot.put("directions", stepsJson(getRouteDirections(displayed)));
-					Map<String, Object> progress = new LinkedHashMap<>();
-					progress.put("reachedIndex", routeDirectionsOverlay.getReachedIndex());
-					progress.put("liveRemainingTicks", routeDirectionsOverlay.getLiveRemainingTicks());
-					progress.put("speedTilesPerSecond", routeDirectionsOverlay.getSpeedTilesPerSecond());
-					snapshot.put("progress", progress);
-				}
-
-				File dir = new File(net.runelite.client.RuneLite.RUNELITE_DIR, "gps-debug");
-				//noinspection ResultOfMethodCallIgnored
-				dir.mkdirs();
-				File out = new File(dir, "gps-capture-" + new java.text.SimpleDateFormat("yyyyMMdd-HHmmss").format(new java.util.Date()) + ".json");
-				try (java.io.Writer writer = new java.io.OutputStreamWriter(
-					new java.io.FileOutputStream(out), java.nio.charset.StandardCharsets.UTF_8))
-				{
-					gson.newBuilder().setPrettyPrinting().create().toJson(snapshot, writer);
-				}
-				log.info("GPS debug snapshot saved to {}", out.getAbsolutePath());
-				if (GameState.LOGGED_IN.equals(client.getGameState()))
-				{
-					client.addChatMessage(net.runelite.api.ChatMessageType.GAMEMESSAGE, "",
-						"GPS debug snapshot saved to " + out.getAbsolutePath(), null);
-				}
-			}
-			catch (Exception e)
-			{
-				log.warn("Failed to capture GPS debug snapshot", e);
-			}
-		});
+		clientThread.invokeLater(() -> new DebugSnapshot(this).capture());
 	}
 
-	private static Map<String, Object> packedPointJson(int packed)
+	// ---- State the diagnostics classes (IssueReport, DebugSnapshot) read; package-private ----
+
+	RouteSession session()
 	{
-		if (packed == WorldPointUtil.UNDEFINED)
-		{
-			return null;
-		}
-		Map<String, Object> point = new LinkedHashMap<>();
-		point.put("packed", packed);
-		point.put("x", WorldPointUtil.unpackWorldX(packed));
-		point.put("y", WorldPointUtil.unpackWorldY(packed));
-		point.put("plane", WorldPointUtil.unpackWorldPlane(packed));
-		return point;
+		return session;
+	}
+
+	List<TeleportMethod> teleportCatalog()
+	{
+		return teleportCatalog;
+	}
+
+	Map<TeleportMethod, MethodAvailability> unavailableMethods()
+	{
+		return unavailableMethods;
+	}
+
+	PohDetectionService pohDetection()
+	{
+		return pohDetection;
+	}
+
+	boolean spiritTreesParsedLive()
+	{
+		return spiritTreesParsedLive;
+	}
+
+	AlternativeRoutesService altRoutesService()
+	{
+		return altRoutesService;
+	}
+
+	RouteDirectionsOverlay routeDirectionsOverlay()
+	{
+		return routeDirectionsOverlay;
+	}
+
+	Gson gson()
+	{
+		return gson;
 	}
 
 	/**

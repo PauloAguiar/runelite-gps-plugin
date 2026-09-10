@@ -15,10 +15,10 @@ public class IssueReportTest
 	@Test
 	public void newIssueLinkCarriesNoData()
 	{
-		assertTrue(ShortestPathPlugin.GITHUB_NEW_ISSUE.startsWith(
+		assertTrue(BuildInfo.GITHUB_NEW_ISSUE.startsWith(
 			"https://github.com/PauloAguiar/runelite-gps-plugin/issues/new"));
 		assertFalse("the new-issue link must be bare — context goes via the clipboard, never the URL",
-			ShortestPathPlugin.GITHUB_NEW_ISSUE.contains("?"));
+			BuildInfo.GITHUB_NEW_ISSUE.contains("?"));
 	}
 
 	@Test
@@ -26,7 +26,7 @@ public class IssueReportTest
 	{
 		// build.gradle bundles runelite-plugin.properties onto the classpath, so the plugin reports
 		// its real release version (not a hard-coded constant that can drift).
-		String version = ShortestPathPlugin.pluginVersion();
+		String version = BuildInfo.pluginVersion();
 		assertTrue("version must be read from the manifest, not the 'unknown' fallback: " + version,
 			version.matches("\\d+\\.\\d+\\.\\d+"));
 	}

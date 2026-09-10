@@ -56,7 +56,7 @@ class TransportAuditPanel extends PluginPanel
 
 	// Transport builder controls (values are the operator's; only the labels track the plugin).
 	/** Build identity so field capture sessions know exactly what code they ran. */
-	private final JLabel buildStamp = new JLabel("GPS " + gps.ShortestPathPlugin.pluginVersion() + " @ " + gps.ShortestPathPlugin.buildCommit());
+	private final JLabel buildStamp = new JLabel("GPS " + gps.BuildInfo.pluginVersion() + " @ " + gps.BuildInfo.buildCommit());
 	private final JLabel builderOrigin = new JLabel("origin: — (shift right-click)");
 	private final JLabel builderDest = new JLabel("dest: —");
 	private final JLabel builderObject = new JLabel("object: —");

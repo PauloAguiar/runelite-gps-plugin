@@ -634,3 +634,31 @@ test, the tile walk, the spawn event handler (one line), and the two panel gette
 config key moved with the service. Plugin class: 4,587 to 4,514 lines.
 
 **Suite:** 714 tests, all green (707 plus the seven new ones).
+
+## Modules out of the plugin class, by concern (2026-09-09)
+
+After L11 the plugin class still held 4,514 lines. The owner's criterion is readability and
+maintainability: dedicated, specialized modules beat a huge file that mixes concerns, whether or
+not a seam yields a new test. So the remaining concerns move out one by one, largest and
+cleanest seams first, with a test where there is logic to pin.
+
+### Step L12: BuildInfo, IssueReport, DebugSnapshot (2026-09-09)
+
+**Red first:** `DiagnosticsFormatTest` pins the pure formatting the two reports share: a packed
+point as "x, y, plane" or "(none)", a route's methods as "A + B" or "walk", and a packed point
+as a {packed, x, y, plane} JSON object (key order is what the dashboard reads) or null.
+`IssueReportTest` moved its two assertions (bare new-issue link, manifest version) to
+`BuildInfo`. Red at compile time.
+
+**Change:** the build identity (manifest version, stamped commit, the bare GitHub link) became
+`BuildInfo`, one property reader instead of two copies; public, because the dev audit panel in
+`gps.dev` stamps itself with it. The issue text became `IssueReport` (the body, the item-name
+listing, the point and method text). The debug capture became `DebugSnapshot`, its 180-line
+lambda split into build, varbit snapshot, route JSON, generation timing and write. Both read the
+plugin through nine package-private accessors (session, catalog, unavailable map, house
+detection, spirit-tree flag, the generation service, the directions overlay, Gson). The plugin
+keeps two entry points: `reportIssue` (client thread body, then the panel and the link on the
+EDT) and `captureDebugSnapshot` (one line). Three imports went with the code. Plugin class:
+4,514 to 4,124 lines.
+
+**Suite:** 717 tests, all green.
