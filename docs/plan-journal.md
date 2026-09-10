@@ -549,3 +549,24 @@ the name decode, the persistence and its restore, the logout reset and the per-t
 the plugin for `BoatBannerService`, constructed at startup before the panel with the panel's
 refresh as its change callback. The plugin keeps two delegating getters and a one-line varbit
 handler. Plugin class: 4,975 to 4,843 lines.
+
+### Step L8: PluginMessageCodec (2026-09-09)
+
+**Red first:** `PluginMessageCodecTest`: both namespaces are ours (the pre-fork one keeps older
+integrations working); a start and a target arrive as packed integers or world points and a
+missing start means the player; a set of targets mixes both shapes and an undefined member
+drops the whole request rather than half of it; an override-only message is not a path request
+and a non-map override is empty; an unknown target type means keep the current destination;
+the published transports keep the parallel-list shape older consumers read. The existing
+"PluginMessageTest" is a manual launcher, so this is the first unit coverage of the wire format.
+
+**Change:** parsing and encoding moved to `PluginMessageCodec` (namespaces, actions, keys, a
+`PathRequest` value, `parsePath`, `configOverrideOf`, `encodeTransports`); the plugin's handler
+applies the override, resolves the player start, expands the targets and sets the destination
+as before, and the publisher encodes through the codec. Seven message constants left the plugin.
+Plugin class: 4,843 to 4,762 lines.
+
+**Open question, not changed:** an override-only message still applies its override and
+returns (the review called that a defect: "validate first, apply after"). Kept as-is here
+because this step is a refactor; the codec now makes the two steps separable when that call
+is made.

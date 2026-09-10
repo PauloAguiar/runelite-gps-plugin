@@ -106,13 +106,13 @@ public class ShortestPathPlugin extends Plugin
 {
 	protected static final String CONFIG_GROUP = "gps";
 	// GPS's own plugin-message namespace: new integrations should target this one.
-	protected static final String MESSAGE_NAMESPACE = "gps";
+	protected static final String MESSAGE_NAMESPACE = PluginMessageCodec.NAMESPACE;
 	// Compatibility alias: Quest Helper and other plugins drive the pathfinder through Shortest
 	// Path's namespace (set path/target, config overrides) and listen for its path broadcasts.
 	// GPS supersedes Shortest Path, so it keeps answering on that channel too — inbound messages
 	// are accepted on either, and broadcasts go out on both (no listener subscribes to both today,
 	// so nothing double-processes; drop the legacy channel only if that ever changes).
-	protected static final String MESSAGE_NAMESPACE_LEGACY = "shortestpath";
+	protected static final String MESSAGE_NAMESPACE_LEGACY = PluginMessageCodec.NAMESPACE_LEGACY;
 
 	// POH (Player Owned House) bounds for detecting when path goes through POH
 	// Note: POH_MIN_X is 1856 to exclude the Daddy's Home miniquest area
@@ -154,13 +154,6 @@ public class ShortestPathPlugin extends Plugin
 		}
 		return false;
 	}
-	private static final String PLUGIN_MESSAGE_PATH = "path";
-	private static final String PLUGIN_MESSAGE_CLEAR = "clear";
-	private static final String PLUGIN_MESSAGE_START = "start";
-	private static final String PLUGIN_MESSAGE_TARGET = "target";
-	private static final String PLUGIN_MESSAGE_CONFIG_OVERRIDE = "config";
-	private static final String PLUGIN_MESSAGE_TRANSPORTS = "transports";
-	private static final String PLUGIN_MESSAGE_SOURCE = "source";
 	private static final String CLEAR = "Clear";
 	private static final String PATH = ColorUtil.wrapWithColorTag("Path", JagexColors.MENU_TARGET);
 	private static final String SET = "Set";
@@ -1423,23 +1416,16 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onPluginMessage(PluginMessage event)
 	{
-		if (!MESSAGE_NAMESPACE.equals(event.getNamespace())
-			&& !MESSAGE_NAMESPACE_LEGACY.equals(event.getNamespace()))
+		if (!PluginMessageCodec.isOurs(event.getNamespace()))
 		{
 			return;
 		}
-
 		String action = event.getName();
-		if (PLUGIN_MESSAGE_PATH.equals(action))
+		if (PluginMessageCodec.ACTION_PATH.equals(action))
 		{
 			Map<String, Object> data = event.getData();
-			Object objStart = data.getOrDefault(PLUGIN_MESSAGE_START, null);
-			Object objTarget = data.getOrDefault(PLUGIN_MESSAGE_TARGET, null);
-			Object objConfigOverride = data.getOrDefault(PLUGIN_MESSAGE_CONFIG_OVERRIDE, null);
-
-			@SuppressWarnings("unchecked")
-			Map<String, Object> configOverride = (objConfigOverride instanceof Map<?, ?>) ? ((Map<String, Object>) objConfigOverride) : null;
-			if (configOverride != null && !configOverride.isEmpty())
+			Map<String, Object> configOverride = PluginMessageCodec.configOverrideOf(data);
+			if (!configOverride.isEmpty())
 			{
 				ShortestPathPlugin.configOverride.clear();
 				for (String key : configOverride.keySet())
@@ -1456,13 +1442,12 @@ public class ShortestPathPlugin extends Plugin
 				cacheConfigValues();
 			}
 
-			if (objStart == null && objTarget == null)
+			PluginMessageCodec.PathRequest request = PluginMessageCodec.parsePath(data);
+			if (request == null)
 			{
 				return;
 			}
-
-			int start = (objStart instanceof WorldPoint) ? WorldPointUtil.packWorldPoint((WorldPoint) objStart)
-				: ((objStart instanceof Integer) ? ((int) objStart) : WorldPointUtil.UNDEFINED);
+			int start = request.start;
 			if (start == WorldPointUtil.UNDEFINED)
 			{
 				start = getPlayerLocation();
@@ -1471,56 +1456,10 @@ public class ShortestPathPlugin extends Plugin
 					return;
 				}
 			}
-
-			Set<Integer> targets = new HashSet<>();
-			if (objTarget instanceof Integer)
-			{
-				int packedPoint = (Integer) objTarget;
-				if (packedPoint == WorldPointUtil.UNDEFINED)
-				{
-					return;
-				}
-				targets.add(packedPoint);
-			}
-			else if (objTarget instanceof WorldPoint)
-			{
-				int packedPoint = WorldPointUtil.packWorldPoint((WorldPoint) objTarget);
-				if (packedPoint == WorldPointUtil.UNDEFINED)
-				{
-					return;
-				}
-				targets.add(packedPoint);
-			}
-			else if (objTarget instanceof Set<?>)
-			{
-				@SuppressWarnings("unchecked")
-				Set<Object> objTargets = (Set<Object>) objTarget;
-				for (Object obj : objTargets)
-				{
-					int packedPoint = WorldPointUtil.UNDEFINED;
-					if (obj instanceof Integer)
-					{
-						packedPoint = (Integer) obj;
-					}
-					else if (obj instanceof WorldPoint)
-					{
-						packedPoint = WorldPointUtil.packWorldPoint((WorldPoint) obj);
-					}
-					if (packedPoint == WorldPointUtil.UNDEFINED)
-					{
-						return;
-					}
-					targets.add(packedPoint);
-				}
-			}
-
-			// Attribute the destination for the GPS header. PluginMessage doesn't identify its sender,
-			// so honour an optional "source" string in the data (a convention senders can adopt, e.g.
-			// "Quest Helper"); otherwise all we can say is that a plugin asked for it.
-			Object objSource = data.getOrDefault(PLUGIN_MESSAGE_SOURCE, null);
-			targetSource = (objSource instanceof String && !((String) objSource).isEmpty())
-				? (String) objSource
-				: "another plugin";
+			Set<Integer> targets = request.targets;
+			// Attribute the destination for the GPS header (a "source" the sender chose, else
+			// all we can say is that a plugin asked for it).
+			targetSource = request.source;
 
 			boolean useOld = targets.isEmpty() && hasPathTargets();
 			Set<Integer> ends;
@@ -1566,7 +1505,7 @@ public class ShortestPathPlugin extends Plugin
 			}
 			setDestination(start, ends, useOld);
 		}
-		else if (PLUGIN_MESSAGE_CLEAR.equals(action))
+		else if (PluginMessageCodec.ACTION_CLEAR.equals(action))
 		{
 			configOverride.clear();
 			cacheConfigValues();
@@ -1593,29 +1532,9 @@ public class ShortestPathPlugin extends Plugin
 			{
 				return;
 			}
-			Map<String, Object> data = new HashMap<>();
-			List<WorldPoint> transportOrigins = new ArrayList<>();
-			List<WorldPoint> transportDestinations = new ArrayList<>();
-			List<String> transportObjectInfos = new ArrayList<>();
-			List<String> transportDisplayInfos = new ArrayList<>();
-			for (int i = 1; i < currentPath.size(); i++)
-			{
-				PathStep currentStep = currentPath.get(i - 1);
-				PathStep nextStep = currentPath.get(i);
-				for (Transport transport : transportsForEdge(currentStep, nextStep))
-				{
-					transportOrigins.add(WorldPointUtil.unpackWorldPoint(currentStep.getPackedPosition()));
-					transportDestinations.add(WorldPointUtil.unpackWorldPoint(nextStep.getPackedPosition()));
-					transportObjectInfos.add(transport.getObjectInfo());
-					transportDisplayInfos.add(transport.getDisplayInfo());
-				}
-			}
-			data.put("origin", transportOrigins);
-			data.put("destination", transportDestinations);
-			data.put("objectInfo", transportObjectInfos);
-			data.put("displayInfo", transportDisplayInfos);
-			eventBus.post(new PluginMessage(MESSAGE_NAMESPACE, PLUGIN_MESSAGE_TRANSPORTS, data));
-			eventBus.post(new PluginMessage(MESSAGE_NAMESPACE_LEGACY, PLUGIN_MESSAGE_TRANSPORTS, data));
+			Map<String, Object> data = PluginMessageCodec.encodeTransports(currentPath, this::transportsForEdge);
+			eventBus.post(new PluginMessage(MESSAGE_NAMESPACE, PluginMessageCodec.ACTION_TRANSPORTS, data));
+			eventBus.post(new PluginMessage(MESSAGE_NAMESPACE_LEGACY, PluginMessageCodec.ACTION_TRANSPORTS, data));
 		}
 	}
 
