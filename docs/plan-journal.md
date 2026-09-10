@@ -801,3 +801,23 @@ sea when the route has a sailing leg, so a land route never loads the ocean. Plu
 3,102 to 2,898 lines.
 
 **Suite:** 742 tests, all green.
+
+### Step L20: CompanionPlugins and SidebarButton (2026-09-09)
+
+**Red first:** `CompanionPluginsTest` drives the checks with a mocked plugin manager and three
+tiny annotated plugin classes: an enabled Shortest Path is a conflict and the change callback
+fires once, not again for an unchanged verdict, and again when it is disabled; Quest Helper
+enabled with its option off means pathing off, the option on clears it. `SidebarButtonTest`
+pins the mount rule against a mocked toolbar: added once on LOGGED_IN, untouched by LOADING and
+HOPPING, removed once on the login screens, and removed on shutdown. The classes did not
+exist. One test fix: the navigation button is a final class, so the test builds a real one
+(its builder needs no client).
+
+**Change:** the two descriptor-name scans became one pass in `CompanionPlugins`, with the two
+verdicts and a change callback (the plugin refreshes the panel). The sidebar button's mount
+state and the game-state rule became `SidebarButton`, which the focus-search hotkey opens and
+shutdown removes. The plugin keeps the two panel getters, the three event handlers (one call
+each) and the config-change hook. One import went with the code. Plugin class: 2,898 to 2,795
+lines.
+
+**Suite:** 745 tests, all green.

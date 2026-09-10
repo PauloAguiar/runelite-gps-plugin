@@ -203,10 +203,8 @@ public class ShortestPathPlugin extends Plugin
 	private MouseManager mouseManager;
 	@Inject
 	private net.runelite.client.plugins.PluginManager pluginManager;
-	// True while the original Shortest Path plugin is also enabled: both plugins draw paths and
-	// answer the same plugin-message integrations, so the panel warns and recommends disabling it.
-	private volatile boolean shortestPathConflict = false;
-	private volatile boolean questHelperPathingOff = false;
+	// The Shortest Path conflict and the Quest Helper option (see CompanionPlugins); startup.
+	private CompanionPlugins companions;
 	// Click-to-dismiss for the GPS overlay's lingering "Arrived!" panel.
 	private final MouseAdapter arrivalDismissListener = new MouseAdapter()
 	{
@@ -228,10 +226,8 @@ public class ShortestPathPlugin extends Plugin
 	// Alternative-routes feature: panel, async route generator, the methods the user has excluded, the
 	// generated routes, and which one is currently shown on the map.
 	private ShortestPathPanel altPanel;
-	private NavigationButton navButton;
-	// Whether the sidebar button is currently on the toolbar: GPS is only useful in-game, so the
-	// button is shown while logged in and removed on the login screen.
-	private boolean navButtonShown = false;
+	// The sidebar button, mounted in-game only (see SidebarButton); startup.
+	private SidebarButton sidebar;
 	private AlternativeRoutesService altRoutesService;
 	// The panel's boat banner (see BoatBannerService); constructed at startup, before the panel.
 	private BoatBannerService boatBannerService;
@@ -340,13 +336,13 @@ public class ShortestPathPlugin extends Plugin
 		@Override
 		public void keyPressed(KeyEvent e)
 		{
-			if (!config.focusSearchHotkey().matches(e) || altPanel == null || navButton == null)
+			if (!config.focusSearchHotkey().matches(e) || altPanel == null || sidebar == null)
 			{
 				return;
 			}
 			SwingUtilities.invokeLater(() ->
 			{
-				clientToolbar.openPanel(navButton);
+				sidebar.open();
 				altPanel.focusSearch();
 			});
 		}
@@ -515,14 +511,13 @@ public class ShortestPathPlugin extends Plugin
 		session.setLimit(defaultRouteLimit());
 		altPanel = new ShortestPathPanel(this);
 		altRoutesService = new AlternativeRoutesService(clientThread, pathfinderConfig.copyForPlanning());
-		navButton = NavigationButton.builder()
+		sidebar = new SidebarButton(clientToolbar, NavigationButton.builder()
 			.tooltip("GPS")
 			.icon(RouteIcons.gpsPin())
 			.priority(70)
 			.panel(altPanel)
-			.build();
-		// Only mount the sidebar button in-game — it does nothing useful on the login screen.
-		setNavButtonShown(GameState.LOGGED_IN.equals(client.getGameState()));
+			.build());
+		sidebar.show(GameState.LOGGED_IN.equals(client.getGameState()));
 
 		// Populate the teleport-methods catalog so it's visible before any target is set, and check
 		// whether the bank contents are already known this session.
@@ -542,8 +537,8 @@ public class ShortestPathPlugin extends Plugin
 		keyManager.registerKeyListener(focusSearchKeyListener);
 		mouseManager.registerMouseListener(arrivalDismissListener);
 		// Plugins enabled later are caught by the PluginChanged/ExternalPluginsChanged events.
-		updateShortestPathConflict();
-		updateQuestHelperIntegration();
+		companions = new CompanionPlugins(pluginManager, configManager, this, () -> refreshPanel(session.inFlight()));
+		companions.refresh();
 	}
 
 	@Override
@@ -559,11 +554,10 @@ public class ShortestPathPlugin extends Plugin
 		overlayManager.remove(pathMapTooltipOverlay);
 		overlayManager.remove(routeDirectionsOverlay);
 
-		if (navButton != null)
+		if (sidebar != null)
 		{
-			clientToolbar.removeNavigation(navButton);
-			navButton = null;
-			navButtonShown = false;
+			sidebar.remove();
+			sidebar = null;
 		}
 		if (altRoutesService != null)
 		{
@@ -869,7 +863,7 @@ public class ShortestPathPlugin extends Plugin
 			{
 				configManager.unsetConfiguration(CONFIG_GROUP, "questHelperBannerDismissed");
 			}
-			updateQuestHelperIntegration();
+			companions.refresh();
 			return;
 		}
 		if (!CONFIG_GROUP.equals(event.getGroup()))
@@ -930,134 +924,37 @@ public class ShortestPathPlugin extends Plugin
 		}
 	}
 
-	/** Whether the original Shortest Path plugin is also enabled — the panel shows a warning. */
+	/** Whether the original Shortest Path plugin is also enabled: the panel shows a warning. */
 	public boolean isShortestPathConflict()
 	{
-		return shortestPathConflict;
+		return companions != null && companions.isShortestPathConflict();
 	}
 
 	/**
-	 * Detects the original Shortest Path plugin running alongside GPS. Both draw paths and answer
-	 * the same {@code shortestpath} plugin-message integrations, so running both doubles the
-	 * rendering — the panel recommends disabling it. Matched by descriptor name (each hub plugin
-	 * has its own classloader, so class identity can't be compared across plugins).
+	 * Whether Quest Helper runs WITHOUT its "Use Shortest Path plugin" option: the panel shows a
+	 * dismissable banner explaining quest steps will not reach GPS until it is on.
 	 */
-	private void updateShortestPathConflict()
-	{
-		boolean conflict = false;
-		for (Plugin other : pluginManager.getPlugins())
-		{
-			if (other == this)
-			{
-				continue;
-			}
-			PluginDescriptor descriptor = other.getClass().getAnnotation(PluginDescriptor.class);
-			if (descriptor != null && "Shortest Path".equals(descriptor.name())
-				&& pluginManager.isPluginEnabled(other))
-			{
-				conflict = true;
-				break;
-			}
-		}
-		if (conflict != shortestPathConflict)
-		{
-			shortestPathConflict = conflict;
-			refreshPanel(session.inFlight());
-		}
-	}
-
-	/** Whether Quest Helper runs WITHOUT its "Use Shortest Path plugin" option — the panel
-	 * shows a dismissable banner explaining quest steps won't reach GPS until it's on. */
 	public boolean isQuestHelperPathingOff()
 	{
-		return questHelperPathingOff;
-	}
-
-	/**
-	 * Quest Helper hands quest-step destinations over the {@code shortestpath} plugin-message
-	 * integration only when its own "Use Shortest Path plugin" option is on
-	 * ({@code questhelper.useShortestPath}, default off) — enabled Quest Helper with the
-	 * option off silently draws its own lines and GPS never hears about the step. Matched by
-	 * descriptor name like the Shortest Path conflict above.
-	 */
-	private void updateQuestHelperIntegration()
-	{
-		boolean off = false;
-		for (Plugin other : pluginManager.getPlugins())
-		{
-			PluginDescriptor descriptor = other.getClass().getAnnotation(PluginDescriptor.class);
-			if (descriptor != null && "Quest Helper".equals(descriptor.name())
-				&& pluginManager.isPluginEnabled(other))
-			{
-				off = !Boolean.parseBoolean(
-					configManager.getConfiguration("questhelper", "useShortestPath"));
-				break;
-			}
-		}
-		if (off != questHelperPathingOff)
-		{
-			questHelperPathingOff = off;
-			refreshPanel(session.inFlight());
-		}
+		return companions != null && companions.isQuestHelperPathingOff();
 	}
 
 	@Subscribe
 	public void onPluginChanged(net.runelite.client.events.PluginChanged event)
 	{
-		updateShortestPathConflict();
-		updateQuestHelperIntegration();
+		companions.refresh();
 	}
 
 	@Subscribe
 	public void onExternalPluginsChanged(net.runelite.client.events.ExternalPluginsChanged event)
 	{
-		updateShortestPathConflict();
-		updateQuestHelperIntegration();
-	}
-
-	/**
-	 * Adds/removes the sidebar button so it only appears in-game. Called on every game-state change
-	 * before the login-detection guard below (which returns early in most cases). LOADING / HOPPING
-	 * / CONNECTION_LOST leave the button as-is, so world hops don't flicker it.
-	 */
-	private void updateNavButtonVisibility(GameState state)
-	{
-		switch (state)
-		{
-			case LOGGED_IN:
-				setNavButtonShown(true);
-				break;
-			case LOGIN_SCREEN:
-			case LOGIN_SCREEN_AUTHENTICATOR:
-			case STARTING:
-				setNavButtonShown(false);
-				break;
-			default:
-				break;
-		}
-	}
-
-	private void setNavButtonShown(boolean show)
-	{
-		if (navButton == null || show == navButtonShown)
-		{
-			return;
-		}
-		navButtonShown = show;
-		if (show)
-		{
-			clientToolbar.addNavigation(navButton);
-		}
-		else
-		{
-			clientToolbar.removeNavigation(navButton);
-		}
+		companions.refresh();
 	}
 
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
-		updateNavButtonVisibility(event.getGameState());
+		sidebar.onGameState(event.getGameState());
 
 		// Scene rebuild: the spawn-evidence set belongs to the old scene (LOADING fires before the
 		// new scene's object spawns), and the once-per-scene chunk-dump log re-arms.
