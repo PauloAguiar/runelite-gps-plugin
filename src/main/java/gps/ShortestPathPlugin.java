@@ -52,7 +52,6 @@ import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOpened;
 import net.runelite.api.events.PostClientTick;
 import net.runelite.api.events.VarbitChanged;
-import net.runelite.api.gameval.DBTableID;
 import net.runelite.api.events.WidgetClosed;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.events.WorldChanged;
@@ -309,31 +308,9 @@ public class ShortestPathPlugin extends Plugin
 	private static final String CONFIG_KEY_SPIRIT_TREES = "plantedSpiritTrees";
 	// RSProfile-scoped: the last house scan's furniture (see PohScanner.encode); present = scanned.
 	private static final String CONFIG_KEY_POH_FURNITURE = "pohFurniture";
-	// RSProfile-scoped: owned boats' last seen berths, "name|port" rows joined by ';'.
-	private static final String CONFIG_KEY_BOAT_PORTS = "boatPorts";
+	// The panel's boat banner (see BoatBannerService); constructed at startup, before the panel.
+	private BoatBannerService boatBannerService;
 
-	/** Owned boats as {name, port label} display rows — live varbit reads once seen this
-	 * session, the persisted snapshot before that, null when never collected. Routing does
-	 * NOT read this: PathfinderConfig reads the boat varbits itself at refresh. */
-	private volatile List<String[]> boatBanner;
-	// Written on the client thread, read from the Swing EDT (the panel's berth section).
-	private volatile boolean boatBannerLive;
-	private volatile boolean boatBannerDirty;
-
-	private static final int[][] BOAT_BANNER_VARBITS = {
-		{VarbitID.SAILING_BOAT_1_OWNED, VarbitID.SAILING_BOAT_1_PORT, VarbitID.SAILING_BOAT_1_NAME_1,
-			VarbitID.SAILING_BOAT_1_NAME_2, VarbitID.SAILING_BOAT_1_NAME_3, VarbitID.SAILING_BOAT_1_TYPE},
-		{VarbitID.SAILING_BOAT_2_OWNED, VarbitID.SAILING_BOAT_2_PORT, VarbitID.SAILING_BOAT_2_NAME_1,
-			VarbitID.SAILING_BOAT_2_NAME_2, VarbitID.SAILING_BOAT_2_NAME_3, VarbitID.SAILING_BOAT_2_TYPE},
-		{VarbitID.SAILING_BOAT_3_OWNED, VarbitID.SAILING_BOAT_3_PORT, VarbitID.SAILING_BOAT_3_NAME_1,
-			VarbitID.SAILING_BOAT_3_NAME_2, VarbitID.SAILING_BOAT_3_NAME_3, VarbitID.SAILING_BOAT_3_TYPE},
-		{VarbitID.SAILING_BOAT_4_OWNED, VarbitID.SAILING_BOAT_4_PORT, VarbitID.SAILING_BOAT_4_NAME_1,
-			VarbitID.SAILING_BOAT_4_NAME_2, VarbitID.SAILING_BOAT_4_NAME_3, VarbitID.SAILING_BOAT_4_TYPE},
-		{VarbitID.SAILING_BOAT_5_OWNED, VarbitID.SAILING_BOAT_5_PORT, VarbitID.SAILING_BOAT_5_NAME_1,
-			VarbitID.SAILING_BOAT_5_NAME_2, VarbitID.SAILING_BOAT_5_NAME_3, VarbitID.SAILING_BOAT_5_TYPE},
-	};
-	private static final Set<Integer> BOAT_BANNER_VARBIT_IDS = Arrays.stream(BOAT_BANNER_VARBITS)
-		.flatMapToInt(Arrays::stream).boxed().collect(java.util.stream.Collectors.toSet());
 	private static final String CONFIG_KEY_FAVORITES = "favoriteDestinations";
 	private static final int FAVORITES_LIMIT = 100;
 	private volatile List<Destinations.Entry> favoriteDestinations = new ArrayList<>();
@@ -432,13 +409,9 @@ public class ShortestPathPlugin extends Plugin
 	private volatile Set<Integer> pathTargets = Set.of();
 	@Getter
 	private PathfinderConfig pathfinderConfig;
-	// Journey wall-clock, reported on arrival. 0 means "armed": it starts counting from the first
-	// tick the player MOVES, so standing still after setting a destination (or picking a path)
-	// doesn't inflate the time. Re-armed when a new destination is set OR the user selects a
-	// different path; journeyLastLocation drives the first-movement detection. NB: exposed via
-	// the hand-written getter below (which documents the 0 sentinel), not lombok.
-	private long journeyStartMillis = 0;
-	private int journeyLastLocation = WorldPointUtil.UNDEFINED;
+	// The journey wall-clock reported on arrival (see JourneyTracker): armed by a new destination
+	// or a newly chosen path, started by the player's first action after that.
+	private final JourneyTracker journey = new JourneyTracker();
 	// One-shot world-map pin override for the next setTargets call: the destination a perimeter
 	// expansion is centred on (the searched bank booth), where the pin belongs. UNDEFINED = default
 	// behaviour (pin on a single target, none for multi-target sets).
@@ -604,6 +577,13 @@ public class ShortestPathPlugin extends Plugin
 	{
 		clearUnsurfacedTypeToggles();
 		cacheConfigValues();
+		boatBannerService = new BoatBannerService(client, configManager, CONFIG_GROUP, () ->
+		{
+			if (altPanel != null)
+			{
+				SwingUtilities.invokeLater(altPanel::refreshConfigSections);
+			}
+		});
 
 		pathfinderConfig = new PathfinderConfig(client, config);
 		if (GameState.LOGGED_IN.equals(client.getGameState()))
@@ -1403,9 +1383,7 @@ public class ShortestPathPlugin extends Plugin
 			pohFurnitureFoundThisVisit = false;
 			pohScanAttempts = 0;
 			pohSpawnedFurniture.clear();
-			boatBanner = null;
-			boatBannerLive = false;
-			boatBannerDirty = false;
+			boatBannerService.reset();
 		}
 
 		if (pathfinderConfig == null
@@ -1680,13 +1658,7 @@ public class ShortestPathPlugin extends Plugin
 		// live resolution walks player.getWorldView(), a client-thread-only call since the
 		// boat-position fix — the EDT reads this cache instead and can never trip it.
 		lastKnownPlayerLocation = getPlayerLocation();
-		// Boat berth changes arrive as varbit bursts (login sync, docking); one banner
-		// rebuild per tick at most.
-		if (boatBannerDirty)
-		{
-			boatBannerDirty = false;
-			refreshBoatBanner();
-		}
+		boatBannerService.onTick();
 		// Passive sea-obstacle learning: every 10 ticks, harvest scene tiles that the shipped
 		// ocean calls sailable but live collision blocks (moored vessels, harbour clutter).
 		// The offline map plans; the client corrects itself as scenes reveal the truth.
@@ -1729,25 +1701,15 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		int currentLocation = WorldPointUtil.fromLocalInstance(client, localPlayer);
-		// Journey timer: start counting from the player's first ACTION after a destination (or a chosen
-		// path) was set — moving, OR performing an animation (casting/using a teleport). The animation
-		// catch matters for long teleport channels (e.g. Lumbridge Home): the player stays put for the
-		// whole cast, so a move-only trigger would only start the clock after landing, losing that time.
-		boolean journeyMoved = journeyLastLocation != WorldPointUtil.UNDEFINED
-			&& currentLocation != journeyLastLocation;
-		boolean acting = localPlayer.getAnimation() != -1;
-		if (journeyStartMillis == 0 && (journeyMoved || acting))
-		{
-			journeyStartMillis = System.currentTimeMillis();
-		}
-		journeyLastLocation = currentLocation;
+		// The journey clock starts on the first move or animation after arming (JourneyTracker).
+		journey.tick(currentLocation, localPlayer.getAnimation() != -1, System.currentTimeMillis());
 		if (hasArrived(currentLocation))
 		{
 			// Reached the destination (inside the arrival zone). Show the "Arrived!" panel — including when
 			// the destination was set while already there (e.g. "nearest bank" at a bank), where
 			// the journey time is ~0 — then clear the target. A never-started journey (arrived without
 			// moving) reports 0 rather than a stale duration.
-			long elapsed = journeyStartMillis == 0 ? 0 : System.currentTimeMillis() - journeyStartMillis;
+			long elapsed = journey.elapsedMillis(System.currentTimeMillis());
 			if (routeDirectionsOverlay != null)
 			{
 				routeDirectionsOverlay.markArrived(targetSource, elapsed);
@@ -2071,99 +2033,23 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onVarbitChanged(VarbitChanged event)
 	{
-		if (BOAT_BANNER_VARBIT_IDS.contains(event.getVarbitId()))
+		if (boatBannerService != null && boatBannerService.tracks(event.getVarbitId()))
 		{
-			boatBannerDirty = true;
+			boatBannerService.markDirty();
 		}
-	}
-
-	/** Client thread: re-read every boat's ownership, berth and name, persist, and let the
-	 * panel's sailing section relabel itself. */
-	private void refreshBoatBanner()
-	{
-		if (!GameState.LOGGED_IN.equals(client.getGameState()))
-		{
-			return;
-		}
-		List<String[]> rows = new ArrayList<>();
-		for (int slot = 0; slot < BOAT_BANNER_VARBITS.length; slot++)
-		{
-			int[] varbits = BOAT_BANNER_VARBITS[slot];
-			// Owned varbit alone is unreliable (Where's My Boat's field lesson); a set name
-			// descriptor also proves ownership, and covers Port Sarim's port id 0.
-			if (client.getVarbitValue(varbits[0]) <= 0 && client.getVarbitValue(varbits[3]) <= 0)
-			{
-				continue;
-			}
-			rows.add(new String[]{decodeBoatName(slot, varbits),
-				SailingPorts.portName(client.getVarbitValue(varbits[1])),
-				boatTypeName(client.getVarbitValue(varbits[5]))});
-		}
-		boatBanner = rows;
-		boatBannerLive = true;
-		configManager.setRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_BOAT_PORTS,
-			rows.stream().map(r -> r[0] + "|" + r[1] + "|" + r[2])
-				.collect(java.util.stream.Collectors.joining(";")));
-		if (altPanel != null)
-		{
-			SwingUtilities.invokeLater(altPanel::refreshConfigSections);
-		}
-	}
-
-	/** The three name varbits index the game's own name-part tables (prefix, descriptor,
-	 * noun) — the same decode Where's My Boat ships. Any surprise falls back to a slot label. */
-	/** The hull tier's name for the boat banner (see {@link BoatHull}); "" for an unknown tier. */
-	private static String boatTypeName(int type)
-	{
-		BoatHull hull = BoatHull.fromVarbit(type);
-		return hull == null ? "" : hull.displayName();
-	}
-
-	private String decodeBoatName(int slot, int[] varbits)
-	{
-		try
-		{
-			int[] rowIds = {DBTableID.SailingBoatNameOptions.Row.SAILING_BOAT_NAME_PREFIX_OPTIONS,
-				DBTableID.SailingBoatNameOptions.Row.SAILING_BOAT_NAME_DESCRIPTOR_OPTIONS,
-				DBTableID.SailingBoatNameOptions.Row.SAILING_BOAT_NAME_NOUN_OPTIONS};
-			List<String> parts = new ArrayList<>();
-			for (int part = 0; part < 3; part++)
-			{
-				int index = client.getVarbitValue(varbits[2 + part]) - 1;
-				if (index > 0)
-				{
-					Object[] options = client.getDBTableField(rowIds[part],
-						DBTableID.SailingBoatNameOptions.COL_OPTION, 0);
-					if (index < options.length && options[index] instanceof String
-						&& !((String) options[index]).isEmpty())
-					{
-						parts.add((String) options[index]);
-					}
-				}
-			}
-			if (!parts.isEmpty())
-			{
-				return String.join(" ", parts);
-			}
-		}
-		catch (RuntimeException e)
-		{
-			// Name tables unavailable (cache quirk) — the slot label below still identifies it.
-		}
-		return "Boat " + (slot + 1);
 	}
 
 	/** Owned boats as {name, port label} rows for the panel's sailing section; null = never
 	 * collected for this character. */
 	public List<String[]> getBoatBanner()
 	{
-		return boatBanner;
+		return boatBannerService == null ? null : boatBannerService.banner();
 	}
 
 	/** Whether the banner reflects this session's live varbits rather than a restored snapshot. */
 	public boolean isBoatBannerLive()
 	{
-		return boatBannerLive;
+		return boatBannerService != null && boatBannerService.isLive();
 	}
 
 	private void restoreDetectionsFromConfig()
@@ -2188,24 +2074,7 @@ public class ShortestPathPlugin extends Plugin
 				pohScanned = true;
 			}
 		}
-		if (boatBanner == null)
-		{
-			String raw = configManager.getRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_BOAT_PORTS);
-			if (raw != null)
-			{
-				List<String[]> rows = new ArrayList<>();
-				for (String row : raw.split(";"))
-				{
-					// name|port, with |type appended since the hull glyphs; old snapshots lack it.
-					String[] parts = row.split("\\|", 3);
-					if (parts.length >= 2 && !parts[0].isEmpty())
-					{
-						rows.add(new String[]{parts[0], parts[1], parts.length > 2 ? parts[2] : ""});
-					}
-				}
-				boatBanner = rows;
-			}
-		}
+		boatBannerService.restore();
 		// The panel's sections label their sync state — reflect what was just restored.
 		if (altPanel != null)
 		{
@@ -2984,7 +2853,7 @@ public class ShortestPathPlugin extends Plugin
 	/** The journey wall-clock start, or 0 while it hasn't begun (armed, waiting for movement). */
 	public long getJourneyStartMillis()
 	{
-		return journeyStartMillis;
+		return journey.startMillis();
 	}
 
 	/**
@@ -3018,8 +2887,7 @@ public class ShortestPathPlugin extends Plugin
 	/** Re-arms the journey timer so it recounts from the player's next movement. */
 	private void armJourney()
 	{
-		journeyStartMillis = 0;
-		journeyLastLocation = WorldPointUtil.UNDEFINED;
+		journey.arm();
 	}
 
 	/**

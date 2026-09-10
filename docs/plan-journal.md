@@ -514,3 +514,38 @@ renames them; a TSV of raw ids would lose that and gain nothing the code needs.
 L5 are done; L4 (the hidden toggles) is recorded above as reverted with its reasons. What
 remains is the large structural item (the services out of the 4,800-line plugin class), the
 config model proper, the leagues decision (the owner's call), and the product features.
+
+## Services out of the plugin class (2026-09-09)
+
+The owner chose the structural item next, test first for each service where a unit test proves
+the seam. The order runs from the most self-contained seam outward: the journey timer, the
+boat banner, the plugin-message codec, the route session, then the tick handlers.
+
+### Step L6: JourneyTracker (2026-09-09)
+
+**Red first:** `JourneyTrackerTest` pins the timer's contract: standing still after arming
+starts nothing and reports zero elapsed, the first tick that moved starts the clock (not the
+tick that merely recorded the position), an animation starts it without moving (a teleport
+cast is the first action), and re-arming forgets the old journey without a phantom move on the
+next tick. The class did not exist; the test was red at compile time.
+
+**Change:** the two plugin fields (start, last location), the tick block, the elapsed
+computation, the getter and the arm call became `JourneyTracker` (arm, tick with the location,
+the acting flag and a clock parameter, start, elapsed). The plugin delegates.
+
+### Step L7: BoatBannerService (2026-09-09)
+
+**Red first:** `BoatBannerServiceTest` with a mocked client and config manager: an owned boat
+becomes a {name, port, hull} row from the varbits and the game's name-part tables and persists
+as "name|port|hull"; a boat with a set descriptor but a lagging owned flag still counts (Port
+Sarim is port 0); a dirty mark rebuilds once on the next tick and a quiet tick rebuilds
+nothing; restore reads the snapshot once (rows without a name dropped, older rows without a
+hull tolerated) and is not "live"; logout forgets everything; not logged in means no rebuild
+and no write; the tracked varbits and the wire format. One expectation of mine was wrong on
+the first run (hull varbit 0 is the raft, as the plugin always mapped it), fixed in the test.
+
+**Change:** the banner rows, the live and dirty flags, the five-boat varbit table, the rebuild,
+the name decode, the persistence and its restore, the logout reset and the per-tick check left
+the plugin for `BoatBannerService`, constructed at startup before the panel with the panel's
+refresh as its change callback. The plugin keeps two delegating getters and a one-line varbit
+handler. Plugin class: 4,975 to 4,843 lines.
