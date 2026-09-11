@@ -149,12 +149,14 @@ public class RoutingItemDependenciesTest
 		assertTrue("a teleport item moving matters", getBool(refresher(plugin), "dirty"));
 	}
 
-	/** The plugin's catalog refresher (see CatalogRefresher), which owns the dirty flag since L29. */
+	/** The controller's catalog refresher (see CatalogRefresher): the plugin's route controller owns it since L35. */
 	private static CatalogRefresher refresher(ShortestPathPlugin plugin) throws Exception
 	{
-		Field f = ShortestPathPlugin.class.getDeclaredField("catalogRefresh");
+		Field routes = ShortestPathPlugin.class.getDeclaredField("routes");
+		routes.setAccessible(true);
+		Field f = RouteController.class.getDeclaredField("catalogRefresh");
 		f.setAccessible(true);
-		return (CatalogRefresher) f.get(plugin);
+		return (CatalogRefresher) f.get(routes.get(plugin));
 	}
 
 	private static void set(Object target, String field, Object value) throws Exception

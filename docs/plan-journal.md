@@ -1050,3 +1050,26 @@ written. The method did not exist.
 called; the plugin's handler is the one call. Plugin class: 1,942 to 1924 lines.
 
 **Suite:** 787 tests, all green.
+
+### Step L35: RouteController (2026-09-10)
+
+**Red first:** `RouteControllerTest`, over a mocked plugin, generator and config manager with a
+real session, choice store and exclusions: a mode change saves the mode and regenerates once
+with the last inputs, and the same mode again (or null) does nothing; opening the panel
+re-checks the auto-compute decision, which fires once per target set and never before the
+generator exists; show more widens both the route budget and the cost band before regenerating,
+and only once a non-empty page settled below the cap. The class did not exist.
+
+**Change:** the generation lifecycle became `RouteController`: the generator and its startup
+and shutdown, the mode and its persistence, the catalog and unavailability snapshots, the
+panel-visible flag and the page budget rule, trigger, stream and settle, the panel push, the
+route pick, the catalog-only refresh (it now owns the `CatalogRefresher`), recompute and show
+more. The plugin keeps the client-bound start tile, the round-trip wish and one-line public
+delegates for the panel; the six tests that reached these members by reflection
+(`AutoComputeDecisionTest`, `CatalogStutterHotfixTest`, `RoutingItemDependenciesTest`,
+`ProvisionalDisplayLiveTest`, `ProvisionalDisplayTest`, `RouteRematchTest`) resolve the moved
+names through a ROUTES_FIELDS map to the controller, the way SESSION_FIELDS did for L9, and call
+its package-private methods directly instead of invoking private plugin methods. Plugin class:
+1,924 to 1,721 lines.
+
+**Suite:** 790 tests, all green.

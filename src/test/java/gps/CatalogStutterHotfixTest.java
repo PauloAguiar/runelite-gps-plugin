@@ -121,43 +121,50 @@ public class CatalogStutterHotfixTest
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		lenient().when(client.getTickCount()).thenReturn(100);
 		set(plugin, "client", client);
-		set(plugin, "altRoutesService", service);
+		set(routes(plugin), "service", service);
 		set(plugin, "altPanel", panel);
 		set(refresher(plugin), "dirty", true);
 
-		Method maybeRefreshCatalog = ShortestPathPlugin.class.getDeclaredMethod("maybeRefreshCatalog");
-		maybeRefreshCatalog.setAccessible(true);
+		RouteController routes = routes(plugin);
 
 		// Panel hidden (the reporters' state): nothing runs, the flag stays armed.
-		maybeRefreshCatalog.invoke(plugin);
+		routes.refreshCatalogIfDue();
 		verify(service, never()).refreshCatalog(any(), any());
 		assertTrue("dirty flag must survive a hidden-panel tick", getBool(refresher(plugin), "dirty"));
 
 		// Panel opens: the pending flag is consumed on the next tick.
-		set(plugin, "altPanelVisible", true);
-		maybeRefreshCatalog.invoke(plugin);
+		set(routes, "panelVisible", true);
+		routes.refreshCatalogIfDue();
 		verify(service, times(1)).refreshCatalog(any(), any());
 		assertFalse(getBool(refresher(plugin), "dirty"));
 
 		// A burst on the same tick (chopping logs with the panel open) waits out the cooldown...
 		set(refresher(plugin), "dirty", true);
-		maybeRefreshCatalog.invoke(plugin);
+		routes.refreshCatalogIfDue();
 		verify(service, times(1)).refreshCatalog(any(), any());
 		assertTrue(getBool(refresher(plugin), "dirty"));
 
 		// ...and runs once the cooldown lapses.
 		when(client.getTickCount()).thenReturn(105);
-		maybeRefreshCatalog.invoke(plugin);
+		routes.refreshCatalogIfDue();
 		verify(service, times(2)).refreshCatalog(any(), any());
 		assertFalse(getBool(refresher(plugin), "dirty"));
 	}
 
-	/** The plugin's catalog refresher (see CatalogRefresher), which owns the dirty flag since L29. */
+	/** The plugin's route controller (see RouteController), which owns the generation state since L35. */
+	private static RouteController routes(ShortestPathPlugin plugin) throws Exception
+	{
+		Field f = ShortestPathPlugin.class.getDeclaredField("routes");
+		f.setAccessible(true);
+		return (RouteController) f.get(plugin);
+	}
+
+	/** The controller's catalog refresher (see CatalogRefresher), which owns the dirty flag since L29. */
 	private static CatalogRefresher refresher(ShortestPathPlugin plugin) throws Exception
 	{
-		Field f = ShortestPathPlugin.class.getDeclaredField("catalogRefresh");
+		Field f = RouteController.class.getDeclaredField("catalogRefresh");
 		f.setAccessible(true);
-		return (CatalogRefresher) f.get(plugin);
+		return (CatalogRefresher) f.get(routes(plugin));
 	}
 
 	private static void set(Object target, String field, Object value) throws Exception

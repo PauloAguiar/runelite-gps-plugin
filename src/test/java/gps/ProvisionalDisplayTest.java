@@ -3,7 +3,6 @@ package gps;
 import gps.pathfinder.PathStep;
 import gps.transport.TransportType;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -57,17 +56,33 @@ public class ProvisionalDisplayTest
 		"lastAltTargets", "lastTargets", "lastAltLimit", "lastLimit", "routeLimit", "limit",
 		"routeCostMultiple", "costMultiple");
 
-	/** The object and field name to reflect on for {@code field}: the session for a moved field. */
+	/** The plugin fields that moved onto the RouteController (plan step L35), by their old names. */
+	private static final java.util.Map<String, String> ROUTES_FIELDS = java.util.Map.of(
+		"altRoutesService", "service", "routesMode", "mode", "altPanelVisible", "panelVisible");
+
+	/** The object and field name to reflect on for {@code field}: the session or the controller for a moved field. */
 	private static Object[] resolve(Object plugin, String field) throws Exception
 	{
-		String mapped = SESSION_FIELDS.get(field);
-		if (mapped == null || !(plugin instanceof ShortestPathPlugin))
+		if (!(plugin instanceof ShortestPathPlugin))
 		{
 			return new Object[]{plugin, field};
 		}
-		Field session = ShortestPathPlugin.class.getDeclaredField("session");
-		session.setAccessible(true);
-		return new Object[]{session.get(plugin), mapped};
+		if (SESSION_FIELDS.containsKey(field))
+		{
+			return new Object[]{fieldOf((ShortestPathPlugin) plugin, "session"), SESSION_FIELDS.get(field)};
+		}
+		if (ROUTES_FIELDS.containsKey(field))
+		{
+			return new Object[]{fieldOf((ShortestPathPlugin) plugin, "routes"), ROUTES_FIELDS.get(field)};
+		}
+		return new Object[]{plugin, field};
+	}
+
+	private static Object fieldOf(ShortestPathPlugin plugin, String field) throws Exception
+	{
+		Field f = ShortestPathPlugin.class.getDeclaredField(field);
+		f.setAccessible(true);
+		return f.get(plugin);
 	}
 
 	private void set(String field, Object value) throws Exception
@@ -87,19 +102,19 @@ public class ProvisionalDisplayTest
 		return (T) f.get(at[0]);
 	}
 
+	private RouteController routes() throws Exception
+	{
+		return (RouteController) fieldOf(plugin, "routes");
+	}
+
 	private void trigger() throws Exception
 	{
-		Method m = ShortestPathPlugin.class.getDeclaredMethod("triggerAlternatives", int.class, Set.class);
-		m.setAccessible(true);
-		m.invoke(plugin, START, new HashSet<>(Set.of(TARGET)));
+		routes().trigger(START, new HashSet<>(Set.of(TARGET)));
 	}
 
 	private void update(List<RouteOption> routes, boolean done) throws Exception
 	{
-		Method m = ShortestPathPlugin.class.getDeclaredMethod("onAlternativeRoutesUpdate",
-			List.class, List.class, Map.class, boolean.class);
-		m.setAccessible(true);
-		m.invoke(plugin, routes, List.<TeleportMethod>of(), Map.<TeleportMethod, MethodAvailability>of(), done);
+		routes().onUpdate(routes, List.<TeleportMethod>of(), Map.<TeleportMethod, MethodAvailability>of(), done);
 	}
 
 	private static RouteOption route(int cost, TeleportMethod method)

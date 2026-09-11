@@ -120,7 +120,6 @@ public class ShortestPathPlugin extends Plugin
 	private ShortestPathPanel altPanel;
 	// The sidebar button, mounted in-game only (see SidebarButton); startup.
 	private SidebarButton sidebar;
-	private AlternativeRoutesService altRoutesService;
 	// The panel's boat banner (see BoatBannerService); constructed at startup, before the panel.
 	private BoatBannerService boatBannerService;
 	// Smart house furniture detection (see PohDetectionService); constructed at startup, before the panel.
@@ -132,24 +131,17 @@ public class ShortestPathPlugin extends Plugin
 	// The search box's recent selections and the saved favourites (see SearchMemory).
 	private final SearchMemory searchMemory = new SearchMemory(choices);
 	// The methods the user excluded (see MethodExclusions): a change persists and refreshes the panel.
-	private final MethodExclusions exclusions = new MethodExclusions(choices, () -> refreshPanel(this.session.inFlight()));
+	private final MethodExclusions exclusions = new MethodExclusions(choices, () -> this.routes.refreshPanel(this.session.inFlight()));
 	// Where the current destination came from, for the GPS header: "map pin" for manual targets, the
 	// sender's self-declared "source" for plugin messages (else "another plugin"), null when unset.
 	private volatile String targetSource;
-	// Which methods the alternatives consider: carried (default), carried + bank, or every teleport.
-	private volatile AlternativeRoutesMode routesMode = AlternativeRoutesMode.OWNED_INVENTORY;
 	// The alternative-routes session (see RouteSession): the page, the pick, the displayed route,
 	// the in-flight flag, the last generation's inputs and the "more" budget. The limit is
 	// initialised from config in startUp (config is not injected at field-init time).
 	private final RouteSession session = new RouteSession();
-	private volatile List<TeleportMethod> teleportCatalog = new ArrayList<>();
-	// Catalog methods the player can't use in the current mode, mapped to why (for the panel markers).
-	private volatile Map<TeleportMethod, MethodAvailability> unavailableMethods = Map.of();
-	// Whether and when the catalog is re-classified after an item change (see CatalogRefresher).
-	private final CatalogRefresher catalogRefresh = new CatalogRefresher();
-	// Whether the GPS side panel is currently shown (sidebar tab selected). It no longer changes how
-	// much a generation does (see routeLimitFor); opening the panel re-checks the auto-compute decision.
-	private volatile boolean altPanelVisible = false;
+	// The alternative-routes generation: the generator, the mode, the catalog, the page budget and
+	// the panel push (see RouteController). Built on the final collaborators above.
+	private final RouteController routes = new RouteController(this, session, exclusions, choices, messages);
 	// The bank knowledge and its cross-session snapshot (see BankSnapshotService); constructed at
 	// startup with the pathfinder config.
 	private BankSnapshotService bankSnapshots;
@@ -262,14 +254,8 @@ public class ShortestPathPlugin extends Plugin
 		exclusions.load();
 		preferences.load();
 		searchMemory.load();
-		AlternativeRoutesMode savedMode = choices.loadRoutesMode();
-		if (savedMode != null)
-		{
-			routesMode = savedMode;
-		}
-		session.setLimit(defaultRouteLimit());
+		routes.start(new AlternativeRoutesService(clientThread, pathfinderConfig.copyForPlanning()));
 		altPanel = new ShortestPathPanel(this);
-		altRoutesService = new AlternativeRoutesService(clientThread, pathfinderConfig.copyForPlanning());
 		sidebar = new SidebarButton(clientToolbar, NavigationButton.builder()
 			.tooltip("GPS")
 			.icon(RouteIcons.gpsPin())
@@ -289,12 +275,12 @@ public class ShortestPathPlugin extends Plugin
 				// back to the previous session's saved detections.
 				restoreDetectionsFromConfig();
 			});
-			triggerAlternatives(WorldPointUtil.UNDEFINED, new HashSet<>());
+			routes.trigger(WorldPointUtil.UNDEFINED, new HashSet<>());
 		}
 
 		hotkeys.register(keyManager, mouseManager);
 		// Plugins enabled later are caught by the PluginChanged/ExternalPluginsChanged events.
-		companions = new CompanionPlugins(pluginManager, configManager, this, () -> refreshPanel(session.inFlight()));
+		companions = new CompanionPlugins(pluginManager, configManager, this, () -> routes.refreshPanel(session.inFlight()));
 		companions.refresh();
 	}
 
@@ -316,11 +302,7 @@ public class ShortestPathPlugin extends Plugin
 			sidebar.remove();
 			sidebar = null;
 		}
-		if (altRoutesService != null)
-		{
-			altRoutesService.shutdown();
-			altRoutesService = null;
-		}
+		routes.shutdown();
 
 		hotkeys.unregister(keyManager, mouseManager);
 	}
@@ -523,7 +505,7 @@ public class ShortestPathPlugin extends Plugin
 		// Transport option changed; rerun pathfinding
 		if ("defaultRouteCount".equals(event.getKey()))
 		{
-			session.setLimit(defaultRouteLimit());
+			session.setLimit(routes.defaultLimit());
 		}
 
 		// Display-order only: the keep-sailing preference re-ranks the routes it already has.
@@ -679,12 +661,12 @@ public class ShortestPathPlugin extends Plugin
 	public void onGameTick(GameTick tick)
 	{
 		// The tick as named steps (plan step L10), in the order they always ran.
-		maybeRefreshCatalog();
+		routes.refreshCatalogIfDue();
 		cachePlayerLocation();
 		boatBannerService.onTick();
 		seaObstacles.onTick();
 		runPendingTasks();
-		maybeAutoComputeAlternatives();
+		routes.maybeAutoCompute();
 		panelVarbits.onTick(client);
 		Player localPlayer = client.getLocalPlayer();
 		if (localPlayer == null)
@@ -790,10 +772,10 @@ public class ShortestPathPlugin extends Plugin
 	private void recalculateFrom(int start, Set<Integer> targets)
 	{
 		session.clearSelection();
-		session.resetBudget(defaultRouteLimit());
+		session.resetBudget(routes.defaultLimit());
 		Set<Integer> ends = new HashSet<>(targets);
 		pathStart = start;
-		triggerAlternatives(start, ends);
+		routes.trigger(start, ends);
 	}
 
 	@Subscribe
@@ -810,10 +792,10 @@ public class ShortestPathPlugin extends Plugin
 			// Only the routing-relevant slice of the items dirties the catalog (see CatalogRefresher).
 			if (pathfinderConfig == null)
 			{
-				catalogRefresh.markDirty();
+				routes.markCatalogDirty();
 				return;
 			}
-			catalogRefresh.noteItems(pathfinderConfig.getRoutingItemDependencies().fingerprint(
+			routes.noteItems(pathfinderConfig.getRoutingItemDependencies().fingerprint(
 				client.getItemContainer(InventoryID.INV), client.getItemContainer(InventoryID.WORN)));
 			return;
 		}
@@ -830,7 +812,7 @@ public class ShortestPathPlugin extends Plugin
 			// would discard the displayed route (and with it the way back).
 			if (altRoundTrip)
 			{
-				refreshPanel(session.inFlight());
+				routes.refreshPanel(session.inFlight());
 			}
 			else
 			{
@@ -1146,9 +1128,9 @@ public class ShortestPathPlugin extends Plugin
 
 			mapMarker.clear();
 			session.clearSelection();
-			session.setLimit(defaultRouteLimit());
+			session.setLimit(routes.defaultLimit());
 			// Keep the teleport-methods catalog visible with no target selected.
-			triggerAlternatives(WorldPointUtil.UNDEFINED, new HashSet<>());
+			routes.trigger(WorldPointUtil.UNDEFINED, new HashSet<>());
 		}
 		else
 		{
@@ -1229,7 +1211,7 @@ public class ShortestPathPlugin extends Plugin
 	/** Why every route of the current page stops short, for the panel's status (plan step N12). */
 	public AlternativeRoutesService.UnreachableCause getUnreachableCause()
 	{
-		AlternativeRoutesService service = altRoutesService;
+		AlternativeRoutesService service = routes.service();
 		return service != null ? service.lastUnreachableCause() : AlternativeRoutesService.UnreachableCause.NONE;
 	}
 
@@ -1350,7 +1332,7 @@ public class ShortestPathPlugin extends Plugin
 	private void resortRoutesByPriority()
 	{
 		session.resort(preferences.effectiveOrder());
-		refreshPanel(session.inFlight());
+		routes.refreshPanel(session.inFlight());
 	}
 
 	/** Applies the effective order to a freshly generated list (called from the update stream). */
@@ -1418,7 +1400,7 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	public String methodUnavailabilityDetail(TeleportMethod method)
 	{
-		AlternativeRoutesService service = altRoutesService;
+		AlternativeRoutesService service = routes.service();
 		return service == null ? null : service.getAvailabilityDetails().get(method);
 	}
 
@@ -1475,21 +1457,7 @@ public class ShortestPathPlugin extends Plugin
 
 	public void selectRoute(int index)
 	{
-		clientThread.invoke(() -> selectRouteOnClientThread(index));
-	}
-
-	private void selectRouteOnClientThread(int index)
-	{
-		// Toggle: clicking the route that's already shown hides it (RouteSession.select).
-		if (session.select(index))
-		{
-			// Picking a different path starts a new journey: time it from here, not from the
-			// original destination (re-arm; the timer restarts on the next movement).
-			armJourney();
-			// The displayed path changed: republish it to other plugins (postTransports).
-			messages.postTransports();
-			refreshPanel(false);
-		}
+		routes.select(index);
 	}
 
 	// The exclusion API (see MethodExclusions). No recalculation on a change: exclusions apply on
@@ -1559,32 +1527,15 @@ public class ShortestPathPlugin extends Plugin
 
 	public void recomputeAlternatives()
 	{
-		getClientThread().invokeLater(() ->
-		{
-			Set<Integer> targets = pathTargets;
-			if (!targets.isEmpty())
-			{
-				int start = altStart();
-				log.debug("[alt-routes] Find routes: target set, searchStart={}, target={}",
-					WorldPointUtil.unpackWorldPoint(start),
-					WorldPointUtil.unpackWorldPoint(targets.iterator().next()));
-				session.setLimit(defaultRouteLimit());
-				triggerAlternatives(start, new HashSet<>(targets));
-			}
-			else
-			{
-				log.debug("[alt-routes] Find routes: no target set");
-				triggerAlternatives(WorldPointUtil.UNDEFINED, new HashSet<>());
-			}
-		});
+		routes.recompute();
 	}
 
 	/**
 	 * The start tile to search alternatives from: the player's current (instance-correct) location,
 	 * matching what GPS itself uses for recalculation, falling back to the destination's recorded
-	 * start. Must be called on the client thread.
+	 * start. Client thread.
 	 */
-	private int altStart()
+	int altStart()
 	{
 		Player localPlayer = client.getLocalPlayer();
 		if (localPlayer != null)
@@ -1594,48 +1545,14 @@ public class ShortestPathPlugin extends Plugin
 		return pathStart;
 	}
 
-	/**
-	 * The configured number of routes to search for per query (clamped to the service's hard cap).
-	 */
-	private int defaultRouteLimit()
-	{
-		return routeLimitFor(altPanelVisible, ConfigOverrides.override("defaultRouteCount", config.defaultRouteCount()));
-	}
-
-	/**
-	 * The route budget a generation runs with — the SAME whether the side panel is shown or
-	 * hidden. A panel-hidden run used to search only the primary route (one search, a handful of
-	 * seeds) and found a different "best" often enough that opening the panel visibly changed
-	 * the overlay's route (issue #18, field reports). A full run costs tens to a few hundred
-	 * milliseconds more and streams its first route at the same moment, so the overlay shows that
-	 * one provisionally and settles once — consistently, with or without the panel. The panel
-	 * flag is taken only to state the rule where it is decided. Pure, unit-tested.
-	 */
-	static int routeLimitFor(boolean panelVisible, int configured)
-	{
-		return Math.max(1, Math.min(configured, 25));
-	}
-
 	public boolean canLoadMoreRoutes()
 	{
-		return session.canLoadMore();
+		return routes.canLoadMore();
 	}
 
 	public void loadMoreRoutes()
 	{
-		clientThread.invoke(this::loadMoreRoutesOnClientThread);
-	}
-
-	private void loadMoreRoutesOnClientThread()
-	{
-		// Each poll grows both dimensions of the cap so genuinely more routes surface (see
-		// RouteSession.widen): the cost band and the route-count budget, toward the service's
-		// runaway backstop. A new destination resets both.
-		if (!session.widen(defaultRouteLimit(), AlternativeRoutesService.MAX_ROUTES_CAP))
-		{
-			return;
-		}
-		triggerAlternatives(session.lastStart(), session.lastTargetsCopy());
+		routes.loadMore();
 	}
 
 	// The displayed route's directions, built once per route instance (see DirectionsCache).
@@ -1707,12 +1624,23 @@ public class ShortestPathPlugin extends Plugin
 
 	List<TeleportMethod> teleportCatalog()
 	{
-		return teleportCatalog;
+		return routes.catalog();
 	}
 
 	Map<TeleportMethod, MethodAvailability> unavailableMethods()
 	{
-		return unavailableMethods;
+		return routes.unavailable();
+	}
+
+	ShortestPathPanel panel()
+	{
+		return altPanel;
+	}
+
+	/** Whether the current destination is a round trip (out and back), carried into every generation for it. */
+	boolean isRoundTripWanted()
+	{
+		return altRoundTrip;
 	}
 
 	PohDetectionService pohDetection()
@@ -1727,7 +1655,7 @@ public class ShortestPathPlugin extends Plugin
 
 	AlternativeRoutesService altRoutesService()
 	{
-		return altRoutesService;
+		return routes.service();
 	}
 
 	RouteDirectionsOverlay routeDirectionsOverlay()
@@ -1757,7 +1685,7 @@ public class ShortestPathPlugin extends Plugin
 
 	public AlternativeRoutesMode getRoutesMode()
 	{
-		return routesMode;
+		return routes.mode();
 	}
 
 	/**
@@ -1781,144 +1709,13 @@ public class ShortestPathPlugin extends Plugin
 
 	public void setRoutesMode(AlternativeRoutesMode mode)
 	{
-		// Panel (EDT) entry point: routing state is client-thread owned, so hop over - invoke()
-		// runs inline when already there.
-		clientThread.invoke(() ->
-		{
-			if (mode == null || this.routesMode == mode)
-			{
-				return;
-			}
-			this.routesMode = mode;
-			choices.saveRoutesMode(mode);
-			triggerAlternatives(session.lastStart(), session.lastTargetsCopy());
-		});
+		routes.setMode(mode);
 	}
 
-	/**
-	 * Light auto-detect, run each game tick: when GPS's destination changes (a new target set
-	 * manually, by Quest Helper, on reaching the previous one, etc.) compute the alternatives once.
-	 * Deliberately keyed on the target SET only — never on start/movement — so the live path recalcs
-	 * that thrashed the old approach are ignored. If it ever misses, the panel's "Find routes" button
-	 * forces a recompute.
-	 */
-	private void maybeAutoComputeAlternatives()
-	{
-		if (altRoutesService == null)
-		{
-			return;
-		}
-		Set<Integer> targets = pathTargets;
-		// The full route budget, panel shown or hidden (see routeLimitFor).
-		int desiredLimit = defaultRouteLimit();
-		if (!RouteSession.shouldAutoCompute(targets, session.lastTargets(), session.lastLimit(), desiredLimit))
-		{
-			return;
-		}
-		session.setLimit(desiredLimit);
-		triggerAlternatives(altStart(), new HashSet<>(targets));
-	}
-
-	/**
-	 * Called by the panel when the GPS sidebar tab is shown or hidden. Every generation runs with
-	 * the full route budget regardless (see routeLimitFor); opening the panel only re-checks the
-	 * auto-compute decision, so a generation that ran under a smaller budget is widened.
-	 */
+	/** Called by the panel when the GPS sidebar tab is shown or hidden (see RouteController). */
 	void setAltPanelVisible(boolean visible)
 	{
-		altPanelVisible = visible;
-		if (visible)
-		{
-			clientThread.invokeLater(this::maybeAutoComputeAlternatives);
-		}
-	}
-
-	private void triggerAlternatives(int start, Set<Integer> targets)
-	{
-		if (altRoutesService == null)
-		{
-			return;
-		}
-		Set<Integer> ends = (targets == null) ? new HashSet<>() : new HashSet<>(targets);
-		// The session clears the committed route for a NEW destination (so the overlay stays blank
-		// until the fresh routes settle) and keeps it for the same one; the previous routes go
-		// immediately (the catalog stays) and the new ones stream in as they are found. With no
-		// target this still streams just the teleport-methods catalog.
-		session.begin(start, ends);
-		// Snapshot the exclusions this generation runs with, so the panel can flag the route list as
-		// stale once the user toggles methods afterwards (recalculation is manual via Refresh).
-		exclusions.markGenerated();
-		final List<TeleportMethod> catalog = teleportCatalog;
-		final boolean hasTarget = !ends.isEmpty();
-		if (altPanel != null)
-		{
-			final Map<TeleportMethod, MethodAvailability> unavailable = unavailableMethods;
-			SwingUtilities.invokeLater(() ->
-				altPanel.displayRoutes(List.of(), catalog, unavailable, getUserExclusions(), true, hasTarget));
-		}
-		altRoutesService.generate(start, ends, exclusions.live(), routesMode, session.limit(), session.costMultiple(),
-			altRoundTrip, this::onAlternativeRoutesUpdate);
-	}
-
-	private void onAlternativeRoutesUpdate(List<RouteOption> routes, List<TeleportMethod> catalog,
-		Map<TeleportMethod, MethodAvailability> unavailable, boolean done)
-	{
-		// Priorities re-rank the list (effective ETA = cost + tier adjustments) — everything
-		// downstream (panel, default display pick, rematch) sees the effective order.
-		final List<RouteOption> ordered = sortByEffectiveOrder(routes);
-		teleportCatalog = catalog;
-		unavailableMethods = unavailable;
-		if (done)
-		{
-			// The session re-matches or drops the pick and commits the overlay's route in one step
-			// (see RouteSession.settle); the tracker's progress is the pick's progress.
-			session.settle(ordered, altRoutesService.wasMoreLikely(), AlternativeRoutesService.MAX_ROUTES_CAP,
-				this::displayedRouteProgress);
-			// The displayed route just settled: publish it to other plugins (postTransports).
-			messages.postTransports();
-		}
-		else
-		{
-			// Mid-stream updates deliberately do NOT clear a stale selection: the overlay keeps
-			// drawing the picked route steadily while the new list streams in.
-			session.stream(ordered);
-		}
-		final boolean hasTarget = !session.lastTargets().isEmpty();
-		SwingUtilities.invokeLater(() ->
-		{
-			if (altPanel != null)
-			{
-				altPanel.displayRoutes(ordered, catalog, unavailable, getUserExclusions(), !done, hasTarget);
-			}
-		});
-	}
-
-
-	/** Catalog-only re-classification after an item change, when due (see CatalogRefresher). */
-	private void maybeRefreshCatalog()
-	{
-		if (altRoutesService == null || altPanel == null || !catalogRefresh.claim(client.getTickCount(),
-			altPanelVisible, session.inFlight(), GameState.LOGGED_IN.equals(client.getGameState())))
-		{
-			return;
-		}
-		altRoutesService.refreshCatalog(routesMode, (catalog, unavailable) ->
-		{
-			teleportCatalog = catalog;
-			unavailableMethods = unavailable;
-			refreshPanel(session.inFlight());
-		});
-	}
-
-	private void refreshPanel(boolean calculating)
-	{
-		final boolean hasTarget = !session.lastTargets().isEmpty();
-		if (altPanel != null)
-		{
-			SwingUtilities.invokeLater(() ->
-				altPanel.displayRoutes(session.routes(), teleportCatalog, unavailableMethods,
-					getUserExclusions(), calculating, hasTarget));
-		}
+		routes.setPanelVisible(visible);
 	}
 
 }

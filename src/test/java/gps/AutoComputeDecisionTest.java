@@ -10,7 +10,7 @@ import org.junit.Test;
  * Covers the auto-compute decision ({@link RouteSession#shouldAutoCompute}): alternatives are
  * (re)generated when the target changes or when the last generation was allowed fewer routes than
  * wanted now (its budget grew meanwhile). The route budget itself never depends on whether the
- * side panel is shown ({@link ShortestPathPlugin#routeLimitFor}).
+ * side panel is shown ({@link RouteController#routeLimitFor}).
  */
 public class AutoComputeDecisionTest
 {
@@ -25,10 +25,10 @@ public class AutoComputeDecisionTest
 		// The overlay's route must be the same with the panel open or hidden: both states run the
 		// configured budget, never a primary-only search (the "different route once the panel
 		// opens" experience).
-		assertEquals(ShortestPathPlugin.routeLimitFor(true, 10), ShortestPathPlugin.routeLimitFor(false, 10));
-		assertEquals(10, ShortestPathPlugin.routeLimitFor(false, 10));
-		assertEquals(1, ShortestPathPlugin.routeLimitFor(false, 0));
-		assertEquals(25, ShortestPathPlugin.routeLimitFor(true, 99));
+		assertEquals(RouteController.routeLimitFor(true, 10), RouteController.routeLimitFor(false, 10));
+		assertEquals(10, RouteController.routeLimitFor(false, 10));
+		assertEquals(1, RouteController.routeLimitFor(false, 0));
+		assertEquals(25, RouteController.routeLimitFor(true, 99));
 	}
 
 	@Test
