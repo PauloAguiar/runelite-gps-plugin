@@ -1025,3 +1025,16 @@ keeps the two actions (clear the target, open the panel and focus its search box
 class: 2,012 to 1962 lines.
 
 **Suite:** 783 tests, all green.
+
+### Step L33: WorldMapMarker (2026-09-10)
+
+**Red first:** `WorldMapMarkerTest`, over a mocked world-map point manager: a single target is
+pinned and a multi-target set is not; the one-shot override pins the tile a set was expanded
+from (the searched bank booth, not its walkable surround) and is consumed by that placement;
+clear removes the pin. The class did not exist.
+
+**Change:** the pin, its image, the one-shot override and the place/clear logic became
+`WorldMapMarker`; the two target entry points ask for the override and the target setter places
+or clears in one call. Plugin class: 1,962 to 1942 lines.
+
+**Suite:** 786 tests, all green.

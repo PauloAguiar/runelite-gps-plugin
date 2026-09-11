@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import java.awt.Color;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -47,9 +46,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
-import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
-import net.runelite.client.util.ImageUtil;
 import gps.pathfinder.CollisionMap;
 import gps.pathfinder.PathStep;
 import gps.pathfinder.PathfinderConfig;
@@ -71,7 +68,6 @@ public class ShortestPathPlugin extends Plugin
 {
 	protected static final String CONFIG_GROUP = "gps";
 
-	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
 	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
 	@Getter
 	@Inject
@@ -159,7 +155,9 @@ public class ShortestPathPlugin extends Plugin
 	private BankSnapshotService bankSnapshots;
 	// The right-click menu entries (see MapMenu); startup, after the map projection and minimap clip.
 	private MapMenu mapMenu;
-	private WorldMapPoint marker;
+	// The destination pin on the world map (see WorldMapMarker). Supplier: the manager is injected
+	// after field initialisation.
+	private final WorldMapMarker mapMarker = new WorldMapMarker(() -> worldMapPointManager);
 	// Off-route bands, the transport-jump grace and the distance from the path (see OffRouteTracker).
 	private final OffRouteTracker offRoute = new OffRouteTracker();
 	// Passive sea-obstacle learning from live scene collision (see SeaObstacleLearner).
@@ -181,10 +179,6 @@ public class ShortestPathPlugin extends Plugin
 	// The journey wall-clock reported on arrival (see JourneyTracker): armed by a new destination
 	// or a newly chosen path, started by the player's first action after that.
 	private final JourneyTracker journey = new JourneyTracker();
-	// One-shot world-map pin override for the next setTargets call: the destination a perimeter
-	// expansion is centred on (the searched bank booth), where the pin belongs. UNDEFINED = default
-	// behaviour (pin on a single target, none for multi-target sets).
-	private int markerTarget = WorldPointUtil.UNDEFINED;
 	// Whether the current destination is a round trip (out and back, e.g. "nearest bank (and
 	// back)"). Set by setNearestCategory after setTargets (which resets it), carried into every
 	// generation for this destination (refresh, show-more), cleared when a new target is set.
@@ -1076,7 +1070,7 @@ public class ShortestPathPlugin extends Plugin
 				pathfinderConfig != null ? pathfinderConfig::isTransportOrigin : null));
 			if (targets.size() > 1)
 			{
-				markerTarget = packedPosition;
+				mapMarker.pinNextAt(packedPosition);
 			}
 			setTargets(targets, false);
 		});
@@ -1149,7 +1143,7 @@ public class ShortestPathPlugin extends Plugin
 				pathfinderConfig != null ? pathfinderConfig::isTransportOrigin : null);
 			if (walkable.size() > 1)
 			{
-				markerTarget = target;
+				mapMarker.pinNextAt(target);
 			}
 			targets.addAll(walkable);
 		}
@@ -1168,8 +1162,7 @@ public class ShortestPathPlugin extends Plugin
 			pathStart = WorldPointUtil.UNDEFINED;
 			pathTargets = Set.of();
 
-			worldMapPointManager.removeIf(x -> x == marker);
-			marker = null;
+			mapMarker.clear();
 			session.clearSelection();
 			session.setLimit(defaultRouteLimit());
 			// Keep the teleport-methods catalog visible with no target selected.
@@ -1182,20 +1175,7 @@ public class ShortestPathPlugin extends Plugin
 			{
 				return;
 			}
-			worldMapPointManager.removeIf(x -> x == marker);
-			// A destination expanded to its walkable perimeter (a searched bank booth and its
-			// surround) still gets its pin: on the expansion's centre, not the single-target tile.
-			int markerTile = markerTarget != WorldPointUtil.UNDEFINED ? markerTarget
-				: (targets.size() == 1 ? targets.iterator().next() : WorldPointUtil.UNDEFINED);
-			markerTarget = WorldPointUtil.UNDEFINED;
-			if (markerTile != WorldPointUtil.UNDEFINED)
-			{
-				marker = new WorldMapPoint(WorldPointUtil.unpackWorldPoint(markerTile), MARKER_IMAGE);
-				marker.setName("Target");
-				marker.setTarget(marker.getWorldPoint());
-				marker.setJumpOnClick(true);
-				worldMapPointManager.add(marker);
-			}
+			mapMarker.place(targets);
 
 			int start = WorldPointUtil.fromLocalInstance(client, localPlayer);
 			offRoute.reset(start);
