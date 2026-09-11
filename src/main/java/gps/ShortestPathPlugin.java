@@ -668,29 +668,11 @@ public class ShortestPathPlugin extends Plugin
 		mapMenu.onMenuOpened();
 	}
 
-	/**
-	 * Tracks the balloon log storage from its chat messages — the crates' contents have no varbit,
-	 * chat is the game's only client-side signal (the same approach the dedicated tictac7x-balloon
-	 * plugin uses). Counts persist in config and let balloon flights be paid from storage.
-	 */
+	/** The balloon log-storage counts, tracked from chat (see BalloonLogStorage.track). */
 	@Subscribe
 	public void onChatMessage(net.runelite.api.events.ChatMessage event)
 	{
-		if (!config.balloonSmartMode()
-			|| (event.getType() != net.runelite.api.ChatMessageType.SPAM
-				&& event.getType() != net.runelite.api.ChatMessageType.MESBOX))
-		{
-			return;
-		}
-		Map<String, Integer> updates = BalloonLogStorage.parse(event.getMessage());
-		for (Map.Entry<String, Integer> update : updates.entrySet())
-		{
-			configManager.setConfiguration(CONFIG_GROUP, update.getKey(), update.getValue());
-		}
-		if (!updates.isEmpty() && !config.balloonStorageSynced())
-		{
-			configManager.setConfiguration(CONFIG_GROUP, "balloonStorageSynced", true);
-		}
+		BalloonLogStorage.track(event.getType(), event.getMessage(), config, configManager, CONFIG_GROUP);
 	}
 
 	@Subscribe

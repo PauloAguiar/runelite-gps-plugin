@@ -1038,3 +1038,15 @@ clear removes the pin. The class did not exist.
 or clears in one call. Plugin class: 1,962 to 1942 lines.
 
 **Suite:** 786 tests, all green.
+
+### Step L34: the balloon-log chat tracking on BalloonLogStorage (2026-09-10)
+
+**Red first:** one case added to `BalloonLogStorageTest`: a storage line on a public channel
+changes nothing; on the game channel it writes the parsed count and marks the storage synced
+once; a later line writes its count without re-marking; with smart mode off nothing is
+written. The method did not exist.
+
+**Change:** the chat handler's body became `BalloonLogStorage.track` next to the parser it
+called; the plugin's handler is the one call. Plugin class: 1,942 to 1924 lines.
+
+**Suite:** 787 tests, all green.

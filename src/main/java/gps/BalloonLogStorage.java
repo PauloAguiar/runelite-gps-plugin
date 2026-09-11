@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.runelite.api.ChatMessageType;
 import net.runelite.api.gameval.ItemID;
+import net.runelite.client.config.ConfigManager;
 
 /**
  * Parses the balloon log-storage chat messages into per-type stored counts. The storage crates'
@@ -101,6 +103,31 @@ public final class BalloonLogStorage
 	 * route the player has unlocked (a locked route's empty storage is noise, not a warning).
 	 * Arrays follow the {@link #TYPE_NAMES} order; returns display names.
 	 */
+	/**
+	 * Tracks the storage from a chat line (plan step L34, out of the plugin class): the crates'
+	 * contents have no varbit, chat is the game's only client-side signal (the approach the
+	 * dedicated tictac7x-balloon plugin uses). Counts persist in config and let balloon flights be
+	 * paid from storage; the first count also marks the storage synced. Only with smart mode on,
+	 * and only the game (spam) and dialog (mesbox) channels carry these lines.
+	 */
+	public static void track(ChatMessageType type, String message, ShortestPathConfig config,
+		ConfigManager configManager, String configGroup)
+	{
+		if (!config.balloonSmartMode() || (type != ChatMessageType.SPAM && type != ChatMessageType.MESBOX))
+		{
+			return;
+		}
+		Map<String, Integer> updates = parse(message);
+		for (Map.Entry<String, Integer> update : updates.entrySet())
+		{
+			configManager.setConfiguration(configGroup, update.getKey(), update.getValue());
+		}
+		if (!updates.isEmpty() && !config.balloonStorageSynced())
+		{
+			configManager.setConfiguration(configGroup, "balloonStorageSynced", true);
+		}
+	}
+
 	public static List<String> lowTypes(int[] stored, boolean[] unlocked, int threshold)
 	{
 		List<String> low = new ArrayList<>();

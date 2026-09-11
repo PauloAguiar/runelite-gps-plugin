@@ -1,9 +1,18 @@
 package gps;
 
 import java.util.Map;
+import net.runelite.api.ChatMessageType;
+import net.runelite.client.config.ConfigManager;
+import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import org.junit.Test;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 /**
  * The balloon storage crates have no varbits — the chat messages are the only source of truth for
@@ -73,5 +82,31 @@ public class BalloonLogStorageTest
 		assertEquals(java.util.List.of("normal", "willow", "yew"),
 			BalloonLogStorage.lowTypes(stored, unlocked, 3));
 		assertTrue(BalloonLogStorage.lowTypes(stored, unlocked, 0).isEmpty());
+	}
+
+	/** Plan step L34: the chat tracking itself, out of the plugin class. */
+	@Test
+	public void chatLinesUpdateTheCountsOnlyOnTheGameChannelsWithSmartModeOn()
+	{
+		ShortestPathConfig config = mock(ShortestPathConfig.class);
+		ConfigManager configManager = mock(ConfigManager.class);
+		when(config.balloonSmartMode()).thenReturn(true);
+		String stored = "You put the Willow logs in the crate. You now have 7 stored.";
+
+		BalloonLogStorage.track(ChatMessageType.PUBLICCHAT, stored, config, configManager, "gps");
+		verifyNoInteractions(configManager);
+
+		BalloonLogStorage.track(ChatMessageType.SPAM, stored, config, configManager, "gps");
+		verify(configManager).setConfiguration("gps", "balloonStoredWillowLogs", 7);
+		verify(configManager).setConfiguration("gps", "balloonStorageSynced", true);
+
+		when(config.balloonStorageSynced()).thenReturn(true);
+		BalloonLogStorage.track(ChatMessageType.MESBOX, "You used the last of your Yew logs.", config, configManager, "gps");
+		verify(configManager).setConfiguration("gps", "balloonStoredYewLogs", 0);
+		verify(configManager, times(1)).setConfiguration("gps", "balloonStorageSynced", true);
+
+		when(config.balloonSmartMode()).thenReturn(false);
+		BalloonLogStorage.track(ChatMessageType.SPAM, stored, config, configManager, "gps");
+		verifyNoMoreInteractions(configManager);
 	}
 }
