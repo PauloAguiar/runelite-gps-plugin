@@ -128,8 +128,8 @@ public class RoutingItemDependenciesTest
 
 		// First event baselines the fingerprint (dirty once, panel-gated downstream anyway).
 		plugin.onItemContainerChanged(new ItemContainerChanged(InventoryID.INV, inv));
-		assertTrue(getBool(plugin, "catalogDirty"));
-		set(plugin, "catalogDirty", false);
+		assertTrue(getBool(refresher(plugin), "dirty"));
+		set(refresher(plugin), "dirty", false);
 
 		// Fishing shrimp: the routing-relevant slice is unchanged, no refresh is ever scheduled.
 		// (Mocks are built BEFORE stubbing - nesting mock creation inside thenReturn is a
@@ -138,7 +138,7 @@ public class RoutingItemDependenciesTest
 			new Item(ItemID.RAW_SHRIMP, 22), new Item(ItemID.LOGS, 5));
 		when(client.getItemContainer(InventoryID.INV)).thenReturn(moreShrimp);
 		plugin.onItemContainerChanged(new ItemContainerChanged(InventoryID.INV, moreShrimp));
-		assertFalse("bulk skilling traffic must not dirty the catalog", getBool(plugin, "catalogDirty"));
+		assertFalse("bulk skilling traffic must not dirty the catalog", getBool(refresher(plugin), "dirty"));
 
 		// Equipping the dueling ring: relevant slice changed, the flag arms.
 		ItemContainer invAfterEquip = container(new Item(ItemID.RAW_SHRIMP, 22), new Item(ItemID.LOGS, 5));
@@ -146,7 +146,15 @@ public class RoutingItemDependenciesTest
 		when(client.getItemContainer(InventoryID.INV)).thenReturn(invAfterEquip);
 		when(client.getItemContainer(InventoryID.WORN)).thenReturn(wornAfterEquip);
 		plugin.onItemContainerChanged(new ItemContainerChanged(InventoryID.WORN, wornAfterEquip));
-		assertTrue("a teleport item moving matters", getBool(plugin, "catalogDirty"));
+		assertTrue("a teleport item moving matters", getBool(refresher(plugin), "dirty"));
+	}
+
+	/** The plugin's catalog refresher (see CatalogRefresher), which owns the dirty flag since L29. */
+	private static CatalogRefresher refresher(ShortestPathPlugin plugin) throws Exception
+	{
+		Field f = ShortestPathPlugin.class.getDeclaredField("catalogRefresh");
+		f.setAccessible(true);
+		return (CatalogRefresher) f.get(plugin);
 	}
 
 	private static void set(Object target, String field, Object value) throws Exception

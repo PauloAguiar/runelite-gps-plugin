@@ -123,7 +123,7 @@ public class CatalogStutterHotfixTest
 		set(plugin, "client", client);
 		set(plugin, "altRoutesService", service);
 		set(plugin, "altPanel", panel);
-		set(plugin, "catalogDirty", true);
+		set(refresher(plugin), "dirty", true);
 
 		Method maybeRefreshCatalog = ShortestPathPlugin.class.getDeclaredMethod("maybeRefreshCatalog");
 		maybeRefreshCatalog.setAccessible(true);
@@ -131,25 +131,33 @@ public class CatalogStutterHotfixTest
 		// Panel hidden (the reporters' state): nothing runs, the flag stays armed.
 		maybeRefreshCatalog.invoke(plugin);
 		verify(service, never()).refreshCatalog(any(), any());
-		assertTrue("dirty flag must survive a hidden-panel tick", getBool(plugin, "catalogDirty"));
+		assertTrue("dirty flag must survive a hidden-panel tick", getBool(refresher(plugin), "dirty"));
 
 		// Panel opens: the pending flag is consumed on the next tick.
 		set(plugin, "altPanelVisible", true);
 		maybeRefreshCatalog.invoke(plugin);
 		verify(service, times(1)).refreshCatalog(any(), any());
-		assertFalse(getBool(plugin, "catalogDirty"));
+		assertFalse(getBool(refresher(plugin), "dirty"));
 
 		// A burst on the same tick (chopping logs with the panel open) waits out the cooldown...
-		set(plugin, "catalogDirty", true);
+		set(refresher(plugin), "dirty", true);
 		maybeRefreshCatalog.invoke(plugin);
 		verify(service, times(1)).refreshCatalog(any(), any());
-		assertTrue(getBool(plugin, "catalogDirty"));
+		assertTrue(getBool(refresher(plugin), "dirty"));
 
 		// ...and runs once the cooldown lapses.
 		when(client.getTickCount()).thenReturn(105);
 		maybeRefreshCatalog.invoke(plugin);
 		verify(service, times(2)).refreshCatalog(any(), any());
-		assertFalse(getBool(plugin, "catalogDirty"));
+		assertFalse(getBool(refresher(plugin), "dirty"));
+	}
+
+	/** The plugin's catalog refresher (see CatalogRefresher), which owns the dirty flag since L29. */
+	private static CatalogRefresher refresher(ShortestPathPlugin plugin) throws Exception
+	{
+		Field f = ShortestPathPlugin.class.getDeclaredField("catalogRefresh");
+		f.setAccessible(true);
+		return (CatalogRefresher) f.get(plugin);
 	}
 
 	private static void set(Object target, String field, Object value) throws Exception

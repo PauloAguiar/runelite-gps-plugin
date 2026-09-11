@@ -957,3 +957,18 @@ keeps the public delegates the overlays, the panel and the directions builder ca
 class: 2,246 to 2,160 lines.
 
 **Suite:** 768 tests, all green.
+
+### Step L29: CatalogRefresher (2026-09-10)
+
+**Red first:** `CatalogRefresherTest`: nothing to claim until something changed; only a changed
+routing-item fingerprint dirties the catalog (the first one always counts); a dirty catalog waits
+for the panel, a lull between generations and a login, keeping its flag until claimed; bursts
+coalesce through the five-tick cooldown, the kept flag claimed once it lapses. The class did not
+exist.
+
+**Change:** the dirty flag, the fingerprint memory and the cooldown became `CatalogRefresher`;
+the item-container handler notes the fingerprint and the tick step claims a refresh. Two tests
+that reached the plugin's dirty flag by reflection (`CatalogStutterHotfixTest`,
+`RoutingItemDependenciesTest`) now reach the refresher's. Plugin class: 2,160 to 2,126 lines.
+
+**Suite:** 772 tests, all green.

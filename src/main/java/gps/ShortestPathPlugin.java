@@ -170,16 +170,8 @@ public class ShortestPathPlugin extends Plugin
 	private volatile List<TeleportMethod> teleportCatalog = new ArrayList<>();
 	// Catalog methods the player can't use in the current mode, mapped to why (for the panel markers).
 	private volatile Map<TeleportMethod, MethodAvailability> unavailableMethods = Map.of();
-	// Inventory / equipment changed since the catalog was last classified (issue #5): the
-	// usable count and per-method reasons were a per-generation snapshot — consumed on the
-	// next tick by a catalog-only refresh, never during a generation.
-	private volatile boolean catalogDirty;
-	/** Earliest tick the next inventory-driven catalog refresh may run (see maybeRefreshCatalog). */
-	private int catalogRefreshBackoffTick;
-	private static final int CATALOG_REFRESH_COOLDOWN_TICKS = 5;
-	/** Fingerprint of the routing-relevant inventory/equipment slice at the last dirty mark. */
-	private long routingItemsFingerprint;
-	private boolean routingItemsFingerprintValid;
+	// Whether and when the catalog is re-classified after an item change (see CatalogRefresher).
+	private final CatalogRefresher catalogRefresh = new CatalogRefresher();
 	// Whether the GPS side panel is currently shown (sidebar tab selected). It no longer changes how
 	// much a generation does (see routeLimitFor); opening the panel re-checks the auto-compute decision.
 	private volatile boolean altPanelVisible = false;
@@ -1037,23 +1029,14 @@ public class ShortestPathPlugin extends Plugin
 	{
 		if (event.getContainerId() == InventoryID.INV || event.getContainerId() == InventoryID.WORN)
 		{
-			// Only mark the catalog dirty when the routing-relevant slice of the inventory and
-			// equipment actually changed: the dependency index knows every item id (and quantity
-			// threshold) any transport requirement can read, so logs, ore, food and loot pass
-			// through without ever scheduling a refresh (issues #23/#24).
+			// Only the routing-relevant slice of the items dirties the catalog (see CatalogRefresher).
 			if (pathfinderConfig == null)
 			{
-				catalogDirty = true;
+				catalogRefresh.markDirty();
 				return;
 			}
-			long fingerprint = pathfinderConfig.getRoutingItemDependencies().fingerprint(
-				client.getItemContainer(InventoryID.INV), client.getItemContainer(InventoryID.WORN));
-			if (!routingItemsFingerprintValid || fingerprint != routingItemsFingerprint)
-			{
-				routingItemsFingerprint = fingerprint;
-				routingItemsFingerprintValid = true;
-				catalogDirty = true;
-			}
+			catalogRefresh.noteItems(pathfinderConfig.getRoutingItemDependencies().fingerprint(
+				client.getItemContainer(InventoryID.INV), client.getItemContainer(InventoryID.WORN)));
 			return;
 		}
 		if (event.getContainerId() != InventoryID.BANK)
@@ -2113,30 +2096,14 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 
-	/**
-	 * Catalog-only re-classification after an inventory/equipment change (issue #5). Skipped
-	 * while a generation is in flight — that generation re-snapshots anyway — and with no
-	 * service or panel to inform.
-	 */
+	/** Catalog-only re-classification after an item change, when due (see CatalogRefresher). */
 	private void maybeRefreshCatalog()
 	{
-		if (!catalogDirty || session.inFlight() || altRoutesService == null || altPanel == null
-			|| !GameState.LOGGED_IN.equals(client.getGameState()))
+		if (altRoutesService == null || altPanel == null || !catalogRefresh.claim(client.getTickCount(),
+			altPanelVisible, session.inFlight(), GameState.LOGGED_IN.equals(client.getGameState())))
 		{
 			return;
 		}
-		// The catalog exists for the sidebar; while the panel is hidden the dirty flag just waits
-		// (issues #23/#24: every pickup, drop and gear switch ran a full planning refresh -
-		// hundreds of quest clientscripts - on the client thread, a per-action micro stutter for
-		// players who never open the panel). Route generations rebuild the catalog themselves, so
-		// routing never sees this deferral. Bursts while the panel IS open coalesce through a
-		// short cooldown; the flag stays set, so no change is lost, only delayed a few ticks.
-		if (!altPanelVisible || client.getTickCount() < catalogRefreshBackoffTick)
-		{
-			return;
-		}
-		catalogRefreshBackoffTick = client.getTickCount() + CATALOG_REFRESH_COOLDOWN_TICKS;
-		catalogDirty = false;
 		altRoutesService.refreshCatalog(routesMode, (catalog, unavailable) ->
 		{
 			teleportCatalog = catalog;
