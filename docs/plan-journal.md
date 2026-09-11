@@ -972,3 +972,19 @@ that reached the plugin's dirty flag by reflection (`CatalogStutterHotfixTest`,
 `RoutingItemDependenciesTest`) now reach the refresher's. Plugin class: 2,160 to 2,126 lines.
 
 **Suite:** 772 tests, all green.
+
+### Step L30: the arrival rule on ArrivalZone (2026-09-10)
+
+**Red first:** three cases added to `ArrivalZoneTest`: arrival is the zone, or a mooring within
+the sea distance of a sailable target (a land target gets no sea tolerance); a round trip
+completes only past its turnaround (two steps short counts), and is suspended while a round trip
+is wanted but only the one-way fallback, or nothing, is displayed; an unreachable one-way target
+never completes, while the flag does not stop a round trip past its turnaround. The function did
+not exist.
+
+**Change:** `hasArrived` became `ArrivalZone.arrived`, pure over the location, the zone, the
+targets, a sailable predicate (the plugin passes the sea map's), the sea distance, the displayed
+route, the round-trip wish, the progress and the unreachable verdict. The plugin's method is the
+one call. Plugin class: 2,126 to 2,080 lines.
+
+**Suite:** 775 tests, all green.

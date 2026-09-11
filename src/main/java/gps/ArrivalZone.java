@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.IntPredicate;
 import java.util.function.Supplier;
 
 /**
@@ -14,7 +15,8 @@ import java.util.function.Supplier;
  * collision map with the pathfinder's own movement rules, so a tile across a wall or fence is
  * not part of the zone. Standing on any of these tiles completes the journey; the debug overlay
  * renders exactly this set. Cached per (path end, finish distance): recomputed only when the
- * displayed route's end or the config changes, then read every tick and every frame.
+ * displayed route's end or the config changes, then read every tick and every frame. The
+ * arrival rule itself ({@link #arrived}) is a pure function over the zone and the route state.
  */
 final class ArrivalZone
 {
@@ -60,6 +62,48 @@ final class ArrivalZone
 			cache = cached;
 		}
 		return cached.zone;
+	}
+
+	/**
+	 * Whether the player has arrived: standing in {@code zone}, or, for a sailable target, moored
+	 * within {@code seaReachedDistance} of it (the zone floods over walkable tiles and the ocean
+	 * is sealed, so a water pin's zone is empty and on-foot arrival can never fire at sea; a hull
+	 * is several tiles of entity and moors off the mark, hence the wider, configurable distance).
+	 * Guards: a round trip only completes once its turnaround has been reached (the zone centres
+	 * on home, so it would otherwise fire at departure); while a round trip is wanted but no
+	 * round-trip route is displayed (regenerating) arrival is suspended rather than measured
+	 * against the outbound fallback path; an unreachable one-way target never completes.
+	 */
+	static boolean arrived(int location, Set<Integer> zone, Set<Integer> targets, IntPredicate sailable,
+		int seaReachedDistance, RouteOption displayed, boolean roundTripWanted, int progress, boolean unreachable)
+	{
+		boolean inZone = !zone.isEmpty() && zone.contains(location);
+		if (!inZone)
+		{
+			for (int target : targets)
+			{
+				if (sailable.test(target) && WorldPointUtil.distanceBetween(location, target) <= seaReachedDistance)
+				{
+					inZone = true;
+					break;
+				}
+			}
+		}
+		if (!inZone)
+		{
+			return false;
+		}
+		boolean roundTrip = displayed != null && displayed.isRoundTrip();
+		if (roundTripWanted && !roundTrip)
+		{
+			return false;
+		}
+		if (roundTrip)
+		{
+			int turnaround = displayed.getTurnaroundIndex();
+			return turnaround < 0 || progress >= turnaround - 2;
+		}
+		return !unreachable;
 	}
 
 	/**

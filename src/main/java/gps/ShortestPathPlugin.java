@@ -488,58 +488,12 @@ public class ShortestPathPlugin extends Plugin
 		return arrivalZone.tiles(getDisplayPath(), config.reachedDistance());
 	}
 
-	/**
-	 * Whether the player has arrived: standing inside the arrival zone (within the finish distance of
-	 * the destination over walkable tiles). Guards: a round trip only completes once its turnaround has
-	 * been reached (the zone centres on home, so it would otherwise fire at departure), and while a
-	 * round trip is regenerating (no round-trip route displayed) arrival is suspended rather than
-	 * measured against the outbound fallback path; an unreachable target never completes.
-	 */
+	/** Whether the player has arrived (see ArrivalZone.arrived): the zone, or moored near a sea target. */
 	private boolean hasArrived(int currentLocation)
 	{
-		Set<Integer> zone = getArrivalTiles();
-		boolean inZone = !zone.isEmpty() && zone.contains(currentLocation);
-		if (!inZone)
-		{
-			// Wet arrival: the arrival zone floods over WALKABLE tiles and the ocean is
-			// sealed, so a water pin's zone is empty and on-foot arrival can never fire at
-			// sea. A boat parked within the sea finish distance of a sailable target IS
-			// arrival — wider than the land radius because a hull is several tiles of
-			// entity and moors off the mark (configurable, default 12).
-			for (int target : pathTargets)
-			{
-				if (SailingSea.isSailable(target)
-					&& WorldPointUtil.distanceBetween(currentLocation, target)
-						<= config.seaReachedDistance())
-				{
-					inZone = true;
-					break;
-				}
-			}
-		}
-		if (!inZone)
-		{
-			return false;
-		}
-		RouteOption displayed = getDisplayedRoute();
-		boolean roundTrip = displayed != null && displayed.isRoundTrip();
-		if (altRoundTrip && !roundTrip)
-		{
-			return false;
-		}
-		if (roundTrip)
-		{
-			int turnaround = displayed.getTurnaroundIndex();
-			if (turnaround >= 0 && displayedRouteProgress() < turnaround - 2)
-			{
-				return false;
-			}
-		}
-		else if (isPathUnreachable())
-		{
-			return false;
-		}
-		return true;
+		return ArrivalZone.arrived(currentLocation, getArrivalTiles(), pathTargets, SailingSea::isSailable,
+			config.seaReachedDistance(), getDisplayedRoute(), altRoundTrip, displayedRouteProgress(),
+			isPathUnreachable());
 	}
 
 	/**
