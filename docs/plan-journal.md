@@ -988,3 +988,24 @@ route, the round-trip wish, the progress and the unreachable verdict. The plugin
 one call. Plugin class: 2,126 to 2,080 lines.
 
 **Suite:** 775 tests, all green.
+
+### Step L31: PluginMessageBridge (2026-09-10)
+
+**Red first:** `PluginMessageBridgeTest`, over a mocked plugin and event bus: a foreign
+namespace is ignored; a new target attributes the source, arms the journey and expands the tile
+to its walkable ends; an empty target keeps the current destination and the running journey;
+without a start the player's position stands in, or the request is dropped when there is none;
+config overrides apply before the request, and a clear drops both the overrides and the
+destination; the displayed route's transports go out on the gps namespace and the legacy
+shortestpath one, only when the setting is on and a route is displayed. The class did not exist.
+
+**Change:** the inbound path/clear flow and the outbound broadcast became `PluginMessageBridge`,
+with the namespace rationale (why the legacy channel stays answered) in its javadoc; the plugin
+keeps a one-line handler and gained three small package-private hooks (apply and clear the
+config overrides, attribute the target source), and the journey arm is package-private. The
+bridge is built at field initialisation with a supplied event bus, the pattern the choice store
+uses, so tests that drive the route update on a bare plugin never meet a null. Plugin class:
+2,080 to 2,012 lines.
+
+**Suite:** 783 tests, all green (the eight new ones include the hotkeys test of L32, written in
+the same pass).

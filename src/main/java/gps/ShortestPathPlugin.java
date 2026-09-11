@@ -73,14 +73,6 @@ import gps.transport.Transport;
 public class ShortestPathPlugin extends Plugin
 {
 	protected static final String CONFIG_GROUP = "gps";
-	// GPS's own plugin-message namespace: new integrations should target this one.
-	protected static final String MESSAGE_NAMESPACE = PluginMessageCodec.NAMESPACE;
-	// Compatibility alias: Quest Helper and other plugins drive the pathfinder through Shortest
-	// Path's namespace (set path/target, config overrides) and listen for its path broadcasts.
-	// GPS supersedes Shortest Path, so it keeps answering on that channel too — inbound messages
-	// are accepted on either, and broadcasts go out on both (no listener subscribes to both today,
-	// so nothing double-processes; drop the legacy channel only if that ever changes).
-	protected static final String MESSAGE_NAMESPACE_LEGACY = PluginMessageCodec.NAMESPACE_LEGACY;
 
 	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
 	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
@@ -122,6 +114,9 @@ public class ShortestPathPlugin extends Plugin
 	private net.runelite.client.plugins.PluginManager pluginManager;
 	// The Shortest Path conflict and the Quest Helper option (see CompanionPlugins); startup.
 	private CompanionPlugins companions;
+	// The plugin-message integration (see PluginMessageBridge). Supplier: the event bus is injected
+	// after field initialisation.
+	private final PluginMessageBridge messages = new PluginMessageBridge(this, () -> eventBus);
 	// Click-to-dismiss for the GPS overlay's lingering "Arrived!" panel.
 	private final MouseAdapter arrivalDismissListener = new MouseAdapter()
 	{
@@ -733,92 +728,9 @@ public class ShortestPathPlugin extends Plugin
 	@Subscribe
 	public void onPluginMessage(PluginMessage event)
 	{
-		if (!PluginMessageCodec.isOurs(event.getNamespace()))
-		{
-			return;
-		}
-		String action = event.getName();
-		if (PluginMessageCodec.ACTION_PATH.equals(action))
-		{
-			Map<String, Object> data = event.getData();
-			Map<String, Object> overrides = PluginMessageCodec.configOverrideOf(data);
-			if (!overrides.isEmpty())
-			{
-				ConfigOverrides.apply(overrides);
-				cacheConfigValues();
-			}
-
-			PluginMessageCodec.PathRequest request = PluginMessageCodec.parsePath(data);
-			if (request == null)
-			{
-				return;
-			}
-			int start = request.start;
-			if (start == WorldPointUtil.UNDEFINED)
-			{
-				start = getPlayerLocation();
-				if (start == WorldPointUtil.UNDEFINED)
-				{
-					return;
-				}
-			}
-			Set<Integer> targets = request.targets;
-			// Attribute the destination for the GPS header (a "source" the sender chose, else
-			// all we can say is that a plugin asked for it).
-			targetSource = request.source;
-
-			boolean useOld = targets.isEmpty() && hasPathTargets();
-			Set<Integer> ends;
-			if (useOld)
-			{
-				ends = new HashSet<>(pathTargets);
-			}
-			else
-			{
-				// A NEW destination from another plugin: this path bypasses setTargets, so arm the
-				// journey timer here too — otherwise the arrival time carries over from whatever manual
-				// destination was last set. Reusing the previous target keeps the running journey.
-				armJourney();
-				// An NPC's or object's own tile expands like a map pin; a transport origin among
-				// the expansion is the interactable side (see Destinations.externalTargets).
-				ends = Destinations.externalTargets(targets,
-					pathfinderConfig != null ? pathfinderConfig.getMap() : null,
-					pathfinderConfig != null ? pathfinderConfig::isTransportOrigin : null);
-			}
-			setDestination(start, ends, useOld);
-		}
-		else if (PluginMessageCodec.ACTION_CLEAR.equals(action))
-		{
-			ConfigOverrides.clear();
-			cacheConfigValues();
-			targetSource = null;
-			setTarget(WorldPointUtil.UNDEFINED);
-		}
+		messages.receive(event);
 	}
 
-	/**
-	 * Publishes the displayed route's transports to other plugins (the {@code postTransports}
-	 * integration). Called when the displayed route settles or changes — it used to stream the
-	 * classic search's path; the displayed route is what the player actually follows.
-	 */
-	public void postPluginMessages()
-	{
-		if (!hasPathTargets())
-		{
-			return;
-		}
-		if (ConfigOverrides.override("postTransports", config.postTransports()))
-		{
-			List<PathStep> currentPath = getDisplayPath();
-			if (currentPath.isEmpty())
-			{
-				return;
-			}
-			Map<String, Object> data = PluginMessageCodec.encodeTransports(currentPath, this::transportsForEdge);
-			eventBus.post(new PluginMessage(MESSAGE_NAMESPACE, PluginMessageCodec.ACTION_TRANSPORTS, data));
-			eventBus.post(new PluginMessage(MESSAGE_NAMESPACE_LEGACY, PluginMessageCodec.ACTION_TRANSPORTS, data));
-		}
-	}
 
 	@Subscribe
 	public void onMenuOpened(MenuOpened event)
@@ -1145,6 +1057,26 @@ public class ShortestPathPlugin extends Plugin
 		return display;
 	}
 
+	/** Config overrides from another plugin's request (see ConfigOverrides), re-cached at once. */
+	void applyConfigOverrides(Map<String, Object> overrides)
+	{
+		ConfigOverrides.apply(overrides);
+		cacheConfigValues();
+	}
+
+	/** Drops another plugin's config overrides (its clear request). */
+	void clearConfigOverrides()
+	{
+		ConfigOverrides.clear();
+		cacheConfigValues();
+	}
+
+	/** Attributes the destination for the GPS header: the sender's source, "map pin", or null. */
+	void setTargetSource(String source)
+	{
+		targetSource = source;
+	}
+
 	private void cacheConfigValues()
 	{
 		cachedKeepSailing = ConfigOverrides.override("sailingKeepSailing", config.sailingKeepSailing());
@@ -1158,7 +1090,7 @@ public class ShortestPathPlugin extends Plugin
 		setTarget(packed);
 	}
 
-	/** "Clear Path" from the map menu. */
+	/** Clears the destination and its attribution: the map menu's "Clear Path", or another plugin's clear. */
 	void clearPinnedTarget()
 	{
 		targetSource = null;
@@ -1367,7 +1299,7 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	/** Re-arms the journey timer so it recounts from the player's next movement. */
-	private void armJourney()
+	void armJourney()
 	{
 		journey.arm();
 	}
@@ -1643,7 +1575,7 @@ public class ShortestPathPlugin extends Plugin
 			// original destination (re-arm; the timer restarts on the next movement).
 			armJourney();
 			// The displayed path changed: republish it to other plugins (postTransports).
-			postPluginMessages();
+			messages.postTransports();
 			refreshPanel(false);
 		}
 	}
@@ -2031,7 +1963,7 @@ public class ShortestPathPlugin extends Plugin
 			session.settle(ordered, altRoutesService.wasMoreLikely(), AlternativeRoutesService.MAX_ROUTES_CAP,
 				this::displayedRouteProgress);
 			// The displayed route just settled: publish it to other plugins (postTransports).
-			postPluginMessages();
+			messages.postTransports();
 		}
 		else
 		{
