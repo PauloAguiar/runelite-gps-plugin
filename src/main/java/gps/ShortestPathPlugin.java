@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import java.awt.Color;
-import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,9 +40,7 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.PluginMessage;
 import net.runelite.client.game.SpriteManager;
-import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.KeyManager;
-import net.runelite.client.input.MouseAdapter;
 import net.runelite.client.input.MouseManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -117,19 +114,6 @@ public class ShortestPathPlugin extends Plugin
 	// The plugin-message integration (see PluginMessageBridge). Supplier: the event bus is injected
 	// after field initialisation.
 	private final PluginMessageBridge messages = new PluginMessageBridge(this, () -> eventBus);
-	// Click-to-dismiss for the GPS overlay's lingering "Arrived!" panel.
-	private final MouseAdapter arrivalDismissListener = new MouseAdapter()
-	{
-		@Override
-		public java.awt.event.MouseEvent mousePressed(java.awt.event.MouseEvent event)
-		{
-			if (routeDirectionsOverlay != null && routeDirectionsOverlay.dismissArrivalAt(event.getPoint()))
-			{
-				event.consume();
-			}
-			return event;
-		}
-	};
 	@Inject
 	private ClientToolbar clientToolbar;
 	// Item images for the panel's Log storage icons.
@@ -205,56 +189,12 @@ public class ShortestPathPlugin extends Plugin
 	// back)"). Set by setNearestCategory after setTargets (which resets it), carried into every
 	// generation for this destination (refresh, show-more), cleared when a new target is set.
 	private volatile boolean altRoundTrip = false;
-	private final KeyListener clearPathKeylistener = new KeyListener()
-	{
-		@Override
-		public void keyTyped(KeyEvent e)
-		{
-		}
-
-		@Override
-		public void keyPressed(KeyEvent e)
-		{
-			if (config.clearPathHotkey().matches(e))
-			{
-				setTarget(WorldPointUtil.UNDEFINED);
-			}
-		}
-
-		@Override
-		public void keyReleased(KeyEvent e)
-		{
-		}
-	};
-
-	// Opens the GPS side panel (if it isn't already) and focuses its destination search box, so a
-	// place can be searched without first opening the panel by hand.
-	private final KeyListener focusSearchKeyListener = new KeyListener()
-	{
-		@Override
-		public void keyTyped(KeyEvent e)
-		{
-		}
-
-		@Override
-		public void keyPressed(KeyEvent e)
-		{
-			if (!config.focusSearchHotkey().matches(e) || altPanel == null || sidebar == null)
-			{
-				return;
-			}
-			SwingUtilities.invokeLater(() ->
-			{
-				sidebar.open();
-				altPanel.focusSearch();
-			});
-		}
-
-		@Override
-		public void keyReleased(KeyEvent e)
-		{
-		}
-	};
+	// The hotkeys and the arrival-panel click (see PluginHotkeys); registered at startup. The
+	// bindings are read on each press (config is injected after field initialisation).
+	private final PluginHotkeys hotkeys = new PluginHotkeys(
+		() -> config.clearPathHotkey(), () -> setTarget(WorldPointUtil.UNDEFINED),
+		() -> config.focusSearchHotkey(), this::focusSearch,
+		point -> routeDirectionsOverlay != null && routeDirectionsOverlay.dismissArrivalAt(point));
 	// The planted spirit trees (see SpiritTreeSync) and the fairy-ring log helper (see
 	// FairyRingHighlighter); constructed at startup with the pathfinder config.
 	private SpiritTreeSync spiritTrees;
@@ -358,9 +298,7 @@ public class ShortestPathPlugin extends Plugin
 			triggerAlternatives(WorldPointUtil.UNDEFINED, new HashSet<>());
 		}
 
-		keyManager.registerKeyListener(clearPathKeylistener);
-		keyManager.registerKeyListener(focusSearchKeyListener);
-		mouseManager.registerMouseListener(arrivalDismissListener);
+		hotkeys.register(keyManager, mouseManager);
 		// Plugins enabled later are caught by the PluginChanged/ExternalPluginsChanged events.
 		companions = new CompanionPlugins(pluginManager, configManager, this, () -> refreshPanel(session.inFlight()));
 		companions.refresh();
@@ -390,9 +328,7 @@ public class ShortestPathPlugin extends Plugin
 			altRoutesService = null;
 		}
 
-		keyManager.unregisterKeyListener(clearPathKeylistener);
-		keyManager.unregisterKeyListener(focusSearchKeyListener);
-		mouseManager.unregisterMouseListener(arrivalDismissListener);
+		hotkeys.unregister(keyManager, mouseManager);
 	}
 
 	/**
@@ -1088,6 +1024,20 @@ public class ShortestPathPlugin extends Plugin
 	{
 		targetSource = "map pin";
 		setTarget(packed);
+	}
+
+	/** The focus-search hotkey: opens the GPS side panel (if it is not already) and focuses its search box. */
+	private void focusSearch()
+	{
+		if (altPanel == null || sidebar == null)
+		{
+			return;
+		}
+		SwingUtilities.invokeLater(() ->
+		{
+			sidebar.open();
+			altPanel.focusSearch();
+		});
 	}
 
 	/** Clears the destination and its attribution: the map menu's "Clear Path", or another plugin's clear. */

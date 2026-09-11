@@ -1009,3 +1009,19 @@ uses, so tests that drive the route update on a bare plugin never meet a null. P
 
 **Suite:** 783 tests, all green (the eight new ones include the hotkeys test of L32, written in
 the same pass).
+
+### Step L32: PluginHotkeys (2026-09-10)
+
+**Red first:** `PluginHotkeysTest`: each hotkey fires on its own binding only, modifiers
+included, and the arrival click is consumed only when it dismissed the panel, so an ordinary
+click still reaches the game. The class did not exist. One finding on the way: RuneLite's
+`Keybind` matches on the event's EXTENDED key code, which the native layer fills in and a
+hand-built KeyEvent leaves at zero, so the test's press mirrors it from the key code.
+
+**Change:** the clear-path and focus-search key listeners and the arrival-dismiss mouse listener
+became `PluginHotkeys`, built once with the bindings as suppliers (read on every press, so a
+config change applies at once) and registered and unregistered in one call each; the plugin
+keeps the two actions (clear the target, open the panel and focus its search box). Plugin
+class: 2,012 to 1962 lines.
+
+**Suite:** 783 tests, all green.
