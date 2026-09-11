@@ -1073,3 +1073,25 @@ its package-private methods directly instead of invoking private plugin methods.
 1,924 to 1,721 lines.
 
 **Suite:** 790 tests, all green.
+
+### Step L36: DestinationController (2026-09-10)
+
+**Red first:** `DestinationControllerTest`, over a mocked plugin, pathfinder config and
+generator with a real session, route controller, marker, off-route tracker and journey: a pin
+records where the player stands, the target, its source and a fresh one-way budget, arms the
+journey (not started) and refreshes and filters the live config; a clear forgets everything and
+keeps the catalog streaming; without a player position nothing changes; a round-trip category
+keeps its flag past the target setter and recomputes at once with the flag, the next ordinary
+pin drops it, and an empty category is ignored; find-closest appends the category's sites to
+the current targets; a recalculation moves the start, drops the pick and regenerates. The class
+did not exist.
+
+**Change:** the destination state (start, targets, source, round trip) and every way of setting
+it (map pin, searched place, amenity category, another plugin's request, find closest, clear,
+the off-route recalculation) became `DestinationController`; the plugin keeps one-line public
+delegates for the panel, the map menu and the message bridge, and reads the state through the
+controller everywhere else (a tick-time clear now also drops the attribution, which only the
+lingering arrival panel had already copied). The three display tests resolve the moved fields
+through a DESTINATION_FIELDS map. Plugin class: 1,721 to 1,571 lines.
+
+**Suite:** 796 tests, all green.

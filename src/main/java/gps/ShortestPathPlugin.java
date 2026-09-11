@@ -132,9 +132,6 @@ public class ShortestPathPlugin extends Plugin
 	private final SearchMemory searchMemory = new SearchMemory(choices);
 	// The methods the user excluded (see MethodExclusions): a change persists and refreshes the panel.
 	private final MethodExclusions exclusions = new MethodExclusions(choices, () -> this.routes.refreshPanel(this.session.inFlight()));
-	// Where the current destination came from, for the GPS header: "map pin" for manual targets, the
-	// sender's self-declared "source" for plugin messages (else "another plugin"), null when unset.
-	private volatile String targetSource;
 	// The alternative-routes session (see RouteSession): the page, the pick, the displayed route,
 	// the in-flight flag, the last generation's inputs and the "more" budget. The limit is
 	// initialised from config in startUp (config is not injected at field-init time).
@@ -160,25 +157,19 @@ public class ShortestPathPlugin extends Plugin
 	private MinimapClip minimapClip;
 	private GameState lastGameState = null;
 	private GameState lastLastGameState = null;
-	// The current destination — the single source of truth the retired classic background search
-	// used to hold. Written on the client thread (setDestination); read from ticks and overlays.
-	// All route computation happens in the alternative-routes generation, whose heuristic-guided
-	// searches replaced the classic uninformed one (which cost 40-160 ms per target change).
-	private volatile int pathStart = WorldPointUtil.UNDEFINED;
-	private volatile Set<Integer> pathTargets = Set.of();
 	@Getter
 	private PathfinderConfig pathfinderConfig;
 	// The journey wall-clock reported on arrival (see JourneyTracker): armed by a new destination
 	// or a newly chosen path, started by the player's first action after that.
 	private final JourneyTracker journey = new JourneyTracker();
-	// Whether the current destination is a round trip (out and back, e.g. "nearest bank (and
-	// back)"). Set by setNearestCategory after setTargets (which resets it), carried into every
-	// generation for this destination (refresh, show-more), cleared when a new target is set.
-	private volatile boolean altRoundTrip = false;
+	// The destination and every way of setting it (see DestinationController): the single source
+	// of truth for where the player is going, written on the client thread, read from ticks and overlays.
+	private final DestinationController destination =
+		new DestinationController(this, session, routes, mapMarker, offRoute, journey);
 	// The hotkeys and the arrival-panel click (see PluginHotkeys); registered at startup. The
 	// bindings are read on each press (config is injected after field initialisation).
 	private final PluginHotkeys hotkeys = new PluginHotkeys(
-		() -> config.clearPathHotkey(), () -> setTarget(WorldPointUtil.UNDEFINED),
+		() -> config.clearPathHotkey(), destination::clear,
 		() -> config.focusSearchHotkey(), this::focusSearch,
 		point -> routeDirectionsOverlay != null && routeDirectionsOverlay.dismissArrivalAt(point));
 	// The planted spirit trees (see SpiritTreeSync) and the fairy-ring log helper (see
@@ -234,7 +225,7 @@ public class ShortestPathPlugin extends Plugin
 			{
 				// Spirit-tree availability just became known: refresh the live config and
 				// regenerate so the displayed route can use (or drop) spirit trees accordingly.
-				setDestination(pathStart, new HashSet<>(pathTargets));
+				setDestination(destination.start(), new HashSet<>(destination.targets()));
 				recomputeAlternatives();
 			}
 		});
@@ -307,31 +298,10 @@ public class ShortestPathPlugin extends Plugin
 		hotkeys.unregister(keyManager, mouseManager);
 	}
 
-	/**
-	 * Records the current destination (after the wilderness filter) and refreshes the live config
-	 * so display lookups (transport labels, POH exits) see current availability. Route computation
-	 * itself happens in the alternative-routes generation, auto-triggered on the next game tick by
-	 * the target-set change — the classic background search this used to start is retired.
-	 */
+	/** Records the destination and refreshes the live config (see DestinationController.set). */
 	public void setDestination(int start, Set<Integer> ends, boolean canReviveFiltered)
 	{
-		getClientThread().invokeLater(() ->
-		{
-			// The panel's method catalog is the single customization surface: methods the user has
-			// excluded there are also excluded here.
-			pathfinderConfig.setExcludedMethods(getUserExclusions());
-			pathfinderConfig.refresh();
-			pathfinderConfig.filterLocations(ends, canReviveFiltered);
-			if (ends.isEmpty())
-			{
-				setTarget(WorldPointUtil.UNDEFINED);
-			}
-			else
-			{
-				pathStart = start;
-				pathTargets = Set.copyOf(ends);
-			}
-		});
+		destination.set(start, ends, canReviveFiltered);
 	}
 
 	public void setDestination(int start, Set<Integer> ends)
@@ -342,13 +312,13 @@ public class ShortestPathPlugin extends Plugin
 	/** Whether a destination is currently set (what {@code pathfinder != null} used to mean). */
 	public boolean hasPathTargets()
 	{
-		return !pathTargets.isEmpty();
+		return !destination.targets().isEmpty();
 	}
 
 	/** The current destination tiles (empty when no destination is set). */
 	public Set<Integer> getPathTargets()
 	{
-		return pathTargets;
+		return destination.targets();
 	}
 
 	/** The recalculate distance (outer off-route band), or -1 when recalculation is disabled. */
@@ -398,8 +368,8 @@ public class ShortestPathPlugin extends Plugin
 	/** Whether the player has arrived (see ArrivalZone.arrived): the zone, or moored near a sea target. */
 	private boolean hasArrived(int currentLocation)
 	{
-		return ArrivalZone.arrived(currentLocation, getArrivalTiles(), pathTargets, SailingSea::isSailable,
-			config.seaReachedDistance(), getDisplayedRoute(), altRoundTrip, displayedRouteProgress(),
+		return ArrivalZone.arrived(currentLocation, getArrivalTiles(), destination.targets(), SailingSea::isSailable,
+			config.seaReachedDistance(), getDisplayedRoute(), destination.isRoundTrip(), displayedRouteProgress(),
 			isPathUnreachable());
 	}
 
@@ -454,7 +424,7 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	public boolean isFindingRoute()
 	{
-		return session.inFlight() && !pathTargets.isEmpty() && getDisplayedRoute() == null;
+		return session.inFlight() && !destination.targets().isEmpty() && getDisplayedRoute() == null;
 	}
 
 	/** Whether a displayed route's endpoint is too far from the targets for the reached colour (see RouteVerdicts). */
@@ -475,7 +445,7 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	public boolean routeReachesTarget(RouteOption route)
 	{
-		return RouteVerdicts.reachesTarget(route, pathTargets, display.unreachableTargetDistance);
+		return RouteVerdicts.reachesTarget(route, destination.targets(), display.unreachableTargetDistance);
 	}
 
 	@Subscribe
@@ -520,7 +490,7 @@ public class ShortestPathPlugin extends Plugin
 			{
 				// Refresh the live config's availability and regenerate the routes with it — the
 				// classic restart this used to do left the displayed (alternative) route stale.
-				setDestination(pathStart, new HashSet<>(pathTargets));
+				setDestination(destination.start(), new HashSet<>(destination.targets()));
 				recomputeAlternatives();
 			}
 		}
@@ -724,13 +694,13 @@ public class ShortestPathPlugin extends Plugin
 		long elapsed = journey.elapsedMillis(System.currentTimeMillis());
 		if (routeDirectionsOverlay != null)
 		{
-			routeDirectionsOverlay.markArrived(targetSource, elapsed);
+			routeDirectionsOverlay.markArrived(destination.source(), elapsed);
 		}
 		if (altPanel != null)
 		{
 			altPanel.markArrived(elapsed);
 		}
-		setTarget(WorldPointUtil.UNDEFINED);
+		destination.clear();
 		return true;
 	}
 
@@ -750,12 +720,12 @@ public class ShortestPathPlugin extends Plugin
 		switch (verdict)
 		{
 			case CANCEL:
-				setTarget(WorldPointUtil.UNDEFINED);
+				destination.clear();
 				break;
 			case RECALCULATE:
 				if (!session.inFlight())
 				{
-					recalculateFrom(currentLocation, pathTargets);
+					destination.recalculateFrom(currentLocation, destination.targets());
 				}
 				break;
 			default:
@@ -763,20 +733,6 @@ public class ShortestPathPlugin extends Plugin
 		}
 	}
 
-	/**
-	 * Recompute the route from a new start (the player's current, off-route position) to the same
-	 * targets. Triggered explicitly because the tick-level auto-compute is keyed on the target SET —
-	 * which hasn't changed here — so it would not refire on its own. The stale selection is dropped
-	 * so the fresh generation's route takes over rather than the overlay clinging to the old line.
-	 */
-	private void recalculateFrom(int start, Set<Integer> targets)
-	{
-		session.clearSelection();
-		session.resetBudget(routes.defaultLimit());
-		Set<Integer> ends = new HashSet<>(targets);
-		pathStart = start;
-		routes.trigger(start, ends);
-	}
 
 	@Subscribe
 	public void onMenuEntryAdded(MenuEntryAdded event)
@@ -810,7 +766,7 @@ public class ShortestPathPlugin extends Plugin
 			// mode) and the catalog header count updates. Also clears the panel warning. NOT
 			// during a round trip: opening the bank is the trip's halfway point, and regenerating
 			// would discard the displayed route (and with it the way back).
-			if (altRoundTrip)
+			if (destination.isRoundTrip())
 			{
 				routes.refreshPanel(session.inFlight());
 			}
@@ -836,7 +792,7 @@ public class ShortestPathPlugin extends Plugin
 		// reflected in the method availability (and the catalog counts) — recomputing on every
 		// in-bank container change would run a generation per deposit. NOT during a round trip:
 		// banking mid-trip is the whole point, and regenerating would discard the way back.
-		if (event.getGroupId() == InterfaceID.BANKMAIN && bankSnapshots.isKnown() && !altRoundTrip)
+		if (event.getGroupId() == InterfaceID.BANKMAIN && bankSnapshots.isKnown() && !destination.isRoundTrip())
 		{
 			recomputeAlternatives();
 		}
@@ -968,7 +924,7 @@ public class ShortestPathPlugin extends Plugin
 	/** Attributes the destination for the GPS header: the sender's source, "map pin", or null. */
 	void setTargetSource(String source)
 	{
-		targetSource = source;
+		destination.setSource(source);
 	}
 
 	private void cacheConfigValues()
@@ -980,8 +936,7 @@ public class ShortestPathPlugin extends Plugin
 	/** "Set GPS Target" from the map menu: the pick is attributed to the map pin. */
 	void pinTarget(int packed)
 	{
-		targetSource = "map pin";
-		setTarget(packed);
+		destination.pin(packed);
 	}
 
 	/** The focus-search hotkey: opens the GPS side panel (if it is not already) and focuses its search box. */
@@ -1001,74 +956,31 @@ public class ShortestPathPlugin extends Plugin
 	/** Clears the destination and its attribution: the map menu's "Clear Path", or another plugin's clear. */
 	void clearPinnedTarget()
 	{
-		targetSource = null;
-		setTarget(WorldPointUtil.UNDEFINED);
+		destination.clear();
 	}
 
 	/** "Find closest" from a world-map icon: every destination of that kind, the nearest wins. */
 	void findClosest(String destinationType)
 	{
-		targetSource = "map pin";
-		setTargets(pathfinderConfig.getDestinations(destinationType), true);
+		destination.findClosest(destinationType);
 	}
 
-	private void setTarget(int target)
-	{
-		setTarget(target, false);
-	}
-
-	/**
-	 * Sets the GPS destination to a searched place/amenity (from the panel search box), recording
-	 * where it came from for the directions header. Runs on the client thread.
-	 */
+	/** A searched place or amenity from the panel search box, attributed to {@code source}. */
 	public void setDestination(int packedPosition, String source)
 	{
-		clientThread.invokeLater(() ->
-		{
-			targetSource = source;
-			// Searched destinations can sit on unwalkable tiles (a place label on a fountain):
-			// expand to the nearest walkable ring, like map pins — walkable tiles stay exact.
-			// The world-map pin stays on the destination itself.
-			Set<Integer> targets = new HashSet<>(Destinations.walkableTargets(
-				pathfinderConfig != null ? pathfinderConfig.getMap() : null, packedPosition,
-				pathfinderConfig != null ? pathfinderConfig::isTransportOrigin : null));
-			if (targets.size() > 1)
-			{
-				mapMarker.pinNextAt(packedPosition);
-			}
-			setTargets(targets, false);
-		});
+		destination.setSearched(packedPosition, source);
 	}
 
-	/**
-	 * Routes to the NEAREST of an amenity category (bank, altar, ...): sets every tile of the
-	 * category as a target and generates the ranked alternative routes, so the shortest paths —
-	 * with the teleports currently available — surface first, whichever site they reach.
-	 */
+	/** Routes to the nearest of an amenity category (see DestinationController.setNearestCategory). */
 	public void setNearestCategory(Set<Integer> tiles, String source)
 	{
-		setNearestCategory(tiles, source, false);
+		destination.setNearestCategory(tiles, source, false);
 	}
 
-	/**
-	 * The round-trip variant additionally routes BACK to the current position: every produced
-	 * route goes out to a site and home again, ranked by the combined cost — the best round-trip
-	 * bank is not necessarily the nearest one-way bank.
-	 */
+	/** The round-trip variant: out to a site and back, ranked by the combined cost. */
 	public void setNearestCategory(Set<Integer> tiles, String source, boolean roundTrip)
 	{
-		if (tiles == null || tiles.isEmpty())
-		{
-			return;
-		}
-		clientThread.invokeLater(() ->
-		{
-			targetSource = source;
-			setTargets(new HashSet<>(tiles), false);
-			// After setTargets: it resets the round-trip flag for ordinary destinations.
-			altRoundTrip = roundTrip;
-			recomputeAlternatives();
-		});
+		destination.setNearestCategory(tiles, source, roundTrip);
 	}
 
 	/**
@@ -1093,68 +1005,6 @@ public class ShortestPathPlugin extends Plugin
 			: WorldPointUtil.fromLocalInstance(client, local);
 	}
 
-	private void setTarget(int target, boolean append)
-	{
-		Set<Integer> targets = new HashSet<>();
-		if (target != WorldPointUtil.UNDEFINED)
-		{
-			// A pin on an unwalkable tile (furniture, a fence, an NPC's tile from Quest Helper) can
-			// never be settled by the search — it would explore the entire map and fall back to a
-			// closest-tile path (captured in-game: 11 exhausted searches, 8.2s). Target the nearest
-			// walkable ring instead; walkable pins stay exact, and the map pin stays on the tile.
-			Set<Integer> walkable = Destinations.walkableTargets(
-				pathfinderConfig != null ? pathfinderConfig.getMap() : null, target,
-				pathfinderConfig != null ? pathfinderConfig::isTransportOrigin : null);
-			if (walkable.size() > 1)
-			{
-				mapMarker.pinNextAt(target);
-			}
-			targets.addAll(walkable);
-		}
-		setTargets(targets, append);
-	}
-
-	private void setTargets(Set<Integer> targets, boolean append)
-	{
-		// Ordinary destinations are one-way; the round-trip entry point re-sets this after.
-		altRoundTrip = false;
-		// A fresh destination starts at the default cost band; "show more" widens it from there.
-		// (loadMoreRoutes bumps the multiple and regenerates without going through setTargets.)
-		session.resetCostMultiple();
-		if (targets == null || targets.isEmpty())
-		{
-			pathStart = WorldPointUtil.UNDEFINED;
-			pathTargets = Set.of();
-
-			mapMarker.clear();
-			session.clearSelection();
-			session.setLimit(routes.defaultLimit());
-			// Keep the teleport-methods catalog visible with no target selected.
-			routes.trigger(WorldPointUtil.UNDEFINED, new HashSet<>());
-		}
-		else
-		{
-			Player localPlayer = client.getLocalPlayer();
-			if (localPlayer == null)
-			{
-				return;
-			}
-			mapMarker.place(targets);
-
-			int start = WorldPointUtil.fromLocalInstance(client, localPlayer);
-			offRoute.reset(start);
-			Set<Integer> destinations = new HashSet<>(targets);
-			if (append)
-			{
-				destinations.addAll(pathTargets);
-			}
-			// Arm the journey timer: it starts counting from the player's first movement.
-			armJourney();
-			// The routes themselves are generated by the tick-level auto-compute (keyed on the
-			// target-set change) or the panel's "Find routes" button.
-			setDestination(start, destinations, append);
-		}
-	}
 
 	// --- Alternative-routes feature (driven by ShortestPathPanel) ---
 
@@ -1217,7 +1067,7 @@ public class ShortestPathPlugin extends Plugin
 
 	public RouteOption getDisplayedRoute()
 	{
-		return session.displayed(pathTargets);
+		return session.displayed(destination.targets());
 	}
 
 	/**
@@ -1522,7 +1372,7 @@ public class ShortestPathPlugin extends Plugin
 	/** Clears the current destination and its route (panel Clear button / clear-path hotkey). */
 	public void clearTarget()
 	{
-		getClientThread().invokeLater(() -> setTarget(WorldPointUtil.UNDEFINED));
+		destination.clearLater();
 	}
 
 	public void recomputeAlternatives()
@@ -1542,7 +1392,7 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return WorldPointUtil.fromLocalInstance(client, localPlayer);
 		}
-		return pathStart;
+		return destination.start();
 	}
 
 	public boolean canLoadMoreRoutes()
@@ -1569,7 +1419,7 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	public String getTargetSource()
 	{
-		return targetSource;
+		return destination.source();
 	}
 
 	/**
@@ -1640,7 +1490,7 @@ public class ShortestPathPlugin extends Plugin
 	/** Whether the current destination is a round trip (out and back), carried into every generation for it. */
 	boolean isRoundTripWanted()
 	{
-		return altRoundTrip;
+		return destination.isRoundTrip();
 	}
 
 	PohDetectionService pohDetection()

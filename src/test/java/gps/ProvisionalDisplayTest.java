@@ -60,7 +60,11 @@ public class ProvisionalDisplayTest
 	private static final java.util.Map<String, String> ROUTES_FIELDS = java.util.Map.of(
 		"altRoutesService", "service", "routesMode", "mode", "altPanelVisible", "panelVisible");
 
-	/** The object and field name to reflect on for {@code field}: the session or the controller for a moved field. */
+	/** The plugin fields that moved onto the DestinationController (plan step L36), by their old names. */
+	private static final java.util.Map<String, String> DESTINATION_FIELDS = java.util.Map.of(
+		"pathTargets", "targets", "pathStart", "start", "altRoundTrip", "roundTrip", "targetSource", "source");
+
+	/** The object and field name to reflect on for {@code field}: the session or a controller for a moved field. */
 	private static Object[] resolve(Object plugin, String field) throws Exception
 	{
 		if (!(plugin instanceof ShortestPathPlugin))
@@ -74,6 +78,10 @@ public class ProvisionalDisplayTest
 		if (ROUTES_FIELDS.containsKey(field))
 		{
 			return new Object[]{fieldOf((ShortestPathPlugin) plugin, "routes"), ROUTES_FIELDS.get(field)};
+		}
+		if (DESTINATION_FIELDS.containsKey(field))
+		{
+			return new Object[]{fieldOf((ShortestPathPlugin) plugin, "destination"), DESTINATION_FIELDS.get(field)};
 		}
 		return new Object[]{plugin, field};
 	}
