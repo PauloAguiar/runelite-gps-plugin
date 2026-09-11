@@ -941,3 +941,19 @@ every change persists. The class did not exist.
 2,271 to 2,246 lines.
 
 **Suite:** 766 tests, all green.
+
+### Step L28: DirectionsCache and RouteVerdicts (2026-09-10)
+
+**Red first:** `RouteVerdictsTest`: a route that stopped short is judged by its endpoint against
+the nearest target and the tolerance (two tiles beside an object destination counts as reached,
+thirty tiles is cut off, a wider tolerance forgives it); a reached route is never too far and
+always reaches; without targets "too far" is false and "reaches" is true (not enough information
+to declare it unreachable); a null route reaches nothing. The class did not exist.
+
+**Change:** the two endpoint judgements and the click-walk gate became `RouteVerdicts`, pure over
+the route, the targets, the tolerance and (for the gate) a door-state predicate the plugin
+supplies from the client. The per-route directions holder became `DirectionsCache`. The plugin
+keeps the public delegates the overlays, the panel and the directions builder call. Plugin
+class: 2,246 to 2,160 lines.
+
+**Suite:** 768 tests, all green.

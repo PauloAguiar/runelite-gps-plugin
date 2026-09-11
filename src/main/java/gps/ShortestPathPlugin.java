@@ -20,7 +20,6 @@ import net.runelite.api.GameState;
 import net.runelite.api.Item;
 import net.runelite.api.Player;
 import net.runelite.api.WorldView;
-import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
@@ -563,10 +562,9 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	/**
-	 * The first path index the player cannot click-walk to yet: at or beyond the first obstacle
-	 * ahead of route progress they must interact with to cross — an agility shortcut, stairs, or a
-	 * door not seen open. The path from there is drawn blocked (in the scene and minimap). Only
-	 * meaningful for a displayed route; the classic path has no step data and is never blocked.
+	 * The first path index the player cannot click-walk to yet (see RouteVerdicts): the path from
+	 * there is drawn blocked in the scene and on the minimap. Only meaningful for the displayed
+	 * route; any other path is never blocked.
 	 */
 	public int blockedFromIndex(List<PathStep> path)
 	{
@@ -575,26 +573,8 @@ public class ShortestPathPlugin extends Plugin
 		{
 			return Integer.MAX_VALUE;
 		}
-		int progress = displayedRouteProgress();
-		for (RouteDirections.Step step : getRouteDirections(route))
-		{
-			if (!step.gatesWalk() || step.getEndIndex() <= progress)
-			{
-				continue;
-			}
-			if (step.isDoor())
-			{
-				ClosedDoors.Door door = ClosedDoors.doorBetween(
-					path.get(step.getStartIndex()).getPackedPosition(),
-					path.get(step.getEndIndex()).getPackedPosition());
-				if (door == null || ClosedDoors.state(client, door) == ClosedDoors.State.OPEN)
-				{
-					continue;
-				}
-			}
-			return step.getEndIndex();
-		}
-		return Integer.MAX_VALUE;
+		return RouteVerdicts.blockedFromIndex(path, getRouteDirections(route), displayedRouteProgress(),
+			door -> ClosedDoors.state(client, door) == ClosedDoors.State.OPEN);
 	}
 
 	/** Colour for the sailed portions of the displayed route (world-map sea tracks). */
@@ -624,31 +604,10 @@ public class ShortestPathPlugin extends Plugin
 		return session.inFlight() && !pathTargets.isEmpty() && getDisplayedRoute() == null;
 	}
 
-	/**
-	 * Mirrors {@link #isPathUnreachable()}'s tolerance for a displayed alternative route: a route that
-	 * stops at the closest reachable tile (e.g. because the exact target tile is an NPC/object spot)
-	 * still counts as reached for colouring while its endpoint is within the configured
-	 * unreachable-distance threshold — only genuinely far endpoints get the unreachable colour.
-	 */
+	/** Whether a displayed route's endpoint is too far from the targets for the reached colour (see RouteVerdicts). */
 	private boolean isRouteEndTooFar(RouteOption route)
 	{
-		if (route.isReached())
-		{
-			return false;
-		}
-		List<PathStep> path = route.getPath();
-		Set<Integer> targets = session.lastTargets();
-		if (path == null || path.isEmpty() || targets.isEmpty())
-		{
-			return false;
-		}
-		int endPoint = path.get(path.size() - 1).getPackedPosition();
-		int closestTargetDistance = Integer.MAX_VALUE;
-		for (int target : targets)
-		{
-			closestTargetDistance = Math.min(closestTargetDistance, WorldPointUtil.distanceBetween(target, endPoint));
-		}
-		return closestTargetDistance > display.unreachableTargetDistance;
+		return RouteVerdicts.endTooFar(route, session.lastTargets(), display.unreachableTargetDistance);
 	}
 
 	public boolean isPathUnreachable()
@@ -658,35 +617,12 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	/**
-	 * Whether an alternative route actually gets to the target: the exact tile, or — for object and
-	 * other adjacent destinations that legitimately end beside the goal (a bank booth, an altar) —
-	 * within the unreachable-distance threshold of it. False means the destination can't be reached
-	 * and the route only got to the closest reachable tile. Unlike {@link #isPathUnreachable()} this
-	 * judges the alt-route's own endpoint, so a target reachable only by a teleport isn't misreported.
+	 * Whether a route actually gets to the current targets, within the unreachable-distance
+	 * tolerance (see RouteVerdicts). False means the route only got to the closest reachable tile.
 	 */
 	public boolean routeReachesTarget(RouteOption route)
 	{
-		if (route == null)
-		{
-			return false;
-		}
-		if (route.isReached())
-		{
-			return true;
-		}
-		List<PathStep> path = route.getPath();
-		Set<Integer> targets = pathTargets;
-		if (path == null || path.isEmpty() || targets.isEmpty())
-		{
-			return true;  // not enough information to declare it unreachable
-		}
-		int endPoint = path.get(path.size() - 1).getPackedPosition();
-		int closest = Integer.MAX_VALUE;
-		for (int target : targets)
-		{
-			closest = Math.min(closest, WorldPointUtil.distanceBetween(target, endPoint));
-		}
-		return closest <= display.unreachableTargetDistance;
+		return RouteVerdicts.reachesTarget(route, pathTargets, display.unreachableTargetDistance);
 	}
 
 	@Subscribe
@@ -1921,36 +1857,13 @@ public class ShortestPathPlugin extends Plugin
 		triggerAlternatives(session.lastStart(), session.lastTargetsCopy());
 	}
 
-	// Directions for the currently displayed route, built once per route (the overlay renders every
-	// frame; the path scan only reruns when the displayed route object changes). One immutable
-	// holder, not two fields: the render thread and the client thread both read this, and a
-	// two-field cache could publish route A's key beside route B's steps.
-	private static final class DirectionsCache
-	{
-		final RouteOption route;
-		final List<RouteDirections.Step> steps;
+	// The displayed route's directions, built once per route instance (see DirectionsCache).
+	private final DirectionsCache directions = new DirectionsCache();
 
-		DirectionsCache(RouteOption route, List<RouteDirections.Step> steps)
-		{
-			this.route = route;
-			this.steps = steps;
-		}
-	}
-
-	private volatile DirectionsCache directionsCache = new DirectionsCache(null, List.of());
-
-	/**
-	 * The step-by-step directions for {@code route}, cached per route instance.
-	 */
+	/** The step-by-step directions for {@code route}, cached per route instance. */
 	public List<RouteDirections.Step> getRouteDirections(RouteOption route)
 	{
-		DirectionsCache cached = directionsCache;
-		if (route != cached.route)
-		{
-			cached = new DirectionsCache(route, RouteDirections.build(this, route));
-			directionsCache = cached;
-		}
-		return cached.steps;
+		return directions.of(this, route);
 	}
 
 	/**
