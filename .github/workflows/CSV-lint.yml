@@ -1,6 +1,9 @@
 name: CSV Lint
 
-# Runs the TSV consistency checker and csvlint against the PR's own code.
+# Runs the TSV consistency checker (scripts/check_tsv.py) against the PR's own code. It is the
+# only linter: the GPS TSV format has comment headers, blank separator lines and omitted trailing
+# cells, all of which an RFC 4180 checker (the csvlint binary this workflow once ran, inherited
+# from the upstream CSV data) rejects on 22 of the 40 files by construction.
 # Uses `pull_request` (not `pull_request_target`) so the PR branch version of
 # scripts and workflow YAML is used — changes to check_tsv.py or this workflow
 # can be tested in PRs.  Comment posting is handled by the separate
@@ -47,15 +50,3 @@ jobs:
       - name: Fail if TSV check failed
         if: steps.tsv-check.outcome == 'failure'
         run: exit 1
-
-      - name: Install csvlint
-        run: |
-          curl -L https://github.com/Clever/csvlint/releases/download/v0.3.0/csvlint-v0.3.0-linux-amd64.tar.gz | tar xz
-          sudo mv csvlint-v0.3.0-linux-amd64/csvlint /usr/local/bin/
-      - name: CSV Lint
-        shell: bash
-        run: |
-          while IFS= read -r -d '' file; do
-            echo "Linting $file"
-            csvlint -delimiter $'\t' "$file"
-          done < <(find ./src/main/resources -name '*.tsv' -print0)
