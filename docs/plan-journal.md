@@ -1095,3 +1095,14 @@ lingering arrival panel had already copied). The three display tests resolve the
 through a DESTINATION_FIELDS map. Plugin class: 1,721 to 1,571 lines.
 
 **Suite:** 796 tests, all green.
+
+### CI: the csvlint step removed from the CSV Lint workflow (2026-09-10)
+
+The CSV Lint workflow had failed on every push since N13 made the workflows run on main; the
+CI Tests workflow was green throughout. The failing step was the third-party csvlint binary,
+inherited from the upstream repository when the data was plain CSV: it validates RFC 4180 only
+(one field count for every record, no comment or blank lines, no flag to skip either), which
+the GPS TSV format breaks by design (comment headers, blank separators, omitted trailing cells
+that `check_tsv.py` accepts since N13). Measured: 22 of the 40 files fail as they are, and six
+would still fail with comments skipped. The project's own checker is the gate and stays; the
+csvlint install and run steps are gone, with the reason in the workflow's header comment.
