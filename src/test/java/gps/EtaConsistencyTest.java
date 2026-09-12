@@ -48,7 +48,7 @@ public class EtaConsistencyTest
 
 	private static int cardSeconds(RouteOption route)
 	{
-		return (int) Math.ceil(ShortestPathPanel.routeEtaUnits(route) * CostUnits.SECONDS_PER_UNIT);
+		return (int) Math.ceil(RouteListView.routeEtaUnits(route) * CostUnits.SECONDS_PER_UNIT);
 	}
 
 	private static int overlaySeconds(double ticks)

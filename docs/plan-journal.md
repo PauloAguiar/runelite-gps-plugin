@@ -1228,3 +1228,20 @@ recursion and the lock/bank status marker (all shared with the route cards) move
 `PanelWidgets`. Panel class: 1,999 to 1224 lines.
 
 **Suite:** 808 tests, all green.
+
+### Step P4: RouteListView (2026-09-12)
+
+**Red first:** `RouteListViewTest`: a duration reads as seconds under a minute and minutes
+plus seconds above; the busy note switches to "longer routes" once the found routes span more
+than three times the cheapest (three times exactly does not count), and never for an empty
+list. Both rules were private to the panel. `EtaConsistencyTest` and `RouteEtaTest` now target
+the view's ETA units.
+
+**Change:** the routes section (the "Routes (N)" header with its more, refresh and clear
+controls, the scrolling cards with pin, rank, ETA and priority chip, the bank-detour chip with
+its client-thread tooltip, the method rows with their hover-revealed priority control, the walk
+and sail totals, and the click-to-show selection) became `RouteListView`; the panel mounts it
+and shows the current routes with the displayed one highlighted. Panel class: 1,224 to 660
+lines.
+
+**Suite:** 810 tests, all green.

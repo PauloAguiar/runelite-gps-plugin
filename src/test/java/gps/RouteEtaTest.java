@@ -27,9 +27,9 @@ public class RouteEtaTest
 	{
 		// rawCost 84 with a +30 surcharge (bank pickup or charged-item modifier): the ETA shows
 		// the full 114 — the surcharge is never hidden from the number the user compares.
-		assertEquals(114, ShortestPathPanel.routeEtaUnits(route(114, 84, true)));
+		assertEquals(114, RouteListView.routeEtaUnits(route(114, 84, true)));
 		// No modifiers: ETA == raw travel cost.
-		assertEquals(104, ShortestPathPanel.routeEtaUnits(route(104, 104, false)));
+		assertEquals(104, RouteListView.routeEtaUnits(route(104, 104, false)));
 	}
 
 	/**
