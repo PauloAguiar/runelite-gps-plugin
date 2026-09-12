@@ -13,7 +13,6 @@ import java.awt.Insets;
 import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -35,7 +34,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JTextField;
-import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.ScrollPaneConstants;
@@ -58,17 +56,22 @@ import static gps.PanelWidgets.BANNER_INFO_ACCENT;
 import static gps.PanelWidgets.BANNER_OK_ACCENT;
 import static gps.PanelWidgets.BANNER_TEXT_WIDTH;
 import static gps.PanelWidgets.BANNER_WARN_ACCENT;
-import static gps.PanelWidgets.CATALOG_MAX_HEIGHT;
 import static gps.PanelWidgets.CONTROL_SIZE;
 import static gps.PanelWidgets.SAIL_DOT_COLOUR;
 import static gps.PanelWidgets.WALK_DOT_COLOUR;
+import static gps.PanelWidgets.addClickRecursively;
 import static gps.PanelWidgets.banner;
 import static gps.PanelWidgets.control;
 import static gps.PanelWidgets.dot;
 import static gps.PanelWidgets.escapeHtml;
+import static gps.PanelWidgets.joinLabels;
 import static gps.PanelWidgets.methodDot;
+import static gps.PanelWidgets.methodTooltip;
+import static gps.PanelWidgets.methodTooltipBody;
 import static gps.PanelWidgets.noteRow;
-import static gps.PanelWidgets.sectionShell;
+import static gps.PanelWidgets.priorityHoverIcon;
+import static gps.PanelWidgets.priorityRestIcon;
+import static gps.PanelWidgets.statusMarker;
 import static gps.PanelWidgets.verticalGap;
 import static gps.PanelWidgets.verticallyCentered;
 import static gps.PanelWidgets.wrappedLabel;
@@ -101,21 +104,8 @@ public class ShortestPathPanel extends PluginPanel
 	// banner rather than "No destination set". Cleared when a new destination is set.
 	private boolean showingArrival;
 	private boolean arrivalImmediate;
-	// Fixed (non-scrolling) slot below the header holding the teleport-methods catalog.
-	private final JPanel catalogHolder = new JPanel();
-	// Filter box for the catalog; a persistent component so typing keeps focus while only the rows
-	// below repopulate. Shown only while the catalog is expanded.
-	private final IconTextField catalogSearch = new IconTextField();
-	// The scrollable rows box of the expanded catalog; repopulated in place when the filter changes.
-	private JPanel catalogRowsPanel;
-	private JScrollPane catalogRowsScroll;
-	// Snapshot of the inputs the catalog section was last built from. Routes stream several updates
-	// per generation; rebuilding ~1000 catalog rows on the EDT for each of them made the toggles
-	// unresponsive (the row under the cursor kept being replaced). Rebuild only when these change.
-	private List<TeleportMethod> renderedCatalog;
-	private Set<TeleportMethod> renderedExclusions;
-	private Map<TeleportMethod, MethodAvailability> renderedUnavailable;
-	private boolean renderedCatalogExpanded;
+	// The "Travel options" slot: the configuration sections and the method catalog (see TravelOptionsView).
+	private final TravelOptionsView travelOptions;
 	private final JPanel listPanel = new JPanel();
 	// Fixed (non-scrolling) slot for the routes header (count + more/refresh/clear controls),
 	// mounted above the route-card scroll area so it stays visible while the cards scroll.
@@ -133,46 +123,6 @@ public class ShortestPathPanel extends PluginPanel
 	private Set<TeleportMethod> cachedExclusions = Set.of();
 	private boolean cachedCalculating = false;
 	private boolean cachedHasTarget = false;
-	private final Set<String> expandedCategories = new HashSet<>();
-	// Whether the whole "Travel methods" catalog section (shown at the top) is expanded. Collapsed
-	// by default so the routes stay the focus; the user opens it to browse/toggle methods.
-	private boolean catalogExpanded = false;
-	private boolean travelSectionExpanded = false;
-	// The seven configuration sections and their expanded state (see ConfigSectionsView).
-	private final ConfigSectionsView configSections;
-	// Funnel filter next to the catalog search: narrow the list to disabled methods or to a single
-	// kind of unavailability (missing item/level/quest, in bank, not unlocked).
-	private CatalogFilter catalogFilter = CatalogFilter.ALL;
-
-	/** The funnel-filter options for the teleport-methods catalog. */
-	private enum CatalogFilter
-	{
-		ALL("Show all methods", null, false),
-		DISABLED("Disabled (excluded)", null, true),
-		MISSING_ITEM("Missing an item", MethodAvailability.MISSING_ITEM, false),
-		IN_BANK("Item in the bank", MethodAvailability.IN_BANK, false),
-		MISSING_LEVEL("Missing a skill level", MethodAvailability.MISSING_LEVEL, false),
-		MISSING_QUEST("Missing a quest", MethodAvailability.MISSING_QUEST, false),
-		LOCKED("Not unlocked yet", MethodAvailability.LOCKED, false);
-
-		private final String label;
-		// The availability kind this filter keeps (null when it doesn't filter by availability).
-		private final MethodAvailability availability;
-		// True for the "disabled" filter, which keeps user-excluded methods regardless of availability.
-		private final boolean disabled;
-
-		CatalogFilter(String label, MethodAvailability availability, boolean disabled)
-		{
-			this.label = label;
-			this.availability = availability;
-			this.disabled = disabled;
-		}
-
-		boolean isActive()
-		{
-			return this != ALL;
-		}
-	}
 
 	/**
 	 * Sidebar visibility does NOT change how much the route generator does — every generation runs
@@ -196,47 +146,18 @@ public class ShortestPathPanel extends PluginPanel
 	{
 		super(false);
 		this.plugin = plugin;
-		configSections = new ConfigSectionsView(plugin, this::refreshCatalog, this::refreshConfigSections);
 		setLayout(new BorderLayout());
 		setBorder(new EmptyBorder(8, 8, 8, 8));
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-		// Fixed top area: the header (title/modes/refresh/status) plus the teleport-methods catalog,
-		// which scrolls inside its own bounded box (see buildCatalogSection) instead of pushing the
-		// route list down. Only the routes scroll in the main area below.
-		catalogHolder.setLayout(new BoxLayout(catalogHolder, BoxLayout.Y_AXIS));
-		catalogHolder.setBackground(ColorScheme.DARK_GRAY_COLOR);
-
-		catalogSearch.setIcon(IconTextField.Icon.SEARCH);
-		catalogSearch.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		catalogSearch.setHoverBackgroundColor(ColorScheme.DARK_GRAY_HOVER_COLOR);
-		catalogSearch.getDocument().addDocumentListener(new DocumentListener()
-		{
-			@Override
-			public void insertUpdate(DocumentEvent e)
-			{
-				populateCatalogRows();
-			}
-
-			@Override
-			public void removeUpdate(DocumentEvent e)
-			{
-				populateCatalogRows();
-			}
-
-			@Override
-			public void changedUpdate(DocumentEvent e)
-			{
-				populateCatalogRows();
-			}
-		});
+		travelOptions = new TravelOptionsView(plugin, this::refreshConfigSections);
 		JPanel top = new JPanel(new BorderLayout());
 		top.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		top.add(buildHeader(), BorderLayout.NORTH);
 		// The teleport-methods catalog, then the "Go to" destination search beneath it, then notes.
 		JPanel belowHeader = new JPanel(new BorderLayout());
 		belowHeader.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		belowHeader.add(catalogHolder, BorderLayout.NORTH);
+		belowHeader.add(travelOptions, BorderLayout.NORTH);
 		destinationSearch = new DestinationSearchView(plugin);
 		belowHeader.add(destinationSearch, BorderLayout.CENTER);
 		top.add(belowHeader, BorderLayout.CENTER);
@@ -282,49 +203,6 @@ public class ShortestPathPanel extends PluginPanel
 	public Dimension getMinimumSize()
 	{
 		return new Dimension(super.getMinimumSize().width, 100);
-	}
-
-	/**
-	 * A panel that always lays out at the scroll viewport's width. A plain JPanel inside a JScrollPane
-	 * keeps its preferred width even with the horizontal scrollbar disabled, so any row slightly wider
-	 * than the viewport pushes the whole content under the vertical scrollbar and gets clipped.
-	 */
-	private static final class ScrollableBox extends JPanel implements javax.swing.Scrollable
-	{
-		private ScrollableBox(java.awt.LayoutManager layout)
-		{
-			super(layout);
-		}
-
-		@Override
-		public Dimension getPreferredScrollableViewportSize()
-		{
-			return getPreferredSize();
-		}
-
-		@Override
-		public int getScrollableUnitIncrement(java.awt.Rectangle visibleRect, int orientation, int direction)
-		{
-			return 16;
-		}
-
-		@Override
-		public int getScrollableBlockIncrement(java.awt.Rectangle visibleRect, int orientation, int direction)
-		{
-			return Math.max(visibleRect.height - 16, 16);
-		}
-
-		@Override
-		public boolean getScrollableTracksViewportWidth()
-		{
-			return true;
-		}
-
-		@Override
-		public boolean getScrollableTracksViewportHeight()
-		{
-			return false;
-		}
 	}
 
 	private JPanel buildHeader()
@@ -687,7 +565,7 @@ public class ShortestPathPanel extends PluginPanel
 		List<String> lowLogs = plugin.getBalloonLowLogTypes();
 		if (!lowLogs.isEmpty())
 		{
-			warnings.add(configSections.balloonLowBanner(lowLogs));
+			warnings.add(travelOptions.balloonLowBanner(lowLogs));
 		}
 		ShortestPathConfig cfg = plugin.getGpsConfig();
 		if (cfg.usePoh() && cfg.pohSmartDetect() && !plugin.isPohScanned())
@@ -738,10 +616,7 @@ public class ShortestPathPanel extends PluginPanel
 		// Expanded it scrolls inside its own bounded box, so it never pushes the routes off screen.
 		// Rebuilt only when its inputs changed — streamed route updates leave it untouched so its
 		// toggles stay responsive while a generation is running.
-		boolean catalogDirty = !cachedCatalog.equals(renderedCatalog)
-			|| !cachedExclusions.equals(renderedExclusions)
-			|| !cachedUnavailable.equals(renderedUnavailable)
-			|| catalogExpanded != renderedCatalogExpanded;
+		boolean catalogDirty = travelOptions.needsRebuild(cachedCatalog, cachedExclusions, cachedUnavailable);
 		if (catalogDirty)
 		{
 			refreshCatalog();
@@ -1216,7 +1091,7 @@ public class ShortestPathPanel extends PluginPanel
 		// the bank marker above, so only add the status marker for other, distinct reasons.
 		if (status != null && !bankGated)
 		{
-			JLabel statusMarker = statusLabel(status, method);
+			JLabel statusMarker = statusMarker(plugin, status, method);
 			statusMarker.setAlignmentY(Component.CENTER_ALIGNMENT);
 			statusMarker.setBorder(new EmptyBorder(0, 3, 0, 0));
 			west.add(statusMarker);
@@ -1242,7 +1117,7 @@ public class ShortestPathPanel extends PluginPanel
 			cardTier == MethodPriority.NORMAL ? RouteIcons.PRIORITY_NEUTRAL_DIM : priorityRestIcon(cardTier),
 			priorityHoverIcon(cardTier),
 			"Priority: " + cardTier.label + " — click to change",
-			() -> showPriorityMenu(excludeHolder[0], method));
+			() -> travelOptions.showPriorityMenu(excludeHolder[0], method));
 		IconActionLabel exclude = excludeHolder[0];
 		JPanel actionWrap = new JPanel(new GridBagLayout());
 		actionWrap.setOpaque(false);
@@ -1262,193 +1137,10 @@ public class ShortestPathPanel extends PluginPanel
 
 	// --- Method priority menu (RimWorld-style tiers; see MethodPriority) ----------------------
 
-	static javax.swing.ImageIcon priorityRestIcon(MethodPriority tier)
-	{
-		switch (tier)
-		{
-			case PREFER_1:
-				return RouteIcons.PRIORITY_UP_ICONS[0];
-			case PREFER_2:
-				return RouteIcons.PRIORITY_UP_ICONS[1];
-			case PREFER_3:
-				return RouteIcons.PRIORITY_UP_ICONS[2];
-			case AVOID_1:
-				return RouteIcons.PRIORITY_DOWN_ICONS[0];
-			case AVOID_2:
-				return RouteIcons.PRIORITY_DOWN_ICONS[1];
-			case AVOID_3:
-				return RouteIcons.PRIORITY_DOWN_ICONS[2];
-			case EXCLUDED:
-				return RouteIcons.CROSS;
-			default:
-				return RouteIcons.PRIORITY_NEUTRAL;
-		}
-	}
-
-	private static javax.swing.ImageIcon priorityHoverIcon(MethodPriority tier)
-	{
-		switch (tier)
-		{
-			case PREFER_1:
-				return RouteIcons.PRIORITY_UP_HOVER_ICONS[0];
-			case PREFER_2:
-				return RouteIcons.PRIORITY_UP_HOVER_ICONS[1];
-			case PREFER_3:
-				return RouteIcons.PRIORITY_UP_HOVER_ICONS[2];
-			case AVOID_1:
-				return RouteIcons.PRIORITY_DOWN_HOVER_ICONS[0];
-			case AVOID_2:
-				return RouteIcons.PRIORITY_DOWN_HOVER_ICONS[1];
-			case AVOID_3:
-				return RouteIcons.PRIORITY_DOWN_HOVER_ICONS[2];
-			case EXCLUDED:
-				return RouteIcons.CROSS_HOVER;
-			default:
-				return RouteIcons.PRIORITY_NEUTRAL_HOVER;
-		}
-	}
-
-	private static String priorityTooltip(String label, MethodPriority tier)
-	{
-		String state = tier == MethodPriority.NORMAL
-			? "Normal priority"
-			: tier.label + (tier.chipText().isEmpty() ? "" : " (" + tier.chipText() + " on ranking)");
-		return "<html><b>" + escapeHtml(label) + "</b>: " + state
-			+ "<br>Click for priority options — prefer/avoid shift the ranking, exclude removes it.</html>";
-	}
-
-	/**
-	 * The tier context menu. Preferences re-rank the current list instantly (no recalculation);
-	 * Exclude keeps its existing semantics (applies on the next refresh). {@code walkMode} swaps
-	 * the target: tiers set the walking preference instead of a method tier, and Exclude is
-	 * omitted (walking can't be excluded).
-	 */
-	private void showPriorityMenu(Component anchor, TeleportMethod method)
-	{
-		javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
-		MethodPriority current = plugin.getMethodPriority(method);
-		for (MethodPriority tier : new MethodPriority[]{
-			MethodPriority.PREFER_3, MethodPriority.PREFER_2, MethodPriority.PREFER_1,
-			MethodPriority.NORMAL,
-			MethodPriority.AVOID_1, MethodPriority.AVOID_2, MethodPriority.AVOID_3})
-		{
-			String text = tier.label + (tier.chipText().isEmpty() ? "" : "  " + tier.chipText());
-			javax.swing.JMenuItem entry = new javax.swing.JMenuItem(text, priorityRestIcon(tier));
-			entry.setFont(tier == current
-				? FontManager.getRunescapeBoldFont() : FontManager.getRunescapeSmallFont());
-			// The catalog slot only rebuilds when catalog/exclusions/availability change (see
-			// render's catalogDirty) - a tier change alters none of them, so refresh here or
-			// the row keeps showing the old tier until something else re-renders the panel.
-			entry.addActionListener(e ->
-			{
-				plugin.setMethodPriority(method, tier);
-				refreshCatalog();
-			});
-			menu.add(entry);
-		}
-		menu.addSeparator();
-		javax.swing.JMenuItem exclude = new javax.swing.JMenuItem(
-			MethodPriority.EXCLUDED.label, RouteIcons.CROSS);
-		exclude.setFont(current == MethodPriority.EXCLUDED
-			? FontManager.getRunescapeBoldFont() : FontManager.getRunescapeSmallFont());
-		exclude.addActionListener(e ->
-		{
-			plugin.setMethodPriority(method, MethodPriority.EXCLUDED);
-			refreshCatalog();
-		});
-		menu.add(exclude);
-		menu.show(anchor, 0, anchor.getHeight());
-	}
-
-	/** The funnel icon that opens the catalog filter menu; orange while a filter is active. */
-	private JLabel buildCatalogFilter()
-	{
-		boolean active = catalogFilter.isActive();
-		JLabel funnel = new JLabel(active ? RouteIcons.FILTER_ACTIVE : RouteIcons.FILTER);
-		funnel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		funnel.setToolTipText("Filter: " + catalogFilter.label + " (click to change)");
-		funnel.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mousePressed(MouseEvent e)
-			{
-				showCatalogFilterMenu(funnel);
-			}
-
-			@Override
-			public void mouseEntered(MouseEvent e)
-			{
-				funnel.setIcon(active ? RouteIcons.FILTER_ACTIVE_HOVER : RouteIcons.FILTER_HOVER);
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e)
-			{
-				funnel.setIcon(active ? RouteIcons.FILTER_ACTIVE : RouteIcons.FILTER);
-			}
-		});
-		return funnel;
-	}
-
-	private void showCatalogFilterMenu(JComponent anchor)
-	{
-		JPopupMenu menu = new JPopupMenu();
-		menu.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		menu.setBorder(BorderFactory.createLineBorder(ColorScheme.MEDIUM_GRAY_COLOR));
-		ButtonGroup group = new ButtonGroup();
-		for (CatalogFilter option : CatalogFilter.values())
-		{
-			JRadioButtonMenuItem item = new JRadioButtonMenuItem(option.label, option == catalogFilter);
-			item.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-			item.setForeground(Color.WHITE);
-			item.setFont(FontManager.getRunescapeSmallFont());
-			item.addActionListener(e ->
-			{
-				catalogFilter = option;
-				refreshCatalog();
-			});
-			group.add(item);
-			menu.add(item);
-		}
-		menu.show(anchor, 0, anchor.getHeight());
-	}
-
-	/**
-	 * Whether a method is usable in the CURRENT mode. The availability map is mode-independent
-	 * (a banked item is always recorded IN_BANK); a banked item counts as usable in the
-	 * "Inventory + bank" mode, whose route walks to a bank to withdraw it.
-	 */
-	private boolean isUsable(TeleportMethod method)
-	{
-		MethodAvailability status = cachedUnavailable.get(method);
-		return status == null
-			|| (status == MethodAvailability.IN_BANK
-				&& plugin.getRoutesMode() == AlternativeRoutesMode.OWNED_WITH_BANK);
-	}
-
-	/** Rebuilds just the teleport-methods catalog slot (used on collapse/expand and dirty renders). */
+	/** Rebuilds the Travel options slot for the current inputs (see TravelOptionsView). */
 	private void refreshCatalog()
 	{
-		// The rebuild replaces the method-rows scroll pane; carry its position over so toggling a
-		// method or category (which regenerates routes and re-renders) doesn't jump the list back
-		// to the top. Applied after the rebuilt pane has been laid out (nested invokeLater), since
-		// a fresh scrollbar clamps everything to 0 until validation.
-		final int rowsScrollPosition = catalogRowsScroll != null
-			? catalogRowsScroll.getVerticalScrollBar().getValue() : 0;
-		catalogHolder.removeAll();
-		catalogHolder.add(buildTravelSection());
-		catalogHolder.revalidate();
-		catalogHolder.repaint();
-		if (rowsScrollPosition > 0 && catalogRowsScroll != null)
-		{
-			final JScrollPane scroll = catalogRowsScroll;
-			SwingUtilities.invokeLater(() -> SwingUtilities.invokeLater(
-				() -> scroll.getVerticalScrollBar().setValue(rowsScrollPosition)));
-		}
-		renderedCatalog = cachedCatalog;
-		renderedExclusions = cachedExclusions;
-		renderedUnavailable = cachedUnavailable;
-		renderedCatalogExpanded = catalogExpanded;
+		travelOptions.rebuild(cachedCatalog, cachedExclusions, cachedUnavailable);
 	}
 
 	/**
@@ -1460,50 +1152,6 @@ public class ShortestPathPanel extends PluginPanel
 	{
 		refreshCatalog();
 		render();
-	}
-
-	/**
-	 * The "Travel options" section: one collapsible home for everything routing may use — the
-	 * player-stated configuration (POH, wilderness, balloons) and the teleport-methods catalog —
-	 * all sharing the same header style.
-	 */
-	private JPanel buildTravelSection()
-	{
-		int enabled = 0;
-		for (TeleportMethod method : cachedCatalog)
-		{
-			if (isUsable(method) && !cachedExclusions.contains(method))
-			{
-				enabled++;
-			}
-		}
-		JPanel section = sectionShell("Travel options",
-			"Everything routing may use: your house, wilderness policy, bank, balloons and the travel methods",
-			travelSectionExpanded, () -> travelSectionExpanded = !travelSectionExpanded,
-			cachedCatalog.isEmpty() ? "" : enabled + "/" + cachedCatalog.size(),
-			ColorScheme.LIGHT_GRAY_COLOR, true, this::refreshCatalog);
-		if (!travelSectionExpanded)
-		{
-			catalogRowsPanel = null;
-			catalogRowsScroll = null;
-			return section;
-		}
-
-		JPanel body = new JPanel();
-		body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
-		body.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		body.setAlignmentX(Component.LEFT_ALIGNMENT);
-		body.setBorder(new EmptyBorder(0, 8, 0, 0));
-		for (JPanel part : configSections.sections())
-		{
-			body.add(part);
-		}
-		if (!cachedCatalog.isEmpty())
-		{
-			body.add(buildCatalogSection());
-		}
-		section.add(body);
-		return section;
 	}
 
 	/**
@@ -1538,409 +1186,7 @@ public class ShortestPathPanel extends PluginPanel
 		return row;
 	}
 
-	private JPanel buildCatalogSection()
-	{
-		// The headline count is the methods a search can ACTUALLY use: usable right now (not
-		// missing an item/level/quest/unlock) AND not excluded — so it responds to the toggles.
-		// Broken down into permanent (unlimited use) and charged (consumes a charge or the item
-		// itself — tabs, charged jewellery).
-		int enabled = 0;
-		int usable = 0;
-		int included = 0;
-		int permanent = 0;
-		int charged = 0;
-		for (TeleportMethod method : cachedCatalog)
-		{
-			boolean canUse = isUsable(method);
-			boolean isIncluded = !cachedExclusions.contains(method);
-			if (canUse)
-			{
-				usable++;
-			}
-			if (isIncluded)
-			{
-				included++;
-			}
-			if (canUse && isIncluded)
-			{
-				enabled++;
-				if (method.isConsumable())
-				{
-					charged++;
-				}
-				else
-				{
-					permanent++;
-				}
-			}
-		}
-		// Same collapsible shell as the other Travel options sub-sections; the enabled count is
-		// the state text.
-		JPanel section = sectionShell("Travel methods",
-			enabled + " enabled (usable and included) · " + usable + " usable now · "
-				+ included + " included in searches · " + cachedCatalog.size() + " total",
-			catalogExpanded, () -> catalogExpanded = !catalogExpanded,
-			enabled + "/" + cachedCatalog.size(), ColorScheme.LIGHT_GRAY_COLOR, false, this::refreshCatalog);
-
-		if (!catalogExpanded)
-		{
-			catalogRowsPanel = null;
-			catalogRowsScroll = null;
-			section.setBorder(new EmptyBorder(0, 0, 4, 0));
-			return section;
-		}
-
-		// Enabled breakdown — permanent (unlimited) vs charged (consumes a charge/the item). Only shown
-		// while expanded, where the split matters; the header count already carries the total collapsed.
-		if (enabled > 0)
-		{
-			JLabel breakdown = new JLabel(permanent + " permanent · " + charged + " charged");
-			breakdown.setFont(FontManager.getRunescapeSmallFont());
-			breakdown.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-			breakdown.setToolTipText("Of the enabled methods: " + permanent + " permanent (unlimited use) · "
-				+ charged + " charged (teleport tabs, charged jewellery — consumed or lose a charge)");
-			breakdown.setAlignmentX(Component.LEFT_ALIGNMENT);
-			breakdown.setBorder(new EmptyBorder(0, 0, 4, 0));
-			section.add(breakdown);
-		}
-
-		// Filter box (persistent component, see the field comment) — only mounted while expanded —
-		// with a funnel that opens a menu to narrow by disabled/unavailability kind.
-		catalogSearch.setAlignmentX(Component.LEFT_ALIGNMENT);
-		catalogSearch.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
-		JPanel filterWrap = new JPanel(new BorderLayout());
-		filterWrap.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		filterWrap.setBorder(new EmptyBorder(0, 4, 0, 2));
-		filterWrap.add(control(buildCatalogFilter()), BorderLayout.CENTER);
-		JPanel searchWrap = new JPanel(new BorderLayout());
-		searchWrap.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		searchWrap.setBorder(new EmptyBorder(0, 0, 4, 0));
-		searchWrap.setAlignmentX(Component.LEFT_ALIGNMENT);
-		searchWrap.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
-		searchWrap.add(catalogSearch, BorderLayout.CENTER);
-		searchWrap.add(filterWrap, BorderLayout.EAST);
-		section.add(searchWrap);
-
-		// The method rows scroll inside their own bounded box with their own scrollbar, so a long
-		// (or fully expanded) catalog never pushes the route list off screen. The rows panel tracks
-		// the viewport width so the scrollbar sits beside the rows instead of clipping them.
-		ScrollableBox rows = new ScrollableBox(null);
-		rows.setLayout(new BoxLayout(rows, BoxLayout.Y_AXIS));
-		rows.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		JScrollPane rowsScroll = new JScrollPane(rows,
-			ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-			ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-		rowsScroll.setBorder(BorderFactory.createEmptyBorder());
-		rowsScroll.getVerticalScrollBar().setUnitIncrement(16);
-		rowsScroll.setAlignmentX(Component.LEFT_ALIGNMENT);
-		catalogRowsPanel = rows;
-		catalogRowsScroll = rowsScroll;
-		populateCatalogRows();
-		section.add(rowsScroll);
-		section.setBorder(new EmptyBorder(0, 0, 8, 0));
-
-		return section;
-	}
-
-	/**
-	 * The catalog section a method is grouped under. Teleport items are split into two sections —
-	 * "Items (permanent)" (reusable jewellery/staves) and "Items (charged)" (tabs, charged jewellery
-	 * that consume a charge or the item) — since that distinction drives how freely they're used.
-	 */
-	private static String catalogGroupKey(TeleportMethod method)
-	{
-		if (method.getType() == TransportType.TELEPORTATION_ITEM)
-		{
-			return method.isConsumable() ? "Items (charged)" : "Items (permanent)";
-		}
-		return method.category();
-	}
-
-	/**
-	 * (Re)fills the expanded catalog's rows box from the current filter text. Called on every filter
-	 * keystroke — repopulates in place so the search field keeps focus. While a filter is active,
-	 * matching categories are shown force-expanded (a filter that only matched collapsed categories
-	 * would otherwise look like it found nothing).
-	 */
-	private void populateCatalogRows()
-	{
-		JPanel rows = catalogRowsPanel;
-		JScrollPane rowsScroll = catalogRowsScroll;
-		if (rows == null || rowsScroll == null)
-		{
-			return;
-		}
-		rows.removeAll();
-
-		String filter = catalogSearch.getText() == null ? "" : catalogSearch.getText().trim().toLowerCase();
-		boolean filtering = !filter.isEmpty();
-
-		Map<String, List<TeleportMethod>> grouped = new TreeMap<>();
-		for (TeleportMethod method : cachedCatalog)
-		{
-			// The funnel filter narrows to disabled methods or a single unavailability kind.
-			if (catalogFilter.disabled && !cachedExclusions.contains(method))
-			{
-				continue;
-			}
-			if (catalogFilter.availability != null && cachedUnavailable.get(method) != catalogFilter.availability)
-			{
-				continue;
-			}
-			// A filter hit on the category keeps the whole category; otherwise match the method label.
-			if (!filtering
-				|| method.category().toLowerCase().contains(filter)
-				|| method.label().toLowerCase().contains(filter))
-			{
-				grouped.computeIfAbsent(catalogGroupKey(method), k -> new ArrayList<>()).add(method);
-			}
-		}
-		for (List<TeleportMethod> items : grouped.values())
-		{
-			items.sort(Comparator.comparing(m -> m.label().toLowerCase()));
-		}
-
-		if (grouped.isEmpty())
-		{
-			String message = catalogFilter.isActive() ? "No methods — " + catalogFilter.label.toLowerCase()
-				: "No methods match \"" + escapeHtml(filter) + "\"";
-			JLabel none = wrappedLabel("<i>" + message + "</i>");
-			none.setBorder(new EmptyBorder(2, 4, 2, 0));
-			none.setAlignmentX(Component.LEFT_ALIGNMENT);
-			rows.add(none);
-		}
-		for (Map.Entry<String, List<TeleportMethod>> entry : grouped.entrySet())
-		{
-			String category = entry.getKey();
-			List<TeleportMethod> items = entry.getValue();
-			// A text filter or an active funnel filter force categories open so the matches show.
-			boolean expanded = filtering || catalogFilter.isActive() || expandedCategories.contains(category);
-			rows.add(buildCategoryHeader(category, items, expanded));
-			if (expanded)
-			{
-				for (TeleportMethod item : items)
-				{
-					rows.add(buildCatalogItemRow(item));
-				}
-			}
-		}
-
-		// Bounded height: natural size for short lists, capped so the routes below stay visible.
-		int height = Math.min(rows.getPreferredSize().height + 2, CATALOG_MAX_HEIGHT);
-		rowsScroll.setPreferredSize(new Dimension(10, height));
-		rowsScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, height));
-		rows.revalidate();
-		rows.repaint();
-		catalogHolder.revalidate();
-		catalogHolder.repaint();
-	}
-
-	private JPanel buildCategoryHeader(String category, List<TeleportMethod> items, boolean expanded)
-	{
-		int excludedCount = 0;
-		for (TeleportMethod method : items)
-		{
-			if (cachedExclusions.contains(method))
-			{
-				excludedCount++;
-			}
-		}
-		boolean allIncluded = excludedCount == 0;
-		boolean allExcluded = excludedCount == items.size();
-
-		JPanel row = new JPanel(new BorderLayout(3, 0));
-		row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		row.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createMatteBorder(0, 0, 1, 0, ColorScheme.DARK_GRAY_COLOR),
-			new EmptyBorder(3, 4, 3, 4)));
-		row.setAlignmentX(Component.LEFT_ALIGNMENT);
-		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
-
-		ImageIcon icon;
-		ImageIcon hover;
-		String tip;
-		Runnable action;
-		if (allIncluded)
-		{
-			icon = RouteIcons.CHECK;
-			hover = RouteIcons.CHECK_HOVER;
-			tip = "All included — click to exclude every " + category.toLowerCase();
-			action = () -> plugin.excludeMethods(items);
-		}
-		else if (allExcluded)
-		{
-			icon = RouteIcons.CROSS;
-			hover = RouteIcons.CROSS_HOVER;
-			tip = "All excluded — click to include every " + category.toLowerCase();
-			action = () -> plugin.includeMethods(items);
-		}
-		else
-		{
-			icon = RouteIcons.DASH;
-			hover = RouteIcons.DASH_HOVER;
-			tip = (items.size() - excludedCount) + " of " + items.size() + " included — click to include all";
-			action = () -> plugin.includeMethods(items);
-		}
-		// Chevron on the left (matching the section headers above), the include/exclude toggle at
-		// the row's right edge — with the toggle up front it sat exactly where users click to
-		// expand, so category toggles kept getting flipped by accident.
-		row.add(control(new JLabel(expanded ? RouteIcons.CHEVRON_DOWN : RouteIcons.CHEVRON_RIGHT)),
-			BorderLayout.WEST);
-
-		String count = allIncluded
-			? " (" + items.size() + ")"
-			: " (" + (items.size() - excludedCount) + "/" + items.size() + ")";
-		JLabel name = new JLabel(category + count);
-		name.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-		row.add(name, BorderLayout.CENTER);
-
-		row.add(control(new IconActionLabel(icon, hover, tip, action)), BorderLayout.EAST);
-
-		row.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		row.setToolTipText(expanded ? "Collapse" : "Expand to toggle individual methods");
-		addClickRecursively(row, new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				toggleCategory(category);
-			}
-		});
-		return row;
-	}
-
-	private JPanel buildCatalogItemRow(TeleportMethod item)
-	{
-		boolean excluded = cachedExclusions.contains(item);
-
-		JPanel row = new JPanel(new BorderLayout(3, 0));
-		row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		row.setBorder(new EmptyBorder(2, 18, 2, 4));
-		row.setAlignmentX(Component.LEFT_ALIGNMENT);
-		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
-
-		// Priority control (replaces the old include/exclude toggle): the icon shows the current
-		// tier — check = normal, stacked arrows = prefer/avoid, cross = excluded — and clicking
-		// opens the tier menu (exclude is its bottom entry).
-		MethodPriority tier = plugin.getMethodPriority(item);
-		final IconActionLabel[] toggleHolder = new IconActionLabel[1];
-		toggleHolder[0] = new IconActionLabel(priorityRestIcon(tier), priorityHoverIcon(tier),
-			priorityTooltip(item.label(), tier),
-			() -> showPriorityMenu(toggleHolder[0], item));
-		IconActionLabel toggle = toggleHolder[0];
-		// The status marker (lock/bank) stays by the name; the toggle sits at the row's right edge,
-		// aligned with the category toggles, away from where users click to expand.
-		MethodAvailability status = cachedUnavailable.get(item);
-		if (status != null)
-		{
-			JLabel statusMarker = statusLabel(status, item);
-			statusMarker.setBorder(new EmptyBorder(0, 0, 0, 3));
-			row.add(verticallyCentered(statusMarker), BorderLayout.WEST);
-		}
-
-		JLabel text = wrappedLabel(escapeHtml(item.label()));
-		text.setToolTipText(methodTooltip(item));
-		if (excluded)
-		{
-			text.setForeground(ColorScheme.LIGHT_GRAY_COLOR.darker());
-		}
-		// Centre the label at its preferred height instead of letting BorderLayout stretch it: a
-		// stretched html JLabel top-anchors its text (the html view claims the full height), which
-		// left the text floating high beside the vertically-centred icons.
-		row.add(verticallyCentered(text), BorderLayout.CENTER);
-
-		row.add(verticallyCentered(control(toggle)), BorderLayout.EAST);
-
-		return row;
-	}
-
-	/**
-	 * Marker for a method the player can't use in the current mode: a bank glyph for an item that's only
-	 * in the bank, a padlock for everything else, each with a reason tooltip.
-	 */
-	private JLabel statusLabel(MethodAvailability status, TeleportMethod method)
-	{
-		JLabel label = new JLabel(status == MethodAvailability.IN_BANK ? RouteIcons.IN_BANK : RouteIcons.LOCKED);
-		// Name exactly what is missing when the classification recorded it ("Requires 60 Mining",
-		// "Missing item: Willow logs"); the per-status generic wording is the fallback.
-		String detail = plugin.methodUnavailabilityDetail(method);
-		if (detail == null)
-		{
-			label.setToolTipText(statusReason(status));
-		}
-		else
-		{
-			label.setToolTipText(status == MethodAvailability.IN_BANK
-				? detail + " — switch to + Bank or withdraw it"
-				: detail);
-		}
-		return label;
-	}
-
-	private static String statusReason(MethodAvailability status)
-	{
-		switch (status)
-		{
-			case IN_BANK:
-				return "In your bank — switch to + Bank or withdraw it";
-			case MISSING_ITEM:
-				return "You don't have the required item";
-			case MISSING_LEVEL:
-				return "Your skill level is too low";
-			case MISSING_QUEST:
-				return "Requires an unfinished quest";
-			case LOCKED:
-			default:
-				return "Not unlocked yet (diary, minigame, purchase or setting)";
-		}
-	}
-
-	private void toggleCategory(String category)
-	{
-		if (!expandedCategories.add(category))
-		{
-			expandedCategories.remove(category);
-		}
-		// Repopulate the rows in place: cheaper than a full render, and the catalog section's dirty
-		// check (which doesn't track per-category expansion) would skip the rebuild anyway.
-		populateCatalogRows();
-	}
-
-	/**
-	 * Human list of method labels, e.g. "Fairy ring" or "Fairy ring and Cowbell amulet".
-	 */
-	private static String joinLabels(Set<TeleportMethod> methods)
-	{
-		StringBuilder joined = new StringBuilder();
-		int i = 0;
-		for (TeleportMethod method : methods)
-		{
-			if (i > 0)
-			{
-				joined.append(i == methods.size() - 1 ? " and " : ", ");
-			}
-			joined.append(method.label());
-			i++;
-		}
-		return joined.toString();
-	}
-
-	private String methodTooltip(TeleportMethod method)
-	{
-		return "<html>" + methodTooltipBody(method) + "</html>";
-	}
-
-	private String methodTooltipBody(TeleportMethod method)
-	{
-		int destination = method.getDestination();
-		int x = WorldPointUtil.unpackWorldX(destination);
-		int y = WorldPointUtil.unpackWorldY(destination);
-		int plane = WorldPointUtil.unpackWorldPlane(destination);
-		return "<b>" + escapeHtml(method.category()) + "</b><br>"
-			+ escapeHtml(method.label()) + "<br>"
-			+ "Arrives at " + x + ", " + y + (plane > 0 ? " (plane " + plane + ")" : "");
-	}
-
+	/** A click anywhere on a route card (its icon controls aside) shows that route on the map. */
 	private void makeSelectable(JPanel card, int index)
 	{
 		addClickRecursively(card, new MouseAdapter()
@@ -1951,27 +1197,6 @@ public class ShortestPathPanel extends PluginPanel
 				plugin.selectRoute(index);
 			}
 		});
-	}
-
-	/**
-	 * Attaches a click listener to a component and its descendants, skipping {@link IconActionLabel}s
-	 * so the icon controls keep their own action. Swing only delivers a click to the deepest component
-	 * under the cursor, hence the recursion.
-	 */
-	private void addClickRecursively(Component component, MouseListener listener)
-	{
-		if (component instanceof IconActionLabel)
-		{
-			return;
-		}
-		component.addMouseListener(listener);
-		if (component instanceof Container)
-		{
-			for (Component child : ((Container) component).getComponents())
-			{
-				addClickRecursively(child, listener);
-			}
-		}
 	}
 
 	private void updateModeButtons()

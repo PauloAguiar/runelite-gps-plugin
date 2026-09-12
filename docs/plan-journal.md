@@ -1208,3 +1208,23 @@ builders, shared with the panel's Travel and catalog headers and the notes strip
 `PanelWidgets` with the after-toggle rebuild passed in. Panel class: 2,829 to 1999 lines.
 
 **Suite:** 804 tests, all green.
+
+### Step P3: MethodCatalogView and TravelOptionsView (2026-09-12)
+
+**Red first:** `MethodCatalogViewTest`: teleport items group by charge model and every other
+method by its category; a banked item is usable only in the Inventory + bank mode; the funnel
+filter keeps excluded methods or one unavailability kind and the text filter matches the
+category or the label case-insensitively; every unavailability kind has a reason. The grouping,
+usability and matching rules were inline in the row builders.
+
+**Change:** the "Travel methods" catalog (the persistent filter box, the funnel menu, the
+category headers with their include/exclude toggles, the item rows with their priority menus,
+the bounded rows box and its scroll-position carry-over) became `MethodCatalogView`. The
+"Travel options" slot that composes the configuration sections and the catalog under one
+headline shell, with the rebuild-only-when-inputs-change rule, became `TravelOptionsView`; the
+panel mounts it and asks it whether a render must rebuild. The scrollable box became its own
+class, and the priority icons and tooltips, the method tooltip, the label joining, the click
+recursion and the lock/bank status marker (all shared with the route cards) moved to
+`PanelWidgets`. Panel class: 1,999 to 1224 lines.
+
+**Suite:** 808 tests, all green.

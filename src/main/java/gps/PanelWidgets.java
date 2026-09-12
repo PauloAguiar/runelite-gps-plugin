@@ -13,6 +13,8 @@ import java.awt.GridBagLayout;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.util.Set;
 import java.awt.image.BufferedImage;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -363,5 +365,159 @@ final class PanelWidgets
 		});
 		section.add(titleRow);
 		return section;
+	}
+
+	/** The rest icon of a priority tier: stacked arrows for prefer/avoid, a cross when excluded. */
+	static ImageIcon priorityRestIcon(MethodPriority tier)
+	{
+		switch (tier)
+		{
+			case PREFER_1:
+				return RouteIcons.PRIORITY_UP_ICONS[0];
+			case PREFER_2:
+				return RouteIcons.PRIORITY_UP_ICONS[1];
+			case PREFER_3:
+				return RouteIcons.PRIORITY_UP_ICONS[2];
+			case AVOID_1:
+				return RouteIcons.PRIORITY_DOWN_ICONS[0];
+			case AVOID_2:
+				return RouteIcons.PRIORITY_DOWN_ICONS[1];
+			case AVOID_3:
+				return RouteIcons.PRIORITY_DOWN_ICONS[2];
+			case EXCLUDED:
+				return RouteIcons.CROSS;
+			default:
+				return RouteIcons.PRIORITY_NEUTRAL;
+		}
+	}
+
+	static ImageIcon priorityHoverIcon(MethodPriority tier)
+	{
+		switch (tier)
+		{
+			case PREFER_1:
+				return RouteIcons.PRIORITY_UP_HOVER_ICONS[0];
+			case PREFER_2:
+				return RouteIcons.PRIORITY_UP_HOVER_ICONS[1];
+			case PREFER_3:
+				return RouteIcons.PRIORITY_UP_HOVER_ICONS[2];
+			case AVOID_1:
+				return RouteIcons.PRIORITY_DOWN_HOVER_ICONS[0];
+			case AVOID_2:
+				return RouteIcons.PRIORITY_DOWN_HOVER_ICONS[1];
+			case AVOID_3:
+				return RouteIcons.PRIORITY_DOWN_HOVER_ICONS[2];
+			case EXCLUDED:
+				return RouteIcons.CROSS_HOVER;
+			default:
+				return RouteIcons.PRIORITY_NEUTRAL_HOVER;
+		}
+	}
+
+	static String priorityTooltip(String label, MethodPriority tier)
+	{
+		String state = tier == MethodPriority.NORMAL
+			? "Normal priority"
+			: tier.label + (tier.chipText().isEmpty() ? "" : " (" + tier.chipText() + " on ranking)");
+		return "<html><b>" + escapeHtml(label) + "</b>: " + state
+			+ "<br>Click for priority options: prefer/avoid shift the ranking, exclude removes it.</html>";
+	}
+
+	/** The hover text of a method: its category, label and arrival tile. */
+	static String methodTooltip(TeleportMethod method)
+	{
+		return "<html>" + methodTooltipBody(method) + "</html>";
+	}
+
+	/** The tooltip's inner HTML, for callers that prepend their own line (the route cards). */
+	static String methodTooltipBody(TeleportMethod method)
+	{
+		int destination = method.getDestination();
+		int x = WorldPointUtil.unpackWorldX(destination);
+		int y = WorldPointUtil.unpackWorldY(destination);
+		int plane = WorldPointUtil.unpackWorldPlane(destination);
+		return "<b>" + escapeHtml(method.category()) + "</b><br>"
+			+ escapeHtml(method.label()) + "<br>"
+			+ "Arrives at " + x + ", " + y + (plane > 0 ? " (plane " + plane + ")" : "");
+	}
+
+	/** Human list of method labels: "Fairy ring", or "Fairy ring and Cowbell amulet". */
+	static String joinLabels(Set<TeleportMethod> methods)
+	{
+		StringBuilder joined = new StringBuilder();
+		int i = 0;
+		for (TeleportMethod method : methods)
+		{
+			if (i > 0)
+			{
+				joined.append(i == methods.size() - 1 ? " and " : ", ");
+			}
+			joined.append(method.label());
+			i++;
+		}
+		return joined.toString();
+	}
+
+	/**
+	 * Attaches a click listener to a component and its descendants, skipping {@link IconActionLabel}s
+	 * so the icon controls keep their own action. Swing only delivers a click to the deepest component
+	 * under the cursor, hence the recursion.
+	 */
+	static void addClickRecursively(Component component, MouseListener listener)
+	{
+		if (component instanceof IconActionLabel)
+		{
+			return;
+		}
+		component.addMouseListener(listener);
+		if (component instanceof Container)
+		{
+			for (Component child : ((Container) component).getComponents())
+			{
+				addClickRecursively(child, listener);
+			}
+		}
+	}
+
+	/**
+	 * Marker for a method the player cannot use in the current mode: a bank glyph for an item
+	 * that is only in the bank, a padlock for everything else, each with a reason tooltip. The
+	 * classification's own detail ("Requires 60 Mining", "Missing item: Willow logs") names
+	 * exactly what is missing when it recorded one; the per-status wording is the fallback.
+	 */
+	static JLabel statusMarker(ShortestPathPlugin plugin, MethodAvailability status, TeleportMethod method)
+	{
+		JLabel label = new JLabel(status == MethodAvailability.IN_BANK ? RouteIcons.IN_BANK : RouteIcons.LOCKED);
+		String detail = plugin.methodUnavailabilityDetail(method);
+		if (detail == null)
+		{
+			label.setToolTipText(statusReason(status));
+		}
+		else
+		{
+			label.setToolTipText(status == MethodAvailability.IN_BANK
+				? detail + ": switch to + Bank or withdraw it"
+				: detail);
+		}
+		return label;
+	}
+
+	/** The generic reason wording per unavailability kind. */
+	static String statusReason(MethodAvailability status)
+	{
+		switch (status)
+		{
+			case IN_BANK:
+				return "In your bank: switch to + Bank or withdraw it";
+			case MISSING_ITEM:
+				return "You don't have the required item";
+			case MISSING_LEVEL:
+				return "Your skill level is too low";
+			case MISSING_QUEST:
+				return "Requires an unfinished quest";
+			case LOCKED:
+			default:
+				return "Not unlocked yet (diary, minigame, purchase or setting)";
+		}
 	}
 }
