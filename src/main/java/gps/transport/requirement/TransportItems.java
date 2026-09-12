@@ -66,7 +66,7 @@ public class TransportItems
 		return requirements.size();
 	}
 
-	// Legacy getters for backwards compatibility
+	// Array views of the requirements, as the transport gating and the item index read them.
 	public int[][] getItems()
 	{
 		int[][] items = new int[requirements.size()][];

@@ -1138,3 +1138,13 @@ reflection, is retired.
 against the default; the plugin's startUp makes the one call. Plugin class: 1,571 to 1546 lines.
 
 **Suite:** 798 tests, all green.
+
+### Q2: the dead dashboard workflow, and a stale comment (2026-09-12)
+
+**Change:** the Dashboard Pages workflow ran on every CI Tests completion and was skipped every
+time: its job was gated on a head branch named master, the same class of bug N13 fixed for the
+other workflows. It also checks out the tooling repository, whose readability by the Actions
+token is unverified (the network was down during the review), so switching the gate alone could
+have turned every push red. It is manual-only now, with the gate corrected to main and the
+reason in the file, until both conditions are confirmed. The "legacy getters" comment in
+`TransportItems` misled: `getItems` has sixty call sites; it now says what the arrays are.

@@ -1,9 +1,11 @@
 name: Dashboard Pages
 
+# Manual only (review of 2026-09-12). The workflow_run trigger was gated on a head branch named
+# master, which never matches this repository's main, so the job had been skipped on every push
+# since the workflows moved to main; and the tooling checkout below needs
+# osrs-pathfinding/shortest-path-tooling to be readable by the Actions token, which has not been
+# verified. Re-enable on workflow_run (CI Tests, completed) once both hold.
 on:
-  workflow_run:
-    workflows: ["CI Tests"]
-    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -19,7 +21,7 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.head_branch == 'master')
+       github.event.workflow_run.head_branch == 'main')
     steps:
       - name: Checkout shortest-path-tooling with submodules
         uses: actions/checkout@v6
