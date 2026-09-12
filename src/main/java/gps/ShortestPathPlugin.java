@@ -186,7 +186,7 @@ public class ShortestPathPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
-		clearUnsurfacedTypeToggles();
+		HiddenToggleMigration.clearStranded(configManager, CONFIG_GROUP);
 		cacheConfigValues();
 		boatBannerService = new BoatBannerService(client, configManager, CONFIG_GROUP, () ->
 		{
@@ -240,7 +240,6 @@ public class ShortestPathPlugin extends Plugin
 		overlayManager.add(pathMapOverlay);
 		overlayManager.add(pathMapTooltipOverlay);
 		overlayManager.add(routeDirectionsOverlay);
-
 
 		exclusions.load();
 		preferences.load();
@@ -471,7 +470,6 @@ public class ShortestPathPlugin extends Plugin
 
 		cacheConfigValues();
 
-
 		// Transport option changed; rerun pathfinding
 		if ("defaultRouteCount".equals(event.getKey()))
 		{
@@ -613,7 +611,6 @@ public class ShortestPathPlugin extends Plugin
 		messages.receive(event);
 	}
 
-
 	@Subscribe
 	public void onMenuOpened(MenuOpened event)
 	{
@@ -732,7 +729,6 @@ public class ShortestPathPlugin extends Plugin
 				break;
 		}
 	}
-
 
 	@Subscribe
 	public void onMenuEntryAdded(MenuEntryAdded event)
@@ -895,7 +891,6 @@ public class ShortestPathPlugin extends Plugin
 		return EdgeTransports.forEdge(pathfinderConfig, currentStep, nextStep);
 	}
 
-
 	// The helm-preference toggle, cached for the comparator (read on the service thread).
 	private volatile boolean cachedKeepSailing = true;
 	// The overlays' display settings, one snapshot per config change (see OverlaySettings).
@@ -1005,7 +1000,6 @@ public class ShortestPathPlugin extends Plugin
 			: WorldPointUtil.fromLocalInstance(client, local);
 	}
 
-
 	// --- Alternative-routes feature (driven by ShortestPathPanel) ---
 
 	/** The journey wall-clock start, or 0 while it hasn't begun (armed, waiting for movement). */
@@ -1023,24 +1017,6 @@ public class ShortestPathPlugin extends Plugin
 	 * (sailing, balloons, POH and its variants, spirit trees) and the deliberate seasonal master
 	 * switch are NOT listed here.
 	 */
-	static final String[] UNSURFACED_TYPE_TOGGLES = {
-		"useAgilityShortcuts", "useGrappleShortcuts", "useBoats", "useCanoes", "useCharterShips",
-		"useShips", "useFairyRings", "useGnomeGliders", "useMagicCarpets", "useMagicMushtrees",
-		"useMinecarts", "useMountainGuides", "useQuetzals", "useTeleportationLevers",
-		"useTeleportationPortals", "useTeleportationSpells", "useTeleportationMinigames",
-		"useWildernessObelisks"};
-
-	private void clearUnsurfacedTypeToggles()
-	{
-		for (String key : UNSURFACED_TYPE_TOGGLES)
-		{
-			if (configManager.getConfiguration(CONFIG_GROUP, key) != null)
-			{
-				log.info("clearing stranded hidden toggle {} (no panel control; the default applies)", key);
-				configManager.unsetConfiguration(CONFIG_GROUP, key);
-			}
-		}
-	}
 
 	/** Re-arms the journey timer so it recounts from the player's next movement. */
 	void armJourney()
@@ -1363,7 +1339,6 @@ public class ShortestPathPlugin extends Plugin
 	{
 		searchMemory.removeFavorite(favorite);
 	}
-
 
 	/**
 	 * Manually (re)compute the alternative routes for whatever destination GPS currently has

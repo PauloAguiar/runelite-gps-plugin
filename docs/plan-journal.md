@@ -1106,3 +1106,35 @@ the GPS TSV format breaks by design (comment headers, blank separators, omitted 
 that `check_tsv.py` accepts since N13). Measured: 22 of the 40 files fail as they are, and six
 would still fail with comments skipped. The project's own checker is the gate and stays; the
 csvlint install and run steps are gone, with the reason in the workflow's header comment.
+
+## Review follow-ups (2026-09-12)
+
+The owner asked where the decomposition landed, what got worse, and which legacy systems remain
+(the startup line "clearing stranded hidden toggle useWildernessObelisks" in particular), then
+said to execute what quality and maintainability need. The review's numbers: plugin class 4,975
+to 1,571 lines (code 3,773 to 1,055), 36 new classes, 679 to 796 tests; against that, the whole
+main source grew 5.8% in comment-stripped code (delegates, accessors, javadoc), the panel still
+talks to the plugin facade, seven tests reached plugin internals by reflection through three
+name maps, and four collaborators take suppliers for injected services.
+
+### Q1: HiddenToggleMigration, and why the log line recurred (2026-09-12)
+
+**Finding:** RuneLite's `ConfigManager.setDefaultConfiguration` (bytecode of client 1.12.35, run
+for every plugin at load) writes each default-method config item's default into the store when
+the key is absent. The eighteen hidden type toggles default to on, so RuneLite wrote
+`useWildernessObelisks=true`, the plugin's routine found a stored value, logged at INFO and
+unset it, and the next start repeated the cycle: the owner's client log shows the eighteen lines
+on 2026-09-09 and again on 2026-09-10. The routine's real job, clearing a stale `false` from a
+pre-0.13 panel, is still valid for upgraders.
+
+**Red first:** `HiddenToggleMigrationTest`: only a stored value differing from the default is
+cleared (a stored "true" and an absent key are left alone; exactly one unset); every listed key
+is a hidden config item keyed by its own name whose default method returns on (invoked through
+a method handle on a proxy, so the DEFAULT constant cannot drift); the list never contains a
+panel-backed toggle. `StrandedToggleMigrationTest`, which reached the plugin's private method by
+reflection, is retired.
+
+**Change:** the routine and its list became `HiddenToggleMigration.clearStranded`, comparing
+against the default; the plugin's startUp makes the one call. Plugin class: 1,571 to 1546 lines.
+
+**Suite:** 798 tests, all green.
