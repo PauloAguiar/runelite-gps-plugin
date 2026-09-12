@@ -1,8 +1,8 @@
 package gps;
 
+import com.google.gson.Gson;
 import gps.pathfinder.PathfinderConfig;
 import gps.pathfinder.TestPathfinderConfig;
-import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -11,6 +11,7 @@ import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.config.ConfigManager;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -45,65 +46,6 @@ public class ProvisionalDisplayLiveTest
 			});
 	}
 
-	/** The plugin fields that moved onto the RouteSession (plan step L9), by their old names. */
-	private static final java.util.Map<String, String> SESSION_FIELDS = java.util.Map.of(
-		"alternativeRoutes", "routes", "selectedRoute", "selected", "committedDisplayRoute", "committed",
-		"altGenerationInFlight", "inFlight", "moreRoutesLikely", "moreLikely", "lastAltStart", "lastStart",
-		"lastAltTargets", "lastTargets", "lastAltLimit", "lastLimit", "routeLimit", "limit",
-		"routeCostMultiple", "costMultiple");
-
-	/** The plugin fields that moved onto the RouteController (plan step L35), by their old names. */
-	private static final java.util.Map<String, String> ROUTES_FIELDS = java.util.Map.of(
-		"altRoutesService", "service", "routesMode", "mode", "altPanelVisible", "panelVisible");
-
-	/** The plugin fields that moved onto the DestinationController (plan step L36), by their old names. */
-	private static final java.util.Map<String, String> DESTINATION_FIELDS = java.util.Map.of(
-		"pathTargets", "targets", "pathStart", "start", "altRoundTrip", "roundTrip", "targetSource", "source");
-
-	/** The object and field name to reflect on for {@code field}: the session or a controller for a moved field. */
-	private static Object[] resolve(Object plugin, String field) throws Exception
-	{
-		if (!(plugin instanceof ShortestPathPlugin))
-		{
-			return new Object[]{plugin, field};
-		}
-		if (SESSION_FIELDS.containsKey(field))
-		{
-			return new Object[]{fieldOf((ShortestPathPlugin) plugin, "session"), SESSION_FIELDS.get(field)};
-		}
-		if (ROUTES_FIELDS.containsKey(field))
-		{
-			return new Object[]{fieldOf((ShortestPathPlugin) plugin, "routes"), ROUTES_FIELDS.get(field)};
-		}
-		if (DESTINATION_FIELDS.containsKey(field))
-		{
-			return new Object[]{fieldOf((ShortestPathPlugin) plugin, "destination"), DESTINATION_FIELDS.get(field)};
-		}
-		return new Object[]{plugin, field};
-	}
-
-	private static Object fieldOf(ShortestPathPlugin plugin, String field) throws Exception
-	{
-		Field f = ShortestPathPlugin.class.getDeclaredField(field);
-		f.setAccessible(true);
-		return f.get(plugin);
-	}
-
-	private static void set(Object target, String field, Object value) throws Exception
-	{
-		Object[] at = resolve(target, field);
-		Field f = at[0].getClass().getDeclaredField((String) at[1]);
-		f.setAccessible(true);
-		f.set(at[0], value);
-	}
-
-	private static Object get(Object target, String field) throws Exception
-	{
-		Object[] at = resolve(target, field);
-		Field f = at[0].getClass().getDeclaredField((String) at[1]);
-		f.setAccessible(true);
-		return f.get(at[0]);
-	}
 
 	private static List<String> sampleGeneration(int start, int target, AlternativeRoutesMode mode) throws Exception
 	{
@@ -130,13 +72,20 @@ public class ProvisionalDisplayLiveTest
 		}).when(ct).invokeLater(Mockito.any(Runnable.class));
 		AlternativeRoutesService service = new AlternativeRoutesService(ct, planning);
 
-		ShortestPathPlugin plugin = new ShortestPathPlugin();
-		set(plugin, "routeDirectionsOverlay", Mockito.mock(RouteDirectionsOverlay.class));
-		set(plugin, "altRoutesService", service);
-		set(plugin, "config", cfg);
-		set(plugin, "pathTargets", Set.of(target));
-		set(plugin, "routeLimit", 10);
-		set(plugin, "routesMode", mode);
+		// The controller over a mocked plugin: the config, the destination and the identity order;
+		// the saved mode comes through the choice store as at startup.
+		Set<Integer> targets = Set.of(target);
+		ShortestPathPlugin plugin = Mockito.mock(ShortestPathPlugin.class);
+		Mockito.when(plugin.getGpsConfig()).thenReturn(cfg);
+		Mockito.when(plugin.getPathTargets()).thenReturn(targets);
+		Mockito.when(plugin.sortByEffectiveOrder(Mockito.any())).thenAnswer(i -> i.getArgument(0));
+		ConfigManager configManager = Mockito.mock(ConfigManager.class);
+		Mockito.when(configManager.getConfiguration("gps", ChoiceStore.CONFIG_KEY_MODE)).thenReturn(mode.name());
+		ChoiceStore choices = new ChoiceStore(() -> configManager, Gson::new, "gps");
+		RouteSession session = new RouteSession();
+		RouteController routes = new RouteController(plugin, session, new MethodExclusions(choices, () -> { }), choices,
+			new PluginMessageBridge(plugin, () -> null));
+		routes.start(service);
 
 		// Sample what the overlay would draw, as fast as a render loop and then some.
 		List<String> trace = new ArrayList<>();
@@ -150,11 +99,11 @@ public class ProvisionalDisplayLiveTest
 			{
 				try
 				{
-					boolean inFlight = (boolean) get(plugin, "altGenerationInFlight");
+					boolean inFlight = session.inFlight();
 					started |= inFlight;
-					RouteOption now = plugin.getDisplayedRoute();
+					RouteOption now = session.displayed(targets);
 					// The initial empty state is only "seen" once the generation is in flight.
-					if (!sawFinding && now == null && plugin.isFindingRoute())
+					if (!sawFinding && now == null && session.isFinding(targets))
 					{
 						sawFinding = true;
 						synchronized (trace)
@@ -167,7 +116,7 @@ public class ProvisionalDisplayLiveTest
 						synchronized (trace)
 						{
 							trace.add((now == null ? "null" : now.getTotalCost() + " " + now.getMethods())
-								+ (plugin.isFindingRoute() ? " [finding]" : "")
+								+ (session.isFinding(targets) ? " [finding]" : "")
 								+ (inFlight ? " [in-flight]" : ""));
 						}
 						last = now;
@@ -186,7 +135,7 @@ public class ProvisionalDisplayLiveTest
 		});
 		sampler.start();
 
-		((RouteController) fieldOf(plugin, "routes")).trigger(start, new HashSet<>(Set.of(target)));
+		routes.trigger(start, new HashSet<>(targets));
 		sampler.join(40000);
 		service.shutdown();
 		synchronized (trace)

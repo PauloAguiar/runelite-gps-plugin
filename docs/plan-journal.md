@@ -1148,3 +1148,20 @@ token is unverified (the network was down during the review), so switching the g
 have turned every push red. It is manual-only now, with the gate corrected to main and the
 reason in the file, until both conditions are confirmed. The "legacy getters" comment in
 `TransportItems` misled: `getItems` has sixty call sites; it now says what the arrays are.
+
+### Q3: the reflective tests target the controllers (2026-09-12)
+
+**Change:** six tests reached plugin internals by reflection through three name maps left by
+L9, L35 and L36. They now drive the real seams directly: `RouteRematchTest` settles and streams
+a `RouteSession` (the generation's done-branch is one call to settle); `ProvisionalDisplayTest`
+and `ProvisionalDisplayLiveTest` trigger and update a `RouteController` over a mocked plugin
+(the live one still runs a real generation on real threads); the catalog cadence test in
+`CatalogStutterHotfixTest` and the item-gate test in `RoutingItemDependenciesTest` use the
+controller's new item hook. Three small production additions made that possible without
+private access: `RouteSession.isFinding` (the HUD's finding state, which the plugin now
+delegates), `RouteController.itemsChanged` (the fingerprint gate, moved out of the plugin's
+item-container handler; it reports whether the catalog became dirty) with `isCatalogDirty`,
+and `CatalogRefresher.isDirty`. The only test left reflecting into the plugin is the gated HUD
+render dump, which sets injected overlay fields for a picture. Plugin class: 1,546 to 1541 lines.
+
+**Suite:** 798 tests, all green.

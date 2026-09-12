@@ -1,5 +1,6 @@
 package gps;
 
+import gps.pathfinder.PathfinderConfig;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -8,6 +9,7 @@ import java.util.Set;
 import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.GameState;
+import net.runelite.api.ItemContainer;
 
 /**
  * The alternative-routes generation (plan step L35, out of the plugin class): when a generation
@@ -290,16 +292,25 @@ final class RouteController
 		});
 	}
 
-	/** An inventory or equipment change with no dependency index to compare against. */
-	void markCatalogDirty()
+	/**
+	 * An inventory or equipment change: only the routing-relevant slice of the items dirties the
+	 * catalog (see CatalogRefresher); without a dependency index yet, every change does. Whether
+	 * the catalog became dirty.
+	 */
+	boolean itemsChanged(PathfinderConfig pathfinderConfig, ItemContainer inventory, ItemContainer equipment)
 	{
-		catalogRefresh.markDirty();
+		if (pathfinderConfig == null)
+		{
+			catalogRefresh.markDirty();
+			return true;
+		}
+		return catalogRefresh.noteItems(pathfinderConfig.getRoutingItemDependencies().fingerprint(inventory, equipment));
 	}
 
-	/** An inventory or equipment change: only the routing-relevant slice dirties the catalog. */
-	void noteItems(long routingItemsFingerprint)
+	/** Whether a catalog re-classification is pending. */
+	boolean isCatalogDirty()
 	{
-		catalogRefresh.noteItems(routingItemsFingerprint);
+		return catalogRefresh.isDirty();
 	}
 
 	/** Catalog-only re-classification after an item change, when due (see CatalogRefresher); each tick. */

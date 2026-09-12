@@ -199,6 +199,16 @@ final class RouteSession
 		return page.get(0);
 	}
 
+	/**
+	 * Whether the HUD is in its "Finding the best route" state for {@code currentTargets}: a
+	 * destination is set, its routes are still computing and nothing is on the overlay yet (a
+	 * same-destination regeneration keeps the previous route on screen instead).
+	 */
+	boolean isFinding(Set<Integer> currentTargets)
+	{
+		return inFlight && !currentTargets.isEmpty() && displayed(currentTargets) == null;
+	}
+
 	/** Toggles the pick at {@code index} (clicking the shown route hides it). False when out of range. */
 	boolean select(int index)
 	{

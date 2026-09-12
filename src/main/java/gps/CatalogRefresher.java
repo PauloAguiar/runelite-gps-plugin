@@ -22,6 +22,12 @@ final class CatalogRefresher
 	private long fingerprint;
 	private boolean fingerprintValid;
 
+	/** Whether a re-classification is pending (claimed on the next tick the panel is open). */
+	boolean isDirty()
+	{
+		return dirty;
+	}
+
 	/** The catalog must be re-classified (no fingerprint available to compare). */
 	void markDirty()
 	{

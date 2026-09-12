@@ -1,128 +1,91 @@
 package gps;
 
+import com.google.gson.Gson;
 import gps.pathfinder.PathStep;
 import gps.transport.TransportType;
-import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import net.runelite.client.config.ConfigManager;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 /**
- * The overlay's route while a generation streams: for a fresh destination NOTHING is shown — the
- * HUD is in its "Finding the best route" state — until the generation settles, when the best
+ * The overlay's route while a generation streams: for a fresh destination NOTHING is shown, the
+ * HUD is in its "Finding the best route" state, until the generation settles, when the best
  * route appears once. Front-runners streamed mid-generation never reach the overlay. A
- * same-destination regeneration keeps the committed route on screen throughout. Exercised through
- * the real trigger/update methods via reflection on a bare plugin instance (the RouteRematchTest
- * pattern).
+ * same-destination regeneration keeps the committed route on screen throughout. Exercised
+ * through the controller's real trigger and update over a mocked plugin (review of 2026-09-12:
+ * previously by reflection on a bare plugin instance).
  */
+@RunWith(MockitoJUnitRunner.class)
 public class ProvisionalDisplayTest
 {
 	private static final int START = WorldPointUtil.packWorldPoint(3222, 3218, 0);
 	private static final int TARGET = WorldPointUtil.packWorldPoint(3164, 3487, 0);
+	private static final Set<Integer> TARGETS = Set.of(TARGET);
 	private static final TeleportMethod TABLET =
 		new TeleportMethod(TransportType.TELEPORTATION_ITEM, "Varrock tablet", TARGET);
 	private static final TeleportMethod SPELL =
 		new TeleportMethod(TransportType.TELEPORTATION_SPELL, "Varrock Teleport", TARGET);
 
-	private ShortestPathPlugin plugin;
+	@Mock
+	ShortestPathPlugin plugin;
+	@Mock
+	ShortestPathConfig config;
+	@Mock
+	ConfigManager configManager;
+	@Mock
+	AlternativeRoutesService service;
+
+	private RouteSession session;
+	private RouteController routes;
 
 	@Before
-	public void before() throws Exception
+	public void before()
 	{
-		plugin = new ShortestPathPlugin();
-		RouteDirectionsOverlay overlay = Mockito.mock(RouteDirectionsOverlay.class);
-		set("routeDirectionsOverlay", overlay);
-		AlternativeRoutesService service = Mockito.mock(AlternativeRoutesService.class);
-		Mockito.when(service.wasMoreLikely()).thenReturn(false);
-		set("altRoutesService", service);
-		set("pathTargets", Set.of(TARGET));
-		// The done-branch publishes to other plugins through the config (postTransports).
-		set("config", Mockito.mock(ShortestPathConfig.class));
+		when(plugin.getGpsConfig()).thenReturn(config);
+		when(config.defaultRouteCount()).thenReturn(10);
+		// The effective order is the identity here: the lists arrive already ordered.
+		when(plugin.sortByEffectiveOrder(any())).thenAnswer(i -> i.getArgument(0));
+		ChoiceStore choices = new ChoiceStore(() -> configManager, Gson::new, "gps");
+		session = new RouteSession();
+		routes = new RouteController(plugin, session, new MethodExclusions(choices, () -> { }), choices,
+			new PluginMessageBridge(plugin, () -> null));
+		routes.start(service);
 	}
 
-	/** The plugin fields that moved onto the RouteSession (plan step L9), by their old names. */
-	private static final java.util.Map<String, String> SESSION_FIELDS = java.util.Map.of(
-		"alternativeRoutes", "routes", "selectedRoute", "selected", "committedDisplayRoute", "committed",
-		"altGenerationInFlight", "inFlight", "moreRoutesLikely", "moreLikely", "lastAltStart", "lastStart",
-		"lastAltTargets", "lastTargets", "lastAltLimit", "lastLimit", "routeLimit", "limit",
-		"routeCostMultiple", "costMultiple");
-
-	/** The plugin fields that moved onto the RouteController (plan step L35), by their old names. */
-	private static final java.util.Map<String, String> ROUTES_FIELDS = java.util.Map.of(
-		"altRoutesService", "service", "routesMode", "mode", "altPanelVisible", "panelVisible");
-
-	/** The plugin fields that moved onto the DestinationController (plan step L36), by their old names. */
-	private static final java.util.Map<String, String> DESTINATION_FIELDS = java.util.Map.of(
-		"pathTargets", "targets", "pathStart", "start", "altRoundTrip", "roundTrip", "targetSource", "source");
-
-	/** The object and field name to reflect on for {@code field}: the session or a controller for a moved field. */
-	private static Object[] resolve(Object plugin, String field) throws Exception
+	private void trigger()
 	{
-		if (!(plugin instanceof ShortestPathPlugin))
-		{
-			return new Object[]{plugin, field};
-		}
-		if (SESSION_FIELDS.containsKey(field))
-		{
-			return new Object[]{fieldOf((ShortestPathPlugin) plugin, "session"), SESSION_FIELDS.get(field)};
-		}
-		if (ROUTES_FIELDS.containsKey(field))
-		{
-			return new Object[]{fieldOf((ShortestPathPlugin) plugin, "routes"), ROUTES_FIELDS.get(field)};
-		}
-		if (DESTINATION_FIELDS.containsKey(field))
-		{
-			return new Object[]{fieldOf((ShortestPathPlugin) plugin, "destination"), DESTINATION_FIELDS.get(field)};
-		}
-		return new Object[]{plugin, field};
+		routes.trigger(START, new HashSet<>(TARGETS));
 	}
 
-	private static Object fieldOf(ShortestPathPlugin plugin, String field) throws Exception
+	private void update(List<RouteOption> list, boolean done)
 	{
-		Field f = ShortestPathPlugin.class.getDeclaredField(field);
-		f.setAccessible(true);
-		return f.get(plugin);
+		routes.onUpdate(list, List.of(), Map.of(), done);
 	}
 
-	private void set(String field, Object value) throws Exception
+	/** What the overlay draws for the destination. */
+	private RouteOption displayed()
 	{
-		Object[] at = resolve(plugin, field);
-		Field f = at[0].getClass().getDeclaredField((String) at[1]);
-		f.setAccessible(true);
-		f.set(at[0], value);
+		return session.displayed(TARGETS);
 	}
 
-	@SuppressWarnings("unchecked")
-	private <T> T get(String field) throws Exception
+	/** Whether the HUD is in its finding state for the destination. */
+	private boolean finding()
 	{
-		Object[] at = resolve(plugin, field);
-		Field f = at[0].getClass().getDeclaredField((String) at[1]);
-		f.setAccessible(true);
-		return (T) f.get(at[0]);
-	}
-
-	private RouteController routes() throws Exception
-	{
-		return (RouteController) fieldOf(plugin, "routes");
-	}
-
-	private void trigger() throws Exception
-	{
-		routes().trigger(START, new HashSet<>(Set.of(TARGET)));
-	}
-
-	private void update(List<RouteOption> routes, boolean done) throws Exception
-	{
-		routes().onUpdate(routes, List.<TeleportMethod>of(), Map.<TeleportMethod, MethodAvailability>of(), done);
+		return session.isFinding(TARGETS);
 	}
 
 	private static RouteOption route(int cost, TeleportMethod method)
@@ -133,33 +96,33 @@ public class ProvisionalDisplayTest
 	}
 
 	@Test
-	public void freshDestinationStaysClearUntilTheListSettles() throws Exception
+	public void freshDestinationStaysClearUntilTheListSettles()
 	{
 		RouteOption first = route(100, SPELL);
 		RouteOption cheaper = route(50, TABLET);
 		RouteOption middle = route(70, SPELL);
 
 		trigger();
-		assertTrue("a generation is in flight", (boolean) get("altGenerationInFlight"));
-		assertNull("nothing on the overlay before the routes settle", plugin.getDisplayedRoute());
-		assertTrue("the HUD is in its finding state", plugin.isFindingRoute());
+		assertTrue("a generation is in flight", session.inFlight());
+		assertNull("nothing on the overlay before the routes settle", displayed());
+		assertTrue("the HUD is in its finding state", finding());
 
 		update(List.of(first), false);
-		assertNull("the first route found is NOT shown — it may still change", plugin.getDisplayedRoute());
-		assertTrue(plugin.isFindingRoute());
+		assertNull("the first route found is NOT shown: it may still change", displayed());
+		assertTrue(finding());
 		update(List.of(cheaper, first), false);
 		update(List.of(cheaper, middle, first), false);
-		assertNull("front-runners mid-stream never reach the overlay", plugin.getDisplayedRoute());
-		assertTrue(plugin.isFindingRoute());
+		assertNull("front-runners mid-stream never reach the overlay", displayed());
+		assertTrue(finding());
 
 		update(List.of(cheaper, middle, first), true);
-		assertSame("settled: the final best appears, once", cheaper, plugin.getDisplayedRoute());
-		assertFalse("finding state over", plugin.isFindingRoute());
-		assertFalse((boolean) get("altGenerationInFlight"));
+		assertSame("settled: the final best appears, once", cheaper, displayed());
+		assertFalse("finding state over", finding());
+		assertFalse(session.inFlight());
 	}
 
 	@Test
-	public void sameDestinationRegenerationKeepsTheCommittedRoute() throws Exception
+	public void sameDestinationRegenerationKeepsTheCommittedRoute()
 	{
 		RouteOption settled = route(50, TABLET);
 		RouteOption newer = route(40, SPELL);
@@ -167,16 +130,16 @@ public class ProvisionalDisplayTest
 		trigger();
 		update(List.of(settled), false);
 		update(List.of(settled), true);
-		assertSame(settled, plugin.getDisplayedRoute());
+		assertSame(settled, displayed());
 
 		// Off-route recalc / method toggle: same targets, the overlay holds the committed route
-		// steadily while the fresh list streams — no blank, no finding state.
+		// steadily while the fresh list streams: no blank, no finding state.
 		trigger();
-		assertSame("committed route survives the regeneration start", settled, plugin.getDisplayedRoute());
-		assertFalse("a held route is not a finding state", plugin.isFindingRoute());
+		assertSame("committed route survives the regeneration start", settled, displayed());
+		assertFalse("a held route is not a finding state", finding());
 		update(List.of(newer), false);
-		assertSame("streaming does not swap the held route", settled, plugin.getDisplayedRoute());
+		assertSame("streaming does not swap the held route", settled, displayed());
 		update(List.of(newer), true);
-		assertSame("settles to the new best once", newer, plugin.getDisplayedRoute());
+		assertSame("settles to the new best once", newer, displayed());
 	}
 }

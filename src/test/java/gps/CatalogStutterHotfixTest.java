@@ -1,11 +1,13 @@
 package gps;
 
+import com.google.gson.Gson;
 import gps.pathfinder.PathfinderConfig;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Quest;
+import net.runelite.client.callback.ClientThread;
+import net.runelite.client.config.ConfigManager;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -113,71 +115,48 @@ public class CatalogStutterHotfixTest
 
 	/** Hidden panel: the dirty flag waits; visible panel: consumed, with a burst cooldown. */
 	@Test
-	public void catalogRefreshWaitsForTheVisiblePanel() throws Exception
+	public void catalogRefreshWaitsForTheVisiblePanel()
 	{
-		ShortestPathPlugin plugin = new ShortestPathPlugin();
-		AlternativeRoutesService service = mock(AlternativeRoutesService.class);
-		ShortestPathPanel panel = mock(ShortestPathPanel.class);
+		ShortestPathPlugin plugin = Mockito.mock(ShortestPathPlugin.class);
+		AlternativeRoutesService service = Mockito.mock(AlternativeRoutesService.class);
+		ShortestPathPanel panel = Mockito.mock(ShortestPathPanel.class);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
-		lenient().when(client.getTickCount()).thenReturn(100);
-		set(plugin, "client", client);
-		set(routes(plugin), "service", service);
-		set(plugin, "altPanel", panel);
-		set(refresher(plugin), "dirty", true);
-
-		RouteController routes = routes(plugin);
+		when(client.getTickCount()).thenReturn(100);
+		when(config.defaultRouteCount()).thenReturn(10);
+		when(plugin.getClient()).thenReturn(client);
+		when(plugin.getGpsConfig()).thenReturn(config);
+		when(plugin.panel()).thenReturn(panel);
+		when(plugin.getClientThread()).thenReturn(Mockito.mock(ClientThread.class));
+		ConfigManager configManager = Mockito.mock(ConfigManager.class);
+		ChoiceStore choices = new ChoiceStore(() -> configManager, Gson::new, "gps");
+		RouteController routes = new RouteController(plugin, new RouteSession(), new MethodExclusions(choices, () -> { }),
+			choices, new PluginMessageBridge(plugin, () -> null));
+		routes.start(service);
+		// An item change with no dependency index yet: the catalog is dirty.
+		routes.itemsChanged(null, null, null);
 
 		// Panel hidden (the reporters' state): nothing runs, the flag stays armed.
 		routes.refreshCatalogIfDue();
 		verify(service, never()).refreshCatalog(any(), any());
-		assertTrue("dirty flag must survive a hidden-panel tick", getBool(refresher(plugin), "dirty"));
+		assertTrue("dirty flag must survive a hidden-panel tick", routes.isCatalogDirty());
 
 		// Panel opens: the pending flag is consumed on the next tick.
-		set(routes, "panelVisible", true);
+		routes.setPanelVisible(true);
 		routes.refreshCatalogIfDue();
 		verify(service, times(1)).refreshCatalog(any(), any());
-		assertFalse(getBool(refresher(plugin), "dirty"));
+		assertFalse(routes.isCatalogDirty());
 
 		// A burst on the same tick (chopping logs with the panel open) waits out the cooldown...
-		set(refresher(plugin), "dirty", true);
+		routes.itemsChanged(null, null, null);
 		routes.refreshCatalogIfDue();
 		verify(service, times(1)).refreshCatalog(any(), any());
-		assertTrue(getBool(refresher(plugin), "dirty"));
+		assertTrue(routes.isCatalogDirty());
 
 		// ...and runs once the cooldown lapses.
 		when(client.getTickCount()).thenReturn(105);
 		routes.refreshCatalogIfDue();
 		verify(service, times(2)).refreshCatalog(any(), any());
-		assertFalse(getBool(refresher(plugin), "dirty"));
+		assertFalse(routes.isCatalogDirty());
 	}
 
-	/** The plugin's route controller (see RouteController), which owns the generation state since L35. */
-	private static RouteController routes(ShortestPathPlugin plugin) throws Exception
-	{
-		Field f = ShortestPathPlugin.class.getDeclaredField("routes");
-		f.setAccessible(true);
-		return (RouteController) f.get(plugin);
-	}
-
-	/** The controller's catalog refresher (see CatalogRefresher), which owns the dirty flag since L29. */
-	private static CatalogRefresher refresher(ShortestPathPlugin plugin) throws Exception
-	{
-		Field f = RouteController.class.getDeclaredField("catalogRefresh");
-		f.setAccessible(true);
-		return (CatalogRefresher) f.get(routes(plugin));
-	}
-
-	private static void set(Object target, String field, Object value) throws Exception
-	{
-		Field f = target.getClass().getDeclaredField(field);
-		f.setAccessible(true);
-		f.set(target, value);
-	}
-
-	private static boolean getBool(Object target, String field) throws Exception
-	{
-		Field f = target.getClass().getDeclaredField(field);
-		f.setAccessible(true);
-		return (boolean) f.get(target);
-	}
 }

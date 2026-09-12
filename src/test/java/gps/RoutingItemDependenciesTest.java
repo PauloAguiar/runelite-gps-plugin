@@ -1,14 +1,13 @@
 package gps;
 
+import com.google.gson.Gson;
 import gps.pathfinder.PathfinderConfig;
 import gps.pathfinder.TestPathfinderConfig;
-import java.lang.reflect.Field;
 import net.runelite.api.Client;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
-import net.runelite.api.events.ItemContainerChanged;
-import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
+import net.runelite.client.config.ConfigManager;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -111,65 +110,34 @@ public class RoutingItemDependenciesTest
 		assertEquals("a coin pickup above every fare crosses no threshold", rich, richer);
 	}
 
-	/** End to end through the plugin handler: only relevant changes arm the dirty flag. */
+	/** End to end through the controller's item hook: only relevant changes arm the dirty flag. */
 	@Test
-	public void inventoryEventsWithoutRelevantChangesStayClean() throws Exception
+	public void inventoryEventsWithoutRelevantChangesStayClean()
 	{
-		ShortestPathPlugin plugin = new ShortestPathPlugin();
 		PathfinderConfig pathConfig = new TestPathfinderConfig(client, config);
-		set(plugin, "client", client);
-		set(plugin, "pathfinderConfig", pathConfig);
+		ShortestPathPlugin plugin = mock(ShortestPathPlugin.class);
+		ConfigManager configManager = mock(ConfigManager.class);
+		ChoiceStore choices = new ChoiceStore(() -> configManager, Gson::new, "gps");
+		RouteController routes = new RouteController(plugin, new RouteSession(), new MethodExclusions(choices, () -> { }),
+			choices, new PluginMessageBridge(plugin, () -> null));
 
 		ItemContainer worn = container();
 		ItemContainer inv = container(new Item(ItemID.RING_OF_DUELING_8, 1),
 			new Item(ItemID.RAW_SHRIMP, 3), new Item(ItemID.LOGS, 5));
-		when(client.getItemContainer(InventoryID.INV)).thenReturn(inv);
-		when(client.getItemContainer(InventoryID.WORN)).thenReturn(worn);
-
 		// First event baselines the fingerprint (dirty once, panel-gated downstream anyway).
-		plugin.onItemContainerChanged(new ItemContainerChanged(InventoryID.INV, inv));
-		assertTrue(getBool(refresher(plugin), "dirty"));
-		set(refresher(plugin), "dirty", false);
+		assertTrue(routes.itemsChanged(pathConfig, inv, worn));
+		assertTrue(routes.isCatalogDirty());
 
 		// Fishing shrimp: the routing-relevant slice is unchanged, no refresh is ever scheduled.
-		// (Mocks are built BEFORE stubbing - nesting mock creation inside thenReturn is a
-		// Mockito unfinished-stubbing trap.)
 		ItemContainer moreShrimp = container(new Item(ItemID.RING_OF_DUELING_8, 1),
 			new Item(ItemID.RAW_SHRIMP, 22), new Item(ItemID.LOGS, 5));
-		when(client.getItemContainer(InventoryID.INV)).thenReturn(moreShrimp);
-		plugin.onItemContainerChanged(new ItemContainerChanged(InventoryID.INV, moreShrimp));
-		assertFalse("bulk skilling traffic must not dirty the catalog", getBool(refresher(plugin), "dirty"));
+		assertFalse("bulk skilling traffic must not dirty the catalog", routes.itemsChanged(pathConfig, moreShrimp, worn));
 
 		// Equipping the dueling ring: relevant slice changed, the flag arms.
 		ItemContainer invAfterEquip = container(new Item(ItemID.RAW_SHRIMP, 22), new Item(ItemID.LOGS, 5));
 		ItemContainer wornAfterEquip = container(new Item(ItemID.RING_OF_DUELING_8, 1));
-		when(client.getItemContainer(InventoryID.INV)).thenReturn(invAfterEquip);
-		when(client.getItemContainer(InventoryID.WORN)).thenReturn(wornAfterEquip);
-		plugin.onItemContainerChanged(new ItemContainerChanged(InventoryID.WORN, wornAfterEquip));
-		assertTrue("a teleport item moving matters", getBool(refresher(plugin), "dirty"));
+		assertTrue("a teleport item moving matters", routes.itemsChanged(pathConfig, invAfterEquip, wornAfterEquip));
+		assertTrue("without a dependency index yet, every change counts", routes.itemsChanged(null, inv, worn));
 	}
 
-	/** The controller's catalog refresher (see CatalogRefresher): the plugin's route controller owns it since L35. */
-	private static CatalogRefresher refresher(ShortestPathPlugin plugin) throws Exception
-	{
-		Field routes = ShortestPathPlugin.class.getDeclaredField("routes");
-		routes.setAccessible(true);
-		Field f = RouteController.class.getDeclaredField("catalogRefresh");
-		f.setAccessible(true);
-		return (CatalogRefresher) f.get(routes.get(plugin));
-	}
-
-	private static void set(Object target, String field, Object value) throws Exception
-	{
-		Field f = target.getClass().getDeclaredField(field);
-		f.setAccessible(true);
-		f.set(target, value);
-	}
-
-	private static boolean getBool(Object target, String field) throws Exception
-	{
-		Field f = target.getClass().getDeclaredField(field);
-		f.setAccessible(true);
-		return (boolean) f.get(target);
-	}
 }

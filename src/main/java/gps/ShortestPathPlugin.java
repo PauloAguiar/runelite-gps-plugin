@@ -423,7 +423,7 @@ public class ShortestPathPlugin extends Plugin
 	 */
 	public boolean isFindingRoute()
 	{
-		return session.inFlight() && !destination.targets().isEmpty() && getDisplayedRoute() == null;
+		return session.isFinding(destination.targets());
 	}
 
 	/** Whether a displayed route's endpoint is too far from the targets for the reached colour (see RouteVerdicts). */
@@ -741,14 +741,9 @@ public class ShortestPathPlugin extends Plugin
 	{
 		if (event.getContainerId() == InventoryID.INV || event.getContainerId() == InventoryID.WORN)
 		{
-			// Only the routing-relevant slice of the items dirties the catalog (see CatalogRefresher).
-			if (pathfinderConfig == null)
-			{
-				routes.markCatalogDirty();
-				return;
-			}
-			routes.noteItems(pathfinderConfig.getRoutingItemDependencies().fingerprint(
-				client.getItemContainer(InventoryID.INV), client.getItemContainer(InventoryID.WORN)));
+			// Only the routing-relevant slice of the items dirties the catalog (see RouteController.itemsChanged).
+			routes.itemsChanged(pathfinderConfig, client.getItemContainer(InventoryID.INV),
+				client.getItemContainer(InventoryID.WORN));
 			return;
 		}
 		if (event.getContainerId() != InventoryID.BANK)
