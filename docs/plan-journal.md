@@ -1245,3 +1245,20 @@ and shows the current routes with the displayed one highlighted. Panel class: 1,
 lines.
 
 **Suite:** 810 tests, all green.
+
+### Step P5: PanelHeaderView and NoticesView (2026-09-12)
+
+**Red first:** `NoticesViewTest`, the status banner's decision table: nothing while calculating
+or while a route reaches; every route stopping short says why (the unlocks you lack, or no
+known route); nothing found for a target hints at a broader mode unless already in All; an
+empty list after arrival says arrived (or already there); otherwise no destination is set. The
+decision was inline in the panel's render.
+
+**Change:** the header (title row with Report an issue, GitHub, Discord and the burger; the
+issue report's copy box; the segmented mode picker; the bank-contents warning under it) became
+`PanelHeaderView`, and the notices strip (the status banner, the warnings behind their hide
+toggle, the persistent dismiss, the arrival state) became `NoticesView`. The panel is now the
+composition of its five views and one render that keeps them current, 169 lines from the
+3,777 the series started at.
+
+**Suite:** 814 tests, all green.
