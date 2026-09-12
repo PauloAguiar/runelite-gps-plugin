@@ -15,6 +15,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -272,5 +273,95 @@ final class PanelWidgets
 			case "Seasonal": return new Color(0x94, 0xB4, 0x4A);        // olive
 			default: return CATEGORY_PALETTE[Math.floorMod(category.hashCode(), CATEGORY_PALETTE.length)];
 		}
+	}
+
+	/**
+	 * A message banner: a coloured left accent bar, an icon, and wrapped text; used for status
+	 * and warnings instead of loose labels.
+	 */
+	static JPanel banner(Icon icon, String innerHtml, Color accent)
+	{
+		JPanel banner = new JPanel(new BorderLayout(7, 0));
+		banner.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		banner.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createMatteBorder(0, 3, 0, 0, accent),
+			new EmptyBorder(5, 7, 5, 6)));
+		banner.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		// The icon sits vertically centred against the (possibly multi-line) text.
+		banner.add(verticallyCentered(new JLabel(icon)), BorderLayout.WEST);
+
+		JLabel text = new JLabel("<html><body style='width:" + BANNER_TEXT_WIDTH + "px'>" + innerHtml + "</body></html>");
+		text.setFont(FontManager.getRunescapeSmallFont());
+		text.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		banner.add(text, BorderLayout.CENTER);
+
+		banner.setMaximumSize(new Dimension(Integer.MAX_VALUE, banner.getPreferredSize().height));
+		return banner;
+	}
+
+	/**
+	 * A titled banner: a bold white title on the first line, the description beneath it. For
+	 * warnings and notices that read better as heading plus body than one run.
+	 */
+	static JPanel banner(Icon icon, String title, String body, Color accent)
+	{
+		String html = "<font color='#FFFFFF'><b>" + escapeHtml(title) + "</b></font>";
+		if (body != null && !body.isEmpty())
+		{
+			html += "<br>" + body;
+		}
+		return banner(icon, html, accent);
+	}
+
+	/**
+	 * Collapsible shell shared by the configuration sections: a clickable header row (chevron,
+	 * title, coloured state text) that runs {@code toggle} to flip the caller's expanded flag,
+	 * then {@code afterToggle} to rebuild. The caller adds the body when expanded.
+	 * {@code headline} styles the title like the panel's top-level section headers (bold, brand
+	 * orange), used by the "Travel options" section that groups the others.
+	 */
+	static JPanel sectionShell(String title, String tooltip, boolean expanded, Runnable toggle,
+		String stateText, Color stateColor, boolean headline, Runnable afterToggle)
+	{
+		JPanel section = new JPanel();
+		section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
+		section.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		section.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		JPanel titleRow = new JPanel(new BorderLayout(5, 0));
+		titleRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		titleRow.setBorder(new EmptyBorder(0, 0, 4, 0));
+		titleRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+		titleRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+		titleRow.add(control(new JLabel(expanded ? RouteIcons.CHEVRON_DOWN : RouteIcons.CHEVRON_RIGHT)),
+			BorderLayout.WEST);
+		JLabel titleLabel = new JLabel(title);
+		if (headline)
+		{
+			titleLabel.setFont(FontManager.getRunescapeBoldFont());
+			titleLabel.setForeground(ColorScheme.BRAND_ORANGE);
+		}
+		else
+		{
+			titleLabel.setForeground(Color.WHITE);
+		}
+		titleRow.add(titleLabel, BorderLayout.CENTER);
+		JLabel state = new JLabel(stateText);
+		state.setForeground(stateColor);
+		titleRow.add(state, BorderLayout.EAST);
+		titleRow.setToolTipText(tooltip);
+		titleRow.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		titleRow.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mousePressed(MouseEvent e)
+			{
+				toggle.run();
+				afterToggle.run();
+			}
+		});
+		section.add(titleRow);
+		return section;
 	}
 }

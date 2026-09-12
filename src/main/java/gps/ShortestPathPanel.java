@@ -11,11 +11,9 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Point;
-import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -64,11 +62,13 @@ import static gps.PanelWidgets.CATALOG_MAX_HEIGHT;
 import static gps.PanelWidgets.CONTROL_SIZE;
 import static gps.PanelWidgets.SAIL_DOT_COLOUR;
 import static gps.PanelWidgets.WALK_DOT_COLOUR;
+import static gps.PanelWidgets.banner;
 import static gps.PanelWidgets.control;
 import static gps.PanelWidgets.dot;
 import static gps.PanelWidgets.escapeHtml;
 import static gps.PanelWidgets.methodDot;
 import static gps.PanelWidgets.noteRow;
+import static gps.PanelWidgets.sectionShell;
 import static gps.PanelWidgets.verticalGap;
 import static gps.PanelWidgets.verticallyCentered;
 import static gps.PanelWidgets.wrappedLabel;
@@ -87,7 +87,6 @@ public class ShortestPathPanel extends PluginPanel
 	// The header's GitHub mark points at the project home; the Discord mark at the community invite.
 	private static final String GITHUB_REPO_URL = "https://github.com/PauloAguiar/runelite-gps-plugin";
 	private static final String DISCORD_URL = "https://discord.gg/7VAbrPsUzT";
-
 
 	private final ShortestPathPlugin plugin;
 	// Message-banner container below the header; repopulated each render with the status banner
@@ -139,13 +138,8 @@ public class ShortestPathPanel extends PluginPanel
 	// by default so the routes stay the focus; the user opens it to browse/toggle methods.
 	private boolean catalogExpanded = false;
 	private boolean travelSectionExpanded = false;
-	private boolean pohSectionExpanded = false;
-	private boolean wildernessSectionExpanded = false;
-	private boolean walkingSectionExpanded = false;
-	private boolean bankSectionExpanded = false;
-	private boolean balloonSectionExpanded = false;
-	private boolean sailingSectionExpanded = false;
-	private boolean spiritTreeSectionExpanded = false;
+	// The seven configuration sections and their expanded state (see ConfigSectionsView).
+	private final ConfigSectionsView configSections;
 	// Funnel filter next to the catalog search: narrow the list to disabled methods or to a single
 	// kind of unavailability (missing item/level/quest, in bank, not unlocked).
 	private CatalogFilter catalogFilter = CatalogFilter.ALL;
@@ -202,6 +196,7 @@ public class ShortestPathPanel extends PluginPanel
 	{
 		super(false);
 		this.plugin = plugin;
+		configSections = new ConfigSectionsView(plugin, this::refreshCatalog, this::refreshConfigSections);
 		setLayout(new BorderLayout());
 		setBorder(new EmptyBorder(8, 8, 8, 8));
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -507,24 +502,6 @@ public class ShortestPathPanel extends PluginPanel
 		return notes;
 	}
 
-	/**
-	 * A message banner: a coloured left accent bar, an icon, and wrapped text — used for status and
-	 * warnings instead of loose labels.
-	 */
-	/**
-	 * A titled banner: a bold white title on the first line, the description beneath it. For
-	 * warnings/notices that read better as heading + body than one run.
-	 */
-	private JPanel buildBanner(Icon icon, String title, String body, Color accent)
-	{
-		String html = "<font color='#FFFFFF'><b>" + escapeHtml(title) + "</b></font>";
-		if (body != null && !body.isEmpty())
-		{
-			html += "<br>" + body;
-		}
-		return buildBanner(icon, html, accent);
-	}
-
 	private boolean cfgQuestBannerDismissed()
 	{
 		return plugin.getGpsConfig().questHelperBannerDismissed();
@@ -563,27 +540,6 @@ public class ShortestPathPanel extends PluginPanel
 		}
 		banner.add(verticallyCentered(close), BorderLayout.EAST);
 		// The narrower text may wrap one line further: recompute the height cap.
-		banner.setMaximumSize(new Dimension(Integer.MAX_VALUE, banner.getPreferredSize().height));
-		return banner;
-	}
-
-	private JPanel buildBanner(Icon icon, String innerHtml, Color accent)
-	{
-		JPanel banner = new JPanel(new BorderLayout(7, 0));
-		banner.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		banner.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createMatteBorder(0, 3, 0, 0, accent),
-			new EmptyBorder(5, 7, 5, 6)));
-		banner.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-		// The icon sits vertically centred against the (possibly multi-line) text.
-		banner.add(verticallyCentered(new JLabel(icon)), BorderLayout.WEST);
-
-		JLabel text = new JLabel("<html><body style='width:" + BANNER_TEXT_WIDTH + "px'>" + innerHtml + "</body></html>");
-		text.setFont(FontManager.getRunescapeSmallFont());
-		text.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-		banner.add(text, BorderLayout.CENTER);
-
 		banner.setMaximumSize(new Dimension(Integer.MAX_VALUE, banner.getPreferredSize().height));
 		return banner;
 	}
@@ -681,7 +637,7 @@ public class ShortestPathPanel extends PluginPanel
 		modeBankWarning.removeAll();
 		if (plugin.getRoutesMode() == AlternativeRoutesMode.OWNED_WITH_BANK && !plugin.isBankContentsKnown())
 		{
-			modeBankWarning.add(buildBanner(RouteIcons.BANNER_WARNING,
+			modeBankWarning.add(banner(RouteIcons.BANNER_WARNING,
 				"Bank contents unknown",
 				plugin.getGpsConfig().rememberBank()
 					? "Open your bank once so banked items can be found. GPS will remember it for future sessions."
@@ -693,7 +649,7 @@ public class ShortestPathPanel extends PluginPanel
 		modeBankWarning.repaint();
 		if (status != null)
 		{
-			notes.add(buildBanner(statusIcon, status, statusAccent));
+			notes.add(banner(statusIcon, status, statusAccent));
 		}
 		// Warning banners are grouped behind a compact "N warnings" row that toggles them, so a
 		// stack of notices doesn't permanently crowd the panel. The sync hints (house, spirit
@@ -705,7 +661,7 @@ public class ShortestPathPanel extends PluginPanel
 		// arrive. Dismissable (the x persists via config) for users who prefer it that way.
 		if (plugin.isQuestHelperPathingOff() && !cfgQuestBannerDismissed())
 		{
-			warnings.add(withDismiss(buildBanner(RouteIcons.BANNER_WARNING,
+			warnings.add(withDismiss(banner(RouteIcons.BANNER_WARNING,
 				"Quest Helper isn't routing through GPS",
 				"Turn on <b>Use Shortest Path plugin</b> in Quest Helper's settings so quest"
 					+ " steps hand their destinations to GPS.",
@@ -715,7 +671,7 @@ public class ShortestPathPanel extends PluginPanel
 		// the plugin-message integrations (both answer Quest Helper's destinations).
 		if (plugin.isShortestPathConflict())
 		{
-			warnings.add(buildBanner(RouteIcons.BANNER_WARNING,
+			warnings.add(banner(RouteIcons.BANNER_WARNING,
 				"Shortest Path is also enabled",
 				"Both plugins draw paths and respond to the same integrations. GPS includes its "
 					+ "functionality — disable Shortest Path to avoid doubled rendering.",
@@ -724,33 +680,33 @@ public class ShortestPathPanel extends PluginPanel
 		// Method toggles no longer recalculate; flag a route list generated with different exclusions.
 		if (!cachedCalculating && cachedHasTarget && plugin.isRouteListStale())
 		{
-			warnings.add(buildBanner(RouteIcons.BANNER_WARNING,
+			warnings.add(banner(RouteIcons.BANNER_WARNING,
 				"Exclusions changed — press \"Refresh routes\" to apply.", BANNER_WARN_ACCENT));
 		}
 		// Log storage running low at the balloon stations (smart mode, synced, unlocked routes only).
 		List<String> lowLogs = plugin.getBalloonLowLogTypes();
 		if (!lowLogs.isEmpty())
 		{
-			warnings.add(buildBalloonLowBanner(lowLogs));
+			warnings.add(configSections.balloonLowBanner(lowLogs));
 		}
 		ShortestPathConfig cfg = plugin.getGpsConfig();
 		if (cfg.usePoh() && cfg.pohSmartDetect() && !plugin.isPohScanned())
 		{
-			warnings.add(buildBanner(RouteIcons.BANNER_WARNING,
+			warnings.add(banner(RouteIcons.BANNER_WARNING,
 				"House furniture not detected",
 				"Enter your house once to auto-detect its teleport furniture.",
 				BANNER_WARN_ACCENT));
 		}
 		if (cfg.useSpiritTrees() && cfg.spiritTreeSmartMode() && !plugin.isSpiritTreeSynced())
 		{
-			warnings.add(buildBanner(RouteIcons.BANNER_WARNING,
+			warnings.add(banner(RouteIcons.BANNER_WARNING,
 				"Planted spirit trees not synced",
 				"Open a spirit tree's travel menu once to detect which trees you have planted.",
 				BANNER_WARN_ACCENT));
 		}
 		if (cfg.useHotAirBalloons() && cfg.balloonSmartMode() && !cfg.balloonStorageSynced())
 		{
-			warnings.add(buildBanner(RouteIcons.BANNER_WARNING,
+			warnings.add(banner(RouteIcons.BANNER_WARNING,
 				"Balloon log storage not synced",
 				"Check the Log storage at a balloon station once so flights can be paid from it.",
 				BANNER_WARN_ACCENT));
@@ -1163,7 +1119,6 @@ public class ShortestPathPanel extends PluginPanel
 		return (seconds / 60) + "m " + (seconds % 60) + "s";
 	}
 
-
 	/**
 	 * A walking-leg row, shaped exactly like a method row: a neutral grey dot in the category-dot
 	 * column, then the step count.
@@ -1508,65 +1463,6 @@ public class ShortestPathPanel extends PluginPanel
 	}
 
 	/**
-	 * Collapsible shell shared by the configuration sections: a clickable header row (chevron,
-	 * title, colored state text) that flips the given expanded flag. The caller adds the body when
-	 * expanded.
-	 */
-	private JPanel configSectionShell(String title, String tooltip, boolean expanded, Runnable toggle,
-		String stateText, Color stateColor)
-	{
-		return configSectionShell(title, tooltip, expanded, toggle, stateText, stateColor, false);
-	}
-
-	/**
-	 * As above; {@code headline} styles the title like the panel's top-level section headers
-	 * (bold, brand orange) — used by the "Travel options" section that groups the others.
-	 */
-	private JPanel configSectionShell(String title, String tooltip, boolean expanded, Runnable toggle,
-		String stateText, Color stateColor, boolean headline)
-	{
-		JPanel section = new JPanel();
-		section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
-		section.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		section.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-		JPanel titleRow = new JPanel(new BorderLayout(5, 0));
-		titleRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		titleRow.setBorder(new EmptyBorder(0, 0, 4, 0));
-		titleRow.setAlignmentX(Component.LEFT_ALIGNMENT);
-		titleRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
-		titleRow.add(control(new JLabel(expanded ? RouteIcons.CHEVRON_DOWN : RouteIcons.CHEVRON_RIGHT)),
-			BorderLayout.WEST);
-		JLabel titleLabel = new JLabel(title);
-		if (headline)
-		{
-			titleLabel.setFont(FontManager.getRunescapeBoldFont());
-			titleLabel.setForeground(ColorScheme.BRAND_ORANGE);
-		}
-		else
-		{
-			titleLabel.setForeground(Color.WHITE);
-		}
-		titleRow.add(titleLabel, BorderLayout.CENTER);
-		JLabel state = new JLabel(stateText);
-		state.setForeground(stateColor);
-		titleRow.add(state, BorderLayout.EAST);
-		titleRow.setToolTipText(tooltip);
-		titleRow.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		titleRow.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mousePressed(MouseEvent e)
-			{
-				toggle.run();
-				refreshCatalog();
-			}
-		});
-		section.add(titleRow);
-		return section;
-	}
-
-	/**
 	 * The "Travel options" section: one collapsible home for everything routing may use — the
 	 * player-stated configuration (POH, wilderness, balloons) and the teleport-methods catalog —
 	 * all sharing the same header style.
@@ -1581,11 +1477,11 @@ public class ShortestPathPanel extends PluginPanel
 				enabled++;
 			}
 		}
-		JPanel section = configSectionShell("Travel options",
+		JPanel section = sectionShell("Travel options",
 			"Everything routing may use: your house, wilderness policy, bank, balloons and the travel methods",
 			travelSectionExpanded, () -> travelSectionExpanded = !travelSectionExpanded,
 			cachedCatalog.isEmpty() ? "" : enabled + "/" + cachedCatalog.size(),
-			ColorScheme.LIGHT_GRAY_COLOR, true);
+			ColorScheme.LIGHT_GRAY_COLOR, true, this::refreshCatalog);
 		if (!travelSectionExpanded)
 		{
 			catalogRowsPanel = null;
@@ -1598,54 +1494,16 @@ public class ShortestPathPanel extends PluginPanel
 		body.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		body.setAlignmentX(Component.LEFT_ALIGNMENT);
 		body.setBorder(new EmptyBorder(0, 8, 0, 0));
-		body.add(buildPohSection());
-		body.add(buildWildernessSection());
-		body.add(buildWalkingSection());
-		body.add(buildBankSection());
-		body.add(buildBalloonSection());
-		body.add(buildSailingSection());
-		body.add(buildSpiritTreeSection());
+		for (JPanel part : configSections.sections())
+		{
+			body.add(part);
+		}
 		if (!cachedCatalog.isEmpty())
 		{
 			body.add(buildCatalogSection());
 		}
 		section.add(body);
 		return section;
-	}
-
-	/** The body box of an expanded configuration section. */
-	private static JPanel configSectionBody()
-	{
-		JPanel body = new JPanel();
-		body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
-		body.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		body.setBorder(new EmptyBorder(4, 6, 6, 6));
-		body.setAlignmentX(Component.LEFT_ALIGNMENT);
-		return body;
-	}
-
-	/**
-	 * A status line at the top of a configuration section body ("Your house: …", "Bank contents:
-	 * …"). HTML-wrapped so text longer than the narrow panel wraps instead of clipping to "…".
-	 */
-	private static JLabel configStatusLabel(String text, Color color)
-	{
-		JLabel label = new JLabel("<html>" + text + "</html>");
-		label.setForeground(color);
-		label.setAlignmentX(Component.LEFT_ALIGNMENT);
-		label.setBorder(new EmptyBorder(0, 0, 4, 0));
-		return label;
-	}
-
-	/** A small wrapped note line inside a configuration section body. */
-	private static JLabel configNote(String text, Color color)
-	{
-		JLabel note = new JLabel("<html>" + text + "</html>");
-		note.setFont(FontManager.getRunescapeSmallFont());
-		note.setForeground(color);
-		note.setAlignmentX(Component.LEFT_ALIGNMENT);
-		note.setBorder(new EmptyBorder(2, 18, 2, 0));
-		return note;
 	}
 
 	/**
@@ -1678,693 +1536,6 @@ public class ShortestPathPanel extends PluginPanel
 			}
 		});
 		return row;
-	}
-
-	/**
-	 * An attention note inside a configuration section rendered as a warning banner (amber accent
-	 * bar + warning glyph), matching the panel's other banners — used for the "needs a sync" hints.
-	 */
-	private JPanel configWarningBanner(String text)
-	{
-		JPanel wrap = new JPanel(new BorderLayout());
-		wrap.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		wrap.setAlignmentX(Component.LEFT_ALIGNMENT);
-		wrap.setBorder(new EmptyBorder(3, 0, 1, 0));
-		JPanel banner = buildBanner(RouteIcons.BANNER_WARNING, text, BANNER_WARN_ACCENT);
-		wrap.add(banner, BorderLayout.CENTER);
-		wrap.setMaximumSize(new Dimension(Integer.MAX_VALUE, banner.getPreferredSize().height + 4));
-		return wrap;
-	}
-
-	/**
-	 * The player-owned-house declarations: which POH teleport features GPS should assume exist.
-	 * Unlike the catalog's include/exclude (what the user WANTS used), these describe what is BUILT
-	 * in the house — facts GPS cannot detect from outside the house, so the player states them once.
-	 * The controls mirror the plugin's config items (same keys, kept in sync through the
-	 * ConfigManager); any change regenerates the current routes.
-	 */
-	private JPanel buildPohSection()
-	{
-		final boolean pohOn = plugin.getGpsConfig().usePoh();
-		JPanel section = configSectionShell("Player-owned house",
-			"Declare which teleport features are built in your house so routes can use them",
-			pohSectionExpanded, () -> pohSectionExpanded = !pohSectionExpanded,
-			pohOn ? "on" : "off",
-			pohOn ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.LIGHT_GRAY_COLOR);
-		if (!pohSectionExpanded)
-		{
-			return section;
-		}
-
-		JPanel body = configSectionBody();
-
-		// What GPS detected on its own: the house location (varbit) — a confidence hint that the
-		// location-gated entries/exits will resolve correctly.
-		String house = plugin.getHouseLocationName();
-		body.add(configStatusLabel(house != null
-				? "Your house: " + house
-				: "No house detected (log in, or you don't own one)",
-			house != null ? ColorScheme.LIGHT_GRAY_COLOR : ColorScheme.MEDIUM_GRAY_COLOR));
-
-		JCheckBox master = configCheckBox("Use my house for routes", pohOn,
-			"Master switch: with this off, no POH teleport is ever routed",
-			v -> plugin.setPanelConfig("usePoh", v));
-		body.add(iconRow("house_portal", 0, master));
-
-		// Smart detection: while inside your house GPS auto-fills the furniture it can recognise.
-		final boolean smartDetect = plugin.getGpsConfig().pohSmartDetect();
-		JCheckBox smartBox = configCheckBox("Auto-detect furniture", smartDetect,
-			"<html><body style='width:220px'>While you are inside your house, fill the checkboxes below"
-				+ " from the furniture GPS recognises — jewellery box, fairy ring, spirit tree and"
-				+ " obelisk. It only ever ticks boxes (never unticks), and you can still edit any of"
-				+ " them.<br><br>Portals &amp; nexus and mounted items can't be auto-detected — set those"
-				+ " yourself.</body></html>",
-			v -> plugin.setPanelConfig("pohSmartDetect", v));
-		body.add(iconRow("house_portal", 18, smartBox));
-		if (smartDetect)
-		{
-			List<String> detected = plugin.getDetectedPohFurniture();
-			if (!plugin.isPohScanned())
-			{
-				body.add(configWarningBanner("Enter your house once to auto-detect its furniture."));
-			}
-			else if (detected.isEmpty())
-			{
-				body.add(configNote("No auto-detectable furniture found in your house.",
-					ColorScheme.MEDIUM_GRAY_COLOR));
-			}
-			else
-			{
-				body.add(configNote("Detected: " + String.join(", ", detected),
-					ColorScheme.LIGHT_GRAY_COLOR));
-			}
-		}
-
-		JPanel tierInner = new JPanel(new BorderLayout(5, 0));
-		tierInner.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		JLabel tierLabel = new JLabel("Jewellery box:");
-		tierLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-		tierInner.add(tierLabel, BorderLayout.WEST);
-		JComboBox<JewelleryBoxTier> tierBox = new JComboBox<>(JewelleryBoxTier.values());
-		tierBox.setSelectedItem(plugin.getGpsConfig().pohJewelleryBoxTier());
-		tierBox.setEnabled(pohOn);
-		tierBox.setToolTipText("The tier built in your house (each tier includes the ones below it)");
-		tierBox.addActionListener(e -> plugin.setPanelConfig("pohJewelleryBoxTier", tierBox.getSelectedItem()));
-		tierInner.add(tierBox, BorderLayout.CENTER);
-		body.add(iconRow("jewellery_box", 18, tierInner));
-
-		JCheckBox portals = configCheckBox("Teleport portals & nexus", plugin.getGpsConfig().useTeleportationPortalsPoh(),
-			"Portal chamber and portal nexus destinations",
-			v -> plugin.setPanelConfig("useTeleportationPortalsPoh", v));
-		JCheckBox mounted = configCheckBox("Mounted items", plugin.getGpsConfig().usePohMountedItems(),
-			"Mounted glory, Xeric's talisman, digsite pendant, mythical cape",
-			v -> plugin.setPanelConfig("usePohMountedItems", v));
-		JCheckBox fairy = configCheckBox("Fairy ring", plugin.getGpsConfig().usePohFairyRing(),
-			"Requires 85 Construction to build",
-			v -> plugin.setPanelConfig("usePohFairyRing", v));
-		JCheckBox spirit = configCheckBox("Spirit tree", plugin.getGpsConfig().usePohSpiritTree(),
-			"Requires 75 Construction and 83 Farming to build",
-			v -> plugin.setPanelConfig("usePohSpiritTree", v));
-		JCheckBox obelisk = configCheckBox("Wilderness obelisk", plugin.getGpsConfig().usePohObelisk(),
-			"Requires 80 Construction to build",
-			v -> plugin.setPanelConfig("usePohObelisk", v));
-		String[] icons = {"portal_chamber", "mounted_glory", "fairy_ring", "spirit_tree", "obelisk"};
-		JCheckBox[] boxes = {portals, mounted, fairy, spirit, obelisk};
-		for (int i = 0; i < boxes.length; i++)
-		{
-			boxes[i].setEnabled(pohOn);
-			body.add(iconRow(icons[i], 18, boxes[i]));
-			if (boxes[i] == mounted)
-			{
-				// The mounts can't be scene-detected (no stable object ids), so each is its own
-				// assumption — pick exactly the ones built in your house.
-				boolean mountsOn = pohOn && plugin.getGpsConfig().usePohMountedItems();
-				String[][] mounts = {
-					{"pohMountGlory", "Amulet of glory", "Mounted Amulet of glory (Edgeville, Karamja, Draynor, Al Kharid)"},
-					{"pohMountXerics", "Xeric's talisman", "Mounted Xeric's talisman (Lookout, Glade, Inferno, Heart, Honour)"},
-					{"pohMountDigsite", "Digsite pendant", "Mounted Digsite pendant (Digsite, Fossil Island, Lithkren)"},
-					{"pohMountMythical", "Mythical cape", "Mounted Mythical cape (Myths' Guild)"},
-				};
-				boolean[] values = {plugin.getGpsConfig().pohMountGlory(), plugin.getGpsConfig().pohMountXerics(),
-					plugin.getGpsConfig().pohMountDigsite(), plugin.getGpsConfig().pohMountMythical()};
-				for (int m = 0; m < mounts.length; m++)
-				{
-					final String key = mounts[m][0];
-					JCheckBox mount = configCheckBox(mounts[m][1], values[m], mounts[m][2],
-						v -> plugin.setPanelConfig(key, v));
-					mount.setEnabled(mountsOn);
-					mount.setBorder(new EmptyBorder(2, 36, 2, 0));
-					body.add(mount);
-				}
-			}
-		}
-
-		section.add(body);
-		return section;
-	}
-
-	/** The wilderness travel policy: whether routes may cross the wilderness at all. */
-	private JPanel buildWildernessSection()
-	{
-		final boolean avoid = plugin.getGpsConfig().avoidWilderness();
-		JPanel section = configSectionShell("Wilderness",
-			"Choose whether routes may cross the wilderness",
-			wildernessSectionExpanded, () -> wildernessSectionExpanded = !wildernessSectionExpanded,
-			avoid ? "avoided" : "allowed",
-			avoid ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.PROGRESS_INPROGRESS_COLOR);
-		if (!wildernessSectionExpanded)
-		{
-			return section;
-		}
-
-		JPanel body = configSectionBody();
-		body.add(configCheckBox("Avoid the wilderness", avoid,
-			"Route around the wilderness whenever possible (e.g. skip the Edgeville lever to Ardougne)",
-			v -> plugin.setPanelConfig("avoidWilderness", v)));
-		body.add(configNote("Routes still enter the wilderness when the destination itself is inside it.",
-			ColorScheme.MEDIUM_GRAY_COLOR));
-		section.add(body);
-		return section;
-	}
-
-	/**
-	 * The seconds chip for a Travel-options section header, in the SAME sign convention as the
-	 * route cards' adjustment chips: green −15s = "ranks as if 15s cheaper". A preference of
-	 * +15s therefore displays as −15s — showing the raw preference read as a surcharge.
-	 */
-	private static String biasChip(int preferenceSeconds)
-	{
-		if (preferenceSeconds == 0)
-		{
-			return "neutral";
-		}
-		int adjustment = -preferenceSeconds;
-		return (adjustment > 0 ? "+" : "−") + Math.abs(adjustment) + "s";
-	}
-
-	private static Color biasColor(int seconds)
-	{
-		if (seconds == 0)
-		{
-			return ColorScheme.LIGHT_GRAY_COLOR;
-		}
-		return seconds > 0 ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.PROGRESS_INPROGRESS_COLOR;
-	}
-
-	/** A "Bias (seconds)" spinner row: −120..120 in steps of 5, wired to the given setter. */
-	private JPanel biasSpinnerRow(String caption, String tooltip, int value,
-		java.util.function.IntConsumer setter)
-	{
-		JPanel row = new JPanel(new BorderLayout(5, 0));
-		row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		row.setAlignmentX(Component.LEFT_ALIGNMENT);
-		JLabel label = new JLabel(caption);
-		label.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-		label.setToolTipText(tooltip);
-		row.add(label, BorderLayout.CENTER);
-		JSpinner spinner = new JSpinner(new SpinnerNumberModel(value, -120, 120, 5));
-		spinner.setToolTipText(tooltip);
-		spinner.addChangeListener(e -> setter.accept((Integer) spinner.getValue()));
-		row.add(spinner, BorderLayout.EAST);
-		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, spinner.getPreferredSize().height + 4));
-		return row;
-	}
-
-	/**
-	 * Walking as a travel POLICY (not a method): a seconds bias with finer control than the
-	 * method tiers. Positive = walking keeps the top spot unless a method beats it by more than
-	 * the bias; negative penalises the pure-walk route the same way.
-	 */
-	private JPanel buildWalkingSection()
-	{
-		int bias = plugin.getWalkPreferenceSeconds();
-		JPanel section = configSectionShell("Walking",
-			"How plain walking ranks against travel methods",
-			walkingSectionExpanded, () -> walkingSectionExpanded = !walkingSectionExpanded,
-			biasChip(bias), biasColor(bias));
-		if (!walkingSectionExpanded)
-		{
-			return section;
-		}
-		JPanel body = configSectionBody();
-		body.add(configStatusLabel(bias == 0
-				? "No preference — routes rank purely by time."
-				: (bias > 0
-					? "Walking wins unless a method is more than " + bias + "s faster."
-					: "Walking is ranked as if " + (-bias) + "s slower."),
-			ColorScheme.LIGHT_GRAY_COLOR));
-		body.add(biasSpinnerRow("Prefer walking by (s):",
-			"<html>Ranking bias for the pure-walk route, in seconds.<br>"
-				+ "Positive: walking keeps the top spot unless a method beats it by more.<br>"
-				+ "Negative: walking ranks as if slower. Changes re-sort instantly.</html>",
-			bias, v ->
-			{
-				plugin.setWalkPreferenceSeconds(v);
-				SwingUtilities.invokeLater(this::refreshConfigSections);
-			}));
-		body.add(configNote("Ranking only — the walk route's ETA and path never change.",
-			ColorScheme.MEDIUM_GRAY_COLOR));
-		section.add(body);
-		return section;
-	}
-
-	/**
-	 * Bank memory: whether GPS saves the bank's contents when the bank closes and restores them at
-	 * login, so "+ Bank" routes and in-bank availability work without opening the bank first. GPS
-	 * only ever sees the bank while it's open — this fills the gap between sessions.
-	 */
-	private JPanel buildBankSection()
-	{
-		final boolean remember = plugin.getGpsConfig().rememberBank();
-		// The header chip is the ranking bias (same convention as Walking and the card chips);
-		// the remember-between-sessions state is a detail inside the body.
-		int headerBias = plugin.getBankPreferenceSeconds();
-		JPanel section = configSectionShell("Bank",
-			"How bank-detour routes rank, and remembering your bank between sessions",
-			bankSectionExpanded, () -> bankSectionExpanded = !bankSectionExpanded,
-			biasChip(headerBias), biasColor(headerBias));
-		if (!bankSectionExpanded)
-		{
-			return section;
-		}
-
-		JPanel body = configSectionBody();
-
-		// What GPS currently knows, and where that knowledge came from — a restored snapshot can be
-		// stale if the bank changed on another client since it was saved.
-		String state;
-		Color stateColor;
-		if (!plugin.isBankContentsKnown())
-		{
-			state = "Bank contents: unknown — open your bank once";
-			stateColor = ColorScheme.MEDIUM_GRAY_COLOR;
-		}
-		else if (plugin.isBankRestored())
-		{
-			state = "Bank contents: restored from your last session";
-			stateColor = ColorScheme.LIGHT_GRAY_COLOR;
-		}
-		else
-		{
-			state = "Bank contents: seen this session";
-			stateColor = ColorScheme.LIGHT_GRAY_COLOR;
-		}
-		body.add(configStatusLabel(state, stateColor));
-
-		body.add(configCheckBox("Remember between sessions", remember,
-			"<html><body style='width:220px'>Save a snapshot of your bank each time you close it, and"
-				+ " load it back at login — so \"+ Bank\" routes can see banked items without opening"
-				+ " the bank first. Saved per character in your RuneLite profile.</body></html>",
-			v -> plugin.setPanelConfig("rememberBank", v)));
-		body.add(configNote("Opening the bank always refreshes the snapshot; turning this off deletes it.",
-			ColorScheme.MEDIUM_GRAY_COLOR));
-
-		// Ranking bias for via-bank routes — finer control than the method tiers, and separate
-		// from the withdrawal time already counted inside those routes' ETAs.
-		int bankBias = plugin.getBankPreferenceSeconds();
-		body.add(biasSpinnerRow("Prefer bank routes by (s):",
-			"<html>Ranking bias for routes that detour via a bank, in seconds.<br>"
-				+ "Positive: bank routes rank as if faster; negative: as if slower.<br>"
-				+ "Separate from the withdrawal time, which is already in their ETA.</html>",
-			bankBias, v ->
-			{
-				plugin.setBankPreferenceSeconds(v);
-				SwingUtilities.invokeLater(this::refreshConfigSections);
-			}));
-		section.add(body);
-		return section;
-	}
-
-	/**
-	 * Balloon travel: the master toggle plus smart mode, which tracks the stations' log storage
-	 * from chat so flights can be paid from storage — including a low-storage warning (threshold
-	 * configurable; only routes the player has unlocked are considered) and a first-time sync hint,
-	 * since the counts only become known once a storage message has been seen.
-	 */
-	private JPanel buildBalloonSection()
-	{
-		final ShortestPathConfig config = plugin.getGpsConfig();
-		final boolean balloonsOn = config.useHotAirBalloons();
-		final boolean smart = config.balloonSmartMode();
-		List<String> lowTypes = plugin.getBalloonLowLogTypes();
-
-		String stateText = !balloonsOn ? "off" : (lowTypes.isEmpty() ? "on" : "low logs");
-		Color stateColor = !balloonsOn ? ColorScheme.LIGHT_GRAY_COLOR
-			: (lowTypes.isEmpty() ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.PROGRESS_INPROGRESS_COLOR);
-		JPanel section = configSectionShell("Hot air balloons",
-			"Balloon travel and smart tracking of the stations' Log storage",
-			balloonSectionExpanded, () -> balloonSectionExpanded = !balloonSectionExpanded,
-			stateText, stateColor);
-		if (!balloonSectionExpanded)
-		{
-			return section;
-		}
-
-		JPanel body = configSectionBody();
-
-		JCheckBox master = configCheckBox("Use balloon routes", balloonsOn,
-			"<html><body style='width:220px'>Master switch: include hot air balloon flights in routes"
-				+ " (requires Enlightened Journey).<br><br>Each flight consumes one log of its"
-				+ " destination's type, paid from your inventory or from the stations' Log"
-				+ " storage.</body></html>",
-			v -> plugin.setPanelConfig("useHotAirBalloons", v));
-		body.add(master);
-
-		JCheckBox smartBox = configCheckBox("Smart Log storage", smart,
-			"<html><body style='width:220px'>Detect and keep track of the logs in the stations' Log"
-				+ " storage (read from chat messages); flights can then be paid from storage without"
-				+ " carrying logs.<br><br>When off, GPS ignores the Log storage: a flight is only"
-				+ " routed while you carry its log type (the All modes assume flights are available"
-				+ " either way).</body></html>",
-			v -> plugin.setPanelConfig("balloonSmartMode", v), 18);
-		smartBox.setEnabled(balloonsOn);
-		body.add(smartBox);
-
-		JPanel warnRow = new JPanel(new BorderLayout(5, 0));
-		warnRow.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		warnRow.setAlignmentX(Component.LEFT_ALIGNMENT);
-		warnRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
-		warnRow.setBorder(new EmptyBorder(2, 28, 2, 0));
-		String warnTooltip = "Warn when an unlocked route's Log storage count falls below this (0 = never warn)";
-		// Deliberately terse — the full wording clipped at this indent on the sidebar's width.
-		JLabel warnLabel = new JLabel("Warn below:");
-		warnLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-		warnLabel.setToolTipText(warnTooltip);
-		warnRow.add(warnLabel, BorderLayout.CENTER);
-		JSpinner warnSpinner = new JSpinner(
-			new SpinnerNumberModel(config.balloonLogWarningThreshold(), 0, 100, 1));
-		warnSpinner.setEnabled(balloonsOn && smart);
-		warnSpinner.setToolTipText(warnTooltip);
-		warnSpinner.addChangeListener(e -> plugin.setPanelConfig("balloonLogWarningThreshold", warnSpinner.getValue()));
-		warnRow.add(warnSpinner, BorderLayout.EAST);
-		body.add(warnRow);
-
-		if (balloonsOn && smart)
-		{
-			if (!config.balloonStorageSynced())
-			{
-				body.add(configWarningBanner("Not synced yet — check the Log storage at a balloon station"
-					+ " once to import your stored log counts."));
-			}
-			else
-			{
-				body.add(configNote("Log storage:", ColorScheme.LIGHT_GRAY_COLOR));
-				int[] counts = plugin.getBalloonStoredCounts();
-				JPanel storageRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
-				storageRow.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-				storageRow.setAlignmentX(Component.LEFT_ALIGNMENT);
-				storageRow.setBorder(new EmptyBorder(0, 14, 2, 0));
-				for (int i = 0; i < counts.length; i++)
-				{
-					storageRow.add(logIcon(i, counts[i]));
-				}
-				storageRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, storageRow.getPreferredSize().height));
-				body.add(storageRow);
-			}
-		}
-
-		section.add(body);
-		return section;
-	}
-
-	/**
-	 * Planted spirit trees: ONLY the five farmable patches — the permanent spirit trees are always
-	 * available and toggled in the Travel methods catalog like every other method. Smart tracking
-	 * reads the travel menu to learn which farmable trees you have grown; the detected list shows
-	 * here (or a sync hint, since GPS can't see a farming patch until the menu has been opened).
-	 */
-	private JPanel buildSailingSection()
-	{
-		final ShortestPathConfig config = plugin.getGpsConfig();
-		final boolean sailingOn = config.useSailing();
-		JPanel section = configSectionShell("Sailing (beta)",
-			"Sail your own boat between mooring points and port berths",
-			sailingSectionExpanded, () -> sailingSectionExpanded = !sailingSectionExpanded,
-			sailingOn ? "on" : "off",
-			sailingOn ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.LIGHT_GRAY_COLOR);
-		if (!sailingSectionExpanded)
-		{
-			return section;
-		}
-
-		JPanel body = configSectionBody();
-		JCheckBox master = configCheckBox("Use sailing routes", sailingOn,
-			"<html><body style='width:220px'>Master switch: include sailing your own boat between"
-				+ " mooring points and port berths.<br><br>Assumes you own a boat; travel times"
-				+ " assume a mid-tier hull speed. Where routes may board is governed by your boat's"
-				+ " detected berth and the Summon Boat assumption below.</body></html>",
-			v -> plugin.setPanelConfig("useSailing", v));
-		body.add(master);
-		JCheckBox abandon = configCheckBox("Teleports may abandon the boat",
-			config.sailingTeleportAbandon(),
-			"<html><body style='width:220px'>Aboard, teleport routes leave the boat where it"
-				+ " floats.<br><br>Off: routes from the water only disembark at moorings and port"
-				+ " berths; the boat is never left at sea.</body></html>",
-			v -> plugin.setPanelConfig("sailingTeleportAbandon", v), 18);
-		abandon.setEnabled(sailingOn);
-		body.add(abandon);
-		JCheckBox helm = configCheckBox("Keep sailing while at the helm",
-			config.sailingKeepSailing(),
-			"<html><body style='width:220px'>Aboard, routes that stay on the water rank first;"
-				+ " disembark-and-teleport chains stay listed below as alternatives.</body></html>",
-			v -> plugin.setPanelConfig("sailingKeepSailing", v), 18);
-		helm.setEnabled(sailingOn);
-		body.add(helm);
-
-		JCheckBox summon = configCheckBox("Assume Summon Boat spell",
-			plugin.getGpsConfig().sailingAssumeSummon(),
-			"<html><body style='width:220px'>Routes may board at ANY mooring: the boat is"
-				+ " summoned there first (56 Magic, Pandemonium, teleport focus).<br><br>Off:"
-				+ " sailing legs start only where a boat is actually moored, and Teleport to"
-				+ " Boat (67 Magic, greater focus) covers the distance.</body></html>",
-			v -> plugin.setPanelConfig("sailingAssumeSummon", v), 18);
-		summon.setEnabled(sailingOn);
-		body.add(summon);
-
-		// Latest known berths: live varbits once seen this session, the stored snapshot
-		// from the last one before that. One two-column row per boat — no glyphs (the
-		// panel font has no boat, it fell back to a warning triangle) and no wrapping:
-		// the name clips with a tooltip, the port keeps its own column and its color.
-		List<String[]> banner = plugin.getBoatBanner();
-		if (banner == null || banner.isEmpty())
-		{
-			JLabel none = wrappedLabel(banner == null
-				? "No boat seen yet. Berths appear after login."
-				: "No owned boat detected.");
-			none.setBorder(new EmptyBorder(4, 18, 2, 0));
-			body.add(none);
-		}
-		else
-		{
-			for (String[] row : banner)
-			{
-				JPanel berthRow = new JPanel(new BorderLayout(8, 0));
-				berthRow.setOpaque(false);
-				berthRow.setBorder(new EmptyBorder(3, 18, 0, 0));
-				// A raw JPanel defaults to CENTER alignmentX (0.5); one such row in a vertical
-				// BoxLayout shifts every LEFT-aligned sibling toward mid-column - the sailing
-				// checkboxes rendered half-indented AND clipped off the right edge.
-				berthRow.setAlignmentX(Component.LEFT_ALIGNMENT);
-				String type = row.length > 2 ? row[2] : "";
-				JLabel name = new JLabel(row[0]);
-				name.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-				BoatHull hull = BoatHull.fromName(type);
-				if (hull != null)
-				{
-					name.setIcon(RouteIcons.hullIcon(hull));
-				}
-				name.setIconTextGap(6);
-				name.setToolTipText(row[0] + (type.isEmpty() ? "" : " (" + type + ")")
-					+ ", moored at " + row[1]);
-				berthRow.add(name, BorderLayout.CENTER);
-				JLabel port = new JLabel(row[1]);
-				port.setForeground(ColorScheme.PROGRESS_COMPLETE_COLOR);
-				port.setToolTipText(name.getToolTipText());
-				berthRow.add(port, BorderLayout.EAST);
-				body.add(berthRow);
-			}
-			if (!plugin.isBoatBannerLive())
-			{
-				JLabel stale = wrappedLabel("(berths from last session)");
-				stale.setBorder(new EmptyBorder(1, 18, 2, 0));
-				body.add(stale);
-			}
-		}
-
-		section.add(body);
-		return section;
-	}
-
-	private JPanel buildSpiritTreeSection()
-	{
-		final boolean smart = plugin.getGpsConfig().spiritTreeSmartMode();
-		List<String> planted = smart && plugin.isSpiritTreeSynced()
-			? plugin.getAvailablePlantedSpiritTrees() : List.of();
-
-		String stateText = !smart ? "all" : (plugin.isSpiritTreeSynced()
-			? (planted.isEmpty() ? "none" : planted.size() + " planted") : "on");
-		Color stateColor = smart && !planted.isEmpty()
-			? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.LIGHT_GRAY_COLOR;
-		JPanel section = configSectionShell("Planted spirit trees",
-			"Smart detection of the farmable spirit trees you have grown (permanent trees are in Travel methods)",
-			spiritTreeSectionExpanded, () -> spiritTreeSectionExpanded = !spiritTreeSectionExpanded,
-			stateText, stateColor);
-		if (!spiritTreeSectionExpanded)
-		{
-			return section;
-		}
-
-		JPanel body = configSectionBody();
-
-		JCheckBox smartBox = configCheckBox("Smart tracking", smart,
-			"<html><body style='width:220px'>Detect which farmable spirit trees you have planted and"
-				+ " grown (read from the travel menu) and route only through those.<br><br>When off, all"
-				+ " farmable spirit trees are assumed available — the Spirit trees category in Travel"
-				+ " methods still turns them on or off.</body></html>",
-			v -> plugin.setPanelConfig("spiritTreeSmartMode", v));
-		body.add(iconRow("spirit_tree", 0, smartBox));
-
-		if (!smart)
-		{
-			body.add(configNote("All farmable spirit trees assumed available.",
-				ColorScheme.MEDIUM_GRAY_COLOR));
-		}
-		else if (!plugin.isSpiritTreeSynced())
-		{
-			body.add(configWarningBanner("Not synced yet — open a spirit tree travel menu once to detect"
-				+ " your planted trees."));
-		}
-		else if (planted.isEmpty())
-		{
-			body.add(configNote("No planted spirit trees detected.", ColorScheme.MEDIUM_GRAY_COLOR));
-		}
-		else
-		{
-			body.add(configNote("Detected:", ColorScheme.LIGHT_GRAY_COLOR));
-			for (String name : planted)
-			{
-				JLabel label = new JLabel(name);
-				label.setForeground(ColorScheme.PROGRESS_COMPLETE_COLOR);
-				label.setFont(FontManager.getRunescapeSmallFont());
-				body.add(iconRow("spirit_tree", 18, label));
-			}
-		}
-
-		section.add(body);
-		return section;
-	}
-
-	/**
-	 * A POH construction icon (bundled OSRS-wiki furniture images under resources/poh/), scaled to
-	 * fit the row height and centred in a fixed-width slot so the row labels align.
-	 */
-	private static JLabel pohIcon(String name)
-	{
-		JLabel label = new JLabel();
-		label.setPreferredSize(new Dimension(26, 20));
-		label.setHorizontalAlignment(SwingConstants.CENTER);
-		BufferedImage img = ImageUtil.loadImageResource(ShortestPathPanel.class, "/poh/" + name + ".png");
-		double scale = Math.min(1.0, Math.min(26.0 / img.getWidth(), 20.0 / img.getHeight()));
-		if (scale < 1.0)
-		{
-			img = ImageUtil.resizeImage(img,
-				(int) Math.round(img.getWidth() * scale), (int) Math.round(img.getHeight() * scale));
-		}
-		label.setIcon(new ImageIcon(img));
-		return label;
-	}
-
-	/** A configuration row decorated with a small icon to the left of its control. */
-	private JPanel iconRow(String pohIconName, int leftInset, JComponent control)
-	{
-		JPanel row = new JPanel(new BorderLayout(5, 0));
-		row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		row.setAlignmentX(Component.LEFT_ALIGNMENT);
-		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
-		row.setBorder(new EmptyBorder(2, leftInset, 2, 0));
-		row.add(pohIcon(pohIconName), BorderLayout.WEST);
-		row.add(control, BorderLayout.CENTER);
-		return row;
-	}
-
-	/**
-	 * An item icon for one Log storage log type, with the stored count drawn as the stack quantity
-	 * (the same rendering the inventory uses) and spelled out in the tooltip.
-	 */
-	private JLabel logIcon(int typeIndex, int count)
-	{
-		JLabel icon = new JLabel();
-		icon.setToolTipText(count + " " + BalloonLogStorage.TYPE_NAMES[typeIndex] + " logs in storage");
-		plugin.getItemManager().getImage(BalloonLogStorage.ITEM_IDS[typeIndex], count, true).addTo(icon);
-		return icon;
-	}
-
-	/**
-	 * The Log-storage-low warning banner: like the bank warning, it lives in the notes strip so it
-	 * is visible even while the balloon section is collapsed. Shows the low types as item icons.
-	 */
-	private JPanel buildBalloonLowBanner(List<String> lowTypes)
-	{
-		JPanel banner = buildBanner(RouteIcons.BANNER_WARNING,
-			"Log storage low", "Restock logs at a balloon station:", BANNER_WARN_ACCENT);
-		int[] counts = plugin.getBalloonStoredCounts();
-		JPanel icons = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
-		icons.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		for (int i = 0; i < BalloonLogStorage.TYPE_NAMES.length; i++)
-		{
-			if (lowTypes.contains(BalloonLogStorage.TYPE_NAMES[i]))
-			{
-				icons.add(logIcon(i, counts[i]));
-			}
-		}
-		banner.add(icons, BorderLayout.SOUTH);
-		banner.setMaximumSize(new Dimension(Integer.MAX_VALUE, banner.getPreferredSize().height));
-		return banner;
-	}
-
-	/** A configuration checkbox: writes its config key on change; the ConfigChanged regenerates. */
-	private JCheckBox configCheckBox(String label, boolean value, String tooltip,
-		java.util.function.Consumer<Boolean> onChange)
-	{
-		return configCheckBox(label, value, tooltip, onChange, 0);
-	}
-
-	/**
-	 * As above, indented {@code indent} px as a sub-toggle — the border is set here so the HTML
-	 * wrap width can shrink by the same amount. The section body offers ~177px of text beside
-	 * the glyph, so the old fixed 168px body fit top-level boxes but CLIPPED indented ones (the
-	 * sailing sub-toggles rendered as "Teleports may aban": a fixed-width HTML view never
-	 * reflows, it just loses its right edge, with no ellipsis). Indent-aware width makes a long
-	 * label wrap onto a second line instead.
-	 */
-	private JCheckBox configCheckBox(String label, boolean value, String tooltip,
-		java.util.function.Consumer<Boolean> onChange, int indent)
-	{
-		JCheckBox box = new JCheckBox(
-			"<html><body style='width:" + (168 - indent) + "px'>" + label + "</body></html>", value);
-		if (indent > 0)
-		{
-			box.setBorder(new EmptyBorder(2, indent, 2, 0));
-		}
-		box.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		box.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-		// HTML text ignores the look-and-feel's disabled dimming — mirror it by hand.
-		box.addPropertyChangeListener("enabled", e -> box.setForeground(
-			box.isEnabled() ? ColorScheme.LIGHT_GRAY_COLOR : ColorScheme.MEDIUM_GRAY_COLOR));
-		box.setToolTipText(tooltip);
-		box.setAlignmentX(Component.LEFT_ALIGNMENT);
-		box.setFocusPainted(false);
-		// The look-and-feel's box is nearly invisible on the dark background — use the catalog's
-		// toggle glyphs instead (green check = on, grey cross = off, red on hover), dimmed while
-		// disabled.
-		box.setIcon(RouteIcons.CROSS);
-		box.setRolloverIcon(RouteIcons.CROSS_HOVER);
-		box.setSelectedIcon(RouteIcons.CHECK);
-		box.setRolloverSelectedIcon(RouteIcons.CHECK_HOVER);
-		box.setDisabledIcon(RouteIcons.CROSS_DIM);
-		box.setDisabledSelectedIcon(RouteIcons.CHECK_DIM);
-		box.addActionListener(e -> onChange.accept(box.isSelected()));
-		return box;
 	}
 
 	private JPanel buildCatalogSection()
@@ -2405,11 +1576,11 @@ public class ShortestPathPanel extends PluginPanel
 		}
 		// Same collapsible shell as the other Travel options sub-sections; the enabled count is
 		// the state text.
-		JPanel section = configSectionShell("Travel methods",
+		JPanel section = sectionShell("Travel methods",
 			enabled + " enabled (usable and included) · " + usable + " usable now · "
 				+ included + " included in searches · " + cachedCatalog.size() + " total",
 			catalogExpanded, () -> catalogExpanded = !catalogExpanded,
-			enabled + "/" + cachedCatalog.size(), ColorScheme.LIGHT_GRAY_COLOR);
+			enabled + "/" + cachedCatalog.size(), ColorScheme.LIGHT_GRAY_COLOR, false, this::refreshCatalog);
 
 		if (!catalogExpanded)
 		{
@@ -2503,7 +1674,6 @@ public class ShortestPathPanel extends PluginPanel
 
 		String filter = catalogSearch.getText() == null ? "" : catalogSearch.getText().trim().toLowerCase();
 		boolean filtering = !filter.isEmpty();
-
 
 		Map<String, List<TeleportMethod>> grouped = new TreeMap<>();
 		for (TeleportMethod method : cachedCatalog)

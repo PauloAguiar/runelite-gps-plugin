@@ -1190,3 +1190,21 @@ HTML escaping, spacer) became `PanelWidgets`, statically imported where the pane
 them. Panel class: 3,777 to 2829 lines.
 
 **Suite:** 801 tests, all green.
+
+### Step P2: ConfigSectionsView (2026-09-12)
+
+**Red first:** `ConfigSectionsViewTest`: the seconds chip reads in the route cards' sign
+convention (a preference of +15 s shows as a green minus 15 s, neutral at zero); the balloon
+chip says off, on or low logs; the spirit-tree chip says all (smart tracking off), on (not
+synced), none or the planted count. The three chip functions were inline in the section
+builders.
+
+**Change:** the seven Travel-options sections (house, wilderness, walking, bank, balloons,
+sailing, planted spirit trees), their expanded flags, the body, status, note and warning
+helpers, the checkbox chrome, the icon rows and the Log-storage-low banner became
+`ConfigSectionsView`; the panel's Travel section adds its sections in one loop and the notes
+strip asks it for the balloon banner. The collapsible section shell and the two message-banner
+builders, shared with the panel's Travel and catalog headers and the notes strip, moved to
+`PanelWidgets` with the after-toggle rebuild passed in. Panel class: 2,829 to 1999 lines.
+
+**Suite:** 804 tests, all green.
