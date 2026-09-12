@@ -14,7 +14,7 @@ public class FavoriteInputTest
 	private static void assertCoordinate(String text, int x, int y, int plane)
 	{
 		assertEquals(text, WorldPointUtil.packWorldPoint(x, y, plane),
-			ShortestPathPanel.parseCoordinateQuery(text));
+			DestinationSearchView.parseCoordinateQuery(text));
 	}
 
 	@Test
@@ -33,9 +33,9 @@ public class FavoriteInputTest
 	@Test
 	public void rejectsNonCoordinates()
 	{
-		assertEquals(WorldPointUtil.UNDEFINED, ShortestPathPanel.parseCoordinateQuery("my house"));
-		assertEquals(WorldPointUtil.UNDEFINED, ShortestPathPanel.parseCoordinateQuery("3221"));
-		assertEquals(WorldPointUtil.UNDEFINED, ShortestPathPanel.parseCoordinateQuery("3221 3218 Lumbridge"));
-		assertEquals(WorldPointUtil.UNDEFINED, ShortestPathPanel.parseCoordinateQuery("9999 99999"));
+		assertEquals(WorldPointUtil.UNDEFINED, DestinationSearchView.parseCoordinateQuery("my house"));
+		assertEquals(WorldPointUtil.UNDEFINED, DestinationSearchView.parseCoordinateQuery("3221"));
+		assertEquals(WorldPointUtil.UNDEFINED, DestinationSearchView.parseCoordinateQuery("3221 3218 Lumbridge"));
+		assertEquals(WorldPointUtil.UNDEFINED, DestinationSearchView.parseCoordinateQuery("9999 99999"));
 	}
 }

@@ -1165,3 +1165,28 @@ and `CatalogRefresher.isDirty`. The only test left reflecting into the plugin is
 render dump, which sets injected overlay fields for a picture. Plugin class: 1,546 to 1541 lines.
 
 **Suite:** 798 tests, all green.
+
+## The panel out of one class (2026-09-12)
+
+After the plugin class, the side panel (3,777 lines, 110 methods) is the largest file by far,
+and the same criterion applies. The views come out cleanest seam first: the destination search,
+the configuration sections, the method catalog, the route list and header; a shared widgets
+class holds the chrome every section uses.
+
+### Step P1: PanelWidgets and DestinationSearchView (2026-09-12)
+
+**Red first:** `DestinationSearchRankingTest`: the match tier ranks before proximity (the
+nearest entry, a word-prefix match, sits below the exact and prefix matches); proximity breaks
+ties within a tier, the name when the player's position is unknown; at most twelve results;
+nothing for no match. The ranking function did not exist (it was inline in the results render).
+`FavoriteInputTest` now targets the view's coordinate parser.
+
+**Change:** the "Go to" search (field, floating results popup, keyboard and mouse selection,
+favourite editor, nearest-X row and menu, the search index cache) became
+`DestinationSearchView`, a panel the main panel mounts and delegates focus and hide to. The
+sizes, accent colours, dot colours, palette and the stateless builders every section uses
+(centred cell, control label, subtle button, wrapped label, note row, dots, category colours,
+HTML escaping, spacer) became `PanelWidgets`, statically imported where the panel still uses
+them. Panel class: 3,777 to 2829 lines.
+
+**Suite:** 801 tests, all green.
