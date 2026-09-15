@@ -25,6 +25,8 @@ final class OverlaySettings {
     final Color colourOverlayAccent;
     final Color colourRouteItem;
     final boolean showTeleportPulse;
+    final boolean showPathPulse;
+    final boolean showPathArrows;
     final boolean highlightRouteItem;
     final boolean showDirections;
     final boolean overrideOverlayTransparency;
@@ -58,6 +60,8 @@ final class OverlaySettings {
         unreachableText = config.unreachableText();
 
         showTeleportPulse = ConfigOverrides.override("showTeleportPulse", config.showTeleportPulse());
+        showPathPulse = ConfigOverrides.override("showPathPulse", config.showPathPulse());
+        showPathArrows = ConfigOverrides.override("showPathArrows", config.showPathArrows());
         highlightRouteItem = ConfigOverrides.override("highlightRouteItem", config.highlightRouteItem());
         showDirections = ConfigOverrides.override("showDirections", config.showDirections());
         overrideOverlayTransparency = ConfigOverrides.override("overrideOverlayTransparency", config.overrideOverlayTransparency());
