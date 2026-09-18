@@ -608,6 +608,16 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         return renderPanel(graphics, lines);
     }
 
+    /** Hides the lingering "Arrived!" panel (the right-click menu's "Dismiss Arrival"). */
+    public void dismissArrival() {
+        arrivalShowing = false;
+    }
+
+    /** Whether the lingering "Arrived!" panel is what the overlay currently shows. */
+    public boolean isArrivalShowing() {
+        return arrivalShowing;
+    }
+
     /**
      * Dismisses the arrival panel when {@code point} (canvas coordinates) is inside it. Called from
      * the plugin's mouse listener; returns true when the click was consumed.
