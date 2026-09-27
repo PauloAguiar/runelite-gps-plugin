@@ -59,10 +59,9 @@ import static gps.PanelWidgets.verticallyCentered;
  */
 final class DestinationSearchView extends JPanel
 {
-	// The two bank quick buttons, restyled while a click would add a stop (see showBankStop).
+	// The Bank quick button, restyled while a click would add a stop (see showBankStop).
 	private JButton bankButton;
-	private JButton bankAndBackButton;
-	private boolean bankButtonsAddStop;
+	private boolean bankButtonAddsStop;
 	private static final int MAX_DESTINATION_RESULTS = 12;
 	// "x, y" or "x y", with an optional plane (0-3): x is 4 digits (the playable range is roughly
 	// 1000-4600), y 4-5 digits (surface ~3000-4200; dungeon/instance planes reach past 10000).
@@ -387,7 +386,6 @@ final class DestinationSearchView extends JPanel
 			quick.add(bank);
 		}
 		JButton bankAndBack = nearestQuickButton("bank_round_trip");
-		bankAndBackButton = bankAndBack;
 		if (bankAndBack != null)
 		{
 			quick.add(bankAndBack);
@@ -399,35 +397,20 @@ final class DestinationSearchView extends JPanel
 	}
 
 	/**
-	 * Shows on the bank quick buttons whether a click adds a stop: with a route under way (or a
-	 * bank trip that will resume one) the route resumes after the bank, so the icons carry a "+"
-	 * badge and the tooltips say so. Called on every panel render; restyles only on a change. EDT.
+	 * Shows on the Bank quick button whether a click adds a stop: with a route under way (or a bank
+	 * trip that will resume one) the route resumes after the bank, so the icon carries a "+" badge
+	 * and the tooltip says so. Bank (and back) keeps its look: it returns to where you are anyway.
+	 * Called on every render; restyles only on a change. EDT.
 	 */
 	void showBankStop(boolean addsStop)
 	{
-		if (addsStop == bankButtonsAddStop)
+		if (bankButton == null || addsStop == bankButtonAddsStop)
 		{
 			return;
 		}
-		bankButtonsAddStop = addsStop;
-		styleBankButton(bankButton, "bank", addsStop);
-		styleBankButton(bankAndBackButton, "bank_round_trip", addsStop);
-	}
-
-	private static void styleBankButton(JButton button, String optionId, boolean addsStop)
-	{
-		if (button == null)
-		{
-			return;
-		}
-		for (Destinations.NearestOption option : Destinations.NEAREST_OPTIONS)
-		{
-			if (option.id.equals(optionId))
-			{
-				button.setIcon(RouteIcons.bankButtonIcon(optionId, addsStop));
-				button.setToolTipText(BankDetour.buttonTooltip(option, addsStop));
-			}
-		}
+		bankButtonAddsStop = addsStop;
+		bankButton.setIcon(RouteIcons.bankButtonIcon(addsStop));
+		bankButton.setToolTipText(BankDetour.bankButtonTooltip(addsStop));
 	}
 
 	/** An icon-only quick button running one nearest-X option directly (tooltip names it). */

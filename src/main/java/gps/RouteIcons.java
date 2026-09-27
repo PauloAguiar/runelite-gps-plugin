@@ -145,9 +145,8 @@ final class RouteIcons
 	private static final ImageIcon DEST_PLACE = new ImageIcon(place());
 	private static final ImageIcon DEST_BANK = new ImageIcon(coinStack());
 	private static final ImageIcon DEST_BANK_ROUND_TRIP = new ImageIcon(coinStackReturn());
-	// The bank quick buttons while a click would add a stop: the same glyphs with a "+" badge.
+	// The Bank quick button while a click would add a stop: the coin stack with a "+" badge.
 	private static final ImageIcon DEST_BANK_STOP = new ImageIcon(withStopBadge(coinStack()));
-	private static final ImageIcon DEST_BANK_ROUND_TRIP_STOP = new ImageIcon(withStopBadge(coinStackReturn()));
 	private static final ImageIcon DEST_ALTAR = new ImageIcon(altar());
 	private static final ImageIcon DEST_WATER = new ImageIcon(droplet());
 	private static final ImageIcon DEST_FURNACE = new ImageIcon(flame(new Color(0xF2, 0x8A, 0x3B)));
@@ -196,14 +195,10 @@ final class RouteIcons
 		}
 	}
 
-	/** A bank quick button's icon: its category glyph, with a "+" badge while a click would add a stop. */
-	static ImageIcon bankButtonIcon(String category, boolean addsStop)
+	/** The Bank quick button's icon: the coin stack, with a "+" badge while a click would add a stop. */
+	static ImageIcon bankButtonIcon(boolean addsStop)
 	{
-		if (!addsStop)
-		{
-			return destinationIcon(category);
-		}
-		return "bank_round_trip".equals(category) ? DEST_BANK_ROUND_TRIP_STOP : DEST_BANK_STOP;
+		return addsStop ? DEST_BANK_STOP : DEST_BANK;
 	}
 
 	/** The glyph with a small green "+" badge over its top-right corner, ringed dark to read on any glyph. */

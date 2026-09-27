@@ -1403,3 +1403,12 @@ into a dot; checked by eye at 1x and 6x). `DestinationSearchView.showBankStop` s
 buttons' icon and tooltip, called from every panel render and restyling only on a change.
 
 **Suite:** 834 tests, all green; checkstyle clean.
+
+### Step S3b: only the Bank button badges (2026-09-27)
+
+Owner feedback on S3: badging Bank (and back) added little, since that trip returns to where the
+player stands anyway. The badge and the "Add a stop" tooltip now belong to the Bank button alone
+(`RouteIcons.bankButtonIcon(boolean)`, `BankDetour.bankButtonTooltip`); Bank (and back) keeps its
+icon and "Nearest bank (and back)" tooltip. The resume itself is unchanged for both.
+
+**Suite:** 834 tests, all green; checkstyle clean.

@@ -1,6 +1,5 @@
 package gps;
 
-import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -64,18 +63,14 @@ final class BankDetour
 	}
 
 	/**
-	 * A bank quick button's tooltip: its plain name ("Nearest bank"), or while a click would add a
-	 * stop, what that does ("Add a stop at the nearest bank", and that the route resumes).
+	 * The Bank quick button's tooltip: "Nearest bank", or while a click would add a stop, what that
+	 * does. Bank (and back) keeps its plain tooltip: it returns to where you are anyway.
 	 */
-	static String buttonTooltip(Destinations.NearestOption option, boolean addsStop)
+	static String bankButtonTooltip(boolean addsStop)
 	{
-		if (!addsStop)
-		{
-			return "Nearest " + option.label.toLowerCase(Locale.ROOT);
-		}
-		return "bank_round_trip".equals(option.id)
-			? "<html><b>Add a stop</b> at the nearest bank and back<br>Your current route resumes once you are back</html>"
-			: "<html><b>Add a stop</b> at the nearest bank<br>Your current route resumes after the bank</html>";
+		return addsStop
+			? "<html><b>Add a stop</b> at the nearest bank<br>Your current route resumes after the bank</html>"
+			: "Nearest bank";
 	}
 
 	/**
