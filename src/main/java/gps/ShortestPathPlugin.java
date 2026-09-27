@@ -497,6 +497,12 @@ public class ShortestPathPlugin extends Plugin
 		{
 		}
 	};
+	// The destination a nearest-bank trip replaced, resumed when the trip completes (see BankDetour).
+	private final BankDetour bankDetour = new BankDetour();
+	// The quick buttons' hotkeys; the bindings are read at key time (config is injected later).
+	private final NearestBankHotkeys nearestBankHotkeys = new NearestBankHotkeys(
+		() -> config.nearestBankHotkey(), () -> goToNearestBank(false),
+		() -> config.nearestBankAndBackHotkey(), () -> goToNearestBank(true));
 	private boolean fairyRingPanelOpen = false;
 	// Whether the spirit tree travel menu has been parsed THIS session. Distinct from the cache
 	// being non-null: a restored previous-session snapshot fills the cache but must not block the
@@ -659,6 +665,8 @@ public class ShortestPathPlugin extends Plugin
 
 		keyManager.registerKeyListener(clearPathKeylistener);
 		keyManager.registerKeyListener(focusSearchKeyListener);
+		keyManager.registerKeyListener(nearestBankHotkeys.bank());
+		keyManager.registerKeyListener(nearestBankHotkeys.bankAndBack());
 		mouseManager.registerMouseListener(arrivalDismissListener);
 		// Plugins enabled later are caught by the PluginChanged/ExternalPluginsChanged events.
 		updateShortestPathConflict();
@@ -689,6 +697,9 @@ public class ShortestPathPlugin extends Plugin
 
 		keyManager.unregisterKeyListener(clearPathKeylistener);
 		keyManager.unregisterKeyListener(focusSearchKeyListener);
+		keyManager.unregisterKeyListener(nearestBankHotkeys.bank());
+		keyManager.unregisterKeyListener(nearestBankHotkeys.bankAndBack());
+		bankDetour.cancel();
 		mouseManager.unregisterMouseListener(arrivalDismissListener);
 	}
 
@@ -1586,6 +1597,11 @@ public class ShortestPathPlugin extends Plugin
 					}
 				}
 			}
+			if (!useOld)
+			{
+				// Another plugin's new destination replaces a bank trip like any other.
+				bankDetour.cancel();
+			}
 			setDestination(start, ends, useOld);
 		}
 		else if (PLUGIN_MESSAGE_CLEAR.equals(action))
@@ -1756,7 +1772,14 @@ public class ShortestPathPlugin extends Plugin
 			{
 				altPanel.markArrived(elapsed);
 			}
+			// A completed bank trip hands back the destination it replaced; read it before the
+			// clear, which would forget it.
+			BankDetour.Route resume = bankDetour.complete();
 			setTarget(WorldPointUtil.UNDEFINED);
+			if (resume != null)
+			{
+				resumeRoute(resume);
+			}
 			return;
 		}
 
@@ -2890,6 +2913,91 @@ public class ShortestPathPlugin extends Plugin
 	}
 
 	/**
+	 * Runs one nearest-X option: the panel's quick buttons and menu, its search box's nearest-of
+	 * row, and the two bank hotkeys. A bank option starts a bank trip: the destination it
+	 * replaces is resumed once the trip completes (see BankDetour).
+	 */
+	public void goToNearest(Destinations.NearestOption option)
+	{
+		Set<Integer> tiles = Destinations.tilesForCategory(option.id, getTransports());
+		boolean roundTrip = "bank_round_trip".equals(option.id);
+		boolean bank = roundTrip || "bank".equals(option.id);
+		if (bank)
+		{
+			// Union in the engine's accessible-bank tiles: the amenity dump misses oddly-named
+			// bank objects (e.g. Slepe's "Bank Chest-wreck"), and "nearest bank" must never
+			// disagree with where the engine itself can bank.
+			tiles.addAll(getEngineBankTiles());
+		}
+		String source = "nearest " + option.label.toLowerCase(Locale.ROOT);
+		if (!bank)
+		{
+			setNearestCategory(tiles, source, false);
+			return;
+		}
+		if (tiles.isEmpty())
+		{
+			return;
+		}
+		clientThread.invokeLater(() ->
+		{
+			if (client.getLocalPlayer() == null)
+			{
+				// Logged out: setTargets would change nothing, so no trip may start either.
+				return;
+			}
+			// Read before the destination changes: setting it forgets any trip under way.
+			BankDetour.Route replaced = bankDetour.replacing(
+				BankDetour.Route.of(pathTargets, targetSource, altRoundTrip, markerTile()));
+			targetSource = source;
+			setTargets(new HashSet<>(tiles), false);
+			// After setTargets: it resets the round-trip flag and forgets the trip.
+			altRoundTrip = roundTrip;
+			bankDetour.begin(replaced);
+			recomputeAlternatives();
+		});
+	}
+
+	/** The panel's "Bank" and "Bank (and back)" quick buttons, and their hotkeys. */
+	public void goToNearestBank(boolean roundTrip)
+	{
+		String id = roundTrip ? "bank_round_trip" : "bank";
+		for (Destinations.NearestOption option : Destinations.NEAREST_OPTIONS)
+		{
+			if (option.id.equals(id))
+			{
+				goToNearest(option);
+				return;
+			}
+		}
+	}
+
+	/** The world-map pin's tile, or UNDEFINED without one. */
+	private int markerTile()
+	{
+		WorldMapPoint pin = marker;
+		return pin == null ? WorldPointUtil.UNDEFINED : WorldPointUtil.packWorldPoint(pin.getWorldPoint());
+	}
+
+	/**
+	 * Picks the destination a completed bank trip replaced back up: the same targets, label, pin
+	 * and round-trip flag, with routes generated from the bank, where the player now stands.
+	 */
+	private void resumeRoute(BankDetour.Route route)
+	{
+		targetSource = route.source;
+		markerTarget = route.marker;
+		setTargets(new HashSet<>(route.targets), false);
+		altRoundTrip = route.roundTrip;
+		if (route.roundTrip)
+		{
+			recomputeAlternatives();
+		}
+		client.addChatMessage(net.runelite.api.ChatMessageType.GAMEMESSAGE, "",
+			"GPS: bank reached, resuming your previous route.", null);
+	}
+
+	/**
 	 * The player's packed world position, or {@link WorldPointUtil#UNDEFINED} when not logged
 	 * in — BOAT-AWARE: aboard, the raw local position lives in the boat's sub-WorldView
 	 * (template-band coordinates that broke progress tracking and hid the route overlays the
@@ -2934,6 +3042,8 @@ public class ShortestPathPlugin extends Plugin
 
 	private void setTargets(Set<Integer> targets, boolean append)
 	{
+		// Any change of destination forgets a bank trip's saved route; a bank trip re-arms after.
+		bankDetour.cancel();
 		// Ordinary destinations are one-way; the round-trip entry point re-sets this after.
 		altRoundTrip = false;
 		// A fresh destination starts at the default cost band; "show more" widens it from there.
