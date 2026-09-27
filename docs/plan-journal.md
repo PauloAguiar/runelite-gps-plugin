@@ -1369,3 +1369,18 @@ their own lines). The imports are gone and each lambda became a named no-op in i
 The release branch, cut before the decomposition, was never affected.
 
 **Suite:** 828 tests, all green; checkstyle clean.
+
+### Step S2: the detour's label and header glyph (2026-09-27)
+
+**Red first:** `BankDetourTest` gains two cases: `pending` is the route a trip will resume (none
+for a trip that replaced nothing, which reads as an ordinary destination), and `headerLine` says
+what happens after the bank ("Bank stop, then the route set by map pin", "Bank and back, then
+..."), falling back to "Destination set by ..." otherwise.
+
+**Change:** the directions overlay's destination line, on the route and while one is being
+found, comes from `getDestinationLine`, and its header draws a bank glyph (a pediment over three
+columns, the pin's footprint) instead of the location pin while `isBankDetour` holds; both glyphs
+are static methods now. `HudRenderDumpTest`, stale since the overlay settings moved into their
+snapshot, builds the shipped defaults and dumps a detour variant; the renders were checked by eye.
+
+**Suite:** 830 tests, all green; checkstyle clean.

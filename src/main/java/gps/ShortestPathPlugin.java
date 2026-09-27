@@ -1006,6 +1006,18 @@ public class ShortestPathPlugin extends Plugin
 		destination.forgetBankTrip();
 	}
 
+	/** The directions header's destination line (see BankDetour.headerLine); null with nothing to say. */
+	public String getDestinationLine()
+	{
+		return BankDetour.headerLine(destination.source(), destination.pendingResume(), destination.isRoundTrip());
+	}
+
+	/** Whether the destination is a bank trip that will resume a replaced route (the header draws a bank). */
+	public boolean isBankDetour()
+	{
+		return destination.pendingResume() != null;
+	}
+
 	/**
 	 * The player's packed world position, or {@link WorldPointUtil#UNDEFINED} when not logged
 	 * in — BOAT-AWARE: aboard, the raw local position lives in the boat's sub-WorldView

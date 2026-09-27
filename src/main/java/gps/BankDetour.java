@@ -45,6 +45,30 @@ final class BankDetour
 	}
 
 	/**
+	 * The destination this trip will resume, or null: no trip, or a trip that replaced nothing
+	 * (which is an ordinary destination, labelled and drawn as one).
+	 */
+	synchronized Route pending()
+	{
+		return active ? saved : null;
+	}
+
+	/**
+	 * The directions header's destination line: "Destination set by <source>", or while a bank
+	 * trip will resume a replaced destination, what happens after the bank ("Bank stop, then the
+	 * route set by map pin"). Null with nothing to say.
+	 */
+	static String headerLine(String source, Route pending, boolean roundTrip)
+	{
+		if (pending != null)
+		{
+			String then = pending.source != null ? "the route set by " + pending.source : "your route";
+			return (roundTrip ? "Bank and back, then " : "Bank stop, then ") + then;
+		}
+		return source == null ? null : "Destination set by " + source;
+	}
+
+	/**
 	 * What a new bank trip replaces: the original destination while a trip is already under way,
 	 * otherwise {@code current}. Read before the destination changes, since the change forgets it.
 	 */

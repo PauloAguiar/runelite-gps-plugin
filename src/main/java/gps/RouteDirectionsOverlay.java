@@ -197,11 +197,12 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		// First pass: collect the lines, then size the panel to the widest one (within bounds) so
 		// content is neither wrapped nor needlessly clipped; only lines beyond MAX_WIDTH truncate.
 		List<Line> lines = new ArrayList<>();
-		String source = plugin.getTargetSource();
-		arrivalSource = source;
-		if (source != null)
+		arrivalSource = plugin.getTargetSource();
+		// "Destination set by ...", or during a bank trip what resumes after it (BankDetour.headerLine).
+		String destinationLine = plugin.getDestinationLine();
+		if (destinationLine != null)
 		{
-			lines.add(new Line("Destination set by " + source, fontOther, UPCOMING, null, null));
+			lines.add(new Line(destinationLine, fontOther, UPCOMING, null, null));
 		}
 		// Drifting off the drawn path: warn before the route is recomputed (the middle of the three
 		// distance bands — see ShortestPathPlugin's off-route handling).
@@ -457,18 +458,18 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	{
 		// All header geometry scales with the header font (1x at the native 16, 2x for Large).
 		final float s = fontCurrent.getSize2D() / 16f;
-		// Location pin: round head with a tail, hollow centre.
 		final int px = 8;
 		final int py = 4;
-		graphics.setColor(accent);
-		graphics.fillOval(px, py, Math.round(9 * s), Math.round(9 * s));
-		Polygon tail = new Polygon(
-			new int[]{px + Math.round(1 * s), px + Math.round(8 * s), px + Math.round(4 * s)},
-			new int[]{py + Math.round(7 * s), py + Math.round(7 * s), py + Math.round(13 * s)},
-			3);
-		graphics.fillPolygon(tail);
-		graphics.setColor(new Color(0x10, 0x10, 0x10));
-		graphics.fillOval(px + Math.round(3 * s), py + Math.round(3 * s), Math.round(3 * s), Math.round(3 * s));
+		// The destination's glyph: a location pin, or a bank while a bank trip will resume a
+		// replaced route (the destination line says what comes after it).
+		if (plugin.isBankDetour())
+		{
+			drawBankGlyph(graphics, px, py, s, accent);
+		}
+		else
+		{
+			drawPinGlyph(graphics, px, py, s, accent);
+		}
 
 		graphics.setFont(fontCurrent);
 		graphics.setColor(Color.BLACK);
@@ -479,6 +480,41 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		// Accent rule under the header row.
 		graphics.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 170));
 		graphics.drawLine(4, py + Math.round(15 * s), panelSize.width - 4, py + Math.round(15 * s));
+	}
+
+	/** Location pin: round head with a tail, hollow centre, 9 x 13 at scale 1. */
+	static void drawPinGlyph(Graphics2D graphics, int px, int py, float s, Color accent)
+	{
+		graphics.setColor(accent);
+		graphics.fillOval(px, py, Math.round(9 * s), Math.round(9 * s));
+		Polygon tail = new Polygon(
+			new int[]{px + Math.round(1 * s), px + Math.round(8 * s), px + Math.round(4 * s)},
+			new int[]{py + Math.round(7 * s), py + Math.round(7 * s), py + Math.round(13 * s)},
+			3);
+		graphics.fillPolygon(tail);
+		graphics.setColor(new Color(0x10, 0x10, 0x10));
+		graphics.fillOval(px + Math.round(3 * s), py + Math.round(3 * s), Math.round(3 * s), Math.round(3 * s));
+	}
+
+	/**
+	 * Bank, the map-legend kind: a pediment over three columns on a plinth, 10 x 13 at scale 1,
+	 * the pin's footprint so the "GPS" title beside it stays put.
+	 */
+	static void drawBankGlyph(Graphics2D graphics, int px, int py, float s, Color accent)
+	{
+		graphics.setColor(accent);
+		int width = Math.round(10 * s);
+		graphics.fillPolygon(new Polygon(
+			new int[]{px, px + width, px + Math.round(5 * s)},
+			new int[]{py + Math.round(4 * s), py + Math.round(4 * s), py},
+			3));
+		graphics.fillRect(px, py + Math.round(4 * s), width, Math.max(1, Math.round(1 * s)));
+		int columnWidth = Math.max(1, Math.round(2 * s));
+		for (int i = 0; i < 3; i++)
+		{
+			graphics.fillRect(px + Math.round((1 + 3 * i) * s), py + Math.round(5 * s), columnWidth, Math.round(6 * s));
+		}
+		graphics.fillRect(px, py + Math.round(11 * s), width, Math.max(1, Math.round(2 * s)));
 	}
 
 	/**
@@ -631,10 +667,10 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	private Dimension renderFinding(Graphics2D graphics)
 	{
 		List<Line> lines = new ArrayList<>();
-		String source = plugin.getTargetSource();
-		if (source != null)
+		String destinationLine = plugin.getDestinationLine();
+		if (destinationLine != null)
 		{
-			lines.add(new Line("Destination set by " + source, fontOther, UPCOMING, null, null));
+			lines.add(new Line(destinationLine, fontOther, UPCOMING, null, null));
 		}
 		lines.add(new Line(" ", fontOther, UPCOMING, null, null));
 		lines.add(new Line("Finding the best route...", fontCurrent, NEXT, null, null, true));

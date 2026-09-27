@@ -142,6 +142,12 @@ final class DestinationController
 		bankTrip.cancel();
 	}
 
+	/** The destination the current bank trip will resume, or null (see BankDetour.pending). */
+	BankDetour.Route pendingResume()
+	{
+		return bankTrip.pending();
+	}
+
 	/**
 	 * A searched place or amenity (the panel search box), attributed to {@code source}. A label
 	 * can sit on an unwalkable tile (a fountain): it expands to the nearest walkable ring, like a
