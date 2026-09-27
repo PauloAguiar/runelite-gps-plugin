@@ -19,7 +19,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -71,7 +70,7 @@ public class RouteControllerTest
 		when(config.defaultRouteCount()).thenReturn(10);
 
 		ChoiceStore choices = new ChoiceStore(() -> configManager, Gson::new, "gps");
-		MethodExclusions exclusions = new MethodExclusions(choices, () -> { });
+		MethodExclusions exclusions = new MethodExclusions(choices, RouteControllerTest::noop);
 		session = new RouteSession();
 		controller = new RouteController(plugin, session, exclusions, choices,
 			new PluginMessageBridge(plugin, () -> null));
@@ -132,5 +131,10 @@ public class RouteControllerTest
 			multiples.capture(), anyBoolean(), any());
 		assertTrue("the route budget grew", limits.getAllValues().get(1) > limits.getAllValues().get(0));
 		assertTrue("the cost band grew", multiples.getAllValues().get(1) > multiples.getAllValues().get(0));
+	}
+
+	/** A no-op callback (checkstyle wants a block's braces on their own lines, so no inline lambda). */
+	private static void noop()
+	{
 	}
 }

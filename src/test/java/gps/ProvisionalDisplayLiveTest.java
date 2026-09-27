@@ -83,7 +83,7 @@ public class ProvisionalDisplayLiveTest
 		Mockito.when(configManager.getConfiguration("gps", ChoiceStore.CONFIG_KEY_MODE)).thenReturn(mode.name());
 		ChoiceStore choices = new ChoiceStore(() -> configManager, Gson::new, "gps");
 		RouteSession session = new RouteSession();
-		RouteController routes = new RouteController(plugin, session, new MethodExclusions(choices, () -> { }), choices,
+		RouteController routes = new RouteController(plugin, session, new MethodExclusions(choices, ProvisionalDisplayLiveTest::noop), choices,
 			new PluginMessageBridge(plugin, () -> null));
 		routes.start(service);
 
@@ -170,5 +170,10 @@ public class ProvisionalDisplayLiveTest
 	public void lumbridgeToCivitasEverything() throws Exception
 	{
 		assertOneAppearance(sampleGeneration(LUMBRIDGE, CIVITAS, AlternativeRoutesMode.ALL_EVERYTHING));
+	}
+
+	/** A no-op callback (checkstyle wants a block's braces on their own lines, so no inline lambda). */
+	private static void noop()
+	{
 	}
 }

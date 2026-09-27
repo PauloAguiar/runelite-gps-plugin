@@ -23,7 +23,6 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -93,7 +92,7 @@ public class DestinationControllerTest
 
 		ChoiceStore choices = new ChoiceStore(() -> configManager, Gson::new, "gps");
 		session = new RouteSession();
-		RouteController routes = new RouteController(plugin, session, new MethodExclusions(choices, () -> { }), choices,
+		RouteController routes = new RouteController(plugin, session, new MethodExclusions(choices, DestinationControllerTest::noop), choices,
 			new PluginMessageBridge(plugin, () -> null));
 		routes.start(service);
 		marker = new WorldMapMarker(() -> mapPoints);
@@ -267,5 +266,10 @@ public class DestinationControllerTest
 		destination.arrived();
 		assertTrue(destination.targets().isEmpty());
 		verify(plugin, never()).getClient();
+	}
+
+	/** A no-op callback (checkstyle wants a block's braces on their own lines, so no inline lambda). */
+	private static void noop()
+	{
 	}
 }

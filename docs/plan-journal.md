@@ -1359,3 +1359,13 @@ positions 83 and 84; the Debug section moved to 85). The search box's nearest-ba
 unions the engine's bank tiles, as the quick buttons always did.
 
 **Suite:** 828 tests, all green.
+
+### Checkstyle green again (2026-09-27)
+
+`./gradlew build` had been failing on main since the decomposition: CI runs only `test`, so
+nothing ran checkstyle, and the steps left four unused imports in the plugin class, three unused
+static imports in tests and ten one-line empty lambdas (checkstyle wants a block's braces on
+their own lines). The imports are gone and each lambda became a named no-op in its test class.
+The release branch, cut before the decomposition, was never affected.
+
+**Suite:** 828 tests, all green; checkstyle clean.

@@ -118,7 +118,7 @@ public class RoutingItemDependenciesTest
 		ShortestPathPlugin plugin = mock(ShortestPathPlugin.class);
 		ConfigManager configManager = mock(ConfigManager.class);
 		ChoiceStore choices = new ChoiceStore(() -> configManager, Gson::new, "gps");
-		RouteController routes = new RouteController(plugin, new RouteSession(), new MethodExclusions(choices, () -> { }),
+		RouteController routes = new RouteController(plugin, new RouteSession(), new MethodExclusions(choices, RoutingItemDependenciesTest::noop),
 			choices, new PluginMessageBridge(plugin, () -> null));
 
 		ItemContainer worn = container();
@@ -140,4 +140,8 @@ public class RoutingItemDependenciesTest
 		assertTrue("without a dependency index yet, every change counts", routes.itemsChanged(null, inv, worn));
 	}
 
+	/** A no-op callback (checkstyle wants a block's braces on their own lines, so no inline lambda). */
+	private static void noop()
+	{
+	}
 }

@@ -60,16 +60,21 @@ public class PluginHotkeysTest
 	@Test
 	public void theArrivalClickIsConsumedOnlyWhenItDismissedThePanel()
 	{
-		PluginHotkeys dismissing = new PluginHotkeys(() -> Keybind.NOT_SET, () -> { }, () -> Keybind.NOT_SET, () -> { },
+		PluginHotkeys dismissing = new PluginHotkeys(() -> Keybind.NOT_SET, PluginHotkeysTest::noop, () -> Keybind.NOT_SET, PluginHotkeysTest::noop,
 			point -> point.x == 5);
 		MouseEvent hit = click();
 		dismissing.dismissArrival().mousePressed(hit);
 		assertTrue(hit.isConsumed());
 
-		PluginHotkeys idle = new PluginHotkeys(() -> Keybind.NOT_SET, () -> { }, () -> Keybind.NOT_SET, () -> { },
+		PluginHotkeys idle = new PluginHotkeys(() -> Keybind.NOT_SET, PluginHotkeysTest::noop, () -> Keybind.NOT_SET, PluginHotkeysTest::noop,
 			point -> false);
 		MouseEvent miss = click();
 		idle.dismissArrival().mousePressed(miss);
 		assertFalse("an ordinary click still reaches the game", miss.isConsumed());
+	}
+
+	/** A no-op callback (checkstyle wants a block's braces on their own lines, so no inline lambda). */
+	private static void noop()
+	{
 	}
 }

@@ -19,7 +19,6 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -129,7 +128,7 @@ public class CatalogStutterHotfixTest
 		when(plugin.getClientThread()).thenReturn(Mockito.mock(ClientThread.class));
 		ConfigManager configManager = Mockito.mock(ConfigManager.class);
 		ChoiceStore choices = new ChoiceStore(() -> configManager, Gson::new, "gps");
-		RouteController routes = new RouteController(plugin, new RouteSession(), new MethodExclusions(choices, () -> { }),
+		RouteController routes = new RouteController(plugin, new RouteSession(), new MethodExclusions(choices, CatalogStutterHotfixTest::noop),
 			choices, new PluginMessageBridge(plugin, () -> null));
 		routes.start(service);
 		// An item change with no dependency index yet: the catalog is dirty.
@@ -159,4 +158,8 @@ public class CatalogStutterHotfixTest
 		assertFalse(routes.isCatalogDirty());
 	}
 
+	/** A no-op callback (checkstyle wants a block's braces on their own lines, so no inline lambda). */
+	private static void noop()
+	{
+	}
 }

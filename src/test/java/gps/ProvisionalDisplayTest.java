@@ -61,7 +61,7 @@ public class ProvisionalDisplayTest
 		when(plugin.sortByEffectiveOrder(any())).thenAnswer(i -> i.getArgument(0));
 		ChoiceStore choices = new ChoiceStore(() -> configManager, Gson::new, "gps");
 		session = new RouteSession();
-		routes = new RouteController(plugin, session, new MethodExclusions(choices, () -> { }), choices,
+		routes = new RouteController(plugin, session, new MethodExclusions(choices, ProvisionalDisplayTest::noop), choices,
 			new PluginMessageBridge(plugin, () -> null));
 		routes.start(service);
 	}
@@ -141,5 +141,10 @@ public class ProvisionalDisplayTest
 		assertSame("streaming does not swap the held route", settled, displayed());
 		update(List.of(newer), true);
 		assertSame("settles to the new best once", newer, displayed());
+	}
+
+	/** A no-op callback (checkstyle wants a block's braces on their own lines, so no inline lambda). */
+	private static void noop()
+	{
 	}
 }
