@@ -149,6 +149,8 @@ public class ShortestPathPanel extends PluginPanel
 	private void render()
 	{
 		header.refresh();
+		// The bank quick buttons badge themselves while a click would add a stop to a route.
+		destinationSearch.showBankStop(plugin.bankClickAddsStop());
 		notices.show(cachedRoutes, cachedCalculating, cachedHasTarget);
 		// The Travel options slot is rebuilt only when its inputs changed: streamed route updates
 		// leave it untouched so its toggles stay responsive while a generation is running.

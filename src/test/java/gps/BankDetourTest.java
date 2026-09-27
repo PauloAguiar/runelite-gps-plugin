@@ -111,4 +111,17 @@ public class BankDetourTest
 			"Destination set by nearest bank", BankDetour.headerLine("nearest bank", null, false));
 		assertNull(BankDetour.headerLine(null, null, false));
 	}
+
+	@Test
+	public void aBankClickAddsAStopWhenARouteWouldResume()
+	{
+		BankDetour detour = new BankDetour();
+		assertFalse("nothing set: a plain trip to the bank", detour.wouldResume(false));
+		assertTrue("a route under way resumes after the bank", detour.wouldResume(true));
+		detour.begin(detour.replacing(BankDetour.Route.of(VARROCK, "map pin", false, WorldPointUtil.UNDEFINED)));
+		assertTrue("during a trip that saved a route, another bank click still adds a stop", detour.wouldResume(true));
+		detour.cancel();
+		detour.begin(detour.replacing(null));
+		assertFalse("a trip that replaced nothing: the bank trip itself is the destination", detour.wouldResume(true));
+	}
 }

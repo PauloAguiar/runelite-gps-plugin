@@ -1018,6 +1018,12 @@ public class ShortestPathPlugin extends Plugin
 		return destination.pendingResume() != null;
 	}
 
+	/** Whether a bank quick button click now would add a stop (the panel badges the buttons). */
+	public boolean bankClickAddsStop()
+	{
+		return destination.bankClickAddsStop();
+	}
+
 	/**
 	 * The player's packed world position, or {@link WorldPointUtil#UNDEFINED} when not logged
 	 * in — BOAT-AWARE: aboard, the raw local position lives in the boat's sub-WorldView

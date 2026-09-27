@@ -272,4 +272,14 @@ public class DestinationControllerTest
 	private static void noop()
 	{
 	}
+
+	@Test
+	public void aBankClickAddsAStopOnlyWithARouteUnderWay()
+	{
+		assertFalse("nothing set", destination.bankClickAddsStop());
+		destination.pin(THERE);
+		assertTrue("a pin resumes after the bank", destination.bankClickAddsStop());
+		destination.clear();
+		assertFalse(destination.bankClickAddsStop());
+	}
 }

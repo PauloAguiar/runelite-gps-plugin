@@ -1,5 +1,6 @@
 package gps;
 
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -51,6 +52,30 @@ final class BankDetour
 	synchronized Route pending()
 	{
 		return active ? saved : null;
+	}
+
+	/**
+	 * Whether a bank click now would add a stop, that is resume a route after the bank: during a
+	 * trip, when it saved one; otherwise, when a destination is set (the one it would replace).
+	 */
+	synchronized boolean wouldResume(boolean destinationSet)
+	{
+		return active ? saved != null : destinationSet;
+	}
+
+	/**
+	 * A bank quick button's tooltip: its plain name ("Nearest bank"), or while a click would add a
+	 * stop, what that does ("Add a stop at the nearest bank", and that the route resumes).
+	 */
+	static String buttonTooltip(Destinations.NearestOption option, boolean addsStop)
+	{
+		if (!addsStop)
+		{
+			return "Nearest " + option.label.toLowerCase(Locale.ROOT);
+		}
+		return "bank_round_trip".equals(option.id)
+			? "<html><b>Add a stop</b> at the nearest bank and back<br>Your current route resumes once you are back</html>"
+			: "<html><b>Add a stop</b> at the nearest bank<br>Your current route resumes after the bank</html>";
 	}
 
 	/**

@@ -148,6 +148,12 @@ final class DestinationController
 		return bankTrip.pending();
 	}
 
+	/** Whether a bank click now would add a stop: a route would resume after it (see BankDetour.wouldResume). */
+	boolean bankClickAddsStop()
+	{
+		return bankTrip.wouldResume(hasTargets());
+	}
+
 	/**
 	 * A searched place or amenity (the panel search box), attributed to {@code source}. A label
 	 * can sit on an unwalkable tile (a fountain): it expands to the nearest walkable ring, like a

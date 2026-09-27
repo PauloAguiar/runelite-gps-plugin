@@ -1384,3 +1384,22 @@ are static methods now. `HudRenderDumpTest`, stale since the overlay settings mo
 snapshot, builds the shipped defaults and dumps a detour variant; the renders were checked by eye.
 
 **Suite:** 830 tests, all green; checkstyle clean.
+
+### Step S3: the bank buttons say when a click adds a stop (2026-09-27)
+
+What the player meant by the detour's label and icon: the panel's Bank and Bank (and back) quick
+buttons, not the HUD (S2 stays; it was welcome).
+
+**Red first:** `BankDetourTest` gains `wouldResume` (a route under way, or a trip that saved one,
+means a click adds a stop; nothing set, or a trip that replaced nothing, does not);
+`BankStopButtonTest` pins the tooltips ("Nearest bank" as before, "Add a stop at the nearest
+bank" with the route resuming after it) and the badged icons (same size, the green badge in the
+top-right corner); `DestinationControllerTest` drives `bankClickAddsStop` through a pin and a
+clear.
+
+**Change:** `RouteIcons.bankButtonIcon` draws each bank glyph with a small green "+" badge,
+pixel-aligned so the plus stays a crisp 1 px cross at 16 px (the first, fractional cut blurred
+into a dot; checked by eye at 1x and 6x). `DestinationSearchView.showBankStop` swaps the two
+buttons' icon and tooltip, called from every panel render and restyling only on a change.
+
+**Suite:** 834 tests, all green; checkstyle clean.
