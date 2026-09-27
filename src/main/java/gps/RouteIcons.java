@@ -130,6 +130,8 @@ final class RouteIcons
 	private static final ImageIcon DEST_PLACE = new ImageIcon(place());
 	private static final ImageIcon DEST_BANK = new ImageIcon(coinStack());
 	private static final ImageIcon DEST_BANK_ROUND_TRIP = new ImageIcon(coinStackReturn());
+	// The Bank quick button while a click would add a stop: the coin stack with a "+" badge.
+	private static final ImageIcon DEST_BANK_STOP = new ImageIcon(withStopBadge(coinStack()));
 	private static final ImageIcon DEST_ALTAR = new ImageIcon(altar());
 	private static final ImageIcon DEST_WATER = new ImageIcon(droplet());
 	private static final ImageIcon DEST_FURNACE = new ImageIcon(flame(new Color(0xF2, 0x8A, 0x3B)));
@@ -176,6 +178,32 @@ final class RouteIcons
 			case "favorite": return FAVORITE;
 			default: return DEST_PIN;
 		}
+	}
+
+	/** The Bank quick button's icon: the coin stack, with a "+" badge while a click would add a stop. */
+	static ImageIcon bankButtonIcon(boolean addsStop)
+	{
+		return addsStop ? DEST_BANK_STOP : DEST_BANK;
+	}
+
+	/** The glyph with a small green "+" badge over its top-right corner, ringed dark to read on any glyph. */
+	private static BufferedImage withStopBadge(BufferedImage base)
+	{
+		return render(g ->
+		{
+			g.drawImage(base, 0, 0, null);
+			// Pixel-aligned so the plus stays a crisp 1 px cross at the icon's native 16 px.
+			final double cx = 12.5;
+			final double cy = 3.5;
+			final double r = 3.5;
+			g.setColor(new Color(0x10, 0x10, 0x10, 210));
+			g.fill(new Ellipse2D.Double(cx - r - 1, cy - r - 1, 2 * (r + 1), 2 * (r + 1)));
+			g.setColor(GREEN);
+			g.fill(new Ellipse2D.Double(cx - r, cy - r, 2 * r, 2 * r));
+			g.setColor(Color.WHITE);
+			g.fill(new Rectangle2D.Double(10, 3, 5, 1));
+			g.fill(new Rectangle2D.Double(12, 1, 1, 5));
+		});
 	}
 
 	private static BufferedImage place()

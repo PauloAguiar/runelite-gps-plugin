@@ -69,6 +69,9 @@ import gps.transport.TransportType;
  */
 public class ShortestPathPanel extends PluginPanel
 {
+	// The Bank quick button, restyled while a click would add a stop (see showBankStop).
+	private JButton bankButton;
+	private boolean bankButtonAddsStop;
 	private static final int CONTROL_SIZE = 18;
 	private static final int METHOD_TEXT_WIDTH = 132;
 	// Wrap width for message-banner text: the sidebar content (~192px after the panel's outer
@@ -646,6 +649,8 @@ public class ShortestPathPanel extends PluginPanel
 	private void render()
 	{
 		updateModeButtons();
+		// The Bank quick button badges itself while a click would add a stop to a route.
+		showBankStop(plugin.bankClickAddsStop());
 		listPanel.removeAll();
 
 		// Banners are for NOTICES only (warnings, arrival, nothing-to-show); routine result state
@@ -3188,6 +3193,7 @@ public class ShortestPathPanel extends PluginPanel
 		JPanel quick = new JPanel(new FlowLayout(FlowLayout.LEADING, 4, 0));
 		quick.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		JButton bank = nearestQuickButton("bank");
+		bankButton = bank;
 		if (bank != null)
 		{
 			quick.add(bank);
@@ -3201,6 +3207,23 @@ public class ShortestPathPanel extends PluginPanel
 
 		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
 		return row;
+	}
+
+	/**
+	 * Shows on the Bank quick button whether a click adds a stop: with a route under way (or a bank
+	 * trip that will resume one) the route resumes after the bank, so the icon carries a "+" badge
+	 * and the tooltip says so. Bank (and back) keeps its look: it returns to where you are anyway.
+	 * Called on every render; restyles only on a change. EDT.
+	 */
+	private void showBankStop(boolean addsStop)
+	{
+		if (bankButton == null || addsStop == bankButtonAddsStop)
+		{
+			return;
+		}
+		bankButtonAddsStop = addsStop;
+		bankButton.setIcon(RouteIcons.bankButtonIcon(addsStop));
+		bankButton.setToolTipText(BankDetour.bankButtonTooltip(addsStop));
 	}
 
 	/** An icon-only quick button running one nearest-X option directly (tooltip names it). */

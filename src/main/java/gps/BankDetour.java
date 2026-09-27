@@ -45,6 +45,50 @@ final class BankDetour
 	}
 
 	/**
+	 * The destination this trip will resume, or null: no trip, or a trip that replaced nothing
+	 * (which is an ordinary destination, labelled and drawn as one).
+	 */
+	synchronized Route pending()
+	{
+		return active ? saved : null;
+	}
+
+	/**
+	 * Whether a bank click now would add a stop, that is resume a route after the bank: during a
+	 * trip, when it saved one; otherwise, when a destination is set (the one it would replace).
+	 */
+	synchronized boolean wouldResume(boolean destinationSet)
+	{
+		return active ? saved != null : destinationSet;
+	}
+
+	/**
+	 * The Bank quick button's tooltip: "Nearest bank", or while a click would add a stop, what that
+	 * does. Bank (and back) keeps its plain tooltip: it returns to where you are anyway.
+	 */
+	static String bankButtonTooltip(boolean addsStop)
+	{
+		return addsStop
+			? "<html><b>Add a stop</b> at the nearest bank<br>Your current route resumes after the bank</html>"
+			: "Nearest bank";
+	}
+
+	/**
+	 * The directions header's destination line: "Destination set by <source>", or while a bank
+	 * trip will resume a replaced destination, what happens after the bank ("Bank stop, then the
+	 * route set by map pin"). Null with nothing to say.
+	 */
+	static String headerLine(String source, Route pending, boolean roundTrip)
+	{
+		if (pending != null)
+		{
+			String then = pending.source != null ? "the route set by " + pending.source : "your route";
+			return (roundTrip ? "Bank and back, then " : "Bank stop, then ") + then;
+		}
+		return source == null ? null : "Destination set by " + source;
+	}
+
+	/**
 	 * What a new bank trip replaces: the original destination while a trip is already under way,
 	 * otherwise {@code current}. Read before the destination changes, since the change forgets it.
 	 */

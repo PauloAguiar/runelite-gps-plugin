@@ -4015,6 +4015,24 @@ public class ShortestPathPlugin extends Plugin
 		return targetSource;
 	}
 
+	/** The directions header's destination line (see BankDetour.headerLine); null with nothing to say. */
+	public String getDestinationLine()
+	{
+		return BankDetour.headerLine(targetSource, bankDetour.pending(), altRoundTrip);
+	}
+
+	/** Whether the destination is a bank trip that will resume a replaced route (the header draws a bank). */
+	public boolean isBankDetour()
+	{
+		return bankDetour.pending() != null;
+	}
+
+	/** Whether a bank quick button click now would add a stop (the panel badges the buttons). */
+	public boolean bankClickAddsStop()
+	{
+		return bankDetour.wouldResume(hasPathTargets());
+	}
+
 	/**
 	 * Writes a JSON snapshot of the current routing state to ~/.runelite/gps-debug/ — everything
 	 * needed to reproduce and debug the current path: routes with their full tile paths, methods and

@@ -83,4 +83,45 @@ public class BankDetourTest
 		assertTrue(route.roundTrip);
 		assertEquals(pin, route.marker);
 	}
+
+	@Test
+	public void pendingIsTheRouteThatWillResume()
+	{
+		BankDetour detour = new BankDetour();
+		assertNull(detour.pending());
+		detour.begin(detour.replacing(BankDetour.Route.of(VARROCK, "map pin", false, WorldPointUtil.UNDEFINED)));
+		assertEquals(VARROCK, detour.pending().targets);
+		detour.cancel();
+		assertNull(detour.pending());
+		detour.begin(detour.replacing(null));
+		assertNull("a trip with nothing to resume is not a detour", detour.pending());
+	}
+
+	@Test
+	public void theHeaderLineSaysWhatResumesDuringATrip()
+	{
+		BankDetour.Route pin = BankDetour.Route.of(VARROCK, "map pin", false, WorldPointUtil.UNDEFINED);
+		assertEquals("Destination set by map pin", BankDetour.headerLine("map pin", null, false));
+		assertEquals("Bank stop, then the route set by map pin", BankDetour.headerLine("nearest bank", pin, false));
+		assertEquals("Bank and back, then the route set by map pin",
+			BankDetour.headerLine("nearest bank (and back)", pin, true));
+		assertEquals("Bank stop, then your route",
+			BankDetour.headerLine("nearest bank", BankDetour.Route.of(VARROCK, null, false, WorldPointUtil.UNDEFINED), false));
+		assertEquals("a trip that resumes nothing reads as an ordinary destination",
+			"Destination set by nearest bank", BankDetour.headerLine("nearest bank", null, false));
+		assertNull(BankDetour.headerLine(null, null, false));
+	}
+
+	@Test
+	public void aBankClickAddsAStopWhenARouteWouldResume()
+	{
+		BankDetour detour = new BankDetour();
+		assertFalse("nothing set: a plain trip to the bank", detour.wouldResume(false));
+		assertTrue("a route under way resumes after the bank", detour.wouldResume(true));
+		detour.begin(detour.replacing(BankDetour.Route.of(VARROCK, "map pin", false, WorldPointUtil.UNDEFINED)));
+		assertTrue("during a trip that saved a route, another bank click still adds a stop", detour.wouldResume(true));
+		detour.cancel();
+		detour.begin(detour.replacing(null));
+		assertFalse("a trip that replaced nothing: the bank trip itself is the destination", detour.wouldResume(true));
+	}
 }

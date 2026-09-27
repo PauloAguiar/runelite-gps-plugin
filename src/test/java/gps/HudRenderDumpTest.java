@@ -28,16 +28,20 @@ public class HudRenderDumpTest
 		ShortestPathPlugin plugin = Mockito.mock(ShortestPathPlugin.class, Mockito.withSettings().lenient());
 		Mockito.when(plugin.isFindingRoute()).thenReturn(true);
 		Mockito.when(plugin.getDisplayedRoute()).thenReturn(null);
-		Mockito.when(plugin.getTargetSource()).thenReturn(System.getenv("GPS_HUD_SOURCE"));
 		set(plugin, "showDirections", true);
 		set(plugin, "colourOverlayAccent", new Color(0x3C, 0x8C, 0xE6));
 		set(plugin, "overlayFontSize", OverlayFontSize.NORMAL);
 		set(plugin, "overrideOverlayTransparency", false);
 
 		RouteDirectionsOverlay overlay = new RouteDirectionsOverlay(Mockito.mock(Client.class), plugin);
-		for (String source : new String[]{"Slayer gear advisor", null})
+		// Plain, an ordinary destination line, and a bank trip that will resume a route.
+		String[][] cases = {{"plain", null}, {"source", "Destination set by Slayer gear advisor"},
+			{"detour", BankDetour.headerLine("nearest bank",
+				BankDetour.Route.of(java.util.Set.of(1), "map pin", false, WorldPointUtil.UNDEFINED), false)}};
+		for (String[] variant : cases)
 		{
-			Mockito.when(plugin.getTargetSource()).thenReturn(source);
+			Mockito.when(plugin.getDestinationLine()).thenReturn(variant[1]);
+			Mockito.when(plugin.isBankDetour()).thenReturn("detour".equals(variant[0]));
 			BufferedImage image = new BufferedImage(420, 160, BufferedImage.TYPE_INT_ARGB);
 			Graphics2D g = image.createGraphics();
 			g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
@@ -52,7 +56,7 @@ public class HudRenderDumpTest
 			g.fillRect(-10, -10, image.getWidth(), image.getHeight());
 			Dimension size = overlay.render(g);
 			g.dispose();
-			File out = new File(System.getenv("GPS_HUD_DUMP") + (source == null ? "-plain.png" : "-source.png"));
+			File out = new File(System.getenv("GPS_HUD_DUMP") + "-" + variant[0] + ".png");
 			ImageIO.write(image, "png", out);
 			System.out.println("wrote " + out.getAbsolutePath() + " panel=" + size
 				+ " children=" + overlay.getPanelComponent().getChildren().size());
