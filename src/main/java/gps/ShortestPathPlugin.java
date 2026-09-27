@@ -172,6 +172,11 @@ public class ShortestPathPlugin extends Plugin
 		() -> config.clearPathHotkey(), destination::clear,
 		() -> config.focusSearchHotkey(), this::focusSearch,
 		point -> routeDirectionsOverlay != null && routeDirectionsOverlay.dismissArrivalAt(point));
+	// The panel's nearest-bank quick buttons as hotkeys (see NearestBankHotkeys); registered at
+	// startup, bindings read on each press.
+	private final NearestBankHotkeys nearestBankHotkeys = new NearestBankHotkeys(
+		() -> config.nearestBankHotkey(), () -> goToNearestBank(false),
+		() -> config.nearestBankAndBackHotkey(), () -> goToNearestBank(true));
 	// The planted spirit trees (see SpiritTreeSync) and the fairy-ring log helper (see
 	// FairyRingHighlighter); constructed at startup with the pathfinder config.
 	private SpiritTreeSync spiritTrees;
@@ -269,6 +274,8 @@ public class ShortestPathPlugin extends Plugin
 		}
 
 		hotkeys.register(keyManager, mouseManager);
+		keyManager.registerKeyListener(nearestBankHotkeys.bank());
+		keyManager.registerKeyListener(nearestBankHotkeys.bankAndBack());
 		// Plugins enabled later are caught by the PluginChanged/ExternalPluginsChanged events.
 		companions = new CompanionPlugins(pluginManager, configManager, this, () -> routes.refreshPanel(session.inFlight()));
 		companions.refresh();
@@ -295,6 +302,9 @@ public class ShortestPathPlugin extends Plugin
 		routes.shutdown();
 
 		hotkeys.unregister(keyManager, mouseManager);
+		keyManager.unregisterKeyListener(nearestBankHotkeys.bank());
+		keyManager.unregisterKeyListener(nearestBankHotkeys.bankAndBack());
+		destination.forgetBankTrip();
 	}
 
 	/** Records the destination and refreshes the live config (see DestinationController.set). */
@@ -697,7 +707,8 @@ public class ShortestPathPlugin extends Plugin
 		{
 			altPanel.markArrived(elapsed);
 		}
-		destination.clear();
+		// Clears the target; a completed bank trip resumes the destination it replaced.
+		destination.arrived();
 		return true;
 	}
 
@@ -971,6 +982,32 @@ public class ShortestPathPlugin extends Plugin
 	public void setNearestCategory(Set<Integer> tiles, String source, boolean roundTrip)
 	{
 		destination.setNearestCategory(tiles, source, roundTrip);
+	}
+
+	/** Runs one nearest-X option (see DestinationController.goToNearest). */
+	public void goToNearest(Destinations.NearestOption option)
+	{
+		destination.goToNearest(option);
+	}
+
+	/** The panel's "Bank" and "Bank (and back)" quick buttons, and their hotkeys. */
+	public void goToNearestBank(boolean roundTrip)
+	{
+		String id = roundTrip ? "bank_round_trip" : "bank";
+		for (Destinations.NearestOption option : Destinations.NEAREST_OPTIONS)
+		{
+			if (option.id.equals(id))
+			{
+				goToNearest(option);
+				return;
+			}
+		}
+	}
+
+	/** Another plugin's new destination replaces a bank trip (see PluginMessageBridge). */
+	void forgetBankTrip()
+	{
+		destination.forgetBankTrip();
 	}
 
 	/**

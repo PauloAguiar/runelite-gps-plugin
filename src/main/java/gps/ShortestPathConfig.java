@@ -1669,10 +1669,36 @@ public interface ShortestPathConfig extends Config
 		return Keybind.NOT_SET;
 	}
 
+	@ConfigItem(
+		keyName = "nearestBankHotkey",
+		name = "Go to nearest bank",
+		description = "Hotkey for the panel's Bank button: routes to the nearest bank.<br>" +
+			"The route it replaces resumes once you reach the bank.",
+		position = 83,
+		section = sectionHotkeys
+	)
+	default Keybind nearestBankHotkey()
+	{
+		return Keybind.NOT_SET;
+	}
+
+	@ConfigItem(
+		keyName = "nearestBankAndBackHotkey",
+		name = "Go to nearest bank and back",
+		description = "Hotkey for the panel's Bank (and back) button: routes to the nearest bank<br>" +
+			"and back. The route it replaces resumes once you are back.",
+		position = 84,
+		section = sectionHotkeys
+	)
+	default Keybind nearestBankAndBackHotkey()
+	{
+		return Keybind.NOT_SET;
+	}
+
 	@ConfigSection(
 		name = "Debug Options",
 		description = "Various options for debugging",
-		position = 83,
+		position = 85,
 		closedByDefault = true
 	)
 	String sectionDebug = "sectionDebug";

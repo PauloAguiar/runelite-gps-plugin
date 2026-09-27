@@ -1331,3 +1331,31 @@ sealed 708 ms; warm 16 to 78 ms on the common queries. Full flood 271 ms, guided
 73 us, refresh 3.7 ms, rebuild with an exclusion 230 us.
 
 **Suite:** main code untouched (benchmarks, script and docs only).
+
+## A player suggestion: nearest-bank hotkeys and the resumed route (2026-09-27)
+
+A player asked for keybinds for the panel's "nearest bank" and "nearest bank and back" quick
+buttons, unset by default, and for the route a nearest-bank click replaced to resume once the
+bank trip completes, but only when the click did replace one. Built first on the 0.14.0 release
+branch (cut before the decomposition, at e10be63), then here in the decomposed structure; the
+two new classes and their tests are byte-identical on both branches, so the release's merge back
+into main adds nothing twice.
+
+### Step S1: BankDetour, NearestBankHotkeys, the controller's nearest entry point (2026-09-27)
+
+**Red first:** `BankDetourTest` (a trip resumes what it replaced, once; nothing active resumes
+nothing; any other destination change forgets it; a second bank click keeps the original),
+`NearestBankHotkeysTest` (both default to not set; each fires on its own binding only), and six
+`DestinationControllerTest` cases driving the wiring: the resume on arrival with its chat line,
+a new pin cancelling it, a trip with nothing active, "and back" during a trip, another plugin's
+new target, and a non-bank nearest option starting no trip.
+
+**Change:** `BankDetour` holds the replaced destination (targets, label, round-trip flag, pin).
+`DestinationController` forgets it in its target setter, starts a trip in `goToNearest` (moved
+out of the search view so the hotkeys work with the panel closed), and resumes it in `arrived`,
+which the tick's arrival step now calls instead of `clear`. The message bridge forgets the trip
+on another plugin's new target. `NearestBankHotkeys` carries the two keybinds (Hotkeys section,
+positions 83 and 84; the Debug section moved to 85). The search box's nearest-bank row now
+unions the engine's bank tiles, as the quick buttons always did.
+
+**Suite:** 828 tests, all green.

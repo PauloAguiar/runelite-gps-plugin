@@ -2,7 +2,9 @@ package gps;
 
 import gps.pathfinder.PathfinderConfig;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
+import net.runelite.api.ChatMessageType;
 
 /**
  * The GPS destination (plan step L36, out of the plugin class): the single source of truth for
@@ -33,6 +35,8 @@ final class DestinationController
 	// the round-trip entry point after the targets, carried into every generation for this
 	// destination (refresh, show more), cleared when a new target is set.
 	private volatile boolean roundTrip;
+	// The destination a nearest-bank trip replaced, resumed when the trip completes (see BankDetour).
+	private final BankDetour bankTrip = new BankDetour();
 
 	DestinationController(ShortestPathPlugin plugin, RouteSession session, RouteController routes,
 		WorldMapMarker marker, OffRouteTracker offRoute, JourneyTracker journey)
@@ -104,6 +108,41 @@ final class DestinationController
 	}
 
 	/**
+	 * The player arrived: the destination clears, and a completed bank trip picks the destination
+	 * it replaced back up, from the bank, with a chat line saying so (see BankDetour). Client thread.
+	 */
+	void arrived()
+	{
+		// Read before the clear, which would forget it.
+		BankDetour.Route resume = bankTrip.complete();
+		clear();
+		if (resume == null)
+		{
+			return;
+		}
+		source = resume.source;
+		if (resume.marker != WorldPointUtil.UNDEFINED)
+		{
+			marker.pinNextAt(resume.marker);
+		}
+		setTargets(new HashSet<>(resume.targets), false);
+		// After setTargets: it resets the round-trip flag for ordinary destinations.
+		roundTrip = resume.roundTrip;
+		if (resume.roundTrip)
+		{
+			routes.recompute();
+		}
+		plugin.getClient().addChatMessage(ChatMessageType.GAMEMESSAGE, "",
+			"GPS: bank reached, resuming your previous route.", null);
+	}
+
+	/** Another plugin's new destination replaces a bank trip like any other change. */
+	void forgetBankTrip()
+	{
+		bankTrip.cancel();
+	}
+
+	/**
 	 * A searched place or amenity (the panel search box), attributed to {@code source}. A label
 	 * can sit on an unwalkable tile (a fountain): it expands to the nearest walkable ring, like a
 	 * map pin, while the world-map pin stays on the place itself.
@@ -141,6 +180,53 @@ final class DestinationController
 			setTargets(new HashSet<>(tiles), false);
 			// After setTargets: it resets the round-trip flag for ordinary destinations.
 			this.roundTrip = roundTrip;
+			routes.recompute();
+		});
+	}
+
+	/**
+	 * Runs one nearest-X option: the panel's quick buttons and menu, its search box's nearest-of
+	 * row, and the two bank hotkeys. A bank option starts a bank trip: the destination it replaces
+	 * is resumed once the trip completes (see BankDetour). The tiles are read on the calling
+	 * thread, as the panel always read them; the destination changes on the client thread.
+	 */
+	void goToNearest(Destinations.NearestOption option)
+	{
+		Set<Integer> tiles = Destinations.tilesForCategory(option.id, plugin.getTransports());
+		boolean trip = "bank_round_trip".equals(option.id);
+		boolean bank = trip || "bank".equals(option.id);
+		if (bank)
+		{
+			// Union in the engine's accessible-bank tiles: the amenity dump misses oddly-named
+			// bank objects (Slepe's "Bank Chest-wreck"), and "nearest bank" must never disagree
+			// with where the engine itself can bank.
+			tiles.addAll(plugin.getEngineBankTiles());
+		}
+		String label = "nearest " + option.label.toLowerCase(Locale.ROOT);
+		if (!bank)
+		{
+			setNearestCategory(tiles, label, false);
+			return;
+		}
+		if (tiles.isEmpty())
+		{
+			return;
+		}
+		plugin.getClientThread().invokeLater(() ->
+		{
+			if (plugin.getPlayerLocation() == WorldPointUtil.UNDEFINED)
+			{
+				// Logged out: setTargets would change nothing, so no trip may start either.
+				return;
+			}
+			// Read before the destination changes: setting it forgets any trip under way.
+			BankDetour.Route replaced = bankTrip.replacing(
+				BankDetour.Route.of(targets, source, roundTrip, marker.pinnedTile()));
+			source = label;
+			setTargets(new HashSet<>(tiles), false);
+			// After setTargets: it resets the round-trip flag and forgets the trip.
+			roundTrip = trip;
+			bankTrip.begin(replaced);
 			routes.recompute();
 		});
 	}
@@ -218,6 +304,8 @@ final class DestinationController
 	/** The target set as given (already expanded); empty clears. Client thread. */
 	private void setTargets(Set<Integer> newTargets, boolean append)
 	{
+		// Any change of destination forgets a bank trip's saved route; a bank trip re-arms after.
+		bankTrip.cancel();
 		// Ordinary destinations are one-way; the round-trip entry point re-sets this after.
 		roundTrip = false;
 		// A fresh destination starts at the default cost band; "show more" widens it from there

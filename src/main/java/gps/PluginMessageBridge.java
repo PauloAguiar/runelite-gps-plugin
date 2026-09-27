@@ -79,6 +79,8 @@ final class PluginMessageBridge
 				// whatever destination was last set. Reusing the previous target keeps the running
 				// journey.
 				plugin.armJourney();
+				// A new destination replaces a bank trip like any other change.
+				plugin.forgetBankTrip();
 				// An NPC's or object's own tile expands like a map pin; a transport origin among
 				// the expansion is the interactable side (see Destinations.externalTargets).
 				PathfinderConfig pathfinderConfig = plugin.getPathfinderConfig();

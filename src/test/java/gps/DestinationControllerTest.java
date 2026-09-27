@@ -3,6 +3,8 @@ package gps;
 import com.google.gson.Gson;
 import gps.pathfinder.PathfinderConfig;
 import java.util.Set;
+import net.runelite.api.ChatMessageType;
+import net.runelite.api.Client;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
@@ -19,6 +21,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
@@ -56,6 +59,8 @@ public class DestinationControllerTest
 	PathfinderConfig pathfinderConfig;
 	@Mock
 	WorldMapPointManager mapPoints;
+	@Mock
+	Client client;
 
 	private RouteSession session;
 	private WorldMapMarker marker;
@@ -171,5 +176,96 @@ public class DestinationControllerTest
 		destination.recalculateFrom(elsewhere, Set.of(THERE));
 		assertEquals(elsewhere, destination.start());
 		verify(service).generate(eq(elsewhere), eq(Set.of(THERE)), any(), any(), anyInt(), anyInt(), anyBoolean(), any());
+	}
+
+	private static Destinations.NearestOption nearest(String id)
+	{
+		return Destinations.NEAREST_OPTIONS.stream().filter(o -> o.id.equals(id)).findFirst().orElseThrow();
+	}
+
+	/** A player suggestion: the destination a nearest-bank trip replaced is resumed at the bank. */
+	@Test
+	public void aBankTripResumesTheDestinationItReplacedOnArrival()
+	{
+		when(plugin.getEngineBankTiles()).thenReturn(Set.of(BANK));
+		when(plugin.getClient()).thenReturn(client);
+		destination.pin(THERE);
+
+		destination.goToNearest(nearest("bank"));
+		assertTrue("the bank trip targets the engine's banks", destination.targets().contains(BANK));
+		assertEquals("nearest bank", destination.source());
+
+		destination.arrived();
+		assertEquals("the pin is back", Set.of(THERE), destination.targets());
+		assertEquals("map pin", destination.source());
+		assertEquals(THERE, marker.pinnedTile());
+		verify(client).addChatMessage(eq(ChatMessageType.GAMEMESSAGE), eq(""), anyString(), eq(null));
+
+		destination.arrived();
+		assertTrue("arriving at the resumed destination just clears it", destination.targets().isEmpty());
+	}
+
+	@Test
+	public void anotherDestinationDuringTheTripCancelsTheResume()
+	{
+		when(plugin.getEngineBankTiles()).thenReturn(Set.of(BANK));
+		destination.pin(THERE);
+		destination.goToNearest(nearest("bank"));
+		int elsewhere = WorldPointUtil.packWorldPoint(3250, 3250, 0);
+		destination.pin(elsewhere);
+
+		destination.arrived();
+		assertTrue(destination.targets().isEmpty());
+		verify(plugin, never()).getClient();
+	}
+
+	@Test
+	public void aBankTripWithNothingActiveJustArrives()
+	{
+		when(plugin.getEngineBankTiles()).thenReturn(Set.of(BANK));
+		destination.goToNearest(nearest("bank"));
+		destination.arrived();
+		assertTrue(destination.targets().isEmpty());
+		verify(plugin, never()).getClient();
+	}
+
+	@Test
+	public void andBackDuringTheTripStillResumesTheOriginal()
+	{
+		when(plugin.getEngineBankTiles()).thenReturn(Set.of(BANK));
+		when(plugin.getClient()).thenReturn(client);
+		destination.pin(THERE);
+		destination.goToNearest(nearest("bank"));
+		destination.goToNearest(nearest("bank_round_trip"));
+		assertTrue(destination.isRoundTrip());
+
+		destination.arrived();
+		assertEquals(Set.of(THERE), destination.targets());
+		assertFalse("the resumed pin is one-way, as it was", destination.isRoundTrip());
+	}
+
+	@Test
+	public void anotherPluginsNewTargetForgetsTheTrip()
+	{
+		when(plugin.getEngineBankTiles()).thenReturn(Set.of(BANK));
+		destination.pin(THERE);
+		destination.goToNearest(nearest("bank"));
+		destination.forgetBankTrip();
+
+		destination.arrived();
+		assertTrue(destination.targets().isEmpty());
+		verify(plugin, never()).getClient();
+	}
+
+	@Test
+	public void aNonBankNearestOptionStartsNoTrip()
+	{
+		destination.pin(THERE);
+		destination.goToNearest(nearest("altar"));
+		assertEquals("nearest altar", destination.source());
+
+		destination.arrived();
+		assertTrue(destination.targets().isEmpty());
+		verify(plugin, never()).getClient();
 	}
 }

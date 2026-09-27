@@ -408,19 +408,10 @@ final class DestinationSearchView extends JPanel
 		return null;
 	}
 
-	/** Runs one nearest-X option, shared by the menu items and the quick buttons. */
+	/** Runs one nearest-X option, shared by the menu items and the quick buttons (see DestinationController.goToNearest). */
 	private void runNearestOption(Destinations.NearestOption option)
 	{
-		Set<Integer> tiles = Destinations.tilesForCategory(option.id, plugin.getTransports());
-		boolean roundTrip = "bank_round_trip".equals(option.id);
-		if ("bank".equals(option.id) || roundTrip)
-		{
-			// Union in the engine's accessible-bank tiles: the amenity dump misses oddly-named
-			// bank objects (Slepe's "Bank Chest-wreck"), and "nearest bank" must never disagree
-			// with where the engine itself can bank.
-			tiles.addAll(plugin.getEngineBankTiles());
-		}
-		plugin.setNearestCategory(tiles, "nearest " + option.label.toLowerCase(Locale.ROOT), roundTrip);
+		plugin.goToNearest(option);
 		searchField.setText("");
 	}
 
@@ -681,7 +672,7 @@ final class DestinationSearchView extends JPanel
 		Destinations.Entry resolved = withTiles(entry);
 		if (resolved.nearest != null)
 		{
-			plugin.setNearestCategory(resolved.tiles, resolved.name, "bank_round_trip".equals(resolved.nearest.id));
+			plugin.goToNearest(resolved.nearest);
 		}
 		else if (resolved.tiles.size() > 1)
 		{
