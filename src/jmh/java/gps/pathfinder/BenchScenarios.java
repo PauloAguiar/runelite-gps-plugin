@@ -163,7 +163,7 @@ final class BenchScenarios
 			{
 				// The panel's "nearest bank": the amenity dump's bank tiles plus the engine's own
 				// accessible-bank tiles (see DestinationSearchView.runNearestOption). A map-wide
-				// set: no compact field, so every search runs uninformed under the walk cap.
+				// set; it gets a distance field like any other (plan step N1).
 				Set<Integer> banks = new HashSet<>(Destinations.tilesForCategory("bank", null));
 				banks.addAll(config.getDestinations("bank"));
 				return banks;

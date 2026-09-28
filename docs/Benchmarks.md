@@ -45,8 +45,8 @@ suite's output comes along:
 | `SailingSeaBenchmark` | The wet flood behind a water pin, the sea-track builder per sailing leg | The water-pin hot paths |
 
 The generate scenarios: six single-target queries of increasing difficulty, then the panel's
-"nearest bank" (a map-wide target set, so no compact field and every search runs uninformed under
-the walk cap), "nearest bank and back" (round trips: a return search per route), a water pin (sea
+"nearest bank" (a map-wide set of 1,394 tiles; it gets a distance field like any other since plan
+step N1, so its searches are guided), "nearest bank and back" (round trips: a return search per route), a water pin (sea
 legs synthesized per generation) and a sealed target (the provably-unreachable short circuit). The
 bench client carries nothing, so the owned mode is the no-items player: walking plus the free
 networks, the flood with no cheap teleport floor.
@@ -67,6 +67,19 @@ machine, and the sailing benchmarks (which cycle through inputs of different siz
 treat single-digit deltas as noise and re-run before believing a marked one. Numbers are not
 comparable across machines: re-baseline when the machine changes.
 
+The same machine drifts too. On 2026-09-27 main measured about 20 percent faster across the board
+than its own 2026-09-12 baseline, benchmarks whose code never changed included, while back-to-back
+runs of identical code differed by up to 15 percent. The checked-in baseline is a quick look; a
+real question is settled with both sides run in the same session. To measure an older build with
+today's benchmarks, give it a detached worktree with this `src/jmh` in place of its own (every API
+the set uses exists since 0.13.2) and run it right before or after the current code:
+
+    git worktree add --detach ../gps-bench-old v0.13.2
+    rm -rf ../gps-bench-old/src/jmh && cp -r src/jmh ../gps-bench-old/src/
+    ./gradlew -p ../gps-bench-old -Pjmh jmh --args='-rf json -rff build/jmh/old.json'
+    ./gradlew -Pjmh jmh --args='-rf json -rff build/jmh/result.json'
+    python scripts/bench_compare.py --baseline ../gps-bench-old/build/jmh/old.json
+
 To re-baseline after an intended change, run the full set and copy the JSON over the baseline,
 noting the commit and date here.
 
@@ -82,9 +95,11 @@ are averages per operation; the generate matrix is in ms/op. The full JSON, with
 600 to 850 for the boat-only island and the wilderness escape; the field flood is most of a cold
 generation (270 ms for a full flood, 9 to 27 ms bounded to the cost band). Regenerating toward
 the same target costs 16 to 78 ms on the common queries. "Nearest bank" is over a second cold
-and three quarters of a second warm: a map-wide target set gets no compact field, so every
-search runs uninformed under the walk cap, and the round trip adds another 300 ms of return
-searches. A sealed target costs about 700 ms cold or warm: its three escape routes are
+and three quarters of a second warm, and the round trip adds another 300 ms of return searches.
+Its searches are cheap (guided, a few ms in all); most of the time goes to sea-leg synthesis: four
+bank booths stand on sailable pier tiles, so every generation treats them as water pins and floods
+the ocean four times, which the single-entry flood cache cannot keep (measured 2026-09-27 with a
+stack-sampling probe, journal "Benchmarks for the 0.14.0 release"). A sealed target costs about 700 ms cold or warm: its three escape routes are
 uninformed floods the field cache cannot help. The guided search is 50 to 75 us against 45 to
 130 ms uninformed; the wilderness escape is the one case the heuristic does not help (3.0 ms
 against 2.5), since teleports are blocked where the search starts. The owned and everything

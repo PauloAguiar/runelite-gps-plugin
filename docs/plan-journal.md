@@ -1412,3 +1412,28 @@ player stands anyway. The badge and the "Add a stop" tooltip now belong to the B
 icon and "Nearest bank (and back)" tooltip. The resume itself is unchanged for both.
 
 **Suite:** 834 tests, all green; checkstyle clean.
+
+## Benchmarks for the 0.14.0 release (2026-09-27)
+
+The 0.14.0 release is cut before the decomposition, so its own benchmark sources predate B1 and
+B2. Rather than port that tooling (dev-only; main keeps it), main's benchmark set ran against
+three builds in one session, each in a detached worktree with main's `src/jmh`: the release
+candidate (518ed2f), 0.13.2 and main (b22bed7).
+
+- **Release against main:** equal within noise (5 of 64 entries beyond 15 percent, in both
+  directions, identical code included). The decomposition changed no performance.
+- **Main against its 2026-09-12 baseline:** about 20 percent faster everywhere, unchanged code
+  included: machine drift. The guide now says to compare within one session, with the recipe.
+- **Release against 0.13.2**, cold owned generations profiled per search: the common queries are
+  flat (lumbridge-barrows 270 against 265 ms, ge-shilo 290 against 300); warm regenerations are 3
+  to 14 times faster (the field cache) and the per-search rebuild 9 times. Two regressions come
+  from this release's page-quality work: the island (347 to 574 ms: one tail-diversity search,
+  excluding the only boat to Entrana, floods 577k nodes in 250 ms) and the wilderness escape (560
+  to 982 ms: the prefix-twin skip keeps the chain going, 40 chain searches instead of 10).
+- **Nearest bank** (926 against 981 ms cold, both builds): its searches are guided since N1, but
+  four bank booths on sailable pier tiles (3768,3899 3767,3900 3767,3898 2280,2544) make every
+  generation synthesize sea legs, four ocean floods (~700 ms) the single-entry flood cache cannot
+  keep. Stack sampling put 95 percent of a warm generation in `SailingSea.seaDistances`, called
+  from the generation's prepare step. 0.13.2 pays it too.
+- The guide blamed nearest bank's cost on having no distance field, untrue since N1; corrected
+  there and in the benchmark comments.

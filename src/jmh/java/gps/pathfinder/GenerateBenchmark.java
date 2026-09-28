@@ -38,7 +38,7 @@ import gps.TeleportMethod;
  * bounce is run inline via a mock. Output in ms.
  * <p>
  * {@code scenario}: the six single-target queries, then the panel's "nearest bank" (a map-wide
- * target set: no compact field, uninformed searches under the walk cap), "nearest bank and back"
+ * target set, guided by its field like any other), "nearest bank and back"
  * (round trips: a return search per route over a start-rooted field), a water pin (sea legs
  * synthesized per generation) and a sealed target (the provably-unreachable short circuit).
  * <p>
