@@ -1462,3 +1462,29 @@ and under sixteen parallel test forks the three escape floods can exceed it, whi
 likely". Pre-existing and load-dependent; noted, not changed.
 
 **Suite:** 838 tests, all green; checkstyle clean.
+
+### Correction to "Benchmarks for the 0.14.0 release", and the state after S4 (2026-09-27)
+
+The release entry above calls the common queries flat against 0.13.2 (lumbridge-barrows 270
+against 265 ms). That came from one profiling pass that showed 9 chain searches on that query; it
+could not be reproduced. Main, the release tip and the release commit before S4 all produce the
+identical page, deterministically over eight runs (10 routes, 66 chain searches, the same route
+costs), and both JMH sessions of the day agree: a first click on a common query is 1.3 to 1.5 times
+slower than in 0.13.2, not flat.
+
+Full set, main (ed764a2) against 0.13.2 in one session, GenerateBenchmark owned mode:
+
+- First click: lumbridge-barrows 318 against 215 ms, ge-shilo 327 against 234, deep-wild 310
+  against 218, water pin 343 against 268, capture 95 against 84; island 530 against 253 and the
+  wilderness escape 678 against 241. Faster: nearest bank 258 against 657, bank and back 531
+  against 820; sealed even.
+- Regenerating toward the same target: 4 to 40 times faster on every common query (the field
+  cache), nearest bank 18 against 748 ms; the wilderness escape is the exception (569 against 338).
+- Where a first click goes: the distance field (about 280 ms of a common query's 320 to 370, and 20
+  to 40 percent dearer than 0.13.2's since N7 follows reverse edges out of blocked landings), then
+  the per-search availability rebuilds, which the longer chains multiply (66 to 70 chain searches
+  on several queries, each cheap). The components: the rebuild is 9 times faster, uninformed
+  searches 10 to 40 percent faster, the guided search about 50 us.
+- The dearest case the probes show: an owned-mode generation for a player with no teleport items
+  (Lumbridge to Ardougne, SeedSearchProfileProbeTest) takes 1.8 s, its chain searches flooding
+  100k to 460k nodes each under a walk-heavy cost band.
