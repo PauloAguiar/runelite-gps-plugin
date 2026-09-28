@@ -1437,3 +1437,28 @@ candidate (518ed2f), 0.13.2 and main (b22bed7).
   from the generation's prepare step. 0.13.2 pays it too.
 - The guide blamed nearest bank's cost on having no distance field, untrue since N1; corrected
   there and in the benchmark comments.
+
+### Step S4: nearest bank stops flooding the ocean (2026-09-27)
+
+**Red first:** `SailingSeaWaterPinsTest`: a pinned water tile is a water pin, aboard or not; the
+panel's nearest-bank set on foot gets no sea legs, though it holds the Bank Boat; aboard it keeps
+its water tiles; a named place (the Fossil Island Bank's two chest tiles) is compact and keeps
+them.
+
+**Change:** `SailingSea.waterPins` decides which targets get sea legs, called at synthesis time
+(whether the player is aboard comes from the refreshed snapshot): a compact target set is one
+place and always qualifies; a set spanning more than 64 tiles is a category and qualifies only
+aboard. The first idea, that a wet tile must have no walkable neighbour, failed on the data:
+three of the four bank tiles are walled in on all four sides, exactly like ocean pins. Ported
+identically to the 0.14.0 release branch.
+
+**Measured** (one session, GenerateBenchmark, owned mode): nearest bank 902 to 258 ms cold and
+638 to 19 ms warm; bank and back 1158 to 503 cold and 883 to 267 warm; the water pin and
+lumbridge-barrows unchanged.
+
+**Also seen:** `UnreachableTargetShortCircuitTest` failed once in a full build and passed three
+times alone and in the next full build. Its unreachable target's 4 s search budget is wall time,
+and under sixteen parallel test forks the three escape floods can exceed it, which flips "more
+likely". Pre-existing and load-dependent; noted, not changed.
+
+**Suite:** 838 tests, all green; checkstyle clean.

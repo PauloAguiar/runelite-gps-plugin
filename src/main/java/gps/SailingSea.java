@@ -7,8 +7,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.zip.InflaterInputStream;
 
 /**
@@ -255,6 +257,56 @@ public final class SailingSea
 			return false;
 		}
 		return bit(sea, x, y);
+	}
+
+	// A target set spanning more than this on either axis is a category spread over the map
+	// ("nearest bank"), not one place (a pin, a searched spot, a named bank's booths).
+	private static final int COMPACT_SPAN = 64;
+
+	/**
+	 * The targets that get sea legs: the blocked ones (open water is sealed to walkers; stilt
+	 * decks are walkable, so never wet), for whose sailable members {@link #seaLegTransports}
+	 * then builds the legs. A compact set is one place and always qualifies. A category spread
+	 * over the map qualifies only for a player already aboard: its few water tiles (the Bank Boat,
+	 * the Fossil Island shipwreck's chest) matter to a sailor at sea, while synthesizing them
+	 * anyway cost every on-foot "nearest bank" click four ocean floods, about 700 ms (measured
+	 * 2026-09-27).
+	 */
+	public static Set<Integer> waterPins(gps.pathfinder.CollisionMap map, Set<Integer> targets, boolean aboard)
+	{
+		if (map == null || targets.isEmpty() || (!aboard && !isCompact(targets)))
+		{
+			return Set.of();
+		}
+		Set<Integer> wet = new HashSet<>();
+		for (int target : targets)
+		{
+			if (map.isBlocked(WorldPointUtil.unpackWorldX(target), WorldPointUtil.unpackWorldY(target),
+				WorldPointUtil.unpackWorldPlane(target)))
+			{
+				wet.add(target);
+			}
+		}
+		return wet;
+	}
+
+	/** Whether the targets fit within {@link #COMPACT_SPAN} tiles on both axes: one place. */
+	private static boolean isCompact(Set<Integer> targets)
+	{
+		int minX = Integer.MAX_VALUE;
+		int maxX = Integer.MIN_VALUE;
+		int minY = Integer.MAX_VALUE;
+		int maxY = Integer.MIN_VALUE;
+		for (int target : targets)
+		{
+			int x = WorldPointUtil.unpackWorldX(target);
+			int y = WorldPointUtil.unpackWorldY(target);
+			minX = Math.min(minX, x);
+			maxX = Math.max(maxX, x);
+			minY = Math.min(minY, y);
+			maxY = Math.max(maxY, y);
+		}
+		return maxX - minX <= COMPACT_SPAN && maxY - minY <= COMPACT_SPAN;
 	}
 
 	/**
