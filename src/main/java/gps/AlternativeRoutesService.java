@@ -271,16 +271,9 @@ public class AlternativeRoutesService
 		// Wet = sailable terrain AND collision-blocked: stilt-deck tiles (the Pandemonium
 		// dock) sit on water-family terrain but are walkable pier cells — functionally land.
 		// Sea legs to those said "sail to the destination" where mooring + walking is the
-		// real route (and the only physically sensible one).
-		Set<Integer> wetTargets = new HashSet<>();
-		for (int target : ends)
-		{
-			if (planningConfig.getMap().isBlocked(WorldPointUtil.unpackWorldX(target),
-				WorldPointUtil.unpackWorldY(target), WorldPointUtil.unpackWorldPlane(target)))
-			{
-				wetTargets.add(target);
-			}
-		}
+		// real route (and the only physically sensible one). Which targets qualify is
+		// SailingSea.waterPins, decided at synthesis time: whether the player is aboard comes
+		// from the refreshed snapshot.
 		// Synthesis must run against the CURRENT snapshot: the gated must-include berths
 		// and the BOARDED varbit both come from planningConfig state that the client-thread
 		// refresh rewrites, and synthesizing before it used the PREVIOUS generation's
@@ -290,6 +283,9 @@ public class AlternativeRoutesService
 		// branch synthesizes at its own right moment.
 		Runnable synthesizeSeaLegs = () ->
 		{
+			// A place's water tiles always; a category's only for a player already aboard.
+			Set<Integer> wetTargets = SailingSea.waterPins(planningConfig.getMap(), ends,
+				planningConfig.isOnSailingBoat());
 			for (int target : wetTargets)
 			{
 				seaLegs.addAll(SailingSea.seaLegTransports(target, 6,
