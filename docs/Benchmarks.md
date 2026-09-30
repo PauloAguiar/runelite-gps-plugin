@@ -99,7 +99,7 @@ and three quarters of a second warm, and the round trip adds another 300 ms of r
 Its searches are cheap (guided, a few ms in all); most of the time goes to sea-leg synthesis: four
 bank booths stand on sailable pier tiles, so every generation treats them as water pins and floods
 the ocean four times, which the single-entry flood cache cannot keep (measured 2026-09-27 with a
-stack-sampling probe, journal "Benchmarks for the 0.14.0 release"). A sealed target costs about 700 ms cold or warm: its three escape routes are
+stack-sampling probe). A sealed target costs about 700 ms cold or warm: its three escape routes are
 uninformed floods the field cache cannot help. The guided search is 50 to 75 us against 45 to
 130 ms uninformed; the wilderness escape is the one case the heuristic does not help (3.0 ms
 against 2.5), since teleports are blocked where the search starts. The owned and everything
