@@ -5383,6 +5383,12 @@
 1891 4639 1	1891 4644 2	Climb-up Staircase 10015						1	
 1892 4639 1	1892 4644 2	Climb-up Staircase 10015						1	
 1901 4612 1	1907 4612 0	Climb Wall support 10033						13	
+# The way in during the quest: the Mourner HQ trapdoor down to the tunnels and the ladder back up
+# (audit captures 2026-09-07/29, one row per tile stood on; the ladder at the median of three climbs).
+2543 3327 0	2044 4649 0	Open Trapdoor 8783						2	
+2044 4649 0	2543 3327 0	Climb-up Ladder 8785						3	
+2043 4648 0	2543 3327 0	Climb-up Ladder 8785						3	
+2044 4648 0	2543 3327 0	Climb-up Ladder 8785						3	
 									
 # Water Altar									
 3051 4833 0	2714 4838 0	Exit-through Water rift 25382							
