@@ -5370,12 +5370,9 @@
 1905 4638 0	1901 4638 1	Climb-up Staircase 10015						2	
 1905 4639 0	1901 4639 1	Climb-up Staircase 10015						2	
 1905 4640 0	1901 4640 1	Climb-up Staircase 10015						2	
-1906 4638 0	1901 4638 1	Climb-up Staircase 10015						2	
-1906 4639 0	1901 4639 1	Climb-up Staircase 10015						2	
-1906 4640 0	1901 4640 1	Climb-up Staircase 10015						2	
-1900 4638 1	1905 4638 0	Climb-down Staircase 10016						2	
-1900 4639 1	1905 4639 0	Climb-down Staircase 10016						2	
-1900 4640 1	1905 4640 0	Climb-down Staircase 10016						2	
+1901 4638 1	1905 4638 0	Climb-down Staircase 10016						2	
+1901 4639 1	1905 4639 0	Climb-down Staircase 10016						2	
+1901 4640 1	1905 4640 0	Climb-down Staircase 10016						2	
 1890 4634 2	1890 4638 1	Climb-down Staircase 10016						1	
 1891 4634 2	1891 4638 1	Climb-down Staircase 10016						1	
 1892 4634 2	1892 4638 1	Climb-down Staircase 10016						1	
