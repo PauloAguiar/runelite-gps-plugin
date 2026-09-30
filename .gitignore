@@ -16,3 +16,8 @@ output/
 cache.jar
 keys.json
 cache.zip
+
+# Working notes kept locally, not in the repository
+docs/plan-journal.md
+docs/*-journal.md
+docs/*-notes.md
