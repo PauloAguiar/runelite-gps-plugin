@@ -16,3 +16,6 @@ output/
 cache.jar
 keys.json
 cache.zip
+
+# The assistant's working notes (journal, plans, tracking documents): local only, never committed
+ai/
