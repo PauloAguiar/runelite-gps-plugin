@@ -5360,6 +5360,29 @@
 # todo: destination is estimated									
 3050 4837 0	2209 4834 0	Exit-through Death rift 25382			Mourning's End Part II				
 2208 4830 0	1860 4639 0	Enter Portal 34758						1	
+
+# Temple of Light (Mourning's End Part II). The gate from the Mourner Tunnels: the object keeps
+# its collision when open, so it is a walk-through edge (audit 2026-09-29, live collision dump
+# 1790734494363). The east staircase between the ground and middle floors, the stairs between the
+# middle and top floors and the wall-support climb down are audit captures of 2026-09-07/29.
+1918 4639 0	1916 4639 0							4	Temple of Light gate
+1916 4639 0	1918 4639 0							4	Temple of Light gate
+1905 4638 0	1901 4638 1	Climb-up Staircase 10015						2	
+1905 4639 0	1901 4639 1	Climb-up Staircase 10015						2	
+1905 4640 0	1901 4640 1	Climb-up Staircase 10015						2	
+1906 4638 0	1901 4638 1	Climb-up Staircase 10015						2	
+1906 4639 0	1901 4639 1	Climb-up Staircase 10015						2	
+1906 4640 0	1901 4640 1	Climb-up Staircase 10015						2	
+1900 4638 1	1905 4638 0	Climb-down Staircase 10016						2	
+1900 4639 1	1905 4639 0	Climb-down Staircase 10016						2	
+1900 4640 1	1905 4640 0	Climb-down Staircase 10016						2	
+1890 4634 2	1890 4638 1	Climb-down Staircase 10016						1	
+1891 4634 2	1891 4638 1	Climb-down Staircase 10016						1	
+1892 4634 2	1892 4638 1	Climb-down Staircase 10016						1	
+1890 4639 1	1890 4644 2	Climb-up Staircase 10015						1	
+1891 4639 1	1891 4644 2	Climb-up Staircase 10015						1	
+1892 4639 1	1892 4644 2	Climb-up Staircase 10015						1	
+1901 4612 1	1907 4612 0	Climb Wall support 10033						13	
 									
 # Water Altar									
 3051 4833 0	2714 4838 0	Exit-through Water rift 25382							

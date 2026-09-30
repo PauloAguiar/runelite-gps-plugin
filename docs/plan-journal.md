@@ -1488,3 +1488,28 @@ Full set, main (ed764a2) against 0.13.2 in one session, GenerateBenchmark owned 
 - The dearest case the probes show: an owned-mode generation for a player with no teleport items
   (Lumbridge to Ardougne, SeedSearchProfileProbeTest) takes 1.8 s, its chain searches flooding
   100k to 460k nodes each under a walk-heavy cost band.
+
+## Data: the Temple of Light (2026-09-29)
+
+A Quest Helper target on the temple's middle floor (1898,4613,1; capture 20260929-183918) came back
+unreachable with closest-approach routes into a room under Keldagrim, a different dungeon 100 tiles
+away in the same coordinate band. The data touched the temple only through the Death Altar portal
+(ground floor, west side, cut off from the east) and one top-to-middle staircase. Eighteen rows
+join, after the Death Altar block:
+
+- The gate from the Mourner Tunnels at 1916/1918,4639,0, as a walk-through edge of 4 ticks (the
+  owner's transport-builder row). The object keeps its collision when open: the live collision dump
+  1790734494363 shows zero edge mismatches against the shipped map, and both block the step.
+- The east staircase between the ground and middle floors (10015 up from 1905/1906,4638-4640;
+  10016 down from 1900,4638-4640,1), the stairs between the middle and top floors at x 1890-1892
+  (10016 down, 10015 up), and the wall-support climb down (10033, 1901,4612,1 to 1907,4612,0),
+  all audit captures of 2026-09-07 and 2026-09-29 with their measured ticks.
+
+Verified: from Camelot in the everything mode the target is reached at cost 167 via the slayer
+ring's Dark Beasts teleport, the tunnels, the gate and the east staircase; in an owned mode without
+the ring the verdict is "missing unlocks", as it should be. Still unmapped: the Mourner HQ basement
+and its keyed door, the mid-quest way in. Also seen: that everything-mode page took 24 s and 30
+searches, since once the ring is excluded every alternative search floods the world (the
+single-entry weakness the island case shows too).
+
+**Suite:** 838 tests, all green; TSV lint clean.
