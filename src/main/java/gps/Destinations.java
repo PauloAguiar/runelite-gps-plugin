@@ -15,6 +15,11 @@ import lombok.extern.slf4j.Slf4j;
 import gps.transport.Transport;
 import gps.transport.TransportType;
 
+import static gps.WorldPointUtil.packWorldPoint;
+import static gps.WorldPointUtil.unpackWorldPlane;
+import static gps.WorldPointUtil.unpackWorldX;
+import static gps.WorldPointUtil.unpackWorldY;
+
 /**
  * The GPS search index: named places and curated amenities (bank, altar, water source,
  * furnace, ...) a player can navigate to by name or as "nearest X". The bulk is a bundled
@@ -224,9 +229,9 @@ public final class Destinations {
 
     private static Set<Integer> walkableLandTargets(gps.pathfinder.CollisionMap map, int packed,
         java.util.function.IntPredicate transportOrigin) {
-        final int x = WorldPointUtil.unpackWorldX(packed);
-        final int y = WorldPointUtil.unpackWorldY(packed);
-        final int plane = WorldPointUtil.unpackWorldPlane(packed);
+        final int x = unpackWorldX(packed);
+        final int y = unpackWorldY(packed);
+        final int plane = unpackWorldPlane(packed);
         if (map == null || !map.isBlocked(x, y, plane))
             return Set.of(packed);
         // Pass 1: a transport origin near the blocked tile beats plain proximity, even when it
@@ -238,7 +243,7 @@ public final class Destinations {
                     for (int dy = -radius; dy <= radius; dy++) {
                         if (Math.max(Math.abs(dx), Math.abs(dy)) != radius)
                             continue;
-                        int tile = WorldPointUtil.packWorldPoint(x + dx, y + dy, plane);
+                        int tile = packWorldPoint(x + dx, y + dy, plane);
                         if (!map.isBlocked(x + dx, y + dy, plane) && transportOrigin.test(tile))
                             origins.add(tile);
                     }
@@ -254,7 +259,7 @@ public final class Destinations {
                     if (Math.max(Math.abs(dx), Math.abs(dy)) != radius)
                         continue;
                     if (!map.isBlocked(x + dx, y + dy, plane))
-                        ring.add(WorldPointUtil.packWorldPoint(x + dx, y + dy, plane));
+                        ring.add(packWorldPoint(x + dx, y + dy, plane));
                 }
             }
             if (!ring.isEmpty()) {
@@ -298,9 +303,9 @@ public final class Destinations {
      * nearest known-good tile, usually the entrance. Data: destination-remaps.tsv.
      */
     static int remapTemplateOnlyZones(int packed) {
-        final int x = WorldPointUtil.unpackWorldX(packed);
-        final int y = WorldPointUtil.unpackWorldY(packed);
-        final int plane = WorldPointUtil.unpackWorldPlane(packed);
+        final int x = unpackWorldX(packed);
+        final int y = unpackWorldY(packed);
+        final int plane = unpackWorldPlane(packed);
         for (Remap remap : loadRemaps()) {
             if (plane == remap.plane && x >= remap.minX && x <= remap.maxX
                 && y >= remap.minY && y <= remap.maxY) {
@@ -327,7 +332,7 @@ public final class Destinations {
                         loaded.add(new Remap(Integer.parseInt(f[0].trim()), Integer.parseInt(f[1].trim()),
                             Integer.parseInt(f[2].trim()), Integer.parseInt(f[3].trim()),
                             Integer.parseInt(f[4].trim()),
-                            WorldPointUtil.packWorldPoint(Integer.parseInt(f[5].trim()),
+                            packWorldPoint(Integer.parseInt(f[5].trim()),
                                 Integer.parseInt(f[6].trim()), Integer.parseInt(f[7].trim())),
                             f[8].trim()));
                     }
@@ -447,9 +452,9 @@ public final class Destinations {
      * "there is no point in routing to it").
      */
     static boolean insideExcludedZone(int packed) {
-        final int x = WorldPointUtil.unpackWorldX(packed);
-        final int y = WorldPointUtil.unpackWorldY(packed);
-        final int plane = WorldPointUtil.unpackWorldPlane(packed);
+        final int x = unpackWorldX(packed);
+        final int y = unpackWorldY(packed);
+        final int plane = unpackWorldPlane(packed);
         for (ExclusionZone zone : loadExclusionZones()) {
             if (plane == zone.plane && x >= zone.minX && x <= zone.maxX
                 && y >= zone.minY && y <= zone.maxY) {
@@ -533,7 +538,7 @@ public final class Destinations {
             if (fields.length < 5)
                 continue;
             try {
-                int packed = WorldPointUtil.packWorldPoint(
+                int packed = packWorldPoint(
                     Integer.parseInt(fields[2]), Integer.parseInt(fields[3]), Integer.parseInt(fields[4]));
                 entries.add(new Entry(fields[0], fields[1], packed));
             }

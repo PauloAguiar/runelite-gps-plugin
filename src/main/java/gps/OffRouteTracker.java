@@ -4,6 +4,8 @@ import gps.pathfinder.PathStep;
 import java.util.List;
 import java.util.function.IntSupplier;
 
+import static gps.WorldPointUtil.distanceBetween;
+
 /**
  * Off-route handling (plan step L10, out of the plugin class), in three bands of distance from
  * the path: on route (nothing), a warning band (the overlay shows a red "drifting off route"
@@ -63,7 +65,7 @@ final class OffRouteTracker {
             warning = false;
             return Verdict.ON_ROUTE;
         }
-        int step = WorldPointUtil.distanceBetween(lastLocation, location);
+        int step = distanceBetween(lastLocation, location);
         boolean moved = lastLocation != location;
         lastLocation = location;
         int d = distanceFromPath.getAsInt();
@@ -105,7 +107,7 @@ final class OffRouteTracker {
             return -1;
         int best = Integer.MAX_VALUE;
         for (PathStep pathStep : path)
-            best = Math.min(best, WorldPointUtil.distanceBetween(location, pathStep.getPackedPosition()));
+            best = Math.min(best, distanceBetween(location, pathStep.getPackedPosition()));
         if (displayed != null && !displayed.sailingJumpDepartures().isEmpty() && SailingSea.isSailable(location)) {
             for (int departure : displayed.sailingJumpDepartures()) {
                 if (departure < 0 || departure + 1 >= path.size())
@@ -115,7 +117,7 @@ final class OffRouteTracker {
                 if (track == null)
                     return 0;
                 for (int waypoint : track)
-                    best = Math.min(best, WorldPointUtil.distanceBetween(location, waypoint));
+                    best = Math.min(best, distanceBetween(location, waypoint));
             }
         }
         return best;

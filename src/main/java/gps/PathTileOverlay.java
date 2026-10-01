@@ -31,6 +31,14 @@ import gps.pathfinder.PathStep;
 import gps.transport.BankPickupRequirements;
 import gps.transport.Transport;
 
+import static gps.WorldPointUtil.distanceBetween;
+import static gps.WorldPointUtil.fromLocalInstance;
+import static gps.WorldPointUtil.toLocalInstance;
+import static gps.WorldPointUtil.toLocalPoint;
+import static gps.WorldPointUtil.unpackWorldPlane;
+import static gps.WorldPointUtil.unpackWorldX;
+import static gps.WorldPointUtil.unpackWorldY;
+
 public class PathTileOverlay extends Overlay {
     private static final int TRANSPORT_LABEL_GAP = 3;
     // The flowing highlight on the drawn line: a train of small ripples travelling towards the
@@ -112,7 +120,7 @@ public class PathTileOverlay extends Overlay {
                 PathStep currentStep = path.get(i - 1);
                 PathStep nextStep = path.get(i);
                 // A non-adjacent pair is a teleport/transport jump, not a walkable edge.
-                boolean jump = WorldPointUtil.distanceBetween(
+                boolean jump = distanceBetween(
                     currentStep.getPackedPosition(), nextStep.getPackedPosition()) > 1;
                 // Sailing legs draw their sea track through the scene: the jump's endpoints
                 // are ports/pins far outside the loaded scene mid-voyage, so the dashed beam
@@ -128,12 +136,12 @@ public class PathTileOverlay extends Overlay {
                         int sailedUpTo = -1;
                         if (!done && client.getVarbitValue(
                             net.runelite.api.gameval.VarbitID.SAILING_BOARDED_BOAT) != 0) {
-                            int playerPacked = WorldPointUtil.fromLocalInstance(
+                            int playerPacked = fromLocalInstance(
                                 client, client.getLocalPlayer());
                             if (playerPacked != WorldPointUtil.UNDEFINED) {
                                 int nearestDistance = Integer.MAX_VALUE;
                                 for (int w = 0; w < track.length; w++) {
-                                    int d = WorldPointUtil.distanceBetween(playerPacked, track[w]);
+                                    int d = distanceBetween(playerPacked, track[w]);
                                     if (d < nearestDistance) {
                                         nearestDistance = d;
                                         sailedUpTo = w;
@@ -252,9 +260,9 @@ public class PathTileOverlay extends Overlay {
      * core, so the "walk up to here" points stand out along the drawn line.
      */
     private void drawSectionMarker(Graphics2D graphics, int location) {
-        PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
+        PrimitiveIntList points = toLocalInstance(client, location);
         for (int i = 0; i < points.size(); i++) {
-            LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
+            LocalPoint lp = toLocalPoint(client, points.get(i));
             if (lp == null)
                 continue;
             Polygon poly = Perspective.getCanvasTilePoly(client, lp);
@@ -292,10 +300,10 @@ public class PathTileOverlay extends Overlay {
         if (player == null || recalc < 0 || path == null || path.isEmpty())
             return;
         final int warn = plugin.getOffRouteWarnDistance();
-        final int centre = WorldPointUtil.fromLocalInstance(client, player);
-        final int cx = WorldPointUtil.unpackWorldX(centre);
-        final int cy = WorldPointUtil.unpackWorldY(centre);
-        final int plane = WorldPointUtil.unpackWorldPlane(centre);
+        final int centre = fromLocalInstance(client, player);
+        final int cx = unpackWorldX(centre);
+        final int cy = unpackWorldY(centre);
+        final int plane = unpackWorldPlane(centre);
         final int window = Math.min(recalc + 1, BAND_WINDOW);
 
         // Path tiles near enough to be some window tile's nearest (within window of a tile within window).
@@ -303,8 +311,8 @@ public class PathTileOverlay extends Overlay {
         int nearCount = 0;
         for (PathStep step : path) {
             final int p = step.getPackedPosition();
-            if (WorldPointUtil.unpackWorldPlane(p) == plane
-                && WorldPointUtil.distanceBetween(centre, p) <= 2 * window) {
+            if (unpackWorldPlane(p) == plane
+                && distanceBetween(centre, p) <= 2 * window) {
                 near[nearCount++] = p;
             }
         }
@@ -318,7 +326,7 @@ public class PathTileOverlay extends Overlay {
                     final int tile = WorldPointUtil.packWorldPoint(cx + dx, cy + dy, plane);
                     int dmin = Integer.MAX_VALUE;
                     for (int k = 0; k < nearCount; k++) {
-                        final int dist = WorldPointUtil.distanceBetween(tile, near[k]);
+                        final int dist = distanceBetween(tile, near[k]);
                         if (dist < dmin)
                             dmin = dist;
                         if (dmin < warn) {
@@ -345,9 +353,9 @@ public class PathTileOverlay extends Overlay {
     }
 
     private void highlightWorldTile(Graphics2D graphics, int location, Color fill, Color outline) {
-        final PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
+        final PrimitiveIntList points = toLocalInstance(client, location);
         for (int i = 0; i < points.size(); i++) {
-            final LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
+            final LocalPoint lp = toLocalPoint(client, points.get(i));
             if (lp == null)
                 continue;
             final Polygon poly = Perspective.getCanvasTilePoly(client, lp);
@@ -383,9 +391,9 @@ public class PathTileOverlay extends Overlay {
     }
 
     private void drawDestinationPulse(Graphics2D graphics, int location, Color colour) {
-        PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
+        PrimitiveIntList points = toLocalInstance(client, location);
         for (int i = 0; i < points.size(); i++) {
-            LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
+            LocalPoint lp = toLocalPoint(client, points.get(i));
             if (lp == null)
                 continue;
             Polygon poly = Perspective.getCanvasTilePoly(client, lp);
@@ -418,10 +426,10 @@ public class PathTileOverlay extends Overlay {
     }
 
     private static boolean directionChanges(int previous, int current, int next) {
-        int dx1 = WorldPointUtil.unpackWorldX(current) - WorldPointUtil.unpackWorldX(previous);
-        int dy1 = WorldPointUtil.unpackWorldY(current) - WorldPointUtil.unpackWorldY(previous);
-        int dx2 = WorldPointUtil.unpackWorldX(next) - WorldPointUtil.unpackWorldX(current);
-        int dy2 = WorldPointUtil.unpackWorldY(next) - WorldPointUtil.unpackWorldY(current);
+        int dx1 = unpackWorldX(current) - unpackWorldX(previous);
+        int dy1 = unpackWorldY(current) - unpackWorldY(previous);
+        int dx2 = unpackWorldX(next) - unpackWorldX(current);
+        int dy2 = unpackWorldY(next) - unpackWorldY(current);
         return dx1 != dx2 || dy1 != dy2;
     }
 
@@ -434,8 +442,8 @@ public class PathTileOverlay extends Overlay {
 
     private void drawLine(Graphics2D graphics, int startLoc, int endLoc, Color color, boolean arrowHead,
         double glow, boolean jump) {
-        PrimitiveIntList starts = WorldPointUtil.toLocalInstance(client, startLoc);
-        PrimitiveIntList ends = WorldPointUtil.toLocalInstance(client, endLoc);
+        PrimitiveIntList starts = toLocalInstance(client, startLoc);
+        PrimitiveIntList ends = toLocalInstance(client, endLoc);
 
         if (starts.isEmpty() || ends.isEmpty())
             return;
@@ -444,11 +452,11 @@ public class PathTileOverlay extends Overlay {
         int end = ends.get(0);
 
         final int z = client.getTopLevelWorldView().getPlane();
-        if (WorldPointUtil.unpackWorldPlane(start) != z)
+        if (unpackWorldPlane(start) != z)
             return;
 
-        LocalPoint lpStart = WorldPointUtil.toLocalPoint(client, start);
-        LocalPoint lpEnd = WorldPointUtil.toLocalPoint(client, end);
+        LocalPoint lpStart = toLocalPoint(client, start);
+        LocalPoint lpEnd = toLocalPoint(client, end);
 
         if (lpStart == null || lpEnd == null)
             return;
@@ -497,9 +505,9 @@ public class PathTileOverlay extends Overlay {
     }
 
     private int drawLabelAtPackedLocation(Graphics2D graphics, int location, String text, int verticalOffset) {
-        PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
+        PrimitiveIntList points = toLocalInstance(client, location);
         for (int i = 0; i < points.size(); i++) {
-            LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
+            LocalPoint lp = toLocalPoint(client, points.get(i));
             if (lp == null)
                 continue;
 
@@ -519,9 +527,9 @@ public class PathTileOverlay extends Overlay {
      * cast-from-anywhere teleport that sits under the player, drawing the eye to "teleport now".
      */
     private void drawTeleportPulse(Graphics2D graphics, int location) {
-        PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
+        PrimitiveIntList points = toLocalInstance(client, location);
         for (int i = 0; i < points.size(); i++) {
-            LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
+            LocalPoint lp = toLocalPoint(client, points.get(i));
             if (lp == null)
                 continue;
             Polygon poly = Perspective.getCanvasTilePoly(client, lp);
@@ -582,8 +590,8 @@ public class PathTileOverlay extends Overlay {
     }
 
     private static boolean nearScene(int packed, int minX, int minY, int maxX, int maxY) {
-        int x = WorldPointUtil.unpackWorldX(packed);
-        int y = WorldPointUtil.unpackWorldY(packed);
+        int x = unpackWorldX(packed);
+        int y = unpackWorldY(packed);
         return x >= minX && x <= maxX && y >= minY && y <= maxY;
     }
 
@@ -591,7 +599,7 @@ public class PathTileOverlay extends Overlay {
         int pathIndex, Map<Integer, Integer> playerHas) {
         int location = currentStep.getPackedPosition();
         if (nextStep == null || !plugin.display().showTransportInfo ||
-            WorldPointUtil.unpackWorldPlane(location) != client.getTopLevelWorldView().getPlane()) {
+            unpackWorldPlane(location) != client.getTopLevelWorldView().getPlane()) {
             return;
         }
 
@@ -611,11 +619,11 @@ public class PathTileOverlay extends Overlay {
         // Workaround for weird pathing inside PoH to instead show info on the player
         // tile
         LocalPoint playerLocalPoint = client.getLocalPlayer().getLocalLocation();
-        int playerPackedPoint = WorldPointUtil.fromLocalInstance(client, playerLocalPoint);
-        int px = WorldPointUtil.unpackWorldX(playerPackedPoint);
-        int py = WorldPointUtil.unpackWorldY(playerPackedPoint);
-        int tx = WorldPointUtil.unpackWorldX(location);
-        int ty = WorldPointUtil.unpackWorldY(location);
+        int playerPackedPoint = fromLocalInstance(client, playerLocalPoint);
+        int px = unpackWorldX(playerPackedPoint);
+        int py = unpackWorldY(playerPackedPoint);
+        int tx = unpackWorldX(location);
+        int ty = unpackWorldY(location);
         boolean transportAndPlayerInsidePoh = PlayerOwnedHouse.isInside(tx, ty)
             && PlayerOwnedHouse.isInside(px, py);
         Set<Transport> candidateTransports = plugin.transportsForEdge(currentStep, nextStep);

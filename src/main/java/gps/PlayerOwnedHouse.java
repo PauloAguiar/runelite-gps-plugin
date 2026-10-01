@@ -12,6 +12,9 @@ import net.runelite.api.GameObject;
 import net.runelite.api.Tile;
 import net.runelite.api.WorldView;
 
+import static gps.WorldPointUtil.unpackWorldX;
+import static gps.WorldPointUtil.unpackWorldY;
+
 /**
  * What GPS knows about the player-owned house (plan step L18, out of the plugin class): the
  * model area route tiles live in, the template regions a live house scene is assembled from,
@@ -70,13 +73,13 @@ public final class PlayerOwnedHouse {
         BiFunction<PathStep, PathStep, Set<Transport>> transportsForEdge) {
         if (path == null || currentIndex < 0)
             return null;
-        if (!isInside(WorldPointUtil.unpackWorldX(destination), WorldPointUtil.unpackWorldY(destination)))
+        if (!isInside(unpackWorldX(destination), unpackWorldY(destination)))
             return null;
         for (int i = currentIndex + 1; i < path.size() - 1; i++) {
             int stepLocation = path.get(i).getPackedPosition();
             int nextLocation = path.get(i + 1).getPackedPosition();
-            boolean stepInside = isInside(WorldPointUtil.unpackWorldX(stepLocation), WorldPointUtil.unpackWorldY(stepLocation));
-            boolean nextInside = isInside(WorldPointUtil.unpackWorldX(nextLocation), WorldPointUtil.unpackWorldY(nextLocation));
+            boolean stepInside = isInside(unpackWorldX(stepLocation), unpackWorldY(stepLocation));
+            boolean nextInside = isInside(unpackWorldX(nextLocation), unpackWorldY(nextLocation));
             if (stepInside && !nextInside) {
                 for (Transport transport : transportsForEdge.apply(path.get(i), path.get(i + 1))) {
                     String exitInfo = transport.getDisplayInfo();

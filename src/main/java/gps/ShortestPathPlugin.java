@@ -48,6 +48,8 @@ import gps.pathfinder.PathStep;
 import gps.pathfinder.PathfinderConfig;
 import gps.transport.Transport;
 
+import static gps.WorldPointUtil.fromLocalInstance;
+
 @Slf4j
 @SuppressWarnings("SameParameterValue")
 // configName is REQUIRED here: without it RuneLite keys the on/off state by the class's simple
@@ -568,7 +570,7 @@ public class ShortestPathPlugin extends Plugin {
         pohDetection.onTick();
         if (!hasPathTargets())
             return;
-        int currentLocation = WorldPointUtil.fromLocalInstance(client, localPlayer);
+        int currentLocation = fromLocalInstance(client, localPlayer);
         if (trackJourneyAndArrival(localPlayer, currentLocation))
             return;
         trackOffRoute(currentLocation);
@@ -888,7 +890,7 @@ public class ShortestPathPlugin extends Plugin {
     public int getPlayerLocation() {
         Player local = client.getLocalPlayer();
         return local == null ? WorldPointUtil.UNDEFINED
-            : WorldPointUtil.fromLocalInstance(client, local);
+            : fromLocalInstance(client, local);
     }
 
     // --- Alternative-routes feature (driven by ShortestPathPanel) ---
@@ -1203,7 +1205,7 @@ public class ShortestPathPlugin extends Plugin {
     int altStart() {
         Player localPlayer = client.getLocalPlayer();
         if (localPlayer != null)
-            return WorldPointUtil.fromLocalInstance(client, localPlayer);
+            return fromLocalInstance(client, localPlayer);
         return destination.start();
     }
 

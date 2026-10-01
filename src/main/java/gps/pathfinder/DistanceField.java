@@ -1,5 +1,9 @@
 package gps.pathfinder;
 
+import static gps.WorldPointUtil.packWorldPoint;
+import static gps.WorldPointUtil.unpackWorldPlane;
+import static gps.WorldPointUtil.unpackWorldX;
+import static gps.WorldPointUtil.unpackWorldY;
 import static net.runelite.api.Constants.REGION_SIZE;
 
 import java.util.HashMap;
@@ -84,9 +88,9 @@ public final class DistanceField {
 
     /** The field value for a packed tile: cost lower bound to the nearest target, or UNREACHED. */
     public int distance(int packedPosition) {
-        final int x = WorldPointUtil.unpackWorldX(packedPosition);
-        final int y = WorldPointUtil.unpackWorldY(packedPosition);
-        final int plane = WorldPointUtil.unpackWorldPlane(packedPosition);
+        final int x = unpackWorldX(packedPosition);
+        final int y = unpackWorldY(packedPosition);
+        final int plane = unpackWorldPlane(packedPosition);
         final int regionIndex = getRegionIndex(x / REGION_SIZE, y / REGION_SIZE);
         if (regionIndex < 0 || regionIndex >= regions.length)
             return UNREACHED;
@@ -191,9 +195,9 @@ public final class DistanceField {
         long horizonTarget = Long.MAX_VALUE;
 
         for (int target : targets) {
-            final int x = WorldPointUtil.unpackWorldX(target);
-            final int y = WorldPointUtil.unpackWorldY(target);
-            final int plane = WorldPointUtil.unpackWorldPlane(target);
+            final int x = unpackWorldX(target);
+            final int y = unpackWorldY(target);
+            final int plane = unpackWorldPlane(target);
             if (field.relax(x, y, plane, 0))
                 fifo.addLast(target);
         }
@@ -206,9 +210,9 @@ public final class DistanceField {
             }
             else
                 packed = fifo.pollFirst();
-            final int x = WorldPointUtil.unpackWorldX(packed);
-            final int y = WorldPointUtil.unpackWorldY(packed);
-            final int plane = WorldPointUtil.unpackWorldPlane(packed);
+            final int x = unpackWorldX(packed);
+            final int y = unpackWorldY(packed);
+            final int plane = unpackWorldPlane(packed);
             if (!settled.set(x, y, plane, false))
                 continue;
             final int distance = field.distance(packed);
@@ -235,9 +239,9 @@ public final class DistanceField {
                     final int origin = edge.getKey();
                     final int cost = edge.getValue();
                     final int candidate = distance + cost;
-                    final int ox = WorldPointUtil.unpackWorldX(origin);
-                    final int oy = WorldPointUtil.unpackWorldY(origin);
-                    final int oplane = WorldPointUtil.unpackWorldPlane(origin);
+                    final int ox = unpackWorldX(origin);
+                    final int oy = unpackWorldY(origin);
+                    final int oplane = unpackWorldPlane(origin);
                     if (!settled.get(ox, oy, oplane, false) && field.relax(ox, oy, oplane, candidate))
                         heap.add(((long) candidate << 32) | (origin & 0xFFFFFFFFL));
                 }
@@ -272,9 +276,9 @@ public final class DistanceField {
             }
         }
         for (int landing : landings) {
-            final int x = WorldPointUtil.unpackWorldX(landing);
-            final int y = WorldPointUtil.unpackWorldY(landing);
-            final int plane = WorldPointUtil.unpackWorldPlane(landing);
+            final int x = unpackWorldX(landing);
+            final int y = unpackWorldY(landing);
+            final int plane = unpackWorldPlane(landing);
             if (distance(landing) != UNREACHED || !map.isBlocked(x, y, plane))
                 continue;
             // Forward step-off adjacency from a blocked tile (CollisionMap.getTileNeighbors'
@@ -294,7 +298,7 @@ public final class DistanceField {
             for (int i = 0; i < 8; i++) {
                 if (!stepOpen[i])
                     continue;
-                final int neighbour = distance(WorldPointUtil.packWorldPoint(x + DX[i], y + DY[i], plane));
+                final int neighbour = distance(packWorldPoint(x + DX[i], y + DY[i], plane));
                 if (neighbour != UNREACHED && neighbour + 1 < best)
                     best = neighbour + 1;
             }
@@ -348,7 +352,7 @@ public final class DistanceField {
             final int ny = y + DY[i];
             boolean canStep = traversable[i];
             if (!canStep && map.isBlocked(nx, ny, plane)) {
-                final int neighborPacked = WorldPointUtil.packWorldPoint(nx, ny, plane);
+                final int neighborPacked = packWorldPoint(nx, ny, plane);
                 final boolean cardinal = Math.abs(DX[i] + DY[i]) == 1;
                 if (cardinal && config.getTransportsPacked(true)
                     .getOrDefault(neighborPacked, TransportAvailability.EMPTY_TRANSPORTS).length > 0) {
@@ -373,7 +377,7 @@ public final class DistanceField {
             if (!canStep || settled.get(nx, ny, plane, false))
                 continue;
             if (relax(nx, ny, plane, distance + 1))
-                fifo.addLast(WorldPointUtil.packWorldPoint(nx, ny, plane));
+                fifo.addLast(packWorldPoint(nx, ny, plane));
         }
     }
 

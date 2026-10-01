@@ -52,6 +52,9 @@ import gps.transport.parser.VarRequirement;
 import gps.transport.requirement.ItemRequirement;
 import gps.transport.requirement.TransportItems;
 
+import static gps.WorldPointUtil.unpackWorldX;
+import static gps.WorldPointUtil.unpackWorldY;
+
 @SuppressWarnings("SameParameterValue")
 public class PathfinderConfig {
     public static final List<Integer> RUNE_POUCHES = Arrays.asList(
@@ -1351,8 +1354,8 @@ public class PathfinderConfig {
         for (Set<Transport> transportSet : transports.values()) {
             for (Transport transport : transportSet) {
                 int destination = transport.getDestination();
-                int destX = WorldPointUtil.unpackWorldX(destination);
-                int destY = WorldPointUtil.unpackWorldY(destination);
+                int destX = unpackWorldX(destination);
+                int destY = unpackWorldY(destination);
                 if (destination != pohLanding && PlayerOwnedHouse.isInside(destX, destY))
                     transport.setDestination(pohLanding);
             }
@@ -1501,10 +1504,10 @@ public class PathfinderConfig {
                 ? "Teleport portals & nexus are off (House section)"
                 : travelOptionName(type) + " are off (Travel options)";
         }
-        boolean inHouse = PlayerOwnedHouse.isInside(WorldPointUtil.unpackWorldX(transport.getOrigin()),
-            WorldPointUtil.unpackWorldY(transport.getOrigin()))
-            || PlayerOwnedHouse.isInside(WorldPointUtil.unpackWorldX(transport.getDestination()),
-            WorldPointUtil.unpackWorldY(transport.getDestination()));
+        boolean inHouse = PlayerOwnedHouse.isInside(unpackWorldX(transport.getOrigin()),
+            unpackWorldY(transport.getOrigin()))
+            || PlayerOwnedHouse.isInside(unpackWorldX(transport.getDestination()),
+            unpackWorldY(transport.getDestination()));
         if (inHouse && !usePoh)
             return "House is off (House section)";
         if (inHouse && !checkPohVariant(transport, type)) {
@@ -1555,10 +1558,10 @@ public class PathfinderConfig {
 
         // Master POH gate - if POH is disabled, reject all POH transports.
         if (!usePoh) {
-            int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
-            int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
-            int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
-            int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
+            int originX = unpackWorldX(transport.getOrigin());
+            int originY = unpackWorldY(transport.getOrigin());
+            int destX = unpackWorldX(transport.getDestination());
+            int destY = unpackWorldY(transport.getDestination());
             if (PlayerOwnedHouse.isInside(originX, originY) || PlayerOwnedHouse.isInside(destX, destY))
                 return false;
         }
@@ -1593,16 +1596,16 @@ public class PathfinderConfig {
     }
 
     private boolean checkPlantedSpiritTrees(Transport transport) {
-        int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
-        int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
+        int originX = unpackWorldX(transport.getOrigin());
+        int originY = unpackWorldY(transport.getOrigin());
 
         // Check planted spirit tree origins (travel FROM a planted tree)
         if (isPlantedSpiritTreeBlocked(originX, originY))
             return false;
 
         // Check planted spirit tree destinations (travel TO a planted tree)
-        int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
-        int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
+        int destX = unpackWorldX(transport.getDestination());
+        int destY = unpackWorldY(transport.getDestination());
 
         return !isPlantedSpiritTreeBlocked(destX, destY);
     }
@@ -1612,10 +1615,10 @@ public class PathfinderConfig {
      * Returns false if the transport is a POH variant and that variant is disabled.
      */
     private boolean checkPohVariant(Transport transport, TransportType type) {
-        int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
-        int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
-        int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
-        int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
+        int originX = unpackWorldX(transport.getOrigin());
+        int originY = unpackWorldY(transport.getOrigin());
+        int destX = unpackWorldX(transport.getDestination());
+        int destY = unpackWorldY(transport.getDestination());
 
         if (!PlayerOwnedHouse.isInside(originX, originY) && !PlayerOwnedHouse.isInside(destX, destY)) {
             return true; // Not a POH transport
