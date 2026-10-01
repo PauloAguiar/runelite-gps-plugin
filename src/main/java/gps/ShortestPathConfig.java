@@ -1443,6 +1443,30 @@ public interface ShortestPathConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "showPathPulse",
+		name = "Path pulse",
+		description = "Show a pulse animation on the path drawn on the game tiles",
+		position = 72,
+		section = sectionDisplay
+	)
+	default boolean showPathPulse()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showPathArrows",
+		name = "Path arrows",
+		description = "Display arrows along the path drawn on the game tiles",
+		position = 72,
+		section = sectionDisplay
+	)
+	default boolean showPathArrows()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "showDirections",
 		name = "Directions overlay",
 		description = "Show a movable step-by-step directions panel for the route currently shown on the map<br>" +

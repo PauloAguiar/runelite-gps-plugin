@@ -189,7 +189,7 @@ public class PathTileOverlay extends Overlay
 				}
 				// Edge i covers path[i-1]->path[i]; it's done once progress has reached path[i].
 				boolean done = i <= progress;
-				double glow = jump || done ? 0 : Math.max(0, 1 - waveDistance / WAVE_HALF_WIDTH);
+				double glow = jump || done || !plugin.display().showPathPulse ? 0 : Math.max(0, 1 - waveDistance / WAVE_HALF_WIDTH);
 				Color edgeColor = done ? doneColor : (i >= blockedFrom ? blockedColor : color);
 				drawLine(graphics, currentStep.getPackedPosition(), nextStep.getPackedPosition(),
 					edgeColor, head, glow, jump);
@@ -568,7 +568,7 @@ public class PathTileOverlay extends Overlay
 			graphics.setStroke(LINE_STROKE);
 		}
 		graphics.draw(line);
-		if (arrowHead)
+		if (arrowHead && plugin.display().showPathArrows)
 		{
 			ArrowHead.draw(graphics, p1.getX(), p1.getY(), p2.getX(), p2.getY(), 12);
 		}
