@@ -17,7 +17,6 @@ import org.junit.runner.RunWith;
 import static org.mockito.ArgumentMatchers.any;
 import org.mockito.Mock;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
 import gps.MethodAvailability;
@@ -60,8 +59,6 @@ public class MethodAvailabilityCatalogTest
 		when(config.useTeleportationItems()).thenReturn(TeleportationItem.NONE);
 		// The classifier now locks switched-off travel options first; these tests exercise
 		// the per-transport gates, so the types they touch are ON.
-		lenient().when(config.useTeleportationSpells()).thenReturn(true);
-		lenient().when(config.useFairyRings()).thenReturn(true);
 	}
 
 	/**

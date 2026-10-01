@@ -63,7 +63,6 @@ public class TailDiversityTest
 		when(config.currencyThreshold()).thenReturn(10000000);
 		lenient().when(config.costBankPickup()).thenReturn(15);
 		when(config.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY);
-		lenient().when(config.useFairyRings()).thenReturn(true);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenAnswer(i -> Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);

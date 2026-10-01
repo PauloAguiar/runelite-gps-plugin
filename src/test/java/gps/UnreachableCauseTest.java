@@ -2,6 +2,7 @@ package gps;
 
 import gps.pathfinder.PathfinderConfig;
 import gps.pathfinder.TestPathfinderConfig;
+import gps.transport.TransportType;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -11,6 +12,7 @@ import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Skill;
 import net.runelite.client.callback.ClientThread;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -20,7 +22,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 /**
@@ -46,14 +47,19 @@ public class UnreachableCauseTest
 	/** Mos Le'Harmless charter landing: charter ships only, which need coins the inventory lacks. */
 	private static final int MOS_LE_HARMLESS = WorldPointUtil.packWorldPoint(3668, 2931, 1);
 
+	@After
+	public void clearTypeOverrides()
+	{
+		TypeOverrides.clear();
+	}
+
 	@Test
 	public void theCauseTellsMissingUnlocksFromNoKnownRoute() throws Exception
 	{
+		TypeOverrides.only(TransportType.CHARTER_SHIP, TransportType.TELEPORTATION_SPELL);
 		when(config.calculationCutoff()).thenReturn(120);
 		when(config.currencyThreshold()).thenReturn(10000000);
 		when(config.useTeleportationItems()).thenReturn(TeleportationItem.ALL);
-		lenient().when(config.useCharterShips()).thenReturn(true);
-		lenient().when(config.useTeleportationSpells()).thenReturn(true);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenAnswer(i -> Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);

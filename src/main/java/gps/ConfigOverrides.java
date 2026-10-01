@@ -35,7 +35,7 @@ public final class ConfigOverrides
 	{
 	}
 
-	/** Every @ConfigItem key ShortestPathConfig declares: the only keys a message may override. */
+	/** Every @ConfigItem key ShortestPathConfig declares, plus the toggle-less types' keys: all a message may override. */
 	static Set<String> knownKeys()
 	{
 		Set<String> keys = knownKeysCache;
@@ -48,6 +48,15 @@ public final class ConfigOverrides
 				if (item != null)
 				{
 					keys.add(item.keyName());
+				}
+			}
+			// The transport types without a toggle keep an override key, so a message or a test can
+			// still switch one off.
+			for (TransportType type : TransportType.values())
+			{
+				if (type.getEnabledKey() != null)
+				{
+					keys.add(type.getEnabledKey());
 				}
 			}
 			knownKeysCache = Collections.unmodifiableSet(keys);

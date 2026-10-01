@@ -59,9 +59,6 @@ public class SameTailPrefixCapTest
 		when(config.currencyThreshold()).thenReturn(10000000);
 		lenient().when(config.costBankPickup()).thenReturn(15);
 		when(config.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY_NON_CONSUMABLE);
-		lenient().when(config.useShips()).thenReturn(true);
-		lenient().when(config.useAgilityShortcuts()).thenReturn(true);
-		lenient().when(config.useTeleportationSpells()).thenReturn(true);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenAnswer(i -> Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);

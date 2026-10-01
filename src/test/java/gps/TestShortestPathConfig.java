@@ -31,12 +31,6 @@ public class TestShortestPathConfig implements ShortestPathConfig
 	}
 
 	@Override
-	public boolean useTeleportationMinigames()
-	{
-		return true;
-	}
-
-	@Override
 	public boolean includeBankPath()
 	{
 		return includeBankPath;

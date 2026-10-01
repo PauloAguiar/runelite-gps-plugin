@@ -10,7 +10,7 @@ import gps.ShortestPathConfig;
 public enum TransportType
 {
 	TRANSPORT("/transports/transports.tsv", null, null, null, null),
-	AGILITY_SHORTCUT("/transports/agility_shortcuts.tsv", "useAgilityShortcuts", ShortestPathConfig::useAgilityShortcuts, "costAgilityShortcuts", ShortestPathConfig::costAgilityShortcuts)
+	AGILITY_SHORTCUT("/transports/agility_shortcuts.tsv", "useAgilityShortcuts", null, "costAgilityShortcuts", ShortestPathConfig::costAgilityShortcuts)
 		{
 			@Override
 			public TransportType refine(int[] skillLevels)
@@ -22,20 +22,20 @@ public enum TransportType
 				return this;
 			}
 		},
-	GRAPPLE_SHORTCUT(null, "useGrappleShortcuts", ShortestPathConfig::useGrappleShortcuts, "costGrappleShortcuts", ShortestPathConfig::costGrappleShortcuts),
-	BOAT("/transports/boats.tsv", "useBoats", ShortestPathConfig::useBoats, "costBoats", ShortestPathConfig::costBoats),
-	CANOE("/transports/canoes.tsv", "useCanoes", ShortestPathConfig::useCanoes, "costCanoes", ShortestPathConfig::costCanoes),
-	CHARTER_SHIP("/transports/charter_ships.tsv", "useCharterShips", ShortestPathConfig::useCharterShips, "costCharterShips", ShortestPathConfig::costCharterShips),
-	SHIP("/transports/ships.tsv", "useShips", ShortestPathConfig::useShips, "costShips", ShortestPathConfig::costShips),
+	GRAPPLE_SHORTCUT(null, "useGrappleShortcuts", null, "costGrappleShortcuts", ShortestPathConfig::costGrappleShortcuts),
+	BOAT("/transports/boats.tsv", "useBoats", null, "costBoats", ShortestPathConfig::costBoats),
+	CANOE("/transports/canoes.tsv", "useCanoes", null, "costCanoes", ShortestPathConfig::costCanoes),
+	CHARTER_SHIP("/transports/charter_ships.tsv", "useCharterShips", null, "costCharterShips", ShortestPathConfig::costCharterShips),
+	SHIP("/transports/ships.tsv", "useShips", null, "costShips", ShortestPathConfig::costShips),
 	SAILING("/transports/sailing.tsv", "useSailing", ShortestPathConfig::useSailing, "costSailing", ShortestPathConfig::costSailing),
-	FAIRY_RING("/transports/fairy_rings.tsv", "useFairyRings", ShortestPathConfig::useFairyRings, "costFairyRings", ShortestPathConfig::costFairyRings, 6),
-	GNOME_GLIDER("/transports/gnome_gliders.tsv", "useGnomeGliders", ShortestPathConfig::useGnomeGliders, "costGnomeGliders", ShortestPathConfig::costGnomeGliders, 6),
+	FAIRY_RING("/transports/fairy_rings.tsv", "useFairyRings", null, "costFairyRings", ShortestPathConfig::costFairyRings, 6),
+	GNOME_GLIDER("/transports/gnome_gliders.tsv", "useGnomeGliders", null, "costGnomeGliders", ShortestPathConfig::costGnomeGliders, 6),
 	HOT_AIR_BALLOON("/transports/hot_air_balloons.tsv", "useHotAirBalloons", ShortestPathConfig::useHotAirBalloons, "costHotAirBalloons", ShortestPathConfig::costHotAirBalloons, 7),
-	MAGIC_CARPET("/transports/magic_carpets.tsv", "useMagicCarpets", ShortestPathConfig::useMagicCarpets, "costMagicCarpets", ShortestPathConfig::costMagicCarpets),
-	MAGIC_MUSHTREE("/transports/magic_mushtrees.tsv", "useMagicMushtrees", ShortestPathConfig::useMagicMushtrees, "costMagicMushtrees", ShortestPathConfig::costMagicMushtrees, 5),
-	MINECART("/transports/minecarts.tsv", "useMinecarts", ShortestPathConfig::useMinecarts, "costMinecarts", ShortestPathConfig::costMinecarts),
-	MOUNTAIN_GUIDE("/transports/mountain_guides.tsv", "useMountainGuides", ShortestPathConfig::useMountainGuides, "costMountainGuides", ShortestPathConfig::costMountainGuides),
-	QUETZAL("/transports/quetzals.tsv", "useQuetzals", ShortestPathConfig::useQuetzals, "costQuetzals", ShortestPathConfig::costQuetzals, 5)
+	MAGIC_CARPET("/transports/magic_carpets.tsv", "useMagicCarpets", null, "costMagicCarpets", ShortestPathConfig::costMagicCarpets),
+	MAGIC_MUSHTREE("/transports/magic_mushtrees.tsv", "useMagicMushtrees", null, "costMagicMushtrees", ShortestPathConfig::costMagicMushtrees, 5),
+	MINECART("/transports/minecarts.tsv", "useMinecarts", null, "costMinecarts", ShortestPathConfig::costMinecarts),
+	MOUNTAIN_GUIDE("/transports/mountain_guides.tsv", "useMountainGuides", null, "costMountainGuides", ShortestPathConfig::costMountainGuides),
+	QUETZAL("/transports/quetzals.tsv", "useQuetzals", null, "costQuetzals", ShortestPathConfig::costQuetzals, 5)
 		{
 			@Override
 			public TransportType sharesDestinationsWith()
@@ -43,7 +43,7 @@ public enum TransportType
 				return QUETZAL_WHISTLE;
 			}
 		},
-	QUETZAL_WHISTLE("/transports/quetzal_whistle.tsv", "useQuetzals", ShortestPathConfig::useQuetzals, "costQuetzalWhistle", ShortestPathConfig::costQuetzals)
+	QUETZAL_WHISTLE("/transports/quetzal_whistle.tsv", "useQuetzals", null, "costQuetzalWhistle", ShortestPathConfig::costQuetzals)
 		{
 			@Override
 			public boolean isTeleport()
@@ -74,8 +74,8 @@ public enum TransportType
 				return true;
 			}
 		},
-	TELEPORTATION_LEVER("/transports/teleportation_levers.tsv", "useTeleportationLevers", ShortestPathConfig::useTeleportationLevers, "costTeleportationLevers", ShortestPathConfig::costTeleportationLevers),
-	TELEPORTATION_MINIGAME("/transports/teleportation_minigames.tsv", "useTeleportationMinigames", ShortestPathConfig::useTeleportationMinigames, "costTeleportationMinigames", ShortestPathConfig::costTeleportationMinigames)
+	TELEPORTATION_LEVER("/transports/teleportation_levers.tsv", "useTeleportationLevers", null, "costTeleportationLevers", ShortestPathConfig::costTeleportationLevers),
+	TELEPORTATION_MINIGAME("/transports/teleportation_minigames.tsv", "useTeleportationMinigames", null, "costTeleportationMinigames", ShortestPathConfig::costTeleportationMinigames)
 		{
 			@Override
 			public boolean isTeleport()
@@ -83,9 +83,9 @@ public enum TransportType
 				return true;
 			}
 		},
-	TELEPORTATION_PORTAL("/transports/teleportation_portals.tsv", "useTeleportationPortals", ShortestPathConfig::useTeleportationPortals, "costTeleportationPortals", ShortestPathConfig::costTeleportationPortals),
+	TELEPORTATION_PORTAL("/transports/teleportation_portals.tsv", "useTeleportationPortals", null, "costTeleportationPortals", ShortestPathConfig::costTeleportationPortals),
 	TELEPORTATION_PORTAL_POH("/transports/teleportation_portals_poh.tsv", "useTeleportationPortalsPoh", ShortestPathConfig::useTeleportationPortalsPoh, null, null),
-	TELEPORTATION_SPELL("/transports/teleportation_spells.tsv", "useTeleportationSpells", ShortestPathConfig::useTeleportationSpells, "costTeleportationSpells", ShortestPathConfig::costTeleportationSpells)
+	TELEPORTATION_SPELL("/transports/teleportation_spells.tsv", "useTeleportationSpells", null, "costTeleportationSpells", ShortestPathConfig::costTeleportationSpells)
 		{
 			@Override
 			public boolean isTeleport()
@@ -93,7 +93,7 @@ public enum TransportType
 				return true;
 			}
 		},
-	WILDERNESS_OBELISK("/transports/wilderness_obelisks.tsv", "useWildernessObelisks", ShortestPathConfig::useWildernessObelisks, "costWildernessObelisks", ShortestPathConfig::costWildernessObelisks),
+	WILDERNESS_OBELISK("/transports/wilderness_obelisks.tsv", "useWildernessObelisks", null, "costWildernessObelisks", ShortestPathConfig::costWildernessObelisks),
 	;
 
 	private final String resourcePath;

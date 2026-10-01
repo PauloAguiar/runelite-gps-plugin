@@ -187,7 +187,6 @@ public class ShortestPathPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
-		HiddenToggleMigration.clearStranded(configManager, CONFIG_GROUP);
 		cacheConfigValues();
 		boatBannerService = new BoatBannerService(client, configManager, CONFIG_GROUP, () ->
 		{

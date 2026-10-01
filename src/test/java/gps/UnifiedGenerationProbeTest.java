@@ -40,12 +40,8 @@ public class UnifiedGenerationProbeTest
 		Mockito.when(cfg.calculationCutoff()).thenReturn(120);
 		Mockito.when(cfg.currencyThreshold()).thenReturn(10000000);
 		Mockito.when(cfg.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY);
-		for (String name : new String[]{"useAgilityShortcuts", "useGrappleShortcuts", "useBoats", "useCanoes",
-			"useCharterShips", "useShips", "useSailing", "useFairyRings", "useGnomeGliders", "useHotAirBalloons",
-			"useMagicCarpets", "useMagicMushtrees", "useMinecarts", "useMountainGuides", "useQuetzals",
-			"useSpiritTrees", "useTeleportationLevers", "useTeleportationPortals", "useTeleportationSpells",
-			"useTeleportationMinigames", "useWildernessObelisks", "usePoh", "usePohFairyRing", "usePohSpiritTree",
-			"useTeleportationPortalsPoh", "usePohMountedItems", "usePohObelisk"})
+		for (String name : new String[]{"useSailing", "useHotAirBalloons", "useSpiritTrees", "usePoh",
+			"usePohFairyRing", "usePohSpiritTree", "useTeleportationPortalsPoh", "usePohMountedItems", "usePohObelisk"})
 		{
 			try
 			{

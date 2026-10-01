@@ -53,7 +53,6 @@ public class CharterFareDiscountTest
 		when(config.calculationCutoff()).thenReturn(120);
 		when(config.currencyThreshold()).thenReturn(10000000);
 		when(config.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY);
-		lenient().when(config.useCharterShips()).thenReturn(true);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenAnswer(i -> Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);

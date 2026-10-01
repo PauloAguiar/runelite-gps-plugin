@@ -116,14 +116,9 @@ public class TransportTypeConfig
 			return teleportationItemSetting != TeleportationItem.NONE;
 		}
 
-		// No enabled getter means always enabled (controlled elsewhere or not
-		// configurable)
-		if (!type.hasEnabledGetter())
-		{
-			return true;
-		}
-
-		boolean configValue = type.getEnabledGetter().apply(config);
+		// No enabled getter means always enabled: the type has no toggle, only a dev override by its
+		// key (the tests use it to narrow the world to one transport type).
+		boolean configValue = !type.hasEnabledGetter() || type.getEnabledGetter().apply(config);
 		return ConfigOverrides.override(type, configValue);
 	}
 

@@ -3,6 +3,7 @@ package gps;
 import gps.pathfinder.PathStep;
 import gps.pathfinder.PathfinderConfig;
 import gps.pathfinder.TestPathfinderConfig;
+import gps.transport.TransportType;
 import gps.transport.Transport;
 import java.util.HashSet;
 import java.util.List;
@@ -70,7 +71,7 @@ public class FreeBankFamilyTest
 		when(config.costBankPickup()).thenReturn(0);
 		when(config.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY_AND_BANK);
 		// The reporter crossed to Karamja by ship (Ardougne -> Brimhaven, 30gp): ships on, coins in hand.
-		lenient().when(config.useShips()).thenReturn(true);
+		TypeOverrides.only(TransportType.SHIP);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenAnswer(i -> Thread.currentThread());
 		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(99);
@@ -88,6 +89,7 @@ public class FreeBankFamilyTest
 	@After
 	public void after()
 	{
+		TypeOverrides.clear();
 		if (service != null)
 		{
 			service.shutdown();

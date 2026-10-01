@@ -15,6 +15,7 @@ import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.client.callback.ClientThread;
 import static org.junit.Assert.assertTrue;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,6 +33,7 @@ import gps.ShortestPathConfig;
 import gps.TeleportMethod;
 import gps.TeleportationItem;
 import gps.WorldPointUtil;
+import gps.TypeOverrides;
 import gps.transport.TransportType;
 
 /**
@@ -61,12 +63,18 @@ public class AlternativeRoutesServiceTest
 	@Mock
 	ShortestPathConfig config;
 
+	@After
+	public void clearTypeOverrides()
+	{
+		TypeOverrides.clear();
+	}
+
 	@Before
 	public void before()
 	{
 		when(config.calculationCutoff()).thenReturn(30);
+		TypeOverrides.only(TransportType.TELEPORTATION_SPELL);
 		when(config.currencyThreshold()).thenReturn(10000000);
-		when(config.useTeleportationSpells()).thenReturn(true);
 		when(config.useTeleportationItems()).thenReturn(TeleportationItem.NONE);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenAnswer(invocation -> Thread.currentThread());

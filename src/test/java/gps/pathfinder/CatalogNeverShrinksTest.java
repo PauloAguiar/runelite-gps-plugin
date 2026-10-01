@@ -5,11 +5,13 @@ import gps.MethodAvailability;
 import gps.ShortestPathConfig;
 import gps.TeleportMethod;
 import gps.TeleportationItem;
+import gps.TypeOverrides;
 import gps.transport.TransportType;
 import java.util.Map;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Skill;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,6 +36,12 @@ public class CatalogNeverShrinksTest
 	Client client;
 	@Mock
 	ShortestPathConfig config;
+
+	@After
+	public void clearTypeOverrides()
+	{
+		TypeOverrides.clear();
+	}
 
 	@Before
 	public void before()
@@ -114,7 +122,8 @@ public class CatalogNeverShrinksTest
 	@Test
 	public void travelOptionOffLocksItsMethodsInsteadOfRemovingThem()
 	{
-		// The charter network with its toggle off (the mock's default): listed, locked, named.
+		TypeOverrides.off(TransportType.CHARTER_SHIP);
+		// The charter network switched off by override: listed, locked, named.
 		PathfinderConfig off = planning();
 		TeleportMethod charter = first(off.getMethodAvailability(), TransportType.CHARTER_SHIP, null);
 		assertTrue("a charter method is still listed", charter != null);
@@ -123,7 +132,7 @@ public class CatalogNeverShrinksTest
 			off.getMethodAvailabilityDetail().get(charter));
 		int total = off.getMethodCatalog().size();
 
-		when(config.useCharterShips()).thenReturn(true);
+		TypeOverrides.clear();
 		PathfinderConfig on = planning();
 		assertEquals("the catalog is the same size either way", total, on.getMethodCatalog().size());
 		assertTrue("with the toggle on the charter is no longer locked",

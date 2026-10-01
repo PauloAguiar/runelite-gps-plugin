@@ -50,9 +50,6 @@ public class UnreachableTargetShortCircuitTest
 		when(config.calculationCutoff()).thenReturn(120);
 		when(config.currencyThreshold()).thenReturn(10000000);
 		when(config.useTeleportationItems()).thenReturn(TeleportationItem.ALL);
-		lenient().when(config.useFairyRings()).thenReturn(true);
-		lenient().when(config.useGnomeGliders()).thenReturn(true);
-		lenient().when(config.useTeleportationSpells()).thenReturn(true);
 		lenient().when(config.useSailing()).thenReturn(true);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenAnswer(i -> Thread.currentThread());

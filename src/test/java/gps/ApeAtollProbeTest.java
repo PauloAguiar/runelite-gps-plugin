@@ -44,11 +44,7 @@ public class ApeAtollProbeTest
 		Mockito.when(cfg.calculationCutoff()).thenReturn(120);
 		Mockito.when(cfg.currencyThreshold()).thenReturn(10000000);
 		Mockito.when(cfg.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY);
-		for (String name : new String[]{"useBoats", "useShips", "useCharterShips", "useGnomeGliders", "useFairyRings",
-			"useSpiritTrees", "useTeleportationSpells", "useAgilityShortcuts", "useTeleportationPortals"})
-		{
-			Mockito.when((Boolean) ShortestPathConfig.class.getMethod(name).invoke(cfg)).thenReturn(true);
-		}
+		Mockito.when(cfg.useSpiritTrees()).thenReturn(true);
 		PathfinderConfig config = new TestPathfinderConfig(client(), cfg).copyForPlanning();
 		config.refresh();
 		ClientThread ct = Mockito.mock(ClientThread.class, Mockito.withSettings().stubOnly());

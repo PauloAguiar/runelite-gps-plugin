@@ -53,10 +53,7 @@ public class ProvisionalDisplayLiveTest
 		Mockito.when(cfg.calculationCutoff()).thenReturn(120);
 		Mockito.when(cfg.currencyThreshold()).thenReturn(10000000);
 		Mockito.when(cfg.useTeleportationItems()).thenReturn(TeleportationItem.INVENTORY);
-		for (String name : new String[]{"useTeleportationSpells", "useFairyRings", "useSpiritTrees", "useShips",
-			"useMinecarts", "useCharterShips", "useGnomeGliders", "useQuetzals", "useTeleportationMinigames",
-			"useTeleportationPortals", "useAgilityShortcuts", "useBoats", "useMagicCarpets", "useCanoes",
-			"useTeleportationLevers", "useMountainGuides", "useHotAirBalloons", "useMagicMushtrees", "useSailing"})
+		for (String name : new String[]{"useSpiritTrees", "useHotAirBalloons", "useSailing"})
 		{
 			Mockito.when((Boolean) ShortestPathConfig.class.getMethod(name).invoke(cfg)).thenReturn(true);
 		}

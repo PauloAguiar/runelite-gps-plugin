@@ -49,84 +49,6 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigItem(
 		hidden = true,
-		keyName = "useAgilityShortcuts",
-		name = "Use agility shortcuts",
-		description = "Include agility shortcuts",
-		position = 2,
-		section = sectionSettings
-	)
-	default boolean useAgilityShortcuts()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		hidden = true,
-		keyName = "useGrappleShortcuts",
-		name = "Use grapple shortcuts",
-		description = "Include crossbow grapple shortcuts",
-		position = 3,
-		section = sectionSettings
-	)
-	default boolean useGrappleShortcuts()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		hidden = true,
-		keyName = "useBoats",
-		name = "Use boats",
-		description = "Include small boats",
-		position = 4,
-		section = sectionSettings
-	)
-	default boolean useBoats()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		hidden = true,
-		keyName = "useCanoes",
-		name = "Use canoes",
-		description = "Include canoes",
-		position = 5,
-		section = sectionSettings
-	)
-	default boolean useCanoes()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		hidden = true,
-		keyName = "useCharterShips",
-		name = "Use charter ships",
-		description = "Include charter ships",
-		position = 6,
-		section = sectionSettings
-	)
-	default boolean useCharterShips()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		hidden = true,
-		keyName = "useShips",
-		name = "Use ships",
-		description = "Include passenger ships",
-		position = 7,
-		section = sectionSettings
-	)
-	default boolean useShips()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		hidden = true,
 		keyName = "useSailing",
 		name = "Use sailing routes",
 		description = "Sail your own boat between moorings and port berths; times assume a mid-tier hull",
@@ -179,32 +101,6 @@ public interface ShortestPathConfig extends Config
 
 	@ConfigItem(
 		hidden = true,
-		keyName = "useFairyRings",
-		name = "Use fairy rings",
-		description = "Include fairy rings",
-		position = 8,
-		section = sectionSettings
-	)
-	default boolean useFairyRings()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		hidden = true,
-		keyName = "useGnomeGliders",
-		name = "Use gnome gliders",
-		description = "Include gnome gliders",
-		position = 9,
-		section = sectionSettings
-	)
-	default boolean useGnomeGliders()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		hidden = true,
 		keyName = "useHotAirBalloons",
 		name = "Use balloon routes",
 		description = "Include hot air balloon flights (Enlightened Journey); each flight burns one log of the destination's type, from your inventory or the stations' Log storage",
@@ -212,71 +108,6 @@ public interface ShortestPathConfig extends Config
 		section = sectionSettings
 	)
 	default boolean useHotAirBalloons()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		hidden = true,
-		keyName = "useMagicCarpets",
-		name = "Use magic carpets",
-		description = "Include magic carpets",
-		position = 11,
-		section = sectionSettings
-	)
-	default boolean useMagicCarpets()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		hidden = true,
-		keyName = "useMagicMushtrees",
-		name = "Use magic mushtrees",
-		description = "Include Fossil Island magic mushtrees",
-		position = 12,
-		section = sectionSettings
-	)
-	default boolean useMagicMushtrees()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		hidden = true,
-		keyName = "useMinecarts",
-		name = "Use minecarts",
-		description = "Include minecarts",
-		position = 13,
-		section = sectionSettings
-	)
-	default boolean useMinecarts()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		hidden = true,
-		keyName = "useMountainGuides",
-		name = "Use mountain guides",
-		description = "Include mountain guides",
-		position = 13,
-		section = sectionSettings
-	)
-	default boolean useMountainGuides()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		hidden = true,
-		keyName = "useQuetzals",
-		name = "Use quetzals",
-		description = "Include quetzals",
-		position = 14,
-		section = sectionSettings
-	)
-	default boolean useQuetzals()
 	{
 		return true;
 	}
@@ -357,71 +188,6 @@ public interface ShortestPathConfig extends Config
 	default TeleportationItem useTeleportationItems()
 	{
 		return TeleportationItem.INVENTORY_NON_CONSUMABLE;
-	}
-
-	@ConfigItem(
-		hidden = true,
-		keyName = "useTeleportationLevers",
-		name = "Use teleportation levers",
-		description = "Include teleport levers",
-		position = 17,
-		section = sectionSettings
-	)
-	default boolean useTeleportationLevers()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		hidden = true,
-		keyName = "useTeleportationPortals",
-		name = "Use teleportation portals",
-		description = "Include teleport portals",
-		position = 18,
-		section = sectionSettings
-	)
-	default boolean useTeleportationPortals()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		hidden = true,
-		keyName = "useTeleportationSpells",
-		name = "Use teleportation spells",
-		description = "Include teleport spells",
-		position = 19,
-		section = sectionSettings
-	)
-	default boolean useTeleportationSpells()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		hidden = true,
-		keyName = "useTeleportationMinigames",
-		name = "Use teleportation to minigames",
-		description = "Include minigame and grouping teleports (shared 20 minute cooldown)",
-		position = 20,
-		section = sectionSettings
-	)
-	default boolean useTeleportationMinigames()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		hidden = true,
-		keyName = "useWildernessObelisks",
-		name = "Use wilderness obelisks",
-		description = "Include wilderness obelisks",
-		position = 21,
-		section = sectionSettings
-	)
-	default boolean useWildernessObelisks()
-	{
-		return true;
 	}
 
 	@ConfigItem(

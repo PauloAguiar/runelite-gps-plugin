@@ -62,10 +62,6 @@ public class RedundantTeleportHopTest
 		Mockito.when(cfg.calculationCutoff()).thenReturn(120);
 		Mockito.when(cfg.currencyThreshold()).thenReturn(10000000);
 		Mockito.when(cfg.useTeleportationItems()).thenReturn(TeleportationItem.ALL);
-		Mockito.when(cfg.useQuetzals()).thenReturn(true);
-		Mockito.when(cfg.useCharterShips()).thenReturn(true);
-		Mockito.when(cfg.useTeleportationMinigames()).thenReturn(true);
-		Mockito.when(cfg.useShips()).thenReturn(true);
 		return cfg;
 	}
 

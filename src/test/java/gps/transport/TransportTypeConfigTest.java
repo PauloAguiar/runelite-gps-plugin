@@ -124,16 +124,14 @@ public class TransportTypeConfigTest
 	{
 		// Setup default mocks first, then override specific values
 		setupDefaultMocks();
-		when(config.useAgilityShortcuts()).thenReturn(true);
-		when(config.useGrappleShortcuts()).thenReturn(false);
-		when(config.useBoats()).thenReturn(true);
+		when(config.useSailing()).thenReturn(false);
 
 		TransportTypeConfig typeConfig = new TransportTypeConfig(config);
 
-		assertTrue("AGILITY_SHORTCUT should be enabled",
+		assertTrue("AGILITY_SHORTCUT has no toggle: always enabled",
 			typeConfig.isEnabled(TransportType.AGILITY_SHORTCUT));
-		assertFalse("GRAPPLE_SHORTCUT should be disabled",
-			typeConfig.isEnabled(TransportType.GRAPPLE_SHORTCUT));
+		assertFalse("SAILING should be disabled",
+			typeConfig.isEnabled(TransportType.SAILING));
 		assertTrue("BOAT should be enabled",
 			typeConfig.isEnabled(TransportType.BOAT));
 	}
@@ -280,7 +278,6 @@ public class TransportTypeConfigTest
 	@Test
 	public void testDisableUnless()
 	{
-		when(config.useFairyRings()).thenReturn(true);
 		setupDefaultMocks();
 
 		TransportTypeConfig typeConfig = new TransportTypeConfig(config);
@@ -307,7 +304,6 @@ public class TransportTypeConfigTest
 	@Test
 	public void testSetEnabled()
 	{
-		when(config.useBoats()).thenReturn(true);
 		setupDefaultMocks();
 
 		TransportTypeConfig typeConfig = new TransportTypeConfig(config);
@@ -331,17 +327,17 @@ public class TransportTypeConfigTest
 	{
 		// Setup default mocks first, then override specific value
 		setupDefaultMocks();
-		when(config.useCanoes()).thenReturn(false);
+		when(config.useSailing()).thenReturn(false);
 
 		TransportTypeConfig typeConfig = new TransportTypeConfig(config);
-		assertFalse(typeConfig.isEnabled(TransportType.CANOE));
+		assertFalse(typeConfig.isEnabled(TransportType.SAILING));
 
 		// Change mock and refresh
-		when(config.useCanoes()).thenReturn(true);
+		when(config.useSailing()).thenReturn(true);
 		typeConfig.refresh();
 
-		assertTrue("CANOE should be enabled after refresh with new config value",
-			typeConfig.isEnabled(TransportType.CANOE));
+		assertTrue("SAILING should be enabled after refresh with new config value",
+			typeConfig.isEnabled(TransportType.SAILING));
 	}
 
 	/**
@@ -454,27 +450,10 @@ public class TransportTypeConfigTest
 		when(config.useTeleportationItems()).thenReturn(TeleportationItem.ALL);
 
 		// Enable methods (return true by default)
-		when(config.useAgilityShortcuts()).thenReturn(true);
-		when(config.useGrappleShortcuts()).thenReturn(true);
-		when(config.useBoats()).thenReturn(true);
-		when(config.useCanoes()).thenReturn(true);
-		when(config.useCharterShips()).thenReturn(true);
-		when(config.useShips()).thenReturn(true);
-		when(config.useFairyRings()).thenReturn(true);
-		when(config.useGnomeGliders()).thenReturn(true);
 		when(config.useHotAirBalloons()).thenReturn(true);
-		when(config.useMagicCarpets()).thenReturn(true);
-		when(config.useMagicMushtrees()).thenReturn(true);
-		when(config.useMinecarts()).thenReturn(true);
-		when(config.useQuetzals()).thenReturn(true);
 		when(config.useSeasonalTransports()).thenReturn(true);
 		when(config.useSpiritTrees()).thenReturn(true);
-		when(config.useTeleportationLevers()).thenReturn(true);
-		when(config.useTeleportationMinigames()).thenReturn(true);
-		when(config.useTeleportationPortals()).thenReturn(true);
 		when(config.useTeleportationPortalsPoh()).thenReturn(true);
-		when(config.useTeleportationSpells()).thenReturn(true);
-		when(config.useWildernessObelisks()).thenReturn(true);
 
 		// Cost methods (return 0 by default)
 		when(config.costAgilityShortcuts()).thenReturn(0);

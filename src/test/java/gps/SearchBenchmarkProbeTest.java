@@ -48,11 +48,7 @@ public class SearchBenchmarkProbeTest
 		Assume.assumeTrue(Boolean.getBoolean("gps.searchBench"));
 		when(config.calculationCutoff()).thenReturn(120);
 		lenient().when(config.currencyThreshold()).thenReturn(10000000);
-		lenient().when(config.useAgilityShortcuts()).thenReturn(true);
-		lenient().when(config.useFairyRings()).thenReturn(true);
-		lenient().when(config.useGnomeGliders()).thenReturn(true);
 		lenient().when(config.useSpiritTrees()).thenReturn(true);
-		lenient().when(config.useTeleportationSpells()).thenReturn(true);
 		lenient().when(config.useSailing()).thenReturn(true);
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(client.getClientThread()).thenAnswer(i -> Thread.currentThread());
