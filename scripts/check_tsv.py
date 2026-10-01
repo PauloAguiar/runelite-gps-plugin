@@ -67,6 +67,8 @@ KNOWN_COLUMNS = {
     # sailing-sea-matrix.tsv (fromLandX fromLandY toLandX toLandY centitiles)
     "landX", "landY", "waterX", "waterY", "reachable", "portId",
     "fromLandX", "fromLandY", "toLandX", "toLandY", "centitiles",
+    # item-variations.tsv (Family Item id Gameval name), rune-sources.tsv (Rune Staves Offhands)
+    "Family", "Item id", "Gameval name", "Rune", "Staves", "Offhands",
 }
 
 # Files with no header at all: a fixed number of columns, the last one free text.
