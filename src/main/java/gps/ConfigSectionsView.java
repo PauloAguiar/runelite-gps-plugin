@@ -6,8 +6,10 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.image.BufferedImage;
+import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.Map;
 import java.util.function.IntConsumer;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
@@ -21,6 +23,7 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
+import net.runelite.client.config.ConfigItem;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.util.ImageUtil;
@@ -34,11 +37,29 @@ import static gps.PanelWidgets.wrappedLabel;
  * The "Travel options" configuration sections (panel series P2, out of the panel class): the
  * player-stated facts routing cannot detect on its own (the house, the wilderness policy, the
  * walking and bank biases, balloons, sailing, planted spirit trees), each a collapsible section
- * whose header chip summarises its state. The controls mirror the plugin's config items (same
- * keys, kept in sync through the ConfigManager); any change regenerates the current routes.
+ * whose header chip summarises its state. The controls ARE the plugin's config items: a checkbox
+ * or spinner is built from the item's key, takes its label and tooltip from the item's name and
+ * description (hidden items, so that text shows nowhere else), reads the current value through
+ * the config and writes the key through the ConfigManager; any change regenerates the routes.
  */
 final class ConfigSectionsView
 {
+	private static final int LABEL_WIDTH = 168;
+	/** The config items by key; the controls' labels and tooltips come from the annotations. */
+	private static final Map<String, Method> ITEMS = new HashMap<>();
+
+	static
+	{
+		for (Method method : ShortestPathConfig.class.getMethods())
+		{
+			ConfigItem item = method.getAnnotation(ConfigItem.class);
+			if (item != null)
+			{
+				ITEMS.put(item.keyName(), method);
+			}
+		}
+	}
+
 	private final ShortestPathPlugin plugin;
 	// Rebuilds the sections slot after a header toggle.
 	private final Runnable refresh;
@@ -64,6 +85,17 @@ final class ConfigSectionsView
 	List<JPanel> sections()
 	{
 		return List.of(poh(), wilderness(), walking(), bank(), balloon(), sailing(), spiritTree());
+	}
+
+	/** The config item a section binds; a misspelt key fails here, when the section is built. */
+	static ConfigItem item(String key)
+	{
+		Method method = ITEMS.get(key);
+		if (method == null)
+		{
+			throw new IllegalArgumentException("no config item " + key);
+		}
+		return method.getAnnotation(ConfigItem.class);
 	}
 
 	/**
@@ -166,22 +198,11 @@ final class ConfigSectionsView
 				: "No house detected (log in, or you don't own one)",
 			house != null ? ColorScheme.LIGHT_GRAY_COLOR : ColorScheme.MEDIUM_GRAY_COLOR));
 
-		JCheckBox master = configCheckBox("Use my house for routes", pohOn,
-			"Master switch: with this off, no POH teleport is ever routed",
-			v -> plugin.setPanelConfig("usePoh", v));
-		body.add(iconRow("house_portal", 0, master));
+		body.add(iconRow("house_portal", 0, toggle("usePoh", 0, true)));
 
 		// Smart detection: while inside your house GPS auto-fills the furniture it can recognise.
-		final boolean smartDetect = plugin.getGpsConfig().pohSmartDetect();
-		JCheckBox smartBox = configCheckBox("Auto-detect furniture", smartDetect,
-			"<html><body style='width:220px'>While you are inside your house, fill the checkboxes below"
-				+ " from the furniture GPS recognises: jewellery box, fairy ring, spirit tree and"
-				+ " obelisk. It only ever ticks boxes (never unticks), and you can still edit any of"
-				+ " them.<br><br>Portals &amp; nexus and mounted items can't be auto-detected; set those"
-				+ " yourself.</body></html>",
-			v -> plugin.setPanelConfig("pohSmartDetect", v));
-		body.add(iconRow("house_portal", 18, smartBox));
-		if (smartDetect)
+		body.add(iconRow("house_portal", 18, toggle("pohSmartDetect", 0, true)));
+		if (plugin.getGpsConfig().pohSmartDetect())
 		{
 			List<String> detected = plugin.getDetectedPohFurniture();
 			if (!plugin.isPohScanned())
@@ -198,64 +219,32 @@ final class ConfigSectionsView
 			}
 		}
 
+		ConfigItem tier = item("pohJewelleryBoxTier");
 		JPanel tierInner = new JPanel(new BorderLayout(5, 0));
 		tierInner.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		JLabel tierLabel = new JLabel("Jewellery box:");
+		JLabel tierLabel = new JLabel(tier.name() + ":");
 		tierLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 		tierInner.add(tierLabel, BorderLayout.WEST);
 		JComboBox<JewelleryBoxTier> tierBox = new JComboBox<>(JewelleryBoxTier.values());
 		tierBox.setSelectedItem(plugin.getGpsConfig().pohJewelleryBoxTier());
 		tierBox.setEnabled(pohOn);
-		tierBox.setToolTipText("The tier built in your house (each tier includes the ones below it)");
+		tierBox.setToolTipText(tooltip(tier));
 		tierBox.addActionListener(e -> plugin.setPanelConfig("pohJewelleryBoxTier", tierBox.getSelectedItem()));
 		tierInner.add(tierBox, BorderLayout.CENTER);
 		body.add(iconRow("jewellery_box", 18, tierInner));
 
-		JCheckBox portals = configCheckBox("Teleport portals & nexus", plugin.getGpsConfig().useTeleportationPortalsPoh(),
-			"Portal chamber and portal nexus destinations",
-			v -> plugin.setPanelConfig("useTeleportationPortalsPoh", v));
-		JCheckBox mounted = configCheckBox("Mounted items", plugin.getGpsConfig().usePohMountedItems(),
-			"Mounted glory, Xeric's talisman, digsite pendant, mythical cape",
-			v -> plugin.setPanelConfig("usePohMountedItems", v));
-		JCheckBox fairy = configCheckBox("Fairy ring", plugin.getGpsConfig().usePohFairyRing(),
-			"Requires 85 Construction to build",
-			v -> plugin.setPanelConfig("usePohFairyRing", v));
-		JCheckBox spirit = configCheckBox("Spirit tree", plugin.getGpsConfig().usePohSpiritTree(),
-			"Requires 75 Construction and 83 Farming to build",
-			v -> plugin.setPanelConfig("usePohSpiritTree", v));
-		JCheckBox obelisk = configCheckBox("Wilderness obelisk", plugin.getGpsConfig().usePohObelisk(),
-			"Requires 80 Construction to build",
-			v -> plugin.setPanelConfig("usePohObelisk", v));
-		String[] icons = {"portal_chamber", "mounted_glory", "fairy_ring", "spirit_tree", "obelisk"};
-		JCheckBox[] boxes = {portals, mounted, fairy, spirit, obelisk};
-		for (int i = 0; i < boxes.length; i++)
-		{
-			boxes[i].setEnabled(pohOn);
-			body.add(iconRow(icons[i], 18, boxes[i]));
-			if (boxes[i] == mounted)
-			{
-				// The mounts cannot be scene-detected (no stable object ids), so each is its own
-				// assumption: pick exactly the ones built in your house.
-				boolean mountsOn = pohOn && plugin.getGpsConfig().usePohMountedItems();
-				String[][] mounts = {
-					{"pohMountGlory", "Amulet of glory", "Mounted Amulet of glory (Edgeville, Karamja, Draynor, Al Kharid)"},
-					{"pohMountXerics", "Xeric's talisman", "Mounted Xeric's talisman (Lookout, Glade, Inferno, Heart, Honour)"},
-					{"pohMountDigsite", "Digsite pendant", "Mounted Digsite pendant (Digsite, Fossil Island, Lithkren)"},
-					{"pohMountMythical", "Mythical cape", "Mounted Mythical cape (Myths' Guild)"},
-				};
-				boolean[] values = {plugin.getGpsConfig().pohMountGlory(), plugin.getGpsConfig().pohMountXerics(),
-					plugin.getGpsConfig().pohMountDigsite(), plugin.getGpsConfig().pohMountMythical()};
-				for (int m = 0; m < mounts.length; m++)
-				{
-					final String key = mounts[m][0];
-					JCheckBox mount = configCheckBox(mounts[m][1], values[m], mounts[m][2],
-						v -> plugin.setPanelConfig(key, v));
-					mount.setEnabled(mountsOn);
-					mount.setBorder(new EmptyBorder(2, 36, 2, 0));
-					body.add(mount);
-				}
-			}
-		}
+		body.add(iconRow("portal_chamber", 18, toggle("useTeleportationPortalsPoh", 0, pohOn)));
+		body.add(iconRow("mounted_glory", 18, toggle("usePohMountedItems", 0, pohOn)));
+		// The mounts cannot be scene-detected (no stable object ids), so each is its own
+		// assumption: pick exactly the ones built in your house.
+		boolean mountsOn = pohOn && plugin.getGpsConfig().usePohMountedItems();
+		body.add(toggle("pohMountGlory", 36, mountsOn));
+		body.add(toggle("pohMountXerics", 36, mountsOn));
+		body.add(toggle("pohMountDigsite", 36, mountsOn));
+		body.add(toggle("pohMountMythical", 36, mountsOn));
+		body.add(iconRow("fairy_ring", 18, toggle("usePohFairyRing", 0, pohOn)));
+		body.add(iconRow("spirit_tree", 18, toggle("usePohSpiritTree", 0, pohOn)));
+		body.add(iconRow("obelisk", 18, toggle("usePohObelisk", 0, pohOn)));
 
 		section.add(body);
 		return section;
@@ -276,31 +265,11 @@ final class ConfigSectionsView
 		}
 
 		JPanel body = body();
-		body.add(configCheckBox("Avoid the wilderness", avoid,
-			"Route around the wilderness whenever possible (e.g. skip the Edgeville lever to Ardougne)",
-			v -> plugin.setPanelConfig("avoidWilderness", v)));
+		body.add(toggle("avoidWilderness", 0, true));
 		body.add(note("Routes still enter the wilderness when the destination itself is inside it.",
 			ColorScheme.MEDIUM_GRAY_COLOR));
 		section.add(body);
 		return section;
-	}
-
-	/** A "Bias (seconds)" spinner row: minus 120 to 120 in steps of 5, wired to the given setter. */
-	private static JPanel biasSpinnerRow(String caption, String tooltip, int value, IntConsumer setter)
-	{
-		JPanel row = new JPanel(new BorderLayout(5, 0));
-		row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		row.setAlignmentX(Component.LEFT_ALIGNMENT);
-		JLabel label = new JLabel(caption);
-		label.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-		label.setToolTipText(tooltip);
-		row.add(label, BorderLayout.CENTER);
-		JSpinner spinner = new JSpinner(new SpinnerNumberModel(value, -120, 120, 5));
-		spinner.setToolTipText(tooltip);
-		spinner.addChangeListener(e -> setter.accept((Integer) spinner.getValue()));
-		row.add(spinner, BorderLayout.EAST);
-		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, spinner.getPreferredSize().height + 4));
-		return row;
 	}
 
 	/**
@@ -326,15 +295,9 @@ final class ConfigSectionsView
 					? "Walking wins unless a method is more than " + bias + "s faster."
 					: "Walking is ranked as if " + (-bias) + "s slower."),
 			ColorScheme.LIGHT_GRAY_COLOR));
-		body.add(biasSpinnerRow("Prefer walking by (s):",
-			"<html>Ranking bias for the pure-walk route, in seconds.<br>"
-				+ "Positive: walking keeps the top spot unless a method beats it by more.<br>"
-				+ "Negative: walking ranks as if slower. Changes re-sort instantly.</html>",
-			bias, v ->
-			{
-				plugin.setWalkPreferenceSeconds(v);
-				SwingUtilities.invokeLater(refreshAll);
-			}));
+		body.add(biasSpinner("Prefer walking by (s):",
+			"Ranking bias in seconds: positive keeps walking on top unless a method beats it by more, negative ranks it as if slower",
+			bias, plugin::setWalkPreferenceSeconds));
 		body.add(note("Ranking only: the walk route's ETA and path never change.", ColorScheme.MEDIUM_GRAY_COLOR));
 		section.add(body);
 		return section;
@@ -347,14 +310,13 @@ final class ConfigSectionsView
 	 */
 	private JPanel bank()
 	{
-		final boolean remember = plugin.getGpsConfig().rememberBank();
 		// The header chip is the ranking bias (same convention as Walking and the card chips);
 		// the remember-between-sessions state is a detail inside the body.
-		int headerBias = plugin.getBankPreferenceSeconds();
+		int bankBias = plugin.getBankPreferenceSeconds();
 		JPanel section = shell("Bank",
 			"How bank-detour routes rank, and remembering your bank between sessions",
 			bankExpanded, () -> bankExpanded = !bankExpanded,
-			biasChip(headerBias), biasColor(headerBias));
+			biasChip(bankBias), biasColor(bankBias));
 		if (!bankExpanded)
 		{
 			return section;
@@ -383,26 +345,15 @@ final class ConfigSectionsView
 		}
 		body.add(statusLabel(state, stateColor));
 
-		body.add(configCheckBox("Remember between sessions", remember,
-			"<html><body style='width:220px'>Save a snapshot of your bank each time you close it, and"
-				+ " load it back at login, so \"+ Bank\" routes can see banked items without opening"
-				+ " the bank first. Saved per character in your RuneLite profile.</body></html>",
-			v -> plugin.setPanelConfig("rememberBank", v)));
+		body.add(toggle("rememberBank", 0, true));
 		body.add(note("Opening the bank always refreshes the snapshot; turning this off deletes it.",
 			ColorScheme.MEDIUM_GRAY_COLOR));
 
 		// Ranking bias for via-bank routes: finer control than the method tiers, and separate
 		// from the withdrawal time already counted inside those routes' ETAs.
-		int bankBias = plugin.getBankPreferenceSeconds();
-		body.add(biasSpinnerRow("Prefer bank routes by (s):",
-			"<html>Ranking bias for routes that detour via a bank, in seconds.<br>"
-				+ "Positive: bank routes rank as if faster; negative: as if slower.<br>"
-				+ "Separate from the withdrawal time, which is already in their ETA.</html>",
-			bankBias, v ->
-			{
-				plugin.setBankPreferenceSeconds(v);
-				SwingUtilities.invokeLater(refreshAll);
-			}));
+		body.add(biasSpinner("Prefer bank routes by (s):",
+			"Ranking bias in seconds for routes that detour via a bank: positive ranks them as if faster, negative as if slower; the withdrawal time is already in their ETA",
+			bankBias, plugin::setBankPreferenceSeconds));
 		section.add(body);
 		return section;
 	}
@@ -432,42 +383,9 @@ final class ConfigSectionsView
 		}
 
 		JPanel body = body();
-
-		JCheckBox master = configCheckBox("Use balloon routes", balloonsOn,
-			"<html><body style='width:220px'>Master switch: include hot air balloon flights in routes"
-				+ " (requires Enlightened Journey).<br><br>Each flight consumes one log of its"
-				+ " destination's type, paid from your inventory or from the stations' Log"
-				+ " storage.</body></html>",
-			v -> plugin.setPanelConfig("useHotAirBalloons", v));
-		body.add(master);
-
-		JCheckBox smartBox = configCheckBox("Smart Log storage", smart,
-			"<html><body style='width:220px'>Detect and keep track of the logs in the stations' Log"
-				+ " storage (read from chat messages); flights can then be paid from storage without"
-				+ " carrying logs.<br><br>When off, GPS ignores the Log storage: a flight is only"
-				+ " routed while you carry its log type (the All modes assume flights are available"
-				+ " either way).</body></html>",
-			v -> plugin.setPanelConfig("balloonSmartMode", v), 18);
-		smartBox.setEnabled(balloonsOn);
-		body.add(smartBox);
-
-		JPanel warnRow = new JPanel(new BorderLayout(5, 0));
-		warnRow.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		warnRow.setAlignmentX(Component.LEFT_ALIGNMENT);
-		warnRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
-		warnRow.setBorder(new EmptyBorder(2, 28, 2, 0));
-		String warnTooltip = "Warn when an unlocked route's Log storage count falls below this (0 = never warn)";
-		// Deliberately terse: the full wording clipped at this indent on the sidebar's width.
-		JLabel warnLabel = new JLabel("Warn below:");
-		warnLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-		warnLabel.setToolTipText(warnTooltip);
-		warnRow.add(warnLabel, BorderLayout.CENTER);
-		JSpinner warnSpinner = new JSpinner(new SpinnerNumberModel(config.balloonLogWarningThreshold(), 0, 100, 1));
-		warnSpinner.setEnabled(balloonsOn && smart);
-		warnSpinner.setToolTipText(warnTooltip);
-		warnSpinner.addChangeListener(e -> plugin.setPanelConfig("balloonLogWarningThreshold", warnSpinner.getValue()));
-		warnRow.add(warnSpinner, BorderLayout.EAST);
-		body.add(warnRow);
+		body.add(toggle("useHotAirBalloons", 0, true));
+		body.add(toggle("balloonSmartMode", 18, balloonsOn));
+		body.add(spinner("balloonLogWarningThreshold", 0, 100, 1, 28, balloonsOn && smart));
 
 		if (balloonsOn && smart)
 		{
@@ -500,8 +418,7 @@ final class ConfigSectionsView
 	/** Sailing your own boat: the master switch, the boarding assumptions and the known berths. */
 	private JPanel sailing()
 	{
-		final ShortestPathConfig config = plugin.getGpsConfig();
-		final boolean sailingOn = config.useSailing();
+		final boolean sailingOn = plugin.getGpsConfig().useSailing();
 		JPanel section = shell("Sailing (beta)",
 			"Sail your own boat between mooring points and port berths",
 			sailingExpanded, () -> sailingExpanded = !sailingExpanded,
@@ -513,38 +430,10 @@ final class ConfigSectionsView
 		}
 
 		JPanel body = body();
-		JCheckBox master = configCheckBox("Use sailing routes", sailingOn,
-			"<html><body style='width:220px'>Master switch: include sailing your own boat between"
-				+ " mooring points and port berths.<br><br>Assumes you own a boat; travel times"
-				+ " assume a mid-tier hull speed. Where routes may board is governed by your boat's"
-				+ " detected berth and the Summon Boat assumption below.</body></html>",
-			v -> plugin.setPanelConfig("useSailing", v));
-		body.add(master);
-		JCheckBox abandon = configCheckBox("Teleports may abandon the boat",
-			config.sailingTeleportAbandon(),
-			"<html><body style='width:220px'>Aboard, teleport routes leave the boat where it"
-				+ " floats.<br><br>Off: routes from the water only disembark at moorings and port"
-				+ " berths; the boat is never left at sea.</body></html>",
-			v -> plugin.setPanelConfig("sailingTeleportAbandon", v), 18);
-		abandon.setEnabled(sailingOn);
-		body.add(abandon);
-		JCheckBox helm = configCheckBox("Keep sailing while at the helm",
-			config.sailingKeepSailing(),
-			"<html><body style='width:220px'>Aboard, routes that stay on the water rank first;"
-				+ " disembark-and-teleport chains stay listed below as alternatives.</body></html>",
-			v -> plugin.setPanelConfig("sailingKeepSailing", v), 18);
-		helm.setEnabled(sailingOn);
-		body.add(helm);
-
-		JCheckBox summon = configCheckBox("Assume Summon Boat spell",
-			plugin.getGpsConfig().sailingAssumeSummon(),
-			"<html><body style='width:220px'>Routes may board at ANY mooring: the boat is"
-				+ " summoned there first (56 Magic, Pandemonium, teleport focus).<br><br>Off:"
-				+ " sailing legs start only where a boat is actually moored, and Teleport to"
-				+ " Boat (67 Magic, greater focus) covers the distance.</body></html>",
-			v -> plugin.setPanelConfig("sailingAssumeSummon", v), 18);
-		summon.setEnabled(sailingOn);
-		body.add(summon);
+		body.add(toggle("useSailing", 0, true));
+		body.add(toggle("sailingTeleportAbandon", 18, sailingOn));
+		body.add(toggle("sailingKeepSailing", 18, sailingOn));
+		body.add(toggle("sailingAssumeSummon", 18, sailingOn));
 
 		// Latest known berths: live varbits once seen this session, the stored snapshot from
 		// the last one before that. One two-column row per boat: no glyphs (the panel font has
@@ -623,14 +512,7 @@ final class ConfigSectionsView
 		}
 
 		JPanel body = body();
-
-		JCheckBox smartBox = configCheckBox("Smart tracking", smart,
-			"<html><body style='width:220px'>Detect which farmable spirit trees you have planted and"
-				+ " grown (read from the travel menu) and route only through those.<br><br>When off, all"
-				+ " farmable spirit trees are assumed available; the Spirit trees category in Travel"
-				+ " methods still turns them on or off.</body></html>",
-			v -> plugin.setPanelConfig("spiritTreeSmartMode", v));
-		body.add(iconRow("spirit_tree", 0, smartBox));
+		body.add(iconRow("spirit_tree", 0, toggle("spiritTreeSmartMode", 0, true)));
 
 		if (!smart)
 		{
@@ -757,25 +639,35 @@ final class ConfigSectionsView
 		return icon;
 	}
 
-	/** A configuration checkbox: writes its config key on change; the ConfigChanged regenerates. */
-	private static JCheckBox configCheckBox(String label, boolean value, String tooltip, Consumer<Boolean> onChange)
+	private static String tooltip(ConfigItem item)
 	{
-		return configCheckBox(label, value, tooltip, onChange, 0);
+		return "<html><body style='width:220px'>" + item.description() + "</body></html>";
+	}
+
+	/** The item's current value, read through the config (so defaults apply). */
+	private Object value(String key)
+	{
+		try
+		{
+			return ITEMS.get(key).invoke(plugin.getGpsConfig());
+		}
+		catch (ReflectiveOperationException e)
+		{
+			throw new IllegalStateException(key, e);
+		}
 	}
 
 	/**
-	 * As above, indented {@code indent} px as a sub-toggle; the border is set here so the HTML
-	 * wrap width can shrink by the same amount. The section body offers ~177px of text beside
-	 * the glyph, so the old fixed 168px body fit top-level boxes but CLIPPED indented ones (the
-	 * sailing sub-toggles rendered as "Teleports may aban": a fixed-width HTML view never
-	 * reflows, it just loses its right edge, with no ellipsis). Indent-aware width makes a long
-	 * label wrap onto a second line instead.
+	 * A config checkbox: the item's name as its label, its description as the tooltip; writes the
+	 * key on change and the ConfigChanged regenerates. Indented {@code indent} px as a sub-toggle;
+	 * the HTML wrap width shrinks by the same amount, since a fixed-width HTML view never reflows,
+	 * it loses its right edge (the sailing sub-toggles once rendered as "Teleports may aban").
 	 */
-	private static JCheckBox configCheckBox(String label, boolean value, String tooltip,
-		Consumer<Boolean> onChange, int indent)
+	private JCheckBox toggle(String key, int indent, boolean enabled)
 	{
+		ConfigItem item = item(key);
 		JCheckBox box = new JCheckBox(
-			"<html><body style='width:" + (168 - indent) + "px'>" + label + "</body></html>", value);
+			"<html><body style='width:" + (LABEL_WIDTH - indent) + "px'>" + item.name() + "</body></html>", (Boolean) value(key));
 		if (indent > 0)
 		{
 			box.setBorder(new EmptyBorder(2, indent, 2, 0));
@@ -785,7 +677,7 @@ final class ConfigSectionsView
 		// HTML text ignores the look-and-feel's disabled dimming: mirror it by hand.
 		box.addPropertyChangeListener("enabled", e -> box.setForeground(
 			box.isEnabled() ? ColorScheme.LIGHT_GRAY_COLOR : ColorScheme.MEDIUM_GRAY_COLOR));
-		box.setToolTipText(tooltip);
+		box.setToolTipText(tooltip(item));
 		box.setAlignmentX(Component.LEFT_ALIGNMENT);
 		box.setFocusPainted(false);
 		// The look-and-feel's box is nearly invisible on the dark background: use the catalog's
@@ -797,7 +689,46 @@ final class ConfigSectionsView
 		box.setRolloverSelectedIcon(RouteIcons.CHECK_HOVER);
 		box.setDisabledIcon(RouteIcons.CROSS_DIM);
 		box.setDisabledSelectedIcon(RouteIcons.CHECK_DIM);
-		box.addActionListener(e -> onChange.accept(box.isSelected()));
+		box.setEnabled(enabled);
+		box.addActionListener(e -> plugin.setPanelConfig(key, box.isSelected()));
 		return box;
+	}
+
+	/** A config spinner row: the item's name as caption, its description as tooltip. */
+	private JPanel spinner(String key, int min, int max, int step, int indent, boolean enabled)
+	{
+		ConfigItem item = item(key);
+		return spinnerRow(item.name() + ":", tooltip(item), (Integer) value(key), min, max, step, indent, enabled,
+			v -> plugin.setPanelConfig(key, v));
+	}
+
+	/** A "Bias (seconds)" spinner row: minus 120 to 120 in steps of 5, wired to the given setter. */
+	private JPanel biasSpinner(String caption, String tooltip, int value, IntConsumer setter)
+	{
+		return spinnerRow(caption, tooltip, value, -120, 120, 5, 0, true, v ->
+		{
+			setter.accept(v);
+			SwingUtilities.invokeLater(refreshAll);
+		});
+	}
+
+	private static JPanel spinnerRow(String caption, String tooltip, int value, int min, int max, int step,
+		int indent, boolean enabled, IntConsumer setter)
+	{
+		JPanel row = new JPanel(new BorderLayout(5, 0));
+		row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		row.setAlignmentX(Component.LEFT_ALIGNMENT);
+		row.setBorder(new EmptyBorder(2, indent, 2, 0));
+		JLabel label = new JLabel(caption);
+		label.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		label.setToolTipText(tooltip);
+		row.add(label, BorderLayout.CENTER);
+		JSpinner spinner = new JSpinner(new SpinnerNumberModel(value, min, max, step));
+		spinner.setEnabled(enabled);
+		spinner.setToolTipText(tooltip);
+		spinner.addChangeListener(e -> setter.accept((Integer) spinner.getValue()));
+		row.add(spinner, BorderLayout.EAST);
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, spinner.getPreferredSize().height + 4));
+		return row;
 	}
 }
