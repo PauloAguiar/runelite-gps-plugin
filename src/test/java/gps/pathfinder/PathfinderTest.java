@@ -1063,7 +1063,7 @@ public class PathfinderTest
 		setupInventory();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
-		assertFalse("No transports should be present that require a pickaxe", hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.PICKAXE.getIds()));
+		assertFalse("No transports should be present that require a pickaxe", hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.fromName("PICKAXE").getIds()));
 	}
 
 	@Test
@@ -1074,7 +1074,7 @@ public class PathfinderTest
 		setupConfig(QuestState.FINISHED, 50, TeleportationItem.NONE); // transport in data requires 50 Mining
 
 		assertTrue("Transports requiring a pickaxe should be present",
-			hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.PICKAXE.getIds()));
+			hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.fromName("PICKAXE").getIds()));
 	}
 
 	@Test
@@ -1084,7 +1084,7 @@ public class PathfinderTest
 		setupInventory();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
-		assertFalse("No transports should be present that require an axe", hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.AXE.getIds()));
+		assertFalse("No transports should be present that require an axe", hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.fromName("AXE").getIds()));
 	}
 
 	@Test
@@ -1095,7 +1095,7 @@ public class PathfinderTest
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
 		assertTrue("Transports requiring an axe should be present",
-			hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.AXE.getIds()));
+			hasTransportWithRequiredItem(pathfinderConfig.getTransports(), ItemVariations.fromName("AXE").getIds()));
 	}
 
 	@Test
@@ -1471,13 +1471,13 @@ public class PathfinderTest
 		{
 			expected = new TransportItems(
 				new int[][]{
-					ItemVariations.AIR_RUNE.getIds(),
-					ItemVariations.FIRE_RUNE.getIds(),
-					ItemVariations.LAW_RUNE.getIds()},
+					ItemVariations.fromName("AIR_RUNE").getIds(),
+					ItemVariations.fromName("FIRE_RUNE").getIds(),
+					ItemVariations.fromName("LAW_RUNE").getIds()},
 				new int[][]{
-					ItemVariations.STAFF_OF_AIR.getIds(),
-					ItemVariations.STAFF_OF_FIRE.getIds(), null},
-				new int[][]{null, ItemVariations.TOME_OF_FIRE.getIds(), null},
+					ItemVariations.fromName("STAFF_OF_AIR").getIds(),
+					ItemVariations.fromName("STAFF_OF_FIRE").getIds(), null},
+				new int[][]{null, ItemVariations.fromName("TOME_OF_FIRE").getIds(), null},
 				new int[]{3, 1, 1});
 			assertEquals(expected, actual);
 		}
@@ -1496,13 +1496,13 @@ public class PathfinderTest
 		{
 			expected = new TransportItems(
 				new int[][]{
-					ItemVariations.FIRE_RUNE.getIds(),
-					ItemVariations.LAW_RUNE.getIds()},
+					ItemVariations.fromName("FIRE_RUNE").getIds(),
+					ItemVariations.fromName("LAW_RUNE").getIds()},
 				new int[][]{
-					ItemVariations.STAFF_OF_FIRE.getIds(),
+					ItemVariations.fromName("STAFF_OF_FIRE").getIds(),
 					null},
 				new int[][]{
-					ItemVariations.TOME_OF_FIRE.getIds(),
+					ItemVariations.fromName("TOME_OF_FIRE").getIds(),
 					null},
 				new int[]{2, 2});
 			assertEquals(expected, actual);
