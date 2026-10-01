@@ -1,346 +1,106 @@
 package gps;
 
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
 import lombok.Getter;
-import net.runelite.api.gameval.ItemID;
 
-public enum ItemVariations
+/**
+ * An item family: the name the transport TSVs use in their Items column ("AXE", "COINS") and
+ * every item id that counts as that item, read from item-variations.tsv. For a rune family,
+ * rune-sources.tsv names the staff and offhand (tome) families that stand in for it. Data rather
+ * than code, so a new ornament kit is a row, not a release of logic.
+ */
+public final class ItemVariations
 {
-	AIR_RUNE(ItemID.AIRRUNE,
-		ItemID.MISTRUNE,
-		ItemID.DUSTRUNE,
-		ItemID.SMOKERUNE),
-	ARDOUGNE_CLOAK(ItemID.ARDY_CAPE_EASY,
-		ItemID.ARDY_CAPE_MEDIUM,
-		ItemID.ARDY_CAPE_HARD,
-		ItemID.ARDY_CAPE_ELITE,
-		ItemID.SKILLCAPE_MAX_ARDY),
-	ASTRAL_RUNE(ItemID.ASTRALRUNE),
-	AXE(ItemID.BRONZE_AXE,
-		ItemID.IRON_AXE,
-		ItemID.STEEL_AXE,
-		ItemID.BLACK_AXE,
-		ItemID.MITHRIL_AXE,
-		ItemID.ADAMANT_AXE,
-		ItemID.RUNE_AXE,
-		ItemID.DRAGON_AXE,
-		ItemID.CRYSTAL_AXE,
-		ItemID.CRYSTAL_AXE_INACTIVE,
-		ItemID.TRAIL_GILDED_AXE,
-		ItemID.INFERNAL_AXE,
-		ItemID.INFERNAL_AXE_EMPTY,
-		// Trailblazer ornament kit variants: dragon axe (or), infernal axe (or) charged/uncharged.
-		ItemID.TRAILBLAZER_AXE_NO_INFERNAL,
-		ItemID.TRAILBLAZER_AXE,
-		ItemID.TRAILBLAZER_AXE_EMPTY,
-		ItemID._3A_AXE,
-		// Felling axes (Forestry) cut canoes and trees like their one-handed counterparts.
-		ItemID.BRONZE_AXE_2H,
-		ItemID.IRON_AXE_2H,
-		ItemID.STEEL_AXE_2H,
-		ItemID.BLACK_AXE_2H,
-		ItemID.MITHRIL_AXE_2H,
-		ItemID.ADAMANT_AXE_2H,
-		ItemID.RUNE_AXE_2H,
-		ItemID.DRAGON_AXE_2H,
-		ItemID.CRYSTAL_AXE_2H,
-		ItemID.CRYSTAL_AXE_2H_INACTIVE,
-		ItemID._3A_AXE_2H),
-	BANANA(ItemID.BANANA),
-	BLOOD_RUNE(ItemID.BLOODRUNE),
-	BROWN_APRON(ItemID.BROWN_APRON,
-		ItemID.GOLDEN_APRON,
-		ItemID.SKILLCAPE_CRAFTING,
-		ItemID.SKILLCAPE_CRAFTING_TRIMMED,
-		ItemID.SKILLCAPE_CRAFTING_HOOD),
-	BRYOPHYTAS_STAFF(ItemID.NATURE_STAFF_CHARGED),
-	CAPESLOT(ItemID.CASTLEWARS_HOOD_SARADOMIN_PRIZE, // TODO: also use slot or item category
-		ItemID.CASTLEWARS_HOOD_ZAMORAK_PRIZE),
-	CLIMBING_BOOTS(ItemID.DEATH_CLIMBINGBOOTS,
-		ItemID.CLIMBING_BOOTS_G),
-	COINS(ItemID.COINS),
-	LOGS(ItemID.LOGS),
-	OAK_LOGS(ItemID.OAK_LOGS),
-	WILLOW_LOGS(ItemID.WILLOW_LOGS),
-	YEW_LOGS(ItemID.YEW_LOGS),
-	MAGIC_LOGS(ItemID.MAGIC_LOGS),
-	CROSSBOW(ItemID.CROSSBOW,
-		ItemID.PHOENIX_CROSSBOW,
-		ItemID.DTTD_BONE_CROSSBOW,
-		ItemID.HUNTING_CROSSBOW,
-		ItemID.XBOWS_CROSSBOW_BRONZE,
-		ItemID.XBOWS_CROSSBOW_IRON,
-		ItemID.XBOWS_CROSSBOW_STEEL,
-		ItemID.XBOWS_CROSSBOW_MITHRIL,
-		ItemID.XBOWS_CROSSBOW_ADAMANTITE,
-		ItemID.XBOWS_CROSSBOW_RUNITE,
-		ItemID.XBOWS_CROSSBOW_DRAGON,
-		ItemID.DRAGONHUNTER_XBOW,
-		ItemID.BARROWS_KARIL_WEAPON,
-		ItemID.BARROWS_KARIL_WEAPON_BROKEN,
-		ItemID.BARROWS_KARIL_WEAPON_25,
-		ItemID.BARROWS_KARIL_WEAPON_50,
-		ItemID.BARROWS_KARIL_WEAPON_75,
-		ItemID.BARROWS_KARIL_WEAPON_100,
-		ItemID.ACB,
-		ItemID.ZARYTE_XBOW),
-	DRAMEN_STAFF(ItemID.DRAMEN_STAFF,
-		ItemID.DRAMEN_STAFF_AIR,
-		ItemID.DRAMEN_STAFF_FIRE,
-		ItemID.DRAMEN_STAFF_WATER,
-		ItemID.LUNAR_MOONCLAN_LIMINAL_STAFF),
-	DUST_BATTLESTAFF(ItemID.DUST_BATTLESTAFF,
-		ItemID.MYSTIC_DUST_BATTLESTAFF),
-	DUST_RUNE(ItemID.DUSTRUNE),
-	DUSTY_KEY(ItemID.DUSTY_KEY),
-	EARTH_RUNE(ItemID.EARTHRUNE,
-		ItemID.DUSTRUNE,
-		ItemID.MUDRUNE,
-		ItemID.LAVARUNE),
-	ECTO_TOKEN(ItemID.ECTOTOKEN),
-	FIRE_RUNE(ItemID.FIRERUNE,
-		ItemID.SMOKERUNE,
-		ItemID.STEAMRUNE,
-		ItemID.LAVARUNE),
-	GAMES_NECKLACE(ItemID.NECKLACE_OF_MINIGAMES_8,
-		ItemID.NECKLACE_OF_MINIGAMES_7,
-		ItemID.NECKLACE_OF_MINIGAMES_6,
-		ItemID.NECKLACE_OF_MINIGAMES_5,
-		ItemID.NECKLACE_OF_MINIGAMES_4,
-		ItemID.NECKLACE_OF_MINIGAMES_3,
-		ItemID.NECKLACE_OF_MINIGAMES_2,
-		ItemID.NECKLACE_OF_MINIGAMES_1),
-	GLOWING_FUNGUS(ItemID.GLOWING_FUNGUS),
-	HEADSLOT(ItemID.CASTLEWARS_CLOAK_SARADOMIN_PRIZE, // TODO: also use slot or item category
-		ItemID.CASTLEWARS_CLOAK_ZAMORAK_PRIZE),
-	LAVA_BATTLESTAFF(ItemID.LAVA_BATTLESTAFF,
-		ItemID.LAVA_BATTLESTAFF_PRETTY,
-		ItemID.MYSTIC_LAVA_STAFF,
-		ItemID.MYSTIC_LAVA_STAFF_PRETTY),
-	LAVA_RUNE(ItemID.LAVARUNE),
-	LAW_RUNE(ItemID.LAWRUNE),
-	MACHETE(ItemID.MACHETTE,
-		ItemID.MACHETTE_OPAL,
-		ItemID.MACHETTE_JADE,
-		ItemID.MACHETTE_REDTOPAZ),
-	MAX_CAPE(ItemID.SKILLCAPE_MAX,
-		ItemID.SKILLCAPE_MAX_WORN,
-		ItemID.SKILLCAPE_MAX_FIRECAPE,
-		ItemID.SKILLCAPE_MAX_FIRECAPE_DUMMY,
-		ItemID.SKILLCAPE_MAX_FIRECAPE_TROUVER,
-		ItemID.SKILLCAPE_MAX_SARADOMIN,
-		ItemID.SKILLCAPE_MAX_ZAMORAK,
-		ItemID.SKILLCAPE_MAX_GUTHIX,
-		ItemID.SKILLCAPE_MAX_ANMA,
-		ItemID.SKILLCAPE_MAX_ARDY,
-		ItemID.SKILLCAPE_MAX_INFERNALCAPE,
-		ItemID.SKILLCAPE_MAX_INFERNALCAPE_DUMMY,
-		ItemID.SKILLCAPE_MAX_INFERNALCAPE_TROUVER,
-		ItemID.SKILLCAPE_MAX_SARADOMIN2,
-		ItemID.SKILLCAPE_MAX_SARADOMIN2_TROUVER,
-		ItemID.SKILLCAPE_MAX_ZAMORAK2,
-		ItemID.SKILLCAPE_MAX_ZAMORAK2_TROUVER,
-		ItemID.SKILLCAPE_MAX_GUTHIX2,
-		ItemID.SKILLCAPE_MAX_GUTHIX2_TROUVER,
-		ItemID.SKILLCAPE_MAX_ASSEMBLER,
-		ItemID.SKILLCAPE_MAX_ASSEMBLER_TROUVER,
-		ItemID.SKILLCAPE_MAX_MYTHICAL,
-		ItemID.SKILLCAPE_MAX_ASSEMBLER_MASORI,
-		ItemID.SKILLCAPE_MAX_ASSEMBLER_MASORI_TROUVER,
-		ItemID.SKILLCAPE_MAX_DIZANAS,
-		ItemID.SKILLCAPE_MAX_DIZANAS_TROUVER),
-	MAX_HOOD(ItemID.SKILLCAPE_MAX_HOOD,
-		ItemID.SKILLCAPE_MAX_HOOD_FIRECAPE,
-		ItemID.SKILLCAPE_MAX_HOOD_SARADOMIN,
-		ItemID.SKILLCAPE_MAX_HOOD_ZAMORAK,
-		ItemID.SKILLCAPE_MAX_HOOD_GUTHIX,
-		ItemID.SKILLCAPE_MAX_HOOD_ANMA,
-		ItemID.SKILLCAPE_MAX_HOOD_ARDY,
-		ItemID.SKILLCAPE_MAX_HOOD_INFERNALCAPE,
-		ItemID.SKILLCAPE_MAX_HOOD_SARADOMIN2,
-		ItemID.SKILLCAPE_MAX_HOOD_ZAMORAK2,
-		ItemID.SKILLCAPE_MAX_HOOD_GUTHIX2,
-		ItemID.SKILLCAPE_MAX_HOOD_ASSEMBLER,
-		ItemID.SKILLCAPE_MAX_HOOD_MYTHICAL,
-		ItemID.SKILLCAPE_MAX_HOOD_ASSEMBLER_MASORI,
-		ItemID.SKILLCAPE_MAX_HOOD_DIZANAS),
-	MAZE_KEY(ItemID.MELZARKEY),
-	MIND_RUNE(ItemID.MINDRUNE),
-	MIST_BATTLESTAFF(ItemID.MIST_BATTLESTAFF,
-		ItemID.MYSTIC_MIST_BATTLESTAFF),
-	MIST_RUNE(ItemID.MISTRUNE),
-	MITH_GRAPPLE(ItemID.XBOWS_GRAPPLE_TIP_BOLT_MITHRIL_ROPE),
-	MUD_BATTLESTAFF(ItemID.MUD_BATTLESTAFF,
-		ItemID.MYSTIC_MUD_STAFF),
-	MUD_RUNE(ItemID.MUDRUNE),
-	MYSTIC_DUST_STAFF(ItemID.MYSTIC_DUST_BATTLESTAFF),
-	MYSTIC_LAVA_STAFF(ItemID.MYSTIC_LAVA_STAFF),
-	MYSTIC_MIST_STAFF(ItemID.MYSTIC_MIST_BATTLESTAFF),
-	MYSTIC_MUD_STAFF(ItemID.MYSTIC_MUD_STAFF),
-	MYSTIC_SMOKE_STAFF(ItemID.MYSTIC_SMOKE_BATTLESTAFF),
-	MYSTIC_STEAM_STAFF(ItemID.MYSTIC_STEAM_BATTLESTAFF),
-	NATURE_RUNE(ItemID.NATURERUNE),
-	PICKAXE(ItemID.BRONZE_PICKAXE,
-		ItemID.IRON_PICKAXE,
-		ItemID.STEEL_PICKAXE,
-		ItemID.BLACK_PICKAXE,
-		ItemID.MITHRIL_PICKAXE,
-		ItemID.ADAMANT_PICKAXE,
-		ItemID.RUNE_PICKAXE,
-		ItemID.DRAGON_PICKAXE,
-		ItemID.CRYSTAL_PICKAXE,
-		ItemID.TRAIL_GILDED_PICKAXE,
-		ItemID._3A_PICKAXE,
-		ItemID.DRAGON_PICKAXE_PRETTY,
-		ItemID.ZALCANO_PICKAXE,
-		ItemID.TRAILBLAZER_PICKAXE_NO_INFERNAL,
-		ItemID.TRAILBLAZER_RELOADED_PICKAXE_NO_INFERNAL,
-		ItemID.INFERNAL_PICKAXE),
-	ROPE(ItemID.ROPE),
-	SHANTAY_PASS(ItemID.SHANTAY_PASS),
-	SKAVID_MAP(ItemID.SKAVIDMAP),
-	SMOKE_BATTLESTAFF(ItemID.SMOKE_BATTLESTAFF,
-		ItemID.MYSTIC_SMOKE_BATTLESTAFF),
-	SMOKE_RUNE(ItemID.SMOKERUNE),
-	SOUL_RUNE(ItemID.SOULRUNE),
-	SPADE(ItemID.SPADE),
-	STAFF_OF_AIR(ItemID.STAFF_OF_AIR,
-		ItemID.MYSTIC_AIR_STAFF,
-		ItemID.AIR_BATTLESTAFF,
-		ItemID.MIST_BATTLESTAFF,
-		ItemID.DUST_BATTLESTAFF,
-		ItemID.SMOKE_BATTLESTAFF,
-		ItemID.MYSTIC_MIST_BATTLESTAFF,
-		ItemID.MYSTIC_DUST_BATTLESTAFF,
-		ItemID.MYSTIC_SMOKE_BATTLESTAFF,
-		ItemID.SHADOWFLAME_QUADRANT),
-	STAFF_OF_EARTH(ItemID.STAFF_OF_EARTH,
-		ItemID.MYSTIC_EARTH_STAFF,
-		ItemID.EARTH_BATTLESTAFF,
-		ItemID.DUST_BATTLESTAFF,
-		ItemID.MUD_BATTLESTAFF,
-		ItemID.LAVA_BATTLESTAFF,
-		// The "(or)" cosmetic variants are the same staves (field report 2026-08-23: a pretty
-		// lava staff counted as fire but not earth, so the Civitas spell demanded bank runes).
-		ItemID.LAVA_BATTLESTAFF_PRETTY,
-		ItemID.MYSTIC_DUST_BATTLESTAFF,
-		ItemID.MYSTIC_MUD_STAFF,
-		ItemID.MYSTIC_LAVA_STAFF,
-		ItemID.MYSTIC_LAVA_STAFF_PRETTY,
-		ItemID.SHADOWFLAME_QUADRANT),
-	STAFF_OF_FIRE(ItemID.STAFF_OF_FIRE,
-		ItemID.MYSTIC_FIRE_STAFF,
-		ItemID.FIRE_BATTLESTAFF,
-		ItemID.SMOKE_BATTLESTAFF,
-		ItemID.STEAM_BATTLESTAFF,
-		ItemID.STEAM_BATTLESTAFF_PRETTY,
-		ItemID.LAVA_BATTLESTAFF,
-		ItemID.LAVA_BATTLESTAFF_PRETTY,
-		ItemID.MYSTIC_SMOKE_BATTLESTAFF,
-		ItemID.MYSTIC_STEAM_BATTLESTAFF,
-		ItemID.MYSTIC_LAVA_STAFF,
-		ItemID.MYSTIC_LAVA_STAFF_PRETTY,
-		ItemID.MYSTIC_STEAM_BATTLESTAFF_PRETTY,
-		ItemID.TWINFLAME_STAFF,
-		ItemID.SHADOWFLAME_QUADRANT),
-	STAFF_OF_WATER(ItemID.STAFF_OF_WATER,
-		ItemID.MYSTIC_WATER_STAFF,
-		ItemID.WATER_BATTLESTAFF,
-		ItemID.MIST_BATTLESTAFF,
-		ItemID.MUD_BATTLESTAFF,
-		ItemID.STEAM_BATTLESTAFF,
-		ItemID.STEAM_BATTLESTAFF_PRETTY,
-		ItemID.MYSTIC_MIST_BATTLESTAFF,
-		ItemID.MYSTIC_MUD_STAFF,
-		ItemID.MYSTIC_STEAM_BATTLESTAFF,
-		ItemID.MYSTIC_STEAM_BATTLESTAFF_PRETTY,
-		ItemID.TWINFLAME_STAFF,
-		ItemID.SHADOWFLAME_QUADRANT),
-	STEAM_BATTLESTAFF(ItemID.STEAM_BATTLESTAFF,
-		ItemID.STEAM_BATTLESTAFF_PRETTY,
-		ItemID.MYSTIC_STEAM_BATTLESTAFF,
-		ItemID.MYSTIC_STEAM_BATTLESTAFF_PRETTY,
-		ItemID.TWINFLAME_STAFF),
-	STEAM_RUNE(ItemID.STEAMRUNE),
-	TOME_OF_EARTH(ItemID.TOME_OF_EARTH),
-	TOME_OF_FIRE(ItemID.TOME_OF_FIRE),
-	TOME_OF_WATER(ItemID.TOME_OF_WATER),
-	WATER_RUNE(ItemID.WATERRUNE,
-		ItemID.MISTRUNE,
-		ItemID.MUDRUNE,
-		ItemID.STEAMRUNE),
-	;
+	private static final Map<String, ItemVariations> FAMILIES = load();
+	/** The one family code names directly: the fairy rings' staff, with its bank and withdraw hints. */
+	public static final ItemVariations DRAMEN_STAFF = fromName("DRAMEN_STAFF");
 
+	private final String name;
 	@Getter
-	private final int[] ids;
+	private int[] ids = new int[0];
+	private ItemVariations staves;
+	private ItemVariations offhands;
 
-	ItemVariations(int... ids)
+	private ItemVariations(String name)
 	{
-		this.ids = ids;
+		this.name = name;
 	}
 
-	public static int[] staves(ItemVariations itemVariation)
-	{
-		if (itemVariation == null)
-		{
-			return null;
-		}
-		switch (itemVariation)
-		{
-			case AIR_RUNE:
-				return STAFF_OF_AIR.ids;
-			case DUST_RUNE:
-				return DUST_BATTLESTAFF.ids;
-			case EARTH_RUNE:
-				return STAFF_OF_EARTH.ids;
-			case FIRE_RUNE:
-				return STAFF_OF_FIRE.ids;
-			case LAVA_RUNE:
-				return LAVA_BATTLESTAFF.ids;
-			case MIST_RUNE:
-				return MIST_BATTLESTAFF.ids;
-			case MUD_RUNE:
-				return MUD_BATTLESTAFF.ids;
-			case NATURE_RUNE:
-				return BRYOPHYTAS_STAFF.ids;
-			case SMOKE_RUNE:
-				return SMOKE_BATTLESTAFF.ids;
-			case STEAM_RUNE:
-				return STEAM_BATTLESTAFF.ids;
-			case WATER_RUNE:
-				return STAFF_OF_WATER.ids;
-			default:
-				return null;
-		}
-	}
-
-	public static int[] offhands(ItemVariations itemVariation)
-	{
-		if (itemVariation == null)
-		{
-			return null;
-		}
-		switch (itemVariation)
-		{
-			case EARTH_RUNE:
-				return TOME_OF_EARTH.ids;
-			case FIRE_RUNE:
-				return TOME_OF_FIRE.ids;
-			case WATER_RUNE:
-				return TOME_OF_WATER.ids;
-			default:
-				return null;
-		}
-	}
-
+	/** The family of that name, or null when no family carries it (the parser then tries a raw item id). */
 	public static ItemVariations fromName(String name)
 	{
-		for (ItemVariations itemVariations : ItemVariations.values())
+		return FAMILIES.get(name);
+	}
+
+	/** The item ids of the staff family that is an unlimited source of this rune family, or null. */
+	public static int[] staves(ItemVariations family)
+	{
+		return family == null || family.staves == null ? null : family.staves.ids;
+	}
+
+	/** The item ids of the offhand family (a tome) that covers this rune family, or null. */
+	public static int[] offhands(ItemVariations family)
+	{
+		return family == null || family.offhands == null ? null : family.offhands.ids;
+	}
+
+	@Override
+	public String toString()
+	{
+		return name;
+	}
+
+	private static Map<String, ItemVariations> load()
+	{
+		Map<String, ItemVariations> families = new LinkedHashMap<>();
+		for (String[] row : rows("/item-variations.tsv"))
 		{
-			if (itemVariations.name().equals(name))
+			ItemVariations family = families.computeIfAbsent(row[0], ItemVariations::new);
+			family.ids = Arrays.copyOf(family.ids, family.ids.length + 1);
+			family.ids[family.ids.length - 1] = Integer.parseInt(row[1]);
+		}
+		for (String[] row : rows("/rune-sources.tsv"))
+		{
+			ItemVariations rune = families.get(row[0]);
+			rune.staves = row.length > 1 && !row[1].isEmpty() ? families.get(row[1]) : null;
+			rune.offhands = row.length > 2 && !row[2].isEmpty() ? families.get(row[2]) : null;
+		}
+		return families;
+	}
+
+	/** The data rows of a TSV resource: comment lines and the header skipped, fields tab-split. */
+	private static List<String[]> rows(String resource)
+	{
+		List<String[]> rows = new ArrayList<>();
+		try (InputStream in = ItemVariations.class.getResourceAsStream(resource);
+			Scanner scanner = new Scanner(in, "UTF-8"))
+		{
+			boolean header = true;
+			while (scanner.hasNextLine())
 			{
-				return itemVariations;
+				String line = scanner.nextLine();
+				if (line.isEmpty() || line.startsWith("#"))
+				{
+					continue;
+				}
+				if (header)
+				{
+					header = false;
+					continue;
+				}
+				rows.add(line.split("\t"));
 			}
 		}
-		return null;
+		catch (java.io.IOException e)
+		{
+			throw new IllegalStateException(resource, e);
+		}
+		return rows;
 	}
 }
