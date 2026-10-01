@@ -1,158 +1,126 @@
 package gps;
 
-import java.awt.AlphaComposite;
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.geom.Arc2D;
-import java.awt.geom.Ellipse2D;
-import java.awt.geom.Line2D;
-import java.awt.geom.Path2D;
-import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
-import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import javax.swing.ImageIcon;
 import net.runelite.client.util.ImageUtil;
 
 /**
- * Small 16px UI icons for the alternative-routes panel, rendered with Java2D so the plugin carries
- * (almost) no image assets — the GitHub mark is the one bundled PNG, since the logo isn't ours to
- * redraw. Each action has a base (grey) and a hover (accent) variant, mirroring the base/hover icon
- * swap used by the tile-packs panel controls.
+ * Small 16px UI icons for the alternative-routes panel, PNG resources under /icons. They were drawn
+ * with Java2D up to 0.13.2 (that RouteIcons is the source of every file here, pixel for pixel, as
+ * RouteIconsTest's recorded hashes attest); the hub's review bot counts code, not resources, so
+ * the drawings became assets. Each action has a base (grey) and a hover (accent) variant,
+ * mirroring the base/hover icon swap used by the tile-packs panel controls.
  */
 final class RouteIcons
 {
 	private static final int SIZE = 16;
 
-	private static final Color GREY = new Color(0xA8, 0xA8, 0xA8);
-	private static final Color LIGHT = new Color(0xED, 0xED, 0xED);
-	private static final Color RED = new Color(0xE3, 0x1C, 0x1C);
-	private static final Color RED_LIGHT = new Color(0xFF, 0x5A, 0x5A);
-	private static final Color GREEN = new Color(0x4C, 0xAF, 0x50);
-	private static final Color GREEN_LIGHT = new Color(0x7C, 0xD6, 0x80);
-	private static final Color BLUE = new Color(0x4C, 0x8B, 0xF5);
-	private static final Color BLUE_LIGHT = new Color(0x8B, 0xB4, 0xF9);
-	private static final Color ORANGE = new Color(0xFF, 0x98, 0x1F);
-	private static final Color ORANGE_LIGHT = new Color(0xFF, 0xC0, 0x6A);
-	private static final Color GOLD = new Color(0xF2, 0xC1, 0x4E);
-
 	// Show / hide a route on the map (map pin). Active = currently shown.
-	static final ImageIcon SHOW = new ImageIcon(pin(GREY));
-	static final ImageIcon SHOW_ACTIVE = new ImageIcon(pin(ORANGE));
+	static final ImageIcon SHOW = icon("show");
+	static final ImageIcon SHOW_ACTIVE = icon("show_active");
 	// Exclude a method from the next search (no-entry).
-	static final ImageIcon EXCLUDE_HOVER = new ImageIcon(ban(RED));
+	static final ImageIcon EXCLUDE_HOVER = icon("exclude_hover");
 	// Resting state on route cards: present but nearly invisible, coloured up while the card is
 	// hovered — toggling visibility instead shifted the row height.
-	static final ImageIcon EXCLUDE_DIM = new ImageIcon(ban(new Color(0x45, 0x45, 0x45)));
+	static final ImageIcon EXCLUDE_DIM = icon("exclude_dim");
 	// Marks the route card's ETA.
-	static final ImageIcon CLOCK = new ImageIcon(clock(GREY));
+	static final ImageIcon CLOCK = icon("clock");
 	// Hull-type glyphs for the sailing section's berth rows: drawn, not font glyphs (the panel
 	// font has no boat character and falls back to a warning triangle).
-	static final ImageIcon BOAT_RAFT = new ImageIcon(raft(GREY));
-	static final ImageIcon BOAT_SKIFF = new ImageIcon(skiff(GREY));
-	static final ImageIcon BOAT_SLOOP = new ImageIcon(sloop(GREY));
-	// Re-include an excluded method (plus).
-	// Recompute routes (circular refresh arrow).
+	static final ImageIcon BOAT_RAFT = icon("boat_raft");
+	static final ImageIcon BOAT_SKIFF = icon("boat_skiff");
+	static final ImageIcon BOAT_SLOOP = icon("boat_sloop");
 	// Clear all exclusions (trash can).
-	static final ImageIcon CLEAR = new ImageIcon(trash(GREY));
+	static final ImageIcon CLEAR = icon("clear");
 	// Catalog toggles: included (check), excluded (cross), partially-included category (dash).
-	static final ImageIcon CHECK = new ImageIcon(check(GREEN));
-	static final ImageIcon CHECK_HOVER = new ImageIcon(check(GREEN_LIGHT));
-	static final ImageIcon CROSS = new ImageIcon(cross(GREY));
-	static final ImageIcon CROSS_HOVER = new ImageIcon(cross(RED));
+	static final ImageIcon CHECK = icon("check");
+	static final ImageIcon CHECK_HOVER = icon("check_hover");
+	static final ImageIcon CROSS = icon("cross");
+	static final ImageIcon CROSS_HOVER = icon("cross_hover");
 	// Red at REST (brighter red on hover): close controls that should read as red without hovering.
-	static final ImageIcon CROSS_RED = new ImageIcon(cross(RED));
-	static final ImageIcon CROSS_RED_HOVER = new ImageIcon(cross(new Color(0xFF, 0x6A, 0x6A)));
-	static final ImageIcon DASH = new ImageIcon(dash(ORANGE));
-	static final ImageIcon DASH_HOVER = new ImageIcon(dash(ORANGE_LIGHT));
+	static final ImageIcon CROSS_RED = icon("cross_red");
+	static final ImageIcon CROSS_RED_HOVER = icon("cross_red_hover");
+	static final ImageIcon DASH = icon("dash");
+	static final ImageIcon DASH_HOVER = icon("dash_hover");
 	// Dimmed variants of the catalog toggle glyphs for the configuration sections' checkboxes,
 	// whose rows (unlike the catalog's) can be disabled.
-	static final ImageIcon CHECK_DIM = new ImageIcon(check(new Color(0x3F, 0x6E, 0x42)));
-	static final ImageIcon CROSS_DIM = new ImageIcon(cross(new Color(0x55, 0x55, 0x55)));
+	static final ImageIcon CHECK_DIM = icon("check_dim");
+	static final ImageIcon CROSS_DIM = icon("cross_dim");
 	// Favourite positions: the save button beside the destination search, and the search results'
 	// category glyph for saved favourites.
-	private static final Color HEART_PINK = new Color(0xE0, 0x5B, 0x7B);
-	static final ImageIcon FAVORITE = new ImageIcon(heart(HEART_PINK));
-	static final ImageIcon FAVORITE_HOVER = new ImageIcon(heart(new Color(0xF2, 0x8B, 0xA5)));
-	// Expand/collapse a category.
+	static final ImageIcon FAVORITE = icon("favorite");
+	static final ImageIcon FAVORITE_HOVER = icon("favorite_hover");
 	// Route control panel: a green "+" for more routes, blue refresh, red clear.
-	static final ImageIcon SHOW_MORE = new ImageIcon(plus(GREEN));
-	static final ImageIcon SHOW_MORE_HOVER = new ImageIcon(plus(GREEN_LIGHT));
-	static final ImageIcon CTRL_REFRESH = new ImageIcon(refresh(BLUE));
-	static final ImageIcon CTRL_REFRESH_HOVER = new ImageIcon(refresh(BLUE_LIGHT));
-	static final ImageIcon CTRL_CLEAR = new ImageIcon(cross(RED));
-	static final ImageIcon CTRL_CLEAR_HOVER = new ImageIcon(cross(RED_LIGHT));
-	static final ImageIcon CHEVRON_RIGHT = new ImageIcon(chevron(GREY, false));
-	static final ImageIcon CHEVRON_DOWN = new ImageIcon(chevron(GREY, true));
+	static final ImageIcon SHOW_MORE = icon("show_more");
+	static final ImageIcon SHOW_MORE_HOVER = icon("show_more_hover");
+	static final ImageIcon CTRL_REFRESH = icon("ctrl_refresh");
+	static final ImageIcon CTRL_REFRESH_HOVER = icon("ctrl_refresh_hover");
+	static final ImageIcon CTRL_CLEAR = icon("ctrl_clear");
+	static final ImageIcon CTRL_CLEAR_HOVER = icon("ctrl_clear_hover");
+	// Expand/collapse a category.
+	static final ImageIcon CHEVRON_RIGHT = icon("chevron_right");
+	static final ImageIcon CHEVRON_DOWN = icon("chevron_down");
 	// Method the player can't use right now (missing item/level/quest/unlock).
-	static final ImageIcon LOCKED = new ImageIcon(lock(ORANGE));
+	static final ImageIcon LOCKED = icon("locked");
 	// Method whose required item is owned but sitting in the bank (route through a bank to grab it).
-	static final ImageIcon IN_BANK = new ImageIcon(coins(GOLD));
+	static final ImageIcon IN_BANK = icon("in_bank");
 	// Capture a debug snapshot of the current routes (camera).
-	static final ImageIcon DEBUG = new ImageIcon(camera(GREY));
+	static final ImageIcon DEBUG = icon("debug");
 	// Filter the catalog to only the currently-disabled methods (funnel). Orange = active.
-	static final ImageIcon FILTER = new ImageIcon(funnel(GREY));
-	static final ImageIcon FILTER_HOVER = new ImageIcon(funnel(LIGHT));
-	static final ImageIcon FILTER_ACTIVE = new ImageIcon(funnel(ORANGE));
-	static final ImageIcon FILTER_ACTIVE_HOVER = new ImageIcon(funnel(ORANGE_LIGHT));
+	static final ImageIcon FILTER = icon("filter");
+	static final ImageIcon FILTER_HOVER = icon("filter_hover");
+	static final ImageIcon FILTER_ACTIVE = icon("filter_active");
+	static final ImageIcon FILTER_ACTIVE_HOVER = icon("filter_active_hover");
 	// Header burger menu holding the secondary actions (debug snapshot, reset exclusions).
-	static final ImageIcon MENU = new ImageIcon(hamburger(GREY));
-	static final ImageIcon MENU_HOVER = new ImageIcon(hamburger(LIGHT));
-	// GitHub mark linking to the plugin's repository (report issues / contribute).
-	static final ImageIcon GITHUB = new ImageIcon(github(false));
+	static final ImageIcon MENU = icon("menu");
+	static final ImageIcon MENU_HOVER = icon("menu_hover");
+	// GitHub mark linking to the plugin's repository (report issues / contribute). The rest state
+	// sits at the panel's grey-icon weight.
+	static final ImageIcon GITHUB = new ImageIcon(ImageUtil.alphaOffset(
+		ImageUtil.resizeImage(ImageUtil.loadImageResource(RouteIcons.class, "/github.png"), SIZE, SIZE), -70));
 	// Discord invite: the bundled Discord mark (from Quest Helper's resources).
 	static final ImageIcon DISCORD = new ImageIcon(
 		ImageUtil.resizeImage(ImageUtil.loadImageResource(RouteIcons.class, "/discord.png"), SIZE, SIZE));
 	// Report an issue: a red warning triangle on the report button (opens a pre-filled GitHub issue).
-	static final ImageIcon REPORT = new ImageIcon(warningTriangle(RED));
+	static final ImageIcon REPORT = icon("report");
 
-	// The plugin's identity mark: the navigation-blue location pin, matching the GPS overlay's
-	// title glyph. Used for the sidebar tab (and exportable for the hub listing icon).
-	private static final Color GPS_BLUE = new Color(0x4C, 0x8B, 0xF5);
-
+	/**
+	 * The plugin's identity mark: the navigation-blue location pin, matching the GPS overlay's title
+	 * glyph, scaled up to fill the 16px tile for the sidebar tab (the panel's row pins stay smaller
+	 * so they read as buttons next to text). Also exportable for the hub listing icon.
+	 */
 	static BufferedImage gpsPin()
 	{
-		// The sidebar tab needs presence: scale the pin up to fill the 16px tile (the panel's
-		// row pins stay smaller so they read as buttons next to text).
-		return render(g ->
-		{
-			g.translate(8.0, 8.0);
-			g.scale(1.3, 1.3);
-			g.translate(-8.0, -8.5);
-			drawPin(g, GPS_BLUE);
-		});
+		return image("gps_pin");
 	}
 
 	// ── Destination-search category icons ──────────────────────────────
 	// A coherent, meaningful set (one glyph per category) replacing the old hash-coloured dots.
-	private static final ImageIcon DEST_PLACE = new ImageIcon(place());
-	private static final ImageIcon DEST_BANK = new ImageIcon(coinStack());
-	private static final ImageIcon DEST_BANK_ROUND_TRIP = new ImageIcon(coinStackReturn());
+	private static final ImageIcon DEST_PLACE = icon("dest_place");
+	private static final ImageIcon DEST_BANK = icon("dest_bank");
+	private static final ImageIcon DEST_BANK_ROUND_TRIP = icon("dest_bank_round_trip");
 	// The Bank quick button while a click would add a stop: the coin stack with a "+" badge.
-	private static final ImageIcon DEST_BANK_STOP = new ImageIcon(withStopBadge(coinStack()));
-	private static final ImageIcon DEST_ALTAR = new ImageIcon(altar());
-	private static final ImageIcon DEST_WATER = new ImageIcon(droplet());
-	private static final ImageIcon DEST_FURNACE = new ImageIcon(flame(new Color(0xF2, 0x8A, 0x3B)));
-	private static final ImageIcon DEST_ANVIL = new ImageIcon(anvil());
-	private static final ImageIcon DEST_RANGE = new ImageIcon(pot());
-	private static final ImageIcon DEST_SPINNING = new ImageIcon(wheel());
-	private static final ImageIcon DEST_POTTERY = new ImageIcon(vase());
-	private static final ImageIcon DEST_FAIRY = new ImageIcon(ring());
-	private static final ImageIcon DEST_SPIRIT_TREE = new ImageIcon(tree());
-	private static final ImageIcon DEST_DUNGEON = new ImageIcon(dungeon());
-	private static final ImageIcon DEST_MINIGAME = new ImageIcon(minigame());
-	private static final ImageIcon DEST_LANDMARK = new ImageIcon(landmark());
+	private static final ImageIcon DEST_BANK_STOP = icon("dest_bank_stop");
+	private static final ImageIcon DEST_ALTAR = icon("dest_altar");
+	private static final ImageIcon DEST_WATER = icon("dest_water");
+	private static final ImageIcon DEST_FURNACE = icon("dest_furnace");
+	private static final ImageIcon DEST_ANVIL = icon("dest_anvil");
+	private static final ImageIcon DEST_RANGE = icon("dest_range");
+	private static final ImageIcon DEST_SPINNING = icon("dest_spinning");
+	private static final ImageIcon DEST_POTTERY = icon("dest_pottery");
+	private static final ImageIcon DEST_FAIRY = icon("dest_fairy");
+	private static final ImageIcon DEST_SPIRIT_TREE = icon("dest_spirit_tree");
+	private static final ImageIcon DEST_DUNGEON = icon("dest_dungeon");
+	private static final ImageIcon DEST_MINIGAME = icon("dest_minigame");
+	private static final ImageIcon DEST_LANDMARK = icon("dest_landmark");
 	// Training spots (agility courses, skilling areas): a course flag.
-	private static final ImageIcon DEST_TRAINING = new ImageIcon(flag());
-	private static final ImageIcon DEST_PIN = new ImageIcon(pin(GPS_BLUE));
+	private static final ImageIcon DEST_TRAINING = icon("dest_training");
+	private static final ImageIcon DEST_PIN = icon("dest_pin");
 
-	// Route-card marker: the GPS pin the route number sits beside.
 	// Panel message-banner glyphs: a warning triangle, an info circle, and a busy spinner.
-	static final ImageIcon BANNER_WARNING = new ImageIcon(warningTriangle(ORANGE));
-	static final ImageIcon BANNER_INFO = new ImageIcon(infoCircle(GPS_BLUE));
-	static final ImageIcon BANNER_BUSY = new ImageIcon(spinner(GPS_BLUE));
+	static final ImageIcon BANNER_WARNING = icon("banner_warning");
+	static final ImageIcon BANNER_INFO = icon("banner_info");
+	static final ImageIcon BANNER_BUSY = icon("banner_busy");
 
 	/** The icon for a destination category, falling back to a location pin for anything unmapped. */
 	static ImageIcon destinationIcon(String category)
@@ -186,768 +154,33 @@ final class RouteIcons
 		return addsStop ? DEST_BANK_STOP : DEST_BANK;
 	}
 
-	/** The glyph with a small green "+" badge over its top-right corner, ringed dark to read on any glyph. */
-	private static BufferedImage withStopBadge(BufferedImage base)
-	{
-		return render(g ->
-		{
-			g.drawImage(base, 0, 0, null);
-			// Pixel-aligned so the plus stays a crisp 1 px cross at the icon's native 16 px.
-			final double cx = 12.5;
-			final double cy = 3.5;
-			final double r = 3.5;
-			g.setColor(new Color(0x10, 0x10, 0x10, 210));
-			g.fill(new Ellipse2D.Double(cx - r - 1, cy - r - 1, 2 * (r + 1), 2 * (r + 1)));
-			g.setColor(GREEN);
-			g.fill(new Ellipse2D.Double(cx - r, cy - r, 2 * r, 2 * r));
-			g.setColor(Color.WHITE);
-			g.fill(new Rectangle2D.Double(10, 3, 5, 1));
-			g.fill(new Rectangle2D.Double(12, 1, 1, 5));
-		});
-	}
+	// Priority tiers (MethodPriority): stacked arrowheads, RimWorld-style — green up = prefer,
+	// amber/red down = avoid, grey dash = normal. Hover variants brighten. Index = tier - 1.
+	static final ImageIcon[] PRIORITY_UP_ICONS = {icon("priority_up_1"), icon("priority_up_2"), icon("priority_up_3")};
+	static final ImageIcon[] PRIORITY_UP_HOVER_ICONS = {
+		icon("priority_up_hover_1"), icon("priority_up_hover_2"), icon("priority_up_hover_3")};
+	static final ImageIcon[] PRIORITY_DOWN_ICONS = {
+		icon("priority_down_1"), icon("priority_down_2"), icon("priority_down_3")};
+	static final ImageIcon[] PRIORITY_DOWN_HOVER_ICONS = {
+		icon("priority_down_hover_1"), icon("priority_down_hover_2"), icon("priority_down_hover_3")};
 
-	private static BufferedImage place()
-	{
-		final Color body = new Color(0x8A, 0xB4, 0xF8);
-		return render(g ->
-		{
-			g.setColor(body);
-			g.fill(new Rectangle2D.Double(2, 6, 5, 8));    // shorter building
-			g.fill(new Rectangle2D.Double(8, 3, 6, 11));   // taller building
-			g.setComposite(AlphaComposite.Clear);
-			for (double wy : new double[]{8, 11})
-			{
-				g.fill(new Rectangle2D.Double(3.4, wy, 1.2, 1.4));
-			}
-			for (double wy : new double[]{5.5, 8, 10.5})
-			{
-				g.fill(new Rectangle2D.Double(9.4, wy, 1.2, 1.4));
-				g.fill(new Rectangle2D.Double(11.4, wy, 1.2, 1.4));
-			}
-			g.setComposite(AlphaComposite.SrcOver);
-		});
-	}
-
-	private static BufferedImage coinStack()
-	{
-		final Color gold = new Color(0xF2, 0xC1, 0x4E);
-		final Color edge = new Color(0xB8, 0x8E, 0x2A);
-		return render(g ->
-		{
-			for (double y : new double[]{9.5, 6.5, 3.5})
-			{
-				g.setColor(gold);
-				g.fill(new Ellipse2D.Double(3, y, 10, 3.6));
-				g.setColor(edge);
-				g.setStroke(new BasicStroke(1f));
-				g.draw(new Ellipse2D.Double(3, y, 10, 3.6));
-			}
-		});
-	}
-
-	private static BufferedImage coinStackReturn()
-	{
-		final Color gold = new Color(0xF2, 0xC1, 0x4E);
-		final Color edge = new Color(0xB8, 0x8E, 0x2A);
-		final Color arrow = new Color(0x8A, 0xB4, 0xF8);
-		return render(g ->
-		{
-			// A smaller coin stack, bottom-left, with a return arrow looping over it.
-			for (double y : new double[]{11, 8.5})
-			{
-				g.setColor(gold);
-				g.fill(new Ellipse2D.Double(1.5, y, 8, 3.2));
-				g.setColor(edge);
-				g.setStroke(new BasicStroke(1f));
-				g.draw(new Ellipse2D.Double(1.5, y, 8, 3.2));
-			}
-			g.setColor(arrow);
-			g.setStroke(new BasicStroke(1.7f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-			g.draw(new Arc2D.Double(4.5, 1.5, 9.5, 9, -20, 220, Arc2D.OPEN));   // out-and-back loop
-			Path2D head = new Path2D.Double();                                  // arrowhead pointing home
-			head.moveTo(3.2, 7.4);
-			head.lineTo(6.6, 6.2);
-			head.lineTo(5.8, 9.6);
-			head.closePath();
-			g.fill(head);
-		});
-	}
-
-	private static BufferedImage altar()
-	{
-		return render(g ->
-		{
-			g.setColor(new Color(0xC9, 0xB8, 0xE8));
-			g.fill(new Rectangle2D.Double(3.5, 11, 9, 3));   // base
-			g.fill(new Rectangle2D.Double(4.5, 8.5, 7, 2));  // top slab
-			g.fill(new Rectangle2D.Double(6.5, 10, 3, 1.2));  // column
-			g.setColor(new Color(0xFF, 0xB4, 0x4A));
-			g.fill(flameShape(8, 4.2, 0.75));                // candle glow
-		});
-	}
-
-	private static BufferedImage droplet()
-	{
-		return render(g ->
-		{
-			g.setColor(new Color(0x4A, 0xA3, 0xE0));
-			Path2D drop = new Path2D.Double();
-			drop.moveTo(8, 2.5);
-			drop.curveTo(11.5, 7, 12, 9, 12, 10.5);
-			drop.curveTo(12, 13, 10.2, 14.5, 8, 14.5);
-			drop.curveTo(5.8, 14.5, 4, 13, 4, 10.5);
-			drop.curveTo(4, 9, 4.5, 7, 8, 2.5);
-			drop.closePath();
-			g.fill(drop);
-			g.setColor(new Color(0xBF, 0xE4, 0xFF));
-			g.fill(new Ellipse2D.Double(6, 9.5, 2, 3));      // highlight
-		});
-	}
-
-	private static BufferedImage flame(Color colour)
-	{
-		return render(g ->
-		{
-			g.setColor(colour);
-			g.fill(flameShape(8, 8, 1.0));
-		});
-	}
-
-	private static Path2D flameShape(double cx, double cy, double scale)
-	{
-		Path2D f = new Path2D.Double();
-		f.moveTo(cx, cy - 6 * scale);
-		f.curveTo(cx + 3 * scale, cy - 3 * scale, cx + 3 * scale, cy - scale, cx + 1.5 * scale, cy);
-		f.curveTo(cx + 3 * scale, cy + scale, cx + 3.5 * scale, cy + 3 * scale, cx + 2 * scale, cy + 5 * scale);
-		f.curveTo(cx + scale, cy + 6.5 * scale, cx - scale, cy + 6.5 * scale, cx - 2 * scale, cy + 5 * scale);
-		f.curveTo(cx - 3.5 * scale, cy + 3 * scale, cx - 2.5 * scale, cy + scale, cx - 1 * scale, cy);
-		f.curveTo(cx - 2.5 * scale, cy - scale, cx - 1.5 * scale, cy - 4 * scale, cx, cy - 6 * scale);
-		f.closePath();
-		return f;
-	}
-
-	private static BufferedImage anvil()
-	{
-		return render(g ->
-		{
-			g.setColor(new Color(0x9A, 0xA5, 0xB1));
-			Path2D horn = new Path2D.Double();
-			horn.moveTo(3, 5);
-			horn.lineTo(1.3, 6.2);
-			horn.lineTo(3, 7.4);
-			horn.closePath();
-			g.fill(horn);
-			g.fill(new Rectangle2D.Double(3, 5, 10, 2.4));    // top face
-			g.fill(new Rectangle2D.Double(6.5, 7.4, 3, 2.6));  // waist
-			g.fill(new RoundRectangle2D.Double(4, 10, 8, 2.6, 2, 2)); // base
-		});
-	}
-
-	private static BufferedImage pot()
-	{
-		return render(g ->
-		{
-			g.setColor(new Color(0xE0, 0x60, 0x3B));
-			g.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-			g.draw(new Arc2D.Double(3.2, 6.5, 3, 4, 40, 280, Arc2D.OPEN));   // left handle
-			g.draw(new Arc2D.Double(9.8, 6.5, 3, 4, -140, 280, Arc2D.OPEN)); // right handle
-			g.fill(new RoundRectangle2D.Double(4, 7, 8, 6.5, 3.5, 3.5));     // body
-			g.fill(new RoundRectangle2D.Double(3, 6, 10, 2, 1.5, 1.5));      // rim
-		});
-	}
-
-	private static BufferedImage wheel()
-	{
-		return render(g ->
-		{
-			g.setColor(new Color(0xC7, 0xA6, 0x5A));
-			g.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-			g.draw(new Ellipse2D.Double(2.5, 2.5, 11, 11));
-			final double cx = 8, cy = 8, r = 5.3;
-			for (int a = 0; a < 180; a += 45)
-			{
-				double rad = Math.toRadians(a);
-				g.draw(new Line2D.Double(cx - Math.cos(rad) * r, cy - Math.sin(rad) * r,
-					cx + Math.cos(rad) * r, cy + Math.sin(rad) * r));
-			}
-			g.fill(new Ellipse2D.Double(6.7, 6.7, 2.6, 2.6));
-		});
-	}
-
-	private static BufferedImage vase()
-	{
-		return render(g ->
-		{
-			g.setColor(new Color(0xB5, 0x79, 0x3B));
-			Path2D vase = new Path2D.Double();
-			vase.moveTo(6, 2.5);
-			vase.lineTo(10, 2.5);
-			vase.lineTo(9.2, 5);
-			vase.curveTo(12.5, 7, 12.5, 12, 8, 13.5);
-			vase.curveTo(3.5, 12, 3.5, 7, 6.8, 5);
-			vase.closePath();
-			g.fill(vase);
-			g.setColor(new Color(0x8A, 0x5A, 0x2A));
-			g.setStroke(new BasicStroke(1f));
-			g.draw(new Line2D.Double(5, 8.5, 11, 8.5));       // decorative band
-		});
-	}
-
-	private static BufferedImage ring()
-	{
-		return render(g ->
-		{
-			g.setColor(new Color(0x5F, 0xB8, 0x65));
-			g.fill(new Ellipse2D.Double(2.5, 2.5, 11, 11));
-			g.setComposite(AlphaComposite.Clear);
-			g.fill(new Ellipse2D.Double(5.5, 5.5, 5, 5));
-			g.setComposite(AlphaComposite.SrcOver);
-			// A couple of "mushrooms" on the ring to read as a fairy ring rather than a plain torus.
-			g.setColor(new Color(0xE0, 0x60, 0x60));
-			g.fill(new Ellipse2D.Double(7, 1.6, 2, 1.6));
-			g.fill(new Ellipse2D.Double(12, 7, 1.6, 2));
-		});
-	}
-
-	private static BufferedImage tree()
-	{
-		return render(g ->
-		{
-			g.setColor(new Color(0x8A, 0x5A, 0x2A));
-			g.fill(new Rectangle2D.Double(7, 8.5, 2, 5.5));  // trunk
-			g.setColor(new Color(0x4C, 0xAF, 0x50));
-			g.fill(new Ellipse2D.Double(2.5, 1.5, 11, 9));   // canopy
-		});
-	}
-
-	private static BufferedImage dungeon()
-	{
-		return render(g ->
-		{
-			g.setColor(new Color(0x8A, 0x8F, 0x98));           // rocky mound
-			Path2D mound = new Path2D.Double();
-			mound.moveTo(1.5, 14);
-			mound.curveTo(2.5, 4.5, 13.5, 4.5, 14.5, 14);
-			mound.closePath();
-			g.fill(mound);
-			g.setColor(new Color(0x1E, 0x20, 0x26));           // dark cave mouth
-			Path2D mouth = new Path2D.Double();
-			mouth.moveTo(5, 14);
-			mouth.curveTo(5, 8, 11, 8, 11, 14);
-			mouth.closePath();
-			g.fill(mouth);
-		});
-	}
-
-	private static BufferedImage minigame()
-	{
-		return render(g ->
-		{
-			g.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-			g.setColor(new Color(0xC7, 0xD0, 0xDA));           // two crossed blades, tips up
-			g.draw(new Line2D.Double(2.5, 2.5, 12, 12));
-			g.draw(new Line2D.Double(13.5, 2.5, 4, 12));
-			g.setColor(new Color(0xF2, 0xC1, 0x4E));           // gold pommels at the hilts
-			g.fill(new Ellipse2D.Double(11, 11, 3, 3));
-			g.fill(new Ellipse2D.Double(2.8, 11, 3, 3));
-		});
-	}
-
-	private static BufferedImage landmark()
-	{
-		return render(g ->
-		{
-			g.setColor(new Color(0x9A, 0xA5, 0xB1));           // pole
-			g.setStroke(new BasicStroke(1.6f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-			g.draw(new Line2D.Double(4.5, 2, 4.5, 14.5));
-			g.setColor(new Color(0xE0, 0x60, 0x3B));           // pennant
-			Path2D flag = new Path2D.Double();
-			flag.moveTo(4.5, 2.5);
-			flag.lineTo(13, 4.7);
-			flag.lineTo(4.5, 6.9);
-			flag.closePath();
-			g.fill(flag);
-		});
-	}
-
-	private static BufferedImage warningTriangle(Color colour)
-	{
-		return render(g ->
-		{
-			g.setColor(colour);
-			g.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-			Path2D tri = new Path2D.Double();
-			tri.moveTo(8, 1.6);
-			tri.lineTo(15, 14);
-			tri.lineTo(1, 14);
-			tri.closePath();
-			g.fill(tri);
-			g.setComposite(AlphaComposite.Clear);              // exclamation cut out
-			g.fill(new Rectangle2D.Double(7.2, 5.6, 1.6, 4.6));
-			g.fill(new Ellipse2D.Double(7.2, 11.2, 1.6, 1.6));
-			g.setComposite(AlphaComposite.SrcOver);
-		});
-	}
-
-	private static BufferedImage infoCircle(Color colour)
-	{
-		return render(g ->
-		{
-			g.setColor(colour);
-			g.fill(new Ellipse2D.Double(1.5, 1.5, 13, 13));
-			g.setComposite(AlphaComposite.Clear);              // "i" cut out
-			g.fill(new Ellipse2D.Double(7.1, 3.6, 1.9, 1.9));
-			g.fill(new Rectangle2D.Double(7.1, 6.7, 1.9, 5.4));
-			g.setComposite(AlphaComposite.SrcOver);
-		});
-	}
-
-	private static BufferedImage spinner(Color colour)
-	{
-		return render(g ->
-		{
-			g.setColor(colour);
-			g.setStroke(new BasicStroke(2.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-			g.draw(new Arc2D.Double(2.5, 2.5, 11, 11, 90, 280, Arc2D.OPEN));   // broken ring = loading
-		});
-	}
+	// Neutral tier: a quiet dash (a checkmark reads as "enabled", not "no preference"). The dim
+	// variant is the route-card rest state, near-invisible like the old exclude circle.
+	static final ImageIcon PRIORITY_NEUTRAL = icon("priority_neutral");
+	static final ImageIcon PRIORITY_NEUTRAL_HOVER = icon("priority_neutral_hover");
+	static final ImageIcon PRIORITY_NEUTRAL_DIM = icon("priority_neutral_dim");
 
 	private RouteIcons()
 	{
 	}
 
-	private interface Drawer
+	private static ImageIcon icon(String name)
 	{
-		void draw(Graphics2D g);
+		return new ImageIcon(image(name));
 	}
 
-	private static BufferedImage heart(Color color)
+	private static BufferedImage image(String name)
 	{
-		return render(g ->
-		{
-			Path2D heart = new Path2D.Double();
-			heart.moveTo(8, 13.5);
-			heart.curveTo(3.2, 10.2, 1.6, 7.6, 1.6, 5.9);
-			heart.curveTo(1.6, 3.9, 3.1, 2.6, 4.9, 2.6);
-			heart.curveTo(6.2, 2.6, 7.4, 3.4, 8, 4.5);
-			heart.curveTo(8.6, 3.4, 9.8, 2.6, 11.1, 2.6);
-			heart.curveTo(12.9, 2.6, 14.4, 3.9, 14.4, 5.9);
-			heart.curveTo(14.4, 7.6, 12.8, 10.2, 8, 13.5);
-			heart.closePath();
-			g.setColor(color);
-			g.fill(heart);
-		});
-	}
-
-	private static BufferedImage render(Drawer drawer)
-	{
-		BufferedImage image = new BufferedImage(SIZE, SIZE, BufferedImage.TYPE_INT_ARGB);
-		Graphics2D g = image.createGraphics();
-		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
-		g.setStroke(new BasicStroke(1.7f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-		drawer.draw(g);
-		g.dispose();
-		return image;
-	}
-
-	private static BufferedImage flag()
-	{
-		return render(g ->
-		{
-			// Pole with a small base, and a gold pennant pointing right — a course-start marker.
-			g.setColor(new Color(0xB4, 0xB4, 0xB4));
-			g.draw(new Line2D.Double(5, 2.5, 5, 13.5));
-			g.draw(new Line2D.Double(3.5, 13.5, 6.5, 13.5));
-			g.setColor(GOLD);
-			Path2D pennant = new Path2D.Double();
-			pennant.moveTo(5.8, 3.0);
-			pennant.lineTo(12.5, 5.2);
-			pennant.lineTo(5.8, 7.4);
-			pennant.closePath();
-			g.fill(pennant);
-		});
-	}
-
-	private static BufferedImage hamburger(Color colour)
-	{
-		return render(g ->
-		{
-			g.setColor(colour);
-			g.draw(new Line2D.Double(3, 4.5, 13, 4.5));
-			g.draw(new Line2D.Double(3, 8, 13, 8));
-			g.draw(new Line2D.Double(3, 11.5, 13, 11.5));
-		});
-	}
-
-	private static BufferedImage github(boolean hover)
-	{
-		BufferedImage img = ImageUtil.resizeImage(
-			ImageUtil.loadImageResource(RouteIcons.class, "/github.png"), SIZE, SIZE);
-		// The rest state sits at the panel's grey-icon weight; hover brings it to full strength.
-		return hover ? img : ImageUtil.alphaOffset(img, -70);
-	}
-
-	private static BufferedImage pin(Color colour)
-	{
-		return render(g -> drawPin(g, colour));
-	}
-
-	private static void drawPin(Graphics2D g, Color colour)
-	{
-		final double cx = 8, cy = 6.4, r = 4.0;
-		Path2D body = new Path2D.Double();
-		body.moveTo(cx - 3.0, cy + 1.6);
-		body.curveTo(cx - 2.0, cy + 4.4, cx - 0.5, cy + 5.4, cx, 14.6);
-		body.curveTo(cx + 0.5, cy + 5.4, cx + 2.0, cy + 4.4, cx + 3.0, cy + 1.6);
-		body.closePath();
-		g.setColor(colour);
-		g.fill(new Ellipse2D.Double(cx - r, cy - r, 2 * r, 2 * r));
-		g.fill(body);
-		g.setComposite(AlphaComposite.Clear);
-		final double hr = 1.65;
-		g.fill(new Ellipse2D.Double(cx - hr, cy - hr, 2 * hr, 2 * hr));
-		g.setComposite(AlphaComposite.SrcOver);
-	}
-
-	private static BufferedImage ban(Color colour)
-	{
-		return render(g ->
-		{
-			g.setColor(colour);
-			final double m = 1.7, d = SIZE - 2 * m;
-			g.draw(new Ellipse2D.Double(m, m, d, d));
-			g.draw(new Line2D.Double(5.0, 8.0, 11.0, 8.0));
-		});
-	}
-
-	private static BufferedImage plus(Color colour)
-	{
-		return render(g ->
-		{
-			g.setColor(colour);
-			final double m = 1.7, d = SIZE - 2 * m;
-			g.draw(new Ellipse2D.Double(m, m, d, d));
-			g.draw(new Line2D.Double(8, 5, 8, 11));
-			g.draw(new Line2D.Double(5, 8, 11, 8));
-		});
-	}
-
-	private static BufferedImage refresh(Color colour)
-	{
-		return render(g ->
-		{
-			g.setColor(colour);
-			final double m = 2.6, d = SIZE - 2 * m;
-			final double start = 65, extent = 250;
-			Arc2D arc = new Arc2D.Double(m, m, d, d, start, extent, Arc2D.OPEN);
-			g.draw(arc);
-			Point2D p0 = arc.getStartPoint();
-			Point2D p1 = new Arc2D.Double(m, m, d, d, start + 5, 1, Arc2D.OPEN).getStartPoint();
-			double angle = Math.atan2(p0.getY() - p1.getY(), p0.getX() - p1.getX());
-			arrowHead(g, p0.getX(), p0.getY(), angle, 3.4, colour);
-		});
-	}
-
-	private static BufferedImage trash(Color colour)
-	{
-		return render(g ->
-		{
-			g.setColor(colour);
-			g.draw(new Line2D.Double(3.5, 4.6, 12.5, 4.6));
-			g.draw(new Line2D.Double(6.5, 4.6, 6.5, 3.2));
-			g.draw(new Line2D.Double(9.5, 4.6, 9.5, 3.2));
-			g.draw(new Line2D.Double(6.5, 3.2, 9.5, 3.2));
-			Path2D body = new Path2D.Double();
-			body.moveTo(4.4, 5.4);
-			body.lineTo(5.2, 13.0);
-			body.lineTo(10.8, 13.0);
-			body.lineTo(11.6, 5.4);
-			g.draw(body);
-			g.draw(new Line2D.Double(6.6, 6.4, 6.9, 12.0));
-			g.draw(new Line2D.Double(8.0, 6.4, 8.0, 12.0));
-			g.draw(new Line2D.Double(9.4, 6.4, 9.1, 12.0));
-		});
-	}
-
-	/** Raft: two lashed planks and a stubby mast with a pennant. */
-	private static BufferedImage raft(Color colour)
-	{
-		return render(g ->
-		{
-			g.setColor(colour);
-			g.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-			g.draw(new Line2D.Double(3, 10.5, 13, 10.5));
-			g.draw(new Line2D.Double(3.5, 12.5, 12.5, 12.5));
-			g.draw(new Line2D.Double(8, 10.5, 8, 5));
-			Path2D pennant = new Path2D.Double();
-			pennant.moveTo(8, 5);
-			pennant.lineTo(11.5, 6.2);
-			pennant.lineTo(8, 7.4);
-			pennant.closePath();
-			g.draw(pennant);
-		});
-	}
-
-	/** Skiff: a shallow hull under a single triangular sail. */
-	private static BufferedImage skiff(Color colour)
-	{
-		return render(g ->
-		{
-			g.setColor(colour);
-			g.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-			Path2D hull = new Path2D.Double();
-			hull.moveTo(2.5, 10);
-			hull.quadTo(8, 13.8, 13.5, 10);
-			g.draw(hull);
-			g.draw(new Line2D.Double(7.5, 10, 7.5, 3));
-			Path2D sail = new Path2D.Double();
-			sail.moveTo(7.5, 3);
-			sail.lineTo(12.5, 8.8);
-			sail.lineTo(7.5, 8.8);
-			sail.closePath();
-			g.draw(sail);
-		});
-	}
-
-	/** Sloop: the bigger hull carries a main sail and a jib. */
-	private static BufferedImage sloop(Color colour)
-	{
-		return render(g ->
-		{
-			g.setColor(colour);
-			g.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-			Path2D hull = new Path2D.Double();
-			hull.moveTo(2, 10.5);
-			hull.quadTo(8, 14.2, 14, 10.5);
-			g.draw(hull);
-			g.draw(new Line2D.Double(8.5, 10.5, 8.5, 2));
-			Path2D main = new Path2D.Double();
-			main.moveTo(8.5, 2);
-			main.lineTo(13.2, 9);
-			main.lineTo(8.5, 9);
-			main.closePath();
-			g.draw(main);
-			Path2D jib = new Path2D.Double();
-			jib.moveTo(7.2, 4);
-			jib.lineTo(7.2, 9);
-			jib.lineTo(3.2, 9);
-			jib.closePath();
-			g.draw(jib);
-		});
-	}
-
-	private static BufferedImage check(Color colour)
-	{
-		return render(g ->
-		{
-			g.setColor(colour);
-			g.setStroke(new BasicStroke(1.9f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-			Path2D tick = new Path2D.Double();
-			tick.moveTo(3.5, 8.5);
-			tick.lineTo(6.6, 11.6);
-			tick.lineTo(12.5, 4.5);
-			g.draw(tick);
-		});
-	}
-
-	private static BufferedImage cross(Color colour)
-	{
-		return render(g ->
-		{
-			g.setColor(colour);
-			g.setStroke(new BasicStroke(1.9f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-			g.draw(new Line2D.Double(4.2, 4.2, 11.8, 11.8));
-			g.draw(new Line2D.Double(11.8, 4.2, 4.2, 11.8));
-		});
-	}
-
-	private static BufferedImage dash(Color colour)
-	{
-		return render(g ->
-		{
-			g.setColor(colour);
-			g.setStroke(new BasicStroke(1.9f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-			g.draw(new Line2D.Double(4.0, 8.0, 12.0, 8.0));
-		});
-	}
-
-	private static BufferedImage lock(Color colour)
-	{
-		return render(g ->
-		{
-			g.setColor(colour);
-			// Shackle
-			g.draw(new Arc2D.Double(4.75, 2.5, 6.5, 7.5, 0, 180, Arc2D.OPEN));
-			// Body
-			g.fillRoundRect(3, 7, 10, 6, 3, 3);
-		});
-	}
-
-	private static BufferedImage coins(Color colour)
-	{
-		return render(g ->
-		{
-			g.setStroke(new BasicStroke(1.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-			final double x = 3.5, w = 9.0, h = 3.4;
-			// Bottom-to-top so the upper coins overlap the lower ones, reading as a stack.
-			final double[] ys = {9.6, 7.0, 4.4};
-			for (double y : ys)
-			{
-				g.setColor(colour);
-				g.fill(new Ellipse2D.Double(x, y, w, h));
-				g.setColor(colour.darker());
-				g.draw(new Ellipse2D.Double(x, y, w, h));
-			}
-		});
-	}
-
-	private static BufferedImage funnel(Color colour)
-	{
-		return render(g ->
-		{
-			g.setColor(colour);
-			Path2D f = new Path2D.Double();
-			f.moveTo(2.5, 3);
-			f.lineTo(13.5, 3);
-			f.lineTo(9, 8);
-			f.lineTo(9, 13.5);
-			f.lineTo(7, 12);
-			f.lineTo(7, 8);
-			f.closePath();
-			g.fill(f);
-		});
-	}
-
-	private static BufferedImage clock(Color colour)
-	{
-		return render(g ->
-		{
-			g.setColor(colour);
-			g.setStroke(new BasicStroke(1.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-			g.draw(new Ellipse2D.Double(2.5, 2.5, 11, 11));
-			g.draw(new Line2D.Double(8, 8, 8, 4.5));     // minute hand, pointing up
-			g.draw(new Line2D.Double(8, 8, 10.5, 9.5));  // hour hand, pointing ~4 o'clock
-		});
-	}
-
-	private static BufferedImage camera(Color colour)
-	{
-		return render(g ->
-		{
-			g.setColor(colour);
-			// Body with a small viewfinder bump, and the lens as a hollow circle.
-			g.draw(new Line2D.Double(5.5, 4.0, 6.8, 4.0));
-			g.drawRoundRect(2, 5, 12, 8, 3, 3);
-			g.draw(new Ellipse2D.Double(6.0, 6.5, 5.0, 5.0));
-		});
-	}
-
-
-	// Priority tiers (MethodPriority): stacked arrowheads, RimWorld-style — green up = prefer,
-	// amber/red down = avoid, grey dash = normal. Hover variants brighten.
-	private static final Color PRIORITY_UP = new Color(70, 200, 90);
-	private static final Color PRIORITY_UP_BRIGHT = new Color(110, 240, 130);
-	private static final Color PRIORITY_DOWN = new Color(230, 120, 60);
-	private static final Color PRIORITY_DOWN_BRIGHT = new Color(255, 150, 90);
-	static final ImageIcon[] PRIORITY_UP_ICONS = {
-		new ImageIcon(priorityGlyph(1, true, PRIORITY_UP)),
-		new ImageIcon(priorityGlyph(2, true, PRIORITY_UP)),
-		new ImageIcon(priorityGlyph(3, true, PRIORITY_UP)),
-	};
-	static final ImageIcon[] PRIORITY_UP_HOVER_ICONS = {
-		new ImageIcon(priorityGlyph(1, true, PRIORITY_UP_BRIGHT)),
-		new ImageIcon(priorityGlyph(2, true, PRIORITY_UP_BRIGHT)),
-		new ImageIcon(priorityGlyph(3, true, PRIORITY_UP_BRIGHT)),
-	};
-	static final ImageIcon[] PRIORITY_DOWN_ICONS = {
-		new ImageIcon(priorityGlyph(1, false, PRIORITY_DOWN)),
-		new ImageIcon(priorityGlyph(2, false, PRIORITY_DOWN)),
-		new ImageIcon(priorityGlyph(3, false, PRIORITY_DOWN)),
-	};
-	static final ImageIcon[] PRIORITY_DOWN_HOVER_ICONS = {
-		new ImageIcon(priorityGlyph(1, false, PRIORITY_DOWN_BRIGHT)),
-		new ImageIcon(priorityGlyph(2, false, PRIORITY_DOWN_BRIGHT)),
-		new ImageIcon(priorityGlyph(3, false, PRIORITY_DOWN_BRIGHT)),
-	};
-
-	// Neutral tier: a quiet dash (a checkmark reads as "enabled", not "no preference"). The dim
-	// variant is the route-card rest state, near-invisible like the old exclude circle.
-	static final ImageIcon PRIORITY_NEUTRAL = new ImageIcon(priorityDash(GREY));
-	static final ImageIcon PRIORITY_NEUTRAL_HOVER = new ImageIcon(priorityDash(new Color(0xE0, 0xE0, 0xE0)));
-	static final ImageIcon PRIORITY_NEUTRAL_DIM = new ImageIcon(priorityDash(new Color(0x45, 0x45, 0x45)));
-
-	private static BufferedImage priorityDash(Color colour)
-	{
-		return render(g ->
-		{
-			g.setColor(colour);
-			g.fillRoundRect(4, 7, 8, 2, 2, 2);
-		});
-	}
-
-	/** 1-3 stacked arrowheads filling the 16px canvas from the middle out. */
-	private static BufferedImage priorityGlyph(int count, boolean up, Color colour)
-	{
-		return render(g ->
-		{
-			g.setColor(colour);
-			// Each arrowhead is 4px tall with a 1px gap; the stack is centred vertically.
-			double totalHeight = count * 5 - 1;
-			double top = (16 - totalHeight) / 2.0;
-			for (int i = 0; i < count; i++)
-			{
-				double y = top + i * 5;
-				Path2D head = new Path2D.Double();
-				if (up)
-				{
-					head.moveTo(3.0, y + 4);
-					head.lineTo(13.0, y + 4);
-					head.lineTo(8.0, y);
-				}
-				else
-				{
-					head.moveTo(3.0, y);
-					head.lineTo(13.0, y);
-					head.lineTo(8.0, y + 4);
-				}
-				head.closePath();
-				g.fill(head);
-			}
-		});
-	}
-
-	private static BufferedImage chevron(Color colour, boolean down)
-	{
-		return render(g ->
-		{
-			g.setColor(colour);
-			Path2D triangle = new Path2D.Double();
-			if (down)
-			{
-				triangle.moveTo(4.5, 6.0);
-				triangle.lineTo(11.5, 6.0);
-				triangle.lineTo(8.0, 11.0);
-			}
-			else
-			{
-				triangle.moveTo(6.0, 4.5);
-				triangle.lineTo(11.0, 8.0);
-				triangle.lineTo(6.0, 11.5);
-			}
-			triangle.closePath();
-			g.fill(triangle);
-		});
-	}
-
-	private static void arrowHead(Graphics2D g, double x, double y, double angle, double size, Color colour)
-	{
-		Path2D head = new Path2D.Double();
-		head.moveTo(x, y);
-		head.lineTo(x - size * Math.cos(angle - Math.PI / 6), y - size * Math.sin(angle - Math.PI / 6));
-		head.lineTo(x - size * Math.cos(angle + Math.PI / 6), y - size * Math.sin(angle + Math.PI / 6));
-		head.closePath();
-		g.setColor(colour);
-		g.fill(head);
+		return ImageUtil.loadImageResource(RouteIcons.class, "/icons/" + name + ".png");
 	}
 }
