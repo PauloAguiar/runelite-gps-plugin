@@ -17,10 +17,8 @@ import java.util.function.IntSupplier;
  * them and clears once they are back within the warning band. Client-thread owned; the warning
  * and the distance are read by the overlays.
  */
-final class OffRouteTracker
-{
-	enum Verdict
-	{
+final class OffRouteTracker {
+	enum Verdict {
 		ON_ROUTE,
 		WARNING,
 		RECALCULATE,
@@ -39,20 +37,17 @@ final class OffRouteTracker
 	private volatile boolean warning;
 
 	/** The distance from the path at the last tick, or -1 when unknown (no same-plane tile). */
-	int distance()
-	{
+	int distance() {
 		return distance;
 	}
 
 	/** Whether the overlays should show the drifting-off-route warning. */
-	boolean isWarning()
-	{
+	boolean isWarning() {
 		return warning;
 	}
 
 	/** Records where the player stands so the next tick is not read as a move from elsewhere. */
-	void reset(int location)
-	{
+	void reset(int location) {
 		lastLocation = location;
 	}
 
@@ -63,10 +58,8 @@ final class OffRouteTracker
 	 * warn x3: field-tuned, 3x let the boat wander before a recalc rescued it, arcs fit inside 2x).
 	 */
 	Verdict tick(int location, IntSupplier distanceFromPath, int recalculateDistance, int warnDistance,
-		boolean autoRecalculate, boolean cancelInstead, boolean aboard)
-	{
-		if (recalculateDistance < 0)
-		{
+		boolean autoRecalculate, boolean cancelInstead, boolean aboard) {
+		if (recalculateDistance < 0) {
 			warning = false;
 			return Verdict.ON_ROUTE;
 		}
@@ -77,26 +70,19 @@ final class OffRouteTracker
 		distance = d;
 		int recalc = recalculateDistance;
 		int warn = Math.max(0, Math.min(warnDistance, recalc));
-		if (aboard)
-		{
+		if (aboard) {
 			recalc *= 2;
 			warn *= 3;
 		}
 		if (step > TRANSPORT_STEP_TILES)
-		{
 			graceTicks = TRANSPORT_GRACE_TICKS;
-		}
 		else if (graceTicks > 0)
-		{
 			graceTicks = (d >= 0 && d < warn) ? 0 : graceTicks - 1;
-		}
-		if (d < 0 || graceTicks > 0)
-		{
+		if (d < 0 || graceTicks > 0) {
 			warning = false;
 			return Verdict.ON_ROUTE;
 		}
-		if (moved && d >= recalc && autoRecalculate)
-		{
+		if (moved && d >= recalc && autoRecalculate) {
 			warning = false;
 			return cancelInstead ? Verdict.CANCEL : Verdict.RECALCULATE;
 		}
@@ -114,35 +100,22 @@ final class OffRouteTracker
 	 * while a track is still computing the sailor is on route rather than measured against
 	 * incomplete geometry.
 	 */
-	static int distanceFromPath(int location, List<PathStep> path, RouteOption displayed)
-	{
+	static int distanceFromPath(int location, List<PathStep> path, RouteOption displayed) {
 		if (path == null || path.isEmpty())
-		{
 			return -1;
-		}
 		int best = Integer.MAX_VALUE;
 		for (PathStep pathStep : path)
-		{
 			best = Math.min(best, WorldPointUtil.distanceBetween(location, pathStep.getPackedPosition()));
-		}
-		if (displayed != null && !displayed.sailingJumpDepartures().isEmpty() && SailingSea.isSailable(location))
-		{
-			for (int departure : displayed.sailingJumpDepartures())
-			{
+		if (displayed != null && !displayed.sailingJumpDepartures().isEmpty() && SailingSea.isSailable(location)) {
+			for (int departure : displayed.sailingJumpDepartures()) {
 				if (departure < 0 || departure + 1 >= path.size())
-				{
 					continue;
-				}
 				int[] track = SailingSea.seaPath(path.get(departure).getPackedPosition(),
 					path.get(departure + 1).getPackedPosition());
 				if (track == null)
-				{
 					return 0;
-				}
 				for (int waypoint : track)
-				{
 					best = Math.min(best, WorldPointUtil.distanceBetween(location, waypoint));
-				}
 			}
 		}
 		return best;

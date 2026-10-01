@@ -17,8 +17,7 @@ import net.runelite.api.ChatMessageType;
  * pin; the routes themselves come from the auto-compute on the next tick, keyed on the target
  * set, or from an explicit recompute. Written on the client thread, read from ticks and overlays.
  */
-final class DestinationController
-{
+final class DestinationController {
 	private final ShortestPathPlugin plugin;
 	private final RouteSession session;
 	private final RouteController routes;
@@ -39,8 +38,7 @@ final class DestinationController
 	private final BankDetour bankTrip = new BankDetour();
 
 	DestinationController(ShortestPathPlugin plugin, RouteSession session, RouteController routes,
-		WorldMapMarker marker, OffRouteTracker offRoute, JourneyTracker journey)
-	{
+		WorldMapMarker marker, OffRouteTracker offRoute, JourneyTracker journey) {
 		this.plugin = plugin;
 		this.session = session;
 		this.routes = routes;
@@ -49,61 +47,51 @@ final class DestinationController
 		this.journey = journey;
 	}
 
-	int start()
-	{
+	int start() {
 		return start;
 	}
 
-	Set<Integer> targets()
-	{
+	Set<Integer> targets() {
 		return targets;
 	}
 
-	boolean hasTargets()
-	{
+	boolean hasTargets() {
 		return !targets.isEmpty();
 	}
 
-	String source()
-	{
+	String source() {
 		return source;
 	}
 
 	/** Attributes the destination for the GPS header: the sender's source, "map pin", or null. */
-	void setSource(String source)
-	{
+	void setSource(String source) {
 		this.source = source;
 	}
 
-	boolean isRoundTrip()
-	{
+	boolean isRoundTrip() {
 		return roundTrip;
 	}
 
 	/** "Set GPS Target" from the map menu: the pick is attributed to the map pin. Client thread. */
-	void pin(int packed)
-	{
+	void pin(int packed) {
 		source = "map pin";
 		setTarget(packed, false);
 	}
 
 	/** "Find closest" from a world-map icon: every destination of that kind, the nearest wins. */
-	void findClosest(String destinationType)
-	{
+	void findClosest(String destinationType) {
 		source = "map pin";
 		setTargets(plugin.getPathfinderConfig().getDestinations(destinationType), true);
 	}
 
 	/** Clears the destination and its attribution, on the client thread (a tick, a hotkey, a clear request). */
-	void clear()
-	{
+	void clear() {
 		source = null;
 		setTarget(WorldPointUtil.UNDEFINED, false);
 	}
 
 	/** Clears the destination from another thread (the panel's Clear button). */
-	void clearLater()
-	{
+	void clearLater() {
 		plugin.getClientThread().invokeLater(this::clear);
 	}
 
@@ -111,46 +99,36 @@ final class DestinationController
 	 * The player arrived: the destination clears, and a completed bank trip picks the destination
 	 * it replaced back up, from the bank, with a chat line saying so (see BankDetour). Client thread.
 	 */
-	void arrived()
-	{
+	void arrived() {
 		// Read before the clear, which would forget it.
 		BankDetour.Route resume = bankTrip.complete();
 		clear();
 		if (resume == null)
-		{
 			return;
-		}
 		source = resume.source;
 		if (resume.marker != WorldPointUtil.UNDEFINED)
-		{
 			marker.pinNextAt(resume.marker);
-		}
 		setTargets(new HashSet<>(resume.targets), false);
 		// After setTargets: it resets the round-trip flag for ordinary destinations.
 		roundTrip = resume.roundTrip;
 		if (resume.roundTrip)
-		{
 			routes.recompute();
-		}
 		plugin.getClient().addChatMessage(ChatMessageType.GAMEMESSAGE, "",
 			"GPS: bank reached, resuming your previous route.", null);
 	}
 
 	/** Another plugin's new destination replaces a bank trip like any other change. */
-	void forgetBankTrip()
-	{
+	void forgetBankTrip() {
 		bankTrip.cancel();
 	}
 
 	/** The destination the current bank trip will resume, or null (see BankDetour.pending). */
-	BankDetour.Route pendingResume()
-	{
+	BankDetour.Route pendingResume() {
 		return bankTrip.pending();
 	}
 
 	/** Whether a bank click now would add a stop: a route would resume after it (see BankDetour.wouldResume). */
-	boolean bankClickAddsStop()
-	{
+	boolean bankClickAddsStop() {
 		return bankTrip.wouldResume(hasTargets());
 	}
 
@@ -159,16 +137,12 @@ final class DestinationController
 	 * can sit on an unwalkable tile (a fountain): it expands to the nearest walkable ring, like a
 	 * map pin, while the world-map pin stays on the place itself.
 	 */
-	void setSearched(int packedPosition, String source)
-	{
-		plugin.getClientThread().invokeLater(() ->
-		{
+	void setSearched(int packedPosition, String source) {
+		plugin.getClientThread().invokeLater(() -> {
 			this.source = source;
 			Set<Integer> expanded = new HashSet<>(walkable(packedPosition));
 			if (expanded.size() > 1)
-			{
 				marker.pinNextAt(packedPosition);
-			}
 			setTargets(expanded, false);
 		});
 	}
@@ -180,14 +154,10 @@ final class DestinationController
 	 * every route goes out to a site and home again, ranked by the combined cost (the best
 	 * round-trip bank is not necessarily the nearest one-way bank).
 	 */
-	void setNearestCategory(Set<Integer> tiles, String source, boolean roundTrip)
-	{
+	void setNearestCategory(Set<Integer> tiles, String source, boolean roundTrip) {
 		if (tiles == null || tiles.isEmpty())
-		{
 			return;
-		}
-		plugin.getClientThread().invokeLater(() ->
-		{
+		plugin.getClientThread().invokeLater(() -> {
 			this.source = source;
 			setTargets(new HashSet<>(tiles), false);
 			// After setTargets: it resets the round-trip flag for ordinary destinations.
@@ -202,35 +172,26 @@ final class DestinationController
 	 * is resumed once the trip completes (see BankDetour). The tiles are read on the calling
 	 * thread, as the panel always read them; the destination changes on the client thread.
 	 */
-	void goToNearest(Destinations.NearestOption option)
-	{
+	void goToNearest(Destinations.NearestOption option) {
 		Set<Integer> tiles = Destinations.tilesForCategory(option.id, plugin.getTransports());
 		boolean trip = "bank_round_trip".equals(option.id);
 		boolean bank = trip || "bank".equals(option.id);
 		if (bank)
-		{
 			// Union in the engine's accessible-bank tiles: the amenity dump misses oddly-named
 			// bank objects (Slepe's "Bank Chest-wreck"), and "nearest bank" must never disagree
 			// with where the engine itself can bank.
 			tiles.addAll(plugin.getEngineBankTiles());
-		}
 		String label = "nearest " + option.label.toLowerCase(Locale.ROOT);
-		if (!bank)
-		{
+		if (!bank) {
 			setNearestCategory(tiles, label, false);
 			return;
 		}
 		if (tiles.isEmpty())
-		{
 			return;
-		}
-		plugin.getClientThread().invokeLater(() ->
-		{
+		plugin.getClientThread().invokeLater(() -> {
 			if (plugin.getPlayerLocation() == WorldPointUtil.UNDEFINED)
-			{
 				// Logged out: setTargets would change nothing, so no trip may start either.
 				return;
-			}
 			// Read before the destination changes: setting it forgets any trip under way.
 			BankDetour.Route replaced = bankTrip.replacing(
 				BankDetour.Route.of(targets, source, roundTrip, marker.pinnedTile()));
@@ -249,10 +210,8 @@ final class DestinationController
 	 * computation happens in the generation, auto-triggered on the next tick by the target-set
 	 * change. Hops to the client thread.
 	 */
-	void set(int newStart, Set<Integer> ends, boolean canReviveFiltered)
-	{
-		plugin.getClientThread().invokeLater(() ->
-		{
+	void set(int newStart, Set<Integer> ends, boolean canReviveFiltered) {
+		plugin.getClientThread().invokeLater(() -> {
 			PathfinderConfig pathfinderConfig = plugin.getPathfinderConfig();
 			// The panel's method catalog is the single customization surface: methods the user has
 			// excluded there are also excluded here.
@@ -260,11 +219,8 @@ final class DestinationController
 			pathfinderConfig.refresh();
 			pathfinderConfig.filterLocations(ends, canReviveFiltered);
 			if (ends.isEmpty())
-			{
 				setTarget(WorldPointUtil.UNDEFINED, false);
-			}
-			else
-			{
+			else {
 				start = newStart;
 				targets = Set.copyOf(ends);
 			}
@@ -277,8 +233,7 @@ final class DestinationController
 	 * not changed. The stale selection is dropped so the fresh generation's route takes over
 	 * rather than the overlay clinging to the old line. Client thread.
 	 */
-	void recalculateFrom(int newStart, Set<Integer> currentTargets)
-	{
+	void recalculateFrom(int newStart, Set<Integer> currentTargets) {
 		session.clearSelection();
 		session.resetBudget(routes.defaultLimit());
 		Set<Integer> ends = new HashSet<>(currentTargets);
@@ -287,35 +242,29 @@ final class DestinationController
 	}
 
 	/** A single tile, expanded to its walkable ring; UNDEFINED clears. Client thread. */
-	private void setTarget(int target, boolean append)
-	{
+	private void setTarget(int target, boolean append) {
 		Set<Integer> expanded = new HashSet<>();
-		if (target != WorldPointUtil.UNDEFINED)
-		{
+		if (target != WorldPointUtil.UNDEFINED) {
 			// A pin on an unwalkable tile (furniture, a fence, an NPC's tile from Quest Helper) can
 			// never be settled by the search: it would explore the entire map and fall back to a
 			// closest-tile path (captured in-game: 11 exhausted searches, 8.2 s). Target the nearest
 			// walkable ring instead; walkable pins stay exact, and the map pin stays on the tile.
 			Set<Integer> ring = walkable(target);
 			if (ring.size() > 1)
-			{
 				marker.pinNextAt(target);
-			}
 			expanded.addAll(ring);
 		}
 		setTargets(expanded, append);
 	}
 
-	private Set<Integer> walkable(int packed)
-	{
+	private Set<Integer> walkable(int packed) {
 		PathfinderConfig pathfinderConfig = plugin.getPathfinderConfig();
 		return Destinations.walkableTargets(pathfinderConfig != null ? pathfinderConfig.getMap() : null, packed,
 			pathfinderConfig != null ? pathfinderConfig::isTransportOrigin : null);
 	}
 
 	/** The target set as given (already expanded); empty clears. Client thread. */
-	private void setTargets(Set<Integer> newTargets, boolean append)
-	{
+	private void setTargets(Set<Integer> newTargets, boolean append) {
 		// Any change of destination forgets a bank trip's saved route; a bank trip re-arms after.
 		bankTrip.cancel();
 		// Ordinary destinations are one-way; the round-trip entry point re-sets this after.
@@ -323,8 +272,7 @@ final class DestinationController
 		// A fresh destination starts at the default cost band; "show more" widens it from there
 		// (it bumps the multiple and regenerates without coming through here).
 		session.resetCostMultiple();
-		if (newTargets == null || newTargets.isEmpty())
-		{
+		if (newTargets == null || newTargets.isEmpty()) {
 			start = WorldPointUtil.UNDEFINED;
 			targets = Set.of();
 			marker.clear();
@@ -336,16 +284,12 @@ final class DestinationController
 		}
 		int here = plugin.getPlayerLocation();
 		if (here == WorldPointUtil.UNDEFINED)
-		{
 			return;
-		}
 		marker.place(newTargets);
 		offRoute.reset(here);
 		Set<Integer> destinations = new HashSet<>(newTargets);
 		if (append)
-		{
 			destinations.addAll(targets);
-		}
 		// Arm the journey timer: it starts counting from the player's first movement.
 		journey.arm();
 		// The routes themselves come from the tick-level auto-compute (keyed on the target-set

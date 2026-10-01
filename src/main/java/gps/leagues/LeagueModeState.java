@@ -47,8 +47,7 @@ import net.runelite.api.WorldType;
  * change during a league season.
  * </p>
  */
-public class LeagueModeState
-{
+public class LeagueModeState {
 	/**
 	 * Varbit IDs storing the league area unlocks. The values match
 	 * {@code LEAGUE_AREA_SELECTION_0..5} from RuneLite's gameval VarbitID
@@ -68,8 +67,7 @@ public class LeagueModeState
 	 */
 	private static final Map<Integer, LeagueRegion> AREA_VARBIT_TO_REGION;
 
-	static
-	{
+	static {
 		AREA_VARBIT_TO_REGION = Map.ofEntries(
 			Map.entry(1, LeagueRegion.MISTHALIN),
 			Map.entry(2, LeagueRegion.KARAMJA),
@@ -100,10 +98,8 @@ public class LeagueModeState
 	 * because non-seasonal logic mirrors normal pathfinding.
 	 * </p>
 	 */
-	public void refresh(Client client)
-	{
-		if (client == null)
-		{
+	public void refresh(Client client) {
+		if (client == null) {
 			seasonal = false;
 			unlockedRegions = EnumSet.noneOf(LeagueRegion.class);
 			return;
@@ -112,12 +108,9 @@ public class LeagueModeState
 		seasonal = worldTypes != null && worldTypes.contains(WorldType.SEASONAL);
 
 		EnumSet<LeagueRegion> next = EnumSet.noneOf(LeagueRegion.class);
-		if (seasonal)
-		{
+		if (seasonal) {
 			for (int varbitId : AREA_SELECTION_VARBITS)
-			{
 				addRegionFromSlot(client, varbitId, next);
-			}
 		}
 		unlockedRegions = next;
 	}
@@ -126,24 +119,15 @@ public class LeagueModeState
 	 * Whether the supplied region is currently traversable. Outside of
 	 * seasonal mode every region is considered unlocked.
 	 */
-	public boolean isUnlocked(LeagueRegion region)
-	{
+	public boolean isUnlocked(LeagueRegion region) {
 		if (region == null)
-		{
 			return true;
-		}
 		if (region.isAlwaysUnlocked())
-		{
 			return true;
-		}
 		if (!seasonal)
-		{
 			return true;
-		}
 		if (region.isAlwaysBlocked())
-		{
 			return false;
-		}
 		return unlockedRegions.contains(region);
 	}
 
@@ -152,12 +136,9 @@ public class LeagueModeState
 	 * player is on a seasonal world. Returns {@code false} on non-seasonal
 	 * worlds so normal pathfinding is unaffected.
 	 */
-	public boolean isInBlockedRegion(int packedPoint)
-	{
+	public boolean isInBlockedRegion(int packedPoint) {
 		if (!seasonal)
-		{
 			return false;
-		}
 		return LeagueRegionChecker.getRegion(packedPoint).isAlwaysBlocked();
 	}
 
@@ -165,25 +146,19 @@ public class LeagueModeState
 	 * Test hook: forces the seasonal flag and unlock set without touching
 	 * the client.
 	 */
-	public void setForTest(boolean seasonal, Set<LeagueRegion> unlocked)
-	{
+	public void setForTest(boolean seasonal, Set<LeagueRegion> unlocked) {
 		this.seasonal = seasonal;
 		this.unlockedRegions = unlocked == null
 			? EnumSet.noneOf(LeagueRegion.class)
 			: EnumSet.copyOf(unlocked);
 	}
 
-	private static void addRegionFromSlot(Client client, int varbitId, Set<LeagueRegion> out)
-	{
+	private static void addRegionFromSlot(Client client, int varbitId, Set<LeagueRegion> out) {
 		int value = client.getVarbitValue(varbitId);
 		if (value <= 0)
-		{
 			return;
-		}
 		LeagueRegion region = AREA_VARBIT_TO_REGION.get(value);
 		if (region != null)
-		{
 			out.add(region);
-		}
 	}
 }

@@ -41,8 +41,7 @@ import gps.TeleportationItem;
  * </ul>
  */
 @Slf4j
-public class TransportTypeConfig
-{
+public class TransportTypeConfig {
 	private final Map<TransportType, Boolean> enabledStates = new EnumMap<>(TransportType.class);
 	/**
 	 * The toggles as configured, before {@link #disableUnless}/{@link #setEnabled} adjust the
@@ -56,8 +55,7 @@ public class TransportTypeConfig
 	@Getter
 	private TeleportationItem teleportationItemSetting;
 
-	public TransportTypeConfig(ShortestPathConfig config)
-	{
+	public TransportTypeConfig(ShortestPathConfig config) {
 		this.config = config;
 		refresh();
 	}
@@ -68,8 +66,7 @@ public class TransportTypeConfig
 	 * its source's refresh produced, runtime adjustments included, and is built off the client
 	 * thread).
 	 */
-	public TransportTypeConfig(TransportTypeConfig source)
-	{
+	public TransportTypeConfig(TransportTypeConfig source) {
 		this.config = source.config;
 		this.teleportationItemSetting = source.teleportationItemSetting;
 		this.enabledStates.putAll(source.enabledStates);
@@ -81,13 +78,11 @@ public class TransportTypeConfig
 	 * Refreshes all transport type enabled states and cost thresholds from config.
 	 * Uses the functional getters defined in TransportType to read config values.
 	 */
-	public void refresh()
-	{
+	public void refresh() {
 		// Cache the teleportation item setting
 		teleportationItemSetting = ConfigOverrides.override("useTeleportationItems", config.useTeleportationItems());
 
-		for (TransportType type : TransportType.values())
-		{
+		for (TransportType type : TransportType.values()) {
 			boolean enabled = getEnabledState(type);
 			enabledStates.put(type, enabled);
 			configEnabledStates.put(type, enabled);
@@ -105,16 +100,13 @@ public class TransportTypeConfig
 	 * Special handling for teleportation item types which are controlled by
 	 * the TeleportationItem enum rather than a simple boolean.
 	 */
-	private boolean getEnabledState(TransportType type)
-	{
+	private boolean getEnabledState(TransportType type) {
 		// Special handling for teleportation item types
 		if (type == TransportType.TELEPORTATION_ITEM || type == TransportType.TELEPORTATION_BOX)
-		{
 			// These are enabled unless TeleportationItem is NONE
 			// The detailed filtering (consumable, inventory, etc.) is done in
 			// PathfinderConfig
 			return teleportationItemSetting != TeleportationItem.NONE;
-		}
 
 		// No enabled getter means always enabled: the type has no toggle, only a dev override by its
 		// key (the tests use it to narrow the world to one transport type).
@@ -126,13 +118,10 @@ public class TransportTypeConfig
 	 * Determines the cost threshold for a transport type.
 	 * Uses the costGetter function from TransportType to look up the config value.
 	 */
-	private int getCostThreshold(TransportType type)
-	{
+	private int getCostThreshold(TransportType type) {
 		// No cost getter means no additional cost
 		if (!type.hasCostGetter())
-		{
 			return 0;
-		}
 
 		int configValue = type.getCostGetter().apply(config);
 		return ConfigOverrides.override(type, configValue);
@@ -141,16 +130,14 @@ public class TransportTypeConfig
 	/**
 	 * Checks if a transport type is enabled in config.
 	 */
-	public boolean isEnabled(TransportType type)
-	{
+	public boolean isEnabled(TransportType type) {
 		return enabledStates.getOrDefault(type, true);
 	}
 
 	/**
 	 * Gets the cost threshold for a transport type.
 	 */
-	public int getCost(TransportType type)
-	{
+	public int getCost(TransportType type) {
 		return costThresholds.getOrDefault(type, 0);
 	}
 
@@ -158,8 +145,7 @@ public class TransportTypeConfig
 	 * Overrides the teleportation-item setting (used by the alternative-routes planning copy to force a
 	 * mode independent of the user's config). Keeps the teleport-item/box enabled states consistent.
 	 */
-	public void setTeleportationItemSetting(TeleportationItem setting)
-	{
+	public void setTeleportationItemSetting(TeleportationItem setting) {
 		this.teleportationItemSetting = setting;
 		boolean enabled = setting != TeleportationItem.NONE;
 		enabledStates.put(TransportType.TELEPORTATION_ITEM, enabled);
@@ -173,8 +159,7 @@ public class TransportTypeConfig
 	 * Used for runtime modifications (e.g., disabling fairy rings without dramen
 	 * staff).
 	 */
-	public void setEnabled(TransportType type, boolean enabled)
-	{
+	public void setEnabled(TransportType type, boolean enabled) {
 		enabledStates.put(type, enabled);
 	}
 
@@ -191,16 +176,12 @@ public class TransportTypeConfig
 	 * must not fire for a type that is merely quest-locked (that classifies MISSING_QUEST).
 	 */
 	/** The toggle as configured at the last {@link #refresh()}, ignoring later runtime adjustments. */
-	public boolean isEnabledInConfig(TransportType type)
-	{
+	public boolean isEnabledInConfig(TransportType type) {
 		return configEnabledStates.getOrDefault(type, true);
 	}
 
-	public void disableUnless(TransportType type, boolean condition)
-	{
+	public void disableUnless(TransportType type, boolean condition) {
 		if (!condition)
-		{
 			enabledStates.put(type, false);
-		}
 	}
 }

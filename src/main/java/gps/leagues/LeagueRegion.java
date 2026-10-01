@@ -32,8 +32,7 @@ package gps.leagues;
  * mapping fall back to {@link #NEUTRAL}.
  * </p>
  */
-public enum LeagueRegion
-{
+public enum LeagueRegion {
 	VARLAMORE,
 	KARAMJA,
 	ASGARNIA,
@@ -53,8 +52,7 @@ public enum LeagueRegion
 	 * NEUTRAL bucket are always-unlocked; every other region — including
 	 * Karamja — depends on the player's slot picks.
 	 */
-	public boolean isAlwaysUnlocked()
-	{
+	public boolean isAlwaysUnlocked() {
 		return this == VARLAMORE || this == NEUTRAL;
 	}
 
@@ -63,8 +61,7 @@ public enum LeagueRegion
 	 * always-blocked regions reject both walking and transport traversal
 	 * (see {@code LeagueRegionChecker} and {@code PathfinderConfig.useTransport}).
 	 */
-	public boolean isAlwaysBlocked()
-	{
+	public boolean isAlwaysBlocked() {
 		return this == MISTHALIN;
 	}
 }

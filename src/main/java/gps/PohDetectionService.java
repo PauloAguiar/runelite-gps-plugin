@@ -21,16 +21,14 @@ import net.runelite.client.config.ConfigManager;
  * mode re-arms it. The result persists per character so the next session starts scanned.
  */
 @Slf4j
-final class PohDetectionService
-{
+final class PohDetectionService {
 	/** RSProfile-scoped: the last scan's furniture (see PohScanner.encode); present = scanned. */
 	static final String CONFIG_KEY_POH_FURNITURE = "pohFurniture";
 	/** Bounds the "scene still loading" retries. */
 	static final int MAX_ATTEMPTS = 6;
 
 	/** What the scan reads from the loaded scene. */
-	interface Scene
-	{
+	interface Scene {
 		boolean isHouse();
 
 		boolean isInstance();
@@ -41,8 +39,7 @@ final class PohDetectionService
 	}
 
 	/** The house declarations a scan may raise (a feature on, a higher jewellery tier), never lower. */
-	interface Declarations
-	{
+	interface Declarations {
 		boolean fairyRing();
 
 		boolean spiritTree();
@@ -75,8 +72,7 @@ final class PohDetectionService
 	private boolean building;
 
 	PohDetectionService(Supplier<Scene> scene, BooleanSupplier buildingMode, BooleanSupplier smartDetect,
-		Declarations declarations, ConfigManager configManager, String configGroup, Runnable onChanged)
-	{
+		Declarations declarations, ConfigManager configManager, String configGroup, Runnable onChanged) {
 		this.scene = scene;
 		this.buildingMode = buildingMode;
 		this.smartDetect = smartDetect;
@@ -87,54 +83,39 @@ final class PohDetectionService
 	}
 
 	/** Whether the house has been scanned (this session or restored from the last). */
-	boolean isScanned()
-	{
+	boolean isScanned() {
 		return scanned;
 	}
 
-	PohScanner.Detected detected()
-	{
+	PohScanner.Detected detected() {
 		return detected;
 	}
 
 	/** The furniture the last scan recognised, as display names (empty until scanned). */
-	List<String> detectedNames()
-	{
+	List<String> detectedNames() {
 		PohScanner.Detected found = detected;
 		if (found == null)
-		{
 			return List.of();
-		}
 		List<String> names = new ArrayList<>();
 		if (found.jewelleryBox != JewelleryBoxTier.NONE)
-		{
 			names.add(found.jewelleryBox + " jewellery box");
-		}
 		if (found.fairyRing)
-		{
 			names.add("Fairy ring");
-		}
 		if (found.spiritTree)
-		{
 			names.add("Spirit tree");
-		}
 		if (found.obelisk)
-		{
 			names.add("Obelisk");
-		}
 		return names;
 	}
 
 	/** A scene rebuild: the spawn evidence belonged to the old scene; the chunk-dump log re-arms. */
-	void onSceneLoading()
-	{
+	void onSceneLoading() {
 		spawned.clear();
 		chunksLogged = false;
 	}
 
 	/** Logged out: the next character starts from its own snapshot. */
-	void reset()
-	{
+	void reset() {
 		scanned = false;
 		detected = null;
 		foundThisVisit = false;
@@ -143,42 +124,33 @@ final class PohDetectionService
 	}
 
 	/** A game object spawned: recognised house furniture is unambiguous in-house evidence. */
-	void furnitureSpawned(int objectId)
-	{
-		if (PohScanner.isRecognised(objectId) && spawned.add(objectId))
-		{
+	void furnitureSpawned(int objectId) {
+		if (PohScanner.isRecognised(objectId) && spawned.add(objectId)) {
 			log.debug("[poh] recognised furniture spawned: {}", objectId);
 		}
 	}
 
 	/** Restores the persisted scan when none has run this session. */
-	void restore()
-	{
+	void restore() {
 		if (scanned)
-		{
 			return;
-		}
 		PohScanner.Detected stored = PohScanner.decode(
 			configManager.getRSProfileConfiguration(configGroup, CONFIG_KEY_POH_FURNITURE));
-		if (stored != null)
-		{
+		if (stored != null) {
 			detected = stored;
 			scanned = true;
 		}
 	}
 
 	/** Client thread, once per game tick. */
-	void onTick()
-	{
+	void onTick() {
 		Scene current = scene.get();
 		boolean sceneIsHouse = current.isHouse();
 		boolean inside = sceneIsHouse || !spawned.isEmpty();
-		if (!inside)
-		{
+		if (!inside) {
 			// Diagnosability: when an instance is judged not-a-house, log its decoded template
 			// chunks once per scene, so a missed house shows in the client log.
-			if (!chunksLogged && log.isDebugEnabled() && current.isInstance())
-			{
+			if (!chunksLogged && log.isDebugEnabled() && current.isInstance()) {
 				chunksLogged = true;
 				log.debug("[poh] instance not judged a house; template chunks: {}", current.describeChunks());
 			}
@@ -189,24 +161,20 @@ final class PohDetectionService
 		// Leaving building mode re-arms the scan: furniture built this visit gets detected without
 		// exiting the house.
 		boolean buildingNow = buildingMode.getAsBoolean();
-		if (building && !buildingNow)
-		{
+		if (building && !buildingNow) {
 			foundThisVisit = false;
 			attempts = 0;
 		}
 		building = buildingNow;
 		if (!smartDetect.getAsBoolean() || foundThisVisit || attempts >= MAX_ATTEMPTS)
-		{
 			return;
-		}
 		attempts++;
 		log.debug("[poh] scan attempt {} (sceneIsHouse={}, spawned={})", attempts, sceneIsHouse, spawned);
 		scan(current);
 		foundThisVisit = detected != null && detected.any();
 	}
 
-	private void scan(Scene current)
-	{
+	private void scan(Scene current) {
 		Set<Integer> ids = new HashSet<>(current.objectIds());
 		// Spawn-event evidence joins the tile scan: authoritative even if the tile walk missed it.
 		ids.addAll(spawned);
@@ -215,8 +183,7 @@ final class PohDetectionService
 		boolean changed = !scanned || !found.sameAs(detected);
 		scanned = true;
 		detected = found;
-		if (!changed)
-		{
+		if (!changed) {
 			return; // nothing new this scan: do not churn the config or the panel
 		}
 		// Persist per character, so next session's panel starts in the "scanned" state.
@@ -224,24 +191,14 @@ final class PohDetectionService
 		// Only ever raise declarations (turn a feature on, raise the jewellery tier): a partial
 		// scene load that missed a piece can never wipe an existing declaration.
 		if (found.fairyRing && !declarations.fairyRing())
-		{
 			declarations.raise("usePohFairyRing", true);
-		}
 		if (found.spiritTree && !declarations.spiritTree())
-		{
 			declarations.raise("usePohSpiritTree", true);
-		}
 		if (found.obelisk && !declarations.obelisk())
-		{
 			declarations.raise("usePohObelisk", true);
-		}
 		if (found.jewelleryBox.ordinal() > declarations.jewelleryBoxTier().ordinal())
-		{
 			declarations.raise("pohJewelleryBoxTier", found.jewelleryBox);
-		}
 		if (onChanged != null)
-		{
 			onChanged.run();
-		}
 	}
 }

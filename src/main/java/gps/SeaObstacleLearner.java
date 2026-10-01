@@ -14,8 +14,7 @@ import net.runelite.api.WorldView;
  * vessels, harbour clutter). The offline map plans; the client corrects itself as scenes
  * reveal the truth.
  */
-final class SeaObstacleLearner
-{
+final class SeaObstacleLearner {
 	static final int SCAN_PERIOD_TICKS = 10;
 	// Scene border padding reads 0xFFFFFF (everything blocked); the first field harvest showed
 	// the border bands dwarfing the actual galleon, so a 3-tile edge margin is skipped too.
@@ -31,71 +30,53 @@ final class SeaObstacleLearner
 	private final IntSupplier playerLocation;
 	private int cooldown;
 
-	SeaObstacleLearner(Client client, IntSupplier playerLocation)
-	{
+	SeaObstacleLearner(Client client, IntSupplier playerLocation) {
 		this.client = client;
 		this.playerLocation = playerLocation;
 	}
 
 	/** Client thread, once per game tick. */
-	void onTick()
-	{
-		if (--cooldown <= 0)
-		{
+	void onTick() {
+		if (--cooldown <= 0) {
 			cooldown = SCAN_PERIOD_TICKS;
 			scan();
 		}
 	}
 
 	/** A real obstacle carries BLOCK_MOVEMENT_OBJECT; the border padding and margin are skipped. */
-	private void scan()
-	{
+	private void scan() {
 		WorldView view = client.getTopLevelWorldView();
 		if (view == null || view.getCollisionMaps() == null || view.getPlane() != 0)
-		{
 			return;
-		}
 		CollisionData collision = view.getCollisionMaps()[0];
 		if (collision == null)
-		{
 			return;
-		}
 		int[][] flags = collision.getFlags();
 		int baseX = view.getBaseX();
 		int baseY = view.getBaseY();
 		int playerAt = playerLocation.getAsInt();
 		List<Integer> found = null;
-		for (int sx = EDGE_MARGIN; sx < flags.length - EDGE_MARGIN; sx++)
-		{
-			for (int sy = EDGE_MARGIN; sy < flags[sx].length - EDGE_MARGIN; sy++)
-			{
+		for (int sx = EDGE_MARGIN; sx < flags.length - EDGE_MARGIN; sx++) {
+			for (int sy = EDGE_MARGIN; sy < flags[sx].length - EDGE_MARGIN; sy++) {
 				int tileFlags = flags[sx][sy];
 				if (tileFlags == 0xFFFFFF || (tileFlags & CollisionDataFlag.BLOCK_MOVEMENT_OBJECT) == 0)
-				{
 					continue;
-				}
 				int x = baseX + sx;
 				int y = baseY + sy;
 				if (playerAt != WorldPointUtil.UNDEFINED
 					&& Math.max(Math.abs(WorldPointUtil.unpackWorldX(playerAt) - x),
-						Math.abs(WorldPointUtil.unpackWorldY(playerAt) - y)) <= OWN_BOAT_RADIUS)
-				{
+						Math.abs(WorldPointUtil.unpackWorldY(playerAt) - y)) <= OWN_BOAT_RADIUS) {
 					continue;
 				}
 				int packed = WorldPointUtil.packWorldPoint(x, y, 0);
-				if (SailingSea.isSailable(packed) && !SailingSea.obstacleAt(x, y))
-				{
+				if (SailingSea.isSailable(packed) && !SailingSea.obstacleAt(x, y)) {
 					if (found == null)
-					{
 						found = new ArrayList<>();
-					}
 					found.add(packed);
 				}
 			}
 		}
 		if (found != null)
-		{
 			SailingSea.learnObstacles(found);
-		}
 	}
 }

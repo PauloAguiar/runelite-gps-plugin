@@ -13,8 +13,7 @@ import net.runelite.client.util.ImageUtil;
  * unless a one-shot override names the tile the set was expanded from (a searched bank booth
  * and its walkable surround still pins the booth). Clicking the pin jumps the map to it.
  */
-final class WorldMapMarker
-{
+final class WorldMapMarker {
 	private static final BufferedImage IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
 
 	// A supplier: the manager is injected into the plugin after field initialisation.
@@ -23,28 +22,23 @@ final class WorldMapMarker
 	// The one-shot override for the next placement; UNDEFINED = the default rule.
 	private int pinNext = WorldPointUtil.UNDEFINED;
 
-	WorldMapMarker(Supplier<WorldMapPointManager> manager)
-	{
+	WorldMapMarker(Supplier<WorldMapPointManager> manager) {
 		this.manager = manager;
 	}
 
 	/** The next placement pins {@code tile} whatever the target set (consumed by that placement). */
-	void pinNextAt(int tile)
-	{
+	void pinNextAt(int tile) {
 		pinNext = tile;
 	}
 
 	/** Replaces the pin for a new target set: the override, else the single target, else none. */
-	void place(Set<Integer> targets)
-	{
+	void place(Set<Integer> targets) {
 		clear();
 		int tile = pinNext != WorldPointUtil.UNDEFINED ? pinNext
 			: (targets.size() == 1 ? targets.iterator().next() : WorldPointUtil.UNDEFINED);
 		pinNext = WorldPointUtil.UNDEFINED;
 		if (tile == WorldPointUtil.UNDEFINED)
-		{
 			return;
-		}
 		marker = new WorldMapPoint(WorldPointUtil.unpackWorldPoint(tile), IMAGE);
 		marker.setName("Target");
 		marker.setTarget(marker.getWorldPoint());
@@ -53,15 +47,13 @@ final class WorldMapMarker
 	}
 
 	/** Removes the pin, if any. */
-	void clear()
-	{
+	void clear() {
 		manager.get().removeIf(x -> x == marker);
 		marker = null;
 	}
 
 	/** The pinned tile, or UNDEFINED when there is no pin. */
-	int pinnedTile()
-	{
+	int pinnedTile() {
 		return marker == null ? WorldPointUtil.UNDEFINED : WorldPointUtil.packWorldPoint(marker.getWorldPoint());
 	}
 }

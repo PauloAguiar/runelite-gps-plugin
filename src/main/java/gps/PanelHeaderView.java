@@ -33,8 +33,7 @@ import static gps.PanelWidgets.control;
  * bank-contents warning that belongs with the mode it explains. Report, GitHub and Discord stay
  * in the header row by the owner's decision (reverted from the burger on 2026-09-07).
  */
-final class PanelHeaderView extends JPanel
-{
+final class PanelHeaderView extends JPanel {
 	// The header's GitHub mark points at the project home; the Discord mark at the community invite.
 	private static final String GITHUB_REPO_URL = "https://github.com/PauloAguiar/runelite-gps-plugin";
 	private static final String DISCORD_URL = "https://discord.gg/7VAbrPsUzT";
@@ -49,8 +48,7 @@ final class PanelHeaderView extends JPanel
 	private final JButton bankModeButton = new JButton("+ Bank");
 	private final JButton allModeButton = new JButton("All");
 
-	PanelHeaderView(ShortestPathPlugin plugin)
-	{
+	PanelHeaderView(ShortestPathPlugin plugin) {
 		super(new BorderLayout());
 		this.plugin = plugin;
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -81,8 +79,7 @@ final class PanelHeaderView extends JPanel
 	}
 
 	/** The mode buttons' highlight and the bank-contents warning, from the plugin's current state. */
-	void refresh()
-	{
+	void refresh() {
 		AlternativeRoutesMode mode = plugin.getRoutesMode();
 		styleModeButton(inventoryModeButton, mode == AlternativeRoutesMode.OWNED_INVENTORY);
 		styleModeButton(bankModeButton, mode == AlternativeRoutesMode.OWNED_WITH_BANK);
@@ -91,8 +88,7 @@ final class PanelHeaderView extends JPanel
 		// The bank container is only populated once the bank has been opened this session; without
 		// it Bank mode cannot see banked items (the same constraint as Shortest Path itself).
 		modeBankWarning.removeAll();
-		if (mode == AlternativeRoutesMode.OWNED_WITH_BANK && !plugin.isBankContentsKnown())
-		{
+		if (mode == AlternativeRoutesMode.OWNED_WITH_BANK && !plugin.isBankContentsKnown()) {
 			modeBankWarning.add(banner(RouteIcons.BANNER_WARNING,
 				"Bank contents unknown",
 				plugin.getGpsConfig().rememberBank()
@@ -109,8 +105,7 @@ final class PanelHeaderView extends JPanel
 	 * Shows the routing context in the copy box under the title, pre-selected so a single Ctrl+C
 	 * carries it to the GitHub issue. Stays until the player hides it. EDT only.
 	 */
-	void showReportContext(String context)
-	{
+	void showReportContext(String context) {
 		reportContext.setText(context);
 		reportBox.setVisible(true);
 		reportBox.revalidate();
@@ -118,8 +113,7 @@ final class PanelHeaderView extends JPanel
 		reportContext.selectAll();
 	}
 
-	private JPanel titleRow()
-	{
+	private JPanel titleRow() {
 		JPanel titleRow = new JPanel(new BorderLayout());
 		titleRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
@@ -172,8 +166,7 @@ final class PanelHeaderView extends JPanel
 	 * HAND into the GitHub issue that just opened; no clipboard API, no data in the URL, and they
 	 * see exactly what they are sharing. Hidden until the button is used.
 	 */
-	private void buildReportBox()
-	{
+	private void buildReportBox() {
 		reportBox.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		reportBox.setBorder(new EmptyBorder(6, 6, 6, 6));
 		reportBox.setVisible(false);
@@ -187,8 +180,7 @@ final class PanelHeaderView extends JPanel
 		reportHide.setFont(FontManager.getRunescapeSmallFont());
 		reportHide.setMargin(new Insets(0, 4, 0, 4));
 		reportHide.setFocusable(false);
-		reportHide.addActionListener(e ->
-		{
+		reportHide.addActionListener(e -> {
 			reportBox.setVisible(false);
 			reportBox.revalidate();
 		});
@@ -212,8 +204,7 @@ final class PanelHeaderView extends JPanel
 	 * One segmented row, ordered by inclusiveness (each step considers strictly more methods):
 	 * what you carry, plus your bank, everything in the game.
 	 */
-	private JPanel modeRow()
-	{
+	private JPanel modeRow() {
 		JPanel modeRow = new JPanel(new GridLayout(1, 3, 4, 0));
 		modeRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		modeRow.setBorder(new EmptyBorder(8, 0, 0, 0));
@@ -239,8 +230,7 @@ final class PanelHeaderView extends JPanel
 		return modeRow;
 	}
 
-	private static void styleModeButton(JButton button, boolean active)
-	{
+	private static void styleModeButton(JButton button, boolean active) {
 		button.setForeground(active ? ColorScheme.BRAND_ORANGE : ColorScheme.LIGHT_GRAY_COLOR);
 		button.setBackground(active ? ColorScheme.DARKER_GRAY_HOVER_COLOR : ColorScheme.DARKER_GRAY_COLOR);
 		button.setBorder(BorderFactory.createCompoundBorder(

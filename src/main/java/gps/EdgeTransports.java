@@ -21,10 +21,8 @@ import java.util.Set;
  * destination under the same edge state; the structural fix would be explicit edges on
  * reconstructed paths.
  */
-final class EdgeTransports
-{
-	private EdgeTransports()
-	{
+final class EdgeTransports {
+	private EdgeTransports() {
 	}
 
 	/**
@@ -36,56 +34,39 @@ final class EdgeTransports
 	 * on the edge, or when the edge is within the shared type's radius (the path is walking to
 	 * the landing site, not teleporting there).
 	 */
-	static Set<Transport> forEdge(PathfinderConfig config, PathStep current, PathStep next)
-	{
+	static Set<Transport> forEdge(PathfinderConfig config, PathStep current, PathStep next) {
 		if (current == null || next == null)
-		{
 			return Set.of();
-		}
 		boolean bankVisited = current.isBankVisited() || next.isBankVisited();
 		final int landing = next.getPackedPosition();
 		Set<Transport> stepTransports = new HashSet<>();
 		for (Transport transport : config.getTransportsPacked(bankVisited)
-			.getOrDefault(current.getPackedPosition(), TransportAvailability.EMPTY_TRANSPORTS))
-		{
+			.getOrDefault(current.getPackedPosition(), TransportAvailability.EMPTY_TRANSPORTS)) {
 			if (transport.getDestination() == landing)
-			{
 				stepTransports.add(transport);
-			}
 		}
-		for (Transport transport : config.getUsableTeleports(bankVisited))
-		{
+		for (Transport transport : config.getUsableTeleports(bankVisited)) {
 			if (transport.getDestination() == landing)
-			{
 				stepTransports.add(transport);
-			}
 		}
 		Set<TransportType> localTypes = EnumSet.noneOf(TransportType.class);
-		for (Transport t : stepTransports)
-		{
+		for (Transport t : stepTransports) {
 			if (t.getOrigin() != Transport.UNDEFINED_ORIGIN && t.getType() != null)
-			{
 				localTypes.add(t.getType());
-			}
 		}
 		int edgeDistance = WorldPointUtil.distanceBetween2D(current.getPackedPosition(), next.getPackedPosition());
 		boolean samePlane = WorldPointUtil.unpackWorldPlane(current.getPackedPosition())
 			== WorldPointUtil.unpackWorldPlane(next.getPackedPosition());
-		stepTransports.removeIf(t ->
-		{
-			if (t.getOrigin() != Transport.UNDEFINED_ORIGIN || t.getType() == null)
-			{
+		stepTransports.removeIf(t -> {
+			if (t.getOrigin() != Transport.UNDEFINED_ORIGIN || t.getType() == null) {
 				return false; // local transports stay
 			}
-			if (samePlane && edgeDistance <= 1)
-			{
+			if (samePlane && edgeDistance <= 1) {
 				return true; // a walking step across a teleport's landing tile
 			}
 			TransportType sharedType = t.getType().sharesDestinationsWith();
 			if (sharedType == null)
-			{
 				return false;
-			}
 			return localTypes.contains(sharedType)
 				|| (sharedType.getRadiusThreshold() != null && edgeDistance <= sharedType.getRadiusThreshold());
 		});
@@ -93,12 +74,9 @@ final class EdgeTransports
 	}
 
 	/** The step after {@code index}, or null at the end of the path. */
-	static PathStep nextStep(List<PathStep> path, int index)
-	{
+	static PathStep nextStep(List<PathStep> path, int index) {
 		if (path == null || index < 0 || index + 1 >= path.size())
-		{
 			return null;
-		}
 		return path.get(index + 1);
 	}
 }

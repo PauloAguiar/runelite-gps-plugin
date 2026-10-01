@@ -26,8 +26,7 @@ import gps.transport.requirement.TransportItems;
  * This class represents a travel point between two WorldPoints.
  */
 @Slf4j
-public class Transport
-{
+public class Transport {
 	public static final int UNDEFINED_ORIGIN = WorldPointUtil.UNDEFINED;
 	public static final int UNDEFINED_DESTINATION = WorldPointUtil.UNDEFINED;
 	/**
@@ -75,17 +74,14 @@ public class Transport
 	 */
 	private TeleportMethod method;
 
-	public void setDestination(int destination)
-	{
+	public void setDestination(int destination) {
 		this.destination = destination;
 		this.method = null;
 	}
 
-	public TeleportMethod method()
-	{
+	public TeleportMethod method() {
 		TeleportMethod cached = method;
-		if (cached == null)
-		{
+		if (cached == null) {
 			cached = TeleportMethod.fromTransport(this);
 			method = cached;
 		}
@@ -157,8 +153,7 @@ public class Transport
 	 * Creates a new transport from an origin-only transport
 	 * and a destination-only transport, and merges requirements
 	 */
-	Transport(Transport origin, Transport destination)
-	{
+	Transport(Transport origin, Transport destination) {
 		TransportBuilder builder = new TransportBuilder()
 			.origin(origin.origin)
 			.destination(destination.destination)
@@ -195,77 +190,46 @@ public class Transport
 		this.varRequirements = builtTransport.varRequirements;
 	}
 
-	Transport(TransportRecord record, TransportType transportType)
-	{
+	Transport(TransportRecord record, TransportType transportType) {
 		TransportBuilder builder = new TransportBuilder();
 		builder.type(transportType);
 
 		// Origin/Destination use hasKey because empty string means LOCATION_PERMUTATION
 		if (record.hasKey(TransportRecord.Fields.ORIGIN))
-		{
 			builder.origin(record.getOrigin());
-		}
 		if (record.hasKey(TransportRecord.Fields.DESTINATION))
-		{
 			builder.destination(record.getDestination());
-		}
 		if (record.has(TransportRecord.Fields.SKILLS))
-		{
 			builder.skillLevels(record.getSkills());
-		}
 		if (record.has(TransportRecord.Fields.ITEMS))
-		{
 			builder.itemRequirements(record.getItems());
-		}
 		if (record.has(TransportRecord.Fields.QUESTS))
-		{
 			builder.quests(record.getQuests());
-		}
 		if (record.has(TransportRecord.Fields.DURATION))
-		{
 			builder.duration(record.getDuration());
-		}
 		else if (transportType == TransportType.TRANSPORT)
-		{
 			// Object transports (stairs, ladders, doors, gates, dungeon portals, passages) without an
 			// explicit duration are NOT free: interacting with the object and crossing takes at least a
 			// tick. Pricing them at zero let the search treat them as free shortcuts — e.g. hopping out
 			// of a dungeon and back through an exit that shares its surface tile (Stronghold of
 			// Security). Specific transports still override this with a larger duration in the data.
 			builder.duration(OBJECT_TRANSPORT_MIN_DURATION);
-		}
 		if (record.has(TransportRecord.Fields.DISPLAY_INFO))
-		{
 			builder.displayInfo(record.getDisplayInfo());
-		}
 		if (record.has(TransportRecord.Fields.CONSUMABLE))
-		{
 			builder.isConsumable(record.getConsumable());
-		}
 		if (record.has(TransportRecord.Fields.WILDERNESS_LEVEL))
-		{
 			builder.maxWildernessLevel(record.getWildernessLevel());
-		}
 		if (record.has(TransportRecord.Fields.OBJECT_INFO))
-		{
 			builder.objectInfo(record.getObjectInfo());
-		}
 		if (record.has(TransportRecord.Fields.NOTE))
-		{
 			builder.note(record.getNote());
-		}
 		if (record.has(TransportRecord.Fields.VARBITS))
-		{
 			builder.varbits(record.getVarbits());
-		}
 		if (record.has(TransportRecord.Fields.VAR_PLAYERS))
-		{
 			builder.varPlayers(record.getVarPlayers());
-		}
 		if (record.has(TransportRecord.Fields.REGION_OVERRIDE))
-		{
 			builder.regionOverride(record.getRegionOverride());
-		}
 
 		Transport builtTransport = builder.build();
 		this.origin = builtTransport.origin;
@@ -284,8 +248,7 @@ public class Transport
 		this.regionOverride = builtTransport.regionOverride;
 	}
 
-	private Transport()
-	{
+	private Transport() {
 	}
 
 	/**
@@ -293,8 +256,7 @@ public class Transport
 	 * requirement sets do not allocate a {@code HashSet}/{@code HashMap} per transport. A non-empty
 	 * builder set is handed over directly (the single-use builder is discarded afterwards).
 	 */
-	private static <T> Set<T> compact(Set<T> set)
-	{
+	private static <T> Set<T> compact(Set<T> set) {
 		return set.isEmpty() ? Collections.emptySet() : set;
 	}
 
@@ -303,8 +265,7 @@ public class Transport
 	 * compact {@link EnumSet} (a single bitmask object) rather than a HashSet plus its HashMap and
 	 * per-element nodes (issue #491). The empty case keeps the shared immutable empty set.
 	 */
-	private static Set<Quest> compactQuests(Set<Quest> quests)
-	{
+	private static Set<Quest> compactQuests(Set<Quest> quests) {
 		return quests.isEmpty() ? Collections.emptySet() : EnumSet.copyOf(quests);
 	}
 
@@ -313,14 +274,10 @@ public class Transport
 	 * all-zero skill arrays do not allocate a per-transport {@code int[]}. A non-empty builder array
 	 * is handed over directly (the single-use builder is discarded afterwards).
 	 */
-	private static int[] compactSkills(int[] skills)
-	{
-		for (int level : skills)
-		{
+	private static int[] compactSkills(int[] skills) {
+		for (int level : skills) {
 			if (level != 0)
-			{
 				return skills;
-			}
 		}
 		return NO_SKILLS;
 	}
@@ -332,31 +289,24 @@ public class Transport
 	 * rather than each holding a distinct copy (issue #491). Identical requirements are extremely
 	 * common across the permuted transport rows. The pools are local to loading and discarded after.
 	 */
-	void internRequirements(LoadInterner interner)
-	{
+	void internRequirements(LoadInterner interner) {
 		itemRequirements = interner.intern(itemRequirements);
 		displayInfo = interner.internString(displayInfo);
 		objectInfo = interner.internString(objectInfo);
-		if (!varRequirements.isEmpty())
-		{
+		if (!varRequirements.isEmpty()) {
 			Set<VarRequirement> interned = new HashSet<>(varRequirements.size() * 2);
 			for (VarRequirement requirement : varRequirements)
-			{
 				interned.add(interner.intern(requirement));
-			}
 			// Transports with identical var requirements (very common across permutations) share one
 			// read-only Set instead of each keeping a copy.
 			varRequirements = interner.internVarSet(interned);
 		}
 		if (!quests.isEmpty())
-		{
 			quests = interner.internQuestSet(quests);
-		}
 	}
 
 	@Override
-	public String toString()
-	{
+	public String toString() {
 		return ("(" +
 			WorldPointUtil.unpackWorldX(origin) + ", " +
 			WorldPointUtil.unpackWorldY(origin) + ", " +
@@ -369,16 +319,14 @@ public class Transport
 	/**
 	 * Whether the transport has one or more quest requirements
 	 */
-	public boolean isQuestLocked()
-	{
+	public boolean isQuestLocked() {
 		return !quests.isEmpty();
 	}
 
 	/**
 	 * Whether this transport is of the given type.
 	 */
-	public boolean isType(TransportType type)
-	{
+	public boolean isType(TransportType type) {
 		return type.equals(this.type);
 	}
 
@@ -386,16 +334,14 @@ public class Transport
 	 * Whether this transport's display info contains the given substring.
 	 * Returns false if displayInfo is null.
 	 */
-	public boolean hasDisplayInfo(String substring)
-	{
+	public boolean hasDisplayInfo(String substring) {
 		return displayInfo != null && displayInfo.contains(substring);
 	}
 
 	/**
 	 * Whether this transport can be used at the given wilderness level.
 	 */
-	public boolean isUsableAtWildernessLevel(int wildernessLevel)
-	{
+	public boolean isUsableAtWildernessLevel(int wildernessLevel) {
 		return !type.isTeleport() || wildernessLevel <= maxWildernessLevel;
 	}
 
@@ -403,15 +349,11 @@ public class Transport
 	 * Gets varbit requirements (filtered from varRequirements).
 	 * For backward compatibility with code that needs separate varbit access.
 	 */
-	public Set<VarRequirement> getVarbits()
-	{
+	public Set<VarRequirement> getVarbits() {
 		Set<VarRequirement> varbits = new HashSet<>();
-		for (VarRequirement req : varRequirements)
-		{
+		for (VarRequirement req : varRequirements) {
 			if (req.isVarbit())
-			{
 				varbits.add(req);
-			}
 		}
 		return varbits;
 	}
@@ -419,14 +361,10 @@ public class Transport
 	/**
 	 * Whether this transport has a varbit requirement with the given ID.
 	 */
-	public boolean hasVarbit(int varbitId)
-	{
-		for (VarRequirement req : varRequirements)
-		{
+	public boolean hasVarbit(int varbitId) {
+		for (VarRequirement req : varRequirements) {
 			if (req.isVarbit() && req.getId() == varbitId)
-			{
 				return true;
-			}
 		}
 		return false;
 	}
@@ -435,21 +373,16 @@ public class Transport
 	 * Gets varplayer requirements (filtered from varRequirements).
 	 * For backward compatibility with code that needs separate varplayer access.
 	 */
-	public Set<VarRequirement> getVarPlayers()
-	{
+	public Set<VarRequirement> getVarPlayers() {
 		Set<VarRequirement> varPlayers = new HashSet<>();
-		for (VarRequirement req : varRequirements)
-		{
+		for (VarRequirement req : varRequirements) {
 			if (req.isVarPlayer())
-			{
 				varPlayers.add(req);
-			}
 		}
 		return varPlayers;
 	}
 
-	public static class TransportBuilder
-	{
+	public static class TransportBuilder {
 		private final int[] skillLevels = new int[Skill.values().length + 3];
 		private final Set<VarRequirement> varRequirements = new HashSet<>();
 		private final FieldParser<int[]> skillParser = new SkillRequirementParser();
@@ -471,201 +404,159 @@ public class Transport
 		private String note = null;
 		private LeagueRegion regionOverride = null;
 
-		public TransportBuilder origin(int origin)
-		{
+		public TransportBuilder origin(int origin) {
 			this.origin = origin;
 			return this;
 		}
 
-		public TransportBuilder origin(String value)
-		{
+		public TransportBuilder origin(String value) {
 			this.origin = worldPointParser.parse(value);
 			return this;
 		}
 
-		public TransportBuilder destination(int destination)
-		{
+		public TransportBuilder destination(int destination) {
 			this.destination = destination;
 			return this;
 		}
 
-		public TransportBuilder destination(String value)
-		{
+		public TransportBuilder destination(String value) {
 			this.destination = worldPointParser.parse(value);
 			return this;
 		}
 
-		public TransportBuilder skillLevels(String value)
-		{
+		public TransportBuilder skillLevels(String value) {
 			int[] parsedSkills = skillParser.parse(value);
-			for (int i = 0; i < skillLevels.length; i++)
-			{
+			for (int i = 0; i < skillLevels.length; i++) {
 				if (parsedSkills[i] > 0)
-				{
 					skillLevels[i] = parsedSkills[i];
-				}
 			}
 			return this;
 		}
 
-		public TransportBuilder startSkillLevels(int[] otherSkillLevels)
-		{
+		public TransportBuilder startSkillLevels(int[] otherSkillLevels) {
 			for (int i = 0; i < skillLevels.length; i++)
-			{
 				this.skillLevels[i] = Math.max(this.skillLevels[i], otherSkillLevels[i]);
-			}
 			return this;
 		}
 
-		public TransportBuilder quests(Set<Quest> quests)
-		{
+		public TransportBuilder quests(Set<Quest> quests) {
 			this.quests.addAll(quests);
 			return this;
 		}
 
-		public TransportBuilder quests(String value)
-		{
+		public TransportBuilder quests(String value) {
 			this.quests.addAll(questParser.parse(value));
 			return this;
 		}
 
-		public TransportBuilder itemRequirements(TransportItems itemRequirements)
-		{
+		public TransportBuilder itemRequirements(TransportItems itemRequirements) {
 			this.itemRequirements = itemRequirements;
 			return this;
 		}
 
-		public TransportBuilder itemRequirements(String value)
-		{
+		public TransportBuilder itemRequirements(String value) {
 			this.itemRequirements = itemParser.parse(value);
 			return this;
 		}
 
-		public TransportBuilder type(TransportType type)
-		{
+		public TransportBuilder type(TransportType type) {
 			this.type = type;
 			return this;
 		}
 
-		public TransportBuilder duration(int duration)
-		{
+		public TransportBuilder duration(int duration) {
 			this.duration = Math.max(this.duration, duration);
 			return this;
 		}
 
-		public TransportBuilder duration(String value)
-		{
-			if (value != null && !value.isEmpty())
-			{
-				try
-				{
+		public TransportBuilder duration(String value) {
+			if (value != null && !value.isEmpty()) {
+				try {
 					this.duration = Integer.parseInt(value);
 				}
-				catch (NumberFormatException e)
-				{
+				catch (NumberFormatException e) {
 					log.error("Invalid tick duration: {}", value);
 				}
 			}
 			return this;
 		}
 
-		public TransportBuilder displayInfo(String displayInfo)
-		{
+		public TransportBuilder displayInfo(String displayInfo) {
 			this.displayInfo = displayInfo;
 			return this;
 		}
 
-		public TransportBuilder note(String note)
-		{
+		public TransportBuilder note(String note) {
 			this.note = (note == null || note.isEmpty()) ? null : note;
 			return this;
 		}
 
-		public TransportBuilder isConsumable(boolean isConsumable)
-		{
+		public TransportBuilder isConsumable(boolean isConsumable) {
 			this.isConsumable |= isConsumable;
 			return this;
 		}
 
-		public TransportBuilder isConsumable(String value)
-		{
+		public TransportBuilder isConsumable(String value) {
 			this.isConsumable = "T".equals(value) || "yes".equalsIgnoreCase(value);
 			return this;
 		}
 
-		public TransportBuilder maxWildernessLevel(int maxWildernessLevel)
-		{
+		public TransportBuilder maxWildernessLevel(int maxWildernessLevel) {
 			this.maxWildernessLevel = Math.max(this.maxWildernessLevel, maxWildernessLevel);
 			return this;
 		}
 
-		public TransportBuilder maxWildernessLevel(String value)
-		{
-			if (value != null && !value.isEmpty())
-			{
-				try
-				{
+		public TransportBuilder maxWildernessLevel(String value) {
+			if (value != null && !value.isEmpty()) {
+				try {
 					this.maxWildernessLevel = Integer.parseInt(value);
 				}
-				catch (NumberFormatException e)
-				{
+				catch (NumberFormatException e) {
 					log.error("Invalid wilderness level: {}", value);
 				}
 			}
 			return this;
 		}
 
-		public TransportBuilder objectInfo(String objectInfo)
-		{
+		public TransportBuilder objectInfo(String objectInfo) {
 			this.objectInfo = objectInfo;
 			return this;
 		}
 
-		public TransportBuilder regionOverride(LeagueRegion regionOverride)
-		{
+		public TransportBuilder regionOverride(LeagueRegion regionOverride) {
 			if (regionOverride != null)
-			{
 				this.regionOverride = regionOverride;
-			}
 			return this;
 		}
 
-		public TransportBuilder regionOverride(String value)
-		{
-			if (value != null && !value.isEmpty())
-			{
-				try
-				{
+		public TransportBuilder regionOverride(String value) {
+			if (value != null && !value.isEmpty()) {
+				try {
 					this.regionOverride = LeagueRegion.valueOf(value.trim().toUpperCase());
 				}
-				catch (IllegalArgumentException e)
-				{
+				catch (IllegalArgumentException e) {
 					log.error("Invalid region override: {}", value);
 				}
 			}
 			return this;
 		}
 
-		public TransportBuilder varRequirements(Set<VarRequirement> requirements)
-		{
+		public TransportBuilder varRequirements(Set<VarRequirement> requirements) {
 			this.varRequirements.addAll(requirements);
 			return this;
 		}
 
-		public TransportBuilder varbits(String value)
-		{
+		public TransportBuilder varbits(String value) {
 			this.varRequirements.addAll(varbitParser.parse(value));
 			return this;
 		}
 
-		public TransportBuilder varPlayers(String value)
-		{
+		public TransportBuilder varPlayers(String value) {
 			this.varRequirements.addAll(varPlayerParser.parse(value));
 			return this;
 		}
 
-		public Transport build()
-		{
+		public Transport build() {
 			Transport transport = new Transport();
 			transport.origin = this.origin;
 			transport.destination = this.destination;
@@ -684,14 +575,10 @@ public class Transport
 
 			// Post-build validation/refinement
 			if (transport.type != null && transport.type.isTeleport())
-			{
 				transport.duration = Math.max(transport.duration, 1);
-			}
 
 			if (transport.type != null)
-			{
 				transport.type = transport.type.refine(transport.skillLevels);
-			}
 
 			return transport;
 		}

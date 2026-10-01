@@ -13,8 +13,7 @@ import java.util.function.Predicate;
  * the copies. Everything here is a pure function of the candidate and the page, so each rule is
  * testable on its own (see RouteAcceptanceTest); the passes keep the wiring and the logging.
  */
-final class RouteAcceptance
-{
+final class RouteAcceptance {
 	// A super-cheap best route must not strangle the cost band: with the best route at cost 9 (a
 	// direct teleport), best x 3 = 27 hid every teleport+short-walk combination (a 28-cost quetzal
 	// whistle route) behind "more". The band prices off max(best, this), so the default band is
@@ -33,13 +32,11 @@ final class RouteAcceptance
 	/** How close a same-kind teleport must land to a flight's destination to make the hop pointless. */
 	private static final int SHARED_DESTINATION_RADIUS = 10;
 
-	private RouteAcceptance()
-	{
+	private RouteAcceptance() {
 	}
 
 	/** The display band: {@code max(best, MIN_BEST_FOR_BAND) * multiple}. The page must not be empty. */
-	static long band(List<RouteOption> routes, int multiple)
-	{
+	static long band(List<RouteOption> routes, int multiple) {
 		return (long) Math.max(routes.get(0).getTotalCost(), MIN_BEST_FOR_BAND) * multiple;
 	}
 
@@ -51,20 +48,16 @@ final class RouteAcceptance
 	 * measured from the band it is 1 (the cluster the band edge landed in). The ceiling ratchets as
 	 * fill routes are accepted, so it follows a dense cluster and stops at the first real cliff.
 	 */
-	static long pageFillCeiling(int bestCost, int maxAcceptedCost, int multiple)
-	{
+	static long pageFillCeiling(int bestCost, int maxAcceptedCost, int multiple) {
 		long ref = Math.max((long) Math.max(bestCost, MIN_BEST_FOR_BAND) * multiple, maxAcceptedCost);
 		return ref + Math.max(PAGE_FILL_MIN_GAP, ref / 8);
 	}
 
 	/** The costliest accepted route's cost (walk-only entries included: they bound the page too). */
-	static int maxAcceptedCost(List<RouteOption> routes)
-	{
+	static int maxAcceptedCost(List<RouteOption> routes) {
 		int max = 0;
 		for (RouteOption route : routes)
-		{
 			max = Math.max(max, route.getTotalCost());
-		}
 		return max;
 	}
 
@@ -74,12 +67,9 @@ final class RouteAcceptance
 	 * cost order, so the first is the cheapest. No effect before the first route, when
 	 * {@code multiple <= 0} (uncapped), or when the product exceeds {@code cap}.
 	 */
-	static int cappedByBestCost(int cap, List<RouteOption> routes, int multiple)
-	{
+	static int cappedByBestCost(int cap, List<RouteOption> routes, int multiple) {
 		if (routes.isEmpty() || multiple <= 0)
-		{
 			return cap;
-		}
 		long byBest = band(routes, multiple);
 		return byBest < cap ? (int) byBest : cap;
 	}
@@ -93,18 +83,14 @@ final class RouteAcceptance
 	 * {@code limit} the page being full past the band is a stop as well (the chain cannot evict);
 	 * the passes that evict pass {@link Integer#MAX_VALUE}.
 	 */
-	static boolean beyondBand(int cost, List<RouteOption> routes, int multiple, int limit)
-	{
+	static boolean beyondBand(int cost, List<RouteOption> routes, int multiple, int limit) {
 		if (multiple <= 0 || routes.size() < MIN_PAGE_ROUTES || cost <= band(routes, multiple))
-		{
 			return false;
-		}
 		return routes.size() >= limit
 			|| cost > pageFillCeiling(routes.get(0).getTotalCost(), maxAcceptedCost(routes), multiple);
 	}
 
-	static boolean beyondBand(int cost, List<RouteOption> routes, int multiple)
-	{
+	static boolean beyondBand(int cost, List<RouteOption> routes, int multiple) {
 		return beyondBand(cost, routes, multiple, Integer.MAX_VALUE);
 	}
 
@@ -116,12 +102,9 @@ final class RouteAcceptance
 	 * accepted only while they get about as close. Before any route ({@code bestRemaining < 0})
 	 * nothing is too far; the caller records the first as the best.
 	 */
-	static boolean tooFar(boolean reached, int remaining, int bestRemaining)
-	{
+	static boolean tooFar(boolean reached, int remaining, int bestRemaining) {
 		if (!reached && bestRemaining == 0)
-		{
 			return true;
-		}
 		return bestRemaining >= 0 && remaining > bestRemaining + CLOSEST_DISTANCE_TOLERANCE;
 	}
 
@@ -131,16 +114,13 @@ final class RouteAcceptance
 	 * port-first route (the "park the boat properly" promise is evict-proof like the walk
 	 * baseline). -1 when nothing qualifies, in which case the candidate is dropped instead.
 	 */
-	static int evictionIndex(List<RouteOption> routes, int costlierThan, Predicate<RouteOption> evictable)
-	{
+	static int evictionIndex(List<RouteOption> routes, int costlierThan, Predicate<RouteOption> evictable) {
 		int sole = solePortFirstIndex(routes);
 		int evict = -1;
 		int maxCost = costlierThan;
-		for (int r = 0; r < routes.size(); r++)
-		{
+		for (int r = 0; r < routes.size(); r++) {
 			RouteOption route = routes.get(r);
-			if (r != sole && evictable.test(route) && route.getTotalCost() > maxCost)
-			{
+			if (r != sole && evictable.test(route) && route.getTotalCost() > maxCost) {
 				maxCost = route.getTotalCost();
 				evict = r;
 			}
@@ -149,8 +129,7 @@ final class RouteAcceptance
 	}
 
 	/** Whether the route starts by disembarking at a port. */
-	static boolean portFirst(RouteOption route)
-	{
+	static boolean portFirst(RouteOption route) {
 		List<TeleportMethod> methods = route.getMethods();
 		return !methods.isEmpty()
 			&& TransportType.SAILING.equals(methods.get(0).getType())
@@ -159,17 +138,12 @@ final class RouteAcceptance
 	}
 
 	/** The index of the only port-first route on the page, or -1 when there is none or several. */
-	static int solePortFirstIndex(List<RouteOption> routes)
-	{
+	static int solePortFirstIndex(List<RouteOption> routes) {
 		int found = -1;
-		for (int r = 0; r < routes.size(); r++)
-		{
-			if (portFirst(routes.get(r)))
-			{
+		for (int r = 0; r < routes.size(); r++) {
+			if (portFirst(routes.get(r))) {
 				if (found >= 0)
-				{
 					return -1;
-				}
 				found = r;
 			}
 		}
@@ -177,14 +151,10 @@ final class RouteAcceptance
 	}
 
 	/** Whether any shown route already starts by disembarking at a port. */
-	static boolean hasPortFirstRoute(List<RouteOption> routes)
-	{
-		for (RouteOption route : routes)
-		{
+	static boolean hasPortFirstRoute(List<RouteOption> routes) {
+		for (RouteOption route : routes) {
 			if (portFirst(route))
-			{
 				return true;
-			}
 		}
 		return false;
 	}
@@ -195,20 +165,15 @@ final class RouteAcceptance
 	 * route that also banks). Such a candidate adds nothing the page does not already say.
 	 */
 	static boolean nestsAKeptRoute(List<TeleportMethod> candidate, boolean candidateViaBank,
-		List<RouteOption> kept)
-	{
-		for (RouteOption route : kept)
-		{
+		List<RouteOption> kept) {
+		for (RouteOption route : kept) {
 			List<TeleportMethod> base = route.getMethods();
 			if (base.isEmpty() || candidate.size() <= base.size()
-				|| (candidateViaBank && !route.isViaBank()))
-			{
+				|| (candidateViaBank && !route.isViaBank())) {
 				continue;
 			}
 			if (candidate.subList(candidate.size() - base.size(), candidate.size()).equals(base))
-			{
 				return true;
-			}
 		}
 		return false;
 	}
@@ -219,23 +184,18 @@ final class RouteAcceptance
 	 * {@link #SHARED_DESTINATION_RADIUS} of the flight's destination. The hop only exists because
 	 * the chain excluded the direct teleport, so it is filtered rather than shown.
 	 */
-	static boolean hasRedundantTeleportHop(List<Transport> baselineTeleports, List<TeleportMethod> methods)
-	{
-		for (int i = 0; i + 1 < methods.size(); i++)
-		{
+	static boolean hasRedundantTeleportHop(List<Transport> baselineTeleports, List<TeleportMethod> methods) {
+		for (int i = 0; i + 1 < methods.size(); i++) {
 			TeleportMethod teleport = methods.get(i);
 			TeleportMethod flight = methods.get(i + 1);
 			if (teleport.getType() == null || flight.getType() == null
-				|| !flight.getType().equals(teleport.getType().sharesDestinationsWith()))
-			{
+				|| !flight.getType().equals(teleport.getType().sharesDestinationsWith())) {
 				continue;
 			}
-			for (Transport candidate : baselineTeleports)
-			{
+			for (Transport candidate : baselineTeleports) {
 				if (teleport.getType().equals(candidate.getType())
 					&& WorldPointUtil.distanceBetween(candidate.getDestination(), flight.getDestination())
-						<= SHARED_DESTINATION_RADIUS)
-				{
+						<= SHARED_DESTINATION_RADIUS) {
 					return true;
 				}
 			}

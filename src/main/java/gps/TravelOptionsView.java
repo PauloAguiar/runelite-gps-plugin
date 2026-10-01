@@ -20,8 +20,7 @@ import static gps.PanelWidgets.sectionShell;
  * catalog rows on the EDT for each of them made the toggles unresponsive (the row under the
  * cursor kept being replaced).
  */
-final class TravelOptionsView extends JPanel
-{
+final class TravelOptionsView extends JPanel {
 	private final ConfigSectionsView sections;
 	private final MethodCatalogView catalog;
 	private boolean expanded;
@@ -31,13 +30,11 @@ final class TravelOptionsView extends JPanel
 	private Map<TeleportMethod, MethodAvailability> builtUnavailable;
 	private boolean builtCatalogExpanded;
 
-	TravelOptionsView(ShortestPathPlugin plugin, Runnable refreshAll)
-	{
+	TravelOptionsView(ShortestPathPlugin plugin, Runnable refreshAll) {
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
 		sections = new ConfigSectionsView(plugin, this::rebuild, refreshAll);
-		catalog = new MethodCatalogView(plugin, this::rebuild, () ->
-		{
+		catalog = new MethodCatalogView(plugin, this::rebuild, () -> {
 			revalidate();
 			repaint();
 		});
@@ -45,35 +42,30 @@ final class TravelOptionsView extends JPanel
 
 	/** Whether the inputs changed since the slot was last built. */
 	boolean needsRebuild(List<TeleportMethod> newCatalog, Set<TeleportMethod> exclusions,
-		Map<TeleportMethod, MethodAvailability> unavailable)
-	{
+		Map<TeleportMethod, MethodAvailability> unavailable) {
 		return !newCatalog.equals(builtCatalog) || !exclusions.equals(builtExclusions)
 			|| !unavailable.equals(builtUnavailable) || catalog.isExpanded() != builtCatalogExpanded;
 	}
 
 	/** Rebuilds the slot for the given inputs, carrying the catalog rows' scroll position over. */
 	void rebuild(List<TeleportMethod> newCatalog, Set<TeleportMethod> exclusions,
-		Map<TeleportMethod, MethodAvailability> unavailable)
-	{
+		Map<TeleportMethod, MethodAvailability> unavailable) {
 		catalog.update(newCatalog, exclusions, unavailable);
 		rebuild();
 	}
 
 	/** The Log-storage-low banner for the notes strip (see ConfigSectionsView). */
-	JPanel balloonLowBanner(List<String> lowTypes)
-	{
+	JPanel balloonLowBanner(List<String> lowTypes) {
 		return sections.balloonLowBanner(lowTypes);
 	}
 
 	/** The tier menu for a method, shared by the route cards and the catalog rows. */
-	void showPriorityMenu(Component anchor, TeleportMethod method)
-	{
+	void showPriorityMenu(Component anchor, TeleportMethod method) {
 		catalog.showPriorityMenu(anchor, method);
 	}
 
 	/** Rebuilds with the current inputs (a header toggle, a tier or funnel change). */
-	private void rebuild()
-	{
+	private void rebuild() {
 		// The rebuild replaces the method-rows scroll pane; carry its position over so toggling a
 		// method or category (which regenerates routes and re-renders) does not jump the list back
 		// to the top.
@@ -89,16 +81,14 @@ final class TravelOptionsView extends JPanel
 		builtCatalogExpanded = catalog.isExpanded();
 	}
 
-	private JPanel section()
-	{
+	private JPanel section() {
 		List<TeleportMethod> methods = catalog.catalog();
 		JPanel section = sectionShell("Travel options",
 			"Everything routing may use: your house, wilderness policy, bank, balloons and the travel methods",
 			expanded, () -> expanded = !expanded,
 			methods.isEmpty() ? "" : catalog.enabledCount() + "/" + methods.size(),
 			ColorScheme.LIGHT_GRAY_COLOR, true, this::rebuild);
-		if (!expanded)
-		{
+		if (!expanded) {
 			catalog.slotCollapsed();
 			return section;
 		}
@@ -109,13 +99,9 @@ final class TravelOptionsView extends JPanel
 		body.setAlignmentX(Component.LEFT_ALIGNMENT);
 		body.setBorder(new EmptyBorder(0, 8, 0, 0));
 		for (JPanel part : sections.sections())
-		{
 			body.add(part);
-		}
 		if (!methods.isEmpty())
-		{
 			body.add(catalog.section());
-		}
 		section.add(body);
 		return section;
 	}

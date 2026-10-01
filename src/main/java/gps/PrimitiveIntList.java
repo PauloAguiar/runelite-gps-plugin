@@ -17,8 +17,7 @@ import java.util.Arrays;
  * when the
  * existing array is exhausted. Capacity never shrinks.
  */
-public class PrimitiveIntList
-{
+public class PrimitiveIntList {
 	private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
 	private int[] elementData;
@@ -36,17 +35,12 @@ public class PrimitiveIntList
 	 *                        the list is created empty.
 	 * @throws IllegalArgumentException if {@code initialCapacity < 0}.
 	 */
-	public PrimitiveIntList(int initialCapacity, boolean initialize)
-	{
+	public PrimitiveIntList(int initialCapacity, boolean initialize) {
 		if (initialCapacity < 0)
-		{
 			throw new IllegalArgumentException("Illegal capacity: " + initialCapacity);
-		}
 		this.elementData = new int[initialCapacity];
 		if (initialize)
-		{
 			size = initialCapacity;
-		}
 	}
 
 	/**
@@ -55,23 +49,19 @@ public class PrimitiveIntList
 	 * @param initialCapacity initial length of the internal array (must be
 	 *                        {@code >= 0}).
 	 */
-	public PrimitiveIntList(int initialCapacity)
-	{
+	public PrimitiveIntList(int initialCapacity) {
 		this(initialCapacity, false);
 	}
 
 	/**
 	 * Creates an empty list with a default initial capacity of 10.
 	 */
-	public PrimitiveIntList()
-	{
+	public PrimitiveIntList() {
 		this(10);
 	}
 
-	private static int hugeCapacity(int minCapacity)
-	{
-		if (minCapacity < 0)
-		{ // overflow
+	private static int hugeCapacity(int minCapacity) {
+		if (minCapacity < 0) { // overflow
 			throw new OutOfMemoryError();
 		}
 		return (minCapacity > MAX_ARRAY_SIZE) ? Integer.MAX_VALUE : MAX_ARRAY_SIZE;
@@ -84,34 +74,23 @@ public class PrimitiveIntList
 	 *
 	 * @param minCapacity the desired minimum capacity (ignored if {@code <= 0}).
 	 */
-	public void ensureCapacity(int minCapacity)
-	{
+	public void ensureCapacity(int minCapacity) {
 		if (minCapacity > 0)
-		{
 			ensureCapacityInternal(minCapacity);
-		}
 	}
 
-	private void ensureCapacityInternal(int minCapacity)
-	{
+	private void ensureCapacityInternal(int minCapacity) {
 		if (minCapacity - elementData.length > 0)
-		{
 			grow(minCapacity);
-		}
 	}
 
-	private void grow(int minCapacity)
-	{
+	private void grow(int minCapacity) {
 		int oldCapacity = elementData.length;
 		int newCapacity = oldCapacity + (oldCapacity >> 1);
 		if (newCapacity - minCapacity < 0)
-		{
 			newCapacity = minCapacity;
-		}
 		if (newCapacity - MAX_ARRAY_SIZE > 0)
-		{
 			newCapacity = hugeCapacity(minCapacity);
-		}
 		elementData = Arrays.copyOf(elementData, newCapacity);
 	}
 
@@ -121,8 +100,7 @@ public class PrimitiveIntList
 	 *
 	 * @return current element count (always {@code >= 0}).
 	 */
-	public int size()
-	{
+	public int size() {
 		return size;
 	}
 
@@ -131,8 +109,7 @@ public class PrimitiveIntList
 	 *
 	 * @return {@code true} if {@link #size()} is zero; {@code false} otherwise.
 	 */
-	public boolean isEmpty()
-	{
+	public boolean isEmpty() {
 		return size == 0;
 	}
 
@@ -143,8 +120,7 @@ public class PrimitiveIntList
 	 * @return {@code true} if the value occurs at least once; {@code false}
 	 * otherwise.
 	 */
-	public boolean contains(int e)
-	{
+	public boolean contains(int e) {
 		return indexOf(e) >= 0;
 	}
 
@@ -155,14 +131,10 @@ public class PrimitiveIntList
 	 * @param e the value to locate.
 	 * @return zero-based index of the value, or {@code -1} if not found.
 	 */
-	public int indexOf(int e)
-	{
-		for (int i = 0; i < size; i++)
-		{
+	public int indexOf(int e) {
+		for (int i = 0; i < size; i++) {
 			if (e == elementData[i])
-			{
 				return i;
-			}
 		}
 		return -1;
 	}
@@ -174,8 +146,7 @@ public class PrimitiveIntList
 	 * @return the value stored at {@code index}.
 	 * @throws IndexOutOfBoundsException if {@code index < 0 || index >= size}.
 	 */
-	public int get(int index)
-	{
+	public int get(int index) {
 		rangeCheck(index);
 		return elementData[index];
 	}
@@ -188,8 +159,7 @@ public class PrimitiveIntList
 	 * @return the previous value stored at {@code index}.
 	 * @throws IndexOutOfBoundsException if {@code index < 0 || index >= size}.
 	 */
-	public int set(int index, int element)
-	{
+	public int set(int index, int element) {
 		rangeCheck(index);
 		int oldValue = elementData[index];
 		elementData[index] = element;
@@ -202,8 +172,7 @@ public class PrimitiveIntList
 	 *
 	 * @param e value to append.
 	 */
-	public void add(int e)
-	{
+	public void add(int e) {
 		ensureCapacityInternal(size + 1);
 		elementData[size++] = e;
 	}
@@ -217,8 +186,7 @@ public class PrimitiveIntList
 	 * @param element the value to insert.
 	 * @throws IndexOutOfBoundsException if {@code index < 0 || index > size}.
 	 */
-	public void add(int index, int element)
-	{
+	public void add(int index, int element) {
 		rangeCheckForAdd(index);
 		ensureCapacityInternal(size + 1);
 		System.arraycopy(elementData, index, elementData, index + 1, size - index);
@@ -233,15 +201,12 @@ public class PrimitiveIntList
 	 * @return the removed value.
 	 * @throws IndexOutOfBoundsException if {@code index < 0 || index >= size}.
 	 */
-	public int removeAt(int index)
-	{
+	public int removeAt(int index) {
 		rangeCheck(index);
 		int oldValue = elementData[index];
 		int numMoved = size - index - 1;
 		if (numMoved > 0)
-		{
 			System.arraycopy(elementData, index + 1, elementData, index, numMoved);
-		}
 		elementData[--size] = 0;
 		return oldValue;
 	}
@@ -252,12 +217,9 @@ public class PrimitiveIntList
 	 * @param e value to remove.
 	 * @return {@code true} if a value was removed; {@code false} otherwise.
 	 */
-	public boolean remove(int e)
-	{
-		for (int i = 0; i < size; i++)
-		{
-			if (e == elementData[i])
-			{
+	public boolean remove(int e) {
+		for (int i = 0; i < size; i++) {
+			if (e == elementData[i]) {
 				fastRemove(i);
 				return true;
 			}
@@ -265,13 +227,10 @@ public class PrimitiveIntList
 		return false;
 	}
 
-	private void fastRemove(int index)
-	{
+	private void fastRemove(int index) {
 		int numMoved = size - index - 1;
 		if (numMoved > 0)
-		{
 			System.arraycopy(elementData, index + 1, elementData, index, numMoved);
-		}
 		elementData[--size] = 0;
 	}
 
@@ -279,28 +238,19 @@ public class PrimitiveIntList
 	 * Removes all elements from the list and resets {@link #size()} to zero.
 	 * The backing array is retained for reuse.
 	 */
-	public void clear()
-	{
+	public void clear() {
 		for (int i = 0; i < size; i++)
-		{
 			elementData[i] = 0;
-		}
 		size = 0;
 	}
 
-	private void rangeCheck(int index)
-	{
+	private void rangeCheck(int index) {
 		if (index >= size)
-		{
 			throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + size);
-		}
 	}
 
-	private void rangeCheckForAdd(int index)
-	{
+	private void rangeCheckForAdd(int index) {
 		if (index > size || index < 0)
-		{
 			throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + size);
-		}
 	}
 }

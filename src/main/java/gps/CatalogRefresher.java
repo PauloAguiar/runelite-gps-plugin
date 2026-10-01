@@ -12,8 +12,7 @@ package gps;
  * never sees the deferral. Bursts while the panel is open coalesce through a short cooldown; the
  * flag stays set, so no change is lost, only delayed a few ticks.
  */
-final class CatalogRefresher
-{
+final class CatalogRefresher {
 	/** Ticks between two claimed refreshes while changes keep coming. */
 	static final int COOLDOWN_TICKS = 5;
 
@@ -23,14 +22,12 @@ final class CatalogRefresher
 	private boolean fingerprintValid;
 
 	/** Whether a re-classification is pending (claimed on the next tick the panel is open). */
-	boolean isDirty()
-	{
+	boolean isDirty() {
 		return dirty;
 	}
 
 	/** The catalog must be re-classified (no fingerprint available to compare). */
-	void markDirty()
-	{
+	void markDirty() {
 		dirty = true;
 	}
 
@@ -38,12 +35,9 @@ final class CatalogRefresher
 	 * An inventory or equipment change: dirties the catalog only when the routing-relevant item
 	 * fingerprint differs from the last one seen (the first one always counts). True when it did.
 	 */
-	boolean noteItems(long routingItemsFingerprint)
-	{
+	boolean noteItems(long routingItemsFingerprint) {
 		if (fingerprintValid && routingItemsFingerprint == fingerprint)
-		{
 			return false;
-		}
 		fingerprint = routingItemsFingerprint;
 		fingerprintValid = true;
 		dirty = true;
@@ -55,12 +49,9 @@ final class CatalogRefresher
 	 * in flight (it re-snapshots anyway), the player is logged in and the cooldown has elapsed.
 	 * Claiming clears the flag and arms the cooldown from {@code tick}.
 	 */
-	boolean claim(int tick, boolean panelVisible, boolean generationInFlight, boolean loggedIn)
-	{
+	boolean claim(int tick, boolean panelVisible, boolean generationInFlight, boolean loggedIn) {
 		if (!dirty || !panelVisible || generationInFlight || !loggedIn || tick < backoffTick)
-		{
 			return false;
-		}
 		backoffTick = tick + COOLDOWN_TICKS;
 		dirty = false;
 		return true;

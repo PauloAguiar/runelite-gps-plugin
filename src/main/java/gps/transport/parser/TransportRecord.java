@@ -9,8 +9,7 @@ import lombok.Getter;
  * Provides a clean interface to access field values by name.
  */
 @Getter
-public class TransportRecord
-{
+public class TransportRecord {
 
 	/**
 	 * -- GETTER --
@@ -18,24 +17,21 @@ public class TransportRecord
 	 */
 	private final Map<String, String> fields;
 
-	public TransportRecord(Map<String, String> fields)
-	{
+	public TransportRecord(Map<String, String> fields) {
 		this.fields = Map.copyOf(fields);
 	}
 
 	/**
 	 * Gets a field value by name, or null if not present.
 	 */
-	public String get(String fieldName)
-	{
+	public String get(String fieldName) {
 		return fields.get(fieldName);
 	}
 
 	/**
 	 * Checks if a field is present and non-empty.
 	 */
-	public boolean has(String fieldName)
-	{
+	public boolean has(String fieldName) {
 		String value = fields.get(fieldName);
 		return value != null && !value.isEmpty();
 	}
@@ -43,128 +39,112 @@ public class TransportRecord
 	/**
 	 * Checks if a field key exists in the record (may have empty value).
 	 */
-	public boolean hasKey(String fieldName)
-	{
+	public boolean hasKey(String fieldName) {
 		return fields.containsKey(fieldName);
 	}
 
 	/**
 	 * Gets the origin field value.
 	 */
-	public String getOrigin()
-	{
+	public String getOrigin() {
 		return get(Fields.ORIGIN);
 	}
 
 	/**
 	 * Gets the destination field value.
 	 */
-	public String getDestination()
-	{
+	public String getDestination() {
 		return get(Fields.DESTINATION);
 	}
 
 	/**
 	 * Gets the skills field value.
 	 */
-	public String getSkills()
-	{
+	public String getSkills() {
 		return get(Fields.SKILLS);
 	}
 
 	/**
 	 * Gets the items field value.
 	 */
-	public String getItems()
-	{
+	public String getItems() {
 		return get(Fields.ITEMS);
 	}
 
 	/**
 	 * Gets the quests field value.
 	 */
-	public String getQuests()
-	{
+	public String getQuests() {
 		return get(Fields.QUESTS);
 	}
 
 	/**
 	 * Gets the duration field value.
 	 */
-	public String getDuration()
-	{
+	public String getDuration() {
 		return get(Fields.DURATION);
 	}
 
 	/**
 	 * Gets the display info field value.
 	 */
-	public String getDisplayInfo()
-	{
+	public String getDisplayInfo() {
 		return get(Fields.DISPLAY_INFO);
 	}
 
 	/**
 	 * Gets the consumable field value.
 	 */
-	public String getConsumable()
-	{
+	public String getConsumable() {
 		return get(Fields.CONSUMABLE);
 	}
 
 	/**
 	 * Gets the wilderness level field value.
 	 */
-	public String getWildernessLevel()
-	{
+	public String getWildernessLevel() {
 		return get(Fields.WILDERNESS_LEVEL);
 	}
 
 	/**
 	 * Gets the object info field value.
 	 */
-	public String getObjectInfo()
-	{
+	public String getObjectInfo() {
 		return get(Fields.OBJECT_INFO);
 	}
 
 	/**
 	 * Gets the varbits field value.
 	 */
-	public String getVarbits()
-	{
+	public String getVarbits() {
 		return get(Fields.VARBITS);
 	}
 
 	/**
 	 * Gets the var players field value.
 	 */
-	public String getVarPlayers()
-	{
+	public String getVarPlayers() {
 		return get(Fields.VAR_PLAYERS);
 	}
 
 	/**
 	 * Gets the league region override field value.
 	 */
-	public String getRegionOverride()
-	{
+	public String getRegionOverride() {
 		return get(Fields.REGION_OVERRIDE);
 	}
 
 	/**
 	 * Gets the advisory note field value.
 	 */
-	public String getNote()
-	{
+	public String getNote() {
 		return get(Fields.NOTE);
 	}
 
 	/**
 	 * Standard field names used across TSV files
 	 */
-	public static final class Fields
-	{
+	public static final class Fields {
 		public static final String ORIGIN = "Origin";
 		public static final String DESTINATION = "Destination";
 		public static final String SKILLS = "Skills";
@@ -182,8 +162,7 @@ public class TransportRecord
 		// For soft requirements ("bring a shovel", "fire arrow needed") and fail chances.
 		public static final String NOTE = "Note";
 
-		private Fields()
-		{
+		private Fields() {
 		}
 	}
 }

@@ -20,15 +20,13 @@ import net.runelite.client.config.ConfigManager;
  * as EXCLUDED, a mask over the stored tier so re-including restores the user's tuning.
  */
 @Slf4j
-final class RoutePreferences
-{
+final class RoutePreferences {
 	static final String CONFIG_KEY_PRIORITIES = "methodPriorities";
 	static final String CONFIG_KEY_WALK_PREFERENCE = "walkPreferenceSeconds";
 	static final String CONFIG_KEY_BANK_PREFERENCE = "bankPreferenceSeconds";
 
 	/** One serialized priority entry (method identity + tier), for the config JSON. */
-	private static final class PriorityEntry
-	{
+	private static final class PriorityEntry {
 		TeleportMethod method;
 		MethodPriority priority;
 	}
@@ -47,8 +45,7 @@ final class RoutePreferences
 	private volatile int bankPreferenceSeconds;
 
 	RoutePreferences(Set<TeleportMethod> exclusions, BooleanSupplier keepSailingFirst,
-		Supplier<ConfigManager> configManager, Supplier<Gson> gson, String configGroup)
-	{
+		Supplier<ConfigManager> configManager, Supplier<Gson> gson, String configGroup) {
 		this.exclusions = exclusions;
 		this.keepSailingFirst = keepSailingFirst;
 		this.configManager = configManager;
@@ -57,53 +54,39 @@ final class RoutePreferences
 	}
 
 	/** The method's tier: EXCLUDED when in the exclusion set, else its stored tier or NORMAL. */
-	MethodPriority priorityOf(TeleportMethod method)
-	{
+	MethodPriority priorityOf(TeleportMethod method) {
 		if (exclusions.contains(method))
-		{
 			return MethodPriority.EXCLUDED;
-		}
 		return priorities.getOrDefault(method, MethodPriority.NORMAL);
 	}
 
 	/** Stores a ranking tier (NORMAL removes the entry) and persists. EXCLUDED is not a stored tier. */
-	void setTier(TeleportMethod method, MethodPriority tier)
-	{
+	void setTier(TeleportMethod method, MethodPriority tier) {
 		if (tier == MethodPriority.EXCLUDED)
-		{
 			throw new IllegalArgumentException("exclusion is not a stored tier");
-		}
 		if (tier == MethodPriority.NORMAL)
-		{
 			priorities.remove(method);
-		}
 		else
-		{
 			priorities.put(method, tier);
-		}
 		save();
 	}
 
 	/** The walk-preference bias in seconds (negative effective ETA for the pure-walk route). */
-	int walkPreferenceSeconds()
-	{
+	int walkPreferenceSeconds() {
 		return walkPreferenceSeconds;
 	}
 
-	void setWalkPreferenceSeconds(int seconds)
-	{
+	void setWalkPreferenceSeconds(int seconds) {
 		configManager.get().setConfiguration(configGroup, CONFIG_KEY_WALK_PREFERENCE, seconds);
 		walkPreferenceSeconds = seconds;
 	}
 
 	/** The bank-detour bias in seconds: positive prefers via-bank routes, negative avoids them. */
-	int bankPreferenceSeconds()
-	{
+	int bankPreferenceSeconds() {
 		return bankPreferenceSeconds;
 	}
 
-	void setBankPreferenceSeconds(int seconds)
-	{
+	void setBankPreferenceSeconds(int seconds) {
 		configManager.get().setConfiguration(configGroup, CONFIG_KEY_BANK_PREFERENCE, seconds);
 		bankPreferenceSeconds = seconds;
 	}
@@ -113,27 +96,19 @@ final class RoutePreferences
 	 * bias for a via-bank route; or, for the pure-walk route, minus the walk preference (walking
 	 * wins ties up to that many seconds).
 	 */
-	int adjustmentSeconds(RouteOption route)
-	{
+	int adjustmentSeconds(RouteOption route) {
 		if (route.getMethods().isEmpty())
-		{
 			return -walkPreferenceSeconds;
-		}
 		int seconds = 0;
 		for (TeleportMethod method : route.getMethods())
-		{
 			seconds += priorities.getOrDefault(method, MethodPriority.NORMAL).adjustSeconds;
-		}
 		if (route.isViaBank())
-		{
 			seconds -= bankPreferenceSeconds;
-		}
 		return seconds;
 	}
 
 	/** Effective sort key: reached routes first, then raw cost plus the priority adjustment. */
-	Comparator<RouteOption> effectiveOrder()
-	{
+	Comparator<RouteOption> effectiveOrder() {
 		return Comparator
 			.comparingInt((RouteOption r) -> r.isReached() ? 0 : 1)
 			// At the helm, routes that STAY ON THE WATER outrank disembark-and-teleport chains
@@ -145,20 +120,16 @@ final class RoutePreferences
 	}
 
 	/** A copy of the routes in effective order (stable). */
-	List<RouteOption> sorted(List<RouteOption> routes)
-	{
+	List<RouteOption> sorted(List<RouteOption> routes) {
 		List<RouteOption> sorted = new ArrayList<>(routes);
 		sorted.sort(effectiveOrder());
 		return sorted;
 	}
 
-	private void save()
-	{
-		try
-		{
+	private void save() {
+		try {
 			List<PriorityEntry> entries = new ArrayList<>();
-			for (Map.Entry<TeleportMethod, MethodPriority> e : priorities.entrySet())
-			{
+			for (Map.Entry<TeleportMethod, MethodPriority> e : priorities.entrySet()) {
 				PriorityEntry entry = new PriorityEntry();
 				entry.method = e.getKey();
 				entry.priority = e.getValue();
@@ -166,38 +137,30 @@ final class RoutePreferences
 			}
 			configManager.get().setConfiguration(configGroup, CONFIG_KEY_PRIORITIES, gson.get().toJson(entries));
 		}
-		catch (Exception e)
-		{
+		catch (Exception e) {
 			log.warn("Failed to save method priorities", e);
 		}
 	}
 
 	/** Loads the persisted tiers and biases (plugin start). */
-	void load()
-	{
+	void load() {
 		ConfigManager manager = configManager.get();
-		try
-		{
+		try {
 			String json = manager.getConfiguration(configGroup, CONFIG_KEY_PRIORITIES);
-			if (json != null && !json.isEmpty())
-			{
+			if (json != null && !json.isEmpty()) {
 				PriorityEntry[] saved = gson.get().fromJson(json, PriorityEntry[].class);
-				if (saved != null)
-				{
-					for (PriorityEntry entry : saved)
-					{
+				if (saved != null) {
+					for (PriorityEntry entry : saved) {
 						if (entry != null && entry.method != null && entry.method.getType() != null
 							&& entry.priority != null && entry.priority != MethodPriority.NORMAL
-							&& entry.priority != MethodPriority.EXCLUDED)
-						{
+							&& entry.priority != MethodPriority.EXCLUDED) {
 							priorities.put(entry.method, entry.priority);
 						}
 					}
 				}
 			}
 		}
-		catch (Exception e)
-		{
+		catch (Exception e) {
 			log.warn("Failed to load method priorities", e);
 		}
 		Integer walk = manager.getConfiguration(configGroup, CONFIG_KEY_WALK_PREFERENCE, Integer.class);

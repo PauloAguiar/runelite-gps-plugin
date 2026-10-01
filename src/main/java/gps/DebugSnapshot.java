@@ -27,37 +27,30 @@ import net.runelite.client.RuneLite;
  * "Save debug snapshot" item; confirms via a game message. Built on the client thread.
  */
 @Slf4j
-final class DebugSnapshot
-{
+final class DebugSnapshot {
 	private final ShortestPathPlugin plugin;
 
-	DebugSnapshot(ShortestPathPlugin plugin)
-	{
+	DebugSnapshot(ShortestPathPlugin plugin) {
 		this.plugin = plugin;
 	}
 
 	/** Builds and writes the snapshot, CLIENT THREAD. Failures are logged, never thrown. */
-	void capture()
-	{
-		try
-		{
+	void capture() {
+		try {
 			File out = write(build());
 			log.info("GPS debug snapshot saved to {}", out.getAbsolutePath());
 			Client client = plugin.getClient();
-			if (GameState.LOGGED_IN.equals(client.getGameState()))
-			{
+			if (GameState.LOGGED_IN.equals(client.getGameState())) {
 				client.addChatMessage(ChatMessageType.GAMEMESSAGE, "",
 					"GPS debug snapshot saved to " + out.getAbsolutePath(), null);
 			}
 		}
-		catch (Exception e)
-		{
+		catch (Exception e) {
 			log.warn("Failed to capture GPS debug snapshot", e);
 		}
 	}
 
-	private Map<String, Object> build()
-	{
+	private Map<String, Object> build() {
 		Client client = plugin.getClient();
 		RouteSession session = plugin.session();
 		ShortestPathConfig config = plugin.getGpsConfig();
@@ -77,15 +70,11 @@ final class DebugSnapshot
 		snapshot.put("altStart", packedPointJson(session.lastStart()));
 		List<Object> targets = new ArrayList<>();
 		for (int target : session.lastTargets())
-		{
 			targets.add(packedPointJson(target));
-		}
 		snapshot.put("targets", targets);
 		List<String> exclusions = new ArrayList<>();
 		for (TeleportMethod method : plugin.getUserExclusions())
-		{
 			exclusions.add(methodKey(method));
-		}
 		snapshot.put("userExclusions", exclusions);
 		snapshot.put("bankContentsKnown", plugin.isBankContentsKnown());
 		snapshot.put("bankRestored", plugin.isBankRestored());
@@ -110,17 +99,12 @@ final class DebugSnapshot
 		snapshot.put("displayedRouteIndex", displayed != null ? routes.indexOf(displayed) : -1);
 		List<Object> routesJson = new ArrayList<>();
 		for (RouteOption route : routes)
-		{
 			routesJson.add(routeJson(route));
-		}
 		snapshot.put("routes", routesJson);
 		Map<String, Object> timing = generationTiming(plugin.altRoutesService());
 		if (timing != null)
-		{
 			snapshot.put("altGenTiming", timing);
-		}
-		if (displayed != null)
-		{
+		if (displayed != null) {
 			snapshot.put("directions", stepsJson(plugin.getRouteDirections(displayed)));
 			RouteDirectionsOverlay overlay = plugin.routeDirectionsOverlay();
 			Map<String, Object> progress = new LinkedHashMap<>();
@@ -137,29 +121,22 @@ final class DebugSnapshot
 	 * balloon route unlocks): capture before and after the in-game action and diff the two files;
 	 * the flipped id is the gate. A few thousand entries, debug-file-sized only.
 	 */
-	private static Map<String, Integer> varbitSnapshot(Client client)
-	{
+	private static Map<String, Integer> varbitSnapshot(Client client) {
 		Map<String, Integer> varbits = new LinkedHashMap<>();
-		for (int id = 0; id <= 20000; id++)
-		{
-			try
-			{
+		for (int id = 0; id <= 20000; id++) {
+			try {
 				int value = client.getVarbitValue(id);
 				if (value != 0)
-				{
 					varbits.put(Integer.toString(id), value);
-				}
 			}
-			catch (Exception ignored)
-			{
+			catch (Exception ignored) {
 				// Unknown varbit ids past the cache's definitions: skip.
 			}
 		}
 		return varbits;
 	}
 
-	private Map<String, Object> routeJson(RouteOption route)
-	{
+	private Map<String, Object> routeJson(RouteOption route) {
 		Map<String, Object> routeJson = new LinkedHashMap<>();
 		routeJson.put("totalCost", route.getTotalCost());
 		routeJson.put("rawCost", route.getRawCost());
@@ -167,9 +144,7 @@ final class DebugSnapshot
 		routeJson.put("viaBank", route.isViaBank());
 		List<String> methods = new ArrayList<>();
 		for (TeleportMethod method : route.getMethods())
-		{
 			methods.add(methodKey(method));
-		}
 		routeJson.put("methods", methods);
 		routeJson.put("methodEdgeIndexes", route.getMethodEdgeIndexes());
 		routeJson.put("methodDurations", route.getMethodDurations());
@@ -177,12 +152,10 @@ final class DebugSnapshot
 		routeJson.put("trailingWalkSteps", route.getTrailingWalkSteps());
 		List<Integer> packedPath = new ArrayList<>(route.getPath().size());
 		List<Integer> bankFlips = new ArrayList<>();
-		for (int i = 0; i < route.getPath().size(); i++)
-		{
+		for (int i = 0; i < route.getPath().size(); i++) {
 			packedPath.add(route.getPath().get(i).getPackedPosition());
 			if (route.getPath().get(i).isBankVisited()
-				&& (i == 0 || !route.getPath().get(i - 1).isBankVisited()))
-			{
+				&& (i == 0 || !route.getPath().get(i - 1).isBankVisited())) {
 				bankFlips.add(i);
 			}
 		}
@@ -198,13 +171,10 @@ final class DebugSnapshot
 	}
 
 	/** The last generation's timing and per-search profiles (slowest first), or null when none ran. */
-	private static Map<String, Object> generationTiming(AlternativeRoutesService service)
-	{
+	private static Map<String, Object> generationTiming(AlternativeRoutesService service) {
 		long[] genTiming = service != null ? service.getLastTimingSummary() : null;
 		if (genTiming == null)
-		{
 			return null;
-		}
 		Map<String, Object> timingJson = new LinkedHashMap<>();
 		timingJson.put("wallMs", genTiming[0]);
 		timingJson.put("clientMs", genTiming[1]);
@@ -212,14 +182,11 @@ final class DebugSnapshot
 		timingJson.put("searchCpuMs", genTiming[3]);
 		timingJson.put("searches", genTiming[4]);
 		if (genTiming.length > 5)
-		{
 			timingJson.put("fieldMs", genTiming[5]);
-		}
 		// Which searches the time went to and how much each explored (a flat A* heuristic shows
 		// up as a huge node count).
 		List<Object> searchDetails = new ArrayList<>();
-		for (AlternativeRoutesService.SearchRecord r : service.getLastSearchRecords())
-		{
+		for (AlternativeRoutesService.SearchRecord r : service.getLastSearchRecords()) {
 			Map<String, Object> detail = new LinkedHashMap<>();
 			detail.put("label", r.label);
 			detail.put("cpuMs", r.cpuMs);
@@ -236,32 +203,27 @@ final class DebugSnapshot
 		return timingJson;
 	}
 
-	private File write(Map<String, Object> snapshot) throws java.io.IOException
-	{
+	private File write(Map<String, Object> snapshot) throws java.io.IOException {
 		File dir = new File(RuneLite.RUNELITE_DIR, "gps-debug");
 		//noinspection ResultOfMethodCallIgnored
 		dir.mkdirs();
 		File out = new File(dir, "gps-capture-" + new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date()) + ".json");
 		Gson gson = plugin.gson().newBuilder().setPrettyPrinting().create();
-		try (Writer writer = new OutputStreamWriter(new FileOutputStream(out), StandardCharsets.UTF_8))
-		{
+		try (Writer writer = new OutputStreamWriter(new FileOutputStream(out), StandardCharsets.UTF_8)) {
 			gson.toJson(snapshot, writer);
 		}
 		return out;
 	}
 
 	/** A method's identity as the dashboard reads it: type, display info, destination. */
-	private static String methodKey(TeleportMethod method)
-	{
+	private static String methodKey(TeleportMethod method) {
 		return method.getType() + "|" + method.getDisplayInfo() + "|" + method.getDestination();
 	}
 
 	/** The directions as JSON rows: text, indexes, ticks and the step kind flags. */
-	static List<Object> stepsJson(List<RouteDirections.Step> steps)
-	{
+	static List<Object> stepsJson(List<RouteDirections.Step> steps) {
 		List<Object> stepsJson = new ArrayList<>();
-		for (RouteDirections.Step step : steps)
-		{
+		for (RouteDirections.Step step : steps) {
 			Map<String, Object> stepJson = new LinkedHashMap<>();
 			stepJson.put("text", step.getText());
 			stepJson.put("startIndex", step.getStartIndex());
@@ -276,12 +238,9 @@ final class DebugSnapshot
 	}
 
 	/** A packed point as {packed, x, y, plane}, or null when undefined. */
-	static Map<String, Object> packedPointJson(int packed)
-	{
+	static Map<String, Object> packedPointJson(int packed) {
 		if (packed == WorldPointUtil.UNDEFINED)
-		{
 			return null;
-		}
 		Map<String, Object> point = new LinkedHashMap<>();
 		point.put("packed", packed);
 		point.put("x", WorldPointUtil.unpackWorldX(packed));

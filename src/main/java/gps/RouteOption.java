@@ -12,8 +12,7 @@ import gps.transport.Transport;
  * the other routes in the same result list.
  */
 @Getter
-public final class RouteOption
-{
+public final class RouteOption {
 	/**
 	 * The full tile path, as returned by the pathfinder.
 	 */
@@ -85,22 +84,16 @@ public final class RouteOption
 	 * cost us an invisible off-by-one in the overlay (every sea leg permanently dashed); this
 	 * method is the single place that arithmetic lives now, pinned by RouteOptionTest.
 	 */
-	public java.util.Set<Integer> sailingJumpDepartures()
-	{
+	public java.util.Set<Integer> sailingJumpDepartures() {
 		// Memoized: the overlay asks once per rendered frame, and this object is immutable.
 		// Benign race — concurrent first calls compute identical sets.
 		java.util.Set<Integer> cached = sailingJumpDeparturesCache;
 		if (cached != null)
-		{
 			return cached;
-		}
 		java.util.Set<Integer> departures = new java.util.HashSet<>();
-		for (int i = 0; i < methods.size() && i < methodEdgeIndexes.size(); i++)
-		{
+		for (int i = 0; i < methods.size() && i < methodEdgeIndexes.size(); i++) {
 			if (methods.get(i).getType() == gps.transport.TransportType.SAILING)
-			{
 				departures.add(methodEdgeIndexes.get(i) - 1);
-			}
 		}
 		sailingJumpDeparturesCache = java.util.Collections.unmodifiableSet(departures);
 		return sailingJumpDeparturesCache;
@@ -110,32 +103,28 @@ public final class RouteOption
 
 	public RouteOption(List<PathStep> path, List<TeleportMethod> methods, List<Integer> methodEdgeIndexes,
 		List<Integer> methodDurations, int totalCost, int rawCost, boolean reached, Set<TeleportMethod> bankMethods,
-		List<Integer> walkBeforeSteps, int trailingWalkSteps)
-	{
+		List<Integer> walkBeforeSteps, int trailingWalkSteps) {
 		this(path, methods, methodEdgeIndexes, methodDurations, totalCost, rawCost, reached, bankMethods,
 			List.of(), walkBeforeSteps, trailingWalkSteps, -1);
 	}
 
 	public RouteOption(List<PathStep> path, List<TeleportMethod> methods, List<Integer> methodEdgeIndexes,
 		List<Integer> methodDurations, int totalCost, int rawCost, boolean reached, Set<TeleportMethod> bankMethods,
-		List<Transport> bankTransports, List<Integer> walkBeforeSteps, int trailingWalkSteps)
-	{
+		List<Transport> bankTransports, List<Integer> walkBeforeSteps, int trailingWalkSteps) {
 		this(path, methods, methodEdgeIndexes, methodDurations, totalCost, rawCost, reached, bankMethods,
 			bankTransports, walkBeforeSteps, trailingWalkSteps, -1);
 	}
 
 	public RouteOption(List<PathStep> path, List<TeleportMethod> methods, List<Integer> methodEdgeIndexes,
 		List<Integer> methodDurations, int totalCost, int rawCost, boolean reached, Set<TeleportMethod> bankMethods,
-		List<Integer> walkBeforeSteps, int trailingWalkSteps, int turnaroundIndex)
-	{
+		List<Integer> walkBeforeSteps, int trailingWalkSteps, int turnaroundIndex) {
 		this(path, methods, methodEdgeIndexes, methodDurations, totalCost, rawCost, reached, bankMethods,
 			List.of(), walkBeforeSteps, trailingWalkSteps, turnaroundIndex);
 	}
 
 	public RouteOption(List<PathStep> path, List<TeleportMethod> methods, List<Integer> methodEdgeIndexes,
 		List<Integer> methodDurations, int totalCost, int rawCost, boolean reached, Set<TeleportMethod> bankMethods,
-		List<Transport> bankTransports, List<Integer> walkBeforeSteps, int trailingWalkSteps, int turnaroundIndex)
-	{
+		List<Transport> bankTransports, List<Integer> walkBeforeSteps, int trailingWalkSteps, int turnaroundIndex) {
 		this.path = path;
 		this.methods = methods;
 		this.methodEdgeIndexes = methodEdgeIndexes;
@@ -151,58 +140,44 @@ public final class RouteOption
 	}
 
 	/** Whether this route is a round trip — see {@link #turnaroundIndex}. */
-	public boolean isRoundTrip()
-	{
+	public boolean isRoundTrip() {
 		return turnaroundIndex >= 0;
 	}
 
 	/**
 	 * Tiles walked before the method at {@code index}, or 0 when unknown.
 	 */
-	public int walkBefore(int index)
-	{
+	public int walkBefore(int index) {
 		return (index >= 0 && index < walkBeforeSteps.size()) ? walkBeforeSteps.get(index) : 0;
 	}
 
 	/**
 	 * Whether one of this route's methods requires a bank withdrawal first (see {@link #bankMethods}).
 	 */
-	public boolean isViaBank()
-	{
+	public boolean isViaBank() {
 		return !bankMethods.isEmpty() || !bankTransports.isEmpty();
 	}
 
 	/** Whether every method is a sailing leg: the route never leaves the water system. */
-	public boolean isPureSail()
-	{
+	public boolean isPureSail() {
 		if (methods.isEmpty())
-		{
 			return false;
-		}
-		for (TeleportMethod method : methods)
-		{
+		for (TeleportMethod method : methods) {
 			if (method.getType() != gps.transport.TransportType.SAILING)
-			{
 				return false;
-			}
 		}
 		return true;
 	}
 
-	public boolean isWalkOnly()
-	{
+	public boolean isWalkOnly() {
 		return methods.isEmpty();
 	}
 
 	/** The method whose edge arrives at path index {@code arriveIndex}, or null when that edge is walking. */
-	public TeleportMethod methodArrivingAt(int arriveIndex)
-	{
-		for (int m = 0; m < methodEdgeIndexes.size() && m < methods.size(); m++)
-		{
+	public TeleportMethod methodArrivingAt(int arriveIndex) {
+		for (int m = 0; m < methodEdgeIndexes.size() && m < methods.size(); m++) {
 			if (methodEdgeIndexes.get(m) == arriveIndex)
-			{
 				return methods.get(m);
-			}
 		}
 		return null;
 	}

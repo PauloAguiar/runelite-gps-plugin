@@ -7,18 +7,13 @@ import net.runelite.api.Skill;
 import gps.ShortestPathConfig;
 
 @Getter
-public enum TransportType
-{
+public enum TransportType {
 	TRANSPORT("/transports/transports.tsv", null, null, null, null),
-	AGILITY_SHORTCUT("/transports/agility_shortcuts.tsv", "useAgilityShortcuts", null, "costAgilityShortcuts", ShortestPathConfig::costAgilityShortcuts)
-		{
+	AGILITY_SHORTCUT("/transports/agility_shortcuts.tsv", "useAgilityShortcuts", null, "costAgilityShortcuts", ShortestPathConfig::costAgilityShortcuts) {
 			@Override
-			public TransportType refine(int[] skillLevels)
-			{
+			public TransportType refine(int[] skillLevels) {
 				if (skillLevels[Skill.RANGED.ordinal()] > 1 || skillLevels[Skill.STRENGTH.ordinal()] > 1)
-				{
 					return GRAPPLE_SHORTCUT;
-				}
 				return this;
 			}
 		},
@@ -35,61 +30,49 @@ public enum TransportType
 	MAGIC_MUSHTREE("/transports/magic_mushtrees.tsv", "useMagicMushtrees", null, "costMagicMushtrees", ShortestPathConfig::costMagicMushtrees, 5),
 	MINECART("/transports/minecarts.tsv", "useMinecarts", null, "costMinecarts", ShortestPathConfig::costMinecarts),
 	MOUNTAIN_GUIDE("/transports/mountain_guides.tsv", "useMountainGuides", null, "costMountainGuides", ShortestPathConfig::costMountainGuides),
-	QUETZAL("/transports/quetzals.tsv", "useQuetzals", null, "costQuetzals", ShortestPathConfig::costQuetzals, 5)
-		{
+	QUETZAL("/transports/quetzals.tsv", "useQuetzals", null, "costQuetzals", ShortestPathConfig::costQuetzals, 5) {
 			@Override
-			public TransportType sharesDestinationsWith()
-			{
+			public TransportType sharesDestinationsWith() {
 				return QUETZAL_WHISTLE;
 			}
 		},
-	QUETZAL_WHISTLE("/transports/quetzal_whistle.tsv", "useQuetzals", null, "costQuetzalWhistle", ShortestPathConfig::costQuetzals)
-		{
+	QUETZAL_WHISTLE("/transports/quetzal_whistle.tsv", "useQuetzals", null, "costQuetzalWhistle", ShortestPathConfig::costQuetzals) {
 			@Override
-			public boolean isTeleport()
-			{
+			public boolean isTeleport() {
 				return true;
 			}
 
 			@Override
-			public TransportType sharesDestinationsWith()
-			{
+			public TransportType sharesDestinationsWith() {
 				return QUETZAL;
 			}
 
 			@Override
-			public Function<ShortestPathConfig, Integer> differentialCostFunction()
-			{
+			public Function<ShortestPathConfig, Integer> differentialCostFunction() {
 				return ShortestPathConfig::costQuetzalWhistle;
 			}
 		},
 	SEASONAL_TRANSPORTS("/transports/seasonal_transports.tsv", "useSeasonalTransports", ShortestPathConfig::useSeasonalTransports, "costSeasonalTransports", ShortestPathConfig::costSeasonalTransports),
 	SPIRIT_TREE("/transports/spirit_trees.tsv", "useSpiritTrees", ShortestPathConfig::useSpiritTrees, "costSpiritTrees", ShortestPathConfig::costSpiritTrees, 5),
 	TELEPORTATION_BOX("/transports/teleportation_boxes.tsv", null, null, "costTeleportationBoxes", ShortestPathConfig::costTeleportationBoxes),
-	TELEPORTATION_ITEM("/transports/teleportation_items.tsv", null, null, "costNonConsumableTeleportationItems", ShortestPathConfig::costNonConsumableTeleportationItems)
-		{
+	TELEPORTATION_ITEM("/transports/teleportation_items.tsv", null, null, "costNonConsumableTeleportationItems", ShortestPathConfig::costNonConsumableTeleportationItems) {
 			@Override
-			public boolean isTeleport()
-			{
+			public boolean isTeleport() {
 				return true;
 			}
 		},
 	TELEPORTATION_LEVER("/transports/teleportation_levers.tsv", "useTeleportationLevers", null, "costTeleportationLevers", ShortestPathConfig::costTeleportationLevers),
-	TELEPORTATION_MINIGAME("/transports/teleportation_minigames.tsv", "useTeleportationMinigames", null, "costTeleportationMinigames", ShortestPathConfig::costTeleportationMinigames)
-		{
+	TELEPORTATION_MINIGAME("/transports/teleportation_minigames.tsv", "useTeleportationMinigames", null, "costTeleportationMinigames", ShortestPathConfig::costTeleportationMinigames) {
 			@Override
-			public boolean isTeleport()
-			{
+			public boolean isTeleport() {
 				return true;
 			}
 		},
 	TELEPORTATION_PORTAL("/transports/teleportation_portals.tsv", "useTeleportationPortals", null, "costTeleportationPortals", ShortestPathConfig::costTeleportationPortals),
 	TELEPORTATION_PORTAL_POH("/transports/teleportation_portals_poh.tsv", "useTeleportationPortalsPoh", ShortestPathConfig::useTeleportationPortalsPoh, null, null),
-	TELEPORTATION_SPELL("/transports/teleportation_spells.tsv", "useTeleportationSpells", null, "costTeleportationSpells", ShortestPathConfig::costTeleportationSpells)
-		{
+	TELEPORTATION_SPELL("/transports/teleportation_spells.tsv", "useTeleportationSpells", null, "costTeleportationSpells", ShortestPathConfig::costTeleportationSpells) {
 			@Override
-			public boolean isTeleport()
-			{
+			public boolean isTeleport() {
 				return true;
 			}
 		},
@@ -108,8 +91,7 @@ public enum TransportType
 		String enabledKey,
 		Function<ShortestPathConfig, Boolean> enabledGetter,
 		String costKey,
-		Function<ShortestPathConfig, Integer> costGetter)
-	{
+		Function<ShortestPathConfig, Integer> costGetter) {
 		this(resourcePath, enabledKey, enabledGetter, costKey, costGetter, null);
 	}
 
@@ -119,8 +101,7 @@ public enum TransportType
 		Function<ShortestPathConfig, Boolean> enabledGetter,
 		String costKey,
 		Function<ShortestPathConfig, Integer> costGetter,
-		Integer radiusThreshold)
-	{
+		Integer radiusThreshold) {
 		this.resourcePath = resourcePath;
 		this.enabledKey = enabledKey;
 		this.enabledGetter = enabledGetter;
@@ -129,23 +110,19 @@ public enum TransportType
 		this.radiusThreshold = radiusThreshold;
 	}
 
-	public boolean hasResourcePath()
-	{
+	public boolean hasResourcePath() {
 		return resourcePath != null;
 	}
 
-	public boolean hasRadiusThreshold()
-	{
+	public boolean hasRadiusThreshold() {
 		return radiusThreshold != null;
 	}
 
-	public boolean hasEnabledGetter()
-	{
+	public boolean hasEnabledGetter() {
 		return enabledGetter != null;
 	}
 
-	public boolean hasCostGetter()
-	{
+	public boolean hasCostGetter() {
 		return costGetter != null;
 	}
 
@@ -155,8 +132,7 @@ public enum TransportType
 	 * and not teleports because they have a pre-defined origin and no
 	 * wilderness level limit.
 	 */
-	public boolean isTeleport()
-	{
+	public boolean isTeleport() {
 		return false;
 	}
 
@@ -165,8 +141,7 @@ public enum TransportType
 	 * Stores which transport type this transport shares destinations with, if any.
 	 * Used for delayed visit pathfinding so both types can compete in the priority queue.
 	 */
-	public TransportType sharesDestinationsWith()
-	{
+	public TransportType sharesDestinationsWith() {
 		return null;
 	}
 
@@ -176,8 +151,7 @@ public enum TransportType
 	 * (e.g. how many extra tiles the whistle must save over a landing site
 	 * to justify using a charge).
 	 */
-	public Function<ShortestPathConfig, Integer> differentialCostFunction()
-	{
+	public Function<ShortestPathConfig, Integer> differentialCostFunction() {
 		return null;
 	}
 
@@ -185,8 +159,7 @@ public enum TransportType
 	/**
 	 * Refines the TransportType based on the required skill levels.
 	 */
-	public TransportType refine(int[] skillLevels)
-	{
+	public TransportType refine(int[] skillLevels) {
 		return this;
 	}
 }

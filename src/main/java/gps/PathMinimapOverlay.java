@@ -17,14 +17,12 @@ import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import gps.pathfinder.PathStep;
 
-public class PathMinimapOverlay extends Overlay
-{
+public class PathMinimapOverlay extends Overlay {
 	private final Client client;
 	private final ShortestPathPlugin plugin;
 
 	@Inject
-	private PathMinimapOverlay(Client client, ShortestPathPlugin plugin)
-	{
+	private PathMinimapOverlay(Client client, ShortestPathPlugin plugin) {
 		this.client = client;
 		this.plugin = plugin;
 		setPosition(OverlayPosition.DYNAMIC);
@@ -32,8 +30,7 @@ public class PathMinimapOverlay extends Overlay
 		setLayer(OverlayLayer.ABOVE_WIDGETS);
 	}
 
-	public static void renderMinimapRect(Client client, Graphics2D graphics, Point center, Color color)
-	{
+	public static void renderMinimapRect(Client client, Graphics2D graphics, Point center, Color color) {
 		double angle = client.getCameraYawTarget() * Perspective.UNIT;
 		double tileSize = client.getMinimapZoom();
 		int x = (int) Math.round(center.getX() - tileSize / 2);
@@ -47,18 +44,13 @@ public class PathMinimapOverlay extends Overlay
 	}
 
 	@Override
-	public Dimension render(Graphics2D graphics)
-	{
+	public Dimension render(Graphics2D graphics) {
 		if (!plugin.display().drawMinimap || !plugin.hasPathTargets())
-		{
 			return null;
-		}
 
 		Shape minimapClipArea = plugin.minimapClip().area();
 		if (minimapClipArea == null)
-		{
 			return null;
-		}
 		graphics.setClip(minimapClipArea);
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
@@ -69,47 +61,35 @@ public class PathMinimapOverlay extends Overlay
 		// the first un-crossed obstacle, normal in between.
 		int progress = plugin.displayedRouteProgress();
 		int blockedFrom = plugin.blockedFromIndex(pathPoints);
-		for (int i = 0; i < pathPoints.size(); i++)
-		{
+		for (int i = 0; i < pathPoints.size(); i++) {
 			int pathPoint = pathPoints.get(i).getPackedPosition();
 			if (WorldPointUtil.unpackWorldPlane(pathPoint) != client.getTopLevelWorldView().getPlane())
-			{
 				continue;
-			}
 
 			Color color = i <= progress ? doneColor
 				: (i >= blockedFrom ? plugin.display().colourPathBlocked : pathColor);
 			drawOnMinimap(graphics, pathPoint, color);
 		}
-		for (int target : plugin.getPathTargets())
-		{
+		for (int target : plugin.getPathTargets()) {
 			if (!pathPoints.isEmpty() && target != pathPoints.get(pathPoints.size() - 1).getPackedPosition())
-			{
 				drawOnMinimap(graphics, target, plugin.display().colourPathCalculating);
-			}
 		}
 
 		return null;
 	}
 
-	private void drawOnMinimap(Graphics2D graphics, int location, Color color)
-	{
+	private void drawOnMinimap(Graphics2D graphics, int location, Color color) {
 		PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
-		for (int i = 0; i < points.size(); i++)
-		{
+		for (int i = 0; i < points.size(); i++) {
 			LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
 
 			if (lp == null)
-			{
 				continue;
-			}
 
 			Point posOnMinimap = Perspective.localToMinimap(client, lp);
 
 			if (posOnMinimap == null)
-			{
 				continue;
-			}
 
 			renderMinimapRect(client, graphics, posOnMinimap, color);
 		}

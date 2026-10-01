@@ -6,8 +6,7 @@ package gps;
  * panel can explain (missing item, in the bank, missing level/quest, not unlocked) why an entry is
  * greyed out — in every mode, not just the possession-bypassing "All" modes.
  */
-public enum MethodAvailability
-{
+public enum MethodAvailability {
 	/** Usable right now from the inventory/equipment (all unlocks met). */
 	AVAILABLE,
 	/** Owned, but the required item is in the bank — withdraw it or use an "Inventory + bank" mode. */
@@ -25,12 +24,9 @@ public enum MethodAvailability
 	 * The more-available of two statuses (lower ordinal = more available). Used to collapse the several
 	 * transports that can share one method identity down to a single, best-case status.
 	 */
-	public MethodAvailability best(MethodAvailability other)
-	{
+	public MethodAvailability best(MethodAvailability other) {
 		if (other == null)
-		{
 			return this;
-		}
 		return ordinal() <= other.ordinal() ? this : other;
 	}
 }

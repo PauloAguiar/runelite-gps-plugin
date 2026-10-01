@@ -14,16 +14,14 @@ import lombok.Getter;
  * </p>
  */
 @Getter
-public class VarRequirement
-{
+public class VarRequirement {
 
 	private final VarType varType;
 	private final int id;
 	private final int value;
 	private final VarCheckType checkType;
 
-	public VarRequirement(VarType varType, int id, int value, VarCheckType checkType)
-	{
+	public VarRequirement(VarType varType, int id, int value, VarCheckType checkType) {
 		this.varType = varType;
 		this.id = id;
 		this.value = value;
@@ -33,16 +31,14 @@ public class VarRequirement
 	/**
 	 * Creates a varbit requirement.
 	 */
-	public static VarRequirement varbit(int id, int value, VarCheckType checkType)
-	{
+	public static VarRequirement varbit(int id, int value, VarCheckType checkType) {
 		return new VarRequirement(VarType.VARBIT, id, value, checkType);
 	}
 
 	/**
 	 * Creates a varplayer requirement.
 	 */
-	public static VarRequirement varPlayer(int id, int value, VarCheckType checkType)
-	{
+	public static VarRequirement varPlayer(int id, int value, VarCheckType checkType) {
 		return new VarRequirement(VarType.VARPLAYER, id, value, checkType);
 	}
 
@@ -52,23 +48,18 @@ public class VarRequirement
 	 * @param values A map of variable IDs to their current values
 	 * @return true if the requirement is satisfied
 	 */
-	public boolean check(Map<Integer, Integer> values)
-	{
+	public boolean check(Map<Integer, Integer> values) {
 		Integer currentValue = values.get(id);
 		if (currentValue == null)
-		{
 			return false;
-		}
 		return checkValue(currentValue);
 	}
 
 	/**
 	 * Same logic as {@link #check(Map)} but with the variable value already resolved (e.g. from the client).
 	 */
-	public boolean checkValue(int currentValue)
-	{
-		switch (checkType)
-		{
+	public boolean checkValue(int currentValue) {
+		switch (checkType) {
 			case EQUAL:
 				return currentValue == value;
 			case GREATER:
@@ -84,19 +75,16 @@ public class VarRequirement
 		}
 	}
 
-	public boolean isVarbit()
-	{
+	public boolean isVarbit() {
 		return varType == VarType.VARBIT;
 	}
 
-	public boolean isVarPlayer()
-	{
+	public boolean isVarPlayer() {
 		return varType == VarType.VARPLAYER;
 	}
 
 	@Override
-	public int hashCode()
-	{
+	public int hashCode() {
 		int result = varType.hashCode();
 		result = 31 * result + id;
 		result = 31 * result + value;
@@ -105,31 +93,24 @@ public class VarRequirement
 	}
 
 	@Override
-	public boolean equals(Object o)
-	{
+	public boolean equals(Object o) {
 		if (this == o)
-		{
 			return true;
-		}
 		if (o == null || getClass() != o.getClass())
-		{
 			return false;
-		}
 		VarRequirement that = (VarRequirement) o;
 		return id == that.id && value == that.value && varType == that.varType && checkType == that.checkType;
 	}
 
 	@Override
-	public String toString()
-	{
+	public String toString() {
 		return varType + "[" + id + " " + checkType.getCode() + " " + value + "]";
 	}
 
 	/**
 	 * The type of variable this requirement checks.
 	 */
-	public enum VarType
-	{
+	public enum VarType {
 		VARBIT,
 		VARPLAYER
 	}

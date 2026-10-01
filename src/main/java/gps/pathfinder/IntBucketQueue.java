@@ -14,38 +14,29 @@ import java.util.ArrayList;
  * bucket preserves the creation-order tie-break the searches always had. Single-threaded (worker
  * only), like the heap it complements.
  */
-class IntBucketQueue
-{
+class IntBucketQueue {
 	private final ArrayList<IntDeque> buckets = new ArrayList<>();
 	// The lowest bucket that can still hold anything; only ever moves forward (monotone inserts).
 	private int cursor;
 	private int size;
 
-	int size()
-	{
+	int size() {
 		return size;
 	}
 
-	boolean isEmpty()
-	{
+	boolean isEmpty() {
 		return size == 0;
 	}
 
-	void add(int id, int key)
-	{
+	void add(int id, int key) {
 		if (key < cursor)
-		{
 			// Monotonicity safety net: never true with non-negative edges, but a backwards insert
 			// must not be silently skipped by the cursor.
 			cursor = key;
-		}
 		while (buckets.size() <= key)
-		{
 			buckets.add(null);
-		}
 		IntDeque bucket = buckets.get(key);
-		if (bucket == null)
-		{
+		if (bucket == null) {
 			bucket = new IntDeque(16);
 			buckets.set(key, bucket);
 		}
@@ -56,17 +47,12 @@ class IntBucketQueue
 	/**
 	 * @return the minimum-key element, or {@link NodeGraph#NO_NODE} if empty.
 	 */
-	int poll()
-	{
+	int poll() {
 		if (size == 0)
-		{
 			return NodeGraph.NO_NODE;
-		}
-		while (cursor < buckets.size())
-		{
+		while (cursor < buckets.size()) {
 			IntDeque bucket = buckets.get(cursor);
-			if (bucket != null && !bucket.isEmpty())
-			{
+			if (bucket != null && !bucket.isEmpty()) {
 				size--;
 				return bucket.pollFirst();
 			}
@@ -76,8 +62,7 @@ class IntBucketQueue
 		return NodeGraph.NO_NODE;
 	}
 
-	void clear()
-	{
+	void clear() {
 		buckets.clear();
 		cursor = 0;
 		size = 0;

@@ -23,8 +23,7 @@ import net.runelite.client.util.Text;
  * the floating-map controls, and "Find closest" on a world-map icon whose kind GPS knows. A
  * click hands the pick to the plugin.
  */
-final class MapMenu
-{
+final class MapMenu {
 	static final String CLEAR = "Clear";
 	static final String PATH = ColorUtil.wrapWithColorTag("Path", JagexColors.MENU_TARGET);
 	static final String SET = "Set";
@@ -39,31 +38,24 @@ final class MapMenu
 	// Where the menu opened: a world-map pick resolves against it, not the current mouse position.
 	private Point lastMenuOpenedPoint;
 
-	MapMenu(Client client, WorldMapProjection worldMap, MinimapClip minimapClip, ShortestPathPlugin plugin)
-	{
+	MapMenu(Client client, WorldMapProjection worldMap, MinimapClip minimapClip, ShortestPathPlugin plugin) {
 		this.client = client;
 		this.worldMap = worldMap;
 		this.minimapClip = minimapClip;
 		this.plugin = plugin;
 	}
 
-	void onMenuOpened()
-	{
+	void onMenuOpened() {
 		lastMenuOpenedPoint = client.getMouseCanvasPosition();
 	}
 
-	void onMenuEntryAdded(MenuEntryAdded event)
-	{
-		if (client.isKeyPressed(KeyCode.KC_SHIFT) && event.getType() == MenuAction.WALK.getId())
-		{
+	void onMenuEntryAdded(MenuEntryAdded event) {
+		if (client.isKeyPressed(KeyCode.KC_SHIFT) && event.getType() == MenuAction.WALK.getId()) {
 			addMenuEntry(event, SET, TARGET, 1);
-			if (plugin.hasPathTargets())
-			{
+			if (plugin.hasPathTargets()) {
 				int selectedTile = selectedWorldPoint();
-				for (PathStep pathStep : plugin.getDisplayPath())
-				{
-					if (pathStep.getPackedPosition() == selectedTile)
-					{
+				for (PathStep pathStep : plugin.getDisplayPath()) {
+					if (pathStep.getPackedPosition() == selectedTile) {
 						addMenuEntry(event, CLEAR, PATH, 1);
 						break;
 					}
@@ -72,65 +64,46 @@ final class MapMenu
 		}
 
 		final Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
-		if (map != null)
-		{
-			if (map.getBounds().contains(client.getMouseCanvasPosition().getX(), client.getMouseCanvasPosition().getY()))
-			{
+		if (map != null) {
+			if (map.getBounds().contains(client.getMouseCanvasPosition().getX(), client.getMouseCanvasPosition().getY())) {
 				addMenuEntry(event, SET, TARGET, 0);
-				for (int target : plugin.getPathTargets())
-				{
+				for (int target : plugin.getPathTargets()) {
 					if (target != WorldPointUtil.UNDEFINED)
-					{
 						addMenuEntry(event, CLEAR, PATH, 0);
-					}
 				}
 			}
 			if (event.getOption().equals(FLASH_ICONS)
-				&& plugin.getPathfinderConfig().hasDestination(simplify(event.getTarget())))
-			{
+				&& plugin.getPathfinderConfig().hasDestination(simplify(event.getTarget()))) {
 				addMenuEntry(event, FIND_CLOSEST, event.getTarget(), 1);
 			}
 		}
 
 		final Shape minimap = minimapClip.area();
 		if (minimap != null && plugin.hasPathTargets()
-			&& minimap.contains(client.getMouseCanvasPosition().getX(), client.getMouseCanvasPosition().getY()))
-		{
+			&& minimap.contains(client.getMouseCanvasPosition().getX(), client.getMouseCanvasPosition().getY())) {
 			addMenuEntry(event, CLEAR, PATH, 0);
 		}
 		if (minimap != null && plugin.hasPathTargets()
 			&& ("Floating World Map".equals(Text.removeTags(event.getOption()))
-			|| "Close Floating panel".equals(Text.removeTags(event.getOption()))))
-		{
+			|| "Close Floating panel".equals(Text.removeTags(event.getOption())))) {
 			addMenuEntry(event, CLEAR, PATH, 1);
 		}
 	}
 
-	private void onMenuOptionClicked(MenuEntry entry)
-	{
+	private void onMenuOptionClicked(MenuEntry entry) {
 		if (entry.getOption().equals(SET) && entry.getTarget().equals(TARGET))
-		{
 			plugin.pinTarget(selectedWorldPoint());
-		}
 		else if (entry.getOption().equals(CLEAR) && entry.getTarget().equals(PATH))
-		{
 			plugin.clearPinnedTarget();
-		}
 		else if (entry.getOption().equals(FIND_CLOSEST))
-		{
 			plugin.findClosest(simplify(entry.getTarget()));
-		}
 	}
 
 	/** The tile under the menu: the selected scene tile, or the world-map tile where the menu opened. */
-	private int selectedWorldPoint()
-	{
-		if (client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) == null)
-		{
+	private int selectedWorldPoint() {
+		if (client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) == null) {
 			if (client.getTopLevelWorldView().getSelectedSceneTile() != null)
-			{
 				return WorldPointUtil.fromLocalInstance(client, client.getTopLevelWorldView().getSelectedSceneTile().getLocalLocation());
-			}
 			return WorldPointUtil.UNDEFINED;
 		}
 		return client.isMenuOpen()
@@ -138,13 +111,10 @@ final class MapMenu
 			: worldMap.worldPointAt(client.getMouseCanvasPosition().getX(), client.getMouseCanvasPosition().getY());
 	}
 
-	private void addMenuEntry(MenuEntryAdded event, String option, String target, int position)
-	{
+	private void addMenuEntry(MenuEntryAdded event, String option, String target, int position) {
 		List<MenuEntry> entries = new LinkedList<>(Arrays.asList(client.getMenu().getMenuEntries()));
 		if (entries.stream().anyMatch(e -> e.getOption().equals(option) && e.getTarget().equals(target)))
-		{
 			return;
-		}
 		client.getMenu().createMenuEntry(position)
 			.setOption(option)
 			.setTarget(target)
@@ -156,8 +126,7 @@ final class MapMenu
 	}
 
 	/** A world-map icon's menu target as a destination key: tags off, lower case, words joined by underscores. */
-	static String simplify(String text)
-	{
+	static String simplify(String text) {
 		return Text.removeTags(text).toLowerCase()
 			.replaceAll("[^a-zA-Z ]", "")
 			.replace(" ", "_")

@@ -6,8 +6,7 @@ package gps.transport.parser;
  *
  * @param <T> The type of object produced by this parser
  */
-public interface FieldParser<T>
-{
+public interface FieldParser<T> {
 	/**
 	 * Parses a string value into the target type.
 	 *

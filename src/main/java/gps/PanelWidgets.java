@@ -36,8 +36,7 @@ import net.runelite.client.ui.FontManager;
  * wrapped label, the category dots). Built on the tile-packs style: small icon controls with
  * hover states and tooltips.
  */
-final class PanelWidgets
-{
+final class PanelWidgets {
 	static final int CONTROL_SIZE = 18;
 	static final int METHOD_TEXT_WIDTH = 132;
 	// Wrap width for message-banner text: the sidebar content (~192px after the panel's outer
@@ -61,8 +60,7 @@ final class PanelWidgets
 
 	// Stable, distinct-ish palette; categories without a fixed colour hash into it so the same
 	// category always gets the same dot colour.
-	private static final Color[] CATEGORY_PALETTE =
-	{
+	private static final Color[] CATEGORY_PALETTE = {
 		new Color(0x5B, 0x9B, 0xD5), // blue
 		new Color(0x4C, 0xAF, 0x50), // green
 		new Color(0xE9, 0x7D, 0x3B), // orange
@@ -75,8 +73,7 @@ final class PanelWidgets
 		new Color(0xD1, 0x5B, 0x5B), // red
 	};
 
-	private PanelWidgets()
-	{
+	private PanelWidgets() {
 	}
 
 	/**
@@ -84,8 +81,7 @@ final class PanelWidgets
 	 * height), it sits vertically centred against the possibly two-line label in CENTER, while
 	 * staying left-aligned horizontally.
 	 */
-	static JPanel verticallyCentered(Component content)
-	{
+	static JPanel verticallyCentered(Component content) {
 		JPanel wrap = new JPanel(new GridBagLayout());
 		wrap.setOpaque(false);
 		GridBagConstraints gbc = new GridBagConstraints();
@@ -95,16 +91,14 @@ final class PanelWidgets
 	}
 
 	/** Sizes an icon label as a small square control. */
-	static JLabel control(JLabel label)
-	{
+	static JLabel control(JLabel label) {
 		label.setPreferredSize(new Dimension(CONTROL_SIZE, CONTROL_SIZE));
 		label.setHorizontalAlignment(SwingConstants.CENTER);
 		return label;
 	}
 
 	/** Shared subtle-button chrome: small font, outline, tight padding, hand cursor, hover lift. */
-	static JButton subtleButton(JButton button)
-	{
+	static JButton subtleButton(JButton button) {
 		button.setFont(FontManager.getRunescapeSmallFont());
 		button.setForeground(Color.WHITE);
 		button.setBackground(ColorScheme.DARKER_GRAY_HOVER_COLOR);
@@ -113,17 +107,14 @@ final class PanelWidgets
 		button.setBorder(BorderFactory.createCompoundBorder(
 			BorderFactory.createLineBorder(ColorScheme.MEDIUM_GRAY_COLOR),
 			new EmptyBorder(3, 8, 3, 8)));
-		button.addMouseListener(new MouseAdapter()
-		{
+		button.addMouseListener(new MouseAdapter() {
 			@Override
-			public void mouseEntered(MouseEvent e)
-			{
+			public void mouseEntered(MouseEvent e) {
 				button.setBackground(ColorScheme.MEDIUM_GRAY_COLOR);
 			}
 
 			@Override
-			public void mouseExited(MouseEvent e)
-			{
+			public void mouseExited(MouseEvent e) {
 				button.setBackground(ColorScheme.DARKER_GRAY_HOVER_COLOR);
 			}
 		});
@@ -131,29 +122,21 @@ final class PanelWidgets
 	}
 
 	/** The first JTextField inside a composite component (IconTextField hides its own). */
-	static JTextField innerTextField(Container root)
-	{
-		for (Component component : root.getComponents())
-		{
+	static JTextField innerTextField(Container root) {
+		for (Component component : root.getComponents()) {
 			if (component instanceof JTextField)
-			{
 				return (JTextField) component;
-			}
-			if (component instanceof Container)
-			{
+			if (component instanceof Container) {
 				JTextField inner = innerTextField((Container) component);
 				if (inner != null)
-				{
 					return inner;
-				}
 			}
 		}
 		return null;
 	}
 
 	/** A small white section title with the sections' vertical rhythm. */
-	static JLabel sectionLabel(String text)
-	{
+	static JLabel sectionLabel(String text) {
 		JLabel label = new JLabel(text);
 		label.setFont(FontManager.getRunescapeSmallFont());
 		label.setForeground(Color.WHITE);
@@ -162,16 +145,14 @@ final class PanelWidgets
 	}
 
 	/** Left-aligns a component and lets it stretch to the full width at its preferred height. */
-	static JComponent fullWidth(JComponent component)
-	{
+	static JComponent fullWidth(JComponent component) {
 		component.setAlignmentX(Component.LEFT_ALIGNMENT);
 		component.setMaximumSize(new Dimension(Integer.MAX_VALUE, component.getPreferredSize().height));
 		return component;
 	}
 
 	/** A small grey label wrapped at the method text width, top-aligned for two-line rows. */
-	static JLabel wrappedLabel(String innerHtml)
-	{
+	static JLabel wrappedLabel(String innerHtml) {
 		JLabel label = new JLabel("<html><body style='width:" + METHOD_TEXT_WIDTH + "px'>" + innerHtml + "</body></html>");
 		label.setFont(FontManager.getRunescapeSmallFont());
 		label.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
@@ -184,31 +165,24 @@ final class PanelWidgets
 	 * into the vertical BoxLayout: they do not stretch and default to centred alignment, which floats
 	 * them into odd positions and clips them at the card edge.
 	 */
-	static JPanel noteRow(String innerHtml, String tooltip)
-	{
+	static JPanel noteRow(String innerHtml, String tooltip) {
 		JPanel row = new JPanel(new BorderLayout());
 		row.setOpaque(false);
 		JLabel text = wrappedLabel(innerHtml);
 		if (tooltip != null)
-		{
 			text.setToolTipText(tooltip);
-		}
 		row.add(text, BorderLayout.WEST);
 		return row;
 	}
 
-	static String escapeHtml(String text)
-	{
+	static String escapeHtml(String text) {
 		if (text == null)
-		{
 			return "";
-		}
 		return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
 	}
 
 	/** A fixed-height spacer in the panel's background colour. */
-	static Component verticalGap(int height)
-	{
+	static Component verticalGap(int height) {
 		JPanel gap = new JPanel();
 		gap.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		gap.setMaximumSize(new Dimension(Integer.MAX_VALUE, height));
@@ -217,8 +191,7 @@ final class PanelWidgets
 	}
 
 	/** A 9px rounded dot icon in {@code colour}. */
-	static Icon dot(Color colour)
-	{
+	static Icon dot(Color colour) {
 		final int s = 9;
 		BufferedImage image = new BufferedImage(s, s, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g = image.createGraphics();
@@ -229,18 +202,14 @@ final class PanelWidgets
 		return new ImageIcon(image);
 	}
 
-	static Icon categoryDot(String category)
-	{
+	static Icon categoryDot(String category) {
 		return dot(categoryColour(category));
 	}
 
 	/** The category dot for a route-card method, splitting teleport items by charge model. */
-	static Icon methodDot(TeleportMethod method)
-	{
+	static Icon methodDot(TeleportMethod method) {
 		if (method.getType() == TransportType.TELEPORTATION_ITEM)
-		{
 			return dot(method.isConsumable() ? CHARGED_ITEM_DOT : PERMANENT_ITEM_DOT);
-		}
 		return categoryDot(method.category());
 	}
 
@@ -250,10 +219,8 @@ final class PanelWidgets
 	 * permanent-item dot; charged items get the amber dot via {@link #methodDot}. The hashed
 	 * palette remains only as a fallback for categories added later.
 	 */
-	static Color categoryColour(String category)
-	{
-		switch (category)
-		{
+	static Color categoryColour(String category) {
+		switch (category) {
 			case "Spells": return new Color(0x5B, 0x9B, 0xD5);          // blue
 			case "Items": return PERMANENT_ITEM_DOT;                     // teal (charged = amber)
 			case "Jewellery box": return new Color(0xB4, 0x6F, 0xD4);   // purple
@@ -281,8 +248,7 @@ final class PanelWidgets
 	 * A message banner: a coloured left accent bar, an icon, and wrapped text; used for status
 	 * and warnings instead of loose labels.
 	 */
-	static JPanel banner(Icon icon, String innerHtml, Color accent)
-	{
+	static JPanel banner(Icon icon, String innerHtml, Color accent) {
 		JPanel banner = new JPanel(new BorderLayout(7, 0));
 		banner.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		banner.setBorder(BorderFactory.createCompoundBorder(
@@ -306,13 +272,10 @@ final class PanelWidgets
 	 * A titled banner: a bold white title on the first line, the description beneath it. For
 	 * warnings and notices that read better as heading plus body than one run.
 	 */
-	static JPanel banner(Icon icon, String title, String body, Color accent)
-	{
+	static JPanel banner(Icon icon, String title, String body, Color accent) {
 		String html = "<font color='#FFFFFF'><b>" + escapeHtml(title) + "</b></font>";
 		if (body != null && !body.isEmpty())
-		{
 			html += "<br>" + body;
-		}
 		return banner(icon, html, accent);
 	}
 
@@ -324,8 +287,7 @@ final class PanelWidgets
 	 * orange), used by the "Travel options" section that groups the others.
 	 */
 	static JPanel sectionShell(String title, String tooltip, boolean expanded, Runnable toggle,
-		String stateText, Color stateColor, boolean headline, Runnable afterToggle)
-	{
+		String stateText, Color stateColor, boolean headline, Runnable afterToggle) {
 		JPanel section = new JPanel();
 		section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
 		section.setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -339,26 +301,21 @@ final class PanelWidgets
 		titleRow.add(control(new JLabel(expanded ? RouteIcons.CHEVRON_DOWN : RouteIcons.CHEVRON_RIGHT)),
 			BorderLayout.WEST);
 		JLabel titleLabel = new JLabel(title);
-		if (headline)
-		{
+		if (headline) {
 			titleLabel.setFont(FontManager.getRunescapeBoldFont());
 			titleLabel.setForeground(ColorScheme.BRAND_ORANGE);
 		}
 		else
-		{
 			titleLabel.setForeground(Color.WHITE);
-		}
 		titleRow.add(titleLabel, BorderLayout.CENTER);
 		JLabel state = new JLabel(stateText);
 		state.setForeground(stateColor);
 		titleRow.add(state, BorderLayout.EAST);
 		titleRow.setToolTipText(tooltip);
 		titleRow.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		titleRow.addMouseListener(new MouseAdapter()
-		{
+		titleRow.addMouseListener(new MouseAdapter() {
 			@Override
-			public void mousePressed(MouseEvent e)
-			{
+			public void mousePressed(MouseEvent e) {
 				toggle.run();
 				afterToggle.run();
 			}
@@ -368,10 +325,8 @@ final class PanelWidgets
 	}
 
 	/** The rest icon of a priority tier: stacked arrows for prefer/avoid, a cross when excluded. */
-	static ImageIcon priorityRestIcon(MethodPriority tier)
-	{
-		switch (tier)
-		{
+	static ImageIcon priorityRestIcon(MethodPriority tier) {
+		switch (tier) {
 			case PREFER_1:
 				return RouteIcons.PRIORITY_UP_ICONS[0];
 			case PREFER_2:
@@ -391,10 +346,8 @@ final class PanelWidgets
 		}
 	}
 
-	static ImageIcon priorityHoverIcon(MethodPriority tier)
-	{
-		switch (tier)
-		{
+	static ImageIcon priorityHoverIcon(MethodPriority tier) {
+		switch (tier) {
 			case PREFER_1:
 				return RouteIcons.PRIORITY_UP_HOVER_ICONS[0];
 			case PREFER_2:
@@ -414,8 +367,7 @@ final class PanelWidgets
 		}
 	}
 
-	static String priorityTooltip(String label, MethodPriority tier)
-	{
+	static String priorityTooltip(String label, MethodPriority tier) {
 		String state = tier == MethodPriority.NORMAL
 			? "Normal priority"
 			: tier.label + (tier.chipText().isEmpty() ? "" : " (" + tier.chipText() + " on ranking)");
@@ -424,14 +376,12 @@ final class PanelWidgets
 	}
 
 	/** The hover text of a method: its category, label and arrival tile. */
-	static String methodTooltip(TeleportMethod method)
-	{
+	static String methodTooltip(TeleportMethod method) {
 		return "<html>" + methodTooltipBody(method) + "</html>";
 	}
 
 	/** The tooltip's inner HTML, for callers that prepend their own line (the route cards). */
-	static String methodTooltipBody(TeleportMethod method)
-	{
+	static String methodTooltipBody(TeleportMethod method) {
 		int destination = method.getDestination();
 		int x = WorldPointUtil.unpackWorldX(destination);
 		int y = WorldPointUtil.unpackWorldY(destination);
@@ -442,16 +392,12 @@ final class PanelWidgets
 	}
 
 	/** Human list of method labels: "Fairy ring", or "Fairy ring and Cowbell amulet". */
-	static String joinLabels(Set<TeleportMethod> methods)
-	{
+	static String joinLabels(Set<TeleportMethod> methods) {
 		StringBuilder joined = new StringBuilder();
 		int i = 0;
-		for (TeleportMethod method : methods)
-		{
+		for (TeleportMethod method : methods) {
 			if (i > 0)
-			{
 				joined.append(i == methods.size() - 1 ? " and " : ", ");
-			}
 			joined.append(method.label());
 			i++;
 		}
@@ -463,19 +409,13 @@ final class PanelWidgets
 	 * so the icon controls keep their own action. Swing only delivers a click to the deepest component
 	 * under the cursor, hence the recursion.
 	 */
-	static void addClickRecursively(Component component, MouseListener listener)
-	{
+	static void addClickRecursively(Component component, MouseListener listener) {
 		if (component instanceof IconActionLabel)
-		{
 			return;
-		}
 		component.addMouseListener(listener);
-		if (component instanceof Container)
-		{
+		if (component instanceof Container) {
 			for (Component child : ((Container) component).getComponents())
-			{
 				addClickRecursively(child, listener);
-			}
 		}
 	}
 
@@ -485,16 +425,12 @@ final class PanelWidgets
 	 * classification's own detail ("Requires 60 Mining", "Missing item: Willow logs") names
 	 * exactly what is missing when it recorded one; the per-status wording is the fallback.
 	 */
-	static JLabel statusMarker(ShortestPathPlugin plugin, MethodAvailability status, TeleportMethod method)
-	{
+	static JLabel statusMarker(ShortestPathPlugin plugin, MethodAvailability status, TeleportMethod method) {
 		JLabel label = new JLabel(status == MethodAvailability.IN_BANK ? RouteIcons.IN_BANK : RouteIcons.LOCKED);
 		String detail = plugin.methodUnavailabilityDetail(method);
 		if (detail == null)
-		{
 			label.setToolTipText(statusReason(status));
-		}
-		else
-		{
+		else {
 			label.setToolTipText(status == MethodAvailability.IN_BANK
 				? detail + ": switch to + Bank or withdraw it"
 				: detail);
@@ -503,10 +439,8 @@ final class PanelWidgets
 	}
 
 	/** The generic reason wording per unavailability kind. */
-	static String statusReason(MethodAvailability status)
-	{
-		switch (status)
-		{
+	static String statusReason(MethodAvailability status) {
+		switch (status) {
 			case IN_BANK:
 				return "In your bank: switch to + Bank or withdraw it";
 			case MISSING_ITEM:

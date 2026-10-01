@@ -25,8 +25,7 @@ import java.util.Collection;
  *
  * @param <V> the value type stored for each primitive {@code int} key. Must be non-null.
  */
-public class PrimitiveIntHashMap<V>
-{
+public class PrimitiveIntHashMap<V> {
 	private static final int MINIMUM_SIZE = 8;
 
 	// How full the map should get before growing it again. Smaller values speed up
@@ -46,8 +45,7 @@ public class PrimitiveIntHashMap<V>
 	 * @param initialSize initial expected number of elements; rounded to the next power of two
 	 *                    internally.
 	 */
-	public PrimitiveIntHashMap(int initialSize)
-	{
+	public PrimitiveIntHashMap(int initialSize) {
 		this(initialSize, DEFAULT_LOAD_FACTOR);
 	}
 
@@ -59,12 +57,9 @@ public class PrimitiveIntHashMap<V>
 	 * @param loadFactor  a value in the range {@code [0.0, 1.0]} determining when the map rehashes.
 	 * @throws IllegalArgumentException if {@code loadFactor} is outside the inclusive range 0..1.
 	 */
-	public PrimitiveIntHashMap(int initialSize, float loadFactor)
-	{
+	public PrimitiveIntHashMap(int initialSize, float loadFactor) {
 		if (loadFactor < 0.0f || loadFactor > 1.0f)
-		{
 			throw new IllegalArgumentException("Load factor must be between 0 and 1");
-		}
 
 		this.loadFactor = loadFactor;
 		size = 0;
@@ -77,8 +72,7 @@ public class PrimitiveIntHashMap<V>
 	 * rebuilds are copy-on-write views of the base maps, so a copy must be two array clones and
 	 * nothing else).
 	 */
-	public PrimitiveIntHashMap(PrimitiveIntHashMap<V> source)
-	{
+	public PrimitiveIntHashMap(PrimitiveIntHashMap<V> source) {
 		this.loadFactor = source.loadFactor;
 		this.size = source.size;
 		this.capacity = source.capacity;
@@ -89,8 +83,7 @@ public class PrimitiveIntHashMap<V>
 	}
 
 	/** Callback for {@link #forEach}: one primitive key and its value, no boxing. */
-	public interface IntObjConsumer<V>
-	{
+	public interface IntObjConsumer<V> {
 		void accept(int key, V value);
 	}
 
@@ -99,14 +92,10 @@ public class PrimitiveIntHashMap<V>
 	 * modified during the visit.
 	 */
 	@SuppressWarnings("unchecked")
-	public void forEach(IntObjConsumer<? super V> consumer)
-	{
-		for (int i = 0; i < values.length; ++i)
-		{
+	public void forEach(IntObjConsumer<? super V> consumer) {
+		for (int i = 0; i < values.length; ++i) {
 			if (values[i] != null)
-			{
 				consumer.accept(keys[i], (V) values[i]);
-			}
 		}
 	}
 
@@ -114,8 +103,7 @@ public class PrimitiveIntHashMap<V>
 	 * Hash function tuned for packed world point integer encodings. Mixes higher bits downward to
 	 * reduce clustering while remaining inexpensive.
 	 */
-	private static int hash(int value)
-	{
+	private static int hash(int value) {
 		// Full multiplicative avalanche. Linear probing is very sensitive to clustering, and packed
 		// world points of nearby tiles differ only in a few low bits, so the cheap xor-shift mix used
 		// previously left spatially-clustered transport origins clustered in the table too -> long
@@ -129,8 +117,7 @@ public class PrimitiveIntHashMap<V>
 	 *
 	 * @return current entry count (always {@code >= 0}).
 	 */
-	public int size()
-	{
+	public int size() {
 		return size;
 	}
 
@@ -140,16 +127,12 @@ public class PrimitiveIntHashMap<V>
 	 * @return array of all keys in unspecified order; length equals {@link #size()}.
 	 */
 	@SuppressWarnings("unused")
-	public int[] keys()
-	{
+	public int[] keys() {
 		int[] result = new int[size];
 		int index = 0;
-		for (int i = 0; i < values.length; ++i)
-		{
+		for (int i = 0; i < values.length; ++i) {
 			if (values[i] != null)
-			{
 				result[index++] = keys[i];
-			}
 		}
 		return result;
 	}
@@ -160,8 +143,7 @@ public class PrimitiveIntHashMap<V>
 	 * @param key primitive key to look up.
 	 * @return the mapped value, or {@code null} if the key does not exist.
 	 */
-	public V get(int key)
-	{
+	public V get(int key) {
 		return getOrDefault(key, null);
 	}
 
@@ -173,13 +155,10 @@ public class PrimitiveIntHashMap<V>
 	 * @return the mapped value, or {@code defaultValue} when absent.
 	 */
 	@SuppressWarnings("unchecked")
-	public V getOrDefault(int key, V defaultValue)
-	{
+	public V getOrDefault(int key, V defaultValue) {
 		final int slot = findSlot(key);
 		if (slot < 0)
-		{
 			return defaultValue;
-		}
 		return (V) values[slot];
 	}
 
@@ -199,36 +178,27 @@ public class PrimitiveIntHashMap<V>
 	 * @throws IllegalArgumentException if {@code value} is {@code null}.
 	 */
 	@SuppressWarnings({"unchecked"})
-	public <E> V put(int key, V value)
-	{
+	public <E> V put(int key, V value) {
 		if (value == null)
-		{
 			throw new IllegalArgumentException("Cannot insert a null value");
-		}
 
 		int i = (hash(key) & 0x7FFFFFFF) & mask;
-		while (values[i] != null)
-		{
-			if (keys[i] == key)
-			{
+		while (values[i] != null) {
+			if (keys[i] == key) {
 				V previous = (V) values[i];
-				if (previous instanceof Collection<?> && value instanceof Collection<?>)
-				{ // append
-					try
-					{
+				if (previous instanceof Collection<?> && value instanceof Collection<?>) { // append
+					try {
 						Collection<E> prevCollection = (Collection<E>) values[i];
 						Collection<E> newCollection = (Collection<E>) value;
 						prevCollection.addAll(newCollection);
 					}
-					catch (ClassCastException | UnsupportedOperationException e)
-					{
+					catch (ClassCastException | UnsupportedOperationException e) {
 						// If the collections contain incompatible types or the operation is not
 						// supported, just replace instead of append
 						values[i] = value;
 					}
 				}
-				else
-				{ // replace
+				else { // replace
 					values[i] = value;
 				}
 				return previous;
@@ -242,84 +212,63 @@ public class PrimitiveIntHashMap<V>
 		return null;
 	}
 
-	private int findSlot(int key)
-	{
+	private int findSlot(int key) {
 		int i = (hash(key) & 0x7FFFFFFF) & mask;
-		while (values[i] != null)
-		{
+		while (values[i] != null) {
 			if (keys[i] == key)
-			{
 				return i;
-			}
 			i = (i + 1) & mask;
 		}
 		return -1;
 	}
 
-	private void incrementSize()
-	{
+	private void incrementSize() {
 		size++;
 		if (size >= capacity)
-		{
 			rehash();
-		}
 	}
 
-	private int getNewMaxSize(int size)
-	{
+	private int getNewMaxSize(int size) {
 		int nextPow2 = -1 >>> Integer.numberOfLeadingZeros(size);
 		if (nextPow2 >= (Integer.MAX_VALUE >>> 1))
-		{
 			return (Integer.MAX_VALUE >>> 1) + 1;
-		}
 		return nextPow2 + 1;
 	}
 
-	private void setNewSize(int size)
-	{
+	private void setNewSize(int size) {
 		if (size < MINIMUM_SIZE)
-		{
 			size = MINIMUM_SIZE - 1;
-		}
 
 		maxSize = getNewMaxSize(size);
 		mask = maxSize - 1;
 		capacity = (int) (maxSize * loadFactor);
 	}
 
-	private void growCapacity()
-	{
+	private void growCapacity() {
 		setNewSize(maxSize);
 	}
 
 	// Grow the table then rehash all the values into it and discard the old arrays
-	private void rehash()
-	{
+	private void rehash() {
 		growCapacity();
 
 		final int[] oldKeys = keys;
 		final Object[] oldValues = values;
 		recreateArrays();
 
-		for (int i = 0; i < oldValues.length; ++i)
-		{
+		for (int i = 0; i < oldValues.length; ++i) {
 			if (oldValues[i] == null)
-			{
 				continue;
-			}
 
 			int slot = (hash(oldKeys[i]) & 0x7FFFFFFF) & mask;
 			while (values[slot] != null)
-			{
 				slot = (slot + 1) & mask;
-			}
 			keys[slot] = oldKeys[i];
 			values[slot] = oldValues[i];
 		}
 	}
 
-	private void recreateArrays()
-	{
+	private void recreateArrays() {
 		keys = new int[maxSize];
 		values = new Object[maxSize];
 	}
@@ -330,20 +279,16 @@ public class PrimitiveIntHashMap<V>
 	 * @return fullness percentage in {@code [0.0, 100.0]}, or {@link Double#NaN} when the map is
 	 * empty.
 	 */
-	public double calculateFullness()
-	{
+	public double calculateFullness() {
 		if (size == 0)
-		{
 			return Double.NaN;
-		}
 		return 100.0 * (double) size / (double) maxSize;
 	}
 
 	/**
 	 * Removes all entries from the map. The backing arrays are retained and reused.
 	 */
-	public void clear()
-	{
+	public void clear() {
 		size = 0;
 		Arrays.fill(values, null);
 	}

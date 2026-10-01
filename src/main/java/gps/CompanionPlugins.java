@@ -15,8 +15,7 @@ import net.runelite.client.plugins.PluginManager;
  * off): enabled with the option off, it draws its own lines and GPS never hears about the step,
  * so the panel shows a dismissable banner.
  */
-final class CompanionPlugins
-{
+final class CompanionPlugins {
 	static final String SHORTEST_PATH = "Shortest Path";
 	static final String QUEST_HELPER = "Quest Helper";
 
@@ -28,8 +27,7 @@ final class CompanionPlugins
 	private volatile boolean shortestPathConflict;
 	private volatile boolean questHelperPathingOff;
 
-	CompanionPlugins(PluginManager pluginManager, ConfigManager configManager, Plugin self, Runnable onChanged)
-	{
+	CompanionPlugins(PluginManager pluginManager, ConfigManager configManager, Plugin self, Runnable onChanged) {
 		this.pluginManager = pluginManager;
 		this.configManager = configManager;
 		this.self = self;
@@ -37,48 +35,34 @@ final class CompanionPlugins
 	}
 
 	/** Whether the original Shortest Path plugin is also enabled. */
-	boolean isShortestPathConflict()
-	{
+	boolean isShortestPathConflict() {
 		return shortestPathConflict;
 	}
 
 	/** Whether Quest Helper runs WITHOUT its "Use Shortest Path plugin" option. */
-	boolean isQuestHelperPathingOff()
-	{
+	boolean isQuestHelperPathingOff() {
 		return questHelperPathingOff;
 	}
 
 	/** Re-reads both verdicts (plugin start, a plugin toggled, the Quest Helper option changed). */
-	void refresh()
-	{
+	void refresh() {
 		boolean conflict = false;
 		boolean off = false;
-		for (Plugin other : pluginManager.getPlugins())
-		{
+		for (Plugin other : pluginManager.getPlugins()) {
 			if (other == self)
-			{
 				continue;
-			}
 			PluginDescriptor descriptor = other.getClass().getAnnotation(PluginDescriptor.class);
 			if (descriptor == null || !pluginManager.isPluginEnabled(other))
-			{
 				continue;
-			}
 			if (SHORTEST_PATH.equals(descriptor.name()))
-			{
 				conflict = true;
-			}
 			else if (QUEST_HELPER.equals(descriptor.name()))
-			{
 				off = !Boolean.parseBoolean(configManager.getConfiguration("questhelper", "useShortestPath"));
-			}
 		}
 		boolean changed = conflict != shortestPathConflict || off != questHelperPathingOff;
 		shortestPathConflict = conflict;
 		questHelperPathingOff = off;
 		if (changed)
-		{
 			onChanged.run();
-		}
 	}
 }

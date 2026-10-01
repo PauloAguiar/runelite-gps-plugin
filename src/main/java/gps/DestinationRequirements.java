@@ -12,8 +12,7 @@ import gps.transport.parser.VarRequirement;
  * Optional access requirements for a destination tile (e.g. bank booths). Empty requirements mean
  * the destination is always usable when reached.
  */
-public final class DestinationRequirements
-{
+public final class DestinationRequirements {
 	/**
 	 * All-zero skill array; no skill requirements.
 	 */
@@ -28,8 +27,7 @@ public final class DestinationRequirements
 	@Getter
 	private final Set<VarRequirement> varPlayers;
 
-	private DestinationRequirements()
-	{
+	private DestinationRequirements() {
 		this.skillLevels = new int[Skill.values().length + 3];
 		this.quests = Collections.emptySet();
 		this.varbits = Collections.emptySet();
@@ -40,8 +38,7 @@ public final class DestinationRequirements
 		int[] skillLevels,
 		Set<Quest> quests,
 		Set<VarRequirement> varbits,
-		Set<VarRequirement> varPlayers)
-	{
+		Set<VarRequirement> varPlayers) {
 		this.skillLevels = skillLevels != null ? skillLevels : new int[Skill.values().length + 3];
 		this.quests = quests != null ? quests : Collections.emptySet();
 		this.varbits = varbits != null ? varbits : Collections.emptySet();
@@ -51,21 +48,14 @@ public final class DestinationRequirements
 	/**
 	 * @return a merged requirement when the same tile appears on multiple rows (max skills, union sets).
 	 */
-	public static DestinationRequirements merge(DestinationRequirements a, DestinationRequirements b)
-	{
+	public static DestinationRequirements merge(DestinationRequirements a, DestinationRequirements b) {
 		if (a == null || a.isEmpty())
-		{
 			return b != null ? b : EMPTY;
-		}
 		if (b == null || b.isEmpty())
-		{
 			return a;
-		}
 		int[] skills = new int[Skill.values().length + 3];
 		for (int i = 0; i < skills.length; i++)
-		{
 			skills[i] = Math.max(a.skillLevels[i], b.skillLevels[i]);
-		}
 		Set<Quest> q = new HashSet<>(a.quests);
 		q.addAll(b.quests);
 		Set<VarRequirement> vb = new HashSet<>(a.varbits);
@@ -75,22 +65,14 @@ public final class DestinationRequirements
 		return new DestinationRequirements(skills, q, vb, vp);
 	}
 
-	public boolean isEmpty()
-	{
+	public boolean isEmpty() {
 		if (!quests.isEmpty())
-		{
 			return false;
-		}
 		if (!varbits.isEmpty() || !varPlayers.isEmpty())
-		{
 			return false;
-		}
-		for (int level : skillLevels)
-		{
+		for (int level : skillLevels) {
 			if (level > 0)
-			{
 				return false;
-			}
 		}
 		return true;
 	}

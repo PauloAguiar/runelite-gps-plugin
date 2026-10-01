@@ -12,10 +12,8 @@ import java.awt.geom.Path2D;
  * (Copyright (c) 2021, Zoinkwiz &lt;https://github.com/Zoinkwiz&gt;, BSD 2-Clause licence),
  * as also used by the port-tasks plugin.
  */
-public final class ArrowHead
-{
-	private ArrowHead()
-	{
+public final class ArrowHead {
+	private ArrowHead() {
 	}
 
 	/**
@@ -23,8 +21,7 @@ public final class ArrowHead
 	 *
 	 * @param size length of the arrowhead in pixels (its width is {@code size})
 	 */
-	public static void draw(Graphics2D graphics, double x1, double y1, double x2, double y2, double size)
-	{
+	public static void draw(Graphics2D graphics, double x1, double y1, double x2, double y2, double size) {
 		Path2D head = new Path2D.Double();
 		head.moveTo(0, 0);
 		head.lineTo(-size / 2.0, -size);

@@ -8,7 +8,7 @@
 	<property name="charset" value="UTF-8"/>
 	<module name="TreeWalker">
 		<module name="LeftCurly">
-			<property name="option" value="nl"/>
+			<property name="option" value="eol"/>
 		</module>
 		<module name="RightCurly">
 			<property name="option" value="alone"/>

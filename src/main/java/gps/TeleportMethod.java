@@ -15,8 +15,7 @@ import gps.transport.TransportType;
  * the packed {@code destination} disambiguates options that carry no display info.
  */
 @Getter
-public final class TeleportMethod
-{
+public final class TeleportMethod {
 	private final TransportType type;
 	private final String displayInfo;
 	private final int destination;
@@ -30,19 +29,16 @@ public final class TeleportMethod
 	// "Jewellery box to 2: Glade"). Null for every other type.
 	private final String mount;
 
-	public TeleportMethod(TransportType type, String displayInfo, int destination)
-	{
+	public TeleportMethod(TransportType type, String displayInfo, int destination) {
 		this(type, displayInfo, destination, false, null);
 	}
 
-	public TeleportMethod(TransportType type, String displayInfo, int destination, boolean consumable)
-	{
+	public TeleportMethod(TransportType type, String displayInfo, int destination, boolean consumable) {
 		this(type, displayInfo, destination, consumable, null);
 	}
 
 	public TeleportMethod(TransportType type, String displayInfo, int destination, boolean consumable,
-		String objectInfo)
-	{
+		String objectInfo) {
 		this.type = type;
 		this.displayInfo = (displayInfo == null || displayInfo.isEmpty()) ? null : displayInfo;
 		this.destination = destination;
@@ -50,44 +46,31 @@ public final class TeleportMethod
 		this.mount = TransportType.TELEPORTATION_BOX.equals(type) ? mountOf(objectInfo) : null;
 	}
 
-	public static TeleportMethod fromTransport(Transport transport)
-	{
+	public static TeleportMethod fromTransport(Transport transport) {
 		return new TeleportMethod(transport.getType(), transport.getDisplayInfo(),
 			transport.getDestination(), transport.isConsumable(), transport.getObjectInfo());
 	}
 
 	/** The furniture a jewellery-box-type row belongs to, from its "menuOption menuTarget id". */
-	static String mountOf(String objectInfo)
-	{
+	static String mountOf(String objectInfo) {
 		if (objectInfo == null)
-		{
 			return null;
-		}
 		String lower = objectInfo.toLowerCase(java.util.Locale.ROOT);
 		if (lower.contains("xeric"))
-		{
 			return "Xeric's talisman";
-		}
 		if (lower.contains("glory"))
-		{
 			return "Amulet of glory";
-		}
 		if (lower.contains("digsite"))
-		{
 			return "Digsite pendant";
-		}
 		if (lower.contains("mythical"))
-		{
 			return "Mythical cape";
-		}
 		return null;
 	}
 
 	/**
 	 * The grouping bucket shown as a section header in the panel.
 	 */
-	public String category()
-	{
+	public String category() {
 		return categoryOf(type);
 	}
 
@@ -95,22 +78,16 @@ public final class TeleportMethod
 	 * The per-option label shown in the panel row. Falls back to the category plus the destination
 	 * tile when the data file carries no display info (common for spells whose info is the spell name).
 	 */
-	public String label()
-	{
-		if (displayInfo != null)
-		{
+	public String label() {
+		if (displayInfo != null) {
 			// A mounted item under the jewellery-box type names its furniture, or the catalog
 			// shows "2: Glade" under a "Jewellery box" heading it never belonged to.
 			if (mount != null)
-			{
 				return mount + ": " + displayInfo;
-			}
 			// Charters share the "Boats & ships" bucket with ships to the same towns — two bare
 			// "Port Sarim" rows were indistinguishable, and searching "charter" found nothing.
 			if (TransportType.CHARTER_SHIP.equals(type))
-			{
 				return "Charter: " + displayInfo;
-			}
 			return displayInfo;
 		}
 		int x = WorldPointUtil.unpackWorldX(destination);
@@ -124,15 +101,13 @@ public final class TeleportMethod
 	 * which read as places rather than travel methods there, so the vehicle is named. Catalog rows,
 	 * which sit under their category header, keep the bare {@link #label()}.
 	 */
-	public String routeLabel()
-	{
+	public String routeLabel() {
 		String vehicle = displayInfo == null ? null : (mount != null ? mount : vehiclePhrase(type));
 		return vehicle == null ? label() : vehicle + " to " + displayInfo;
 	}
 
 	/** The vehicle name for network methods whose data label is a bare destination; null otherwise. */
-	private static String vehiclePhrase(TransportType type)
-	{
+	private static String vehiclePhrase(TransportType type) {
 		return gps.transport.TransportTypePresentation.vehicleOf(type);
 	}
 
@@ -140,8 +115,7 @@ public final class TeleportMethod
 	 * Whether a transport type counts as a travel "method" worth listing and excluding. Plain local
 	 * connectors (doors/ladders/stairs and agility/grapple shortcuts) are walking, not a method.
 	 */
-	public static boolean isMethodType(TransportType type)
-	{
+	public static boolean isMethodType(TransportType type) {
 		return type != null
 			&& type != TransportType.TRANSPORT
 			&& type != TransportType.AGILITY_SHORTCUT
@@ -151,22 +125,16 @@ public final class TeleportMethod
 			&& type != TransportType.SAILING;
 	}
 
-	public static String categoryOf(TransportType type)
-	{
+	public static String categoryOf(TransportType type) {
 		return gps.transport.TransportTypePresentation.categoryOf(type);
 	}
 
 	@Override
-	public boolean equals(Object o)
-	{
+	public boolean equals(Object o) {
 		if (this == o)
-		{
 			return true;
-		}
 		if (!(o instanceof TeleportMethod))
-		{
 			return false;
-		}
 		TeleportMethod other = (TeleportMethod) o;
 		return destination == other.destination
 			&& type == other.type
@@ -174,8 +142,7 @@ public final class TeleportMethod
 	}
 
 	@Override
-	public int hashCode()
-	{
+	public int hashCode() {
 		int result = type == null ? 0 : type.hashCode();
 		result = 31 * result + (displayInfo == null ? 0 : displayInfo.hashCode());
 		result = 31 * result + destination;
@@ -183,8 +150,7 @@ public final class TeleportMethod
 	}
 
 	@Override
-	public String toString()
-	{
+	public String toString() {
 		return category() + ": " + label();
 	}
 }

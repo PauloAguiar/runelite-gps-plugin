@@ -11,8 +11,7 @@ import net.runelite.client.util.ImageUtil;
  * the drawings became assets. Each action has a base (grey) and a hover (accent) variant,
  * mirroring the base/hover icon swap used by the tile-packs panel controls.
  */
-final class RouteIcons
-{
+final class RouteIcons {
 	private static final int SIZE = 16;
 
 	// Show / hide a route on the map (map pin). Active = currently shown.
@@ -89,8 +88,7 @@ final class RouteIcons
 	 * glyph, scaled up to fill the 16px tile for the sidebar tab (the panel's row pins stay smaller
 	 * so they read as buttons next to text). Also exportable for the hub listing icon.
 	 */
-	static BufferedImage gpsPin()
-	{
+	static BufferedImage gpsPin() {
 		return image("gps_pin");
 	}
 
@@ -123,10 +121,8 @@ final class RouteIcons
 	static final ImageIcon BANNER_BUSY = icon("banner_busy");
 
 	/** The icon for a destination category, falling back to a location pin for anything unmapped. */
-	static ImageIcon destinationIcon(String category)
-	{
-		switch (category)
-		{
+	static ImageIcon destinationIcon(String category) {
+		switch (category) {
 			case "place": return DEST_PLACE;
 			case "bank": return DEST_BANK;
 			case "bank_round_trip": return DEST_BANK_ROUND_TRIP;
@@ -149,16 +145,13 @@ final class RouteIcons
 	}
 
 	/** The Bank quick button's icon: the coin stack, with a "+" badge while a click would add a stop. */
-	static ImageIcon bankButtonIcon(boolean addsStop)
-	{
+	static ImageIcon bankButtonIcon(boolean addsStop) {
 		return addsStop ? DEST_BANK_STOP : DEST_BANK;
 	}
 
 	/** The hull glyph for a tier. */
-	static ImageIcon hullIcon(BoatHull hull)
-	{
-		switch (hull)
-		{
+	static ImageIcon hullIcon(BoatHull hull) {
+		switch (hull) {
 			case RAFT:
 				return BOAT_RAFT;
 			case SKIFF:
@@ -185,17 +178,14 @@ final class RouteIcons
 	static final ImageIcon PRIORITY_NEUTRAL_HOVER = icon("priority_neutral_hover");
 	static final ImageIcon PRIORITY_NEUTRAL_DIM = icon("priority_neutral_dim");
 
-	private RouteIcons()
-	{
+	private RouteIcons() {
 	}
 
-	private static ImageIcon icon(String name)
-	{
+	private static ImageIcon icon(String name) {
 		return new ImageIcon(image(name));
 	}
 
-	private static BufferedImage image(String name)
-	{
+	private static BufferedImage image(String name) {
 		return ImageUtil.loadImageResource(RouteIcons.class, "/icons/" + name + ".png");
 	}
 }

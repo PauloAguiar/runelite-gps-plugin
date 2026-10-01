@@ -32,14 +32,12 @@ import gps.WorldPointUtil;
  * </p>
  */
 @Slf4j
-public class LeagueRegionChecker
-{
+public class LeagueRegionChecker {
 	private static final String RESOURCE_PATH = "/leagues/regions.tsv";
 
 	private static volatile Map<Integer, LeagueRegion> regionsById;
 
-	private LeagueRegionChecker()
-	{
+	private LeagueRegionChecker() {
 	}
 
 	/**
@@ -47,8 +45,7 @@ public class LeagueRegionChecker
 	 * Never returns {@code null}; unmapped tiles resolve to
 	 * {@link LeagueRegion#NEUTRAL}.
 	 */
-	public static LeagueRegion getRegion(int packedPoint)
-	{
+	public static LeagueRegion getRegion(int packedPoint) {
 		final int x = WorldPointUtil.unpackWorldX(packedPoint);
 		final int y = WorldPointUtil.unpackWorldY(packedPoint);
 		final int regionId = ((x >> 6) << 8) | (y >> 6);
@@ -58,8 +55,7 @@ public class LeagueRegionChecker
 	/**
 	 * Convenience predicate for the always-blocked region.
 	 */
-	public static boolean isInMisthalin(int packedPoint)
-	{
+	public static boolean isInMisthalin(int packedPoint) {
 		return getRegion(packedPoint) == LeagueRegion.MISTHALIN;
 	}
 
@@ -67,16 +63,12 @@ public class LeagueRegionChecker
 	 * Returns the underlying region-id-to-region map. Lazily initialised on
 	 * first call. Visible to tests via {@link #reload(String)}.
 	 */
-	private static Map<Integer, LeagueRegion> regions()
-	{
+	private static Map<Integer, LeagueRegion> regions() {
 		Map<Integer, LeagueRegion> snapshot = regionsById;
-		if (snapshot == null)
-		{
-			synchronized (LeagueRegionChecker.class)
-			{
+		if (snapshot == null) {
+			synchronized (LeagueRegionChecker.class) {
 				snapshot = regionsById;
-				if (snapshot == null)
-				{
+				if (snapshot == null) {
 					snapshot = loadFromResource();
 					regionsById = snapshot;
 				}
@@ -90,74 +82,57 @@ public class LeagueRegionChecker
 	 * TSV body. Intended for tests. Pass {@code null} to clear the cache so
 	 * the next call re-loads from the resource file.
 	 */
-	static synchronized void reload(String tsv)
-	{
-		if (tsv == null)
-		{
+	static synchronized void reload(String tsv) {
+		if (tsv == null) {
 			regionsById = null;
 			return;
 		}
 		regionsById = parse(tsv);
 	}
 
-	private static Map<Integer, LeagueRegion> loadFromResource()
-	{
-		try (InputStream in = ShortestPathPlugin.class.getResourceAsStream(RESOURCE_PATH))
-		{
-			if (in == null)
-			{
+	private static Map<Integer, LeagueRegion> loadFromResource() {
+		try (InputStream in = ShortestPathPlugin.class.getResourceAsStream(RESOURCE_PATH)) {
+			if (in == null) {
 				log.warn("League regions resource not found at {}; defaulting all tiles to NEUTRAL", RESOURCE_PATH);
 				return new HashMap<>();
 			}
 			String body = new String(Util.readAllBytes(Objects.requireNonNull(in)), StandardCharsets.UTF_8);
 			return parse(body);
 		}
-		catch (IOException e)
-		{
+		catch (IOException e) {
 			log.error("Failed to load league regions from {}", RESOURCE_PATH, e);
 			return new HashMap<>();
 		}
 	}
 
-	private static Map<Integer, LeagueRegion> parse(String tsv)
-	{
+	private static Map<Integer, LeagueRegion> parse(String tsv) {
 		Map<Integer, LeagueRegion> result = new HashMap<>();
 		if (tsv == null || tsv.isEmpty())
-		{
 			return result;
-		}
 		int lineNumber = 0;
-		for (String rawLine : tsv.split("\\R"))
-		{
+		for (String rawLine : tsv.split("\\R")) {
 			lineNumber++;
 			String line = rawLine.trim();
 			if (line.isEmpty() || line.startsWith("#"))
-			{
 				continue;
-			}
 			String[] parts = line.split("\\s+", 2);
-			if (parts.length != 2)
-			{
+			if (parts.length != 2) {
 				log.warn("Skipping malformed league regions row {}: '{}'", lineNumber, rawLine);
 				continue;
 			}
 			final int regionId;
-			try
-			{
+			try {
 				regionId = Integer.parseInt(parts[0]);
 			}
-			catch (NumberFormatException e)
-			{
+			catch (NumberFormatException e) {
 				log.warn("Skipping league regions row {} with non-numeric region id '{}'", lineNumber, parts[0]);
 				continue;
 			}
 			final LeagueRegion region;
-			try
-			{
+			try {
 				region = LeagueRegion.valueOf(parts[1]);
 			}
-			catch (IllegalArgumentException e)
-			{
+			catch (IllegalArgumentException e) {
 				log.warn("Skipping league regions row {} with unknown region '{}'", lineNumber, parts[1]);
 				continue;
 			}

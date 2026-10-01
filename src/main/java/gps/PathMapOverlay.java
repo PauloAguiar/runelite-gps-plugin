@@ -17,14 +17,12 @@ import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import gps.pathfinder.PathStep;
 
-public class PathMapOverlay extends Overlay
-{
+public class PathMapOverlay extends Overlay {
 	private final Client client;
 	private final ShortestPathPlugin plugin;
 
 	@Inject
-	private PathMapOverlay(Client client, ShortestPathPlugin plugin)
-	{
+	private PathMapOverlay(Client client, ShortestPathPlugin plugin) {
 		this.client = client;
 		this.plugin = plugin;
 		setPosition(OverlayPosition.DYNAMIC);
@@ -34,17 +32,12 @@ public class PathMapOverlay extends Overlay
 	}
 
 	@Override
-	public Dimension render(Graphics2D graphics)
-	{
+	public Dimension render(Graphics2D graphics) {
 		if (!plugin.display().drawMap)
-		{
 			return null;
-		}
 
 		if (client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) == null)
-		{
 			return null;
-		}
 
 		Rectangle worldMapRectangle = Objects.requireNonNull(client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER)).getBounds();
 		Area worldMapClipArea = getWorldMapClipArea(worldMapRectangle);
@@ -52,17 +45,14 @@ public class PathMapOverlay extends Overlay
 
 
 
-		if (plugin.hasPathTargets())
-		{
+		if (plugin.hasPathTargets()) {
 			Color colour = plugin.getPathColor();
 			java.util.List<PathStep> path = plugin.getDisplayPath();
 			Point cursorPos = client.getMouseCanvasPosition();
 			graphics.setColor(colour);
 			drawArrowPath(graphics, path, plugin.getDisplaySailingEdges());
-			for (int target : plugin.getPathTargets())
-			{
-				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition())
-				{
+			for (int target : plugin.getPathTargets()) {
+				if (!path.isEmpty() && target != path.get(path.size() - 1).getPackedPosition()) {
 					graphics.setColor(plugin.display().colourPathCalculating);
 					drawOnMap(graphics, target, true, cursorPos);
 				}
@@ -79,42 +69,34 @@ public class PathMapOverlay extends Overlay
 	 * DirectionArrow, see {@link ArrowHead}.)
 	 */
 	private void drawArrowPath(Graphics2D graphics, java.util.List<PathStep> path,
-		java.util.Set<Integer> sailingEdges)
-	{
+		java.util.Set<Integer> sailingEdges) {
 		final java.awt.Stroke walkStroke = new BasicStroke(2, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
 		final java.awt.Stroke jumpStroke = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{9}, 0);
 
 		int i = 0;
-		while (i < path.size() - 1)
-		{
+		while (i < path.size() - 1) {
 			int from = path.get(i).getPackedPosition();
 			int next = path.get(i + 1).getPackedPosition();
 
-			if (WorldPointUtil.distanceBetween(from, next) > 1)
-			{
+			if (WorldPointUtil.distanceBetween(from, next) > 1) {
 				// Sailing leg: draw the actual sea track (bounded Dijkstra over the shipped
 				// ocean, cached per leg) as a solid line; anything else — and any sailing leg
 				// whose track cannot be computed — stays the dashed jump hint.
 				// sailingEdges holds DEPARTURE indexes (RouteOption.sailingJumpDepartures
 				// owns the arrival->departure arithmetic, pinned by its unit test).
 				int[] track = sailingEdges.contains(i) ? SailingSea.seaPath(from, next) : null;
-				if (track != null)
-				{
+				if (track != null) {
 					// Sea legs draw in their own (configurable) colour: amber reads over both
 					// the ocean and the cyan walking path, then the path colour is restored
 					// for the legs that follow.
 					java.awt.Color pathColour = graphics.getColor();
 					graphics.setColor(plugin.getSailingPathColor());
 					for (int s = 0; s < track.length - 1; s++)
-					{
 						drawMapSegment(graphics, track[s], track[s + 1], walkStroke);
-					}
 					graphics.setColor(pathColour);
 				}
 				else
-				{
 					drawMapSegment(graphics, from, next, jumpStroke);
-				}
 				i++;
 				continue;
 			}
@@ -123,14 +105,12 @@ public class PathMapOverlay extends Overlay
 			int dx = WorldPointUtil.unpackWorldX(next) - WorldPointUtil.unpackWorldX(from);
 			int dy = WorldPointUtil.unpackWorldY(next) - WorldPointUtil.unpackWorldY(from);
 			int j = i + 1;
-			while (j < path.size() - 1)
-			{
+			while (j < path.size() - 1) {
 				int a = path.get(j).getPackedPosition();
 				int b = path.get(j + 1).getPackedPosition();
 				if (WorldPointUtil.distanceBetween(a, b) > 1
 					|| WorldPointUtil.unpackWorldX(b) - WorldPointUtil.unpackWorldX(a) != dx
-					|| WorldPointUtil.unpackWorldY(b) - WorldPointUtil.unpackWorldY(a) != dy)
-				{
+					|| WorldPointUtil.unpackWorldY(b) - WorldPointUtil.unpackWorldY(a) != dy) {
 					break;
 				}
 				j++;
@@ -140,41 +120,34 @@ public class PathMapOverlay extends Overlay
 		}
 	}
 
-	private void drawMapSegment(Graphics2D graphics, int from, int to, java.awt.Stroke stroke)
-	{
+	private void drawMapSegment(Graphics2D graphics, int from, int to, java.awt.Stroke stroke) {
 		int x1 = plugin.worldMap().toGraphicsX(from);
 		int y1 = plugin.worldMap().toGraphicsY(from);
 		int x2 = plugin.worldMap().toGraphicsX(to);
 		int y2 = plugin.worldMap().toGraphicsY(to);
 		if (x1 == Integer.MIN_VALUE || y1 == Integer.MIN_VALUE
-			|| x2 == Integer.MIN_VALUE || y2 == Integer.MIN_VALUE)
-		{
+			|| x2 == Integer.MIN_VALUE || y2 == Integer.MIN_VALUE) {
 			return;
 		}
 		graphics.setStroke(stroke);
 		graphics.drawLine(x1, y1, x2, y2);
 		// Skip the head on segments too short to fit it (e.g. zoomed far out).
 		if (Math.hypot(x2 - x1, y2 - y1) >= 10)
-		{
 			ArrowHead.draw(graphics, x1, y1, x2, y2, 7);
-		}
 	}
 
-	private void drawOnMap(Graphics2D graphics, int point, boolean checkHover, Point cursorPos)
-	{
+	private void drawOnMap(Graphics2D graphics, int point, boolean checkHover, Point cursorPos) {
 		drawOnMap(graphics, point, WorldPointUtil.dxdy(point, 1, -1), checkHover, cursorPos);
 	}
 
-	private void drawOnMap(Graphics2D graphics, int point, int offsetPoint, boolean checkHover, Point cursorPos)
-	{
+	private void drawOnMap(Graphics2D graphics, int point, int offsetPoint, boolean checkHover, Point cursorPos) {
 		int startX = plugin.worldMap().toGraphicsX(point);
 		int startY = plugin.worldMap().toGraphicsY(point);
 		int endX = plugin.worldMap().toGraphicsX(offsetPoint);
 		int endY = plugin.worldMap().toGraphicsY(offsetPoint);
 
 		if (startX == Integer.MIN_VALUE || startY == Integer.MIN_VALUE ||
-			endX == Integer.MIN_VALUE || endY == Integer.MIN_VALUE)
-		{
+			endX == Integer.MIN_VALUE || endY == Integer.MIN_VALUE) {
 			return;
 		}
 
@@ -185,39 +158,31 @@ public class PathMapOverlay extends Overlay
 		x -= width / 2;
 		y -= height / 2;
 
-		if (WorldPointUtil.distanceBetween(point, offsetPoint) > 1)
-		{
+		if (WorldPointUtil.distanceBetween(point, offsetPoint) > 1) {
 			graphics.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{9}, 0));
 			graphics.drawLine(startX, startY, endX, endY);
 		}
-		else
-		{
+		else {
 			if (checkHover && cursorPos != null &&
 				cursorPos.getX() >= x && cursorPos.getX() <= (endX - width / 2) &&
-				cursorPos.getY() >= y && cursorPos.getY() <= (endY - width / 2))
-			{
+				cursorPos.getY() >= y && cursorPos.getY() <= (endY - width / 2)) {
 				graphics.setColor(graphics.getColor().darker());
 			}
 			graphics.fillRect(x, y, width, height);
 		}
 	}
 
-	private Area getWorldMapClipArea(Rectangle baseRectangle)
-	{
+	private Area getWorldMapClipArea(Rectangle baseRectangle) {
 		final Widget overview = client.getWidget(InterfaceID.Worldmap.OVERVIEW_CONTAINER);
 		final Widget surfaceSelector = client.getWidget(InterfaceID.Worldmap.MAPLIST_BOX_GRAPHIC0);
 
 		Area clipArea = new Area(baseRectangle);
 
 		if (overview != null && !overview.isHidden())
-		{
 			clipArea.subtract(new Area(overview.getBounds()));
-		}
 
 		if (surfaceSelector != null && !surfaceSelector.isHidden())
-		{
 			clipArea.subtract(new Area(surfaceSelector.getBounds()));
-		}
 
 		return clipArea;
 	}

@@ -8,8 +8,7 @@ import java.awt.Color;
  * applied) at startup and again on every config change, so a render never sees a half-updated
  * set and never touches the config proxy.
  */
-final class OverlaySettings
-{
+final class OverlaySettings {
 	final boolean drawMap;
 	final boolean drawMinimap;
 	final boolean drawTiles;
@@ -35,8 +34,7 @@ final class OverlaySettings
 	final int unreachableTargetDistance;
 	final String unreachableText;
 
-	private OverlaySettings(ShortestPathConfig config)
-	{
+	private OverlaySettings(ShortestPathConfig config) {
 		drawMap = ConfigOverrides.override("drawMap", config.drawMap());
 		drawMinimap = ConfigOverrides.override("drawMinimap", config.drawMinimap());
 		drawTiles = ConfigOverrides.override("drawTiles", config.drawTiles());
@@ -66,8 +64,7 @@ final class OverlaySettings
 	}
 
 	/** A snapshot of the config as it stands, overrides applied. */
-	static OverlaySettings from(ShortestPathConfig config)
-	{
+	static OverlaySettings from(ShortestPathConfig config) {
 		return new OverlaySettings(config);
 	}
 }

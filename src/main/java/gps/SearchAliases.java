@@ -8,8 +8,7 @@ import java.util.Map;
  * prefix nor a subsequence of the place they mean. Prefix forms ("brim", "cath", "dray") already
  * match through the tiers, so only the genuinely different spellings live here.
  */
-final class SearchAliases
-{
+final class SearchAliases {
 	private static final Map<String, String> ALIASES = Map.ofEntries(
 		Map.entry("ge", "grand exchange"),
 		Map.entry("wildy", "wilderness"),
@@ -34,26 +33,21 @@ final class SearchAliases
 		Map.entry("kq", "kalphite queen"),
 		Map.entry("zmi", "ourania"));
 
-	private SearchAliases()
-	{
+	private SearchAliases() {
 	}
 
 	/**
 	 * The query with every alias token replaced by what it stands for, lower-cased; the query
 	 * itself (lower-cased, trimmed) when no token is an alias.
 	 */
-	static String expand(String query)
-	{
+	static String expand(String query) {
 		String[] tokens = query.toLowerCase(Locale.ROOT).trim().split("\\s+");
 		StringBuilder out = new StringBuilder();
 		boolean changed = false;
-		for (String token : tokens)
-		{
+		for (String token : tokens) {
 			String expansion = ALIASES.get(token);
 			if (out.length() > 0)
-			{
 				out.append(' ');
-			}
 			out.append(expansion != null ? expansion : token);
 			changed |= expansion != null;
 		}

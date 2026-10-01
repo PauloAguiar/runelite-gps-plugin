@@ -19,8 +19,7 @@ import net.runelite.client.config.ConfigManager;
  * bursts (login sync, docking), so a change only marks the banner dirty and the next game tick
  * rebuilds it at most once. Written on the client thread, read from the Swing thread.
  */
-final class BoatBannerService
-{
+final class BoatBannerService {
 	/** RSProfile-scoped: owned boats' last seen berths, "name|port|hull" rows joined by ';'. */
 	static final String CONFIG_KEY_BOAT_PORTS = "boatPorts";
 
@@ -50,8 +49,7 @@ final class BoatBannerService
 	private volatile boolean live;
 	private volatile boolean dirty;
 
-	BoatBannerService(Client client, ConfigManager configManager, String configGroup, Runnable onChanged)
-	{
+	BoatBannerService(Client client, ConfigManager configManager, String configGroup, Runnable onChanged) {
 		this.client = client;
 		this.configManager = configManager;
 		this.configGroup = configGroup;
@@ -59,64 +57,51 @@ final class BoatBannerService
 	}
 
 	/** Whether a varbit change concerns a boat's ownership, berth, name or hull. */
-	boolean tracks(int varbitId)
-	{
+	boolean tracks(int varbitId) {
 		return BOAT_VARBIT_IDS.contains(varbitId);
 	}
 
 	/** A tracked varbit changed: rebuild on the next tick (one rebuild per burst). */
-	void markDirty()
-	{
+	void markDirty() {
 		dirty = true;
 	}
 
 	/** Client thread, once per game tick. */
-	void onTick()
-	{
-		if (dirty)
-		{
+	void onTick() {
+		if (dirty) {
 			dirty = false;
 			refresh();
 		}
 	}
 
 	/** Logged out: the next character starts from its own snapshot. */
-	void reset()
-	{
+	void reset() {
 		banner = null;
 		live = false;
 		dirty = false;
 	}
 
 	/** Owned boats as {name, port label, hull} rows; null when never collected for this character. */
-	List<String[]> banner()
-	{
+	List<String[]> banner() {
 		return banner;
 	}
 
 	/** Whether the banner reflects this session's live varbits rather than a restored snapshot. */
-	boolean isLive()
-	{
+	boolean isLive() {
 		return live;
 	}
 
 	/** Client thread: re-read every boat's ownership, berth, name and hull, persist, and notify. */
-	void refresh()
-	{
+	void refresh() {
 		if (!GameState.LOGGED_IN.equals(client.getGameState()))
-		{
 			return;
-		}
 		List<String[]> rows = new ArrayList<>();
-		for (int slot = 0; slot < BOAT_VARBITS.length; slot++)
-		{
+		for (int slot = 0; slot < BOAT_VARBITS.length; slot++) {
 			int[] varbits = BOAT_VARBITS[slot];
 			// Owned varbit alone is unreliable (Where's My Boat's field lesson); a set name
 			// descriptor also proves ownership, and covers Port Sarim's port id 0.
 			if (client.getVarbitValue(varbits[0]) <= 0 && client.getVarbitValue(varbits[3]) <= 0)
-			{
 				continue;
-			}
 			BoatHull hull = BoatHull.fromVarbit(client.getVarbitValue(varbits[5]));
 			rows.add(new String[]{decodeBoatName(slot, varbits),
 				SailingPorts.portName(client.getVarbitValue(varbits[1])),
@@ -129,43 +114,32 @@ final class BoatBannerService
 	}
 
 	/** Restores the persisted snapshot when nothing has been collected yet this session. */
-	void restore()
-	{
+	void restore() {
 		if (banner != null)
-		{
 			return;
-		}
 		String raw = configManager.getRSProfileConfiguration(configGroup, CONFIG_KEY_BOAT_PORTS);
-		if (raw != null)
-		{
+		if (raw != null) {
 			banner = decode(raw);
 			changed();
 		}
 	}
 
-	private void changed()
-	{
+	private void changed() {
 		if (onChanged != null)
-		{
 			onChanged.run();
-		}
 	}
 
 	/** "name|port|hull" rows joined by ';'. */
-	static String encode(List<String[]> rows)
-	{
+	static String encode(List<String[]> rows) {
 		return rows.stream().map(r -> r[0] + "|" + r[1] + "|" + r[2]).collect(Collectors.joining(";"));
 	}
 
 	/** The inverse of {@link #encode}; old snapshots lack the hull, and rows without a name are dropped. */
-	static List<String[]> decode(String raw)
-	{
+	static List<String[]> decode(String raw) {
 		List<String[]> rows = new ArrayList<>();
-		for (String row : raw.split(";"))
-		{
+		for (String row : raw.split(";")) {
 			String[] parts = row.split("\\|", 3);
-			if (parts.length >= 2 && !parts[0].isEmpty())
-			{
+			if (parts.length >= 2 && !parts[0].isEmpty()) {
 				rows.add(new String[]{parts[0], parts[1], parts.length > 2 ? parts[2] : ""});
 			}
 		}
@@ -176,35 +150,27 @@ final class BoatBannerService
 	 * The three name varbits index the game's own name-part tables (prefix, descriptor, noun),
 	 * the same decode Where's My Boat ships. Any surprise falls back to a slot label.
 	 */
-	private String decodeBoatName(int slot, int[] varbits)
-	{
-		try
-		{
+	private String decodeBoatName(int slot, int[] varbits) {
+		try {
 			int[] rowIds = {DBTableID.SailingBoatNameOptions.Row.SAILING_BOAT_NAME_PREFIX_OPTIONS,
 				DBTableID.SailingBoatNameOptions.Row.SAILING_BOAT_NAME_DESCRIPTOR_OPTIONS,
 				DBTableID.SailingBoatNameOptions.Row.SAILING_BOAT_NAME_NOUN_OPTIONS};
 			List<String> parts = new ArrayList<>();
-			for (int part = 0; part < 3; part++)
-			{
+			for (int part = 0; part < 3; part++) {
 				int index = client.getVarbitValue(varbits[2 + part]) - 1;
-				if (index > 0)
-				{
+				if (index > 0) {
 					Object[] options = client.getDBTableField(rowIds[part],
 						DBTableID.SailingBoatNameOptions.COL_OPTION, 0);
 					if (index < options.length && options[index] instanceof String
-						&& !((String) options[index]).isEmpty())
-					{
+						&& !((String) options[index]).isEmpty()) {
 						parts.add((String) options[index]);
 					}
 				}
 			}
 			if (!parts.isEmpty())
-			{
 				return String.join(" ", parts);
-			}
 		}
-		catch (RuntimeException e)
-		{
+		catch (RuntimeException e) {
 			// Name tables unavailable (cache quirk): the slot label below still identifies it.
 		}
 		return "Boat " + (slot + 1);

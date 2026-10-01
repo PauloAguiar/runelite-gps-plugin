@@ -8,8 +8,7 @@ package gps;
  * a touch softer than the exact-multiple sizes since the pixel grid no longer lands on whole screen
  * pixels, but the most-requested in-between.
  */
-public enum OverlayFontSize
-{
+public enum OverlayFontSize {
 	SMALL("Small"),
 	NORMAL("Normal"),
 	LARGE("Large"),
@@ -17,14 +16,12 @@ public enum OverlayFontSize
 
 	private final String label;
 
-	OverlayFontSize(String label)
-	{
+	OverlayFontSize(String label) {
 		this.label = label;
 	}
 
 	@Override
-	public String toString()
-	{
+	public String toString() {
 		return label;
 	}
 }

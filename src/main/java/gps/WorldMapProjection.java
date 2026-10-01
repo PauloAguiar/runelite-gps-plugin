@@ -13,21 +13,18 @@ import net.runelite.api.worldmap.WorldMap;
  * world point it shows (the shift-click "Set GPS Target" on the world map). Client thread and
  * render thread both read the live widget; no widget means no projection.
  */
-final class WorldMapProjection
-{
+final class WorldMapProjection {
 	/** The pixel result when the world map is not open. */
 	static final int NONE = Integer.MIN_VALUE;
 
 	private final Client client;
 
-	WorldMapProjection(Client client)
-	{
+	WorldMapProjection(Client client) {
 		this.client = client;
 	}
 
 	/** The world point under a screen pixel, or UNDEFINED when the map is not open. */
-	int worldPointAt(int pixelX, int pixelY)
-	{
+	int worldPointAt(int pixelX, int pixelY) {
 		WorldMap worldMap = client.getWorldMap();
 		float zoom = worldMap.getWorldMapZoom();
 		int mapPoint = WorldPointUtil.packWorldPoint(worldMap.getWorldMapPosition().getX(), worldMap.getWorldMapPosition().getY(), 0);
@@ -35,9 +32,7 @@ final class WorldMapProjection
 		int middleY = toGraphicsY(mapPoint);
 
 		if (pixelX == NONE || pixelY == NONE || middleX == NONE || middleY == NONE)
-		{
 			return WorldPointUtil.UNDEFINED;
-		}
 
 		final int dx = (int) ((pixelX - middleX) / zoom);
 		final int dy = (int) ((-(pixelY - middleY)) / zoom);
@@ -46,15 +41,13 @@ final class WorldMapProjection
 	}
 
 	/** The screen x of a world point on the map, or NONE when the map is not open. */
-	int toGraphicsX(int packedWorldPoint)
-	{
+	int toGraphicsX(int packedWorldPoint) {
 		WorldMap worldMap = client.getWorldMap();
 
 		float pixelsPerTile = worldMap.getWorldMapZoom();
 
 		Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
-		if (map != null)
-		{
+		if (map != null) {
 			Rectangle worldMapRect = map.getBounds();
 
 			int widthInTiles = (int) Math.ceil(worldMapRect.getWidth() / pixelsPerTile);
@@ -73,15 +66,13 @@ final class WorldMapProjection
 	}
 
 	/** The screen y of a world point on the map, or NONE when the map is not open. */
-	int toGraphicsY(int packedWorldPoint)
-	{
+	int toGraphicsY(int packedWorldPoint) {
 		WorldMap worldMap = client.getWorldMap();
 
 		float pixelsPerTile = worldMap.getWorldMapZoom();
 
 		Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
-		if (map != null)
-		{
+		if (map != null) {
 			Rectangle worldMapRect = map.getBounds();
 
 			int heightInTiles = (int) Math.ceil(worldMapRect.getHeight() / pixelsPerTile);

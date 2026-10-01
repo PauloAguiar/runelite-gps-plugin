@@ -19,8 +19,7 @@ import net.runelite.client.ui.PluginPanel;
  * exclusion set: a route's method menu and the catalog row flip the same state. Built on the
  * tile-packs style: small icon controls with hover states and tooltips (see PanelWidgets).
  */
-public class ShortestPathPanel extends PluginPanel
-{
+public class ShortestPathPanel extends PluginPanel {
 	private final ShortestPathPlugin plugin;
 	private final PanelHeaderView header;
 	private final TravelOptionsView travelOptions;
@@ -36,8 +35,7 @@ public class ShortestPathPanel extends PluginPanel
 	private boolean cachedCalculating = false;
 	private boolean cachedHasTarget = false;
 
-	public ShortestPathPanel(ShortestPathPlugin plugin)
-	{
+	public ShortestPathPanel(ShortestPathPlugin plugin) {
 		super(false);
 		this.plugin = plugin;
 		setLayout(new BorderLayout());
@@ -74,14 +72,12 @@ public class ShortestPathPanel extends PluginPanel
 	 * Opening it re-checks the auto-compute decision (a budget that grew meanwhile is widened).
 	 */
 	@Override
-	public void onActivate()
-	{
+	public void onActivate() {
 		plugin.setAltPanelVisible(true);
 	}
 
 	@Override
-	public void onDeactivate()
-	{
+	public void onDeactivate() {
 		destinationSearch.hidePopup();
 		plugin.setAltPanelVisible(false);
 	}
@@ -95,16 +91,14 @@ public class ShortestPathPanel extends PluginPanel
 	 * fixed height, and let the internal scroll areas absorb any shortage.
 	 */
 	@Override
-	public Dimension getMinimumSize()
-	{
+	public Dimension getMinimumSize() {
 		return new Dimension(super.getMinimumSize().width, 100);
 	}
 
 	/** Stores the latest data and re-renders. Must be called on the Swing EDT. */
 	public void displayRoutes(List<RouteOption> routes, List<TeleportMethod> catalog,
 		Map<TeleportMethod, MethodAvailability> unavailable, Set<TeleportMethod> exclusions,
-		boolean calculating, boolean hasTarget)
-	{
+		boolean calculating, boolean hasTarget) {
 		cachedRoutes = routes != null ? routes : List.of();
 		cachedCatalog = catalog != null ? catalog : List.of();
 		cachedUnavailable = unavailable != null ? unavailable : Map.of();
@@ -118,14 +112,12 @@ public class ShortestPathPanel extends PluginPanel
 	 * Called by the plugin the moment it reaches (or clears an already-at) destination, so the
 	 * status shows an arrival banner instead of "No destination set" (see NoticesView).
 	 */
-	public void markArrived(long elapsedMillis)
-	{
+	public void markArrived(long elapsedMillis) {
 		notices.markArrived(elapsedMillis);
 	}
 
 	/** Shows the issue report's routing context in the header's copy box (see PanelHeaderView). EDT only. */
-	void showReportContext(String context)
-	{
+	void showReportContext(String context) {
 		header.showReportContext(context);
 	}
 
@@ -134,20 +126,17 @@ public class ShortestPathPanel extends PluginPanel
 	 * the panel (the RuneLite config UI, or the balloon chat parser updating stored log counts).
 	 * A full render follows so the notices strip (the Log storage low banner) tracks the change too.
 	 */
-	public void refreshConfigSections()
-	{
+	public void refreshConfigSections() {
 		refreshCatalog();
 		render();
 	}
 
 	/** Focuses the destination search box (the focus-search hotkey); see DestinationSearchView. */
-	public void focusSearch()
-	{
+	public void focusSearch() {
 		destinationSearch.focusSearch();
 	}
 
-	private void render()
-	{
+	private void render() {
 		header.refresh();
 		// The Bank quick button badges itself while a click would add a stop to a route.
 		destinationSearch.showBankStop(plugin.bankClickAddsStop());
@@ -155,17 +144,14 @@ public class ShortestPathPanel extends PluginPanel
 		// The Travel options slot is rebuilt only when its inputs changed: streamed route updates
 		// leave it untouched so its toggles stay responsive while a generation is running.
 		if (travelOptions.needsRebuild(cachedCatalog, cachedExclusions, cachedUnavailable))
-		{
 			refreshCatalog();
-		}
 		// The highlighted card is the route drawn on the map: the explicitly selected one, or
 		// route 1 by default.
 		routeList.show(cachedRoutes, plugin.getDisplayedRoute(), cachedCalculating, cachedHasTarget, cachedUnavailable);
 	}
 
 	/** Rebuilds the Travel options slot for the current inputs (see TravelOptionsView). */
-	private void refreshCatalog()
-	{
+	private void refreshCatalog() {
 		travelOptions.rebuild(cachedCatalog, cachedExclusions, cachedUnavailable);
 	}
 }

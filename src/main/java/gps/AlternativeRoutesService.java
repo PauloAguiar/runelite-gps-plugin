@@ -51,8 +51,7 @@ import gps.transport.Transport;
  * thread and waits for it before running the search off-thread.
  */
 @Slf4j
-public class AlternativeRoutesService
-{
+public class AlternativeRoutesService {
 	public static final int MAX_ROUTES = 10;
 	// Absolute safety backstop on how many routes one generation may enumerate. "Poll more" grows the
 	// live limit toward this; it exists only so a runaway query can't enumerate without bound, not as a
@@ -70,8 +69,7 @@ public class AlternativeRoutesService
 	 * reason why (missing item, in the bank, missing level/quest, not unlocked), so the panel can mark
 	 * and explain them; it is populated in every mode.
 	 */
-	public interface ResultListener
-	{
+	public interface ResultListener {
 		void onUpdate(List<RouteOption> routes, List<TeleportMethod> catalog,
 			Map<TeleportMethod, MethodAvailability> unavailable, boolean done);
 	}
@@ -91,8 +89,7 @@ public class AlternativeRoutesService
 	// Bumped on every generate()/cancel() so a stale in-flight generation discards its result.
 	private final AtomicInteger generation = new AtomicInteger();
 
-	public AlternativeRoutesService(ClientThread clientThread, PathfinderConfig planningConfig)
-	{
+	public AlternativeRoutesService(ClientThread clientThread, PathfinderConfig planningConfig) {
 		this.clientThread = clientThread;
 		this.planningConfig = planningConfig;
 		this.executor = Executors.newSingleThreadExecutor(
@@ -105,8 +102,7 @@ public class AlternativeRoutesService
 	 * The specific missing-unlock reason per unavailable catalog method ("Requires 60 Mining"),
 	 * from the same client-thread refresh that produced the availability statuses.
 	 */
-	public Map<TeleportMethod, String> getAvailabilityDetails()
-	{
+	public Map<TeleportMethod, String> getAvailabilityDetails() {
 		return planningConfig.getMethodAvailabilityDetail();
 	}
 
@@ -116,8 +112,7 @@ public class AlternativeRoutesService
 	 * generation.
 	 */
 	public void generate(int start, Set<Integer> targets, Set<TeleportMethod> userExclusions,
-		AlternativeRoutesMode mode, int maxRoutes, ResultListener listener)
-	{
+		AlternativeRoutesMode mode, int maxRoutes, ResultListener listener) {
 		generate(start, targets, userExclusions, mode, maxRoutes, 0, false, listener);
 	}
 
@@ -135,20 +130,16 @@ public class AlternativeRoutesService
 	 * could surface routes the cap held back.
 	 */
 	public void generate(int start, Set<Integer> targets, Set<TeleportMethod> userExclusions,
-		AlternativeRoutesMode mode, int maxRoutes, int costMultiple, boolean roundTrip, ResultListener listener)
-	{
+		AlternativeRoutesMode mode, int maxRoutes, int costMultiple, boolean roundTrip, ResultListener listener) {
 		final int gen = generation.incrementAndGet();
 		final Set<Integer> targetsCopy = new HashSet<>(targets);
 		final Set<TeleportMethod> userExclusionsCopy = new HashSet<>(userExclusions);
-		executor.submit(() ->
-		{
-			try
-			{
+		executor.submit(() -> {
+			try {
 				computeRoutes(gen, start, targetsCopy, userExclusionsCopy, mode, maxRoutes, costMultiple,
 					roundTrip, listener);
 			}
-			catch (Exception e)
-			{
+			catch (Exception e) {
 				log.warn("Alternative route generation failed", e);
 				// Without a terminal update the plugin keeps altGenerationInFlight forever and
 				// the panel sits on "Finding the best route". emit() itself drops stale gens.
@@ -157,14 +148,12 @@ public class AlternativeRoutesService
 		});
 	}
 
-	public void cancel()
-	{
+	public void cancel() {
 		generation.incrementAndGet();
 	}
 
 	/** What the panel shows beside the catalog: the catalog and who can't use what. */
-	public interface CatalogListener
-	{
+	public interface CatalogListener {
 		void onCatalog(List<TeleportMethod> catalog, Map<TeleportMethod, MethodAvailability> unavailable);
 	}
 
@@ -175,21 +164,15 @@ public class AlternativeRoutesService
 	 * next route computation). Serialized on the generation executor so it never overlaps a
 	 * generation; the listener runs there too.
 	 */
-	public void refreshCatalog(AlternativeRoutesMode mode, CatalogListener listener)
-	{
-		executor.submit(() ->
-		{
-			try
-			{
+	public void refreshCatalog(AlternativeRoutesMode mode, CatalogListener listener) {
+		executor.submit(() -> {
+			try {
 				if (!refreshOnClientThread(Collections.emptySet(), null, mode))
-				{
 					return;
-				}
 				List<TeleportMethod> catalog = new ArrayList<>(planningConfig.getMethodCatalog());
 				listener.onCatalog(catalog, notUsable(catalog));
 			}
-			catch (Exception e)
-			{
+			catch (Exception e) {
 				log.warn("Catalog refresh failed", e);
 			}
 		});
@@ -201,23 +184,18 @@ public class AlternativeRoutesService
 	 * mode-independently — the panel decides usability per mode (a banked item is usable in the
 	 * "Inventory + bank" mode, whose route walks to a bank) and filters by these reasons.
 	 */
-	private Map<TeleportMethod, MethodAvailability> notUsable(List<TeleportMethod> catalog)
-	{
+	private Map<TeleportMethod, MethodAvailability> notUsable(List<TeleportMethod> catalog) {
 		final Map<TeleportMethod, MethodAvailability> statuses = planningConfig.getMethodAvailability();
 		final Map<TeleportMethod, MethodAvailability> notUsable = new HashMap<>();
-		for (TeleportMethod method : catalog)
-		{
+		for (TeleportMethod method : catalog) {
 			MethodAvailability status = statuses.getOrDefault(method, MethodAvailability.AVAILABLE);
 			if (status != MethodAvailability.AVAILABLE)
-			{
 				notUsable.put(method, status);
-			}
 		}
 		return Collections.unmodifiableMap(notUsable);
 	}
 
-	public void shutdown()
-	{
+	public void shutdown() {
 		executor.shutdownNow();
 		seedExecutor.shutdownNow();
 		cachedField = null;
@@ -226,23 +204,18 @@ public class AlternativeRoutesService
 
 	private void computeRoutes(int gen, int start, Set<Integer> targets,
 		Set<TeleportMethod> userExclusions, AlternativeRoutesMode mode, int maxRoutes, int costMultiple,
-		boolean roundTrip, ResultListener listener)
-	{
+		boolean roundTrip, ResultListener listener) {
 		// The generation as phases over one context (plan step L3): prepare the query (resume or
 		// refresh, sea legs), build the field and its verdict, start the concurrent walk search,
 		// run the exclusion chain, fill the page (seeds, tail diversity), append the baselines,
 		// finish (round trips, timing, resume state, the unreachable cause, the terminal update).
 		Generation g = prepare(gen, start, targets, userExclusions, mode, maxRoutes, costMultiple, roundTrip, listener);
 		if (g == null)
-		{
 			return;
-		}
 		buildField(g);
 		startWalkSearch(g);
 		if (!runChain(g))
-		{
 			return;
-		}
 		fillPage(g);
 		appendBaselines(g);
 		finish(g);
@@ -256,8 +229,7 @@ public class AlternativeRoutesService
 	 */
 	private Generation prepare(int gen, int start, Set<Integer> targets,
 		Set<TeleportMethod> userExclusions, AlternativeRoutesMode mode, int maxRoutes, int costMultiple,
-		boolean roundTrip, ResultListener listener)
-	{
+		boolean roundTrip, ResultListener listener) {
 		final int limit = Math.max(1, Math.min(maxRoutes, MAX_ROUTES_CAP));
 		final Set<Integer> rawTargets = new HashSet<>(targets);
 		final Set<Integer> ends = new HashSet<>(targets);
@@ -305,13 +277,11 @@ public class AlternativeRoutesService
 		// toward Brimhaven as its "closest point" until a second refresh (capture 211433).
 		// Resumed generations keep the prior snapshot ON PURPOSE (no refresh), so each
 		// branch synthesizes at its own right moment.
-		Runnable synthesizeSeaLegs = () ->
-		{
+		Runnable synthesizeSeaLegs = () -> {
 			// A place's water tiles always; a category's only for a player already aboard.
 			Set<Integer> wetTargets = SailingSea.waterPins(planningConfig.getMap(), ends,
 				planningConfig.isOnSailingBoat());
-			for (int target : wetTargets)
-			{
+			for (int target : wetTargets) {
 				seaLegs.addAll(SailingSea.seaLegTransports(target, 6,
 					planningConfig.gatedBoatMoorings()));
 			}
@@ -321,14 +291,11 @@ public class AlternativeRoutesService
 			// BOARDED varbit, not tile wateriness: stilt decks (the Pandemonium) are sailable
 			// tiles a player stands on afoot, and offering "sail from here" there was wrong.
 			if (planningConfig.isOnSailingBoat())
-			{
 				seaLegs.addAll(SailingSea.aboardLegTransports(start, wetTargets));
-			}
 			planningConfig.setExtraTransports(seaLegs);
 		};
 
-		if (resumed)
-		{
+		if (resumed) {
 			synthesizeSeaLegs.run();
 			// No client-thread refresh: the cached routes were computed against the previous snapshot,
 			// and mixing a fresh one into a continued chain would make the page inconsistent. A real
@@ -348,8 +315,7 @@ public class AlternativeRoutesService
 			log.debug("[alt-routes] resuming: {} route(s), limit {} -> {}, multiple {} -> {}",
 				routes.size(), prior.limit, limit, prior.costMultiple, costMultiple);
 		}
-		else
-		{
+		else {
 			excluded = new HashSet<>(userExclusions);
 			// Single client-thread pass per generation, with NO exclusions: snapshots the game state and
 			// builds the full availability (the complete method catalog, and the base lists that per-search
@@ -357,8 +323,7 @@ public class AlternativeRoutesService
 			long clientStart = System.nanoTime();
 			boolean refreshed = refreshOnClientThread(Collections.emptySet(), ends, mode);
 			timer.clientNanos += System.nanoTime() - clientStart;
-			if (!refreshed)
-			{
+			if (!refreshed) {
 				emit(gen, listener, List.of(), List.of(), Map.of(), true);
 				return null;
 			}
@@ -371,8 +336,7 @@ public class AlternativeRoutesService
 			hopBaselineTeleports = teleportHopBaseline(planningConfig, userExclusions);
 			catalog = new ArrayList<>(planningConfig.getMethodCatalog());
 			unavailable = notUsable(catalog);
-			if (ends.isEmpty())
-			{
+			if (ends.isEmpty()) {
 				resumeState = null;
 				emit(gen, listener, List.of(), catalog, unavailable, true);
 				return null;
@@ -396,30 +360,23 @@ public class AlternativeRoutesService
 			// Abandonment forbidden: teleport-FIRST seeds would cast from the helm — the
 			// search itself blocks that (teleportsBlockedAt), so the seeds are dead weight.
 			if (planningConfig.teleportsBlockedAt(start))
-			{
 				seedCandidates.clear();
-			}
 		// Aboard: EVERY disembark port gets its own seeded search — nearest first. With
 			// abandonment forbidden this is the whole diversity engine (teleport-first seeds
 			// are barred, and one port seed + chains produced exactly one route in the
 			// field); with abandonment allowed it still guarantees the "park the boat
 			// properly" options ride alongside the teleport routes.
-			if (planningConfig.isOnSailingBoat())
-			{
+			if (planningConfig.isOnSailingBoat()) {
 				List<Transport> ports = new ArrayList<>();
-				for (Transport leg : seaLegs)
-				{
+				for (Transport leg : seaLegs) {
 					if (leg.getOrigin() == start && leg.getDisplayInfo() != null
-						&& leg.getDisplayInfo().startsWith("Disembark"))
-					{
+						&& leg.getDisplayInfo().startsWith("Disembark")) {
 						ports.add(leg);
 					}
 				}
 				ports.sort(Comparator.comparingInt(Transport::getDuration));
 				for (int i = 0; i < ports.size(); i++)
-				{
 					seedCandidates.add(Math.min(i, seedCandidates.size()), ports.get(i));
-				}
 			}
 		}
 
@@ -436,8 +393,7 @@ public class AlternativeRoutesService
 	}
 
 	/** Builds (or reuses) the generation's distance field and its unreachable verdict. */
-	private void buildField(Generation g)
-	{
+	private void buildField(Generation g) {
 		final int start = g.start;
 		final Set<Integer> ends = g.ends;
 		final Set<TeleportMethod> userExclusions = g.userExclusions;
@@ -470,11 +426,8 @@ public class AlternativeRoutesService
 			&& fieldKey.sameInputs(cachedFieldKey, cachedField.horizon() == Integer.MAX_VALUE);
 		final DistanceField field;
 		if (fieldReused)
-		{
 			field = cachedField;
-		}
-		else
-		{
+		else {
 			field = DistanceField.buildIfCompact(planningConfig, ends, 2 * costMultiple);
 			cachedField = field;
 			cachedFieldKey = field != null ? fieldKey : null;
@@ -503,8 +456,7 @@ public class AlternativeRoutesService
 	}
 
 	/** Starts the concurrent walk-only search (none for single-route pages or a sealed target). */
-	private void startWalkSearch(Generation g)
-	{
+	private void startWalkSearch(Generation g) {
 		final boolean resumed = g.resumed;
 		final List<RouteOption> routes = g.routes;
 		final int costMultiple = g.costMultiple;
@@ -521,8 +473,7 @@ public class AlternativeRoutesService
 		// dropped to that route's cost band so the walk stops flooding the map when walking is
 		// uncompetitive — which is most queries, since a teleport route usually wins.
 		final AtomicInteger walkCeiling = new AtomicInteger(Integer.MAX_VALUE);
-		if (resumed && !routes.isEmpty() && costMultiple > 0)
-		{
+		if (resumed && !routes.isEmpty() && costMultiple > 0) {
 			// The best route is already known, so the walk search starts pre-capped at the (widened)
 			// sanity ceiling instead of waiting for the chain's in-loop drop (which only fires on the
 			// FIRST route — already found on a resume).
@@ -541,8 +492,7 @@ public class AlternativeRoutesService
 	 * so the page walks down the distinct ways in. False when a newer generation superseded this
 	 * one mid-chain (nothing more is emitted for it).
 	 */
-	private boolean runChain(Generation g)
-	{
+	private boolean runChain(Generation g) {
 		final int gen = g.gen;
 		final int start = g.start;
 		final Set<Integer> ends = g.ends;
@@ -572,14 +522,10 @@ public class AlternativeRoutesService
 		// out of route-count budget — the count was binding, so a higher limit can surface more.
 		boolean chainExhausted = false;
 
-		for (int i = routes.size(); i < limit; i++)
-		{
+		for (int i = routes.size(); i < limit; i++) {
 			if (gen != generation.get())
-			{
 				return false;
-			}
-			if (targetProvablyUnreachable && routes.size() >= UNREACHABLE_ESCAPE_ROUTES)
-			{
+			if (targetProvablyUnreachable && routes.size() >= UNREACHABLE_ESCAPE_ROUTES) {
 				// The escape menu is full; every further search would flood the same world to
 				// the same verdict.
 				chainExhausted = true;
@@ -591,9 +537,7 @@ public class AlternativeRoutesService
 			// The pre-field rebuild covered the first iteration's exclusion set; later
 			// iterations rebuild because the chain grows the set between them.
 			if (!availabilityCurrent)
-			{
 				planningConfig.rebuildAvailabilityWithExclusions(excluded);
-			}
 			availabilityCurrent = false;
 			timer.rebuildNanos += System.nanoTime() - rebuildStart;
 
@@ -620,8 +564,7 @@ public class AlternativeRoutesService
 			record(timer, "chain#" + i, searchNanos, pathfinder, chainCap);
 			PathfinderResult result = pathfinder.getResult();
 			List<PathStep> path = (result != null) ? result.getPathSteps() : List.of();
-			if (result == null || path.isEmpty())
-			{
+			if (result == null || path.isEmpty()) {
 				log.debug("[alt-routes] search #{} produced no path: result={}, reason={}",
 					i, result == null ? "null" : "empty",
 					result == null ? "n/a" : result.getTerminationReason());
@@ -637,8 +580,7 @@ public class AlternativeRoutesService
 			// are accepted while they end about as close as the best approach. Either way the
 			// route is beyond the band, and "more routes" reveals it by widening.
 			int remaining = reached ? 0 : remainingDistance(path, ends);
-			if (RouteAcceptance.tooFar(reached, remaining, bestRemaining))
-			{
+			if (RouteAcceptance.tooFar(reached, remaining, bestRemaining)) {
 				log.debug("[alt-routes] search #{} ends {} tiles from target (best {}); stopping with {} route(s)",
 					i, remaining, bestRemaining, routes.size());
 				cappedByCost |= costLimited;
@@ -646,9 +588,7 @@ public class AlternativeRoutesService
 				break;
 			}
 			if (bestRemaining < 0)
-			{
 				bestRemaining = remaining;
-			}
 
 			// Hybrid band edge: routes inside the display band are always accepted; past it the page
 			// keeps filling while the next cost stays within a modest gap of max(band, costliest
@@ -657,8 +597,7 @@ public class AlternativeRoutesService
 			// A minimum page overrides the cliff: one super-cheap route (a direct minigame teleport)
 			// otherwise produced a single-entry page with no alternatives at all (user capture).
 			final int totalCost = result.getTotalCost();
-			if (RouteAcceptance.beyondBand(totalCost, routes, costMultiple, limit))
-			{
+			if (RouteAcceptance.beyondBand(totalCost, routes, costMultiple, limit)) {
 				// A route exists beyond what this page shows: "+" (a wider band) can reveal it.
 				cappedByCost = true;
 				chainExhausted = true;
@@ -671,8 +610,7 @@ public class AlternativeRoutesService
 			// A kept route nested inside this one (detour + same ending): skip it WITHOUT burning
 			// its signature, and keep the chain moving by excluding its primary like any accepted
 			// route — the next iteration can still find genuinely different endings.
-			if (RouteAcceptance.nestsAKeptRoute(methods, !scan.bankGated.isEmpty(), routes))
-			{
+			if (RouteAcceptance.nestsAKeptRoute(methods, !scan.bankGated.isEmpty(), routes)) {
 				excluded.add(methods.get(0));
 				continue;
 			}
@@ -682,8 +620,7 @@ public class AlternativeRoutesService
 			// one filtered variant per whistle site would eat the whole budget - the probe run
 			// came back with 2 routes of 10). Excluding its primary keeps the chain moving to
 			// genuinely different methods; the growing exclusion set bounds the extra turns.
-			if (RouteAcceptance.hasRedundantTeleportHop(hopBaselineTeleports, methods))
-			{
+			if (RouteAcceptance.hasRedundantTeleportHop(hopBaselineTeleports, methods)) {
 				excluded.add(methods.get(0));
 				i--;
 				continue;
@@ -692,8 +629,7 @@ public class AlternativeRoutesService
 			// CHAIN acceptances only (resumable), so a widened resume replays the exact
 			// saturation sequence of a from-scratch run.
 			if (methods.size() >= 2
-				&& chainTailCounts.getOrDefault(tailSignature(methods), 0) >= TAIL_DOMINANCE)
-			{
+				&& chainTailCounts.getOrDefault(tailSignature(methods), 0) >= TAIL_DOMINANCE) {
 				excluded.add(methods.get(0));
 				i--;
 				continue;
@@ -701,47 +637,38 @@ public class AlternativeRoutesService
 
 			// Distinct method-signature gate: if this route uses the same ordered methods as a previous
 			// one, excluding more would only reshuffle, so stop.
-			if (!seenSignatures.add(signature(methods)))
-			{
+			if (!seenSignatures.add(signature(methods))) {
 				chainExhausted = true;
 				break;
 			}
 			routes.add(new RouteOption(withoutIdleBankFlip(path, scan), methods, scan.methodEdges, scan.methodDurations,
 				totalCost, scan.rawCost, reached, scan.bankGated, scan.bankGatedTransports, scan.walkBefore, scan.trailingWalk));
 			if (methods.size() >= 2)
-			{
 				chainTailCounts.merge(tailSignature(methods), 1, Integer::sum);
-			}
 			// The chain's first route is the cheapest; drop the concurrent walk search's ceiling to the
 			// search sanity ceiling (twice the display band). A walk costlier than that can never be
 			// shown, so a walk to an unreachable/far target stops instead of flooding the map. Only when
 			// route 0 actually reached — an unreachable-target run keeps the walk uncapped so it can be
 			// the last resort.
 			if (routes.size() == 1 && reached && costMultiple > 0)
-			{
 				walkCeiling.set((int) Math.min(Integer.MAX_VALUE, (long) totalCost * 2 * costMultiple));
-			}
 			// Stream the route we just found so the panel shows it immediately. Round-trip mode
 			// streams only the merged results — one-way costs would reorder once returns are added.
 			if (!roundTrip)
-			{
 				emit(gen, listener, new ArrayList<>(routes), catalog, unavailable, false);
-			}
 
 			// Unreached target: every extra route is another escape toward the same closest area,
 			// and with the heuristic degenerate (sealed pocket) each iteration is an uninformed
 			// sweep. Time-boxed rather than counted: the page holds whatever the search budget
 			// affords, and "+" resumes with a fresh budget.
-			if (!reached && searchBudgetExhausted(timer))
-			{
+			if (!reached && searchBudgetExhausted(timer)) {
 				cappedByCost = true;
 				chainExhausted = true;
 				break;
 			}
 
 			TeleportMethod primary = methods.isEmpty() ? null : methods.get(0);
-			if (primary == null)
-			{
+			if (primary == null) {
 				// Walk-only route: the exclusion strategy has nothing left to remove. Seeding below can
 				// still surface teleport routes that lost to walking on cost.
 				chainExhausted = true;
@@ -757,8 +684,7 @@ public class AlternativeRoutesService
 	}
 
 	/** The seed and tail-diversity passes, and whether a wider request could show more. */
-	private void fillPage(Generation g)
-	{
+	private void fillPage(Generation g) {
 		final int gen = g.gen;
 		final List<RouteOption> routes = g.routes;
 		final int costMultiple = g.costMultiple;
@@ -774,15 +700,11 @@ public class AlternativeRoutesService
 		// be silenced by a low route limit (the exact failure a user capture showed at limit 10).
 		boolean hasWalkOnly = routes.stream().anyMatch(RouteOption::isWalkOnly);
 		if (!hasWalkOnly && !routes.isEmpty() && !targetProvablyUnreachable)
-		{
 			seedTeleportRoutes(g, RouteAcceptance.cappedByBestCost(capOf(walkFuture), routes, 2 * costMultiple));
-		}
 		// Tail-diversity pass: when the page is dominated by one shared method TAIL, surface a
 		// variant with a different middle. Runs after seeds so eviction sees the full page.
 		if (gen == generation.get() && !targetProvablyUnreachable)
-		{
 			diversifySharedTails(g, RouteAcceptance.cappedByBestCost(capOf(walkFuture), routes, 2 * costMultiple));
-		}
 
 		// More routes are worth polling for when the count budget was the binding limit (the chain kept
 		// finding distinct routes and simply ran out of slots), or the cost cap held routes back — the
@@ -795,8 +717,7 @@ public class AlternativeRoutesService
 	}
 
 	/** The walk-only and keep-sailing baselines, the final ordering, and the cut at walking. */
-	private void appendBaselines(Generation g)
-	{
+	private void appendBaselines(Generation g) {
 		final List<RouteOption> routes = g.routes;
 		final int limit = g.limit;
 		final Set<String> seenSignatures = g.seenSignatures;
@@ -810,8 +731,7 @@ public class AlternativeRoutesService
 		// isn't worth a slot. The searches race the concurrent walk search, and now that they're
 		// heuristic-directed they can finish before its cap exists — under f-ordering an
 		// equal-cost method route can then win the tie the FIFO search implicitly gave to walking.
-		if (walk != null && walk.cap != Integer.MAX_VALUE)
-		{
+		if (walk != null && walk.cap != Integer.MAX_VALUE) {
 			final int walkCost = walk.cap;
 			// When the baseline itself is the keep-sailing route (aboard), an equal-cost
 			// pure-sail route IS that baseline - culling it here and letting the signature
@@ -826,20 +746,16 @@ public class AlternativeRoutesService
 		// "…or just walk N tiles" as a complete-picture fallback, whatever teleports were found.
 		if (walk != null && walk.cap != Integer.MAX_VALUE
 			&& (bestRemaining < 0 || walk.remaining <= bestRemaining + RouteAcceptance.CLOSEST_DISTANCE_TOLERANCE)
-			&& seenSignatures.add(signature(walk.route.getMethods())))
-		{
+			&& seenSignatures.add(signature(walk.route.getMethods()))) {
 			routes.add(walk.route);
 			// Keep it within the limit by dropping the costliest teleport route it displaces. Never
 			// the baseline itself: at the helm it is a pure-sail route (not walk-only), and with a
 			// full page of port-first routes it was the costliest unprotected entry, so the page
 			// evicted the very route this block exists to surface (plan step N10).
-			while (routes.size() > limit)
-			{
+			while (routes.size() > limit) {
 				int drop = RouteAcceptance.evictionIndex(routes, -1, r -> r != walk.route && !r.isWalkOnly());
 				if (drop < 0)
-				{
 					break;
-				}
 				routes.remove(drop);
 			}
 		}
@@ -849,26 +765,20 @@ public class AlternativeRoutesService
 		// walk baseline's exact shape. The plugin ranks it first at the helm.
 		RouteOption sailBaseline = g.bestSail.get();
 		if (sailBaseline != null && routes.stream().noneMatch(RouteOption::isPureSail)
-			&& seenSignatures.add(signature(sailBaseline.getMethods())))
-		{
+			&& seenSignatures.add(signature(sailBaseline.getMethods()))) {
 			routes.add(sailBaseline);
-			while (routes.size() > limit)
-			{
+			while (routes.size() > limit) {
 				int drop = RouteAcceptance.evictionIndex(routes, -1, r -> !r.isWalkOnly() && !r.isPureSail());
 				if (drop < 0)
-				{
 					break;
-				}
 				routes.remove(drop);
 			}
 		}
 
 		routes.sort(Comparator.comparingInt(RouteOption::getTotalCost));
 		// Drop anything after the pure-walk option (belt-and-braces alongside the skipped seeding above).
-		for (int i = 0; i < routes.size(); i++)
-		{
-			if (routes.get(i).isWalkOnly())
-			{
+		for (int i = 0; i < routes.size(); i++) {
+			if (routes.get(i).isWalkOnly()) {
 				routes.subList(i + 1, routes.size()).clear();
 				break;
 			}
@@ -876,8 +786,7 @@ public class AlternativeRoutesService
 	}
 
 	/** Round trips, the timing summary, the resume state, the unreachable cause, the terminal update. */
-	private void finish(Generation g)
-	{
+	private void finish(Generation g) {
 		final int gen = g.gen;
 		final int start = g.start;
 		final Set<Integer> ends = g.ends;
@@ -898,15 +807,13 @@ public class AlternativeRoutesService
 		final Map<String, Integer> chainTailCounts = g.chainTailCounts;
 		final int bestRemaining = g.bestRemaining;
 		// Round-trip mode: give every one-way route its return leg and re-rank by combined cost.
-		if (roundTrip && !routes.isEmpty() && gen == generation.get())
-		{
+		if (roundTrip && !routes.isEmpty() && gen == generation.get()) {
 			List<RouteOption> merged = buildRoundTrips(g, routes);
 			routes.clear();
 			routes.addAll(merged);
 		}
 
-		synchronized (timer)
-		{
+		synchronized (timer) {
 			// Retained for the GPS debug snapshot:
 			// [wallMs, clientMs, rebuildMs, searchCpuMs, searches, fieldMs].
 			lastTimingSummary = new long[]{
@@ -927,8 +834,7 @@ public class AlternativeRoutesService
 		// Capture the chain state so a widened re-request ("+ more routes") can continue this
 		// generation instead of starting over. Round trips merge return legs into the route list,
 		// which the one-way chain state can't be rebuilt from — they always regenerate.
-		if (gen == generation.get() && !roundTrip)
-		{
+		if (gen == generation.get() && !roundTrip) {
 			// Carry ONLY the shown routes' signatures forward — not the full seenSignatures, which
 			// also holds combos the seed pass tried but couldn't fit (cost/slot). A resume that
 			// inherited those burned signatures would reject them again when the wider limit COULD
@@ -936,18 +842,14 @@ public class AlternativeRoutesService
 			// silently dropping cheap routes (user capture: Quest-Helper target lost the 164 route).
 			Set<String> shownSignatures = new HashSet<>();
 			for (RouteOption route : routes)
-			{
 				shownSignatures.add(signature(route.getMethods()));
-			}
 			resumeState = new ResumeState(start, rawTargets, Set.copyOf(ends), Set.copyOf(userExclusions),
 				mode, limit, costMultiple, Set.copyOf(excluded), shownSignatures,
 				List.copyOf(routes), bestRemaining, catalog, unavailable, seedCandidates,
 				java.util.Map.copyOf(chainTailCounts));
 		}
 		if (gen == generation.get())
-		{
 			lastUnreachableCause = unreachableCause(routes, start, ends, mode);
-		}
 		// A superseded run leaves the previous state alone: the newer generation overwrites it when it
 		// completes, and the eligibility check (start/targets/mode/exclusions) guards staleness anyway.
 		emit(gen, listener, new ArrayList<>(routes), catalog, unavailable, true);
@@ -959,8 +861,7 @@ public class AlternativeRoutesService
 	 * the exclusion chain continues where it stopped. Only ever read and written on the generation
 	 * executor thread.
 	 */
-	private static final class ResumeState
-	{
+	private static final class ResumeState {
 		final int start;
 		final Set<Integer> rawTargets;
 		final Set<Integer> filteredEnds;
@@ -984,8 +885,7 @@ public class AlternativeRoutesService
 			Set<TeleportMethod> excluded, Set<String> seenSignatures, List<RouteOption> routes,
 			int bestRemaining, List<TeleportMethod> catalog,
 			Map<TeleportMethod, MethodAvailability> unavailable, List<Transport> seedCandidates,
-			Map<String, Integer> chainTailCounts)
-		{
+			Map<String, Integer> chainTailCounts) {
 			this.chainTailCounts = chainTailCounts;
 			this.start = start;
 			this.rawTargets = rawTargets;
@@ -1012,8 +912,7 @@ public class AlternativeRoutesService
 	 */
 	private volatile long[] lastTimingSummary;
 
-	long[] getLastTimingSummary()
-	{
+	long[] getLastTimingSummary() {
 		long[] summary = lastTimingSummary;
 		return summary == null ? null : summary.clone();
 	}
@@ -1036,13 +935,11 @@ public class AlternativeRoutesService
 	private volatile boolean lastFieldReused;
 
 	/** Whether the last generation reused the previous generation's distance field. */
-	boolean lastFieldReused()
-	{
+	boolean lastFieldReused() {
 		return lastFieldReused;
 	}
 
-	private static final class FieldKey
-	{
+	private static final class FieldKey {
 		private final long usableFingerprint;
 		private final Set<TeleportMethod> userExclusions;
 		private final long extrasFingerprint;
@@ -1050,8 +947,7 @@ public class AlternativeRoutesService
 		private final int costMultiple;
 
 		FieldKey(long usableFingerprint, Set<TeleportMethod> userExclusions, long extrasFingerprint,
-			Set<Integer> ends, int costMultiple)
-		{
+			Set<Integer> ends, int costMultiple) {
 			this.usableFingerprint = usableFingerprint;
 			this.userExclusions = new HashSet<>(userExclusions);
 			this.extrasFingerprint = extrasFingerprint;
@@ -1060,8 +956,7 @@ public class AlternativeRoutesService
 		}
 
 		/** Same inputs; a complete field (horizon at MAX) serves any cost multiple. */
-		boolean sameInputs(FieldKey cached, boolean cachedComplete)
-		{
+		boolean sameInputs(FieldKey cached, boolean cachedComplete) {
 			return cached != null
 				&& usableFingerprint == cached.usableFingerprint
 				&& extrasFingerprint == cached.extrasFingerprint
@@ -1072,11 +967,9 @@ public class AlternativeRoutesService
 	}
 
 	/** Commutative content fingerprint of the synthesized sea legs (fresh objects every generation). */
-	private static long extrasFingerprint(List<Transport> extras)
-	{
+	private static long extrasFingerprint(List<Transport> extras) {
 		long fingerprint = 0;
-		for (Transport extra : extras)
-		{
+		for (Transport extra : extras) {
 			long key = ((long) extra.getOrigin() << 32) ^ (extra.getDestination() & 0xffffffffL);
 			fingerprint += RoutingItemDependencies.mix64(key * 31 + extra.getDuration());
 		}
@@ -1084,8 +977,7 @@ public class AlternativeRoutesService
 	}
 
 	/** Whether raising the cost multiple and regenerating could surface more routes. */
-	public boolean wasMoreLikely()
-	{
+	public boolean wasMoreLikely() {
 		return lastGenerationMoreLikely;
 	}
 
@@ -1095,8 +987,7 @@ public class AlternativeRoutesService
 	 * rebuild/search nanos are CPU-summed across workers (can exceed wall time); accumulation from
 	 * worker threads synchronizes on this object.
 	 */
-	private static final class GenTimer
-	{
+	private static final class GenTimer {
 		private long clientNanos;
 		private long rebuildNanos;
 		private long searchNanos;
@@ -1111,8 +1002,7 @@ public class AlternativeRoutesService
 	 * parameter signatures that used to carry them, plus the one {@link #emit} that cannot forget
 	 * the staleness check. Mutable fields are written by the generation thread between passes.
 	 */
-	private final class Generation
-	{
+	private final class Generation {
 		final int gen;
 		final int start;
 		final Set<Integer> ends;
@@ -1161,8 +1051,7 @@ public class AlternativeRoutesService
 		Generation(int gen, int start, Set<Integer> ends, Set<TeleportMethod> userExclusions,
 			AlternativeRoutesMode mode, int limit, int costMultiple, boolean roundTrip, ResultListener listener,
 			GenTimer timer, List<TeleportMethod> catalog, Map<TeleportMethod, MethodAvailability> unavailable,
-			List<Transport> seedCandidates, List<RouteOption> routes, Set<String> seenSignatures)
-		{
+			List<Transport> seedCandidates, List<RouteOption> routes, Set<String> seenSignatures) {
 			this.gen = gen;
 			this.start = start;
 			this.ends = ends;
@@ -1181,8 +1070,7 @@ public class AlternativeRoutesService
 		}
 
 		/** Whether a newer generation has superseded this one. */
-		boolean stale()
-		{
+		boolean stale() {
 			return gen != generation.get();
 		}
 
@@ -1190,8 +1078,7 @@ public class AlternativeRoutesService
 		 * The listener a one-way pass streams to: none in round-trip mode, which streams only
 		 * merged results (one-way costs would reorder once returns are added).
 		 */
-		ResultListener oneWayListener()
-		{
+		ResultListener oneWayListener() {
 			return roundTrip ? null : listener;
 		}
 	}
@@ -1201,8 +1088,7 @@ public class AlternativeRoutesService
 	 * explored — for the benchmark report and for pinpointing slow searches (the aggregate GenTimer
 	 * numbers can't tell a few expensive searches from many cheap ones).
 	 */
-	static final class SearchRecord
-	{
+	static final class SearchRecord {
 		final String label;
 		final long cpuMs;
 		/** Total cost of the found path, -1 when the search produced none. */
@@ -1215,8 +1101,7 @@ public class AlternativeRoutesService
 		final boolean astar;
 
 		SearchRecord(String label, long cpuMs, int resultCost, boolean reached, String termination,
-			int nodesChecked, int transportsChecked, boolean capped, boolean astar)
-		{
+			int nodesChecked, int transportsChecked, boolean capped, boolean astar) {
 			this.label = label;
 			this.cpuMs = cpuMs;
 			this.resultCost = resultCost;
@@ -1230,8 +1115,7 @@ public class AlternativeRoutesService
 	}
 
 	/** Appends one search's profile to the generation's records (seed workers call concurrently). */
-	private static void record(GenTimer timer, String label, long searchNanos, Pathfinder pathfinder, int cap)
-	{
+	private static void record(GenTimer timer, String label, long searchNanos, Pathfinder pathfinder, int cap) {
 		PathfinderResult result = pathfinder.getResult();
 		Pathfinder.PathfinderStats stats = pathfinder.getStats();
 		List<PathStep> path = result != null ? result.getPathSteps() : null;
@@ -1245,8 +1129,7 @@ public class AlternativeRoutesService
 			stats != null ? stats.getTransportsChecked() : -1,
 			cap != Integer.MAX_VALUE,
 			pathfinder.isAstar());
-		synchronized (timer)
-		{
+		synchronized (timer) {
 			timer.records.add(searchRecord);
 		}
 	}
@@ -1255,8 +1138,7 @@ public class AlternativeRoutesService
 	 * The last completed generation's per-search profiles, slowest first. Empty before the first
 	 * generation. For the benchmark report.
 	 */
-	List<SearchRecord> getLastSearchRecords()
-	{
+	List<SearchRecord> getLastSearchRecords() {
 		List<SearchRecord> records = lastSearchRecords;
 		return records == null ? List.of() : records;
 	}
@@ -1264,8 +1146,7 @@ public class AlternativeRoutesService
 	private volatile List<SearchRecord> lastSearchRecords;
 
 	/** Why the last generation's routes all stop short of the target (plan step N12). */
-	public enum UnreachableCause
-	{
+	public enum UnreachableCause {
 		/** The page has a route that reaches the target (or there is no page). */
 		NONE,
 		/** Reachable with everything the game offers, not with this mode's items and unlocks. */
@@ -1276,8 +1157,7 @@ public class AlternativeRoutesService
 
 	private volatile UnreachableCause lastUnreachableCause = UnreachableCause.NONE;
 
-	public UnreachableCause lastUnreachableCause()
-	{
+	public UnreachableCause lastUnreachableCause() {
 		return lastUnreachableCause;
 	}
 
@@ -1290,28 +1170,18 @@ public class AlternativeRoutesService
 	 * generation.
 	 */
 	private UnreachableCause unreachableCause(List<RouteOption> routes, int start, Set<Integer> ends,
-		AlternativeRoutesMode mode)
-	{
+		AlternativeRoutesMode mode) {
 		if (routes.isEmpty() || ends.isEmpty())
-		{
 			return UnreachableCause.NONE;
-		}
-		for (RouteOption route : routes)
-		{
+		for (RouteOption route : routes) {
 			if (route.isReached())
-			{
 				return UnreachableCause.NONE;
-			}
 		}
 		if (mode == AlternativeRoutesMode.ALL_EVERYTHING)
-		{
 			return UnreachableCause.NO_KNOWN_ROUTE;
-		}
 		PathfinderConfig probe = planningConfig.copyForPlanning();
 		if (!refreshOnClientThread(probe, Collections.emptySet(), null, AlternativeRoutesMode.ALL_EVERYTHING))
-		{
 			return UnreachableCause.NO_KNOWN_ROUTE;
-		}
 		probe.rebuildAvailabilityWithExclusions(Collections.emptySet());
 		DistanceField everything = DistanceField.buildIfCompact(probe, ends, 0);
 		boolean reachableWithEverything = everything != null
@@ -1325,8 +1195,7 @@ public class AlternativeRoutesService
 	 * result is "the best route if you use this teleport". Routes with an already-seen method
 	 * signature, walk-only results, or endpoints meaningfully further than the best route are skipped.
 	 */
-	private void seedTeleportRoutes(Generation g, int costCap)
-	{
+	private void seedTeleportRoutes(Generation g, int costCap) {
 		final int gen = g.gen;
 		final int start = g.start;
 		final Set<Integer> ends = g.ends;
@@ -1348,9 +1217,7 @@ public class AlternativeRoutesService
 		// exclusion universe must span ALL candidates — including ones that don't get an attempt.
 		final Set<TeleportMethod> allSeedMethods = new HashSet<>();
 		for (Transport transport : seedCandidates)
-		{
 			allSeedMethods.add(transport.method());
-		}
 
 		// A floor of attempts even when the chain filled every slot: the best-ranked seeds are the
 		// safety net against a missed-cheap-route bug, and cost nearly nothing when they lose.
@@ -1361,32 +1228,24 @@ public class AlternativeRoutesService
 		// every port seed and the ranking silently dropped them all (field capture 225140 —
 		// ten teleport routes, zero "park the boat" options). One guaranteed attempt keeps
 		// the promise that docking properly is always on the card.
-		if (planningConfig.isOnSailingBoat())
-		{
+		if (planningConfig.isOnSailingBoat()) {
 			Transport nearestPort = null;
-			for (Transport candidate : seedCandidates)
-			{
+			for (Transport candidate : seedCandidates) {
 				if (candidate.getDisplayInfo() != null
 					&& candidate.getDisplayInfo().startsWith("Disembark")
-					&& (nearestPort == null || candidate.getDuration() < nearestPort.getDuration()))
-				{
+					&& (nearestPort == null || candidate.getDuration() < nearestPort.getDuration())) {
 					nearestPort = candidate;
 				}
 			}
-			if (nearestPort != null && !attempts.contains(nearestPort))
-			{
+			if (nearestPort != null && !attempts.contains(nearestPort)) {
 				if (attempts.size() >= maxAttempts && !attempts.isEmpty())
-				{
 					attempts.remove(attempts.size() - 1);
-				}
 				attempts.add(nearestPort);
 			}
 			nearestPortInfo = nearestPort != null ? nearestPort.getDisplayInfo() : null;
 		}
 		if (attempts.isEmpty())
-		{
 			return;
-		}
 
 		// One config per concurrent worker (shares immutable data + the refreshed state); the seed
 		// searches are independent, so they run in parallel on the seed pool. Results are collected
@@ -1394,52 +1253,40 @@ public class AlternativeRoutesService
 		final int workers = Math.min(SEED_POOL_SIZE, attempts.size());
 		final Queue<PathfinderConfig> configPool = new ConcurrentLinkedQueue<>();
 		for (int i = 0; i < workers; i++)
-		{
 			configPool.add(planningConfig.copyForParallelSearch());
-		}
 		final AtomicBoolean stop = new AtomicBoolean(false);
 		final String nearestPortRetained = nearestPortInfo;
 		final CompletionService<SeedResult> completion = new ExecutorCompletionService<>(seedExecutor);
 		final List<Future<SeedResult>> futures = new ArrayList<>(attempts.size());
-		for (Transport seed : attempts)
-		{
+		for (Transport seed : attempts) {
 			futures.add(completion.submit(() ->
 				runSeedSearch(g, stop, allSeedMethods, seed,
 					nearestPortRetained != null && nearestPortRetained.equals(seed.getDisplayInfo()),
 					costCap, configPool)));
 		}
 
-		try
-		{
+		try {
 			// Results are collected first and accepted in a DETERMINISTIC order (cost, then
 			// signature), not completion order: the page-fill ceiling ratchets as routes are
 			// accepted, so completion order (JIT warmth, load) decided which seeds made the page
 			// and the same query produced different pages run to run (plan step N10; the seeds
 			// take milliseconds each, so nothing is lost by waiting for all of them).
 			List<SeedResult> results = new ArrayList<>(futures.size());
-			for (int i = 0; i < futures.size() && gen == generation.get(); i++)
-			{
-				try
-				{
+			for (int i = 0; i < futures.size() && gen == generation.get(); i++) {
+				try {
 					SeedResult seedResult = completion.take().get();
 					if (seedResult != null)
-					{
 						results.add(seedResult);
-					}
 				}
-				catch (ExecutionException e)
-				{
+				catch (ExecutionException e) {
 					log.warn("Seed search failed", e);
 				}
 			}
 			results.sort(Comparator.comparingInt((SeedResult r) -> r.totalCost)
 				.thenComparing(r -> signature(r.scan.methods)));
-			for (SeedResult seedResult : results)
-			{
+			for (SeedResult seedResult : results) {
 				if (gen != generation.get())
-				{
 					break;
-				}
 				// Same hybrid acceptance as the chain: a seed beyond the page-fill ceiling isn't shown
 				// (skip, not stop — seeds complete in parallel, a later one can be cheaper). Checked
 				// BEFORE the signature is consumed: a cost-rejected seed must stay eligible for a
@@ -1458,11 +1305,9 @@ public class AlternativeRoutesService
 				// while cheap disembark-teleport chains fill the page (capture 20260829-204334),
 				// leaving a sailor mid-task with no sea route at all.
 				if (planningConfig.isOnSailingBoat() && seedResult.reached
-					&& isPureSail(seedResult.scan.methods))
-				{
+					&& isPureSail(seedResult.scan.methods)) {
 					RouteOption prior = bestSail.get();
-					if (prior == null || seedResult.totalCost < prior.getTotalCost())
-					{
+					if (prior == null || seedResult.totalCost < prior.getTotalCost()) {
 						bestSail.set(new RouteOption(withoutIdleBankFlip(seedResult.path, seedResult.scan),
 							seedResult.scan.methods, seedResult.scan.methodEdges,
 							seedResult.scan.methodDurations, seedResult.totalCost, seedResult.scan.rawCost,
@@ -1471,28 +1316,20 @@ public class AlternativeRoutesService
 					}
 				}
 				if (!portPromise && RouteAcceptance.beyondBand(seedResult.totalCost, routes, costMultiple))
-				{
 					continue;
-				}
 				// The port promise IS a detour with the same ending (Disembark + the teleport
 				// the bare route uses) — the nesting filter would always drop it.
 				if (!portPromise && RouteAcceptance.nestsAKeptRoute(seedResult.scan.methods,
-					!seedResult.scan.bankGated.isEmpty(), routes))
-				{
+					!seedResult.scan.bankGated.isEmpty(), routes)) {
 					continue;
 				}
 				if (RouteAcceptance.hasRedundantTeleportHop(hopBaselineTeleports, seedResult.scan.methods))
-				{
 					continue;
-				}
 				if (!seenSignatures.add(signature(seedResult.scan.methods)))
-				{
 					continue;
-				}
 				// A full list doesn't end the pass: a strictly cheaper seed evicts the costliest
 				// teleport route — the seeds are the safety net for anything the chain missed.
-				if (routes.size() >= limit)
-				{
+				if (routes.size() >= limit) {
 					// The walk baseline is evict-proof only when there is a LIST to anchor: in
 					// overlay-only mode (panel closed, limit 1) the single route must be the best
 					// route, or a slow walk permanently shadows a cheap sea leg (field report:
@@ -1501,9 +1338,7 @@ public class AlternativeRoutesService
 					int evict = RouteAcceptance.evictionIndex(routes, portPromise ? -1 : seedResult.totalCost,
 						r -> limit == 1 || !r.isWalkOnly());
 					if (evict < 0)
-					{
 						continue;
-					}
 					routes.remove(evict);
 				}
 				routes.add(new RouteOption(withoutIdleBankFlip(seedResult.path, seedResult.scan),
@@ -1514,19 +1349,15 @@ public class AlternativeRoutesService
 				emit(gen, listener, new ArrayList<>(routes), catalog, unavailable, false);
 			}
 		}
-		catch (InterruptedException e)
-		{
+		catch (InterruptedException e) {
 			// Interruption means shutdown/cancellation: just stop. (The plugin hub disallows
 			// Thread::interrupt, so the flag is not restored; this generation thread is ours and
 			// nothing downstream reads it.)
 		}
-		finally
-		{
+		finally {
 			stop.set(true);
 			for (Future<SeedResult> future : futures)
-			{
 				future.cancel(false);
-			}
 		}
 	}
 
@@ -1549,49 +1380,37 @@ public class AlternativeRoutesService
 	 * get a search.
 	 */
 	static List<Transport> rankSeedCandidates(List<Transport> seedCandidates, Set<Integer> targets,
-		Set<TeleportMethod> userExclusions, int maxAttempts)
-	{
+		Set<TeleportMethod> userExclusions, int maxAttempts) {
 		final List<Transport> ranked = new ArrayList<>(seedCandidates);
 		// Long arithmetic: a cross-plane landing has straight-line distance Integer.MAX_VALUE, which
 		// must rank last rather than overflow into ranking first.
 		final int[] targetArray = new int[targets.size()];
 		int t = 0;
 		for (int target : targets)
-		{
 			targetArray[t++] = target;
-		}
 		ranked.sort(Comparator.comparingLong(
 			candidate -> (long) CostUnits.fromTicks(candidate.getDuration())
 				+ distanceToNearest(candidate.getDestination(), targetArray)));
 		final Map<Integer, Transport> byDestination = new LinkedHashMap<>();
-		for (Transport transport : ranked)
-		{
+		for (Transport transport : ranked) {
 			if (userExclusions.contains(transport.method()))
-			{
 				continue;
-			}
 			byDestination.putIfAbsent(transport.getDestination(), transport);
 		}
 		final List<Transport> attempts = new ArrayList<>(Math.max(0, Math.min(maxAttempts, byDestination.size())));
-		for (Transport seed : byDestination.values())
-		{
+		for (Transport seed : byDestination.values()) {
 			if (attempts.size() >= maxAttempts)
-			{
 				break;
-			}
 			attempts.add(seed);
 		}
 		return attempts;
 	}
 
 	/** Straight-line distance from a landing to its nearest target (MAX_VALUE across planes). */
-	private static int distanceToNearest(int packedPoint, int[] targets)
-	{
+	private static int distanceToNearest(int packedPoint, int[] targets) {
 		int best = Integer.MAX_VALUE;
 		for (int target : targets)
-		{
 			best = Math.min(best, WorldPointUtil.distanceBetween(packedPoint, target));
-		}
 		return best;
 	}
 
@@ -1602,8 +1421,7 @@ public class AlternativeRoutesService
 	private static final int TAIL_DIVERSITY_SEARCHES = 2;
 
 	/** The signature of everything after the primary, or null when there is no tail. */
-	private static String tailSignature(List<TeleportMethod> methods)
-	{
+	private static String tailSignature(List<TeleportMethod> methods) {
 		return methods.size() < 2 ? null : signature(methods.subList(1, methods.size()));
 	}
 
@@ -1618,8 +1436,7 @@ public class AlternativeRoutesService
 	 * back — and feeds any distinct result through the exact acceptance the seeds use, evicting
 	 * the costliest member of the dominant family when the page is full.
 	 */
-	private void diversifySharedTails(Generation g, int costCap)
-	{
+	private void diversifySharedTails(Generation g, int costCap) {
 		final int gen = g.gen;
 		final int start = g.start;
 		final Set<Integer> ends = g.ends;
@@ -1636,42 +1453,30 @@ public class AlternativeRoutesService
 		final GenTimer timer = g.timer;
 		// The dominant tail among the kept routes.
 		Map<String, List<RouteOption>> byTail = new LinkedHashMap<>();
-		for (RouteOption route : routes)
-		{
+		for (RouteOption route : routes) {
 			String tail = tailSignature(route.getMethods());
 			if (tail != null)
-			{
 				byTail.computeIfAbsent(tail, k -> new ArrayList<>()).add(route);
-			}
 		}
 		String dominantTail = null;
 		List<RouteOption> family = null;
-		for (Map.Entry<String, List<RouteOption>> entry : byTail.entrySet())
-		{
-			if (family == null || entry.getValue().size() > family.size())
-			{
+		for (Map.Entry<String, List<RouteOption>> entry : byTail.entrySet()) {
+			if (family == null || entry.getValue().size() > family.size()) {
 				dominantTail = entry.getKey();
 				family = entry.getValue();
 			}
 		}
 		if (family == null || family.size() < TAIL_DOMINANCE)
-		{
 			return;
-		}
 
 		List<TeleportMethod> sharedTail = family.get(0).getMethods();
 		sharedTail = sharedTail.subList(1, sharedTail.size());
 		int searches = 0;
-		for (TeleportMethod shared : sharedTail)
-		{
+		for (TeleportMethod shared : sharedTail) {
 			if (searches >= TAIL_DIVERSITY_SEARCHES || gen != generation.get())
-			{
 				break;
-			}
 			if (userExclusions.contains(shared))
-			{
 				continue;
-			}
 			searches++;
 			PathfinderConfig config = planningConfig.copyForParallelSearch();
 			Set<TeleportMethod> exclusions = new HashSet<>(userExclusions);
@@ -1683,8 +1488,7 @@ public class AlternativeRoutesService
 			Pathfinder pathfinder = new Pathfinder(config, start, ends, costCap, heuristic);
 			pathfinder.run();
 			long searchEnd = System.nanoTime();
-			synchronized (timer)
-			{
+			synchronized (timer) {
 				timer.rebuildNanos += searchStart - rebuildStart;
 				timer.searchNanos += searchEnd - searchStart;
 				timer.searches++;
@@ -1694,38 +1498,28 @@ public class AlternativeRoutesService
 			PathfinderResult result = pathfinder.getResult();
 			List<PathStep> path = (result != null) ? result.getPathSteps() : List.of();
 			if (result == null || path.isEmpty())
-			{
 				continue;
-			}
 			boolean reached = result.isReached();
 			int remaining = reached ? 0 : remainingDistance(path, ends);
 			if (RouteAcceptance.tooFar(reached, remaining, bestRemaining))
-			{
 				continue;
-			}
 			final int totalCost = result.getTotalCost();
 			if (RouteAcceptance.beyondBand(totalCost, routes, costMultiple))
-			{
 				continue;
-			}
 			MethodScan scan = scanMethods(config, path);
 			if (scan.methods.isEmpty()
 				|| RouteAcceptance.nestsAKeptRoute(scan.methods, !scan.bankGated.isEmpty(), routes)
 				|| RouteAcceptance.hasRedundantTeleportHop(hopBaselineTeleports, scan.methods)
-				|| !seenSignatures.add(signature(scan.methods)))
-			{
+				|| !seenSignatures.add(signature(scan.methods))) {
 				continue;
 			}
-			if (routes.size() >= limit)
-			{
+			if (routes.size() >= limit) {
 				// The whole point: the slot comes out of the over-represented family.
 				final String familyTail = dominantTail;
 				int evict = RouteAcceptance.evictionIndex(routes, -1,
 					kept -> !kept.isWalkOnly() && familyTail.equals(tailSignature(kept.getMethods())));
 				if (evict < 0)
-				{
 					continue;
-				}
 				routes.remove(evict);
 			}
 			routes.add(new RouteOption(withoutIdleBankFlip(path, scan), scan.methods, scan.methodEdges,
@@ -1736,8 +1530,7 @@ public class AlternativeRoutesService
 	}
 
 	private SeedResult runSeedSearch(Generation g, AtomicBoolean stop, Set<TeleportMethod> allSeedMethods,
-		Transport seed, boolean portPromiseSeed, int costCap, Queue<PathfinderConfig> configPool)
-	{
+		Transport seed, boolean portPromiseSeed, int costCap, Queue<PathfinderConfig> configPool) {
 		final int gen = g.gen;
 		final int start = g.start;
 		final Set<Integer> ends = g.ends;
@@ -1746,23 +1539,16 @@ public class AlternativeRoutesService
 		final DistanceField field = g.field;
 		final GenTimer timer = g.timer;
 		if (gen != generation.get() || stop.get())
-		{
 			return null;
-		}
 		// Unreached-target seeds are uninformed sweeps too — same budget as the chain, checked as
 		// each queued seed comes up so a long tail of pending seeds drains cheaply.
 		if (bestRemaining > 0 && searchBudgetExhausted(timer))
-		{
 			return null;
-		}
 		PathfinderConfig config = configPool.poll();
 		if (config == null)
-		{
 			// Should not happen (pool size == max concurrency), but never block on it.
 			config = planningConfig.copyForParallelSearch();
-		}
-		try
-		{
+		try {
 			// Exclude every other global teleport so the search is forced onto (at most) this one.
 			Set<TeleportMethod> seedExclusions = new HashSet<>(allSeedMethods);
 			seedExclusions.remove(seed.method());
@@ -1772,15 +1558,11 @@ public class AlternativeRoutesService
 			// route is 'Disembark at the nearest port, then the best of everything'.
 			config.portPromiseSearch = portPromiseSeed;
 			Set<TeleportMethod> effectiveExclusions = seedExclusions;
-			if (portPromiseSeed)
-			{
+			if (portPromiseSeed) {
 				effectiveExclusions = new HashSet<>();
-				for (TeleportMethod method : seedExclusions)
-				{
+				for (TeleportMethod method : seedExclusions) {
 					if (!method.getType().isTeleport())
-					{
 						effectiveExclusions.add(method);
-					}
 				}
 			}
 			long rebuildStart = System.nanoTime();
@@ -1793,8 +1575,7 @@ public class AlternativeRoutesService
 			Pathfinder pathfinder = new Pathfinder(config, start, ends, costCap, heuristic);
 			pathfinder.run();
 			long searchEnd = System.nanoTime();
-			synchronized (timer)
-			{
+			synchronized (timer) {
 				timer.rebuildNanos += searchStart - rebuildStart;
 				timer.searchNanos += searchEnd - searchStart;
 				timer.searches++;
@@ -1807,25 +1588,18 @@ public class AlternativeRoutesService
 			PathfinderResult result = pathfinder.getResult();
 			List<PathStep> path = (result != null) ? result.getPathSteps() : List.of();
 			if (result == null || path.isEmpty())
-			{
 				return null;
-			}
 			boolean reached = result.isReached();
 			int remaining = reached ? 0 : remainingDistance(path, ends);
 			if (RouteAcceptance.tooFar(reached, remaining, bestRemaining))
-			{
 				return null;
-			}
 			MethodScan scan = scanMethods(config, path);
 			if (scan.methods.isEmpty())
-			{
 				// Walk-only: the seed teleport didn't help.
 				return null;
-			}
 			return new SeedResult(path, scan, result.getTotalCost(), reached);
 		}
-		finally
-		{
+		finally {
 			config.portPromiseSearch = false;
 			configPool.offer(config);
 		}
@@ -1837,8 +1611,7 @@ public class AlternativeRoutesService
 	 * path is the last-resort route. Runs on the seed pool concurrently with the chain's first
 	 * searches, on its own config copy.
 	 */
-	private WalkResult runWalkSearch(Generation g, AtomicInteger walkCeiling)
-	{
+	private WalkResult runWalkSearch(Generation g, AtomicInteger walkCeiling) {
 		final int gen = g.gen;
 		final int start = g.start;
 		final Set<Integer> ends = g.ends;
@@ -1847,9 +1620,7 @@ public class AlternativeRoutesService
 		final DistanceField field = g.field;
 		final GenTimer timer = g.timer;
 		if (gen != generation.get())
-		{
 			return null;
-		}
 		PathfinderConfig config = planningConfig.copyForParallelSearch();
 		Set<TeleportMethod> walkExclusions = new HashSet<>(catalog);
 		walkExclusions.addAll(userExclusions);
@@ -1863,8 +1634,7 @@ public class AlternativeRoutesService
 		pathfinder.setDynamicCostCap(walkCeiling::get);
 		pathfinder.run();
 		long searchEnd = System.nanoTime();
-		synchronized (timer)
-		{
+		synchronized (timer) {
 			timer.rebuildNanos += searchStart - rebuildStart;
 			timer.searchNanos += searchEnd - searchStart;
 			timer.searches++;
@@ -1874,12 +1644,9 @@ public class AlternativeRoutesService
 		PathfinderResult result = pathfinder.getResult();
 		List<PathStep> path = (result != null) ? result.getPathSteps() : List.of();
 		if (result == null || path.isEmpty())
-		{
 			return null;
-		}
 		MethodScan scan = scanMethods(config, path);
-		if (!scan.methods.isEmpty())
-		{
+		if (!scan.methods.isEmpty()) {
 			// Aboard, the catalog-wide exclusion leaves the SAILING legs untouched (sea legs are
 			// not catalog methods), so this search naturally yields the KEEP-SAILING route: sail
 			// to the port nearest the target and walk ashore. That is the baseline a sailor
@@ -1888,9 +1655,7 @@ public class AlternativeRoutesService
 			// and its cost still serves as the universal ceiling. Any NON-sailing method here
 			// remains a defect and must not become the walk cap or route.
 			if (!(planningConfig.isOnSailingBoat() && isPureSail(scan.methods)))
-			{
 				return null;
-			}
 		}
 		boolean reached = result.isReached();
 		RouteOption route = new RouteOption(withoutIdleBankFlip(path, scan), scan.methods, scan.methodEdges, scan.methodDurations,
@@ -1909,8 +1674,7 @@ public class AlternativeRoutesService
 	 * In bank mode the return leg naturally gets the banked-state teleports: the leg starts ON a
 	 * bank tile, so the engine flips into the banked state immediately.
 	 */
-	private List<RouteOption> buildRoundTrips(Generation g, List<RouteOption> oneWays)
-	{
+	private List<RouteOption> buildRoundTrips(Generation g, List<RouteOption> oneWays) {
 		final int gen = g.gen;
 		final int start = g.start;
 		final Set<TeleportMethod> userExclusions = g.userExclusions;
@@ -1934,20 +1698,16 @@ public class AlternativeRoutesService
 
 		final List<RouteOption> merged = new ArrayList<>();
 		final Set<String> signatures = new HashSet<>();
-		for (RouteOption oneWay : oneWays)
-		{
+		for (RouteOption oneWay : oneWays) {
 			if (gen != generation.get())
-			{
 				return merged;
-			}
 			final List<PathStep> outPath = oneWay.getPath();
 			final int endpoint = outPath.get(outPath.size() - 1).getPackedPosition();
 			long searchStart = System.nanoTime();
 			Pathfinder back = new Pathfinder(planningConfig, endpoint, home, Integer.MAX_VALUE, heuristic);
 			back.run();
 			long searchNanos = System.nanoTime() - searchStart;
-			synchronized (timer)
-			{
+			synchronized (timer) {
 				timer.searchNanos += searchNanos;
 				timer.searches++;
 			}
@@ -1957,23 +1717,19 @@ public class AlternativeRoutesService
 			PathfinderResult result = back.getResult();
 			List<PathStep> returnPath = (result != null) ? result.getPathSteps() : List.of();
 			if (result == null || returnPath.isEmpty() || !result.isReached())
-			{
 				continue;
-			}
 			// Concatenate, dropping the duplicated endpoint tile, and re-derive the method scan
 			// over the whole loop so edges/durations/legs are consistent for the overlay.
 			List<PathStep> fullPath = new ArrayList<>(outPath);
 			// The return leg's cumulative costs continue from the outbound total, so the loop's
 			// steps carry one monotone cost line (the overlay's ETA table reads it).
-			for (PathStep step : returnPath.subList(Math.min(1, returnPath.size()), returnPath.size()))
-			{
+			for (PathStep step : returnPath.subList(Math.min(1, returnPath.size()), returnPath.size())) {
 				fullPath.add(step.getCost() == PathStep.UNKNOWN_COST ? step
 					: new PathStep(step.getPackedPosition(), step.isBankVisited(), step.getCost() + oneWay.getTotalCost()));
 			}
 			MethodScan scan = scanMethods(planningConfig, fullPath);
 			if (!signatures.add(signature(scan.methods))
-				|| RouteAcceptance.hasRedundantTeleportHop(hopBaselineTeleports, scan.methods))
-			{
+				|| RouteAcceptance.hasRedundantTeleportHop(hopBaselineTeleports, scan.methods)) {
 				continue;
 			}
 			// The turnaround is the outbound path's last tile (the destination); the return leg's
@@ -1995,69 +1751,53 @@ public class AlternativeRoutesService
 	 */
 	private static final long UNREACHED_SEARCH_BUDGET_NANOS = 4_000_000_000L;
 	/** Cumulative search CPU spent this generation vs the unreached-target budget. */
-	private static boolean searchBudgetExhausted(GenTimer timer)
-	{
-		synchronized (timer)
-		{
+	private static boolean searchBudgetExhausted(GenTimer timer) {
+		synchronized (timer) {
 			return timer.searchNanos >= UNREACHED_SEARCH_BUDGET_NANOS;
 		}
 	}
 
-	private static int capOf(Future<WalkResult> walkFuture)
-	{
+	private static int capOf(Future<WalkResult> walkFuture) {
 		if (walkFuture == null || !walkFuture.isDone())
-		{
 			return Integer.MAX_VALUE;
-		}
-		try
-		{
+		try {
 			WalkResult walk = walkFuture.get();
 			return walk == null ? Integer.MAX_VALUE : walk.cap;
 		}
-		catch (InterruptedException e)
-		{
+		catch (InterruptedException e) {
 			// Shutdown/cancellation: uncapped is always safe. (Hub rule: no Thread::interrupt.)
 			return Integer.MAX_VALUE;
 		}
-		catch (ExecutionException e)
-		{
+		catch (ExecutionException e) {
 			log.warn("Walk search failed", e);
 			return Integer.MAX_VALUE;
 		}
 	}
 
 	/** The finished walk search's result, waiting for it if needed (used once, at generation end). */
-	private static WalkResult walkResult(Future<WalkResult> walkFuture)
-	{
+	private static WalkResult walkResult(Future<WalkResult> walkFuture) {
 		if (walkFuture == null)
-		{
 			return null;
-		}
-		try
-		{
+		try {
 			return walkFuture.get();
 		}
-		catch (InterruptedException e)
-		{
+		catch (InterruptedException e) {
 			// Shutdown/cancellation: no walk route to append. (Hub rule: no Thread::interrupt.)
 			return null;
 		}
-		catch (ExecutionException e)
-		{
+		catch (ExecutionException e) {
 			log.warn("Walk search failed", e);
 			return null;
 		}
 	}
 
 	/** The walk-only search's route, its cost cap for other searches, and its closeness to the target. */
-	private static final class WalkResult
-	{
+	private static final class WalkResult {
 		private final RouteOption route;
 		private final int cap;
 		private final int remaining;
 
-		WalkResult(RouteOption route, int cap, int remaining)
-		{
+		WalkResult(RouteOption route, int cap, int remaining) {
 			this.route = route;
 			this.cap = cap;
 			this.remaining = remaining;
@@ -2068,15 +1808,13 @@ public class AlternativeRoutesService
 	 * A candidate route produced by one parallel seed search, before signature dedup on the
 	 * generation thread.
 	 */
-	private static final class SeedResult
-	{
+	private static final class SeedResult {
 		private final List<PathStep> path;
 		private final MethodScan scan;
 		private final int totalCost;
 		private final boolean reached;
 
-		SeedResult(List<PathStep> path, MethodScan scan, int totalCost, boolean reached)
-		{
+		SeedResult(List<PathStep> path, MethodScan scan, int totalCost, boolean reached) {
 			this.path = path;
 			this.scan = scan;
 			this.totalCost = totalCost;
@@ -2084,26 +1822,20 @@ public class AlternativeRoutesService
 		}
 	}
 
-	private static int remainingDistance(List<PathStep> path, Set<Integer> targets)
-	{
+	private static int remainingDistance(List<PathStep> path, Set<Integer> targets) {
 		int end = path.get(path.size() - 1).getPackedPosition();
 		int best = Integer.MAX_VALUE;
 		for (int target : targets)
-		{
 			best = Math.min(best, WorldPointUtil.distanceBetween(end, target));
-		}
 		return best;
 	}
 
 	private void emit(int gen, ResultListener listener, List<RouteOption> routes,
-		List<TeleportMethod> catalog, Map<TeleportMethod, MethodAvailability> unavailable, boolean done)
-	{
+		List<TeleportMethod> catalog, Map<TeleportMethod, MethodAvailability> unavailable, boolean done) {
 		// A null listener means streaming is suppressed for this phase (round-trip mode streams
 		// only merged results).
 		if (listener != null && gen == generation.get())
-		{
 			listener.onUpdate(routes, catalog, unavailable, done);
-		}
 	}
 
 	/**
@@ -2112,46 +1844,36 @@ public class AlternativeRoutesService
 	 *
 	 * @return false if the client thread did not run the task within the timeout.
 	 */
-	private boolean refreshOnClientThread(Set<TeleportMethod> excluded, Set<Integer> endsToFilter, AlternativeRoutesMode mode)
-	{
+	private boolean refreshOnClientThread(Set<TeleportMethod> excluded, Set<Integer> endsToFilter, AlternativeRoutesMode mode) {
 		return refreshOnClientThread(planningConfig, excluded, endsToFilter, mode);
 	}
 
 	private boolean refreshOnClientThread(PathfinderConfig target, Set<TeleportMethod> excluded,
-		Set<Integer> endsToFilter, AlternativeRoutesMode mode)
-	{
+		Set<Integer> endsToFilter, AlternativeRoutesMode mode) {
 		final Set<TeleportMethod> excludedSnapshot = new HashSet<>(excluded);
 		final CountDownLatch latch = new CountDownLatch(1);
-		clientThread.invokeLater(() ->
-		{
-			try
-			{
+		clientThread.invokeLater(() -> {
+			try {
 				target.setPlanningMode(mode == AlternativeRoutesMode.ALL_EVERYTHING);
 				target.setBypassItemPossession(!mode.isOwned());
 				target.setConsiderBank(mode == AlternativeRoutesMode.OWNED_WITH_BANK);
 				target.setExcludedMethods(excludedSnapshot);
 				target.refresh();
 				if (endsToFilter != null)
-				{
 					target.filterLocations(endsToFilter, true);
-				}
 			}
-			finally
-			{
+			finally {
 				latch.countDown();
 			}
 		});
-		try
-		{
-			if (!latch.await(CLIENT_THREAD_TIMEOUT_SECONDS, TimeUnit.SECONDS))
-			{
+		try {
+			if (!latch.await(CLIENT_THREAD_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
 				log.warn("Timed out waiting for planning config refresh on client thread");
 				return false;
 			}
 			return true;
 		}
-		catch (InterruptedException e)
-		{
+		catch (InterruptedException e) {
 			// Shutdown/cancellation while waiting on the client thread; the generation aborts.
 			// (Hub rule: no Thread::interrupt.)
 			return false;
@@ -2165,8 +1887,7 @@ public class AlternativeRoutesService
 	 * the route walks to a bank to withdraw that method's required item first — so the panel can say
 	 * which method the bank detour is for.
 	 */
-	private MethodScan scanMethods(PathfinderConfig config, List<PathStep> path)
-	{
+	private MethodScan scanMethods(PathfinderConfig config, List<PathStep> path) {
 		List<TeleportMethod> methods = new ArrayList<>();
 		List<Integer> methodEdges = new ArrayList<>();
 		List<Integer> methodDurations = new ArrayList<>();
@@ -2176,22 +1897,18 @@ public class AlternativeRoutesService
 		// their item or the route silently assumes a bank stop (issue #21: the machete).
 		List<Transport> bankGatedTransports = new ArrayList<>();
 		if (path == null)
-		{
 			return new MethodScan(methods, methodEdges, methodDurations, bankGated, bankGatedTransports, 0, new ArrayList<>(), 0);
-		}
 		int rawCost = 0;
 		// Walking-leg lengths: tiles walked before each method (parallel to `methods`), and after the
 		// last one. Plain connectors (doors, stairs, shortcuts) count into the leg they sit in.
 		List<Integer> walkBefore = new ArrayList<>();
 		int legSteps = 0;
-		for (int i = 1; i < path.size(); i++)
-		{
+		for (int i = 1; i < path.size(); i++) {
 			PathStep from = path.get(i - 1);
 			PathStep to = path.get(i);
 			boolean bankVisited = from.isBankVisited() || to.isBankVisited();
 			Transport chosen = matchMethodTransport(config, from.getPackedPosition(), to.getPackedPosition(), bankVisited);
-			if (chosen != null)
-			{
+			if (chosen != null) {
 				TeleportMethod method = chosen.method();
 				methods.add(method);
 				methodEdges.add(i);
@@ -2200,9 +1917,7 @@ public class AlternativeRoutesService
 				legSteps = 0;
 				// Bank-gated: used in the post-bank state and not available without the bank.
 				if (bankVisited && !availableWithoutBank(config, from.getPackedPosition(), chosen))
-				{
 					bankGated.add(method);
-				}
 			}
 			// Raw cost: what the edge costs without any configured weights, in CostUnits (run-tiles) —
 			// a transport edge counts its travel time normalized to units, a walking edge its tile
@@ -2213,8 +1928,7 @@ public class AlternativeRoutesService
 				: matchAnyTransport(config, from.getPackedPosition(), to.getPackedPosition(), bankVisited);
 			if (chosen == null && edgeTransport != null && bankVisited
 				&& edgeTransport.getItemRequirements() != null
-				&& !availableWithoutBank(config, from.getPackedPosition(), edgeTransport))
-			{
+				&& !availableWithoutBank(config, from.getPackedPosition(), edgeTransport)) {
 				bankGatedTransports.add(edgeTransport);
 			}
 			int edgeCost = edgeTransport != null
@@ -2222,9 +1936,7 @@ public class AlternativeRoutesService
 				: WorldPointUtil.distanceBetween(from.getPackedPosition(), to.getPackedPosition());
 			rawCost += edgeCost;
 			if (chosen == null)
-			{
 				legSteps += edgeCost;
-			}
 		}
 		return new MethodScan(methods, methodEdges, methodDurations, bankGated, bankGatedTransports, rawCost, walkBefore, legSteps);
 	}
@@ -2237,55 +1949,38 @@ public class AlternativeRoutesService
 	 * flags are cleared in place of the steps; no step is dropped, so the scan's edge indexes
 	 * still line up with the path.
 	 */
-	static List<PathStep> withoutIdleBankFlip(List<PathStep> path, MethodScan scan)
-	{
+	static List<PathStep> withoutIdleBankFlip(List<PathStep> path, MethodScan scan) {
 		if (path == null || !scan.bankGated.isEmpty() || !scan.bankGatedTransports.isEmpty())
-		{
 			return path;
-		}
 		boolean flipped = false;
-		for (PathStep step : path)
-		{
-			if (step.isBankVisited())
-			{
+		for (PathStep step : path) {
+			if (step.isBankVisited()) {
 				flipped = true;
 				break;
 			}
 		}
 		if (!flipped)
-		{
 			return path;
-		}
 		List<PathStep> plain = new ArrayList<>(path.size());
 		for (PathStep step : path)
-		{
 			plain.add(step.isBankVisited() ? new PathStep(step.getPackedPosition(), false, step.getCost()) : step);
-		}
 		return plain;
 	}
 
-	private static boolean availableWithoutBank(PathfinderConfig config, int origin, Transport transport)
-	{
+	private static boolean availableWithoutBank(PathfinderConfig config, int origin, Transport transport) {
 		for (Transport candidate : config.getTransportsPacked(false)
-			.getOrDefault(origin, TransportAvailability.EMPTY_TRANSPORTS))
-		{
+			.getOrDefault(origin, TransportAvailability.EMPTY_TRANSPORTS)) {
 			if (candidate == transport)
-			{
 				return true;
-			}
 		}
-		for (Transport candidate : config.getUsableTeleports(false))
-		{
+		for (Transport candidate : config.getUsableTeleports(false)) {
 			if (candidate == transport)
-			{
 				return true;
-			}
 		}
 		return false;
 	}
 
-	private static final class MethodScan
-	{
+	private static final class MethodScan {
 		private final List<TeleportMethod> methods;
 		// Path index of the edge each method sits on (parallel to methods): the index of the step the
 		// method arrives at. Authoritative for the directions overlay, which cannot re-derive methods
@@ -2304,8 +1999,7 @@ public class AlternativeRoutesService
 
 		MethodScan(List<TeleportMethod> methods, List<Integer> methodEdges, List<Integer> methodDurations,
 			Set<TeleportMethod> bankGated, List<Transport> bankGatedTransports, int rawCost,
-			List<Integer> walkBefore, int trailingWalk)
-		{
+			List<Integer> walkBefore, int trailingWalk) {
 			this.methods = methods;
 			this.methodEdges = methodEdges;
 			this.methodDurations = methodDurations;
@@ -2317,8 +2011,7 @@ public class AlternativeRoutesService
 		}
 	}
 
-	private static Transport matchMethodTransport(PathfinderConfig config, int origin, int destination, boolean bankVisited)
-	{
+	private static Transport matchMethodTransport(PathfinderConfig config, int origin, int destination, boolean bankVisited) {
 		return cheapestMatch(config, origin, destination, bankVisited, true);
 	}
 
@@ -2327,8 +2020,7 @@ public class AlternativeRoutesService
 	 * connectors (doors, stairs, agility shortcuts, ...) so the raw-cost scan can use the transport's
 	 * travel time for any edge the search traversed via a transport.
 	 */
-	private static Transport matchAnyTransport(PathfinderConfig config, int origin, int destination, boolean bankVisited)
-	{
+	private static Transport matchAnyTransport(PathfinderConfig config, int origin, int destination, boolean bankVisited) {
 		return cheapestMatch(config, origin, destination, bankVisited, false);
 	}
 
@@ -2342,34 +2034,29 @@ public class AlternativeRoutesService
 	 * method-type transports (excluding plain connectors like doors and stairs).
 	 */
 	private static Transport cheapestMatch(PathfinderConfig config, int origin, int destination,
-		boolean bankVisited, boolean methodsOnly)
-	{
+		boolean bankVisited, boolean methodsOnly) {
 		Transport best = null;
 		long bestCost = Long.MAX_VALUE;
 		Transport[] atOrigin = config.getTransportsPacked(bankVisited)
 			.getOrDefault(origin, TransportAvailability.EMPTY_TRANSPORTS);
-		for (Transport transport : atOrigin)
-		{
+		for (Transport transport : atOrigin) {
 			if (transport.getDestination() == destination
 				&& (!methodsOnly || TeleportMethod.isMethodType(transport.getType())
 					// Sailing is not a CATALOG method, but its legs must appear in the route
 					// methods: the cards, and the sea-track edge detection in the overlay.
 					|| transport.getType() == gps.transport.TransportType.SAILING)
-				&& searchEdgeCost(config, transport) < bestCost)
-			{
+				&& searchEdgeCost(config, transport) < bestCost) {
 				best = transport;
 				bestCost = searchEdgeCost(config, transport);
 			}
 		}
-		for (Transport transport : config.getUsableTeleports(bankVisited))
-		{
+		for (Transport transport : config.getUsableTeleports(bankVisited)) {
 			if (transport.getDestination() == destination
 				&& (!methodsOnly || TeleportMethod.isMethodType(transport.getType())
 					// Sailing is not a CATALOG method, but its legs must appear in the route
 					// methods: the cards, and the sea-track edge detection in the overlay.
 					|| transport.getType() == gps.transport.TransportType.SAILING)
-				&& searchEdgeCost(config, transport) < bestCost)
-			{
+				&& searchEdgeCost(config, transport) < bestCost) {
 				best = transport;
 				bestCost = searchEdgeCost(config, transport);
 			}
@@ -2378,8 +2065,7 @@ public class AlternativeRoutesService
 	}
 
 	/** A transport edge's cost as the search charges it (see NodeGraph.createTransport's clamp). */
-	private static int searchEdgeCost(PathfinderConfig config, Transport transport)
-	{
+	private static int searchEdgeCost(PathfinderConfig config, Transport transport) {
 		return Math.max(0, CostUnits.fromTicks(transport.getDuration())
 			+ config.getAdditionalTransportCost(transport));
 	}
@@ -2405,18 +2091,12 @@ public class AlternativeRoutesService
 	 * only works from the bank, the hop variant is a genuinely different (bankless) route.
 	 */
 	/** Whether every method is a sailing leg (see RouteOption#isPureSail). */
-	static boolean isPureSail(List<TeleportMethod> methods)
-	{
+	static boolean isPureSail(List<TeleportMethod> methods) {
 		if (methods.isEmpty())
-		{
 			return false;
-		}
-		for (TeleportMethod method : methods)
-		{
+		for (TeleportMethod method : methods) {
 			if (method.getType() != gps.transport.TransportType.SAILING)
-			{
 				return false;
-			}
 		}
 		return true;
 	}
@@ -2428,14 +2108,11 @@ public class AlternativeRoutesService
 	 * alternatives. Captured once per generation (see computeRoutes) because the chain's own
 	 * exclusion rebuilds must not blind the filter to the direct teleport they just removed.
 	 */
-	static List<Transport> teleportHopBaseline(PathfinderConfig config, Set<TeleportMethod> userExclusions)
-	{
+	static List<Transport> teleportHopBaseline(PathfinderConfig config, Set<TeleportMethod> userExclusions) {
 		List<Transport> baseline = new ArrayList<>();
-		for (Transport teleport : config.getUsableTeleports(false))
-		{
+		for (Transport teleport : config.getUsableTeleports(false)) {
 			if (teleport.getType() != null && teleport.getType().sharesDestinationsWith() != null
-				&& !userExclusions.contains(teleport.method()))
-			{
+				&& !userExclusions.contains(teleport.method())) {
 				baseline.add(teleport);
 			}
 		}
@@ -2445,12 +2122,9 @@ public class AlternativeRoutesService
 	/** The current generation's hop-filter baseline; set per generation, read by chain/seed/merge filters. */
 	private volatile List<Transport> hopBaselineTeleports = List.of();
 
-	private static String signature(List<TeleportMethod> methods)
-	{
+	private static String signature(List<TeleportMethod> methods) {
 		if (methods.isEmpty())
-		{
 			return "<walk-only>";
-		}
 		StringBuilder sb = new StringBuilder();
 		// Parking-variant collapse (capture 233931): when a LATER method re-embarks under
 		// the summon assumption, the boat gets summoned away from wherever the route just
@@ -2459,8 +2133,7 @@ public class AlternativeRoutesService
 		// wildcard so one such route represents the family. Abandon-off overland
 		// continuations (finding 5) have no later embark: their ports stay distinct.
 		boolean laterEmbark = false;
-		for (int i = 1; i < methods.size(); i++)
-		{
+		for (int i = 1; i < methods.size(); i++) {
 			TeleportMethod method = methods.get(i);
 			laterEmbark |= gps.transport.TransportType.SAILING.equals(method.getType())
 				&& method.getDisplayInfo() != null
@@ -2470,8 +2143,7 @@ public class AlternativeRoutesService
 		boolean parkingFirst = gps.transport.TransportType.SAILING.equals(first.getType())
 			&& first.getDisplayInfo() != null
 			&& first.getDisplayInfo().startsWith("Disembark at ");
-		for (int i = 0; i < methods.size(); i++)
-		{
+		for (int i = 0; i < methods.size(); i++) {
 			sb.append(i == 0 && parkingFirst && laterEmbark
 				? "Disembark at *" : methods.get(i).toString()).append('|');
 		}

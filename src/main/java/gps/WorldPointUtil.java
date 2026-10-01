@@ -26,8 +26,7 @@ import net.runelite.api.coords.WorldPoint;
  * This representation allows efficient storage and hashing of coordinates
  * within the pathfinding data structures.
  */
-public class WorldPointUtil
-{
+public class WorldPointUtil {
 	public static final int CHEBYSHEV_DISTANCE_METRIC = 1;
 	public static final int EUCLIDEAN_SQUARED_DISTANCE_METRIC = 1414213562;
 	public static final int MANHATTAN_DISTANCE_METRIC = 2;
@@ -40,12 +39,9 @@ public class WorldPointUtil
 	 * @return packed integer value, or {@link #UNDEFINED} if {@code point} is
 	 * {@code null}.
 	 */
-	public static int packWorldPoint(WorldPoint point)
-	{
+	public static int packWorldPoint(WorldPoint point) {
 		if (point == null)
-		{
 			return -1;
-		}
 		return packWorldPoint(point.getX(), point.getY(), point.getPlane());
 	}
 
@@ -60,8 +56,7 @@ public class WorldPointUtil
 	 * @param plane plane (0..3).
 	 * @return packed integer representation.
 	 */
-	public static int packWorldPoint(int x, int y, int plane)
-	{
+	public static int packWorldPoint(int x, int y, int plane) {
 		return (x & 0x7FFF) | ((y & 0x7FFF) << 15) | ((plane & 0x3) << 30);
 	}
 
@@ -71,8 +66,7 @@ public class WorldPointUtil
 	 * @param packedPoint packed coordinate.
 	 * @return decoded {@link WorldPoint}.
 	 */
-	public static WorldPoint unpackWorldPoint(int packedPoint)
-	{
+	public static WorldPoint unpackWorldPoint(int packedPoint) {
 		final int x = unpackWorldX(packedPoint);
 		final int y = unpackWorldY(packedPoint);
 		final int plane = unpackWorldPlane(packedPoint);
@@ -85,8 +79,7 @@ public class WorldPointUtil
 	 * @param packedPoint packed coordinate.
 	 * @return x value.
 	 */
-	public static int unpackWorldX(int packedPoint)
-	{
+	public static int unpackWorldX(int packedPoint) {
 		return packedPoint & 0x7FFF;
 	}
 
@@ -96,8 +89,7 @@ public class WorldPointUtil
 	 * @param packedPoint packed coordinate.
 	 * @return y value.
 	 */
-	public static int unpackWorldY(int packedPoint)
-	{
+	public static int unpackWorldY(int packedPoint) {
 		return (packedPoint >> 15) & 0x7FFF;
 	}
 
@@ -107,8 +99,7 @@ public class WorldPointUtil
 	 * @param packedPoint packed coordinate.
 	 * @return plane value (0..3).
 	 */
-	public static int unpackWorldPlane(int packedPoint)
-	{
+	public static int unpackWorldPlane(int packedPoint) {
 		return (packedPoint >> 30) & 0x3;
 	}
 
@@ -120,8 +111,7 @@ public class WorldPointUtil
 	 * @param dy          delta y to add.
 	 * @return packed point after applying deltas.
 	 */
-	public static int dxdy(int packedPoint, int dx, int dy)
-	{
+	public static int dxdy(int packedPoint, int dx, int dy) {
 		int x = unpackWorldX(packedPoint);
 		int y = unpackWorldY(packedPoint);
 		int z = unpackWorldPlane(packedPoint);
@@ -132,8 +122,7 @@ public class WorldPointUtil
 	 * Computes the distance between two packed points using Chebyshev metric
 	 * (diagonal = 1).
 	 */
-	public static int distanceBetween(int previousPacked, int currentPacked)
-	{
+	public static int distanceBetween(int previousPacked, int currentPacked) {
 		return distanceBetween(previousPacked, currentPacked, 1);
 	}
 
@@ -141,8 +130,7 @@ public class WorldPointUtil
 	 * Computes the 2D distance (ignoring plane) between two packed points using
 	 * Chebyshev metric (diagonal = 1).
 	 */
-	public static int distanceBetween2D(int previousPacked, int currentPacked)
-	{
+	public static int distanceBetween2D(int previousPacked, int currentPacked) {
 		return distanceBetween2D(previousPacked, currentPacked, 1);
 	}
 
@@ -155,8 +143,7 @@ public class WorldPointUtil
 	 *                       (sum). Otherwise returns Euclidean squared distance.
 	 * @return distance or {@code Integer.MAX_VALUE} if plane differs.
 	 */
-	public static int distanceBetween(int previousPacked, int currentPacked, int diagonal)
-	{
+	public static int distanceBetween(int previousPacked, int currentPacked, int diagonal) {
 		final int previousX = WorldPointUtil.unpackWorldX(previousPacked);
 		final int previousY = WorldPointUtil.unpackWorldY(previousPacked);
 		final int previousZ = WorldPointUtil.unpackWorldPlane(previousPacked);
@@ -173,8 +160,7 @@ public class WorldPointUtil
 	 *
 	 * @see #distanceBetween(int, int, int, int, int, int, int)
 	 */
-	public static int distanceBetween2D(int previousPacked, int currentPacked, int diagonal)
-	{
+	public static int distanceBetween2D(int previousPacked, int currentPacked, int diagonal) {
 		final int previousX = WorldPointUtil.unpackWorldX(previousPacked);
 		final int previousY = WorldPointUtil.unpackWorldY(previousPacked);
 		final int currentX = WorldPointUtil.unpackWorldX(currentPacked);
@@ -203,14 +189,11 @@ public class WorldPointUtil
 		int currentX,
 		int currentY,
 		int currentZ,
-		int diagonal)
-	{
+		int diagonal) {
 		final int dz = previousZ - currentZ;
 
 		if (dz != 0)
-		{
 			return Integer.MAX_VALUE;
-		}
 
 		return distanceBetween2D(previousX, previousY, currentX, currentY, diagonal);
 	}
@@ -228,19 +211,14 @@ public class WorldPointUtil
 	 * @return distance.
 	 */
 	public static int distanceBetween2D(int previousX, int previousY,
-		int currentX, int currentY, int diagonal)
-	{
+		int currentX, int currentY, int diagonal) {
 		final int dx = previousX - currentX;
 		final int dy = previousY - currentY;
 
 		if (diagonal == CHEBYSHEV_DISTANCE_METRIC)
-		{
 			return Math.max(Math.abs(dx), Math.abs(dy));
-		}
 		else if (diagonal == MANHATTAN_DISTANCE_METRIC)
-		{
 			return Math.abs(dx) + Math.abs(dy);
-		}
 
 		return dx * dx + dy * dy;
 	}
@@ -249,8 +227,7 @@ public class WorldPointUtil
 	 * Convenience overload using Chebyshev distance between two
 	 * {@link WorldPoint}s.
 	 */
-	public static int distanceBetween(WorldPoint previous, WorldPoint current)
-	{
+	public static int distanceBetween(WorldPoint previous, WorldPoint current) {
 		return distanceBetween(previous, current, 1);
 	}
 
@@ -259,8 +236,7 @@ public class WorldPointUtil
 	 *
 	 * @see #distanceBetween(int, int, int, int, int, int, int)
 	 */
-	public static int distanceBetween(WorldPoint previous, WorldPoint current, int diagonal)
-	{
+	public static int distanceBetween(WorldPoint previous, WorldPoint current, int diagonal) {
 		return distanceBetween(previous.getX(), previous.getY(), previous.getPlane(),
 			current.getX(), current.getY(), current.getPlane(), diagonal);
 	}
@@ -270,13 +246,10 @@ public class WorldPointUtil
 	 * respecting plane.
 	 * Returns {@code Integer.MAX_VALUE} if the plane differs.
 	 */
-	public static int distanceToArea(int packedPoint, WorldArea area)
-	{
+	public static int distanceToArea(int packedPoint, WorldArea area) {
 		final int plane = unpackWorldPlane(packedPoint);
 		if (area.getPlane() != plane)
-		{
 			return Integer.MAX_VALUE;
-		}
 		return distanceToArea2D(packedPoint, area);
 	}
 
@@ -285,8 +258,7 @@ public class WorldPointUtil
 	 * plane, equivalent to
 	 * {@link WorldArea#distanceTo(WorldPoint)} semantics in 2D.
 	 */
-	public static int distanceToArea2D(int packedPoint, WorldArea area)
-	{
+	public static int distanceToArea2D(int packedPoint, WorldArea area) {
 		final int y = unpackWorldY(packedPoint);
 		final int x = unpackWorldX(packedPoint);
 		final int areaMaxX = area.getX() + area.getWidth() - 1;
@@ -297,14 +269,12 @@ public class WorldPointUtil
 		return Math.max(dx, dy);
 	}
 
-	private static int rotate(int originalX, int originalY, int z, int rotation)
-	{
+	private static int rotate(int originalX, int originalY, int z, int rotation) {
 		int chunkX = originalX & -CHUNK_SIZE;
 		int chunkY = originalY & -CHUNK_SIZE;
 		int x = originalX & (CHUNK_SIZE - 1);
 		int y = originalY & (CHUNK_SIZE - 1);
-		switch (rotation)
-		{
+		switch (rotation) {
 			case 1:
 				return packWorldPoint(chunkX + y, chunkY + (CHUNK_SIZE - 1 - x), z);
 			case 2:
@@ -315,23 +285,19 @@ public class WorldPointUtil
 		return packWorldPoint(originalX, originalY, z);
 	}
 
-	private static int unpackChunkRotation(int chunkData)
-	{
+	private static int unpackChunkRotation(int chunkData) {
 		return chunkData >> 1 & 0x3;
 	}
 
-	private static int unpackChunkTemplateY(int chunkData)
-	{
+	private static int unpackChunkTemplateY(int chunkData) {
 		return (chunkData >> 3 & 0x7FF) * CHUNK_SIZE;
 	}
 
-	private static int unpackChunkTemplateX(int chunkData)
-	{
+	private static int unpackChunkTemplateX(int chunkData) {
 		return (chunkData >> 14 & 0x3FF) * CHUNK_SIZE;
 	}
 
-	private static int unpackChunkTemplatePlane(int chunkData)
-	{
+	private static int unpackChunkTemplatePlane(int chunkData) {
 		return chunkData >> 24 & 0x3;
 	}
 
@@ -340,55 +306,37 @@ public class WorldPointUtil
 	 * the distinct template chunk world coordinates, deduplicated, capped at 40 entries. "not an
 	 * instance" when the world view isn't one.
 	 */
-	public static String describeInstanceChunks(WorldView worldView)
-	{
+	public static String describeInstanceChunks(WorldView worldView) {
 		if (worldView == null || !worldView.isInstance())
-		{
 			return "not an instance";
-		}
 		int[][][] chunks = worldView.getInstanceTemplateChunks();
 		if (chunks == null)
-		{
 			return "no chunk data";
-		}
 		java.util.LinkedHashSet<String> seen = new java.util.LinkedHashSet<>();
-		for (int[][] planeChunks : chunks)
-		{
+		for (int[][] planeChunks : chunks) {
 			if (planeChunks == null)
-			{
 				continue;
-			}
-			for (int[] column : planeChunks)
-			{
+			for (int[] column : planeChunks) {
 				if (column == null)
-				{
 					continue;
-				}
-				for (int chunkData : column)
-				{
+				for (int chunkData : column) {
 					if (chunkData == -1)
-					{
 						continue;
-					}
 					seen.add("(" + unpackChunkTemplateX(chunkData) + "," + unpackChunkTemplateY(chunkData)
 						+ ",p" + unpackChunkTemplatePlane(chunkData) + ")");
 					if (seen.size() >= 40)
-					{
 						return String.join(" ", seen) + " …";
-					}
 				}
 			}
 		}
 		return seen.isEmpty() ? "all chunks empty" : String.join(" ", seen);
 	}
 
-	public static int fromLocalInstance(Client client, Player localPlayer)
-	{
+	public static int fromLocalInstance(Client client, Player localPlayer) {
 		WorldView worldView = localPlayer.getWorldView();
 		int worldViewId = worldView.getId();
 		boolean isOnBoat = worldViewId != WorldView.TOPLEVEL;
-		if (isOnBoat)
-		{
+		if (isOnBoat) {
 			// The boat is a WorldEntity in the top level; byIndex is briefly null during view
 			// transitions (boarding, chunk swaps) — a single NPE here used to stall every
 			// position consumer for the rest of the session. Resolution goes through
@@ -396,14 +344,10 @@ public class WorldPointUtil
 			// (port-tasks' path matching depends on the same call mid-sail).
 			WorldEntity worldEntity = client.getTopLevelWorldView().worldEntities().byIndex(worldViewId);
 			if (worldEntity == null)
-			{
 				return UNDEFINED;
-			}
 			net.runelite.api.coords.LocalPoint boatLocal = worldEntity.getLocalLocation();
 			if (boatLocal == null)
-			{
 				return UNDEFINED;
-			}
 			net.runelite.api.coords.WorldPoint world =
 				net.runelite.api.coords.WorldPoint.fromLocalInstance(client, boatLocal);
 			return world != null
@@ -422,13 +366,11 @@ public class WorldPointUtil
 	 * @param localPoint local scene coordinate.
 	 * @return packed world point.
 	 */
-	public static int fromLocalInstance(Client client, LocalPoint localPoint)
-	{
+	public static int fromLocalInstance(Client client, LocalPoint localPoint) {
 		WorldView worldView = client.getWorldView(localPoint.getWorldView());
 		int plane = worldView.getPlane();
 
-		if (!worldView.isInstance())
-		{
+		if (!worldView.isInstance()) {
 			return packWorldPoint(
 				(localPoint.getX() >> LOCAL_COORD_BITS) + worldView.getBaseX(),
 				(localPoint.getY() >> LOCAL_COORD_BITS) + worldView.getBaseY(),
@@ -472,13 +414,11 @@ public class WorldPointUtil
 	 * @param packedPoint packed world coordinate.
 	 * @return list of packed coordinates valid in the current instance.
 	 */
-	public static PrimitiveIntList toLocalInstance(Client client, int packedPoint)
-	{
+	public static PrimitiveIntList toLocalInstance(Client client, int packedPoint) {
 		WorldView worldView = client.getTopLevelWorldView();
 
 		PrimitiveIntList worldPoints = new PrimitiveIntList();
-		if (!worldView.isInstance())
-		{
+		if (!worldView.isInstance()) {
 			worldPoints.add(packedPoint);
 			return worldPoints;
 		}
@@ -492,12 +432,9 @@ public class WorldPointUtil
 		int[][][] instanceTemplateChunks = worldView.getInstanceTemplateChunks();
 
 		// find instance chunks using the template point. there might be more than one.
-		for (int z = 0; z < instanceTemplateChunks.length; z++)
-		{
-			for (int x = 0; x < instanceTemplateChunks[z].length; ++x)
-			{
-				for (int y = 0; y < instanceTemplateChunks[z][x].length; ++y)
-				{
+		for (int z = 0; z < instanceTemplateChunks.length; z++) {
+			for (int x = 0; x < instanceTemplateChunks[z].length; ++x) {
+				for (int y = 0; y < instanceTemplateChunks[z][x].length; ++y) {
 					int chunkData = instanceTemplateChunks[z][x][y];
 					int rotation = unpackChunkRotation(chunkData);
 					int templateChunkY = unpackChunkTemplateY(chunkData);
@@ -505,8 +442,7 @@ public class WorldPointUtil
 					int plane = unpackChunkTemplatePlane(chunkData);
 					if (worldPointX >= templateChunkX && worldPointX < templateChunkX + CHUNK_SIZE
 						&& worldPointY >= templateChunkY && worldPointY < templateChunkY + CHUNK_SIZE
-						&& plane == worldPointPlane)
-					{
+						&& plane == worldPointPlane) {
 						worldPoints.add(rotate(
 							baseX + x * CHUNK_SIZE + (worldPointX & (CHUNK_SIZE - 1)),
 							baseY + y * CHUNK_SIZE + (worldPointY & (CHUNK_SIZE - 1)),
@@ -519,8 +455,7 @@ public class WorldPointUtil
 		return worldPoints;
 	}
 
-	private static boolean isInScene(WorldView worldView, int packedPoint)
-	{
+	private static boolean isInScene(WorldView worldView, int packedPoint) {
 		int x = unpackWorldX(packedPoint);
 		int y = unpackWorldY(packedPoint);
 
@@ -543,19 +478,14 @@ public class WorldPointUtil
 	 * @param packedPoint packed world point.
 	 * @return {@link LocalPoint} or {@code null} if out of scene or plane.
 	 */
-	public static LocalPoint toLocalPoint(Client client, int packedPoint)
-	{
+	public static LocalPoint toLocalPoint(Client client, int packedPoint) {
 		WorldView worldView = client.getTopLevelWorldView();
 
 		if (worldView.getPlane() != unpackWorldPlane(packedPoint))
-		{
 			return null;
-		}
 
 		if (!isInScene(worldView, packedPoint))
-		{
 			return null;
-		}
 
 		return new LocalPoint(
 			(unpackWorldX(packedPoint) - worldView.getBaseX() << LOCAL_COORD_BITS) + (1 << LOCAL_COORD_BITS - 1),

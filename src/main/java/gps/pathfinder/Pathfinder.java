@@ -9,8 +9,7 @@ import gps.PrimitiveIntList;
 import gps.WorldPointUtil;
 import gps.leagues.LeagueModeState;
 
-public class Pathfinder implements Runnable
-{
+public class Pathfinder implements Runnable {
 	private final PathfinderStats stats;
 	private final int start;
 	private final Set<Integer> targets;
@@ -98,8 +97,7 @@ public class Pathfinder implements Runnable
 	private int wildernessLevel;
 
 	public Pathfinder(PathfinderConfig config, int start, Set<Integer> targets,
-		int costCap, SearchHeuristic heuristic)
-	{
+		int costCap, SearchHeuristic heuristic) {
 		stats = new PathfinderStats();
 		this.config = config;
 		this.map = config.getMap();
@@ -122,52 +120,40 @@ public class Pathfinder implements Runnable
 		targetArray = new int[targets.size()];
 		int i = 0;
 		for (int target : targets)
-		{
 			targetArray[i++] = target;
-		}
 		// Sorted so the per-node target check is a binary search over ints: Set<Integer>.contains
 		// boxed an Integer for every settled tile (plan step N2).
 		Arrays.sort(targetArray);
 	}
 
-	private boolean isTarget(int packed)
-	{
+	private boolean isTarget(int packed) {
 		return Arrays.binarySearch(targetArray, packed) >= 0;
 	}
 
 	/** Whether this search runs with an A* heuristic (identical costs, smaller exploration). */
-	public boolean isAstar()
-	{
+	public boolean isAstar() {
 		return astar;
 	}
 
 	/** Whether any transport or teleport is usable — the trigger for full heap ordering. */
-	private static boolean anyTransportsUsable(PathfinderConfig config)
-	{
+	private static boolean anyTransportsUsable(PathfinderConfig config) {
 		return config.getTransportsPacked(false).size() > 0
 			|| config.getTransportsPacked(true).size() > 0
 			|| config.getUsableTeleports(false).length > 0
 			|| config.getUsableTeleports(true).length > 0;
 	}
 
-	private static boolean anyInBlockedRegion(LeagueModeState league, Set<Integer> packed)
-	{
+	private static boolean anyInBlockedRegion(LeagueModeState league, Set<Integer> packed) {
 		if (!league.isSeasonal() || packed == null || packed.isEmpty())
-		{
 			return false;
-		}
-		for (Integer point : packed)
-		{
+		for (Integer point : packed) {
 			if (league.isInBlockedRegion(point))
-			{
 				return true;
-			}
 		}
 		return false;
 	}
 
-	public Pathfinder(PathfinderConfig config, int start, Set<Integer> targets)
-	{
+	public Pathfinder(PathfinderConfig config, int start, Set<Integer> targets) {
 		this(config, start, targets, Integer.MAX_VALUE, null);
 	}
 
@@ -175,36 +161,28 @@ public class Pathfinder implements Runnable
 	 * Installs a live cost ceiling polled on every pop (in addition to the fixed {@code costCap}).
 	 * Set before {@link #run()}; the supplier may be lowered from another thread during the search.
 	 */
-	public void setDynamicCostCap(java.util.function.IntSupplier dynamicCostCap)
-	{
+	public void setDynamicCostCap(java.util.function.IntSupplier dynamicCostCap) {
 		this.dynamicCostCap = dynamicCostCap;
 	}
 
-	public PathfinderStats getStats()
-	{
+	public PathfinderStats getStats() {
 		if (stats.started && stats.ended)
-		{
 			return stats;
-		}
 
 		// Don't give incomplete results
 		return null;
 	}
 
 	/** The finished search's path (empty before {@link #run()} completes). */
-	public List<PathStep> getPath()
-	{
+	public List<PathStep> getPath() {
 		List<PathStep> finalised = finalPath;
 		return finalised != null ? finalised : List.of();
 	}
 
-	public PathfinderResult getResult()
-	{
+	public PathfinderResult getResult() {
 		PathfinderStats currentStats = getStats();
 		if (currentStats == null)
-		{
 			return null;
-		}
 
 		List<PathStep> currentPath = getPath();
 		boolean reached = reachedTarget != WorldPointUtil.UNDEFINED;
@@ -224,28 +202,21 @@ public class Pathfinder implements Runnable
 		);
 	}
 
-	private void addNeighbors(int node, boolean nodeIsTile, int nodePacked)
-	{
+	private void addNeighbors(int node, boolean nodeIsTile, int nodePacked) {
 		PrimitiveIntList nodes = map.getNeighbors(node, visited, config, wildernessLevel, targetInWilderness, graph, tentative);
 		final int count = nodes.size();
-		for (int i = 0; i < count; i++)
-		{
+		for (int i = 0; i < count; i++) {
 			int neighbor = nodes.get(i);
 			// Each graph.xxx(id) re-indexes a backing array, so read each neighbour field once and
 			// reuse the loop-invariant node fields passed in (the JIT cached these for free when nodes
 			// were objects, but not when they are int ids into structure-of-arrays storage).
 			final boolean neighborIsTile = graph.isTile(neighbor);
-			if (nodeIsTile && neighborIsTile)
-			{
+			if (nodeIsTile && neighborIsTile) {
 				final int neighborPacked = graph.packedPosition(neighbor);
 				if (config.avoidWilderness(nodePacked, neighborPacked, targetInWilderness))
-				{
 					continue;
-				}
 				if (config.avoidBlockedRegion(nodePacked, neighborPacked, targetInBlockedRegion))
-				{
 					continue;
-				}
 			}
 
 			final boolean neighborIsTransport = graph.isTransport(neighbor);
@@ -254,26 +225,19 @@ public class Pathfinder implements Runnable
 			// for uninformed searches, the (g+h)-keyed heap for A*. Stats are counted at settle
 			// (pop) rather than here: enqueues include duplicates, so counting them would make the
 			// explored-size numbers incomparable with the FIFO search.
-			if (heapMode)
-			{
+			if (heapMode) {
 				if (buckets != null)
-				{
 					buckets.add(neighbor, graph.cost(neighbor));
-				}
 				else
-				{
 					pending.add(neighbor);
-				}
 				continue;
 			}
 			visited.set(neighbor, graph);
-			if (neighborIsTransport)
-			{
+			if (neighborIsTransport) {
 				pending.add(neighbor);
 				++stats.transportsChecked;
 			}
-			else
-			{
+			else {
 				boundary.addLast(neighbor);
 				++stats.nodesChecked;
 			}
@@ -290,22 +254,19 @@ public class Pathfinder implements Runnable
 	 * - 3) If another tie occurs, pick the path with minimum x-coordinate
 	 * - 4) If another tie occurs, pick the path with minimum y-coordinate
 	 */
-	private boolean updateBestPathWhenUnreachable(int node, int packedPosition)
-	{
+	private boolean updateBestPathWhenUnreachable(int node, int packedPosition) {
 		boolean update = false;
 
 		final int travelledDistance = graph.cost(node);
 		// Loop-invariant: this runs once per explored node in the post-pass, times every target.
 		final int x = WorldPointUtil.unpackWorldX(packedPosition);
 		final int y = WorldPointUtil.unpackWorldY(packedPosition);
-		for (int target : targetArray)
-		{
+		for (int target : targetArray) {
 			int remainingDistance = WorldPointUtil.distanceBetween(target, packedPosition, WorldPointUtil.EUCLIDEAN_SQUARED_DISTANCE_METRIC);
 			if ((remainingDistance < bestRemainingDistance) ||
 				(remainingDistance == bestRemainingDistance && travelledDistance < bestTravelledDistance) ||
 				(remainingDistance == bestRemainingDistance && travelledDistance == bestTravelledDistance && x < bestX) ||
-				(remainingDistance == bestRemainingDistance && travelledDistance == bestTravelledDistance && x == bestX && y < bestY))
-			{
+				(remainingDistance == bestRemainingDistance && travelledDistance == bestTravelledDistance && x == bestX && y < bestY)) {
 				bestRemainingDistance = remainingDistance;
 				bestTravelledDistance = travelledDistance;
 				bestX = x;
@@ -321,30 +282,21 @@ public class Pathfinder implements Runnable
 	/**
 	 * Update wilderness level based on the current node position.
 	 */
-	private void updateWildernessLevel(int packedPosition)
-	{
-		if (wildernessLevel > 0)
-		{
+	private void updateWildernessLevel(int packedPosition) {
+		if (wildernessLevel > 0) {
 			// These are overlapping boundaries, so if the node isn't in level 30, it's in 0-29
 			// likewise, if the node isn't in level 20, it's in 0-19
 			if (wildernessLevel > 30 && !WildernessChecker.isInLevel30Wilderness(packedPosition))
-			{
 				wildernessLevel = 30;
-			}
 			if (wildernessLevel > 20 && !WildernessChecker.isInLevel20Wilderness(packedPosition))
-			{
 				wildernessLevel = 20;
-			}
 			if (wildernessLevel > 0 && !WildernessChecker.isInWilderness(packedPosition))
-			{
 				wildernessLevel = 0;
-			}
 		}
 	}
 
 	@Override
-	public void run()
-	{
+	public void run() {
 		stats.start();
 		boundary.addFirst(graph.createStart(start));
 
@@ -352,43 +304,34 @@ public class Pathfinder implements Runnable
 		long cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
 
 		while (!boundary.isEmpty() || !pending.isEmpty()
-			|| (buckets != null && !buckets.isEmpty()))
-		{
+			|| (buckets != null && !buckets.isEmpty())) {
 			int boundaryHead = boundary.peekFirst();
 
 			int node;
 			boolean ordered;
-			if (buckets != null)
-			{
+			if (buckets != null) {
 				// Uninformed heap mode: the boundary only ever holds the start; everything else
 				// comes cost-ordered from the bucket queue.
 				ordered = boundaryHead == NodeGraph.NO_NODE;
 				node = ordered ? buckets.poll() : boundary.pollFirst();
 			}
-			else
-			{
+			else {
 				int pendingHead = pending.peek();
 				ordered = pendingHead != NodeGraph.NO_NODE
 					&& (boundaryHead == NodeGraph.NO_NODE || graph.cost(pendingHead) < graph.cost(boundaryHead));
 				node = ordered ? pending.poll() : boundary.pollFirst();
 			}
-			if (ordered)
-			{
+			if (ordered) {
 				// In heap mode EVERY node dedups here: nothing is marked at enqueue, and cost
 				// ordering (plus a consistent heuristic in A* mode) makes the first dequeue optimal.
-				if (heapMode)
-				{
+				if (heapMode) {
 					if (visited.get(node, graph))
-					{
 						continue;
-					}
 					visited.set(node, graph);
 				}
-				if (validateSettleOrder && heapMode)
-				{
+				if (validateSettleOrder && heapMode) {
 					final int settledKey = graph.orderCost(node);
-					if (settledKey < lastSettledOrderCost)
-					{
+					if (settledKey < lastSettledOrderCost) {
 						throw new IllegalStateException("Settle order violated: orderCost " + settledKey
 							+ " settled after " + lastSettledOrderCost
 							+ " — inadmissible heuristic or polluted ordering key");
@@ -397,22 +340,15 @@ public class Pathfinder implements Runnable
 				}
 				// Heap mode counts distinct settled states (enqueues include duplicates); the FIFO
 				// search counts at enqueue, where marking makes every count unique.
-				if (heapMode)
-				{
+				if (heapMode) {
 					if (graph.isTransport(node))
-					{
 						++stats.transportsChecked;
-					}
 					else
-					{
 						++stats.nodesChecked;
-					}
 				}
 			}
 			if (node == NodeGraph.NO_NODE)
-			{
 				continue;
-			}
 			// Cost cap, checked against f = g + h (orderCost), not g alone: with an admissible h,
 			// g + h > cap proves no completion within the cap exists through this node, so it can be
 			// skipped long before its g reaches the ceiling. This is what keeps a capped search that
@@ -422,28 +358,21 @@ public class Pathfinder implements Runnable
 			// the plain g check. The optional dynamic ceiling can tighten the cap mid-search (the walk
 			// search drops it once the chain finds a cheaper route).
 			int effectiveCap = costCap;
-			if (dynamicCostCap != null)
-			{
+			if (dynamicCostCap != null) {
 				int dynamic = dynamicCostCap.getAsInt();
 				if (dynamic < effectiveCap)
-				{
 					effectiveCap = dynamic;
-				}
 			}
 			if (effectiveCap != Integer.MAX_VALUE && graph.orderCost(node) > effectiveCap)
-			{
 				continue;
-			}
 			// Read the node's tile-ness and position once; every graph.xxx(id) re-indexes a backing
 			// array, and these are used by several of the checks below.
 			final boolean nodeIsTile = graph.isTile(node);
 			final int nodePacked = nodeIsTile ? graph.packedPosition(node) : WorldPointUtil.UNDEFINED;
-			if (nodeIsTile)
-			{
+			if (nodeIsTile) {
 				updateWildernessLevel(nodePacked);
 
-				if (isTarget(nodePacked))
-				{
+				if (isTarget(nodePacked)) {
 					bestLastNode = node;
 					reachedTarget = nodePacked;
 					terminationReason = PathTerminationReason.TARGET_REACHED;
@@ -455,16 +384,14 @@ public class Pathfinder implements Runnable
 				// enough to keep extending the cutoff and to grow the progressively rendered
 				// partial path; the exact closest tile is recovered in the post-pass below.
 				if ((++unreachableTrackCounter & (UNREACHABLE_TRACK_INTERVAL - 1)) == 0
-					&& updateBestPathWhenUnreachable(node, nodePacked))
-				{
+					&& updateBestPathWhenUnreachable(node, nodePacked)) {
 					cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
 				}
 			}
 
 			// One clock read per 1,024 settled nodes: a syscall per node was ~40 ms of a 2M-node
 			// search, and the cutoff is measured in tenths of seconds anyway.
-			if ((++clockCounter & 1023) == 0 && System.currentTimeMillis() > cutoffTimeMillis)
-			{
+			if ((++clockCounter & 1023) == 0 && System.currentTimeMillis() > cutoffTimeMillis) {
 				terminationReason = PathTerminationReason.CUTOFF_REACHED;
 				break;
 			}
@@ -473,34 +400,26 @@ public class Pathfinder implements Runnable
 		}
 
 		if (terminationReason == null)
-		{
 			terminationReason = PathTerminationReason.SEARCH_EXHAUSTED;
-		}
 
 		// The search ended without reaching a target: recover the exact closest tile (same
 		// tie-breaking as the sampled in-loop tracking) in one pass over the explored nodes —
 		// paying O(nodes × targets) once, instead of on every expansion.
-		if (reachedTarget == WorldPointUtil.UNDEFINED && targetArray.length > 0)
-		{
-			for (int id = 0; id < graph.size(); id++)
-			{
+		if (reachedTarget == WorldPointUtil.UNDEFINED && targetArray.length > 0) {
+			for (int id = 0; id < graph.size(); id++) {
 				if (graph.isTile(id))
-				{
 					updateBestPathWhenUnreachable(id, graph.packedPosition(id));
-				}
 			}
 		}
 
 		// Materialise the final path and closest reached tile, then release the large node graph.
 		int lastNode = bestLastNode;
-		if (lastNode != NodeGraph.NO_NODE)
-		{
+		if (lastNode != NodeGraph.NO_NODE) {
 			finalPath = graph.getPathSteps(lastNode);
 			closestReachedPoint = graph.getClosestTilePosition(lastNode);
 			finalCost = graph.cost(lastNode);
 		}
-		else
-		{
+		else {
 			finalPath = List.of();
 			closestReachedPoint = start;
 			finalCost = 0;
@@ -510,45 +429,36 @@ public class Pathfinder implements Runnable
 		visited.clear();
 		pending.clear();
 		if (buckets != null)
-		{
 			buckets.clear();
-		}
 		if (tentative != null)
-		{
 			tentative.clear();
-		}
 		graph.release();
 
 		stats.end(); // Include cleanup in stats to get the total cost of pathfinding
 	}
 
-	public static class PathfinderStats
-	{
+	public static class PathfinderStats {
 		@Getter
 		private int nodesChecked = 0, transportsChecked = 0;
 		private long startNanos, endNanos;
 		private volatile boolean started = false, ended = false;
 
-		public int getTotalNodesChecked()
-		{
+		public int getTotalNodesChecked() {
 			return nodesChecked + transportsChecked;
 		}
 
-		public long getElapsedTimeNanos()
-		{
+		public long getElapsedTimeNanos() {
 			return endNanos - startNanos;
 		}
 
-		private void start()
-		{
+		private void start() {
 			started = true;
 			nodesChecked = 0;
 			transportsChecked = 0;
 			startNanos = System.nanoTime();
 		}
 
-		private void end()
-		{
+		private void end() {
 			endNanos = System.nanoTime();
 			ended = true;
 		}

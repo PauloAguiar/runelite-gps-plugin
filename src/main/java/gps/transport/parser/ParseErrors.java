@@ -11,24 +11,19 @@ import java.util.List;
  * free because its row spelled "Spade"; the Motherlode ladders lost their durations to
  * the varbit column). Recorded alongside the log line; drained by the data lint test.
  */
-public final class ParseErrors
-{
+public final class ParseErrors {
 	private static final List<String> RECORDED = Collections.synchronizedList(new ArrayList<>());
 
-	private ParseErrors()
-	{
+	private ParseErrors() {
 	}
 
-	static void record(String what, String value)
-	{
+	static void record(String what, String value) {
 		RECORDED.add(what + ": " + value);
 	}
 
 	/** Returns everything recorded since the last drain, and clears. */
-	public static List<String> drain()
-	{
-		synchronized (RECORDED)
-		{
+	public static List<String> drain() {
+		synchronized (RECORDED) {
 			List<String> out = new ArrayList<>(RECORDED);
 			RECORDED.clear();
 			return out;

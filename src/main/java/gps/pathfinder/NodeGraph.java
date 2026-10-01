@@ -36,8 +36,7 @@ import gps.WorldPointUtil;
  * a dozen times and then released it all - hundreds of megabytes of garbage per generation
  * (plan step N2; SearchAllocationTest measures bytes per settled node).
  */
-public class NodeGraph
-{
+public class NodeGraph {
 	public static final int NO_NODE = -1;
 
 	private static final byte FLAG_BANK_VISITED = 1;       // bit0
@@ -76,13 +75,11 @@ public class NodeGraph
 	// Optional A* heuristic; null = uninformed (Dijkstra) ordering.
 	private final SearchHeuristic heuristic;
 
-	public NodeGraph(int initialCapacity)
-	{
+	public NodeGraph(int initialCapacity) {
 		this(initialCapacity, null);
 	}
 
-	public NodeGraph(int initialCapacity, SearchHeuristic heuristic)
-	{
+	public NodeGraph(int initialCapacity, SearchHeuristic heuristic) {
 		final int pages = Math.max(1, (Math.max(1, initialCapacity) + PAGE_MASK) >>> PAGE_SHIFT);
 		packedPosition = new int[pages][];
 		previous = new int[pages][];
@@ -91,15 +88,12 @@ public class NodeGraph
 		flags = new byte[pages][];
 		abstractKind = new byte[pages][];
 		for (int page = 0; page < pages; page++)
-		{
 			allocatePage(page);
-		}
 		capacity = pages * PAGE_SIZE;
 		this.heuristic = heuristic;
 	}
 
-	private void allocatePage(int page)
-	{
+	private void allocatePage(int page) {
 		packedPosition[page] = new int[PAGE_SIZE];
 		previous[page] = new int[PAGE_SIZE];
 		cost[page] = new int[PAGE_SIZE];
@@ -108,17 +102,13 @@ public class NodeGraph
 		abstractKind[page] = new byte[PAGE_SIZE];
 	}
 
-	public int size()
-	{
+	public int size() {
 		return size;
 	}
 
-	private void ensureCapacity()
-	{
+	private void ensureCapacity() {
 		if (size < capacity)
-		{
 			return;
-		}
 		// One more page per array. The page tables are small (one reference per 16K nodes), so
 		// growing them by copy is cheap and keeps every existing page for a concurrent reader.
 		final int pages = packedPosition.length;
@@ -133,14 +123,12 @@ public class NodeGraph
 		capacity = (pages + 1) * PAGE_SIZE;
 	}
 
-	private int append(int packed, int prev, int nodeCost, byte flagBits, byte kind)
-	{
+	private int append(int packed, int prev, int nodeCost, byte flagBits, byte kind) {
 		ensureCapacity();
 		final int id = size;
 		final int page = id >>> PAGE_SHIFT;
 		final int slot = id & PAGE_MASK;
-		if (packedPosition[page] == null)
-		{
+		if (packedPosition[page] == null) {
 			allocatePage(page);
 			capacity = Math.max(capacity, (page + 1) * PAGE_SIZE);
 		}
@@ -154,16 +142,14 @@ public class NodeGraph
 		return id;
 	}
 
-	private int costOf(int id)
-	{
+	private int costOf(int id) {
 		return id == NO_NODE ? 0 : cost[id >>> PAGE_SHIFT][id & PAGE_MASK];
 	}
 
 	/**
 	 * The search root. Carries no previous node and zero cost.
 	 */
-	public int createStart(int packedPosition)
-	{
+	public int createStart(int packedPosition) {
 		return append(packedPosition, NO_NODE, 0, (byte) 0, (byte) 0);
 	}
 
@@ -175,8 +161,7 @@ public class NodeGraph
 	 * The edge is clamped at free: configured weights may be negative (favoring), but a negative-cost
 	 * edge would break the search's Dijkstra invariant.
 	 */
-	public int createTile(int packedPosition, int previous, boolean bankVisited, int extraCost)
-	{
+	public int createTile(int packedPosition, int previous, boolean bankVisited, int extraCost) {
 		final int travelTime = (previous != NO_NODE && isTile(previous))
 			? WorldPointUtil.distanceBetween(packedPosition(previous), packedPosition)
 			: 0;
@@ -192,13 +177,10 @@ public class NodeGraph
 	 * weight can make a transport free but never cheaper than free (Dijkstra needs non-negative edges).
 	 */
 	public int createTransport(int packedPosition, int previous, int travelTime, int additionalCost,
-		boolean bankVisited)
-	{
+		boolean bankVisited) {
 		byte flagBits = FLAG_TRANSPORT;
 		if (bankVisited)
-		{
 			flagBits |= FLAG_BANK_VISITED;
-		}
 		return append(packedPosition, previous, costOf(previous) + Math.max(0, travelTime + additionalCost),
 			flagBits, (byte) 0);
 	}
@@ -209,29 +191,23 @@ public class NodeGraph
 	 * surcharge (the bank-pickup penalty when this abstract state is first entered via a bank tile), so
 	 * global teleports expanded from it inherit the penalty. Clamped at free like every other edge.
 	 */
-	public int createAbstract(AbstractNodeKind abstractKind, int previous, boolean bankVisited, int extraCost)
-	{
+	public int createAbstract(AbstractNodeKind abstractKind, int previous, boolean bankVisited, int extraCost) {
 		byte flagBits = FLAG_ABSTRACT;
 		if (bankVisited)
-		{
 			flagBits |= FLAG_BANK_VISITED;
-		}
 		return append(WorldPointUtil.UNDEFINED, previous, costOf(previous) + Math.max(0, extraCost), flagBits,
 			(byte) abstractKind.ordinal());
 	}
 
-	public int packedPosition(int id)
-	{
+	public int packedPosition(int id) {
 		return packedPosition[id >>> PAGE_SHIFT][id & PAGE_MASK];
 	}
 
-	public int previous(int id)
-	{
+	public int previous(int id) {
 		return previous[id >>> PAGE_SHIFT][id & PAGE_MASK];
 	}
 
-	public int cost(int id)
-	{
+	public int cost(int id) {
 		return cost[id >>> PAGE_SHIFT][id & PAGE_MASK];
 	}
 
@@ -239,44 +215,35 @@ public class NodeGraph
 	 * The precomputed priority-queue key: the accumulated cost plus the A* heuristic value when
 	 * one is attached (equal to {@link #cost} otherwise).
 	 */
-	public int orderCost(int id)
-	{
+	public int orderCost(int id) {
 		return orderCost[id >>> PAGE_SHIFT][id & PAGE_MASK];
 	}
 
-	public boolean bankVisited(int id)
-	{
+	public boolean bankVisited(int id) {
 		return (flags[id >>> PAGE_SHIFT][id & PAGE_MASK] & FLAG_BANK_VISITED) != 0;
 	}
 
-	public boolean isTile(int id)
-	{
+	public boolean isTile(int id) {
 		return (flags[id >>> PAGE_SHIFT][id & PAGE_MASK] & FLAG_ABSTRACT) == 0;
 	}
 
-	public boolean isAbstract(int id)
-	{
+	public boolean isAbstract(int id) {
 		return (flags[id >>> PAGE_SHIFT][id & PAGE_MASK] & FLAG_ABSTRACT) != 0;
 	}
 
-	public boolean isTransport(int id)
-	{
+	public boolean isTransport(int id) {
 		return (flags[id >>> PAGE_SHIFT][id & PAGE_MASK] & FLAG_TRANSPORT) != 0;
 	}
 
 
-	public AbstractNodeKind abstractKind(int id)
-	{
+	public AbstractNodeKind abstractKind(int id) {
 		return ABSTRACT_KINDS[abstractKind[id >>> PAGE_SHIFT][id & PAGE_MASK]];
 	}
 
 	/** A node id the snapshotted page tables can serve (every page up to the table's length exists). */
-	private static boolean readable(int id, int[][] prev, int[][] packed, byte[][] flg)
-	{
+	private static boolean readable(int id, int[][] prev, int[][] packed, byte[][] flg) {
 		if (id == NO_NODE)
-		{
 			return false;
-		}
 		final int page = id >>> PAGE_SHIFT;
 		return page < prev.length && page < packed.length && page < flg.length
 			&& prev[page] != null && packed[page] != null && flg[page] != null;
@@ -290,42 +257,32 @@ public class NodeGraph
 	 * locals and the walk is bounds-tolerant, so a concurrent grow or {@link #release()} yields an
 	 * empty or one-frame-stale result rather than throwing.
 	 */
-	public List<PathStep> getPathSteps(int id)
-	{
+	public List<PathStep> getPathSteps(int id) {
 		final int[][] prev = previous;
 		final int[][] packed = packedPosition;
 		final byte[][] flg = flags;
 		final int[][] cst = cost;
 		if (prev == null || packed == null || flg == null || cst == null || id == NO_NODE)
-		{
 			return new ArrayList<>();
-		}
 
 		int node = id;
 		int n = 0;
-		while (readable(node, prev, packed, flg))
-		{
+		while (readable(node, prev, packed, flg)) {
 			if ((flg[node >>> PAGE_SHIFT][node & PAGE_MASK] & FLAG_ABSTRACT) == 0)
-			{
 				n++;
-			}
 			node = prev[node >>> PAGE_SHIFT][node & PAGE_MASK];
 		}
 
 		final List<PathStep> pathSteps = new ArrayList<>(n);
 		for (int i = 0; i < n; i++)
-		{
 			pathSteps.add(null);
-		}
 
 		node = id;
 		int i = n;
-		while (readable(node, prev, packed, flg) && i > 0)
-		{
+		while (readable(node, prev, packed, flg) && i > 0) {
 			final int page = node >>> PAGE_SHIFT;
 			final int slot = node & PAGE_MASK;
-			if ((flg[page][slot] & FLAG_ABSTRACT) == 0)
-			{
+			if ((flg[page][slot] & FLAG_ABSTRACT) == 0) {
 				pathSteps.set(--i, new PathStep(packed[page][slot], (flg[page][slot] & FLAG_BANK_VISITED) != 0,
 					cst[page][slot]));
 			}
@@ -340,20 +297,15 @@ public class NodeGraph
 	 * position, or {@link WorldPointUtil#UNDEFINED} if none. Same threading guarantees as
 	 * {@link #getPathSteps}.
 	 */
-	public int getClosestTilePosition(int id)
-	{
+	public int getClosestTilePosition(int id) {
 		final int[][] prev = previous;
 		final int[][] packed = packedPosition;
 		final byte[][] flg = flags;
 		if (prev == null || packed == null || flg == null)
-		{
 			return WorldPointUtil.UNDEFINED;
-		}
 		int node = id;
 		while (readable(node, prev, packed, flg) && (flg[node >>> PAGE_SHIFT][node & PAGE_MASK] & FLAG_ABSTRACT) != 0)
-		{
 			node = prev[node >>> PAGE_SHIFT][node & PAGE_MASK];
-		}
 		return readable(node, prev, packed, flg) ? packed[node >>> PAGE_SHIFT][node & PAGE_MASK] : WorldPointUtil.UNDEFINED;
 	}
 
@@ -364,8 +316,7 @@ public class NodeGraph
 	 * frontier collections). A render-thread walk in flight keeps its own local references and
 	 * finishes safely.
 	 */
-	public void release()
-	{
+	public void release() {
 		packedPosition = null;
 		previous = null;
 		cost = null;

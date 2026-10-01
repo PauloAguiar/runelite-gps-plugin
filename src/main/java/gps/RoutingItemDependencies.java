@@ -18,28 +18,21 @@ import net.runelite.api.ItemContainer;
  * marks the teleport catalog dirty when that slice actually changed - most inventory traffic
  * (logs, ore, food, loot) touches nothing any transport cares about (issues #23/#24).
  */
-public final class RoutingItemDependencies
-{
+public final class RoutingItemDependencies {
 	/** Item id -> sorted distinct quantities at which some requirement flips. */
 	private final Map<Integer, int[]> thresholds;
 
-	private RoutingItemDependencies(Map<Integer, int[]> thresholds)
-	{
+	private RoutingItemDependencies(Map<Integer, int[]> thresholds) {
 		this.thresholds = thresholds;
 	}
 
-	public static RoutingItemDependencies build(Transport[] transports)
-	{
+	public static RoutingItemDependencies build(Transport[] transports) {
 		Map<Integer, TreeSet<Integer>> collected = new HashMap<>();
-		for (Transport transport : transports)
-		{
+		for (Transport transport : transports) {
 			TransportItems items = transport.getItemRequirements();
 			if (items == null)
-			{
 				continue;
-			}
-			for (ItemRequirement req : items.getRequirements())
-			{
+			for (ItemRequirement req : items.getRequirements()) {
 				// Threshold 1 is always included alongside the required quantity, so checks
 				// with presence semantics (staff substitution) are covered regardless of the
 				// possession logic's internals; extra thresholds only cost a rare false dirty.
@@ -54,50 +47,38 @@ public final class RoutingItemDependencies
 		collect(collected, ItemVariations.DRAMEN_STAFF.getIds(), 1);
 		collect(collected, ItemVariations.staves(ItemVariations.DRAMEN_STAFF), 1);
 		collect(collected, ItemVariations.offhands(ItemVariations.DRAMEN_STAFF), 1);
-		for (int pouch : PathfinderConfig.RUNE_POUCHES)
-		{
+		for (int pouch : PathfinderConfig.RUNE_POUCHES) {
 			collect(collected, new int[]{pouch}, 1);
 		}
 
 		Map<Integer, int[]> thresholds = new HashMap<>(collected.size() * 2);
-		for (Map.Entry<Integer, TreeSet<Integer>> entry : collected.entrySet())
-		{
+		for (Map.Entry<Integer, TreeSet<Integer>> entry : collected.entrySet()) {
 			int[] sorted = new int[entry.getValue().size()];
 			int i = 0;
 			for (int quantity : entry.getValue())
-			{
 				sorted[i++] = quantity;
-			}
 			thresholds.put(entry.getKey(), sorted);
 		}
 		return new RoutingItemDependencies(thresholds);
 	}
 
-	private static void collect(Map<Integer, TreeSet<Integer>> collected, int[] ids, int quantity)
-	{
+	private static void collect(Map<Integer, TreeSet<Integer>> collected, int[] ids, int quantity) {
 		if (ids == null)
-		{
 			return;
-		}
-		for (int id : ids)
-		{
+		for (int id : ids) {
 			TreeSet<Integer> set = collected.computeIfAbsent(id, k -> new TreeSet<>());
 			set.add(1);
 			if (quantity > 1)
-			{
 				set.add(quantity);
-			}
 		}
 	}
 
 	/** Whether this item id can influence any transport's availability at all. */
-	public boolean isRelevant(int itemId)
-	{
+	public boolean isRelevant(int itemId) {
 		return thresholds.containsKey(itemId);
 	}
 
-	public int size()
-	{
+	public int size() {
 		return thresholds.size();
 	}
 
@@ -108,61 +89,45 @@ public final class RoutingItemDependencies
 	 * equal fingerprints mean the catalog refresh can be skipped. The container matters (a
 	 * wielded staff counts differently from a carried one), so each is folded in separately.
 	 */
-	public long fingerprint(ItemContainer inventory, ItemContainer equipment)
-	{
+	public long fingerprint(ItemContainer inventory, ItemContainer equipment) {
 		long acc = 0;
 		acc += containerDigest(inventory, 1);
 		acc += containerDigest(equipment, 2);
 		return acc;
 	}
 
-	private long containerDigest(ItemContainer container, int tag)
-	{
+	private long containerDigest(ItemContainer container, int tag) {
 		if (container == null)
-		{
 			return 0;
-		}
 		// Duplicate un-stacked items (two dramen staffs) aggregate per id before thresholding.
 		Map<Integer, Integer> quantities = null;
-		for (Item item : container.getItems())
-		{
+		for (Item item : container.getItems()) {
 			if (item == null || !thresholds.containsKey(item.getId()))
-			{
 				continue;
-			}
 			if (quantities == null)
-			{
 				quantities = new HashMap<>();
-			}
 			quantities.merge(item.getId(), item.getQuantity(), Integer::sum);
 		}
 		if (quantities == null)
-		{
 			return 0;
-		}
 		long digest = 0;
-		for (Map.Entry<Integer, Integer> entry : quantities.entrySet())
-		{
+		for (Map.Entry<Integer, Integer> entry : quantities.entrySet()) {
 			int[] sorted = thresholds.get(entry.getKey());
 			int met = metCount(sorted, entry.getValue());
 			if (met > 0)
-			{
 				// Commutative sum of well-mixed terms keeps the digest independent of slot order.
 				digest += mix64(((long) tag << 40) ^ ((long) entry.getKey() << 8) ^ met);
-			}
 		}
 		return digest;
 	}
 
-	private static int metCount(int[] sorted, int quantity)
-	{
+	private static int metCount(int[] sorted, int quantity) {
 		int idx = Arrays.binarySearch(sorted, quantity);
 		return idx >= 0 ? idx + 1 : -idx - 1;
 	}
 
 	/** splitmix64 finalizer; also the mixer behind the refresh's usable-transport fingerprint. */
-	public static long mix64(long z)
-	{
+	public static long mix64(long z) {
 		z = (z ^ (z >>> 30)) * 0xbf58476d1ce4e5b9L;
 		z = (z ^ (z >>> 27)) * 0x94d049bb133111ebL;
 		return z ^ (z >>> 31);

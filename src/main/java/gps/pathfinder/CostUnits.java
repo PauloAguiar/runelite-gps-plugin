@@ -11,20 +11,17 @@ package gps.pathfinder;
  * this same currency — positive disfavors a method, negative favors it — never a different unit,
  * which is what keeps the ordering consistent with the displayed ETAs.
  */
-public final class CostUnits
-{
+public final class CostUnits {
 	/** Cost units per game tick: one tick of transport travel time = two run-tiles of walking. */
 	public static final int UNITS_PER_TICK = 2;
 	/** Wall-clock seconds per cost unit (a 0.6s game tick covers 2 run-tiles). */
 	public static final double SECONDS_PER_UNIT = 0.3;
 
 	/** Converts a duration in game ticks to cost units. */
-	public static int fromTicks(int ticks)
-	{
+	public static int fromTicks(int ticks) {
 		return UNITS_PER_TICK * ticks;
 	}
 
-	private CostUnits()
-	{
+	private CostUnits() {
 	}
 }

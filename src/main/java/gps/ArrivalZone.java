@@ -18,18 +18,15 @@ import java.util.function.Supplier;
  * displayed route's end or the config changes, then read every tick and every frame. The
  * arrival rule itself ({@link #arrived}) is a pure function over the zone and the route state.
  */
-final class ArrivalZone
-{
+final class ArrivalZone {
 	// One immutable holder for the zone and its key: the render thread and the client thread
 	// both read it, and two fields could publish one route's key beside another's zone.
-	private static final class Cache
-	{
+	private static final class Cache {
 		final int end;
 		final int radius;
 		final Set<Integer> zone;
 
-		Cache(int end, int radius, Set<Integer> zone)
-		{
+		Cache(int end, int radius, Set<Integer> zone) {
 			this.end = end;
 			this.radius = radius;
 			this.zone = zone;
@@ -39,8 +36,7 @@ final class ArrivalZone
 	private final Supplier<CollisionMap> map;
 	private volatile Cache cache = new Cache(WorldPointUtil.UNDEFINED, Integer.MIN_VALUE, Set.of());
 
-	ArrivalZone(Supplier<CollisionMap> map)
-	{
+	ArrivalZone(Supplier<CollisionMap> map) {
 		this.map = map;
 	}
 
@@ -48,16 +44,12 @@ final class ArrivalZone
 	 * The zone around the path's end, {@code radius} walking steps wide. Empty when there is no
 	 * path or the finish distance is negative (never finish).
 	 */
-	Set<Integer> tiles(List<PathStep> path, int radius)
-	{
+	Set<Integer> tiles(List<PathStep> path, int radius) {
 		if (path == null || path.isEmpty() || radius < 0)
-		{
 			return Set.of();
-		}
 		int end = path.get(path.size() - 1).getPackedPosition();
 		Cache cached = cache;
-		if (end != cached.end || radius != cached.radius)
-		{
+		if (end != cached.end || radius != cached.radius) {
 			cached = new Cache(end, radius, flood(map.get(), end, radius));
 			cache = cached;
 		}
@@ -75,31 +67,22 @@ final class ArrivalZone
 	 * against the outbound fallback path; an unreachable one-way target never completes.
 	 */
 	static boolean arrived(int location, Set<Integer> zone, Set<Integer> targets, IntPredicate sailable,
-		int seaReachedDistance, RouteOption displayed, boolean roundTripWanted, int progress, boolean unreachable)
-	{
+		int seaReachedDistance, RouteOption displayed, boolean roundTripWanted, int progress, boolean unreachable) {
 		boolean inZone = !zone.isEmpty() && zone.contains(location);
-		if (!inZone)
-		{
-			for (int target : targets)
-			{
-				if (sailable.test(target) && WorldPointUtil.distanceBetween(location, target) <= seaReachedDistance)
-				{
+		if (!inZone) {
+			for (int target : targets) {
+				if (sailable.test(target) && WorldPointUtil.distanceBetween(location, target) <= seaReachedDistance) {
 					inZone = true;
 					break;
 				}
 			}
 		}
 		if (!inZone)
-		{
 			return false;
-		}
 		boolean roundTrip = displayed != null && displayed.isRoundTrip();
 		if (roundTripWanted && !roundTrip)
-		{
 			return false;
-		}
-		if (roundTrip)
-		{
+		if (roundTrip) {
 			int turnaround = displayed.getTurnaroundIndex();
 			return turnaround < 0 || progress >= turnaround - 2;
 		}
@@ -112,22 +95,17 @@ final class ArrivalZone
 	 * must be open on both sides), so the zone matches where the player can actually walk.
 	 * Without a map, or with no steps, the zone is the end tile alone.
 	 */
-	static Set<Integer> flood(CollisionMap map, int end, int maxSteps)
-	{
+	static Set<Integer> flood(CollisionMap map, int end, int maxSteps) {
 		Set<Integer> zone = new HashSet<>();
 		zone.add(end);
 		if (map == null || maxSteps <= 0)
-		{
 			return zone;
-		}
 		final int plane = WorldPointUtil.unpackWorldPlane(end);
 		List<Integer> frontier = new ArrayList<>();
 		frontier.add(end);
-		for (int depth = 0; depth < maxSteps && !frontier.isEmpty(); depth++)
-		{
+		for (int depth = 0; depth < maxSteps && !frontier.isEmpty(); depth++) {
 			List<Integer> next = new ArrayList<>();
-			for (int tile : frontier)
-			{
+			for (int tile : frontier) {
 				final int x = WorldPointUtil.unpackWorldX(tile);
 				final int y = WorldPointUtil.unpackWorldY(tile);
 				final boolean n = map.n(x, y, plane);
@@ -148,16 +126,11 @@ final class ArrivalZone
 		return zone;
 	}
 
-	private static void grow(Set<Integer> zone, List<Integer> next, int x, int y, int plane, boolean open)
-	{
+	private static void grow(Set<Integer> zone, List<Integer> next, int x, int y, int plane, boolean open) {
 		if (!open)
-		{
 			return;
-		}
 		int packed = WorldPointUtil.packWorldPoint(x, y, plane);
 		if (zone.add(packed))
-		{
 			next.add(packed);
-		}
 	}
 }

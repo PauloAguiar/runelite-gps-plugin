@@ -16,8 +16,7 @@ import gps.WorldPointUtil;
  * Costs above {@link #MAX_PRUNABLE} are never pruned or recorded (they don't fit the short), so
  * pathological modifier configs lose the optimisation, never correctness.
  */
-class TentativeCosts
-{
+class TentativeCosts {
 	private static final short EMPTY = -1;
 	private static final int MAX_PRUNABLE = 30000;
 
@@ -27,8 +26,7 @@ class TentativeCosts
 	private final short[][] regionsWithBank;
 	private final CollisionMap map;
 
-	TentativeCosts(CollisionMap map)
-	{
+	TentativeCosts(CollisionMap map) {
 		this.map = map;
 		regionExtents = SplitFlagMap.getRegionExtents();
 		widthInclusive = regionExtents.getWidth() + 1;
@@ -41,24 +39,18 @@ class TentativeCosts
 	 * Whether an arrival at {@code packedPoint} costing {@code candidate} is known not to improve
 	 * on an already-queued arrival (prune it); records the candidate as the new best otherwise.
 	 */
-	boolean shouldPrune(int packedPoint, boolean bankVisited, int candidate)
-	{
+	boolean shouldPrune(int packedPoint, boolean bankVisited, int candidate) {
 		if (candidate > MAX_PRUNABLE || candidate < 0)
-		{
 			return false;
-		}
 		final int x = WorldPointUtil.unpackWorldX(packedPoint);
 		final int y = WorldPointUtil.unpackWorldY(packedPoint);
 		final int plane = WorldPointUtil.unpackWorldPlane(packedPoint);
 		final int regionIndex = getRegionIndex(x / REGION_SIZE, y / REGION_SIZE);
 		final short[][] regions = bankVisited ? regionsWithBank : regionsWithoutBank;
 		if (regionIndex < 0 || regionIndex >= regions.length)
-		{
 			return false;
-		}
 		short[] region = regions[regionIndex];
-		if (region == null)
-		{
+		if (region == null) {
 			final byte planeCount = map.getRegionPlaneCounts(regionIndex);
 			region = new short[planeCount * REGION_SIZE * REGION_SIZE];
 			java.util.Arrays.fill(region, EMPTY);
@@ -66,27 +58,20 @@ class TentativeCosts
 		}
 		final int index = (plane * REGION_SIZE + (y % REGION_SIZE)) * REGION_SIZE + (x % REGION_SIZE);
 		if (index >= region.length)
-		{
 			return false;
-		}
 		final short current = region[index];
 		if (current != EMPTY && current <= candidate)
-		{
 			return true;
-		}
 		region[index] = (short) candidate;
 		return false;
 	}
 
-	private int getRegionIndex(int regionX, int regionY)
-	{
+	private int getRegionIndex(int regionX, int regionY) {
 		return (regionX - regionExtents.minX) + (regionY - regionExtents.minY) * widthInclusive;
 	}
 
-	void clear()
-	{
-		for (int i = 0; i < regionsWithoutBank.length; i++)
-		{
+	void clear() {
+		for (int i = 0; i < regionsWithoutBank.length; i++) {
 			regionsWithoutBank[i] = null;
 			regionsWithBank[i] = null;
 		}

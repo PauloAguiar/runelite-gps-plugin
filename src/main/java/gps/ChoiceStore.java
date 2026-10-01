@@ -15,8 +15,7 @@ import net.runelite.client.config.ConfigManager;
  * The plugin owns the live copies; this is where they are read at startup and written on change.
  */
 @Slf4j
-final class ChoiceStore
-{
+final class ChoiceStore {
 	static final String CONFIG_KEY_EXCLUSIONS = "alternativeRoutesExclusions";
 	static final String CONFIG_KEY_MODE = "alternativeRoutesMode";
 	// The search box's recent selections (most recent first).
@@ -29,22 +28,18 @@ final class ChoiceStore
 	private final Supplier<Gson> gson;
 	private final String configGroup;
 
-	ChoiceStore(Supplier<ConfigManager> configManager, Supplier<Gson> gson, String configGroup)
-	{
+	ChoiceStore(Supplier<ConfigManager> configManager, Supplier<Gson> gson, String configGroup) {
 		this.configManager = configManager;
 		this.gson = gson;
 		this.configGroup = configGroup;
 	}
 
-	void saveExclusions(Set<TeleportMethod> exclusions)
-	{
-		try
-		{
+	void saveExclusions(Set<TeleportMethod> exclusions) {
+		try {
 			configManager.get().setConfiguration(configGroup, CONFIG_KEY_EXCLUSIONS,
 				gson.get().toJson(new ArrayList<>(exclusions)));
 		}
-		catch (Exception e)
-		{
+		catch (Exception e) {
 			log.warn("Failed to save alternative-route exclusions", e);
 		}
 	}
@@ -55,70 +50,51 @@ final class ChoiceStore
 	 * the "Enable seasonal transports" toggle now, so any a prior version persisted would linger
 	 * in the set (and in debug captures) forever. The cleaned set is written back once.
 	 */
-	Set<TeleportMethod> loadExclusions()
-	{
+	Set<TeleportMethod> loadExclusions() {
 		Set<TeleportMethod> exclusions = new HashSet<>();
-		try
-		{
+		try {
 			String json = configManager.get().getConfiguration(configGroup, CONFIG_KEY_EXCLUSIONS);
 			if (json == null || json.isEmpty())
-			{
 				return exclusions;
-			}
 			TeleportMethod[] saved = gson.get().fromJson(json, TeleportMethod[].class);
 			if (saved == null)
-			{
 				return exclusions;
-			}
 			boolean dropped = false;
-			for (TeleportMethod method : saved)
-			{
+			for (TeleportMethod method : saved) {
 				if (method == null || method.getType() == null
-					|| method.getType() == gps.transport.TransportType.SEASONAL_TRANSPORTS)
-				{
+					|| method.getType() == gps.transport.TransportType.SEASONAL_TRANSPORTS) {
 					dropped = true;
 					continue;
 				}
 				exclusions.add(method);
 			}
 			if (dropped)
-			{
 				saveExclusions(exclusions);
-			}
 		}
-		catch (Exception e)
-		{
+		catch (Exception e) {
 			log.warn("Failed to load alternative-route exclusions", e);
 		}
 		return exclusions;
 	}
 
-	void saveRoutesMode(AlternativeRoutesMode mode)
-	{
+	void saveRoutesMode(AlternativeRoutesMode mode) {
 		configManager.get().setConfiguration(configGroup, CONFIG_KEY_MODE, mode.name());
 	}
 
 	/** The persisted routes mode, or null when none was saved (the plugin keeps its default). */
-	AlternativeRoutesMode loadRoutesMode()
-	{
+	AlternativeRoutesMode loadRoutesMode() {
 		return decodeRoutesMode(configManager.get().getConfiguration(configGroup, CONFIG_KEY_MODE));
 	}
 
 	/** A mode by name, the legacy 3-mode names mapped onto the Owned/All split, else null. */
-	static AlternativeRoutesMode decodeRoutesMode(String value)
-	{
+	static AlternativeRoutesMode decodeRoutesMode(String value) {
 		if (value == null || value.isEmpty())
-		{
 			return null;
-		}
-		try
-		{
+		try {
 			return AlternativeRoutesMode.valueOf(value);
 		}
-		catch (IllegalArgumentException e)
-		{
-			switch (value)
-			{
+		catch (IllegalArgumentException e) {
+			switch (value) {
 				case "AVAILABLE":
 					return AlternativeRoutesMode.OWNED_INVENTORY;
 				case "AVAILABLE_WITH_BANK":
@@ -134,23 +110,19 @@ final class ChoiceStore
 		}
 	}
 
-	void saveSearchHistory(List<Destinations.Entry> history)
-	{
+	void saveSearchHistory(List<Destinations.Entry> history) {
 		configManager.get().setConfiguration(configGroup, CONFIG_KEY_SEARCH_HISTORY, SearchHistory.serialize(history));
 	}
 
-	List<Destinations.Entry> loadSearchHistory()
-	{
+	List<Destinations.Entry> loadSearchHistory() {
 		return SearchHistory.deserialize(configManager.get().getConfiguration(configGroup, CONFIG_KEY_SEARCH_HISTORY));
 	}
 
-	void saveFavorites(List<Destinations.Entry> favorites)
-	{
+	void saveFavorites(List<Destinations.Entry> favorites) {
 		configManager.get().setConfiguration(configGroup, CONFIG_KEY_FAVORITES, SearchHistory.serialize(favorites));
 	}
 
-	List<Destinations.Entry> loadFavorites()
-	{
+	List<Destinations.Entry> loadFavorites() {
 		return SearchHistory.deserialize(configManager.get().getConfiguration(configGroup, CONFIG_KEY_FAVORITES), FAVORITES_LIMIT);
 	}
 }

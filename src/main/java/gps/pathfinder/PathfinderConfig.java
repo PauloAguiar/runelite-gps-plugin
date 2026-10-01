@@ -53,19 +53,16 @@ import gps.transport.requirement.ItemRequirement;
 import gps.transport.requirement.TransportItems;
 
 @SuppressWarnings("SameParameterValue")
-public class PathfinderConfig
-{
+public class PathfinderConfig {
 	public static final List<Integer> RUNE_POUCHES = Arrays.asList(
 		ItemID.BH_RUNE_POUCH, ItemID.BH_RUNE_POUCH_TROUVER,
 		ItemID.DIVINE_RUNE_POUCH, ItemID.DIVINE_RUNE_POUCH_TROUVER
 	);
-	public static final int[] RUNE_POUCH_RUNE_VARBITS =
-		{
+	public static final int[] RUNE_POUCH_RUNE_VARBITS = {
 			VarbitID.RUNE_POUCH_TYPE_1, VarbitID.RUNE_POUCH_TYPE_2, VarbitID.RUNE_POUCH_TYPE_3, VarbitID.RUNE_POUCH_TYPE_4,
 			VarbitID.RUNE_POUCH_TYPE_5, VarbitID.RUNE_POUCH_TYPE_6
 		};
-	public static final int[] RUNE_POUCH_AMOUNT_VARBITS =
-		{
+	public static final int[] RUNE_POUCH_AMOUNT_VARBITS = {
 			VarbitID.RUNE_POUCH_QUANTITY_1, VarbitID.RUNE_POUCH_QUANTITY_2, VarbitID.RUNE_POUCH_QUANTITY_3, VarbitID.RUNE_POUCH_QUANTITY_4,
 			VarbitID.RUNE_POUCH_QUANTITY_5, VarbitID.RUNE_POUCH_QUANTITY_6
 		};
@@ -202,59 +199,42 @@ public class PathfinderConfig
 	// charged half the row). 100 = no discount.
 	private int charterFarePercent = 100;
 
-	public int getCharterFarePercent()
-	{
+	public int getCharterFarePercent() {
 		return charterFarePercent;
 	}
 
 	/** The percentage of a transport's listed coin fare the player actually pays (100 unless charter). */
-	public int farePercent(Transport transport)
-	{
+	public int farePercent(Transport transport) {
 		return transport != null && TransportType.CHARTER_SHIP.equals(transport.getType()) ? charterFarePercent : 100;
 	}
 
 	/** The coin fare a transport actually charges: its listed COINS requirement scaled by farePercent. */
-	public int effectiveCoinFare(Transport transport)
-	{
+	public int effectiveCoinFare(Transport transport) {
 		if (transport == null || transport.getItemRequirements() == null)
-		{
 			return 0;
-		}
-		for (ItemRequirement requirement : transport.getItemRequirements().getRequirements())
-		{
-			if (requirement.getItemIds() != null)
-			{
-				for (int itemId : requirement.getItemIds())
-				{
+		for (ItemRequirement requirement : transport.getItemRequirements().getRequirements()) {
+			if (requirement.getItemIds() != null) {
+				for (int itemId : requirement.getItemIds()) {
 					if (itemId == ItemID.COINS)
-					{
 						return scaleCoins(requirement.getQuantity(), farePercent(transport));
-					}
 				}
 			}
 		}
 		return 0;
 	}
 
-	public static int scaleCoins(int coins, int percent)
-	{
+	public static int scaleCoins(int coins, int percent) {
 		return coins <= 0 || percent >= 100 || percent <= 0 ? coins : Math.max(1, coins * percent / 100);
 	}
 
 	/** A requirement's quantity with the coin discount applied when it is a coin requirement. */
-	private static int scaledQuantity(ItemRequirement requirement, int coinPercent)
-	{
+	private static int scaledQuantity(ItemRequirement requirement, int coinPercent) {
 		int quantity = requirement.getQuantity();
 		if (coinPercent >= 100 || quantity <= 0 || requirement.getItemIds() == null)
-		{
 			return quantity;
-		}
-		for (int itemId : requirement.getItemIds())
-		{
+		for (int itemId : requirement.getItemIds()) {
 			if (itemId == ItemID.COINS)
-			{
 				return scaleCoins(quantity, coinPercent);
-			}
 		}
 		return quantity;
 	}
@@ -281,8 +261,7 @@ public class PathfinderConfig
 	private boolean isOnSailingBoat;
 
 	/** Whether the player is aboard their boat (SAILING_BOARDED_BOAT, read at refresh). */
-	public boolean isOnSailingBoat()
-	{
+	public boolean isOnSailingBoat() {
 		return isOnSailingBoat;
 	}
 
@@ -310,23 +289,18 @@ public class PathfinderConfig
 
 	/** The moorings that may host an embark under the boat-location gate, or empty when the
 	 * gate stands down (summon assumed, or no boat seen) — leg synthesis must offer these. */
-	public Set<Integer> gatedBoatMoorings()
-	{
+	public Set<Integer> gatedBoatMoorings() {
 		return boatSeen && !assumeSummonBoat ? boatMoorings : Set.of();
 	}
 
-	private void refreshBoatLocations()
-	{
+	private void refreshBoatLocations() {
 		Set<Integer> moorings = new HashSet<>();
 		boolean seen = false;
-		for (int[] boat : BOAT_VARBITS)
-		{
+		for (int[] boat : BOAT_VARBITS) {
 			// The owned varbit alone is unreliable (Where's My Boat's field lesson); a set
 			// name descriptor also proves ownership, and covers Port Sarim's port id 0.
 			if (client.getVarbitValue(boat[0]) <= 0 && client.getVarbitValue(boat[2]) <= 0)
-			{
 				continue;
-			}
 			seen = true;
 			moorings.addAll(gps.SailingPorts.portMoorings(client.getVarbitValue(boat[1])));
 		}
@@ -346,8 +320,7 @@ public class PathfinderConfig
 	 * The earlier config-wide teleport kill made every post-landing continuation walk-only
 	 * (field capture 20260731-134750: 'very inefficient path after getting back to port').
 	 */
-	public boolean teleportsBlockedAt(int packed)
-	{
+	public boolean teleportsBlockedAt(int packed) {
 		return isOnSailingBoat && (!config.sailingTeleportAbandon() || portPromiseSearch)
 			&& gps.SailingSea.isSailable(packed);
 	}
@@ -396,8 +369,7 @@ public class PathfinderConfig
 	 */
 	private Set<TeleportMethod> excludedMethods = Collections.emptySet();
 
-	public PathfinderConfig(Client client, ShortestPathConfig config)
-	{
+	public PathfinderConfig(Client client, ShortestPathConfig config) {
 		this.client = client;
 		this.config = config;
 		this.transportTypeConfig = new TransportTypeConfig(config);
@@ -418,8 +390,7 @@ public class PathfinderConfig
 	protected PathfinderConfig(Client client, ShortestPathConfig config,
 		SplitFlagMap mapData, Map<Integer, Set<Transport>> allTransports,
 		Map<String, Set<Integer>> allDestinations, Map<String, Set<Integer>> filteredDestinations,
-		Map<Integer, DestinationRequirements> bankRequirements)
-	{
+		Map<Integer, DestinationRequirements> bankRequirements) {
 		this.client = client;
 		this.config = config;
 		this.transportTypeConfig = new TransportTypeConfig(config);
@@ -442,8 +413,7 @@ public class PathfinderConfig
 	 * keeps its own mutable availability/state, so its {@link #refresh()} passes never disturb the
 	 * main path's config.
 	 */
-	protected PathfinderConfig(PathfinderConfig source)
-	{
+	protected PathfinderConfig(PathfinderConfig source) {
 		this.client = source.client;
 		this.config = source.config;
 		this.transportTypeConfig = new TransportTypeConfig(source.transportTypeConfig);
@@ -462,8 +432,7 @@ public class PathfinderConfig
 	/**
 	 * A planning-mode sibling of this config for the alternative-routes feature (see {@link #planningMode}).
 	 */
-	public PathfinderConfig copyForPlanning()
-	{
+	public PathfinderConfig copyForPlanning() {
 		PathfinderConfig copy = newPlanningCopy();
 		copy.planningCopy = true;
 		copy.planningMode = true;
@@ -476,8 +445,7 @@ public class PathfinderConfig
 	 * The copy allocation used by {@link #copyForPlanning()}; overridable so test subclasses can keep
 	 * their quest/varbit bypasses on the planning copy.
 	 */
-	protected PathfinderConfig newPlanningCopy()
-	{
+	protected PathfinderConfig newPlanningCopy() {
 		return new PathfinderConfig(this);
 	}
 
@@ -488,8 +456,7 @@ public class PathfinderConfig
 	 * The searcher-visible mutable state (transport availability) is per-copy, and the collision map
 	 * is per-thread, so concurrent searches don't interfere.
 	 */
-	public PathfinderConfig copyForParallelSearch()
-	{
+	public PathfinderConfig copyForParallelSearch() {
 		PathfinderConfig copy = newPlanningCopy();
 		copy.planningCopy = true;
 		copy.planningMode = planningMode;
@@ -543,17 +510,13 @@ public class PathfinderConfig
 	 * Captures a copy of the bank's items; called from ItemContainerChanged while the bank is open,
 	 * when the contents are guaranteed present.
 	 */
-	public void setBankSnapshot(Item[] items)
-	{
+	public void setBankSnapshot(Item[] items) {
 		if (items != null && items.length > 0)
-		{
 			this.bankSnapshot = items.clone();
-		}
 	}
 
 	/** The captured bank snapshot, for persisting it across sessions. Null if never seen. */
-	public Item[] getBankSnapshot()
-	{
+	public Item[] getBankSnapshot() {
 		return bankSnapshot;
 	}
 
@@ -561,8 +524,7 @@ public class PathfinderConfig
 	 * Forgets everything known about the bank — the live container reference and the snapshot.
 	 * Called at logout so a different character logging in doesn't inherit this one's bank.
 	 */
-	public void clearBank()
-	{
+	public void clearBank() {
 		bank = null;
 		bankSnapshot = null;
 	}
@@ -572,22 +534,16 @@ public class PathfinderConfig
 	 * snapshot captured while the bank was open (this config's own, or the main config's for planning
 	 * copies). Null when the bank has never been seen this session.
 	 */
-	private Item[] resolveBankItems()
-	{
+	private Item[] resolveBankItems() {
 		Item[] live = (bank != null) ? bank.getItems() : null;
 		if (live != null && live.length > 0)
-		{
 			return live;
-		}
 		if (bankSnapshot != null)
-		{
 			return bankSnapshot;
-		}
 		return (planningSource != null) ? planningSource.resolveBankItems() : live;
 	}
 
-	public void setExcludedMethods(Set<TeleportMethod> excludedMethods)
-	{
+	public void setExcludedMethods(Set<TeleportMethod> excludedMethods) {
 		this.excludedMethods = (excludedMethods == null || excludedMethods.isEmpty())
 			? Collections.emptySet() : new HashSet<>(excludedMethods);
 	}
@@ -596,8 +552,7 @@ public class PathfinderConfig
 	 * For the planning copy: whether to also consider teleport items in the bank (routing through a
 	 * bank to pick them up). Ignored in full planning mode, which offers everything anyway.
 	 */
-	public void setConsiderBank(boolean considerBank)
-	{
+	public void setConsiderBank(boolean considerBank) {
 		this.considerBank = considerBank;
 	}
 
@@ -605,8 +560,7 @@ public class PathfinderConfig
 	 * Toggles whether this (planning) config bypasses character unlocks as well ({@code true} = the
 	 * "Everything" variant) or respects them. Takes effect on the next {@link #refresh()}.
 	 */
-	public void setPlanningMode(boolean planningMode)
-	{
+	public void setPlanningMode(boolean planningMode) {
 		this.planningMode = planningMode;
 	}
 
@@ -614,16 +568,14 @@ public class PathfinderConfig
 	 * Toggles whether item possession (and config-preference gates) are bypassed — the "All" family.
 	 * Takes effect on the next {@link #refresh()}.
 	 */
-	public void setBypassItemPossession(boolean bypassItemPossession)
-	{
+	public void setBypassItemPossession(boolean bypassItemPossession) {
 		this.bypassItemPossession = bypassItemPossession;
 	}
 
 	/**
 	 * Pure combat-level formula, extracted for testability.
 	 */
-	static int computeCombatLevel(int attack, int strength, int defence, int hitpoints, int magic, int ranged, int prayer)
-	{
+	static int computeCombatLevel(int attack, int strength, int defence, int hitpoints, int magic, int ranged, int prayer) {
 		// Integer division is intentional here — it matches the OSRS floor(x/2) steps in the formula.
 		double base = 0.25 * (defence + hitpoints + Math.floorDiv(prayer, 2));
 		double melee = (13 * (attack + strength)) / 40.0;
@@ -636,56 +588,38 @@ public class PathfinderConfig
 	public static final List<String> FARMABLE_SPIRIT_TREES = List.of(
 		"Port Sarim", "Etceteria", "Brimhaven", "Hosidius", "Farming Guild");
 
-	static String getPlantedSpiritTreeName(int x, int y)
-	{
+	static String getPlantedSpiritTreeName(int x, int y) {
 		if (x >= 3058 && x <= 3062 && y >= 3256 && y <= 3260)
-		{
 			return "Port Sarim";
-		}
 		if (x >= 2611 && x <= 2615 && y >= 3855 && y <= 3860)
-		{
 			return "Etceteria";
-		}
 		if (x >= 2800 && x <= 2804 && y >= 3201 && y <= 3205)
-		{
 			return "Brimhaven";
-		}
 		if (x >= 1691 && x <= 1695 && y >= 3540 && y <= 3544)
-		{
 			return "Hosidius";
-		}
 		if (x >= 1251 && x <= 1255 && y >= 3748 && y <= 3752)
-		{
 			return "Farming Guild";
-		}
 		return null;
 	}
 
-	private void indexTransportOrigins()
-	{
-		for (Transport transport : allTransports)
-		{
+	private void indexTransportOrigins() {
+		for (Transport transport : allTransports) {
 			if (transport.getOrigin() != Transport.UNDEFINED_ORIGIN)
-			{
 				transportOriginTiles.add(transport.getOrigin());
-			}
 		}
 	}
 
 	/** Whether any transport row (available or not) departs from this tile. */
 	/** Every loaded transport row, for the data lint tests. */
-	public Transport[] getAllTransports()
-	{
+	public Transport[] getAllTransports() {
 		return allTransports;
 	}
 
-	public boolean isTransportOrigin(int packed)
-	{
+	public boolean isTransportOrigin(int packed) {
 		return transportOriginTiles.contains(packed);
 	}
 
-	public CollisionMap getMap()
-	{
+	public CollisionMap getMap() {
 		return map.get();
 	}
 
@@ -699,18 +633,15 @@ public class PathfinderConfig
 	 * Use {@link #getTransportAvailability(boolean)}, {@link #getTransportsPacked(boolean)}, or
 	 * {@link #getUsableTeleports(boolean)} for pathfinding and path analysis code.
 	 */
-	public PrimitiveIntHashMap<Transport[]> getTransports()
-	{
+	public PrimitiveIntHashMap<Transport[]> getTransports() {
 		return getTransportAvailability(includeBankPath).getDisplayTransports();
 	}
 
-	public PrimitiveIntHashMap<Transport[]> getTransportsPacked(boolean bankVisited)
-	{
+	public PrimitiveIntHashMap<Transport[]> getTransportsPacked(boolean bankVisited) {
 		return getTransportAvailability(bankVisited).getTransportsPacked();
 	}
 
-	public Transport[] getUsableTeleports(boolean bankVisited)
-	{
+	public Transport[] getUsableTeleports(boolean bankVisited) {
 		return getTransportAvailability(bankVisited).getUsableTeleports();
 	}
 
@@ -721,14 +652,11 @@ public class PathfinderConfig
 	 * dropped out exactly when a via-bank route was about to spend it, and the step lost
 	 * its label (capture 205518: a fare-less 'Ship to Brimhaven' on a withdraw route).
 	 */
-	public List<Transport> transportsOnEdge(int originPacked, int destinationPacked)
-	{
+	public List<Transport> transportsOnEdge(int originPacked, int destinationPacked) {
 		List<Transport> matches = new ArrayList<>();
-		for (Transport transport : allTransports)
-		{
+		for (Transport transport : allTransports) {
 			if (transport.getOrigin() == originPacked
-				&& transport.getDestination() == destinationPacked)
-			{
+				&& transport.getDestination() == destinationPacked) {
 				matches.add(transport);
 			}
 		}
@@ -738,15 +666,12 @@ public class PathfinderConfig
 	/** The committed-edge lookup's teleport twin: origin-less rows landing on the
 	 * destination whose display matches the route's method — same unfiltered rationale
 	 * as {@link #transportsOnEdge}. */
-	public List<Transport> teleportsOnEdge(int destinationPacked, String displayInfo)
-	{
+	public List<Transport> teleportsOnEdge(int destinationPacked, String displayInfo) {
 		List<Transport> matches = new ArrayList<>();
-		for (Transport transport : allTransports)
-		{
+		for (Transport transport : allTransports) {
 			if (transport.getOrigin() == Transport.UNDEFINED_ORIGIN
 				&& transport.getDestination() == destinationPacked
-				&& displayInfo != null && displayInfo.equals(transport.getDisplayInfo()))
-			{
+				&& displayInfo != null && displayInfo.equals(transport.getDisplayInfo())) {
 				matches.add(transport);
 			}
 		}
@@ -760,41 +685,34 @@ public class PathfinderConfig
 	 * entry's usability is reported separately by {@link #getMethodAvailability()}. Built during the last
 	 * client-thread {@link #refresh()} on a planning copy.
 	 */
-	public Set<TeleportMethod> getMethodCatalog()
-	{
+	public Set<TeleportMethod> getMethodCatalog() {
 		return new LinkedHashSet<>(methodAvailability.keySet());
 	}
 
-	public TransportAvailability getTransportAvailability(boolean bankVisited)
-	{
+	public TransportAvailability getTransportAvailability(boolean bankVisited) {
 		return bankVisited ? transportAvailabilityWithBank : transportAvailabilityWithoutBank;
 	}
 
-	public boolean isBankPathEnabled()
-	{
+	public boolean isBankPathEnabled() {
 		return includeBankPath;
 	}
 
-	public boolean hasDestination(String destinationType)
-	{
+	public boolean hasDestination(String destinationType) {
 		return destinations.containsKey(destinationType);
 	}
 
-	public Set<Integer> getDestinations(String destinationType)
-	{
+	public Set<Integer> getDestinations(String destinationType) {
 		return destinations.get(destinationType);
 	}
 
 	/**
 	 * Whether standing on this tile may flip the path into {@code bankVisited} (inventory-from-bank) state.
 	 */
-	public boolean bankAccessible(int packedPosition)
-	{
+	public boolean bankAccessible(int packedPosition) {
 		return accessibleBankIndex.get(packedPosition) != null;
 	}
 
-	public void refresh()
-	{
+	public void refresh() {
 		calculationCutoffMillis = (long) config.calculationCutoff() * Constants.GAME_TICK_LENGTH;
 		avoidWilderness = ConfigOverrides.override("avoidWilderness", config.avoidWilderness());
 		usePoh = ConfigOverrides.override("usePoh", config.usePoh());
@@ -830,8 +748,7 @@ public class PathfinderConfig
 		// Balloon log storage counts (chat-parsed by the plugin; see BalloonLogStorage). Outside
 		// smart mode the storage is not tracked, so flights fall back to inventory checks only.
 		balloonStoredLogs.clear();
-		if (config.balloonSmartMode())
-		{
+		if (config.balloonSmartMode()) {
 			balloonStoredLogs.put(ItemID.LOGS, config.balloonStoredLogs());
 			balloonStoredLogs.put(ItemID.OAK_LOGS, config.balloonStoredOakLogs());
 			balloonStoredLogs.put(ItemID.WILLOW_LOGS, config.balloonStoredWillowLogs());
@@ -842,44 +759,34 @@ public class PathfinderConfig
 		// Alternative-routes "Owned" family: restrict teleport items to what the player possesses —
 		// inventory + equipment only, or additionally the bank (routing through a bank to pick items
 		// up). The "All" family bypasses possession via bypassItemPossession/planningMode instead.
-		if (planningCopy && !bypassItemPossession)
-		{
-			if (considerBank)
-			{
+		if (planningCopy && !bypassItemPossession) {
+			if (considerBank) {
 				// Bank items are resolved at read time (resolveBankItems): live container when it has
 				// contents, else the snapshot captured while the bank was open (own or the main
 				// config's) — the client can empty the live container once the interface closes.
 				includeBankPath = true;
 				transportTypeConfig.setTeleportationItemSetting(TeleportationItem.INVENTORY_AND_BANK);
 			}
-			else
-			{
+			else {
 				includeBankPath = false;
 				transportTypeConfig.setTeleportationItemSetting(TeleportationItem.INVENTORY);
 			}
 		}
 
-		if (GameState.LOGGED_IN.equals(client.getGameState()))
-		{
+		if (GameState.LOGGED_IN.equals(client.getGameState())) {
 			isOnSailingBoat = client.getVarbitValue(VarbitID.SAILING_BOARDED_BOAT) != 0;
 
 			int farePercent = 100;
 			if (QuestState.FINISHED.equals(getQuestState(Quest.CABIN_FEVER)))
-			{
 				farePercent /= 2;
-			}
 			ItemContainer worn = client.getItemContainer(InventoryID.WORN);
 			if (worn != null && worn.contains(ItemID.RING_OF_CHAROS_UNLOCKED))
-			{
 				farePercent /= 2;
-			}
 			charterFarePercent = farePercent;
 
 			int i = 0;
 			for (; i < Skill.values().length; i++)
-			{
 				boostedSkillLevelsAndMore[i] = client.getBoostedSkillLevel(Skill.values()[i]);
-			}
 			boostedSkillLevelsAndMore[i++] = client.getTotalLevel(); // skill total level
 			boostedSkillLevelsAndMore[i++] = getCombatLevel(); // combat level
 			boostedSkillLevelsAndMore[i] = client.getVarpValue(VarPlayerID.QP); // quest points
@@ -895,87 +802,62 @@ public class PathfinderConfig
 		itemSnapshots.clear();
 	}
 
-	private void refreshDestinations()
-	{
+	private void refreshDestinations() {
 		destinations = avoidWilderness ? filteredDestinations : allDestinations;
 	}
 
-	private void rebuildAccessibleBankTiles()
-	{
+	private void rebuildAccessibleBankTiles() {
 		Set<Integer> bankLocs = destinations.get("bank");
-		if (bankLocs == null)
-		{
+		if (bankLocs == null) {
 			accessibleBankTiles = Set.of();
 			accessibleBankIndex = indexOf(accessibleBankTiles);
 			return;
 		}
-		if (!GameState.LOGGED_IN.equals(client.getGameState()))
-		{
+		if (!GameState.LOGGED_IN.equals(client.getGameState())) {
 			accessibleBankTiles = Set.copyOf(bankLocs);
 			accessibleBankIndex = indexOf(accessibleBankTiles);
 			return;
 		}
 		Set<Integer> acc = new HashSet<>(bankLocs.size());
-		for (Integer p : bankLocs)
-		{
+		for (Integer p : bankLocs) {
 			DestinationRequirements req = bankRequirements.getOrDefault(p, DestinationRequirements.EMPTY);
 			if (satisfiesBankDestinationRequirements(req))
-			{
 				acc.add(p);
-			}
 		}
 		accessibleBankTiles = Collections.unmodifiableSet(acc);
 		accessibleBankIndex = indexOf(accessibleBankTiles);
 	}
 
-	private static PrimitiveIntHashMap<Boolean> indexOf(Set<Integer> tiles)
-	{
+	private static PrimitiveIntHashMap<Boolean> indexOf(Set<Integer> tiles) {
 		PrimitiveIntHashMap<Boolean> index = new PrimitiveIntHashMap<>(Math.max(16, tiles.size() * 2));
 		for (int tile : tiles)
-		{
 			index.put(tile, Boolean.TRUE);
-		}
 		return index;
 	}
 
 	/**
 	 * Quest/skill/var gates for bank tiles (not used for transport overlays).
 	 */
-	private boolean satisfiesBankDestinationRequirements(DestinationRequirements dr)
-	{
+	private boolean satisfiesBankDestinationRequirements(DestinationRequirements dr) {
 		if (dr == null || dr.isEmpty())
-		{
 			return true;
-		}
 		int[] requiredLevels = dr.getSkillLevels();
-		for (int i = 0; i < boostedSkillLevelsAndMore.length; i++)
-		{
+		for (int i = 0; i < boostedSkillLevelsAndMore.length; i++) {
 			int need = i < requiredLevels.length ? requiredLevels[i] : 0;
 			if (boostedSkillLevelsAndMore[i] < need)
-			{
 				return false;
-			}
 		}
-		for (Quest quest : dr.getQuests())
-		{
+		for (Quest quest : dr.getQuests()) {
 			if (!QuestState.FINISHED.equals(getQuestState(quest)))
-			{
 				return false;
-			}
 		}
-		for (VarRequirement req : dr.getVarbits())
-		{
+		for (VarRequirement req : dr.getVarbits()) {
 			if (!req.checkValue(client.getVarbitValue(req.getId())))
-			{
 				return false;
-			}
 		}
-		for (VarRequirement req : dr.getVarPlayers())
-		{
+		for (VarRequirement req : dr.getVarPlayers()) {
 			if (!req.checkValue(client.getVarpValue(req.getId())))
-			{
 				return false;
-			}
 		}
 		return true;
 	}
@@ -983,28 +865,21 @@ public class PathfinderConfig
 	/**
 	 * Changes to the config might have invalidated some locations, e.g. those in the wilderness
 	 */
-	public void filterLocations(Set<Integer> locations, boolean canReviveFiltered)
-	{
-		if (avoidWilderness)
-		{
-			locations.removeIf(location ->
-			{
+	public void filterLocations(Set<Integer> locations, boolean canReviveFiltered) {
+		if (avoidWilderness) {
+			locations.removeIf(location -> {
 				boolean inWilderness = WildernessChecker.isInWilderness(location);
 				if (inWilderness)
-				{
 					filteredTargets.add(location);
-				}
 				return inWilderness;
 			});
 			// If we ended up with no valid locations we re-include the filtered locations
-			if (locations.isEmpty())
-			{
+			if (locations.isEmpty()) {
 				locations.addAll(filteredTargets);
 				filteredTargets.clear();
 			}
 		}
-		else if (canReviveFiltered)
-		{ // Re-include previously filtered locations
+		else if (canReviveFiltered) { // Re-include previously filtered locations
 			locations.addAll(filteredTargets);
 			filteredTargets.clear();
 		}
@@ -1020,51 +895,37 @@ public class PathfinderConfig
 	 * save more than the modifier to justify a charge — and the config text always promised it
 	 * ("modifier added to the route's cost").
 	 */
-	public int getAdditionalTransportCost(Transport transport)
-	{
+	public int getAdditionalTransportCost(Transport transport) {
 		if (transport.isConsumable() && TransportType.TELEPORTATION_ITEM.equals(transport.getType()))
-		{
 			return costConsumableTeleportationItems;
-		}
 		int differential = transport.getType().differentialCostFunction() != null
 			? transport.getType().differentialCostFunction().apply(config)
 			: 0;
 		if (transport.isConsumable() && TransportType.QUETZAL_WHISTLE.equals(transport.getType()))
-		{
 			return transportTypeConfig.getCost(transport.getType()) + costConsumableTeleportationItems + differential;
-		}
 		return transportTypeConfig.getCost(transport.getType()) + differential;
 	}
 
-	static Map<String, Set<Integer>> filterDestinations(Map<String, Set<Integer>> allDestinations)
-	{
+	static Map<String, Set<Integer>> filterDestinations(Map<String, Set<Integer>> allDestinations) {
 		Map<String, Set<Integer>> filteredDestinations = new HashMap<>(allDestinations.size());
-		for (Map.Entry<String, Set<Integer>> entry : allDestinations.entrySet())
-		{
+		for (Map.Entry<String, Set<Integer>> entry : allDestinations.entrySet()) {
 			String destinationType = entry.getKey();
 			Set<Integer> usableDestinations = new HashSet<>(entry.getValue().size());
-			for (Integer destination : entry.getValue())
-			{
+			for (Integer destination : entry.getValue()) {
 				// We filter based on whether the destination is inside or outside wilderness
 				if (!WildernessChecker.isInWilderness(destination))
-				{
 					usableDestinations.add(destination);
-				}
 			}
 			// If all destinations of a destination type have been filtered away then we don't add the entry
 			if (!usableDestinations.isEmpty())
-			{
 				// If no destinations of a destination type have been filtered away then we re-use the same set reference
 				filteredDestinations.put(destinationType, usableDestinations);
-			}
 		}
 		return filteredDestinations;
 	}
 
-	private void refreshTransports()
-	{
-		if (!Thread.currentThread().equals(client.getClientThread()))
-		{
+	private void refreshTransports() {
+		if (!Thread.currentThread().equals(client.getClientThread())) {
 			return; // Has to run on the client thread; data will be refreshed when path finding commences
 		}
 
@@ -1098,73 +959,54 @@ public class PathfinderConfig
 		Map<TeleportMethod, MethodAvailability> catalog = planningCopy ? new LinkedHashMap<>() : null;
 		Map<TeleportMethod, String> catalogDetail = planningCopy ? new HashMap<>() : null;
 		long fingerprint = 0;
-		for (int index = 0; index < allTransports.length; index++)
-		{
+		for (int index = 0; index < allTransports.length; index++) {
 			Transport transport = allTransports[index];
 			for (Quest quest : transport.getQuests())
-			{
 				// The explicit put also covers getQuestState overrides (the test harness);
 				// with the base memo it is a redundant self-assignment, repeats are map hits.
 				questStates.put(quest, getQuestState(quest));
-			}
 
-			for (VarRequirement varRequirement : transport.getVarRequirements())
-			{
-				if (varRequirement.isVarbit())
-				{
+			for (VarRequirement varRequirement : transport.getVarRequirements()) {
+				if (varRequirement.isVarbit()) {
 					if (!varbitValues.containsKey(varRequirement.getId()))
-					{
 						varbitValues.put(varRequirement.getId(), client.getVarbitValue(varRequirement.getId()));
-					}
 				}
 				else if (!varPlayerValues.containsKey(varRequirement.getId()))
-				{
 					varPlayerValues.put(varRequirement.getId(), client.getVarpValue(varRequirement.getId()));
-				}
 			}
 
 			// Catalog + availability: record every method-type transport that structurally exists, with
 			// why the player can (or can't) use it. Runs before the mode/possession/unlock filter below so
 			// the catalog is the same full set in every mode; user exclusions are intentionally ignored
 			// here (excluded methods still appear in the catalog, flagged separately).
-			if (catalog != null && TeleportMethod.isMethodType(transport.getType()) && passesCatalogGates(transport))
-			{
+			if (catalog != null && TeleportMethod.isMethodType(transport.getType()) && passesCatalogGates(transport)) {
 				// Keep the BEST status among the transports sharing a method identity, and the
 				// missing-unlock detail of that best transport (its requirements are the mildest).
 				TeleportMethod method = transport.method();
 				MethodAvailability status = classifyAvailability(transport);
 				MethodAvailability prior = catalog.get(method);
-				if (prior == null || status.ordinal() < prior.ordinal())
-				{
+				if (prior == null || status.ordinal() < prior.ordinal()) {
 					catalog.put(method, status);
 					String detail = availabilityDetail(transport, status);
 					if (detail != null)
-					{
 						catalogDetail.put(method, detail);
-					}
 					else
-					{
 						catalogDetail.remove(method);
-					}
 				}
 			}
 
 			if (!useTransport(transport))
-			{
 				continue;
-			}
 
 			boolean usableWithoutBank = bypassItemPossession || hasRequiredItems(transport, true, true, false, true);
 			boolean usableWithBank = bypassItemPossession || hasRequiredItems(transport, true, true, includeBankPath, true);
 			// Commutative mix of (row index, resolved destination) per admitted row and bank state.
 			long rowKey = ((long) index << 32) ^ (transport.getDestination() & 0xffffffffL);
-			if (usableWithoutBank)
-			{
+			if (usableWithoutBank) {
 				withoutBank.add(transport);
 				fingerprint += RoutingItemDependencies.mix64(rowKey);
 			}
-			if (usableWithBank)
-			{
+			if (usableWithBank) {
 				withBank.add(transport);
 				fingerprint += RoutingItemDependencies.mix64(rowKey + 0x9E3779B97F4A7C15L);
 			}
@@ -1174,8 +1016,7 @@ public class PathfinderConfig
 		withBank.remapPohTransports();
 		transportAvailabilityWithoutBank = withoutBank.build();
 		transportAvailabilityWithBank = withBank.build();
-		if (planningCopy)
-		{
+		if (planningCopy) {
 			baseAvailabilityWithoutBank = transportAvailabilityWithoutBank;
 			baseAvailabilityWithBank = transportAvailabilityWithBank;
 			usableFingerprint = fingerprint;
@@ -1191,21 +1032,17 @@ public class PathfinderConfig
 	 * player-facing name). Runs on the client thread during refresh, so live item names, skill
 	 * levels and quest states are readable.
 	 */
-	private String availabilityDetail(Transport transport, MethodAvailability status)
-	{
-		switch (status)
-		{
+	private String availabilityDetail(Transport transport, MethodAvailability status) {
+		switch (status) {
 			case MISSING_LEVEL:
 				return missingLevelsDetail(transport);
 			case MISSING_QUEST:
 				return missingQuestsDetail(transport);
-			case MISSING_ITEM:
-			{
+			case MISSING_ITEM: {
 				String items = itemRequirementNames(transport.getItemRequirements());
 				return items == null ? null : "Missing item: " + items;
 			}
-			case IN_BANK:
-			{
+			case IN_BANK: {
 				String items = itemRequirementNames(transport.getItemRequirements());
 				return items == null ? null : "In your bank: " + items;
 			}
@@ -1216,24 +1053,18 @@ public class PathfinderConfig
 		}
 	}
 
-	private String missingLevelsDetail(Transport transport)
-	{
+	private String missingLevelsDetail(Transport transport) {
 		Skill[] skills = Skill.values();
 		int[] required = transport.getSkillLevels();
 		List<String> missing = new ArrayList<>();
-		for (int i = 0; i < boostedSkillLevelsAndMore.length && i < required.length; i++)
-		{
+		for (int i = 0; i < boostedSkillLevelsAndMore.length && i < required.length; i++) {
 			if (boostedSkillLevelsAndMore[i] >= required[i]
-				|| (leagueModeState.isSeasonal() && i == skills.length))
-			{
+				|| (leagueModeState.isSeasonal() && i == skills.length)) {
 				continue;
 			}
 			if (i < skills.length)
-			{
 				missing.add(required[i] + " " + skills[i].getName());
-			}
-			else
-			{
+			else {
 				String name = i == skills.length ? "total level" : (i == skills.length + 1 ? "combat level" : "quest points");
 				missing.add(required[i] + " " + name);
 			}
@@ -1241,33 +1072,25 @@ public class PathfinderConfig
 		return missing.isEmpty() ? null : "Requires " + String.join(", ", missing);
 	}
 
-	private String missingQuestsDetail(Transport transport)
-	{
+	private String missingQuestsDetail(Transport transport) {
 		List<String> missing = new ArrayList<>();
 		// The type-level network gates (see classifyAvailability) come first: they block the whole
 		// network even when the transport carries no quest requirement of its own.
 		Quest typeQuest = typeGateQuest(transport.getType());
 		if (typeQuest != null && !QuestState.FINISHED.equals(getQuestState(typeQuest)))
-		{
 			missing.add(typeQuest.getName());
-		}
 		if (TransportType.FAIRY_RING.equals(transport.getType())
-			&& varbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST) <= 39)
-		{
+			&& varbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST) <= 39) {
 			missing.add("Fairy Tale II (partial)");
 		}
-		for (Quest quest : transport.getQuests())
-		{
+		for (Quest quest : transport.getQuests()) {
 			if (!QuestState.FINISHED.equals(getQuestState(quest)) && !missing.contains(quest.getName()))
-			{
 				missing.add(quest.getName());
-			}
 		}
 		return missing.isEmpty() ? null : "Requires quest: " + String.join(", ", missing);
 	}
 
-	private static Quest typeGateQuest(TransportType type)
-	{
+	private static Quest typeGateQuest(TransportType type) {
 		return TransportTypePresentation.gateQuestOf(type);
 	}
 
@@ -1276,44 +1099,31 @@ public class PathfinderConfig
 	 * from the live item definitions (client thread). Null when no name could be resolved (e.g.
 	 * under test mocks), so callers fall back to the generic status wording.
 	 */
-	private String itemRequirementNames(TransportItems items)
-	{
+	private String itemRequirementNames(TransportItems items) {
 		if (items == null)
-		{
 			return null;
-		}
 		List<String> names = new ArrayList<>();
-		for (ItemRequirement requirement : items.getRequirements())
-		{
+		for (ItemRequirement requirement : items.getRequirements()) {
 			int[] ids = requirement.getItemIds();
 			if (ids == null || ids.length == 0)
-			{
 				continue;
-			}
 			String name = itemName(ids[0]);
 			if (name != null)
-			{
 				names.add(requirement.getQuantity() > 1 ? name + " x" + requirement.getQuantity() : name);
-			}
 		}
 		return names.isEmpty() ? null : String.join(", ", names);
 	}
 
-	private String itemName(int itemId)
-	{
+	private String itemName(int itemId) {
 		String cached = itemNames.get(itemId);
 		if (cached != null)
-		{
 			return cached.isEmpty() ? null : cached;
-		}
 		String name = null;
-		try
-		{
+		try {
 			ItemComposition definition = client.getItemDefinition(itemId);
 			name = definition != null ? definition.getName() : null;
 		}
-		catch (RuntimeException e)
-		{
+		catch (RuntimeException e) {
 			// Unresolvable here (not the client thread, or no definition): remembered as such.
 		}
 		itemNames.put(itemId, name == null ? "" : name);
@@ -1321,11 +1131,9 @@ public class PathfinderConfig
 	}
 
 	/** One varbit read per id per pass (see {@link #varbitValues}), for reads outside the row loop. */
-	private int varbitValue(int varbitId)
-	{
+	private int varbitValue(int varbitId) {
 		Integer value = varbitValues.get(varbitId);
-		if (value == null)
-		{
+		if (value == null) {
 			value = client.getVarbitValue(varbitId);
 			varbitValues.put(varbitId, value);
 		}
@@ -1339,16 +1147,13 @@ public class PathfinderConfig
 	 * "in the bank" from "not owned at all". Assumes the caller has already limited the input to
 	 * method-type transports that {@link #passesStructuralGates(Transport) structurally exist}.
 	 */
-	private MethodAvailability classifyAvailability(Transport transport)
-	{
+	private MethodAvailability classifyAvailability(Transport transport) {
 		TransportType type = transport.getType();
 		// Rows never leave the catalog for a structural reason (house off, box tier, a
 		// planted tree not detected, no boat at a berth...): they stay, locked, with the
 		// rule named in the tooltip. Only the seasonal rules remove rows (passesCatalogGates).
 		if (!passesStructuralGates(transport))
-		{
 			return MethodAvailability.LOCKED;
-		}
 
 		// A travel option the user switched OFF: the method stays listed, locked, with the toggle
 		// named — otherwise the catalog shows it as usable while routing never picks it (field
@@ -1356,8 +1161,7 @@ public class PathfinderConfig
 		// teleport-item/box "types" are governed by the teleportation-item setting, which this
 		// classification deliberately ignores (see the javadoc).
 		if (!TransportType.TELEPORTATION_ITEM.equals(type) && !TransportType.TELEPORTATION_BOX.equals(type)
-			&& !transportTypeConfig.isEnabledInConfig(type))
-		{
+			&& !transportTypeConfig.isEnabledInConfig(type)) {
 			return MethodAvailability.LOCKED;
 		}
 
@@ -1365,45 +1169,32 @@ public class PathfinderConfig
 		// (via disableUnless above), not by per-transport requirements, so classify them explicitly.
 		Quest typeGate = typeGateQuest(type);
 		if (typeGate != null && !QuestState.FINISHED.equals(getQuestState(typeGate)))
-		{
 			return MethodAvailability.MISSING_QUEST;
-		}
 		if (TransportType.FAIRY_RING.equals(type)
-			&& varbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST) <= 39)
-		{
+			&& varbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST) <= 39) {
 			return MethodAvailability.MISSING_QUEST;
 		}
 
 		// A mount the player says isn't built: present in the catalog, locked.
 		if (!mountBuilt(transport))
-		{
 			return MethodAvailability.LOCKED;
-		}
 		// Per-transport unlock gates.
 		if (!hasRequiredLevels(transport))
-		{
 			return MethodAvailability.MISSING_LEVEL;
-		}
 		if (transport.isQuestLocked() && !completedQuests(transport))
-		{
 			return MethodAvailability.MISSING_QUEST;
-		}
 		if (varbitChecks(transport) || varPlayerChecks(transport))
-		{
 			return MethodAvailability.LOCKED;
-		}
 
 		// Fairy rings additionally need a Dramen/Lunar staff unless the Lumbridge Elite diary is complete
 		// (mirrors hasRequiredItems' special case).
 		if (TransportType.FAIRY_RING.equals(type)
-			&& varbitValues.getOrDefault(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE, 0) != 1)
-		{
+			&& varbitValues.getOrDefault(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE, 0) != 1) {
 			return classifyItems(DRAMEN_STAFF, 100);
 		}
 		// Balloon flights payable from the log storage are available without carrying logs.
 		if (TransportType.HOT_AIR_BALLOON.equals(type)
-			&& balloonStorageCovers(transport.getItemRequirements()))
-		{
+			&& balloonStorageCovers(transport.getItemRequirements())) {
 			return MethodAvailability.AVAILABLE;
 		}
 		return classifyItems(transport.getItemRequirements(), farePercent(transport));
@@ -1413,30 +1204,21 @@ public class PathfinderConfig
 	 * Whether every item requirement of a balloon flight is covered by the balloon log storage
 	 * (chat-parsed counts; conservative zero until the game confirms contents).
 	 */
-	private boolean balloonStorageCovers(TransportItems items)
-	{
+	private boolean balloonStorageCovers(TransportItems items) {
 		if (items == null)
-		{
 			return true;
-		}
-		for (ItemRequirement requirement : items.getRequirements())
-		{
+		for (ItemRequirement requirement : items.getRequirements()) {
 			boolean covered = false;
-			if (requirement.getItemIds() != null)
-			{
-				for (int itemId : requirement.getItemIds())
-				{
-					if (balloonStoredLogs.getOrDefault(itemId, 0) > 0)
-					{
+			if (requirement.getItemIds() != null) {
+				for (int itemId : requirement.getItemIds()) {
+					if (balloonStoredLogs.getOrDefault(itemId, 0) > 0) {
 						covered = true;
 						break;
 					}
 				}
 			}
 			if (!covered)
-			{
 				return false;
-			}
 		}
 		return true;
 	}
@@ -1447,20 +1229,13 @@ public class PathfinderConfig
 	 * MISSING_ITEM. The bank read here always consults the bank (unlike the routing checks, which gate it
 	 * on the teleportation-item setting) so a banked item is reported the same way in every mode.
 	 */
-	private MethodAvailability classifyItems(TransportItems items, int coinPercent)
-	{
+	private MethodAvailability classifyItems(TransportItems items, int coinPercent) {
 		if (items == null)
-		{
 			return MethodAvailability.AVAILABLE;
-		}
 		if (hasRequiredItems(items, true, true, false, true, false, coinPercent))
-		{
 			return MethodAvailability.AVAILABLE;
-		}
 		if (hasRequiredItems(items, true, true, true, true, true, coinPercent))
-		{
 			return MethodAvailability.IN_BANK;
-		}
 		return MethodAvailability.MISSING_ITEM;
 	}
 
@@ -1471,8 +1246,7 @@ public class PathfinderConfig
 	 */
 	private List<Transport> extraTransports = List.of();
 
-	public void setExtraTransports(List<Transport> extras)
-	{
+	public void setExtraTransports(List<Transport> extras) {
 		extraTransports = extras == null ? List.of() : extras;
 	}
 
@@ -1484,37 +1258,28 @@ public class PathfinderConfig
 	 * remove or add the immutable base objects are shared as-is (plan step N3).
 	 */
 	/** See {@link #usableFingerprint}; 0 until a planning refresh has run. */
-	public long getUsableFingerprint()
-	{
+	public long getUsableFingerprint() {
 		return usableFingerprint;
 	}
 
-	public void rebuildAvailabilityWithExclusions(Set<TeleportMethod> excluded)
-	{
+	public void rebuildAvailabilityWithExclusions(Set<TeleportMethod> excluded) {
 		TransportAvailability baseWithoutBank = baseAvailabilityWithoutBank;
 		TransportAvailability baseWithBank = baseAvailabilityWithBank;
 		if (baseWithoutBank == null || baseWithBank == null)
-		{
 			return;
-		}
 		List<Transport> extras = List.of();
-		if (!extraTransports.isEmpty())
-		{
+		if (!extraTransports.isEmpty()) {
 			// The exclusion filter applies to extras exactly as to the base rows: seed searches
 			// exclude every OTHER seed to force diversity, and unfiltered extras made all six
 			// aboard port seeds find the same route (field capture 225226: six searches, six
 			// identical results).
 			extras = new ArrayList<>(extraTransports.size());
-			for (Transport transport : extraTransports)
-			{
+			for (Transport transport : extraTransports) {
 				if (useTransport(transport) && !excluded.contains(transport.method()))
-				{
 					extras.add(transport);
-				}
 			}
 		}
-		if (excluded.isEmpty() && extras.isEmpty())
-		{
+		if (excluded.isEmpty() && extras.isEmpty()) {
 			transportAvailabilityWithoutBank = baseWithoutBank;
 			transportAvailabilityWithBank = baseWithBank;
 			return;
@@ -1523,8 +1288,7 @@ public class PathfinderConfig
 		transportAvailabilityWithBank = baseWithBank.filtered(excluded, extras);
 	}
 
-	public boolean avoidWilderness(int packedPosition, int packedNeighborPosition, boolean targetInWilderness)
-	{
+	public boolean avoidWilderness(int packedPosition, int packedNeighborPosition, boolean targetInWilderness) {
 		return avoidWilderness
 			&& !targetInWilderness
 			&& !WildernessChecker.isInWilderness(packedPosition)
@@ -1537,12 +1301,9 @@ public class PathfinderConfig
 	 * returns {@code false} on non-seasonal worlds so vanilla pathfinding is
 	 * unaffected.
 	 */
-	public boolean avoidBlockedRegion(int packedPosition, int packedNeighborPosition, boolean targetInBlockedRegion)
-	{
+	public boolean avoidBlockedRegion(int packedPosition, int packedNeighborPosition, boolean targetInBlockedRegion) {
 		if (!leagueModeState.isSeasonal())
-		{
 			return false;
-		}
 		return !targetInBlockedRegion
 			&& !leagueModeState.isInBlockedRegion(packedPosition)
 			&& leagueModeState.isInBlockedRegion(packedNeighborPosition);
@@ -1560,17 +1321,12 @@ public class PathfinderConfig
 	 * under (e.g. Trollheim Wilderness climb — destination chunk is
 	 * Wilderness, but the shortcut is wiki-listed as Asgarnia).
 	 */
-	private boolean isTransportRegionAllowed(Transport transport)
-	{
+	private boolean isTransportRegionAllowed(Transport transport) {
 		if (!leagueModeState.isSeasonal())
-		{
 			return true;
-		}
 		LeagueRegion origin = LeagueRegionChecker.getRegion(transport.getOrigin());
 		if (!leagueModeState.isUnlocked(origin))
-		{
 			return false;
-		}
 		LeagueRegion destination = transport.getRegionOverride() != null
 			? transport.getRegionOverride()
 			: LeagueRegionChecker.getRegion(transport.getDestination());
@@ -1583,30 +1339,22 @@ public class PathfinderConfig
 	 * are remapped so chaining with other POH transports is possible.
 	 * Called once at load time since Transport objects in allTransports are shared references.
 	 */
-	private static Transport[] flatten(Map<Integer, Set<Transport>> transports)
-	{
+	private static Transport[] flatten(Map<Integer, Set<Transport>> transports) {
 		List<Transport> all = new ArrayList<>();
 		for (Set<Transport> set : transports.values())
-		{
 			all.addAll(set);
-		}
 		return all.toArray(new Transport[0]);
 	}
 
-	static void remapPohDestinations(Map<Integer, Set<Transport>> transports)
-	{
+	static void remapPohDestinations(Map<Integer, Set<Transport>> transports) {
 		int pohLanding = WorldPointUtil.packWorldPoint(1923, 5709, 0);
-		for (Set<Transport> transportSet : transports.values())
-		{
-			for (Transport transport : transportSet)
-			{
+		for (Set<Transport> transportSet : transports.values()) {
+			for (Transport transport : transportSet) {
 				int destination = transport.getDestination();
 				int destX = WorldPointUtil.unpackWorldX(destination);
 				int destY = WorldPointUtil.unpackWorldY(destination);
 				if (destination != pohLanding && PlayerOwnedHouse.isInside(destX, destY))
-				{
 					transport.setDestination(pohLanding);
-				}
 			}
 		}
 	}
@@ -1618,17 +1366,13 @@ public class PathfinderConfig
 	 * use. The plugin consults it on inventory/equipment changes to skip catalog refreshes for
 	 * items no transport cares about (issues #23/#24).
 	 */
-	public RoutingItemDependencies getRoutingItemDependencies()
-	{
+	public RoutingItemDependencies getRoutingItemDependencies() {
 		if (routingItemDependencies == null)
-		{
 			routingItemDependencies = RoutingItemDependencies.build(allTransports);
-		}
 		return routingItemDependencies;
 	}
 
-	public QuestState getQuestState(Quest quest)
-	{
+	public QuestState getQuestState(Quest quest) {
 		// Memoized for the duration of a refresh pass: every call runs a clientscript (4029),
 		// and the transport loop repeats the same quests hundreds of times per refresh - at one
 		// script per row that is a visible client-thread stall on every inventory change
@@ -1636,77 +1380,55 @@ public class PathfinderConfig
 		// each pass so quest progress is still re-read live.
 		QuestState cached = questStates.get(quest);
 		if (cached != null)
-		{
 			return cached;
-		}
 		QuestState state = quest.getState(client);
 		questStates.put(quest, state);
 		return state;
 	}
 
-	private boolean completedQuests(Transport transport)
-	{
-		for (Quest quest : transport.getQuests())
-		{
+	private boolean completedQuests(Transport transport) {
+		for (Quest quest : transport.getQuests()) {
 			if (!QuestState.FINISHED.equals(questStates.getOrDefault(quest, QuestState.NOT_STARTED)))
-			{
 				return false;
-			}
 		}
 		return true;
 	}
 
-	public boolean varbitChecks(Transport transport)
-	{
-		for (VarRequirement varRequirement : transport.getVarbits())
-		{
+	public boolean varbitChecks(Transport transport) {
+		for (VarRequirement varRequirement : transport.getVarbits()) {
 			if (!varRequirement.check(varbitValues))
-			{
 				return true;
-			}
 		}
 		return false;
 	}
 
-	public boolean varPlayerChecks(Transport transport)
-	{
-		for (VarRequirement varRequirement : transport.getVarPlayers())
-		{
+	public boolean varPlayerChecks(Transport transport) {
+		for (VarRequirement varRequirement : transport.getVarPlayers()) {
 			if (!varRequirement.check(varPlayerValues))
-			{
 				return true;
-			}
 		}
 		return false;
 	}
 
-	private boolean useTransport(Transport transport)
-	{
+	private boolean useTransport(Transport transport) {
 		// Alternative-routes exclusion: the user switched this exact method off for the next search.
 		if (!excludedMethods.isEmpty() && excludedMethods.contains(transport.method()))
-		{
 			return false;
-		}
 
 		// Structural world rules (sailing, POH master switch, league regions, POH variants, planted
 		// spirit trees): apply in every mode, including the catalog pass and full planning mode.
 		if (!passesStructuralGates(transport))
-		{
 			return false;
-		}
 
 		final boolean isQuestLocked = transport.isQuestLocked();
 		TransportType type = transport.getType();
 
 		// Config-preference gates (type toggles, consumable/None item rules): bypassed by the
 		// alternative-routes "All" family. See PathfinderConfig#bypassItemPossession.
-		if (!bypassItemPossession)
-		{
+		if (!bypassItemPossession) {
 			// Check if transport type is enabled in config
 			if (!transportTypeConfig.isEnabled(type))
-			{
 				return false;
-			}
 
 			// Boat-location gate: a boarding leg needs the boat AT that mooring, or Summon
 			// Boat assumed and castable. With boat state read (logged in) and NO boat
@@ -1715,46 +1437,32 @@ public class PathfinderConfig
 			// untouched; the "All" family bypasses above (ownership is a possession).
 			if (TransportType.SAILING.equals(type) && boatStateFresh && !assumeSummonBoat
 				&& gps.SailingSea.isMooringLand(transport.getOrigin())
-				&& !boatMoorings.contains(transport.getOrigin()))
-			{
+				&& !boatMoorings.contains(transport.getOrigin())) {
 				return false;
 			}
 
 			// Handle special cases for teleportation items and seasonal transports
 			if (!checkTeleportationItemRules(transport, type))
-			{
 				return false;
-			}
 
 		}
 
 		// Character-unlock gates (skills, quests, varbits/varplayers): only bypassed by the full
 		// planning mode ("Everything"); the "All available" variant keeps them.
-		if (!planningMode)
-		{
+		if (!planningMode) {
 			if (!mountBuilt(transport))
-			{
 				return false;
-			}
 			if (!hasRequiredLevels(transport))
-			{
 				return false;
-			}
 
 			if (isQuestLocked && !completedQuests(transport))
-			{
 				return false;
-			}
 
 			if (varbitChecks(transport))
-			{
 				return false;
-			}
 
 			if (varPlayerChecks(transport))
-			{
 				return false;
-			}
 		}
 
 		return true;
@@ -1772,28 +1480,23 @@ public class PathfinderConfig
 	 * seasonal world, and league regions the player hasn't unlocked. Everything else a
 	 * structural gate rejects stays listed with a lock (the user's rule: rows never vanish).
 	 */
-	private boolean passesCatalogGates(Transport transport)
-	{
+	private boolean passesCatalogGates(Transport transport) {
 		if (TransportType.SEASONAL_TRANSPORTS.equals(transport.getType())
-			&& !transportTypeConfig.isEnabled(TransportType.SEASONAL_TRANSPORTS))
-		{
+			&& !transportTypeConfig.isEnabled(TransportType.SEASONAL_TRANSPORTS)) {
 			return false;
 		}
 		return isTransportRegionAllowed(transport);
 	}
 
 	/** Why a structurally gated method is locked — the rule, in the words of the panel section that owns it. */
-	private String structuralLockDetail(Transport transport)
-	{
+	private String structuralLockDetail(Transport transport) {
 		TransportType type = transport.getType();
-		if (transport.getDisplayInfo() != null && transport.getDisplayInfo().startsWith("Teleport to Boat"))
-		{
+		if (transport.getDisplayInfo() != null && transport.getDisplayInfo().startsWith("Teleport to Boat")) {
 			return !useSailing ? "Sailing is off (Travel options)"
 				: !boatSeen ? "No boat seen yet (Sailing section)" : "Your boat isn't moored at this port";
 		}
 		if (!TransportType.TELEPORTATION_ITEM.equals(type) && !TransportType.TELEPORTATION_BOX.equals(type)
-			&& !transportTypeConfig.isEnabledInConfig(type))
-		{
+			&& !transportTypeConfig.isEnabledInConfig(type)) {
 			return TransportType.TELEPORTATION_PORTAL_POH.equals(type)
 				? "Teleport portals & nexus are off (House section)"
 				: travelOptionName(type) + " are off (Travel options)";
@@ -1803,17 +1506,13 @@ public class PathfinderConfig
 			|| PlayerOwnedHouse.isInside(WorldPointUtil.unpackWorldX(transport.getDestination()),
 			WorldPointUtil.unpackWorldY(transport.getDestination()));
 		if (inHouse && !usePoh)
-		{
 			return "House is off (House section)";
-		}
-		if (inHouse && !checkPohVariant(transport, type))
-		{
+		if (inHouse && !checkPohVariant(transport, type)) {
 			return (TransportType.FAIRY_RING.equals(type) ? "Fairy ring"
 				: TransportType.SPIRIT_TREE.equals(type) ? "Spirit tree" : "Wilderness obelisk")
 				+ " is off in the House section";
 		}
-		if (TransportType.TELEPORTATION_BOX.equals(type) && !checkJewelleryBoxTier(transport))
-		{
+		if (TransportType.TELEPORTATION_BOX.equals(type) && !checkJewelleryBoxTier(transport)) {
 			String objectInfo = transport.getObjectInfo() == null ? "" : transport.getObjectInfo();
 			boolean mount = objectInfo.contains("Amulet of Glory") || objectInfo.contains("Xeric's Talisman")
 				|| objectInfo.contains("Digsite") || objectInfo.contains("Mythical cape");
@@ -1821,24 +1520,18 @@ public class PathfinderConfig
 				: "Not built at your jewellery box tier (House section)";
 		}
 		if (TransportType.SPIRIT_TREE.equals(type) && !checkPlantedSpiritTrees(transport))
-		{
 			return "Planted spirit tree not detected (Planted spirit trees section)";
-		}
 		if (!mountBuilt(transport))
-		{
 			return "Not built in your house (House section)";
-		}
 		return null;
 	}
 
 	/** The Travel-options checkbox that owns this type, for lock reasons. */
-	private static String travelOptionName(TransportType type)
-	{
+	private static String travelOptionName(TransportType type) {
 		return TransportTypePresentation.travelOptionOf(type);
 	}
 
-	private boolean passesStructuralGates(Transport transport)
-	{
+	private boolean passesStructuralGates(Transport transport) {
 		TransportType type = transport.getType();
 
 
@@ -1846,9 +1539,7 @@ public class PathfinderConfig
 		// section), not a catalog method — with it off, sailing edges must not exist in ANY
 		// mode, planning included, or "every method excluded" would still sail to islands.
 		if (!useSailing && type == TransportType.SAILING)
-		{
 			return false;
-		}
 
 		// (The boat-location gate for BOARDING legs lives in useTransport's possession
 		// block, not here: boat ownership is a possession, so the "All" family bypasses
@@ -1858,72 +1549,56 @@ public class PathfinderConfig
 		// no boat seen (or sailing off entirely) means none are.
 		if (transport.getDisplayInfo() != null
 			&& transport.getDisplayInfo().startsWith("Teleport to Boat")
-			&& (!useSailing || !boatSeen || !boatMoorings.contains(transport.getDestination())))
-		{
+			&& (!useSailing || !boatSeen || !boatMoorings.contains(transport.getDestination()))) {
 			return false;
 		}
 
 		// Master POH gate - if POH is disabled, reject all POH transports.
-		if (!usePoh)
-		{
+		if (!usePoh) {
 			int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
 			int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
 			int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
 			int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
 			if (PlayerOwnedHouse.isInside(originX, originY) || PlayerOwnedHouse.isInside(destX, destY))
-			{
 				return false;
-			}
 		}
 
 		// League region gate: in seasonal mode, drop transports that touch the always-blocked region or
 		// a region the player has not unlocked.
 		if (!isTransportRegionAllowed(transport))
-		{
 			return false;
-		}
 
 		// POH variants (fairy ring / spirit tree / obelisk inside the POH) depend on POH sub-settings.
 		if (!checkPohVariant(transport, type))
-		{
 			return false;
-		}
 
 		// The jewellery-box tier and mounted-item toggle describe what furniture EXISTS in the
 		// player's house — structural facts like the POH variants above, not character unlocks —
 		// so they apply in every mode, including the "All" family.
 		if (TransportType.TELEPORTATION_BOX.equals(type) && !checkJewelleryBoxTier(transport))
-		{
 			return false;
-		}
 
 		// Seasonal (Leagues) transports are hidden entirely unless the master toggle is on: gating
 		// here (a structural rule that applies in EVERY mode, including the catalog pass and the
 		// "All" family) keeps them out of routes, the method catalog and captures alike. They only
 		// function in a seasonal world, so off-by-default is right for the common case.
-		if (TransportType.SEASONAL_TRANSPORTS.equals(type))
-		{
+		if (TransportType.SEASONAL_TRANSPORTS.equals(type)) {
 			return transportTypeConfig.isEnabled(TransportType.SEASONAL_TRANSPORTS)
 				&& checkPlantedSpiritTrees(transport);
 		}
 		if (TransportType.SPIRIT_TREE.equals(type))
-		{
 			return checkPlantedSpiritTrees(transport);
-		}
 
 		return true;
 	}
 
-	private boolean checkPlantedSpiritTrees(Transport transport)
-	{
+	private boolean checkPlantedSpiritTrees(Transport transport) {
 		int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
 		int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
 
 		// Check planted spirit tree origins (travel FROM a planted tree)
 		if (isPlantedSpiritTreeBlocked(originX, originY))
-		{
 			return false;
-		}
 
 		// Check planted spirit tree destinations (travel TO a planted tree)
 		int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
@@ -1936,33 +1611,25 @@ public class PathfinderConfig
 	 * Checks POH-specific transport variants (fairy ring, spirit tree, obelisk inside POH).
 	 * Returns false if the transport is a POH variant and that variant is disabled.
 	 */
-	private boolean checkPohVariant(Transport transport, TransportType type)
-	{
+	private boolean checkPohVariant(Transport transport, TransportType type) {
 		int originX = WorldPointUtil.unpackWorldX(transport.getOrigin());
 		int originY = WorldPointUtil.unpackWorldY(transport.getOrigin());
 		int destX = WorldPointUtil.unpackWorldX(transport.getDestination());
 		int destY = WorldPointUtil.unpackWorldY(transport.getDestination());
 
-		if (!PlayerOwnedHouse.isInside(originX, originY) && !PlayerOwnedHouse.isInside(destX, destY))
-		{
+		if (!PlayerOwnedHouse.isInside(originX, originY) && !PlayerOwnedHouse.isInside(destX, destY)) {
 			return true; // Not a POH transport
 		}
 
 		// POH fairy ring
 		if (TransportType.FAIRY_RING.equals(type))
-		{
 			return usePohFairyRing;
-		}
 		// POH spirit tree
 		if (TransportType.SPIRIT_TREE.equals(type))
-		{
 			return usePohSpiritTree;
-		}
 		// POH obelisk
 		if (TransportType.WILDERNESS_OBELISK.equals(type))
-		{
 			return usePohObelisk;
-		}
 
 		return true;
 	}
@@ -1971,17 +1638,14 @@ public class PathfinderConfig
 	 * Checks teleportation item rules (consumable vs non-consumable, inventory settings).
 	 * Returns false if the transport should be filtered out based on teleportation item settings.
 	 */
-	private boolean checkTeleportationItemRules(Transport transport, TransportType type)
-	{
+	private boolean checkTeleportationItemRules(Transport transport, TransportType type) {
 		if (!TransportType.TELEPORTATION_ITEM.equals(type)
 			&& !TransportType.SEASONAL_TRANSPORTS.equals(type)
-			&& !TransportType.QUETZAL_WHISTLE.equals(type))
-		{
+			&& !TransportType.QUETZAL_WHISTLE.equals(type)) {
 			return true; // Not a teleportation item type
 		}
 
-		switch (transportTypeConfig.getTeleportationItemSetting())
-		{
+		switch (transportTypeConfig.getTeleportationItemSetting()) {
 			case ALL:
 				return true;
 			case ALL_NON_CONSUMABLE:
@@ -2004,29 +1668,18 @@ public class PathfinderConfig
 	 * toggle says it isn't built; true for everything else. An unlock-class gate: the row
 	 * keeps its catalog entry with a lock and the 'Everything' planning mode ignores it.
 	 */
-	private boolean mountBuilt(Transport transport)
-	{
+	private boolean mountBuilt(Transport transport) {
 		String objectInfo = transport.getObjectInfo();
 		if (!TransportType.TELEPORTATION_BOX.equals(transport.getType()) || objectInfo == null)
-		{
 			return true;
-		}
 		if (objectInfo.contains("Amulet of Glory"))
-		{
 			return pohMountGlory;
-		}
 		if (objectInfo.contains("Xeric's Talisman"))
-		{
 			return pohMountXerics;
-		}
 		if (objectInfo.contains("Digsite"))
-		{
 			return pohMountDigsite;
-		}
 		if (objectInfo.contains("Mythical cape"))
-		{
 			return pohMountMythical;
-		}
 		return true;
 	}
 
@@ -2034,13 +1687,10 @@ public class PathfinderConfig
 	 * Checks if a TELEPORTATION_BOX transport should be used based on POH settings.
 	 * Handles jewellery box tiers and mounted items.
 	 */
-	private boolean checkJewelleryBoxTier(Transport transport)
-	{
+	private boolean checkJewelleryBoxTier(Transport transport) {
 		String objectInfo = transport.getObjectInfo();
 		if (objectInfo == null)
-		{
 			return false;
-		}
 
 		// Check if this is a mounted item (glory, xeric's, digsite, mythical cape)
 		boolean isMountedGlory = objectInfo.contains("Amulet of Glory");
@@ -2049,14 +1699,11 @@ public class PathfinderConfig
 			objectInfo.contains("Digsite") ||
 			objectInfo.contains("Mythical cape");
 
-		if (isMountedItem)
-		{
+		if (isMountedItem) {
 			// If mounted glory and ornate jewellery box is enabled, skip the glory
 			// because the ornate box already covers all 4 destinations with correct prefixes
 			if (isMountedGlory && JewelleryBoxTier.ORNATE.equals(pohJewelleryBoxTier))
-			{
 				return false;
-			}
 			// Per-mount choice is an UNLOCK, not structure: the row stays in the catalog with a
 			// lock (see mountBuilt), so nothing vanishes when a mount is unticked.
 			return usePohMountedItems;
@@ -2064,28 +1711,22 @@ public class PathfinderConfig
 
 		// Filter jewellery boxes by tier
 		if (JewelleryBoxTier.NONE.equals(pohJewelleryBoxTier))
-		{
 			return false;
-		}
 
 		// Basic box (37492): destinations 1-9
-		if (objectInfo.contains("Basic Jewellery Box 37492"))
-		{
+		if (objectInfo.contains("Basic Jewellery Box 37492")) {
 			return true; // All tiers include basic
 		}
 
 		// Fancy box (37501): destinations A-J
-		if (objectInfo.contains("Fancy Jewellery Box 37501"))
-		{
+		if (objectInfo.contains("Fancy Jewellery Box 37501")) {
 			return JewelleryBoxTier.FANCY.equals(pohJewelleryBoxTier) ||
 				JewelleryBoxTier.ORNATE.equals(pohJewelleryBoxTier);
 		}
 
 		// Ornate box (37520): destinations K-R
 		if (objectInfo.contains("Ornate Jewellery Box 37520"))
-		{
 			return JewelleryBoxTier.ORNATE.equals(pohJewelleryBoxTier);
-		}
 
 		return false;
 	}
@@ -2093,25 +1734,19 @@ public class PathfinderConfig
 	/**
 	 * Checks if the player has all the required skill levels for the transport
 	 */
-	private boolean hasRequiredLevels(Transport transport)
-	{
+	private boolean hasRequiredLevels(Transport transport) {
 		// In leagues some skills are disabled so the max total level is lower than
 		// the standard 2376. Holding the item (e.g. Max cape) already proves the
 		// player is maxed for the available skills, so skip the total-level check.
 		final int totalLevelIndex = Skill.values().length;
 		int[] requiredLevels = transport.getSkillLevels();
-		for (int i = 0; i < boostedSkillLevelsAndMore.length; i++)
-		{
+		for (int i = 0; i < boostedSkillLevelsAndMore.length; i++) {
 			if (leagueModeState.isSeasonal() && i == totalLevelIndex)
-			{
 				continue;
-			}
 			int boostedLevel = boostedSkillLevelsAndMore[i];
 			int requiredLevel = requiredLevels[i];
 			if (boostedLevel < requiredLevel)
-			{
 				return false;
-			}
 		}
 		return true;
 	}
@@ -2124,21 +1759,17 @@ public class PathfinderConfig
 		boolean checkInventory,
 		boolean checkEquipment,
 		boolean checkBank,
-		boolean checkRunePouch)
-	{
+		boolean checkRunePouch) {
 		// Balloon flights may pay from the balloon log storage instead of carried logs.
 		if (TransportType.HOT_AIR_BALLOON.equals(transport.getType())
-			&& balloonStorageCovers(transport.getItemRequirements()))
-		{
+			&& balloonStorageCovers(transport.getItemRequirements())) {
 			return true;
 		}
 
 		if (TransportType.TELEPORTATION_ITEM.equals(transport.getType()) ||
 			TransportType.SEASONAL_TRANSPORTS.equals(transport.getType()) ||
-			TransportType.QUETZAL_WHISTLE.equals(transport.getType()))
-		{
-			switch (transportTypeConfig.getTeleportationItemSetting())
-			{
+			TransportType.QUETZAL_WHISTLE.equals(transport.getType())) {
+			switch (transportTypeConfig.getTeleportationItemSetting()) {
 				case ALL:
 				case ALL_NON_CONSUMABLE:
 				case UNLOCKED:
@@ -2152,15 +1783,11 @@ public class PathfinderConfig
 		}
 
 		// Fairy rings require Dramen/Lunar staff unless Lumbridge Elite diary is complete
-		if (TransportType.FAIRY_RING.equals(transport.getType()))
-		{
+		if (TransportType.FAIRY_RING.equals(transport.getType())) {
 			int lumbridgeDiaryComplete = varbitValues.getOrDefault(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE, 0);
-			if (lumbridgeDiaryComplete != 1)
-			{
+			if (lumbridgeDiaryComplete != 1) {
 				if (!hasRequiredItems(DRAMEN_STAFF, checkInventory, checkEquipment, checkBank, checkRunePouch))
-				{
 					return false;
-				}
 			}
 		}
 
@@ -2173,8 +1800,7 @@ public class PathfinderConfig
 		boolean checkInventory,
 		boolean checkEquipment,
 		boolean checkBank,
-		boolean checkRunePouch)
-	{
+		boolean checkRunePouch) {
 		return hasRequiredItems(transportItems, checkInventory, checkEquipment, checkBank, checkRunePouch, false);
 	}
 
@@ -2193,82 +1819,59 @@ public class PathfinderConfig
 	 * the ~200 ms the refresh cost the client thread.
 	 */
 	private Map<Integer, Integer> buildItemSnapshot(boolean checkInventory, boolean checkEquipment,
-		boolean checkBank, boolean checkRunePouch, boolean forceBank)
-	{
+		boolean checkBank, boolean checkRunePouch, boolean forceBank) {
 		Map<Integer, Integer> items = new HashMap<>(28 + 11 + 500);
 
-		if (checkInventory)
-		{
+		if (checkInventory) {
 			ItemContainer inventory = client.getItemContainer(InventoryID.INV);
-			if (inventory != null)
-			{
-				for (Item item : inventory.getItems())
-				{
+			if (inventory != null) {
+				for (Item item : inventory.getItems()) {
 					if (item.getId() >= 0 && item.getQuantity() > 0)
-					{
 						items.put(item.getId(), item.getQuantity());
-					}
 				}
 			}
 		}
 
-		if (checkEquipment)
-		{
+		if (checkEquipment) {
 			ItemContainer equipment = client.getItemContainer(InventoryID.WORN);
-			if (equipment != null)
-			{
-				for (Item item : equipment.getItems())
-				{
+			if (equipment != null) {
+				for (Item item : equipment.getItems()) {
 					if (item.getId() >= 0 && item.getQuantity() > 0)
-					{
 						items.put(item.getId(), item.getQuantity());
-					}
 				}
 			}
 		}
 
-		if (checkBank)
-		{
+		if (checkBank) {
 			TeleportationItem teleportSetting = transportTypeConfig.getTeleportationItemSetting();
 			Item[] bankItems = resolveBankItems();
 			if (bankItems != null
 				&& (forceBank
 				|| TeleportationItem.INVENTORY_AND_BANK.equals(teleportSetting)
-				|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportSetting)))
-			{
-				for (Item item : bankItems)
-				{
+				|| TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportSetting))) {
+				for (Item item : bankItems) {
 					if (item.getId() >= 0 && item.getQuantity() > 0)
-					{
 						items.put(item.getId(), item.getQuantity());
-					}
 				}
 			}
 		}
 
-		if (checkRunePouch)
-		{
+		if (checkRunePouch) {
 			boolean pouchCarried = false;
-			for (int pouch : RUNE_POUCHES)
-			{
-				if (items.containsKey(pouch))
-				{
+			for (int pouch : RUNE_POUCHES) {
+				if (items.containsKey(pouch)) {
 					pouchCarried = true;
 					break;
 				}
 			}
-			if (pouchCarried)
-			{
+			if (pouchCarried) {
 				EnumComposition runePouchEnum = client.getEnum(EnumID.RUNEPOUCH_RUNE);
-				for (int i = 0; i < RUNE_POUCH_RUNE_VARBITS.length; i++)
-				{
+				for (int i = 0; i < RUNE_POUCH_RUNE_VARBITS.length; i++) {
 					int runeEnumId = client.getVarbitValue(RUNE_POUCH_RUNE_VARBITS[i]);
 					int runeId = runeEnumId > 0 ? runePouchEnum.getIntValue(runeEnumId) : 0;
 					int runeAmount = client.getVarbitValue(RUNE_POUCH_AMOUNT_VARBITS[i]);
 					if (runeId > 0 && runeAmount > 0)
-					{
 						items.put(runeId, runeAmount);
-					}
 				}
 			}
 		}
@@ -2281,18 +1884,14 @@ public class PathfinderConfig
 	private boolean refreshPassActive;
 
 	private Map<Integer, Integer> itemSnapshot(boolean checkInventory, boolean checkEquipment,
-		boolean checkBank, boolean checkRunePouch, boolean forceBank)
-	{
+		boolean checkBank, boolean checkRunePouch, boolean forceBank) {
 		if (!refreshPassActive)
-		{
 			// Outside a pass the containers may have changed since: read them live, as before.
 			return buildItemSnapshot(checkInventory, checkEquipment, checkBank, checkRunePouch, forceBank);
-		}
 		int key = (checkInventory ? 1 : 0) | (checkEquipment ? 2 : 0) | (checkBank ? 4 : 0)
 			| (checkRunePouch ? 8 : 0) | (forceBank ? 16 : 0);
 		Map<Integer, Integer> snapshot = itemSnapshots.get(key);
-		if (snapshot == null)
-		{
+		if (snapshot == null) {
 			snapshot = buildItemSnapshot(checkInventory, checkEquipment, checkBank, checkRunePouch, forceBank);
 			itemSnapshots.put(key, snapshot);
 		}
@@ -2305,8 +1904,7 @@ public class PathfinderConfig
 		boolean checkEquipment,
 		boolean checkBank,
 		boolean checkRunePouch,
-		boolean forceBank)
-	{
+		boolean forceBank) {
 		return hasRequiredItems(transportItems, checkInventory, checkEquipment, checkBank, checkRunePouch, forceBank, 100);
 	}
 
@@ -2318,12 +1916,9 @@ public class PathfinderConfig
 		boolean checkBank,
 		boolean checkRunePouch,
 		boolean forceBank,
-		int coinPercent)
-	{
+		int coinPercent) {
 		if (transportItems == null)
-		{
 			return true;
-		}
 		Map<Integer, Integer> items = itemSnapshot(checkInventory, checkEquipment, checkBank, checkRunePouch, forceBank);
 
 		// One staff is wielded per cast, but a COMBO staff covers both its elements at once: the
@@ -2334,54 +1929,38 @@ public class PathfinderConfig
 		// likewise a single offhand (tome) across the offhand-covered requirements.
 		List<int[]> staffNeeds = new ArrayList<>();
 		List<int[]> offhandNeeds = new ArrayList<>();
-		for (ItemRequirement req : transportItems.getRequirements())
-		{
+		for (ItemRequirement req : transportItems.getRequirements()) {
 			boolean missing = true;
 			int requiredQuantity = scaledQuantity(req, coinPercent);
-			if (req.getItemIds() != null)
-			{
-				for (int itemId : req.getItemIds())
-				{
+			if (req.getItemIds() != null) {
+				for (int itemId : req.getItemIds()) {
 					int quantity = items.getOrDefault(itemId, 0);
-					if (requiredQuantity > 0 && quantity >= requiredQuantity || requiredQuantity == 0 && quantity == 0)
-					{
+					if (requiredQuantity > 0 && quantity >= requiredQuantity || requiredQuantity == 0 && quantity == 0) {
 						if (CURRENCIES.contains(itemId) && requiredQuantity > currencyThreshold)
-						{
 							return false;
-						}
 						missing = false;
 						break;
 					}
 				}
 			}
-			if (missing && req.getStaffIds() != null)
-			{
+			if (missing && req.getStaffIds() != null) {
 				int[] present = presentIds(items, req.getStaffIds(), requiredQuantity);
-				if (requiredQuantity == 0 ? present.length == req.getStaffIds().length : present.length > 0)
-				{
+				if (requiredQuantity == 0 ? present.length == req.getStaffIds().length : present.length > 0) {
 					if (requiredQuantity > 0)
-					{
 						staffNeeds.add(present);
-					}
 					missing = false;
 				}
 			}
-			if (missing && req.getOffhandIds() != null)
-			{
+			if (missing && req.getOffhandIds() != null) {
 				int[] present = presentIds(items, req.getOffhandIds(), requiredQuantity);
-				if (requiredQuantity == 0 ? present.length == req.getOffhandIds().length : present.length > 0)
-				{
+				if (requiredQuantity == 0 ? present.length == req.getOffhandIds().length : present.length > 0) {
 					if (requiredQuantity > 0)
-					{
 						offhandNeeds.add(present);
-					}
 					missing = false;
 				}
 			}
 			if (missing)
-			{
 				return false;
-			}
 		}
 		return coveredByOneItem(staffNeeds) && coveredByOneItem(offhandNeeds);
 	}
@@ -2391,46 +1970,33 @@ public class PathfinderConfig
 	 * (any quantity — a staff/tome is not consumed); for a forbidden (=0) requirement, the ids NOT
 	 * held (preserving the old branch's "absence satisfies" semantics).
 	 */
-	private int[] presentIds(Map<Integer, Integer> items, int[] ids, int requiredQuantity)
-	{
+	private int[] presentIds(Map<Integer, Integer> items, int[] ids, int requiredQuantity) {
 		int n = 0;
 		int[] out = new int[ids.length];
-		for (int itemId : ids)
-		{
+		for (int itemId : ids) {
 			int quantity = items.getOrDefault(itemId, 0);
 			if (requiredQuantity > 0 ? quantity >= 1 : quantity == 0)
-			{
 				out[n++] = itemId;
-			}
 		}
 		return java.util.Arrays.copyOf(out, n);
 	}
 
 	/** Whether one single item id appears in every set — one wielded staff / one offhand tome. */
-	private static boolean coveredByOneItem(List<int[]> needs)
-	{
+	private static boolean coveredByOneItem(List<int[]> needs) {
 		if (needs.size() <= 1)
-		{
 			return true;
-		}
 		outer:
-		for (int candidate : needs.get(0))
-		{
-			for (int i = 1; i < needs.size(); i++)
-			{
+		for (int candidate : needs.get(0)) {
+			for (int i = 1; i < needs.size(); i++) {
 				boolean found = false;
-				for (int id : needs.get(i))
-				{
-					if (id == candidate)
-					{
+				for (int id : needs.get(i)) {
+					if (id == candidate) {
 						found = true;
 						break;
 					}
 				}
 				if (!found)
-				{
 					continue outer;
-				}
 			}
 			return true;
 		}
@@ -2440,8 +2006,7 @@ public class PathfinderConfig
 	/**
 	 * Calculates the combat level of the player
 	 */
-	private int getCombatLevel()
-	{
+	private int getCombatLevel() {
 		int attack = client.getRealSkillLevel(Skill.ATTACK);
 		int strength = client.getRealSkillLevel(Skill.STRENGTH);
 		int defence = client.getRealSkillLevel(Skill.DEFENCE);
@@ -2457,28 +2022,22 @@ public class PathfinderConfig
 	 * spirit-tree travel widget has been seen once ({@code availableSpiritTrees} null): a tree GPS
 	 * cannot confirm is excluded rather than assumed, so routes never depend on an unplanted tree.
 	 */
-	private boolean isPlantedSpiritTreeBlocked(int x, int y)
-	{
+	private boolean isPlantedSpiritTreeBlocked(int x, int y) {
 		String treeName = getPlantedSpiritTreeName(x, y);
-		if (treeName == null)
-		{
+		if (treeName == null) {
 			return false; // not a farmable spirit-tree location: nothing to block
 		}
 		// Smart tracking off: assume every farmable tree is grown; the Spirit trees catalog toggle
 		// is then the only gate (mirrors how the All modes assume balloon flights are available).
 		if (!spiritTreeSmartMode)
-		{
 			return false;
-		}
 		// Smart on: only the trees the travel menu confirmed are grown. The parsed set lives on the
 		// main config; planning copies read it through their source (mirrors resolveBankItems), so
 		// widget updates reach the search engine. Until the menu is seen (null), stay conservative.
 		Set<String> available = (planningSource != null)
 			? planningSource.availableSpiritTrees : availableSpiritTrees;
 		if (available == null)
-		{
 			return true;
-		}
 		return !available.contains(treeName);
 	}
 }

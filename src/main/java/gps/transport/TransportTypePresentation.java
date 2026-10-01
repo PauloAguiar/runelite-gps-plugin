@@ -12,20 +12,17 @@ import net.runelite.api.Quest;
  * added to the enum could fall through their defaults unnoticed; the test proves every type has
  * a row.
  */
-public final class TransportTypePresentation
-{
+public final class TransportTypePresentation {
 	/** The travel option named for a type no checkbox owns. */
 	static final String NO_TRAVEL_OPTION = "That travel option";
 
-	private static final class Row
-	{
+	private static final class Row {
 		final String category;
 		final String vehicle;
 		final String travelOption;
 		final Quest gateQuest;
 
-		Row(String category, String vehicle, String travelOption, Quest gateQuest)
-		{
+		Row(String category, String vehicle, String travelOption, Quest gateQuest) {
 			this.category = category;
 			this.vehicle = vehicle;
 			this.travelOption = travelOption;
@@ -35,8 +32,7 @@ public final class TransportTypePresentation
 
 	private static final Map<TransportType, Row> ROWS = new EnumMap<>(TransportType.class);
 
-	static
-	{
+	static {
 		//  type                                  category              vehicle           travel option              gate quest
 		row(TransportType.TRANSPORT,              "Other",              null,             NO_TRAVEL_OPTION,          null);
 		row(TransportType.AGILITY_SHORTCUT,       "Other",              null,             "Agility shortcuts",       null);
@@ -67,45 +63,38 @@ public final class TransportTypePresentation
 		row(TransportType.WILDERNESS_OBELISK,     "Obelisks",           "Obelisk",        "Wilderness obelisks",     null);
 	}
 
-	private static void row(TransportType type, String category, String vehicle, String travelOption, Quest gateQuest)
-	{
+	private static void row(TransportType type, String category, String vehicle, String travelOption, Quest gateQuest) {
 		ROWS.put(type, new Row(category, vehicle, travelOption, gateQuest));
 	}
 
-	private TransportTypePresentation()
-	{
+	private TransportTypePresentation() {
 	}
 
 	/** Whether the table has a row for the type (the test requires one for every type). */
-	public static boolean hasRow(TransportType type)
-	{
+	public static boolean hasRow(TransportType type) {
 		return ROWS.containsKey(type);
 	}
 
 	/** The catalog category ("Spells", "Boats & ships"); "Other" for a null type or no row. */
-	public static String categoryOf(TransportType type)
-	{
+	public static String categoryOf(TransportType type) {
 		Row row = type == null ? null : ROWS.get(type);
 		return row == null ? "Other" : row.category;
 	}
 
 	/** The vehicle word of a route label ("Glider to Gandius"), or null when the label is the destination alone. */
-	public static String vehicleOf(TransportType type)
-	{
+	public static String vehicleOf(TransportType type) {
 		Row row = type == null ? null : ROWS.get(type);
 		return row == null ? null : row.vehicle;
 	}
 
 	/** The Travel-options checkbox that owns the type, for lock reasons. */
-	public static String travelOptionOf(TransportType type)
-	{
+	public static String travelOptionOf(TransportType type) {
 		Row row = type == null ? null : ROWS.get(type);
 		return row == null ? NO_TRAVEL_OPTION : row.travelOption;
 	}
 
 	/** The quest that gates the whole network at the type level, or null. */
-	public static Quest gateQuestOf(TransportType type)
-	{
+	public static Quest gateQuestOf(TransportType type) {
 		Row row = type == null ? null : ROWS.get(type);
 		return row == null ? null : row.gateQuest;
 	}

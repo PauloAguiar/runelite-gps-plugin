@@ -16,8 +16,7 @@ package gps;
  * The enum names are the persisted config values, kept stable across the UI's renames (the old
  * ALL_UNLOCKED middle mode was folded into ALL_EVERYTHING and is mapped on load).
  */
-public enum AlternativeRoutesMode
-{
+public enum AlternativeRoutesMode {
 	/**
 	 * Inventory: items in inventory or equipment only (forces the INVENTORY teleport-item setting).
 	 */
@@ -31,8 +30,7 @@ public enum AlternativeRoutesMode
 	 */
 	ALL_EVERYTHING;
 
-	public boolean isOwned()
-	{
+	public boolean isOwned() {
 		return this == OWNED_INVENTORY || this == OWNED_WITH_BANK;
 	}
 }

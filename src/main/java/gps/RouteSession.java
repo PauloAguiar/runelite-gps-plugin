@@ -15,8 +15,7 @@ import java.util.function.IntSupplier;
  * The plugin keeps everything with a side effect (panel refreshes, the journey timer, plugin
  * messages, persistence); every decision here is a pure function of this state.
  */
-final class RouteSession
-{
+final class RouteSession {
 	// The cost cap for a generation, as a multiple of the best route's cost: only routes up to this
 	// many times the cheapest are computed (a cheap teleport otherwise floods the map searching for
 	// far-worse alternatives). "Show more" raises it; reset to the default on a new destination.
@@ -41,71 +40,58 @@ final class RouteSession
 	private int limit = AlternativeRoutesService.MAX_ROUTES;
 	private int costMultiple = DEFAULT_COST_MULTIPLE;
 
-	List<RouteOption> routes()
-	{
+	List<RouteOption> routes() {
 		return routes;
 	}
 
-	RouteOption selected()
-	{
+	RouteOption selected() {
 		return selected;
 	}
 
-	boolean inFlight()
-	{
+	boolean inFlight() {
 		return inFlight;
 	}
 
-	int lastStart()
-	{
+	int lastStart() {
 		return lastStart;
 	}
 
-	Set<Integer> lastTargets()
-	{
+	Set<Integer> lastTargets() {
 		return lastTargets;
 	}
 
-	int lastLimit()
-	{
+	int lastLimit() {
 		return lastLimit;
 	}
 
-	int limit()
-	{
+	int limit() {
 		return limit;
 	}
 
-	int costMultiple()
-	{
+	int costMultiple() {
 		return costMultiple;
 	}
 
-	boolean canLoadMore()
-	{
+	boolean canLoadMore() {
 		return moreLikely;
 	}
 
-	void setLimit(int limit)
-	{
+	void setLimit(int limit) {
 		this.limit = limit;
 	}
 
 	/** A fresh destination starts at the default cost band; "show more" widens it from there. */
-	void resetCostMultiple()
-	{
+	void resetCostMultiple() {
 		costMultiple = DEFAULT_COST_MULTIPLE;
 	}
 
-	void resetBudget(int defaultLimit)
-	{
+	void resetBudget(int defaultLimit) {
 		costMultiple = DEFAULT_COST_MULTIPLE;
 		limit = defaultLimit;
 	}
 
 	/** Drops the pick so a fresh generation's best takes over rather than the overlay clinging to the old line. */
-	void clearSelection()
-	{
+	void clearSelection() {
 		selected = null;
 	}
 
@@ -115,13 +101,10 @@ final class RouteSession
 	 * the SAME destination (off-route recalc, method toggle, "more") keeps it, so the overlay holds
 	 * the current route steadily rather than blinking blank. The page empties either way.
 	 */
-	void begin(int start, Set<Integer> targets)
-	{
+	void begin(int start, Set<Integer> targets) {
 		Set<Integer> ends = targets == null ? Set.of() : Set.copyOf(targets);
 		if (!ends.equals(lastTargets))
-		{
 			committed = null;
-		}
 		lastStart = start;
 		lastTargets = ends;
 		lastLimit = limit;
@@ -131,8 +114,7 @@ final class RouteSession
 	}
 
 	/** A streaming update: the page so far, in effective order. The selection and the committed route stay. */
-	void stream(List<RouteOption> ordered)
-	{
+	void stream(List<RouteOption> ordered) {
 		routes = ordered;
 	}
 
@@ -146,28 +128,23 @@ final class RouteSession
 	 * adopts it in one step. "More" stays available while routes were left unshown and the
 	 * route-count budget is below {@code cap}.
 	 */
-	void settle(List<RouteOption> ordered, boolean wasMoreLikely, int cap, IntSupplier progressOfSelected)
-	{
+	void settle(List<RouteOption> ordered, boolean wasMoreLikely, int cap, IntSupplier progressOfSelected) {
 		routes = ordered;
 		moreLikely = !ordered.isEmpty() && wasMoreLikely && limit < cap;
 		RouteOption rematched = null;
-		if (selected != null)
-		{
+		if (selected != null) {
 			int progress = progressOfSelected.getAsInt();
 			rematched = rematch(selected, ordered, progress);
 			if (rematched != null && !ordered.isEmpty() && rematched != ordered.get(0)
-				&& progress == 0 && rematched.getTotalCost() > ordered.get(0).getTotalCost() * 2)
-			{
+				&& progress == 0 && rematched.getTotalCost() > ordered.get(0).getTotalCost() * 2) {
 				rematched = null;
 			}
 		}
-		if (rematched != null)
-		{
+		if (rematched != null) {
 			selected = rematched;
 			committed = rematched;
 		}
-		else
-		{
+		else {
 			selected = null;
 			committed = ordered.isEmpty() ? null : ordered.get(0);
 		}
@@ -180,22 +157,15 @@ final class RouteSession
 	 * says it is finding the route); else the best route, and only when the page was generated
 	 * for these targets (a stale page for a previous destination is never shown).
 	 */
-	RouteOption displayed(Set<Integer> currentTargets)
-	{
+	RouteOption displayed(Set<Integer> currentTargets) {
 		RouteOption pick = selected;
 		if (pick != null)
-		{
 			return pick;
-		}
 		if (inFlight)
-		{
 			return committed;
-		}
 		List<RouteOption> page = routes;
 		if (page.isEmpty() || currentTargets.isEmpty() || !lastTargets.equals(currentTargets))
-		{
 			return null;
-		}
 		return page.get(0);
 	}
 
@@ -204,29 +174,23 @@ final class RouteSession
 	 * destination is set, its routes are still computing and nothing is on the overlay yet (a
 	 * same-destination regeneration keeps the previous route on screen instead).
 	 */
-	boolean isFinding(Set<Integer> currentTargets)
-	{
+	boolean isFinding(Set<Integer> currentTargets) {
 		return inFlight && !currentTargets.isEmpty() && displayed(currentTargets) == null;
 	}
 
 	/** Toggles the pick at {@code index} (clicking the shown route hides it). False when out of range. */
-	boolean select(int index)
-	{
+	boolean select(int index) {
 		List<RouteOption> page = routes;
 		if (index < 0 || index >= page.size())
-		{
 			return false;
-		}
 		RouteOption route = page.get(index);
 		selected = selected == route ? null : route;
 		return true;
 	}
 
-	void resort(Comparator<RouteOption> order)
-	{
+	void resort(Comparator<RouteOption> order) {
 		List<RouteOption> page = routes;
-		if (!page.isEmpty())
-		{
+		if (!page.isEmpty()) {
 			List<RouteOption> sorted = new ArrayList<>(page);
 			sorted.sort(order);
 			routes = sorted;
@@ -238,12 +202,9 @@ final class RouteSession
 	 * cost band and raise the route-count budget by another page, capped). False when there is no
 	 * destination or the last generation left nothing unshown.
 	 */
-	boolean widen(int defaultLimit, int cap)
-	{
+	boolean widen(int defaultLimit, int cap) {
 		if (lastTargets.isEmpty() || !moreLikely)
-		{
 			return false;
-		}
 		costMultiple += COST_MULTIPLE_STEP;
 		limit = Math.min(limit + defaultLimit, cap);
 		return true;
@@ -253,8 +214,7 @@ final class RouteSession
 	 * Whether a new generation is needed: there is a target, and either it changed since the last
 	 * generation or the last generation was allowed fewer routes than wanted now.
 	 */
-	static boolean shouldAutoCompute(Set<Integer> targets, Set<Integer> lastTargets, int lastLimit, int desiredLimit)
-	{
+	static boolean shouldAutoCompute(Set<Integer> targets, Set<Integer> lastTargets, int lastLimit, int desiredLimit) {
 		return !targets.isEmpty() && (!targets.equals(lastTargets) || lastLimit < desiredLimit);
 	}
 
@@ -265,22 +225,17 @@ final class RouteSession
 	 * equivalent route is the one continuing with the remaining methods. Bank-ness only
 	 * distinguishes routes while nothing is consumed yet. Null when no equivalent exists.
 	 */
-	static RouteOption rematch(RouteOption previous, List<RouteOption> routes, int progress)
-	{
+	static RouteOption rematch(RouteOption previous, List<RouteOption> routes, int progress) {
 		List<TeleportMethod> methods = previous.getMethods();
 		List<Integer> edges = previous.getMethodEdgeIndexes();
 		int consumed = 0;
 		while (consumed < methods.size() && consumed < edges.size() && edges.get(consumed) <= progress)
-		{
 			consumed++;
-		}
 		List<TeleportMethod> remaining = methods.subList(consumed, methods.size());
 		boolean checkBank = consumed == 0;
-		for (RouteOption route : routes)
-		{
+		for (RouteOption route : routes) {
 			if ((!checkBank || route.isViaBank() == previous.isViaBank())
-				&& route.getMethods().equals(remaining))
-			{
+				&& route.getMethods().equals(remaining)) {
 				return route;
 			}
 		}
@@ -288,8 +243,7 @@ final class RouteSession
 	}
 
 	/** A defensive copy of the targets, for callers that mutate. */
-	Set<Integer> lastTargetsCopy()
-	{
+	Set<Integer> lastTargetsCopy() {
 		return new HashSet<>(lastTargets);
 	}
 }

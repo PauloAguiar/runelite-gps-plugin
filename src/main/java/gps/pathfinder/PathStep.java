@@ -3,8 +3,7 @@ package gps.pathfinder;
 import lombok.Getter;
 
 @Getter
-public final class PathStep
-{
+public final class PathStep {
 	private final int packedPosition;
 	private final boolean bankVisited;
 	/**
@@ -16,13 +15,11 @@ public final class PathStep
 
 	public static final int UNKNOWN_COST = -1;
 
-	public PathStep(int packedPosition, boolean bankVisited)
-	{
+	public PathStep(int packedPosition, boolean bankVisited) {
 		this(packedPosition, bankVisited, UNKNOWN_COST);
 	}
 
-	public PathStep(int packedPosition, boolean bankVisited, int cost)
-	{
+	public PathStep(int packedPosition, boolean bankVisited, int cost) {
 		this.packedPosition = packedPosition;
 		this.bankVisited = bankVisited;
 		this.cost = cost;

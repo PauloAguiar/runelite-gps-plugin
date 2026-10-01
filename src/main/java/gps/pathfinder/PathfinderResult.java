@@ -4,8 +4,7 @@ import java.util.List;
 import lombok.Getter;
 
 @Getter
-public class PathfinderResult
-{
+public class PathfinderResult {
 	private final int start;
 	private final int target;
 	private final boolean reached;
@@ -31,8 +30,7 @@ public class PathfinderResult
 		int nodesChecked,
 		int transportsChecked,
 		long elapsedNanos,
-		PathTerminationReason terminationReason)
-	{
+		PathTerminationReason terminationReason) {
 		this.start = start;
 		this.target = target;
 		this.reached = reached;

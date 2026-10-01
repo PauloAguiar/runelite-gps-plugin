@@ -31,8 +31,7 @@ import gps.pathfinder.PathStep;
 import gps.transport.BankPickupRequirements;
 import gps.transport.Transport;
 
-public class PathTileOverlay extends Overlay
-{
+public class PathTileOverlay extends Overlay {
 	private static final int TRANSPORT_LABEL_GAP = 3;
 	// The flowing highlight on the drawn line: a train of small ripples travelling towards the
 	// destination — one every WAVE_SPACING steps, each fading over WAVE_HALF_WIDTH steps to either
@@ -51,8 +50,7 @@ public class PathTileOverlay extends Overlay
 	private final Set<Integer> hintedDoorTiles = new HashSet<>();
 
 	@Inject
-	public PathTileOverlay(Client client, ShortestPathPlugin plugin)
-	{
+	public PathTileOverlay(Client client, ShortestPathPlugin plugin) {
 		this.client = client;
 		this.plugin = plugin;
 		setPosition(OverlayPosition.DYNAMIC);
@@ -61,19 +59,16 @@ public class PathTileOverlay extends Overlay
 	}
 
 	@Override
-	public Dimension render(Graphics2D graphics)
-	{
+	public Dimension render(Graphics2D graphics) {
 		playerTileLabelOffset = 0;
 		hintedDoorTiles.clear();
 
-		if (plugin.display().drawRecalculationRanges)
-		{
+		if (plugin.display().drawRecalculationRanges) {
 			drawArrivalTiles(graphics);
 			drawRecalculationRanges(graphics);
 		}
 
-		if (plugin.display().drawTiles && !plugin.getDisplayPath().isEmpty())
-		{
+		if (plugin.display().drawTiles && !plugin.getDisplayPath().isEmpty()) {
 			Color pathColor = plugin.getPathColor();
 			Color color = new Color(
 				pathColor.getRed(),
@@ -113,8 +108,7 @@ public class PathTileOverlay extends Overlay
 			final int sceneMaxY = worldView.getBaseY() + worldView.getSizeY() + 2;
 			final Map<Integer, Integer> playerHas = plugin.display().showTransportInfo
 				? BankPickupRequirements.collectPlayerItems(client) : Map.of();
-			for (int i = 1; i < path.size(); i++)
-			{
+			for (int i = 1; i < path.size(); i++) {
 				PathStep currentStep = path.get(i - 1);
 				PathStep nextStep = path.get(i);
 				// A non-adjacent pair is a teleport/transport jump, not a walkable edge.
@@ -124,35 +118,28 @@ public class PathTileOverlay extends Overlay
 				// are ports/pins far outside the loaded scene mid-voyage, so the dashed beam
 				// below rendered NOTHING while actually sailing. Track segments near the boat
 				// project fine; drawLine skips the rest.
-				if (jump && sailingEdges.contains(i - 1))
-				{
+				if (jump && sailingEdges.contains(i - 1)) {
 					int[] track = SailingSea.seaPath(
 						currentStep.getPackedPosition(), nextStep.getPackedPosition());
-					if (track != null && track.length > 1)
-					{
+					if (track != null && track.length > 1) {
 						boolean done = i <= progress;
 						// The sailed stretch greys waypoint by waypoint behind the boat: the
 						// aboard position scored against the track, same rule the tracker uses.
 						int sailedUpTo = -1;
 						if (!done && client.getVarbitValue(
-							net.runelite.api.gameval.VarbitID.SAILING_BOARDED_BOAT) != 0)
-						{
+							net.runelite.api.gameval.VarbitID.SAILING_BOARDED_BOAT) != 0) {
 							int playerPacked = WorldPointUtil.fromLocalInstance(
 								client, client.getLocalPlayer());
-							if (playerPacked != WorldPointUtil.UNDEFINED)
-							{
+							if (playerPacked != WorldPointUtil.UNDEFINED) {
 								int nearestDistance = Integer.MAX_VALUE;
-								for (int w = 0; w < track.length; w++)
-								{
+								for (int w = 0; w < track.length; w++) {
 									int d = WorldPointUtil.distanceBetween(playerPacked, track[w]);
-									if (d < nearestDistance)
-									{
+									if (d < nearestDistance) {
 										nearestDistance = d;
 										sailedUpTo = w;
 									}
 								}
-								if (nearestDistance > 30)
-								{
+								if (nearestDistance > 30) {
 									sailedUpTo = -1; // aboard on a DIFFERENT leg: grey nothing here
 								}
 							}
@@ -160,8 +147,7 @@ public class PathTileOverlay extends Overlay
 						Color sail = plugin.getSailingPathColor();
 						Color sailColor = new Color(sail.getRed(), sail.getGreen(), sail.getBlue(),
 							sail.getAlpha() / 2);
-						for (int s = 1; s < track.length; s++)
-						{
+						for (int s = 1; s < track.length; s++) {
 							Color segment = done || s <= sailedUpTo ? doneColor
 								: (i >= blockedFrom ? blockedColor : sailColor);
 							drawLine(graphics, track[s - 1], track[s], segment,
@@ -177,14 +163,11 @@ public class PathTileOverlay extends Overlay
 						path.get(i + 1).getPackedPosition());
 				double phase = (i - waveOffset) % WAVE_SPACING;
 				if (phase < 0)
-				{
 					phase += WAVE_SPACING;
-				}
 				double waveDistance = Math.min(phase, WAVE_SPACING - phase);
 				if (cullByScene
 					&& !nearScene(currentStep.getPackedPosition(), sceneMinX, sceneMinY, sceneMaxX, sceneMaxY)
-					&& !nearScene(nextStep.getPackedPosition(), sceneMinX, sceneMinY, sceneMaxX, sceneMaxY))
-				{
+					&& !nearScene(nextStep.getPackedPosition(), sceneMinX, sceneMinY, sceneMaxX, sceneMaxY)) {
 					continue;
 				}
 				// Edge i covers path[i-1]->path[i]; it's done once progress has reached path[i].
@@ -200,14 +183,10 @@ public class PathTileOverlay extends Overlay
 			// (walk up to here, then do the next step) and a growing green pulse on the destination.
 			RouteOption displayedRoute = plugin.getDisplayedRoute();
 			if (displayedRoute != null && plugin.display().showDirections)
-			{
 				drawGpsMarkers(graphics, displayedRoute);
-			}
 
 			if (plugin.isPathUnreachable())
-			{
 				playerTileLabelOffset += drawLabelOnPlayerTile(graphics, plugin.display().unreachableText, playerTileLabelOffset);
-			}
 		}
 
 		return null;
@@ -219,68 +198,49 @@ public class PathTileOverlay extends Overlay
 	 * is still standing at either end of the edge. Opening the door replaces the object, so the hint
 	 * disappears by itself. Null for non-door transports and doors that are already open.
 	 */
-	private String closedDoorText(Transport transport)
-	{
+	private String closedDoorText(Transport transport) {
 		String objectInfo = transport.getObjectInfo();
 		if (objectInfo == null || !objectInfo.startsWith("Open "))
-		{
 			return null;
-		}
 		int lastSpace = objectInfo.lastIndexOf(' ');
 		if (lastSpace <= 0)
-		{
 			return null;
-		}
 		String idText = objectInfo.substring(lastSpace + 1);
 		if (idText.isEmpty() || !idText.chars().allMatch(Character::isDigit))
-		{
 			return null;
-		}
 		int objectId = Integer.parseInt(idText);
 		if (objectPresent(transport.getOrigin(), objectId) || objectPresent(transport.getDestination(), objectId))
-		{
 			return objectInfo.substring(0, lastSpace);
-		}
 		return null;
 	}
 
-	private boolean objectPresent(int packedLocation, int objectId)
-	{
+	private boolean objectPresent(int packedLocation, int objectId) {
 		return SceneObjects.objectPresent(client, packedLocation, objectId);
 	}
 
-	private void drawGpsMarkers(Graphics2D graphics, RouteOption route)
-	{
+	private void drawGpsMarkers(Graphics2D graphics, RouteOption route) {
 		List<RouteDirections.Step> steps = plugin.getRouteDirections(route);
 		List<PathStep> path = route.getPath();
 		if (steps.isEmpty() || path.isEmpty())
-		{
 			return;
-		}
 		int destinationIndex = path.size() - 1;
 		Set<Integer> marked = new HashSet<>();
-		for (RouteDirections.Step step : steps)
-		{
+		for (RouteDirections.Step step : steps) {
 			int end = step.getEndIndex();
-			if (end <= 0 || end >= destinationIndex)
-			{
+			if (end <= 0 || end >= destinationIndex) {
 				continue; // the destination gets the pulse, not a dot
 			}
 			int packed = path.get(end).getPackedPosition();
 			if (marked.add(packed))
-			{
 				drawSectionMarker(graphics, packed);
-			}
 		}
 		// A round trip's halfway point (the bank) pulses GOLD while the outbound leg is being
 		// walked — reach it and the beacon vanishes, leaving the green home pulse for the way back.
 		RouteOption displayed = plugin.getDisplayedRoute();
-		if (displayed != null && displayed.isRoundTrip())
-		{
+		if (displayed != null && displayed.isRoundTrip()) {
 			int turnaround = displayed.getTurnaroundIndex();
 			if (turnaround > 0 && turnaround < path.size()
-				&& plugin.displayedRouteProgress() < turnaround - 2)
-			{
+				&& plugin.displayedRouteProgress() < turnaround - 2) {
 				drawDestinationPulse(graphics, path.get(turnaround).getPackedPosition(), PULSE_TURNAROUND);
 			}
 		}
@@ -291,21 +251,15 @@ public class PathTileOverlay extends Overlay
 	 * A small waypoint dot on the tile where a route section ends: white ring with a path-coloured
 	 * core, so the "walk up to here" points stand out along the drawn line.
 	 */
-	private void drawSectionMarker(Graphics2D graphics, int location)
-	{
+	private void drawSectionMarker(Graphics2D graphics, int location) {
 		PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
-		for (int i = 0; i < points.size(); i++)
-		{
+		for (int i = 0; i < points.size(); i++) {
 			LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
 			if (lp == null)
-			{
 				continue;
-			}
 			Polygon poly = Perspective.getCanvasTilePoly(client, lp);
 			if (poly == null)
-			{
 				continue;
-			}
 			final double cx = poly.getBounds().getCenterX();
 			final double cy = poly.getBounds().getCenterY();
 			graphics.setColor(Color.WHITE);
@@ -331,15 +285,12 @@ public class PathTileOverlay extends Overlay
 	 * (the on-screen stretch) so a large configured distance can't blow up the render. A label reports
 	 * the live distance from the path.
 	 */
-	private void drawRecalculationRanges(Graphics2D graphics)
-	{
+	private void drawRecalculationRanges(Graphics2D graphics) {
 		final Player player = client.getLocalPlayer();
 		final int recalc = plugin.getRecalculateDistance();
 		final List<PathStep> path = plugin.getDisplayPath();
 		if (player == null || recalc < 0 || path == null || path.isEmpty())
-		{
 			return;
-		}
 		final int warn = plugin.getOffRouteWarnDistance();
 		final int centre = WorldPointUtil.fromLocalInstance(client, player);
 		final int cx = WorldPointUtil.unpackWorldX(centre);
@@ -350,56 +301,42 @@ public class PathTileOverlay extends Overlay
 		// Path tiles near enough to be some window tile's nearest (within window of a tile within window).
 		final int[] near = new int[path.size()];
 		int nearCount = 0;
-		for (PathStep step : path)
-		{
+		for (PathStep step : path) {
 			final int p = step.getPackedPosition();
 			if (WorldPointUtil.unpackWorldPlane(p) == plane
-				&& WorldPointUtil.distanceBetween(centre, p) <= 2 * window)
-			{
+				&& WorldPointUtil.distanceBetween(centre, p) <= 2 * window) {
 				near[nearCount++] = p;
 			}
 		}
-		if (nearCount > 0)
-		{
+		if (nearCount > 0) {
 			final Color warnFill = new Color(0xFF, 0xE0, 0x00, 70);
 			final Color warnLine = new Color(0xFF, 0xE0, 0x00, 200);
 			final Color recalcFill = new Color(0xFF, 0x3C, 0x3C, 70);
 			final Color recalcLine = new Color(0xFF, 0x3C, 0x3C, 200);
-			for (int dx = -window; dx <= window; dx++)
-			{
-				for (int dy = -window; dy <= window; dy++)
-				{
+			for (int dx = -window; dx <= window; dx++) {
+				for (int dy = -window; dy <= window; dy++) {
 					final int tile = WorldPointUtil.packWorldPoint(cx + dx, cy + dy, plane);
 					int dmin = Integer.MAX_VALUE;
-					for (int k = 0; k < nearCount; k++)
-					{
+					for (int k = 0; k < nearCount; k++) {
 						final int dist = WorldPointUtil.distanceBetween(tile, near[k]);
 						if (dist < dmin)
-						{
 							dmin = dist;
-						}
-						if (dmin < warn)
-						{
+						if (dmin < warn) {
 							break; // interior to the warning band — not a boundary tile
 						}
 					}
 					// Only the two contour lines; the recalc boundary wins a tie with the warn boundary.
 					if (dmin == recalc)
-					{
 						highlightWorldTile(graphics, tile, recalcFill, recalcLine);
-					}
 					else if (dmin == warn)
-					{
 						highlightWorldTile(graphics, tile, warnFill, warnLine);
-					}
 				}
 			}
 		}
 
 		final int d = plugin.getPathDistance();
 		final Point anchor = Perspective.localToCanvas(client, player.getLocalLocation(), plane);
-		if (anchor != null)
-		{
+		if (anchor != null) {
 			final String label = "off-route: " + (d < 0 ? "?" : d)
 				+ " (warn " + warn + " / recalc " + recalc + ")";
 			graphics.setColor(plugin.isOffRouteWarning() ? new Color(0xFF, 0x4C, 0x4C) : Color.WHITE);
@@ -407,21 +344,15 @@ public class PathTileOverlay extends Overlay
 		}
 	}
 
-	private void highlightWorldTile(Graphics2D graphics, int location, Color fill, Color outline)
-	{
+	private void highlightWorldTile(Graphics2D graphics, int location, Color fill, Color outline) {
 		final PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
-		for (int i = 0; i < points.size(); i++)
-		{
+		for (int i = 0; i < points.size(); i++) {
 			final LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
 			if (lp == null)
-			{
 				continue;
-			}
 			final Polygon poly = Perspective.getCanvasTilePoly(client, lp);
 			if (poly == null)
-			{
 				continue;
-			}
 			graphics.setColor(fill);
 			graphics.fill(poly);
 			graphics.setColor(outline);
@@ -434,14 +365,11 @@ public class PathTileOverlay extends Overlay
 	 * the finish distance of the destination (flooded over the collision map). This is the exact set
 	 * the arrival check tests membership of — standing on any tinted tile completes the journey.
 	 */
-	private void drawArrivalTiles(Graphics2D graphics)
-	{
+	private void drawArrivalTiles(Graphics2D graphics) {
 		final Color fill = new Color(0x3C, 0xC8, 0x6A, 60);
 		final Color outline = new Color(0x3C, 0xC8, 0x6A, 170);
 		for (int tile : plugin.getArrivalTiles())
-		{
 			highlightWorldTile(graphics, tile, fill, outline);
-		}
 	}
 
 	// The two pulse colours: green marks the journey's end; gold marks a round trip's turnaround
@@ -450,26 +378,19 @@ public class PathTileOverlay extends Overlay
 	private static final Color PULSE_DESTINATION = new Color(0, 220, 90);
 	private static final Color PULSE_TURNAROUND = new Color(255, 196, 64);
 
-	private void drawDestinationPulse(Graphics2D graphics, int location)
-	{
+	private void drawDestinationPulse(Graphics2D graphics, int location) {
 		drawDestinationPulse(graphics, location, PULSE_DESTINATION);
 	}
 
-	private void drawDestinationPulse(Graphics2D graphics, int location, Color colour)
-	{
+	private void drawDestinationPulse(Graphics2D graphics, int location, Color colour) {
 		PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
-		for (int i = 0; i < points.size(); i++)
-		{
+		for (int i = 0; i < points.size(); i++) {
 			LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
 			if (lp == null)
-			{
 				continue;
-			}
 			Polygon poly = Perspective.getCanvasTilePoly(client, lp);
 			if (poly == null)
-			{
 				continue;
-			}
 			final double cx = poly.getBounds().getCenterX();
 			final double cy = poly.getBounds().getCenterY();
 			final double tileWidth = Math.max(8, poly.getBounds().getWidth());
@@ -481,16 +402,13 @@ public class PathTileOverlay extends Overlay
 			final int rings = 2;
 			final Stroke previousStroke = graphics.getStroke();
 			graphics.setStroke(new BasicStroke(2.2f));
-			for (int r = 0; r < rings; r++)
-			{
+			for (int r = 0; r < rings; r++) {
 				double phase = ((System.currentTimeMillis() + (long) (r * period / (double) rings)) % period)
 					/ (double) period;
 				double radius = tileWidth * (0.25 + phase * 1.1);
 				int alpha = (int) Math.round(180 * (1.0 - phase));
 				if (alpha <= 0)
-				{
 					continue;
-				}
 				graphics.setColor(new Color(colour.getRed(), colour.getGreen(), colour.getBlue(), alpha));
 				graphics.draw(new Ellipse2D.Double(
 					cx - radius, cy - radius * flatten, radius * 2, radius * 2 * flatten));
@@ -499,8 +417,7 @@ public class PathTileOverlay extends Overlay
 		}
 	}
 
-	private static boolean directionChanges(int previous, int current, int next)
-	{
+	private static boolean directionChanges(int previous, int current, int next) {
 		int dx1 = WorldPointUtil.unpackWorldX(current) - WorldPointUtil.unpackWorldX(previous);
 		int dy1 = WorldPointUtil.unpackWorldY(current) - WorldPointUtil.unpackWorldY(previous);
 		int dx2 = WorldPointUtil.unpackWorldX(next) - WorldPointUtil.unpackWorldX(current);
@@ -516,32 +433,25 @@ public class PathTileOverlay extends Overlay
 	private static final BasicStroke GLOW_STROKE = new BasicStroke(3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
 
 	private void drawLine(Graphics2D graphics, int startLoc, int endLoc, Color color, boolean arrowHead,
-		double glow, boolean jump)
-	{
+		double glow, boolean jump) {
 		PrimitiveIntList starts = WorldPointUtil.toLocalInstance(client, startLoc);
 		PrimitiveIntList ends = WorldPointUtil.toLocalInstance(client, endLoc);
 
 		if (starts.isEmpty() || ends.isEmpty())
-		{
 			return;
-		}
 
 		int start = starts.get(0);
 		int end = ends.get(0);
 
 		final int z = client.getTopLevelWorldView().getPlane();
 		if (WorldPointUtil.unpackWorldPlane(start) != z)
-		{
 			return;
-		}
 
 		LocalPoint lpStart = WorldPointUtil.toLocalPoint(client, start);
 		LocalPoint lpEnd = WorldPointUtil.toLocalPoint(client, end);
 
 		if (lpStart == null || lpEnd == null)
-		{
 			return;
-		}
 
 		final int startHeight = Perspective.getTileHeight(client, lpStart, z);
 		final int endHeight = Perspective.getTileHeight(client, lpEnd, z);
@@ -550,30 +460,21 @@ public class PathTileOverlay extends Overlay
 		Point p2 = Perspective.localToCanvas(client, lpEnd.getX(), lpEnd.getY(), endHeight);
 
 		if (p1 == null || p2 == null)
-		{
 			return;
-		}
 
 		Line2D.Double line = new Line2D.Double(p1.getX(), p1.getY(), p2.getX(), p2.getY());
 
 		graphics.setColor(color);
 		if (jump)
-		{
 			// Teleport/transport jumps: a thin dashed hint, like the world map draws them —
 			// a full solid beam across the scene reads as a walkable line, which it isn't.
 			graphics.setStroke(JUMP_STROKE);
-		}
 		else
-		{
 			graphics.setStroke(LINE_STROKE);
-		}
 		graphics.draw(line);
 		if (arrowHead)
-		{
 			ArrowHead.draw(graphics, p1.getX(), p1.getY(), p2.getX(), p2.getY(), 12);
-		}
-		if (glow > 0)
-		{
+		if (glow > 0) {
 			// The flowing ripple: a subtly brighter core stroke — only a mild step towards white,
 			// at the path colour's own opacity, so it reads as a sheen rather than a flash.
 			graphics.setColor(new Color(
@@ -586,34 +487,25 @@ public class PathTileOverlay extends Overlay
 		}
 	}
 
-	private int drawLabelAtCanvasPoint(Graphics2D graphics, Point point, String text, int verticalOffset)
-	{
+	private int drawLabelAtCanvasPoint(Graphics2D graphics, Point point, String text, int verticalOffset) {
 		if (point == null || text == null || text.isEmpty())
-		{
 			return 0;
-		}
 
 		double height = drawLabel(graphics, point, text, verticalOffset);
 
 		return (int) height + TRANSPORT_LABEL_GAP;
 	}
 
-	private int drawLabelAtPackedLocation(Graphics2D graphics, int location, String text, int verticalOffset)
-	{
+	private int drawLabelAtPackedLocation(Graphics2D graphics, int location, String text, int verticalOffset) {
 		PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
-		for (int i = 0; i < points.size(); i++)
-		{
+		for (int i = 0; i < points.size(); i++) {
 			LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
 			if (lp == null)
-			{
 				continue;
-			}
 
 			Point p = Perspective.localToCanvas(client, lp, client.getTopLevelWorldView().getPlane());
 			if (p == null)
-			{
 				continue;
-			}
 
 			verticalOffset += drawLabelAtCanvasPoint(graphics, p, text, verticalOffset);
 		}
@@ -626,21 +518,15 @@ public class PathTileOverlay extends Overlay
 	 * stays smooth regardless of game ticks. Anchored to the tile the player casts from — for a
 	 * cast-from-anywhere teleport that sits under the player, drawing the eye to "teleport now".
 	 */
-	private void drawTeleportPulse(Graphics2D graphics, int location)
-	{
+	private void drawTeleportPulse(Graphics2D graphics, int location) {
 		PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, location);
-		for (int i = 0; i < points.size(); i++)
-		{
+		for (int i = 0; i < points.size(); i++) {
 			LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
 			if (lp == null)
-			{
 				continue;
-			}
 			Polygon poly = Perspective.getCanvasTilePoly(client, lp);
 			if (poly == null || poly.npoints == 0)
-			{
 				continue;
-			}
 			final double cx = poly.getBounds().getCenterX();
 			final double cy = poly.getBounds().getCenterY();
 
@@ -649,8 +535,7 @@ public class PathTileOverlay extends Overlay
 			final Color base = plugin.display().colourTeleportPulse;
 			final Stroke previousStroke = graphics.getStroke();
 			graphics.setStroke(new BasicStroke(2.2f));
-			for (int r = 0; r < rings; r++)
-			{
+			for (int r = 0; r < rings; r++) {
 				// Stagger the two rings by half a period so one is always small/bright while the other
 				// is large/faint — a continuous outward pulse.
 				double phase = ((System.currentTimeMillis() + (long) (r * period / (double) rings)) % period)
@@ -658,22 +543,15 @@ public class PathTileOverlay extends Overlay
 				double scale = 1.0 + phase * 2.6;
 				int alpha = (int) Math.round(170 * (1.0 - phase));
 				if (alpha <= 0)
-				{
 					continue;
-				}
 				Path2D ring = new Path2D.Double();
-				for (int v = 0; v < poly.npoints; v++)
-				{
+				for (int v = 0; v < poly.npoints; v++) {
 					double x = cx + (poly.xpoints[v] - cx) * scale;
 					double y = cy + (poly.ypoints[v] - cy) * scale;
 					if (v == 0)
-					{
 						ring.moveTo(x, y);
-					}
 					else
-					{
 						ring.lineTo(x, y);
-					}
 				}
 				ring.closePath();
 				graphics.setColor(new Color(base.getRed(), base.getGreen(), base.getBlue(), alpha));
@@ -683,8 +561,7 @@ public class PathTileOverlay extends Overlay
 		}
 	}
 
-	private double drawLabel(Graphics2D graphics, Point point, String text, int verticalOffset)
-	{
+	private double drawLabel(Graphics2D graphics, Point point, String text, int verticalOffset) {
 		Rectangle2D textBounds = graphics.getFontMetrics().getStringBounds(text, graphics);
 		double height = textBounds.getHeight();
 		int x = (int) (point.getX() - textBounds.getWidth() / 2);
@@ -696,48 +573,39 @@ public class PathTileOverlay extends Overlay
 		return height;
 	}
 
-	private int drawLabelOnPlayerTile(Graphics2D graphics, String text, int verticalOffset)
-	{
+	private int drawLabelOnPlayerTile(Graphics2D graphics, String text, int verticalOffset) {
 		if (client.getLocalPlayer() == null)
-		{
 			return 0;
-		}
 
 		Point playerPoint = Perspective.localToCanvas(client, client.getLocalPlayer().getLocalLocation(), client.getTopLevelWorldView().getPlane());
 		return drawLabelAtCanvasPoint(graphics, playerPoint, text, verticalOffset);
 	}
 
-	private static boolean nearScene(int packed, int minX, int minY, int maxX, int maxY)
-	{
+	private static boolean nearScene(int packed, int minX, int minY, int maxX, int maxY) {
 		int x = WorldPointUtil.unpackWorldX(packed);
 		int y = WorldPointUtil.unpackWorldY(packed);
 		return x >= minX && x <= maxX && y >= minY && y <= maxY;
 	}
 
 	private void drawTransportInfo(Graphics2D graphics, PathStep currentStep, PathStep nextStep, List<PathStep> path,
-		int pathIndex, Map<Integer, Integer> playerHas)
-	{
+		int pathIndex, Map<Integer, Integer> playerHas) {
 		int location = currentStep.getPackedPosition();
 		if (nextStep == null || !plugin.display().showTransportInfo ||
-			WorldPointUtil.unpackWorldPlane(location) != client.getTopLevelWorldView().getPlane())
-		{
+			WorldPointUtil.unpackWorldPlane(location) != client.getTopLevelWorldView().getPlane()) {
 			return;
 		}
 
 		// Sailing: teleports are suppressed while aboard a boat. When the path is
 		// unreachable as a result, show a one-time hint on the player tile.
 		if (pathIndex == 0 && plugin.getPathfinderConfig().isOnSailingBoat()
-			&& plugin.isPathUnreachable())
-		{
+			&& plugin.isPathUnreachable()) {
 			playerTileLabelOffset = drawLabelOnPlayerTile(graphics,
 				"Disembark the boat to resume pathfinding", playerTileLabelOffset);
 			return;
 		}
 
 		if (plugin.isPathUnreachable())
-		{
 			return;
-		}
 		int locationEnd = nextStep.getPackedPosition();
 
 		// Workaround for weird pathing inside PoH to instead show info on the player
@@ -753,36 +621,26 @@ public class PathTileOverlay extends Overlay
 		Set<Transport> candidateTransports = plugin.transportsForEdge(currentStep, nextStep);
 
 		// When inside POH, only show the POH exit info once (not per-transport)
-		if (transportAndPlayerInsidePoh)
-		{
+		if (transportAndPlayerInsidePoh) {
 			String pohExitInfo = PlayerOwnedHouse.exitInfo(locationEnd, path, pathIndex, plugin::transportsForEdge);
 			if (pohExitInfo == null)
-			{
 				return;
-			}
 
 			// Find the display name of the teleport that brought us to POH using bank-aware
 			// lookup
 			String text = null;
-			for (Transport transport : candidateTransports)
-			{
+			for (Transport transport : candidateTransports) {
 				text = transport.getDisplayInfo();
 				if (text != null && !text.isEmpty())
-				{
 					break;
-				}
 			}
 			if (text == null || text.isEmpty())
-			{
 				return;
-			}
 			text = text + " (Exit: " + pohExitInfo + ")";
 
 			Point p = Perspective.localToCanvas(client, playerLocalPoint, client.getTopLevelWorldView().getPlane());
 			if (p == null)
-			{
 				return;
-			}
 
 			drawLabel(graphics, p, text, 0);
 			return;
@@ -792,12 +650,10 @@ public class PathTileOverlay extends Overlay
 		// the path assumes they are open. Hint while the door is actually closed (the closed
 		// object still stands in the scene) — opening it replaces the object, so the hint
 		// clears by itself. Edges with a mapped door transport are handled below instead.
-		if (candidateTransports.isEmpty())
-		{
+		if (candidateTransports.isEmpty()) {
 			ClosedDoors.Door door = ClosedDoors.doorBetween(location, locationEnd);
 			if (door != null && ClosedDoors.state(client, door) == ClosedDoors.State.CLOSED
-				&& hintedDoorTiles.add(door.packedPosition))
-			{
+				&& hintedDoorTiles.add(door.packedPosition)) {
 				playerTileLabelOffset = drawLabelAtPackedLocation(
 					graphics, door.packedPosition, "Open " + door.name, playerTileLabelOffset);
 			}
@@ -807,8 +663,7 @@ public class PathTileOverlay extends Overlay
 		// contents once a bank opens, the previous session's persisted state before that)
 		// stands in for the live container so the hint works from login.
 		Set<Integer> bankLocations = plugin.getPathfinderConfig().getDestinations("bank");
-		if (bankLocations != null && plugin.getPathfinderConfig().getBankSnapshot() != null)
-		{
+		if (bankLocations != null && plugin.getPathfinderConfig().getBankSnapshot() != null) {
 			List<String> bankPickupItems = BankPickupRequirements.getRequiredBankItems(
 				client,
 				plugin.getPathfinderConfig().getBankSnapshot(),
@@ -817,38 +672,30 @@ public class PathTileOverlay extends Overlay
 				path,
 				pathIndex
 			);
-			if (!bankPickupItems.isEmpty())
-			{
+			if (!bankPickupItems.isEmpty()) {
 				String pickupText = "Pick up: " + String.join(", ", bankPickupItems);
 				playerTileLabelOffset = drawLabelAtPackedLocation(graphics, location, pickupText, playerTileLabelOffset);
 
 				// By default, bank pickup info replaces the default transport hint text;
 				// enable the option to show both
 				if (!plugin.display().showBankPickupInfo)
-				{
 					return;
-				}
 			}
 		}
 
 		// Only show transports the player can currently use; fall back to all if none are usable.
 		List<Transport> usableTransports = new ArrayList<>();
-		for (Transport t : candidateTransports)
-		{
+		for (Transport t : candidateTransports) {
 			if (BankPickupRequirements.transportSatisfiedBy(t, playerHas, plugin.getPathfinderConfig().farePercent(t)))
-			{
 				usableTransports.add(t);
-			}
 		}
 		Collection<Transport> transportsToShow = usableTransports.isEmpty() ? candidateTransports : usableTransports;
 
 		// Teleports ("use this item/spell") get a pulsing highlight on the tile you cast from, drawn
 		// once for the edge even if several teleport options share it.
 		boolean teleportEdge = false;
-		for (Transport transport : transportsToShow)
-		{
-			if (transport.getType() != null && transport.getType().isTeleport())
-			{
+		for (Transport transport : transportsToShow) {
+			if (transport.getType() != null && transport.getType().isTeleport()) {
 				teleportEdge = true;
 				break;
 			}
@@ -856,20 +703,14 @@ public class PathTileOverlay extends Overlay
 		// Also pulse when the DISPLAYED route teleports on this edge but the config-derived lookup
 		// above missed it — a charged jewellery leg under a "perm-only" teleport-item setting.
 		if (!teleportEdge)
-		{
 			teleportEdge = plugin.displayedRouteTeleportsAt(pathIndex);
-		}
 		if (teleportEdge && plugin.display().showTeleportPulse)
-		{
 			drawTeleportPulse(graphics, location);
-		}
 
 		Set<String> shownTexts = new HashSet<>();
-		for (Transport transport : transportsToShow)
-		{
+		for (Transport transport : transportsToShow) {
 			String text = transport.getDisplayInfo();
-			if (text == null || text.isEmpty())
-			{
+			if (text == null || text.isEmpty()) {
 				// Stairs, ladders, agility shortcuts and other object transports have no display
 				// info, so the drawn line just ends at them with no cue. Fall back to their menu
 				// text ("Climb-up Staircase", "Walk-across Log balance") so the player is told to
@@ -877,29 +718,21 @@ public class PathTileOverlay extends Overlay
 				// label.
 				String objectText = RouteDirections.objectText(transport);
 				if (objectText != null && !objectText.startsWith("Open "))
-				{
 					text = objectText;
-				}
 			}
 			if (text == null || text.isEmpty())
-			{
 				// Doors/gates: hint only while the door is actually closed (the closed object still
 				// stands in the scene) — an open door needs no cue, and labelling every doorway on
 				// the path would be noise.
 				text = closedDoorText(transport);
-			}
 			if (text == null || text.isEmpty() || !shownTexts.add(text))
-			{
 				continue;
-			}
 
 			// Check if this transport goes to POH - if so, look ahead to find the exit
 			// transport
 			String pohExitInfo = PlayerOwnedHouse.exitInfo(locationEnd, path, pathIndex, plugin::transportsForEdge);
 			if (pohExitInfo != null)
-			{
 				text = text + " (Exit: " + pohExitInfo + ")";
-			}
 
 			playerTileLabelOffset = drawLabelAtPackedLocation(graphics, location, text, playerTileLabelOffset);
 		}
@@ -908,16 +741,12 @@ public class PathTileOverlay extends Overlay
 		// config-derived lookup above found no matching transport — its teleport-item setting
 		// ("Inventory (perm)") excludes consumables. Label it straight from the route's method so
 		// the world cue matches the pulse and the panel step.
-		if (shownTexts.isEmpty())
-		{
+		if (shownTexts.isEmpty()) {
 			TeleportMethod routeMethod = plugin.displayedRouteMethodAt(pathIndex);
-			if (routeMethod != null && routeMethod.getType() != null && routeMethod.getType().isTeleport())
-			{
+			if (routeMethod != null && routeMethod.getType() != null && routeMethod.getType().isTeleport()) {
 				String label = routeMethod.label();
 				if (label != null && !label.isEmpty())
-				{
 					playerTileLabelOffset = drawLabelAtPackedLocation(graphics, location, label, playerTileLabelOffset);
-				}
 			}
 		}
 	}

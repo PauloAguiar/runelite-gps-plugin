@@ -18,82 +18,64 @@ import net.runelite.client.input.MouseManager;
  * lingering "Arrived!" panel. The bindings are read on every press, so a config change applies
  * at once.
  */
-final class PluginHotkeys
-{
+final class PluginHotkeys {
 	private final KeyListener clearPath;
 	private final KeyListener focusSearch;
 	private final MouseAdapter dismissArrival;
 
 	PluginHotkeys(Supplier<Keybind> clearPathKey, Runnable onClearPath,
-		Supplier<Keybind> focusSearchKey, Runnable onFocusSearch, Predicate<Point> dismissArrivalAt)
-	{
+		Supplier<Keybind> focusSearchKey, Runnable onFocusSearch, Predicate<Point> dismissArrivalAt) {
 		this.clearPath = hotkey(clearPathKey, onClearPath);
 		this.focusSearch = hotkey(focusSearchKey, onFocusSearch);
-		this.dismissArrival = new MouseAdapter()
-		{
+		this.dismissArrival = new MouseAdapter() {
 			@Override
-			public MouseEvent mousePressed(MouseEvent event)
-			{
+			public MouseEvent mousePressed(MouseEvent event) {
 				if (dismissArrivalAt.test(event.getPoint()))
-				{
 					event.consume();
-				}
 				return event;
 			}
 		};
 	}
 
-	private static KeyListener hotkey(Supplier<Keybind> key, Runnable action)
-	{
-		return new KeyListener()
-		{
+	private static KeyListener hotkey(Supplier<Keybind> key, Runnable action) {
+		return new KeyListener() {
 			@Override
-			public void keyTyped(KeyEvent e)
-			{
+			public void keyTyped(KeyEvent e) {
 			}
 
 			@Override
-			public void keyPressed(KeyEvent e)
-			{
+			public void keyPressed(KeyEvent e) {
 				if (key.get().matches(e))
-				{
 					action.run();
-				}
 			}
 
 			@Override
-			public void keyReleased(KeyEvent e)
-			{
+			public void keyReleased(KeyEvent e) {
 			}
 		};
 	}
 
-	void register(KeyManager keys, MouseManager mouse)
-	{
+	void register(KeyManager keys, MouseManager mouse) {
 		keys.registerKeyListener(clearPath);
 		keys.registerKeyListener(focusSearch);
 		mouse.registerMouseListener(dismissArrival);
 	}
 
-	void unregister(KeyManager keys, MouseManager mouse)
-	{
+	void unregister(KeyManager keys, MouseManager mouse) {
 		keys.unregisterKeyListener(clearPath);
 		keys.unregisterKeyListener(focusSearch);
 		mouse.unregisterMouseListener(dismissArrival);
 	}
 
-	KeyListener clearPath()
-	{
+	KeyListener clearPath() {
 		return clearPath;
 	}
 
-	KeyListener focusSearch()
-	{
+	KeyListener focusSearch() {
 		return focusSearch;
 	}
 
-	MouseAdapter dismissArrival()
-	{
+	MouseAdapter dismissArrival() {
 		return dismissArrival;
 	}
 }

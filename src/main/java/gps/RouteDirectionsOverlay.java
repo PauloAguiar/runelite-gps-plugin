@@ -25,8 +25,7 @@ import net.runelite.client.ui.overlay.components.LineComponent;
  * executed is orange (amber once it's nearly finished), the next step is white. Drag it wherever you
  * like (RuneLite overlay editing); hidden when no route is shown or via the config toggle.
  */
-public class RouteDirectionsOverlay extends OverlayPanel
-{
+public class RouteDirectionsOverlay extends OverlayPanel {
 	private static final int MAX_LINES = 14;
 	// The panel grows to fit its widest line between these bounds; only beyond MAX_WIDTH do lines
 	// get ellipsized (clipping "Use Rat Pits M…" is worse than a wider panel).
@@ -110,8 +109,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	private static final Color ARRIVED = new Color(0x3C, 0xC8, 0x6A);
 
 	@Inject
-	public RouteDirectionsOverlay(Client client, ShortestPathPlugin plugin)
-	{
+	public RouteDirectionsOverlay(Client client, ShortestPathPlugin plugin) {
 		super(plugin);
 		this.client = client;
 		this.plugin = plugin;
@@ -119,12 +117,9 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	}
 
 	@Override
-	public Dimension render(Graphics2D graphics)
-	{
+	public Dimension render(Graphics2D graphics) {
 		if (!plugin.display().showDirections)
-		{
 			return null;
-		}
 		// Override RuneLite's overlay transparency on request: the base OverlayPanel only
 		// substitutes the user's preferred colour when the panel still has the STANDARD
 		// background, so setting our own (and restoring STANDARD when the override is off)
@@ -139,19 +134,16 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		refreshFonts();
 		long now = System.currentTimeMillis();
 		RouteOption route = plugin.getDisplayedRoute();
-		if (route == null)
-		{
+		if (route == null) {
 			// A fresh destination whose routes are still computing: the ground stays clear, the
 			// HUD says so — a line that may still change is never shown as the route.
-			if (plugin.isFindingRoute())
-			{
+			if (plugin.isFindingRoute()) {
 				arrivalShowing = false;
 				return renderFinding(graphics);
 			}
 			// The route just ended: if progress was at the destination moments ago, this is an
 			// arrival — linger with a farewell instead of vanishing mid-glance.
-			if (!arrivalShowing && now - nearEndAtMillis < NEAR_END_GRACE_MILLIS)
-			{
+			if (!arrivalShowing && now - nearEndAtMillis < NEAR_END_GRACE_MILLIS) {
 				arrivalShowing = true;
 				arrivalUntilMillis = plugin.display().arrivalAutoDismiss
 					? now + plugin.display().arrivalDismissSeconds * 1000L : Long.MAX_VALUE;
@@ -160,33 +152,25 @@ public class RouteDirectionsOverlay extends OverlayPanel
 			}
 			nearEndAtMillis = Long.MIN_VALUE / 2;
 			if (arrivalShowing && now < arrivalUntilMillis)
-			{
 				return renderArrival(graphics);
-			}
 			arrivalShowing = false;
 			return null;
 		}
 		arrivalShowing = false;
 		List<RouteDirections.Step> steps = plugin.getRouteDirections(route);
 		if (steps.isEmpty())
-		{
 			return null;
-		}
 		updateProgress(route, steps);
 		// "About to arrive" needs more than a small ETA — straight-line proximity can undercut
 		// walls (the goal one tile away across a fence). It must be EARNED: standing exactly on
 		// a path tile in the final stretch, with no unopened door left between here and the end.
 		if (liveRemainingTicks <= 3.5 && lastSelectionDistance == 0 && lastLegClear(route, steps))
-		{
 			nearEndAtMillis = now;
-		}
 
 		// The first step whose span the player hasn't finished yet is the one being executed.
 		int current = steps.size() - 1;
-		for (int i = 0; i < steps.size(); i++)
-		{
-			if (!finished(steps.get(i)))
-			{
+		for (int i = 0; i < steps.size(); i++) {
+			if (!finished(steps.get(i))) {
 				current = i;
 				break;
 			}
@@ -201,13 +185,10 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		// "Destination set by ...", or during a bank trip what resumes after it (BankDetour.headerLine).
 		String destinationLine = plugin.getDestinationLine();
 		if (destinationLine != null)
-		{
 			lines.add(new Line(destinationLine, fontOther, UPCOMING, null, null));
-		}
 		// Drifting off the drawn path: warn before the route is recomputed (the middle of the three
 		// distance bands — see ShortestPathPlugin's off-route handling).
-		if (plugin.isOffRouteWarning())
-		{
+		if (plugin.isOffRouteWarning()) {
 			// With auto-recalculate off the route is deliberately kept, so don't promise a recompute.
 			lines.add(new Line(plugin.isAutoRecalculateEnabled()
 				? "Off route — recomputing if you drift further"
@@ -217,23 +198,20 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		// Window: collapse all but the most recent completed step into one summary line, then show
 		// the current step and what follows, capped.
 		int windowStart = Math.max(0, current - 1);
-		if (windowStart > 0)
-		{
+		if (windowStart > 0) {
 			lines.add(new Line("✓ " + windowStart + (windowStart == 1 ? " step done" : " steps done"),
 				fontOther, DONE, null, null));
 		}
 		int shown = 0;
 		int i = windowStart;
-		for (; i < steps.size() && shown < MAX_LINES; i++, shown++)
-		{
+		for (; i < steps.size() && shown < MAX_LINES; i++, shown++) {
 			RouteDirections.Step step = steps.get(i);
 			String stepText = i >= current && step.isDoor()
 				? doorStepText(route, step) : step.getText();
 			String text = (i + 1) + ". " + stepText;
 			Color colour;
 			Font font;
-			if (i < current)
-			{
+			if (i < current) {
 				// The RuneScape fonts carry no U+2713 glyph, but the JVM's font pipeline substitutes
 				// one from a system font (verified in-game on Windows). If reports of missing-glyph
 				// boxes come in from other platforms, drop the prefix — the grey colour already
@@ -242,44 +220,34 @@ public class RouteDirectionsOverlay extends OverlayPanel
 				colour = DONE;
 				font = fontOther;
 			}
-			else if (i == current)
-			{
+			else if (i == current) {
 				colour = nearEnd(step) ? accentEnding : accent;
 				font = fontCurrent;
 			}
-			else if (i == current + 1)
-			{
+			else if (i == current + 1) {
 				colour = NEXT;
 				font = fontNext;
 			}
-			else
-			{
+			else {
 				colour = UPCOMING;
 				font = fontOther;
 			}
 			lines.add(new Line(text, font, colour,
 				formatTime((int) Math.ceil(step.getTicks() * RouteDirections.SECONDS_PER_TICK)), colour));
 			// The withdraw step's per-item list: indented, un-numbered, no own time.
-			for (String detail : step.getDetails())
-			{
+			for (String detail : step.getDetails()) {
 				if (shown + 1 >= MAX_LINES)
-				{
 					break;
-				}
 				lines.add(new Line("      • " + detail, fontOther, colour, null, null));
 				shown++;
 			}
 		}
 		if (i < steps.size())
-		{
 			lines.add(new Line("… " + (steps.size() - i) + " more", fontOther, DONE, null, null));
-		}
 
 		Dimension dimension = renderPanel(graphics, lines);
 		if (dimension != null)
-		{
 			drawEtaBadge(graphics, dimension, etaText);
-		}
 		return dimension;
 	}
 
@@ -287,8 +255,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	 * Sizes the panel to its widest line (within bounds), emits the header spacer and the lines, and
 	 * draws the decorated title over the reserved header row.
 	 */
-	private Dimension renderPanel(Graphics2D graphics, List<Line> lines)
-	{
+	private Dimension renderPanel(Graphics2D graphics, List<Line> lines) {
 		// Fit the panel to the content: widest left text + its time column, clamped to sane bounds.
 		// The bounds scale with the text-size preset (2x for Large) — at doubled glyph widths a
 		// fixed cap would ellipsize twice as much of every step.
@@ -296,8 +263,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		final int minWidth = Math.round(MIN_WIDTH * widthScale);
 		final int maxWidth = Math.round(MAX_WIDTH * widthScale);
 		int contentWidth = minWidth;
-		for (Line line : lines)
-		{
+		for (Line line : lines) {
 			// A centred line (arrival, finding) reads as a label, not a list row: give it the
 			// margin on both sides, or the text hugs the panel edges.
 			int width = graphics.getFontMetrics(line.font).stringWidth(line.left)
@@ -314,10 +280,8 @@ public class RouteDirectionsOverlay extends OverlayPanel
 				.left(" ")
 				.leftFont(fontCurrent)
 				.build());
-		for (Line line : lines)
-		{
-			if (line.centred)
-			{
+		for (Line line : lines) {
+			if (line.centred) {
 				// Reserve the row with a spacer in the same font; the text itself is drawn
 				// centred over the panel afterwards.
 				panelComponent.getChildren().add(
@@ -328,8 +292,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 				.left(ellipsize(graphics, line.font, line.left, panelWidth - rightWidth(graphics, line) - PANEL_PADDING))
 				.leftColor(line.colour)
 				.leftFont(line.font);
-			if (line.right != null)
-			{
+			if (line.right != null) {
 				builder.right(line.right)
 					.rightColor(line.rightColour)
 					.rightFont(line.font == fontCurrent ? fontNext : fontOther);
@@ -338,8 +301,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		}
 
 		Dimension dimension = super.render(graphics);
-		if (dimension != null)
-		{
+		if (dimension != null) {
 			drawTitle(graphics, dimension);
 			drawCentredLines(graphics, dimension, lines);
 		}
@@ -351,19 +313,14 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	 * panel's bottom edge. TextLayout's tight glyph bounds centre the text properly — the
 	 * RuneScape fonts' metrics don't match their visual size (see {@link #drawEtaBadge}).
 	 */
-	private void drawCentredLines(Graphics2D graphics, Dimension panelSize, List<Line> lines)
-	{
+	private void drawCentredLines(Graphics2D graphics, Dimension panelSize, List<Line> lines) {
 		int first = lines.size();
 		while (first > 0 && lines.get(first - 1).centred)
-		{
 			first--;
-		}
 		float bottom = panelSize.height - 7;
-		for (int i = lines.size() - 1; i >= first; i--)
-		{
+		for (int i = lines.size() - 1; i >= first; i--) {
 			Line line = lines.get(i);
-			if (line.left.isBlank())
-			{
+			if (line.left.isBlank()) {
 				// A blank centred line is vertical air: its row is reserved in the panel, and the
 				// text above it moves up by half that row (a full row would leave it floating).
 				bottom -= line.font.getSize() / 2f + 5;
@@ -380,8 +337,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	}
 
 	/** Draws laid-out text with the stock one-pixel drop shadow (spacing-neutral in every mode). */
-	private static void drawLayout(Graphics2D graphics, TextLayout layout, float x, float baseline, Color colour)
-	{
+	private static void drawLayout(Graphics2D graphics, TextLayout layout, float x, float baseline, Color colour) {
 		graphics.setColor(Color.BLACK);
 		layout.draw(graphics, x + 1, baseline + 1);
 		graphics.setColor(colour);
@@ -393,28 +349,23 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	 * TRANSPARENCY (100% = invisible, 0% = solid), so a partially visible override still matches
 	 * RuneLite's palette. Never null — a null would re-enable the base panel's colour handling.
 	 */
-	private static Color overriddenBackground(int transparencyPercent)
-	{
+	private static Color overriddenBackground(int transparencyPercent) {
 		final int alpha = Math.max(0, Math.min(255, Math.round(255 * (100 - transparencyPercent) / 100f)));
 		final Color standard = ComponentConstants.STANDARD_BACKGROUND_COLOR;
 		return new Color(standard.getRed(), standard.getGreen(), standard.getBlue(), alpha);
 	}
 
 	/** Rebuilds the three fonts when the text-size preset changes. */
-	private void refreshFonts()
-	{
+	private void refreshFonts() {
 		final OverlayFontSize preset = plugin.display().overlayFontSize == null
 			? OverlayFontSize.NORMAL : plugin.display().overlayFontSize;
 		if (preset == fontSize)
-		{
 			return;
-		}
 		fontSize = preset;
 		final Font bold = FontManager.getRunescapeBoldFont();
 		final Font regular = FontManager.getRunescapeFont();
 		final Font small = FontManager.getRunescapeSmallFont();
-		switch (preset)
-		{
+		switch (preset) {
 			case SMALL:
 				// The hierarchy shifted one tier down, every face at its native size.
 				fontCurrent = regular;
@@ -442,8 +393,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	}
 
 	/** Blends a colour toward white — the derived "about to end" shade of the accent. */
-	private static Color lighten(Color colour, float factor)
-	{
+	private static Color lighten(Color colour, float factor) {
 		return new Color(
 			colour.getRed() + Math.round((255 - colour.getRed()) * factor),
 			colour.getGreen() + Math.round((255 - colour.getGreen()) * factor),
@@ -454,8 +404,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	 * Decorated header drawn over the reserved top row: a small location-pin glyph, bold "GPS", and
 	 * a navigation-blue rule under the header separating it from the steps.
 	 */
-	private void drawTitle(Graphics2D graphics, Dimension panelSize)
-	{
+	private void drawTitle(Graphics2D graphics, Dimension panelSize) {
 		// All header geometry scales with the header font (1x at the native 16, 2x for Large).
 		final float s = fontCurrent.getSize2D() / 16f;
 		final int px = 8;
@@ -463,13 +412,9 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		// The destination's glyph: a location pin, or a bank while a bank trip will resume a
 		// replaced route (the destination line says what comes after it).
 		if (plugin.isBankDetour())
-		{
 			drawBankGlyph(graphics, px, py, s, accent);
-		}
 		else
-		{
 			drawPinGlyph(graphics, px, py, s, accent);
-		}
 
 		graphics.setFont(fontCurrent);
 		graphics.setColor(Color.BLACK);
@@ -483,8 +428,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	}
 
 	/** Location pin: round head with a tail, hollow centre, 9 x 13 at scale 1. */
-	static void drawPinGlyph(Graphics2D graphics, int px, int py, float s, Color accent)
-	{
+	static void drawPinGlyph(Graphics2D graphics, int px, int py, float s, Color accent) {
 		graphics.setColor(accent);
 		graphics.fillOval(px, py, Math.round(9 * s), Math.round(9 * s));
 		Polygon tail = new Polygon(
@@ -500,8 +444,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	 * Bank, the map-legend kind: a pediment over three columns on a plinth, 10 x 13 at scale 1,
 	 * the pin's footprint so the "GPS" title beside it stays put.
 	 */
-	static void drawBankGlyph(Graphics2D graphics, int px, int py, float s, Color accent)
-	{
+	static void drawBankGlyph(Graphics2D graphics, int px, int py, float s, Color accent) {
 		graphics.setColor(accent);
 		int width = Math.round(10 * s);
 		graphics.fillPolygon(new Polygon(
@@ -511,9 +454,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		graphics.fillRect(px, py + Math.round(4 * s), width, Math.max(1, Math.round(1 * s)));
 		int columnWidth = Math.max(1, Math.round(2 * s));
 		for (int i = 0; i < 3; i++)
-		{
 			graphics.fillRect(px + Math.round((1 + 3 * i) * s), py + Math.round(5 * s), columnWidth, Math.round(6 * s));
-		}
 		graphics.fillRect(px, py + Math.round(11 * s), width, Math.max(1, Math.round(2 * s)));
 	}
 
@@ -521,8 +462,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	 * The ETA as a floating pill overlapping the panel's top-right corner — a badge rather than a
 	 * list row, map-app style.
 	 */
-	private void drawEtaBadge(Graphics2D graphics, Dimension panelSize, String etaText)
-	{
+	private void drawEtaBadge(Graphics2D graphics, Dimension panelSize, String etaText) {
 		// TextLayout gives the glyphs' tight pixel bounds — the RuneScape fonts' metrics (ascent,
 		// leading) don't match their visual size, which kept mis-centring the text in the pill.
 		TextLayout layout = new TextLayout(etaText, fontOther, graphics.getFontRenderContext());
@@ -552,8 +492,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	 * One pending panel line: collected first so the panel can be sized to the widest line before
 	 * any component is built.
 	 */
-	private static final class Line
-	{
+	private static final class Line {
 		private final String left;
 		private final Font font;
 		private final Color colour;
@@ -563,13 +502,11 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		// afterwards — LineComponent only aligns left/right. Only trailing lines may be centred.
 		private final boolean centred;
 
-		private Line(String left, Font font, Color colour, String right, Color rightColour)
-		{
+		private Line(String left, Font font, Color colour, String right, Color rightColour) {
 			this(left, font, colour, right, rightColour, false);
 		}
 
-		private Line(String left, Font font, Color colour, String right, Color rightColour, boolean centred)
-		{
+		private Line(String left, Font font, Color colour, String right, Color rightColour, boolean centred) {
 			this.left = left;
 			this.font = font;
 			this.colour = colour;
@@ -579,20 +516,16 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		}
 	}
 
-	private int rightWidth(Graphics2D graphics, Line line)
-	{
+	private int rightWidth(Graphics2D graphics, Line line) {
 		return line.right == null ? 0 : graphics.getFontMetrics(fontOther).stringWidth(line.right) + 6;
 	}
 
 	/**
 	 * Compact wall-time: "34s" under a minute, "2m 05s" above.
 	 */
-	private static String formatTime(int seconds)
-	{
+	private static String formatTime(int seconds) {
 		if (seconds < 60)
-		{
 			return seconds + "s";
-		}
 		return (seconds / 60) + "m " + String.format("%02ds", seconds % 60);
 	}
 
@@ -601,18 +534,13 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	 * blur into their neighbours and break the list rhythm. With the panel sized to its content this
 	 * only kicks in past {@link #MAX_WIDTH}.
 	 */
-	private static String ellipsize(Graphics2D graphics, Font font, String text, int maxWidth)
-	{
+	private static String ellipsize(Graphics2D graphics, Font font, String text, int maxWidth) {
 		java.awt.FontMetrics metrics = graphics.getFontMetrics(font);
 		if (metrics.stringWidth(text) <= maxWidth)
-		{
 			return text;
-		}
 		int end = text.length();
 		while (end > 1 && metrics.stringWidth(text.substring(0, end) + "…") > maxWidth)
-		{
 			end--;
-		}
 		return text.substring(0, end) + "…";
 	}
 
@@ -621,20 +549,15 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	 * through, not opening. Out-of-scene doors keep the "Open" default — regular doors shut
 	 * themselves, so closed is the safe assumption until the door is visible.
 	 */
-	private String doorStepText(RouteOption route, RouteDirections.Step step)
-	{
+	private String doorStepText(RouteOption route, RouteDirections.Step step) {
 		List<gps.pathfinder.PathStep> path = route.getPath();
 		if (step.getStartIndex() < 0 || step.getEndIndex() >= path.size())
-		{
 			return step.getText();
-		}
 		ClosedDoors.Door door = ClosedDoors.doorBetween(
 			path.get(step.getStartIndex()).getPackedPosition(),
 			path.get(step.getEndIndex()).getPackedPosition());
 		if (door != null && ClosedDoors.state(client, door) == ClosedDoors.State.OPEN)
-		{
 			return "Go through " + door.name;
-		}
 		return step.getText();
 	}
 
@@ -643,13 +566,10 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	 * span. Only meaningful for longer spans — short steps (a teleport edge) flip states quickly
 	 * anyway.
 	 */
-	private boolean nearEnd(RouteDirections.Step step)
-	{
+	private boolean nearEnd(RouteDirections.Step step) {
 		int span = step.getEndIndex() - step.getStartIndex();
 		if (span < 8)
-		{
 			return false;
-		}
 		int remaining = step.getEndIndex() - reachedIndex;
 		return remaining <= Math.max(3, span / 5);
 	}
@@ -664,27 +584,21 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	 * of air above and below it. Static text on purpose — animated dots shift the centred label
 	 * and the panel width a few pixels every beat, which reads as jitter, not progress.
 	 */
-	private Dimension renderFinding(Graphics2D graphics)
-	{
+	private Dimension renderFinding(Graphics2D graphics) {
 		List<Line> lines = new ArrayList<>();
 		String destinationLine = plugin.getDestinationLine();
 		if (destinationLine != null)
-		{
 			lines.add(new Line(destinationLine, fontOther, UPCOMING, null, null));
-		}
 		lines.add(new Line(" ", fontOther, UPCOMING, null, null));
 		lines.add(new Line("Finding the best route...", fontCurrent, NEXT, null, null, true));
 		lines.add(new Line(" ", fontOther, NEXT, null, null, true));
 		return renderPanel(graphics, lines);
 	}
 
-	private Dimension renderArrival(Graphics2D graphics)
-	{
+	private Dimension renderArrival(Graphics2D graphics) {
 		List<Line> lines = new ArrayList<>();
 		if (arrivalSource != null)
-		{
 			lines.add(new Line("Destination set by " + arrivalSource, fontOther, UPCOMING, null, null));
-		}
 		lines.add(new Line("Arrived!", fontCurrent, ARRIVED, null, null, true));
 		lines.add(new Line("in " + formatTime((int) (arrivalElapsedMillis / 1000)), fontNext, NEXT, null, null, true));
 		lines.add(new Line("(click to dismiss)", fontOther, DONE, null, null, true));
@@ -695,17 +609,12 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	 * Dismisses the arrival panel when {@code point} (canvas coordinates) is inside it. Called from
 	 * the plugin's mouse listener; returns true when the click was consumed.
 	 */
-	public boolean dismissArrivalAt(java.awt.Point point)
-	{
+	public boolean dismissArrivalAt(java.awt.Point point) {
 		if (!arrivalShowing)
-		{
 			return false;
-		}
 		java.awt.Rectangle bounds = getBounds();
 		if (bounds == null || !bounds.contains(point))
-		{
 			return false;
-		}
 		arrivalShowing = false;
 		return true;
 	}
@@ -715,8 +624,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	 * so arrival is shown even when the near-end proximity stamp never happened — e.g. a destination
 	 * set while already at it, which the plugin clears on the very next tick before the route renders.
 	 */
-	public void markArrived(String source, long elapsedMillis)
-	{
+	public void markArrived(String source, long elapsedMillis) {
 		arrivalSource = source;
 		arrivalElapsedMillis = Math.max(0, elapsedMillis);
 		arrivalShowing = true;
@@ -732,11 +640,9 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	 * route time from it). No same-plane tile at all (e.g. an off-route dungeon detour) freezes the
 	 * estimate.
 	 */
-	private void updateProgress(RouteOption route, List<RouteDirections.Step> steps)
-	{
+	private void updateProgress(RouteOption route, List<RouteDirections.Step> steps) {
 		List<gps.pathfinder.PathStep> path = route.getPath();
-		if (route != progressRoute)
-		{
+		if (route != progressRoute) {
 			progressRoute = route;
 			reachedIndex = 0;
 			remainingTicksAt = buildRemainingTicks(route, steps);
@@ -744,26 +650,20 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		}
 		Player player = client.getLocalPlayer();
 		if (player == null || remainingTicksAt.length != path.size())
-		{
 			return;
-		}
 		// Boat-aware: aboard, the raw local position is in the boat's sub-WorldView — the
 		// tracker froze the moment the player boarded. UNDEFINED transients (view swaps)
 		// simply skip this frame's update.
 		int playerPacked = WorldPointUtil.fromLocalInstance(client, player);
 		if (playerPacked == WorldPointUtil.UNDEFINED)
-		{
 			return;
-		}
 		int playerPlane = WorldPointUtil.unpackWorldPlane(playerPacked);
 
 		// Rolling speed estimate (tiles/second): faster than any running player means a transport is
 		// carrying us — freeze the estimate until we land instead of scoring transient positions.
 		long now = System.currentTimeMillis();
-		if (speedSamplePosition == WorldPointUtil.UNDEFINED || now - speedSampleAt >= SPEED_SAMPLE_MILLIS)
-		{
-			if (speedSamplePosition != WorldPointUtil.UNDEFINED && now > speedSampleAt)
-			{
+		if (speedSamplePosition == WorldPointUtil.UNDEFINED || now - speedSampleAt >= SPEED_SAMPLE_MILLIS) {
+			if (speedSamplePosition != WorldPointUtil.UNDEFINED && now > speedSampleAt) {
 				// A plane change between samples reads as a big move (stairs/teleports).
 				int moved = WorldPointUtil.unpackWorldPlane(speedSamplePosition) == playerPlane
 					? WorldPointUtil.distanceBetween(speedSamplePosition, playerPacked)
@@ -778,8 +678,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		// boarded varbit says it plainly.
 		boolean riding = speedTilesPerSecond > VEHICLE_TILES_PER_SECOND || aboard();
 
-		if (riding)
-		{
+		if (riding) {
 			// Mid-transport: interpolate through the ride geometrically. Distance to the landing
 			// tile over the full hop length gives the fraction completed; the ETA becomes the
 			// remainder of the ride plus everything after it. Progress itself (step completion)
@@ -792,18 +691,15 @@ public class RouteDirectionsOverlay extends OverlayPanel
 			// leg forever, freezing the list at "Walk" and never stamping the arrival. The
 			// sail step whose cached track passes nearest the boat is the active one; being
 			// aboard also means everything before its departure node is done.
-			if (aboard())
-			{
+			if (aboard()) {
 				RouteDirections.Step sail = activeSailRide(
 					route, plugin.getRouteDirections(route), playerPacked);
-				if (sail != null)
-				{
+				if (sail != null) {
 					ride = sail;
 					reachedIndex = Math.max(reachedIndex, sail.getStartIndex());
 				}
 			}
-			if (ride != null && ride.isTransport())
-			{
+			if (ride != null && ride.isTransport()) {
 				int origin = path.get(Math.max(0, ride.getStartIndex())).getPackedPosition();
 				int destination = path.get(ride.getEndIndex()).getPackedPosition();
 				// Sailing rides follow a CURVED track: the embarked world position scores
@@ -817,8 +713,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 				// because the live learner invalidates the track cache exactly when arriving
 				// at an obstacle-rich port, and the stamp must not depend on a cache.
 				if (sailingRide && WorldPointUtil.distanceBetween(playerPacked, destination)
-					<= SEA_NEAR_DISTANCE)
-				{
+					<= SEA_NEAR_DISTANCE) {
 					reachedIndex = Math.max(reachedIndex, ride.getEndIndex());
 					liveRemainingTicks = remainingTicksAt[ride.getEndIndex()];
 					// The completion banner gates on selection distance ZERO — a land-selector
@@ -827,15 +722,12 @@ public class RouteDirectionsOverlay extends OverlayPanel
 					return;
 				}
 				int[] track = sailingRide ? SailingSea.seaPath(origin, destination) : null;
-				if (track != null && track.length > 1)
-				{
+				if (track != null && track.length > 1) {
 					int nearest = 0;
 					int nearestDistance = Integer.MAX_VALUE;
-					for (int w = 0; w < track.length; w++)
-					{
+					for (int w = 0; w < track.length; w++) {
 						int d = WorldPointUtil.distanceBetween(playerPacked, track[w]);
-						if (d < nearestDistance)
-						{
+						if (d < nearestDistance) {
 							nearestDistance = d;
 							nearest = w;
 						}
@@ -843,24 +735,20 @@ public class RouteDirectionsOverlay extends OverlayPanel
 					// Last FEW waypoints, not the literal last: waypoints are decimated
 					// (every 3rd tile) and the hull parks short of the pin.
 					if (nearest >= track.length - 3
-						|| WorldPointUtil.distanceBetween(playerPacked, destination) <= SEA_NEAR_DISTANCE)
-					{
+						|| WorldPointUtil.distanceBetween(playerPacked, destination) <= SEA_NEAR_DISTANCE) {
 						reachedIndex = Math.max(reachedIndex, ride.getEndIndex());
 						liveRemainingTicks = remainingTicksAt[ride.getEndIndex()];
 						lastSelectionDistance = 0;
 					}
-					else
-					{
+					else {
 						double completed = nearest / (double) (track.length - 1);
 						liveRemainingTicks = remainingTicksAt[ride.getEndIndex()]
 							+ rideTicks(ride) * (1 - completed);
 					}
 				}
-				else if (WorldPointUtil.unpackWorldPlane(destination) == playerPlane)
-				{
+				else if (WorldPointUtil.unpackWorldPlane(destination) == playerPlane) {
 					double total = WorldPointUtil.distanceBetween(origin, destination);
-					if (total > 4)
-					{
+					if (total > 4) {
 						double completed = Math.min(1,
 							1 - WorldPointUtil.distanceBetween(playerPacked, destination) / total);
 						liveRemainingTicks = remainingTicksAt[ride.getEndIndex()]
@@ -877,10 +765,8 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		// still outside. Anything at or past that edge only counts once the player is standing
 		// exactly on the path beyond it, which a one-tile doorway forces anyway.
 		int doorGate = Integer.MAX_VALUE;
-		for (RouteDirections.Step step : steps)
-		{
-			if (step.isDoor() && step.getEndIndex() > reachedIndex)
-			{
+		for (RouteDirections.Step step : steps) {
+			if (step.isDoor() && step.getEndIndex() > reachedIndex) {
 				doorGate = step.getEndIndex();
 				break;
 			}
@@ -900,8 +786,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		// tile afterwards, keeping its walk-back charge without steering the selection.
 		// The BFS is memoized by player tile: render runs per FRAME, but the flood only changes
 		// when the player's tile does (game movement is tick-paced) — ~2 floods/s instead of ~100.
-		if (playerPacked != walkCacheTile)
-		{
+		if (playerPacked != walkCacheTile) {
 			walkCache = RouteProgress.walkDistances(
 				plugin.getCollisionMap(), playerPacked, RouteProgress.REACH_RADIUS);
 			walkCacheTile = playerPacked;
@@ -909,10 +794,8 @@ public class RouteDirectionsOverlay extends OverlayPanel
 		RouteProgress.Result selection = RouteProgress.select(
 			path, reachedIndex, doorGate, returnGate, playerPacked, walkCache);
 		if (selection == null)
-		{
 			// Nowhere near the route (long off-path detour): hold the last honest estimate.
 			return;
-		}
 		reachedIndex = selection.index;
 		liveRemainingTicks = selection.distance / 2.0 + remainingTicksAt[selection.index];
 		lastSelectionDistance = selection.distance;
@@ -923,22 +806,16 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	 * condition for arrival: a small ETA behind a still-closed (or unverified) door is not
 	 * an arrival.
 	 */
-	private boolean lastLegClear(RouteOption route, List<RouteDirections.Step> steps)
-	{
+	private boolean lastLegClear(RouteOption route, List<RouteDirections.Step> steps) {
 		List<gps.pathfinder.PathStep> path = route.getPath();
-		for (RouteDirections.Step step : steps)
-		{
+		for (RouteDirections.Step step : steps) {
 			if (!step.isDoor() || step.getEndIndex() <= reachedIndex || step.getEndIndex() >= path.size())
-			{
 				continue;
-			}
 			ClosedDoors.Door door = ClosedDoors.doorBetween(
 				path.get(step.getStartIndex()).getPackedPosition(),
 				path.get(step.getEndIndex()).getPackedPosition());
 			if (door != null && ClosedDoors.state(client, door) != ClosedDoors.State.OPEN)
-			{
 				return false;
-			}
 		}
 		return true;
 	}
@@ -946,8 +823,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	/**
 	 * Progress state exposed for the debug snapshot.
 	 */
-	int getReachedIndex()
-	{
+	int getReachedIndex() {
 		return reachedIndex;
 	}
 
@@ -955,32 +831,25 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	 * The tracked progress along {@code route}, or 0 when that route isn't the one being
 	 * tracked (different selection, or nothing tracked yet).
 	 */
-	int reachedIndexFor(RouteOption route)
-	{
+	int reachedIndexFor(RouteOption route) {
 		return route == progressRoute ? reachedIndex : 0;
 	}
 
-	double getLiveRemainingTicks()
-	{
+	double getLiveRemainingTicks() {
 		return liveRemainingTicks;
 	}
 
-	double getSpeedTilesPerSecond()
-	{
+	double getSpeedTilesPerSecond() {
 		return speedTilesPerSecond;
 	}
 
 	/**
 	 * The step the player is currently executing: the first whose span isn't finished.
 	 */
-	private RouteDirections.Step currentStep(List<RouteDirections.Step> steps)
-	{
-		for (RouteDirections.Step step : steps)
-		{
+	private RouteDirections.Step currentStep(List<RouteDirections.Step> steps) {
+		for (RouteDirections.Step step : steps) {
 			if (!finished(step))
-			{
 				return step;
-			}
 		}
 		return steps.isEmpty() ? null : steps.get(steps.size() - 1);
 	}
@@ -990,12 +859,9 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	 * half of a sailing leg, which shares its node with the walk that leads there: standing on
 	 * the dock is not boarding, only the BOARDED varbit finishes it.
 	 */
-	private boolean finished(RouteDirections.Step step)
-	{
+	private boolean finished(RouteDirections.Step step) {
 		if (step.getEndIndex() > reachedIndex)
-		{
 			return false;
-		}
 		return !step.isEmbark() || aboard();
 	}
 
@@ -1004,39 +870,32 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	 * 30 tiles), or null: multiple sail legs in one route disambiguate by geometry.
 	 */
 	private RouteDirections.Step activeSailRide(RouteOption route,
-		List<RouteDirections.Step> steps, int playerPacked)
-	{
+		List<RouteDirections.Step> steps, int playerPacked) {
 		List<gps.pathfinder.PathStep> path = route.getPath();
 		RouteDirections.Step best = null;
 		int bestDistance = 30;
-		for (RouteDirections.Step step : steps)
-		{
+		for (RouteDirections.Step step : steps) {
 			if (!step.isTransport() || step.getEndIndex() >= path.size()
-				|| !route.sailingJumpDepartures().contains(step.getStartIndex()))
-			{
+				|| !route.sailingJumpDepartures().contains(step.getStartIndex())) {
 				continue;
 			}
 			int origin = path.get(Math.max(0, step.getStartIndex())).getPackedPosition();
 			int destination = path.get(step.getEndIndex()).getPackedPosition();
 			int[] track = SailingSea.seaPath(origin, destination);
-			if (track == null)
-			{
+			if (track == null) {
 				// Track cache just invalidated (the live learner clears it precisely at
 				// obstacle-rich ports — i.e. at ARRIVAL): endpoints still identify the leg.
 				int d = Math.min(WorldPointUtil.distanceBetween(playerPacked, origin),
 					WorldPointUtil.distanceBetween(playerPacked, destination));
-				if (d < bestDistance)
-				{
+				if (d < bestDistance) {
 					bestDistance = d;
 					best = step;
 				}
 				continue;
 			}
-			for (int waypoint : track)
-			{
+			for (int waypoint : track) {
 				int d = WorldPointUtil.distanceBetween(playerPacked, waypoint);
-				if (d < bestDistance)
-				{
+				if (d < bestDistance) {
 					bestDistance = d;
 					best = step;
 				}
@@ -1046,8 +905,7 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	}
 
 	/** Whether the player is at the helm (SAILING_BOARDED_BOAT). */
-	private boolean aboard()
-	{
+	private boolean aboard() {
 		return client.getVarbitValue(net.runelite.api.gameval.VarbitID.SAILING_BOARDED_BOAT) != 0;
 	}
 
@@ -1058,46 +916,37 @@ public class RouteDirectionsOverlay extends OverlayPanel
 	 * linear remainder of the step spanning the index. Index 0 holds the whole journey.
 	 */
 	/** A ride's duration as the ETA table sees it, so mid-ride interpolation stays on the same line. */
-	private double rideTicks(RouteDirections.Step ride)
-	{
+	private double rideTicks(RouteDirections.Step ride) {
 		int start = Math.max(0, Math.min(ride.getStartIndex(), remainingTicksAt.length - 1));
 		int end = Math.max(start, Math.min(ride.getEndIndex(), remainingTicksAt.length - 1));
 		return Math.max(0, remainingTicksAt[start] - remainingTicksAt[end]);
 	}
 
-	static double[] buildRemainingTicks(RouteOption route, List<RouteDirections.Step> steps)
-	{
+	static double[] buildRemainingTicks(RouteOption route, List<RouteDirections.Step> steps) {
 		List<gps.pathfinder.PathStep> path = route.getPath();
 		int pathSize = path.size();
 		boolean costed = pathSize > 0;
-		for (gps.pathfinder.PathStep step : path)
-		{
-			if (step.getCost() == gps.pathfinder.PathStep.UNKNOWN_COST)
-			{
+		for (gps.pathfinder.PathStep step : path) {
+			if (step.getCost() == gps.pathfinder.PathStep.UNKNOWN_COST) {
 				costed = false;
 				break;
 			}
 		}
-		if (costed)
-		{
+		if (costed) {
 			double[] exact = new double[pathSize];
 			int end = path.get(pathSize - 1).getCost();
 			for (int i = 0; i < pathSize; i++)
-			{
 				exact[i] = Math.max(0, end - path.get(i).getCost()) / (double) gps.pathfinder.CostUnits.UNITS_PER_TICK;
-			}
 			return exact;
 		}
 		double[] remaining = new double[pathSize];
 		double after = 0;
-		for (int s = steps.size() - 1; s >= 0; s--)
-		{
+		for (int s = steps.size() - 1; s >= 0; s--) {
 			RouteDirections.Step step = steps.get(s);
 			int start = Math.max(0, Math.min(step.getStartIndex(), pathSize - 1));
 			int end = Math.max(start, Math.min(step.getEndIndex(), pathSize - 1));
 			int span = Math.max(1, end - start);
-			for (int i = end; i >= start; i--)
-			{
+			for (int i = end; i >= start; i--) {
 				double throughStep = step.getTicks() * ((end - i) / (double) span);
 				remaining[i] = Math.max(remaining[i], after + throughStep);
 			}

@@ -57,11 +57,9 @@ import static gps.PanelWidgets.wrappedLabel;
  * box so a long catalog never pushes the route list off screen. The route cards and the catalog
  * share one exclusion set: a route's method menu and the catalog row flip the same state.
  */
-final class MethodCatalogView
-{
+final class MethodCatalogView {
 	/** The funnel-filter options. */
-	enum Filter
-	{
+	enum Filter {
 		ALL("Show all methods", null, false),
 		DISABLED("Disabled (excluded)", null, true),
 		MISSING_ITEM("Missing an item", MethodAvailability.MISSING_ITEM, false),
@@ -76,15 +74,13 @@ final class MethodCatalogView
 		// True for the "disabled" filter, which keeps user-excluded methods regardless of availability.
 		final boolean disabled;
 
-		Filter(String label, MethodAvailability availability, boolean disabled)
-		{
+		Filter(String label, MethodAvailability availability, boolean disabled) {
 			this.label = label;
 			this.availability = availability;
 			this.disabled = disabled;
 		}
 
-		boolean isActive()
-		{
+		boolean isActive() {
 			return this != ALL;
 		}
 	}
@@ -110,81 +106,66 @@ final class MethodCatalogView
 	private Set<TeleportMethod> exclusions = Set.of();
 	private Map<TeleportMethod, MethodAvailability> unavailable = Map.of();
 
-	MethodCatalogView(ShortestPathPlugin plugin, Runnable rebuild, Runnable relayout)
-	{
+	MethodCatalogView(ShortestPathPlugin plugin, Runnable rebuild, Runnable relayout) {
 		this.plugin = plugin;
 		this.rebuild = rebuild;
 		this.relayout = relayout;
 		search.setIcon(IconTextField.Icon.SEARCH);
 		search.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		search.setHoverBackgroundColor(ColorScheme.DARK_GRAY_HOVER_COLOR);
-		search.getDocument().addDocumentListener(new DocumentListener()
-		{
+		search.getDocument().addDocumentListener(new DocumentListener() {
 			@Override
-			public void insertUpdate(DocumentEvent e)
-			{
+			public void insertUpdate(DocumentEvent e) {
 				populateRows();
 			}
 
 			@Override
-			public void removeUpdate(DocumentEvent e)
-			{
+			public void removeUpdate(DocumentEvent e) {
 				populateRows();
 			}
 
 			@Override
-			public void changedUpdate(DocumentEvent e)
-			{
+			public void changedUpdate(DocumentEvent e) {
 				populateRows();
 			}
 		});
 	}
 
 	/** The inputs the next {@link #section()} builds from. */
-	void update(List<TeleportMethod> catalog, Set<TeleportMethod> exclusions, Map<TeleportMethod, MethodAvailability> unavailable)
-	{
+	void update(List<TeleportMethod> catalog, Set<TeleportMethod> exclusions, Map<TeleportMethod, MethodAvailability> unavailable) {
 		this.catalog = catalog;
 		this.exclusions = exclusions;
 		this.unavailable = unavailable;
 	}
 
-	List<TeleportMethod> catalog()
-	{
+	List<TeleportMethod> catalog() {
 		return catalog;
 	}
 
-	Set<TeleportMethod> exclusions()
-	{
+	Set<TeleportMethod> exclusions() {
 		return exclusions;
 	}
 
-	Map<TeleportMethod, MethodAvailability> unavailable()
-	{
+	Map<TeleportMethod, MethodAvailability> unavailable() {
 		return unavailable;
 	}
 
-	boolean isExpanded()
-	{
+	boolean isExpanded() {
 		return expanded;
 	}
 
 	/** The methods a search can actually use: usable in the current mode and not excluded. */
-	int enabledCount()
-	{
+	int enabledCount() {
 		int enabled = 0;
-		for (TeleportMethod method : catalog)
-		{
+		for (TeleportMethod method : catalog) {
 			if (isUsable(method) && !exclusions.contains(method))
-			{
 				enabled++;
-			}
 		}
 		return enabled;
 	}
 
 	/** The rows box's scroll position, to carry over a rebuild (0 when there is none). */
-	int scrollPosition()
-	{
+	int scrollPosition() {
 		return rowsScroll != null ? rowsScroll.getVerticalScrollBar().getValue() : 0;
 	}
 
@@ -192,10 +173,8 @@ final class MethodCatalogView
 	 * Restores a carried-over scroll position after the rebuilt pane has been laid out (nested
 	 * invokeLater), since a fresh scrollbar clamps everything to 0 until validation.
 	 */
-	void restoreScroll(int position)
-	{
-		if (position > 0 && rowsScroll != null)
-		{
+	void restoreScroll(int position) {
+		if (position > 0 && rowsScroll != null) {
 			final JScrollPane scroll = rowsScroll;
 			SwingUtilities.invokeLater(() -> SwingUtilities.invokeLater(
 				() -> scroll.getVerticalScrollBar().setValue(position)));
@@ -203,19 +182,15 @@ final class MethodCatalogView
 	}
 
 	/** The enclosing Travel options section collapsed: the rows box is gone with it. */
-	void slotCollapsed()
-	{
+	void slotCollapsed() {
 		rowsPanel = null;
 		rowsScroll = null;
 	}
 
 	/** The catalog section a method is grouped under: teleport items split by charge model. */
-	static String groupKey(TeleportMethod method)
-	{
+	static String groupKey(TeleportMethod method) {
 		if (method.getType() == TransportType.TELEPORTATION_ITEM)
-		{
 			return method.isConsumable() ? "Items (charged)" : "Items (permanent)";
-		}
 		return method.category();
 	}
 
@@ -224,8 +199,7 @@ final class MethodCatalogView
 	 * mode-independent (a banked item is always recorded IN_BANK); a banked item counts as usable
 	 * in the "Inventory + bank" mode, whose route walks to a bank to withdraw it.
 	 */
-	static boolean usable(MethodAvailability status, AlternativeRoutesMode mode)
-	{
+	static boolean usable(MethodAvailability status, AlternativeRoutesMode mode) {
 		return status == null || (status == MethodAvailability.IN_BANK && mode == AlternativeRoutesMode.OWNED_WITH_BANK);
 	}
 
@@ -235,30 +209,23 @@ final class MethodCatalogView
 	 * empty text keeps everything.
 	 */
 	static boolean matches(TeleportMethod method, Filter filter, String text,
-		Set<TeleportMethod> exclusions, Map<TeleportMethod, MethodAvailability> unavailable)
-	{
+		Set<TeleportMethod> exclusions, Map<TeleportMethod, MethodAvailability> unavailable) {
 		if (filter.disabled && !exclusions.contains(method))
-		{
 			return false;
-		}
 		if (filter.availability != null && unavailable.get(method) != filter.availability)
-		{
 			return false;
-		}
 		String needle = text.trim().toLowerCase(Locale.ROOT);
 		return needle.isEmpty()
 			|| method.category().toLowerCase(Locale.ROOT).contains(needle)
 			|| method.label().toLowerCase(Locale.ROOT).contains(needle);
 	}
 
-	private boolean isUsable(TeleportMethod method)
-	{
+	private boolean isUsable(TeleportMethod method) {
 		return usable(unavailable.get(method), plugin.getRoutesMode());
 	}
 
 	/** The collapsible "Travel methods" section for the current inputs. */
-	JPanel section()
-	{
+	JPanel section() {
 		// The headline count is the methods a search can ACTUALLY use: usable right now (not
 		// missing an item, level, quest or unlock) AND not excluded, so it responds to the
 		// toggles. Broken down into permanent (unlimited use) and charged (consumes a charge or
@@ -268,29 +235,19 @@ final class MethodCatalogView
 		int included = 0;
 		int permanent = 0;
 		int charged = 0;
-		for (TeleportMethod method : catalog)
-		{
+		for (TeleportMethod method : catalog) {
 			boolean canUse = isUsable(method);
 			boolean isIncluded = !exclusions.contains(method);
 			if (canUse)
-			{
 				usable++;
-			}
 			if (isIncluded)
-			{
 				included++;
-			}
-			if (canUse && isIncluded)
-			{
+			if (canUse && isIncluded) {
 				enabled++;
 				if (method.isConsumable())
-				{
 					charged++;
-				}
 				else
-				{
 					permanent++;
-				}
 			}
 		}
 		// Same collapsible shell as the other Travel options sub-sections; the enabled count is
@@ -301,8 +258,7 @@ final class MethodCatalogView
 			expanded, () -> expanded = !expanded,
 			enabled + "/" + catalog.size(), ColorScheme.LIGHT_GRAY_COLOR, false, rebuild);
 
-		if (!expanded)
-		{
+		if (!expanded) {
 			slotCollapsed();
 			section.setBorder(new EmptyBorder(0, 0, 4, 0));
 			return section;
@@ -311,8 +267,7 @@ final class MethodCatalogView
 		// Enabled breakdown, permanent (unlimited) against charged (consumes a charge or the
 		// item). Only shown while expanded, where the split matters; the header count already
 		// carries the total collapsed.
-		if (enabled > 0)
-		{
+		if (enabled > 0) {
 			JLabel breakdown = new JLabel(permanent + " permanent · " + charged + " charged");
 			breakdown.setFont(FontManager.getRunescapeSmallFont());
 			breakdown.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
@@ -364,23 +319,20 @@ final class MethodCatalogView
 	 * The tier context menu for {@code method}. Preferences re-rank the current list instantly
 	 * (no recalculation); Exclude keeps its existing semantics (applies on the next refresh).
 	 */
-	void showPriorityMenu(Component anchor, TeleportMethod method)
-	{
+	void showPriorityMenu(Component anchor, TeleportMethod method) {
 		JPopupMenu menu = new JPopupMenu();
 		MethodPriority current = plugin.getMethodPriority(method);
 		for (MethodPriority tier : new MethodPriority[]{
 			MethodPriority.PREFER_3, MethodPriority.PREFER_2, MethodPriority.PREFER_1,
 			MethodPriority.NORMAL,
-			MethodPriority.AVOID_1, MethodPriority.AVOID_2, MethodPriority.AVOID_3})
-		{
+			MethodPriority.AVOID_1, MethodPriority.AVOID_2, MethodPriority.AVOID_3}) {
 			String text = tier.label + (tier.chipText().isEmpty() ? "" : "  " + tier.chipText());
 			JMenuItem entry = new JMenuItem(text, priorityRestIcon(tier));
 			entry.setFont(tier == current ? FontManager.getRunescapeBoldFont() : FontManager.getRunescapeSmallFont());
 			// The slot only rebuilds when catalog, exclusions or availability change; a tier
 			// change alters none of them, so rebuild here or the row keeps the old tier until
 			// something else re-renders the panel.
-			entry.addActionListener(e ->
-			{
+			entry.addActionListener(e -> {
 				plugin.setMethodPriority(method, tier);
 				rebuild.run();
 			});
@@ -390,8 +342,7 @@ final class MethodCatalogView
 		JMenuItem exclude = new JMenuItem(MethodPriority.EXCLUDED.label, RouteIcons.CROSS);
 		exclude.setFont(current == MethodPriority.EXCLUDED
 			? FontManager.getRunescapeBoldFont() : FontManager.getRunescapeSmallFont());
-		exclude.addActionListener(e ->
-		{
+		exclude.addActionListener(e -> {
 			plugin.setMethodPriority(method, MethodPriority.EXCLUDED);
 			rebuild.run();
 		});
@@ -400,49 +351,41 @@ final class MethodCatalogView
 	}
 
 	/** The funnel icon that opens the filter menu; orange while a filter is active. */
-	private JLabel funnel()
-	{
+	private JLabel funnel() {
 		boolean active = filter.isActive();
 		JLabel funnel = new JLabel(active ? RouteIcons.FILTER_ACTIVE : RouteIcons.FILTER);
 		funnel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		funnel.setToolTipText("Filter: " + filter.label + " (click to change)");
-		funnel.addMouseListener(new MouseAdapter()
-		{
+		funnel.addMouseListener(new MouseAdapter() {
 			@Override
-			public void mousePressed(MouseEvent e)
-			{
+			public void mousePressed(MouseEvent e) {
 				showFilterMenu(funnel);
 			}
 
 			@Override
-			public void mouseEntered(MouseEvent e)
-			{
+			public void mouseEntered(MouseEvent e) {
 				funnel.setIcon(active ? RouteIcons.FILTER_ACTIVE_HOVER : RouteIcons.FILTER_HOVER);
 			}
 
 			@Override
-			public void mouseExited(MouseEvent e)
-			{
+			public void mouseExited(MouseEvent e) {
 				funnel.setIcon(active ? RouteIcons.FILTER_ACTIVE : RouteIcons.FILTER);
 			}
 		});
 		return funnel;
 	}
 
-	private void showFilterMenu(JComponent anchor)
-	{
+	private void showFilterMenu(JComponent anchor) {
 		JPopupMenu menu = new JPopupMenu();
 		menu.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		menu.setBorder(BorderFactory.createLineBorder(ColorScheme.MEDIUM_GRAY_COLOR));
 		ButtonGroup group = new ButtonGroup();
-		for (Filter option : Filter.values())
-		{
+		for (Filter option : Filter.values()) {
 			JRadioButtonMenuItem item = new JRadioButtonMenuItem(option.label, option == filter);
 			item.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 			item.setForeground(Color.WHITE);
 			item.setFont(FontManager.getRunescapeSmallFont());
-			item.addActionListener(e ->
-			{
+			item.addActionListener(e -> {
 				filter = option;
 				rebuild.run();
 			});
@@ -458,34 +401,25 @@ final class MethodCatalogView
 	 * categories are shown force-expanded (a filter that only matched collapsed categories would
 	 * otherwise look like it found nothing).
 	 */
-	private void populateRows()
-	{
+	private void populateRows() {
 		JPanel rows = rowsPanel;
 		JScrollPane scroll = rowsScroll;
 		if (rows == null || scroll == null)
-		{
 			return;
-		}
 		rows.removeAll();
 
 		String text = search.getText() == null ? "" : search.getText().trim();
 		boolean filtering = !text.isEmpty();
 
 		Map<String, List<TeleportMethod>> grouped = new TreeMap<>();
-		for (TeleportMethod method : catalog)
-		{
+		for (TeleportMethod method : catalog) {
 			if (matches(method, filter, text, exclusions, unavailable))
-			{
 				grouped.computeIfAbsent(groupKey(method), k -> new ArrayList<>()).add(method);
-			}
 		}
 		for (List<TeleportMethod> items : grouped.values())
-		{
 			items.sort(Comparator.comparing(m -> m.label().toLowerCase(Locale.ROOT)));
-		}
 
-		if (grouped.isEmpty())
-		{
+		if (grouped.isEmpty()) {
 			String message = filter.isActive() ? "No methods: " + filter.label.toLowerCase(Locale.ROOT)
 				: "No methods match \"" + escapeHtml(text) + "\"";
 			JLabel none = wrappedLabel("<i>" + message + "</i>");
@@ -493,19 +427,15 @@ final class MethodCatalogView
 			none.setAlignmentX(Component.LEFT_ALIGNMENT);
 			rows.add(none);
 		}
-		for (Map.Entry<String, List<TeleportMethod>> entry : grouped.entrySet())
-		{
+		for (Map.Entry<String, List<TeleportMethod>> entry : grouped.entrySet()) {
 			String category = entry.getKey();
 			List<TeleportMethod> items = entry.getValue();
 			// A text filter or an active funnel filter force categories open so the matches show.
 			boolean open = filtering || filter.isActive() || expandedCategories.contains(category);
 			rows.add(categoryHeader(category, items, open));
-			if (open)
-			{
+			if (open) {
 				for (TeleportMethod item : items)
-				{
 					rows.add(itemRow(item));
-				}
 			}
 		}
 
@@ -518,15 +448,11 @@ final class MethodCatalogView
 		relayout.run();
 	}
 
-	private JPanel categoryHeader(String category, List<TeleportMethod> items, boolean open)
-	{
+	private JPanel categoryHeader(String category, List<TeleportMethod> items, boolean open) {
 		int excludedCount = 0;
-		for (TeleportMethod method : items)
-		{
+		for (TeleportMethod method : items) {
 			if (exclusions.contains(method))
-			{
 				excludedCount++;
-			}
 		}
 		boolean allIncluded = excludedCount == 0;
 		boolean allExcluded = excludedCount == items.size();
@@ -543,22 +469,19 @@ final class MethodCatalogView
 		ImageIcon hover;
 		String tip;
 		Runnable action;
-		if (allIncluded)
-		{
+		if (allIncluded) {
 			icon = RouteIcons.CHECK;
 			hover = RouteIcons.CHECK_HOVER;
 			tip = "All included: click to exclude every " + category.toLowerCase(Locale.ROOT);
 			action = () -> plugin.excludeMethods(items);
 		}
-		else if (allExcluded)
-		{
+		else if (allExcluded) {
 			icon = RouteIcons.CROSS;
 			hover = RouteIcons.CROSS_HOVER;
 			tip = "All excluded: click to include every " + category.toLowerCase(Locale.ROOT);
 			action = () -> plugin.includeMethods(items);
 		}
-		else
-		{
+		else {
 			icon = RouteIcons.DASH;
 			hover = RouteIcons.DASH_HOVER;
 			tip = (items.size() - excludedCount) + " of " + items.size() + " included: click to include all";
@@ -580,19 +503,16 @@ final class MethodCatalogView
 
 		row.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		row.setToolTipText(open ? "Collapse" : "Expand to toggle individual methods");
-		addClickRecursively(row, new MouseAdapter()
-		{
+		addClickRecursively(row, new MouseAdapter() {
 			@Override
-			public void mouseClicked(MouseEvent e)
-			{
+			public void mouseClicked(MouseEvent e) {
 				toggleCategory(category);
 			}
 		});
 		return row;
 	}
 
-	private JPanel itemRow(TeleportMethod item)
-	{
+	private JPanel itemRow(TeleportMethod item) {
 		boolean excluded = exclusions.contains(item);
 
 		JPanel row = new JPanel(new BorderLayout(3, 0));
@@ -613,8 +533,7 @@ final class MethodCatalogView
 		// The status marker (lock/bank) stays by the name; the toggle sits at the row's right edge,
 		// aligned with the category toggles, away from where users click to expand.
 		MethodAvailability status = unavailable.get(item);
-		if (status != null)
-		{
+		if (status != null) {
 			JLabel statusMarker = statusMarker(plugin, status, item);
 			statusMarker.setBorder(new EmptyBorder(0, 0, 0, 3));
 			row.add(verticallyCentered(statusMarker), BorderLayout.WEST);
@@ -623,9 +542,7 @@ final class MethodCatalogView
 		JLabel text = wrappedLabel(escapeHtml(item.label()));
 		text.setToolTipText(methodTooltip(item));
 		if (excluded)
-		{
 			text.setForeground(ColorScheme.LIGHT_GRAY_COLOR.darker());
-		}
 		// Centre the label at its preferred height instead of letting BorderLayout stretch it: a
 		// stretched html JLabel top-anchors its text (the html view claims the full height), which
 		// left the text floating high beside the vertically-centred icons.
@@ -636,12 +553,9 @@ final class MethodCatalogView
 		return row;
 	}
 
-	private void toggleCategory(String category)
-	{
+	private void toggleCategory(String category) {
 		if (!expandedCategories.add(category))
-		{
 			expandedCategories.remove(category);
-		}
 		// Repopulate the rows in place: cheaper than a full rebuild, and the slot's dirty check
 		// (which does not track per-category expansion) would skip the rebuild anyway.
 		populateRows();

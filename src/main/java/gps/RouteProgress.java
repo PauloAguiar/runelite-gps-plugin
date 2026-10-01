@@ -18,8 +18,7 @@ import java.util.Map;
  * roughly its straight-line distance, or it doesn't count. When no collision map is available yet,
  * the legacy straight-line rules apply unchanged.
  */
-final class RouteProgress
-{
+final class RouteProgress {
 	/** Max index drift per update for near-line matches (honest travel, not teleports). */
 	static final int STEP_WINDOW = 8;
 	/** Max straight-line distance for near-line matches. */
@@ -29,18 +28,15 @@ final class RouteProgress
 	/** BFS radius: the largest walking distance any eligibility rule can accept. */
 	static final int REACH_RADIUS = NEAR_DISTANCE + REACH_SLACK;
 
-	private RouteProgress()
-	{
+	private RouteProgress() {
 	}
 
 	/** A selection: the reached path index and the walking distance to it (for the ETA). */
-	static final class Result
-	{
+	static final class Result {
 		final int index;
 		final int distance;
 
-		Result(int index, int distance)
-		{
+		Result(int index, int distance) {
 			this.index = index;
 			this.distance = distance;
 		}
@@ -51,12 +47,9 @@ final class RouteProgress
 	 * {@code radius} steps, honouring walls via {@link CollisionMap#canStep}. Null when no map is
 	 * available (callers fall back to straight-line rules).
 	 */
-	static Map<Integer, Integer> walkDistances(CollisionMap map, int fromPacked, int radius)
-	{
+	static Map<Integer, Integer> walkDistances(CollisionMap map, int fromPacked, int radius) {
 		if (map == null)
-		{
 			return null;
-		}
 		Map<Integer, Integer> distances = new HashMap<>();
 		distances.put(fromPacked, 0);
 		ArrayDeque<Integer> queue = new ArrayDeque<>();
@@ -64,29 +57,21 @@ final class RouteProgress
 		int x = WorldPointUtil.unpackWorldX(fromPacked);
 		int y = WorldPointUtil.unpackWorldY(fromPacked);
 		int plane = WorldPointUtil.unpackWorldPlane(fromPacked);
-		while (!queue.isEmpty())
-		{
+		while (!queue.isEmpty()) {
 			int tile = queue.poll();
 			int steps = distances.get(tile);
 			if (steps >= radius)
-			{
 				continue;
-			}
 			int tx = WorldPointUtil.unpackWorldX(tile);
 			int ty = WorldPointUtil.unpackWorldY(tile);
-			for (int dx = -1; dx <= 1; dx++)
-			{
-				for (int dy = -1; dy <= 1; dy++)
-				{
+			for (int dx = -1; dx <= 1; dx++) {
+				for (int dy = -1; dy <= 1; dy++) {
 					if (dx == 0 && dy == 0)
-					{
 						continue;
-					}
 					int next = WorldPointUtil.packWorldPoint(tx + dx, ty + dy, plane);
 					if (!distances.containsKey(next)
 						&& Math.max(Math.abs(tx + dx - x), Math.abs(ty + dy - y)) <= radius
-						&& map.canStep(tile, next))
-					{
+						&& map.canStep(tile, next)) {
 						distances.put(next, steps + 1);
 						queue.add(next);
 					}
@@ -109,17 +94,13 @@ final class RouteProgress
 	 * @param walk        walking distances around the player, or null for legacy straight-line rules
 	 */
 	static Result select(List<PathStep> path, int reachedIndex, int doorGate, int returnGate,
-		int playerPacked, Map<Integer, Integer> walk)
-	{
+		int playerPacked, Map<Integer, Integer> walk) {
 		int best = -1;
 		int bestDistance = Integer.MAX_VALUE;
 		int bestOffset = Integer.MAX_VALUE;
-		for (int i = 0; i < path.size(); i++)
-		{
+		for (int i = 0; i < path.size(); i++) {
 			if (i > returnGate)
-			{
 				break;
-			}
 			int packed = path.get(i).getPackedPosition();
 			// distanceBetween is MAX_VALUE across planes, so other-plane tiles filter out here.
 			int straight = WorldPointUtil.distanceBetween(packed, playerPacked);
@@ -127,21 +108,15 @@ final class RouteProgress
 			boolean beyondDoor = i >= doorGate;
 			boolean eligible;
 			int metric;
-			if (walk != null)
-			{
+			if (walk != null) {
 				// Wall-aware rules: same tile always counts; "on path" needs a genuinely walkable
 				// single step; near-line matches must be walkable in about their straight-line
 				// distance, or the "closeness" is through a wall.
 				if (beyondDoor)
-				{
 					eligible = straight == 0;
-				}
 				else if (walked != null && walked <= 1)
-				{
 					eligible = true;
-				}
-				else
-				{
+				else {
 					eligible = walked != null
 						&& Math.abs(i - reachedIndex) <= STEP_WINDOW
 						&& straight <= NEAR_DISTANCE
@@ -149,8 +124,7 @@ final class RouteProgress
 				}
 				metric = walked != null ? walked : straight;
 			}
-			else
-			{
+			else {
 				// Legacy straight-line rules (no collision map yet).
 				boolean incremental = !beyondDoor && Math.abs(i - reachedIndex) <= STEP_WINDOW
 					&& straight <= NEAR_DISTANCE;
@@ -159,12 +133,9 @@ final class RouteProgress
 				metric = straight;
 			}
 			if (!eligible)
-			{
 				continue;
-			}
 			int offset = Math.abs(i - reachedIndex);
-			if (metric < bestDistance || (metric == bestDistance && offset < bestOffset))
-			{
+			if (metric < bestDistance || (metric == bestDistance && offset < bestOffset)) {
 				best = i;
 				bestDistance = metric;
 				bestOffset = offset;

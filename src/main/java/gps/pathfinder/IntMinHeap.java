@@ -12,37 +12,30 @@ import java.util.Arrays;
  * duplicates with its dequeue-time visited re-check. Single-threaded (worker only), matching the
  * queue it replaces.
  */
-class IntMinHeap
-{
+class IntMinHeap {
 	private final NodeGraph graph;
 	private int[] heap;
 	private int size;
 
-	IntMinHeap(NodeGraph graph, int initialCapacity)
-	{
+	IntMinHeap(NodeGraph graph, int initialCapacity) {
 		this.graph = graph;
 		this.heap = new int[Math.max(1, initialCapacity)];
 	}
 
-	boolean isEmpty()
-	{
+	boolean isEmpty() {
 		return size == 0;
 	}
 
 	/**
 	 * @return the minimum-cost element, or {@link NodeGraph#NO_NODE} if empty.
 	 */
-	int peek()
-	{
+	int peek() {
 		return size == 0 ? NodeGraph.NO_NODE : heap[0];
 	}
 
-	void add(int id)
-	{
+	void add(int id) {
 		if (size == heap.length)
-		{
 			heap = Arrays.copyOf(heap, heap.length << 1);
-		}
 		heap[size] = id;
 		siftUp(size);
 		size++;
@@ -51,24 +44,19 @@ class IntMinHeap
 	/**
 	 * @return the removed minimum-cost element, or {@link NodeGraph#NO_NODE} if empty.
 	 */
-	int poll()
-	{
+	int poll() {
 		if (size == 0)
-		{
 			return NodeGraph.NO_NODE;
-		}
 		final int top = heap[0];
 		size--;
-		if (size > 0)
-		{
+		if (size > 0) {
 			heap[0] = heap[size];
 			siftDown(0);
 		}
 		return top;
 	}
 
-	void clear()
-	{
+	void clear() {
 		size = 0;
 	}
 
@@ -87,55 +75,40 @@ class IntMinHeap
 	 * the FIFO search's (cardinals are generated first), which produces the long straight runs
 	 * that match the game's own click-walk movement, and makes searches fully deterministic.
 	 */
-	private boolean less(int a, int b)
-	{
+	private boolean less(int a, int b) {
 		final int costA = graph.orderCost(a);
 		final int costB = graph.orderCost(b);
 		if (costA != costB)
-		{
 			return costA < costB;
-		}
 		final int gA = graph.cost(a);
 		final int gB = graph.cost(b);
 		if (gA != gB)
-		{
 			return gA > gB;
-		}
 		return a < b;
 	}
 
-	private void siftUp(int index)
-	{
+	private void siftUp(int index) {
 		final int id = heap[index];
-		while (index > 0)
-		{
+		while (index > 0) {
 			final int parent = (index - 1) >> 1;
 			if (!less(id, heap[parent]))
-			{
 				break;
-			}
 			heap[index] = heap[parent];
 			index = parent;
 		}
 		heap[index] = id;
 	}
 
-	private void siftDown(int index)
-	{
+	private void siftDown(int index) {
 		final int id = heap[index];
 		final int half = size >> 1;
-		while (index < half)
-		{
+		while (index < half) {
 			int child = (index << 1) + 1;
 			final int right = child + 1;
 			if (right < size && less(heap[right], heap[child]))
-			{
 				child = right;
-			}
 			if (!less(heap[child], id))
-			{
 				break;
-			}
 			heap[index] = heap[child];
 			index = child;
 		}

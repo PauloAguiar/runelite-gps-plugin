@@ -21,47 +21,34 @@ import net.runelite.client.events.PluginMessage;
  * {@link PluginMessageCodec}; this is the flow: which start, which ends, whether the journey
  * re-arms.
  */
-final class PluginMessageBridge
-{
+final class PluginMessageBridge {
 	private final ShortestPathPlugin plugin;
 	// A supplier: the plugin builds the bridge at field initialisation, before injection.
 	private final Supplier<EventBus> eventBus;
 
-	PluginMessageBridge(ShortestPathPlugin plugin, Supplier<EventBus> eventBus)
-	{
+	PluginMessageBridge(ShortestPathPlugin plugin, Supplier<EventBus> eventBus) {
 		this.plugin = plugin;
 		this.eventBus = eventBus;
 	}
 
 	/** An inbound message on either namespace: a path request or a clear. */
-	void receive(PluginMessage event)
-	{
+	void receive(PluginMessage event) {
 		if (!PluginMessageCodec.isOurs(event.getNamespace()))
-		{
 			return;
-		}
 		String action = event.getName();
-		if (PluginMessageCodec.ACTION_PATH.equals(action))
-		{
+		if (PluginMessageCodec.ACTION_PATH.equals(action)) {
 			Map<String, Object> data = event.getData();
 			Map<String, Object> overrides = PluginMessageCodec.configOverrideOf(data);
 			if (!overrides.isEmpty())
-			{
 				plugin.applyConfigOverrides(overrides);
-			}
 			PluginMessageCodec.PathRequest request = PluginMessageCodec.parsePath(data);
 			if (request == null)
-			{
 				return;
-			}
 			int start = request.start;
-			if (start == WorldPointUtil.UNDEFINED)
-			{
+			if (start == WorldPointUtil.UNDEFINED) {
 				start = plugin.getPlayerLocation();
 				if (start == WorldPointUtil.UNDEFINED)
-				{
 					return;
-				}
 			}
 			// Attribute the destination for the GPS header (a "source" the sender chose, else
 			// all we can say is that a plugin asked for it).
@@ -69,11 +56,8 @@ final class PluginMessageBridge
 			boolean useOld = request.targets.isEmpty() && plugin.hasPathTargets();
 			Set<Integer> ends;
 			if (useOld)
-			{
 				ends = new HashSet<>(plugin.getPathTargets());
-			}
-			else
-			{
+			else {
 				// A NEW destination from another plugin bypasses the manual target path, so the
 				// journey timer is armed here too; otherwise the arrival time would carry over from
 				// whatever destination was last set. Reusing the previous target keeps the running
@@ -90,8 +74,7 @@ final class PluginMessageBridge
 			}
 			plugin.setDestination(start, ends, useOld);
 		}
-		else if (PluginMessageCodec.ACTION_CLEAR.equals(action))
-		{
+		else if (PluginMessageCodec.ACTION_CLEAR.equals(action)) {
 			plugin.clearConfigOverrides();
 			plugin.clearPinnedTarget();
 		}
@@ -102,18 +85,14 @@ final class PluginMessageBridge
 	 * integration) on both namespaces. Called when the displayed route settles: the displayed
 	 * route is what the player actually follows.
 	 */
-	void postTransports()
-	{
+	void postTransports() {
 		if (!plugin.hasPathTargets()
-			|| !ConfigOverrides.override("postTransports", plugin.getGpsConfig().postTransports()))
-		{
+			|| !ConfigOverrides.override("postTransports", plugin.getGpsConfig().postTransports())) {
 			return;
 		}
 		List<PathStep> currentPath = plugin.getDisplayPath();
 		if (currentPath.isEmpty())
-		{
 			return;
-		}
 		Map<String, Object> data = PluginMessageCodec.encodeTransports(currentPath, plugin::transportsForEdge);
 		EventBus bus = eventBus.get();
 		bus.post(new PluginMessage(PluginMessageCodec.NAMESPACE, PluginMessageCodec.ACTION_TRANSPORTS, data));

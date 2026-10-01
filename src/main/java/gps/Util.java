@@ -8,8 +8,7 @@ import java.io.InputStream;
  * General utility helpers for I/O and primitive array manipulation used by the
  * shortest path plugin.
  */
-public class Util
-{
+public class Util {
 	/**
 	 * Reads all bytes from the provided {@link InputStream} until EOF.
 	 * This method does not close the stream; the caller retains responsibility for
@@ -20,19 +19,15 @@ public class Util
 	 * never {@code null}).
 	 * @throws IOException if an I/O error occurs while reading.
 	 */
-	public static byte[] readAllBytes(InputStream in) throws IOException
-	{
+	public static byte[] readAllBytes(InputStream in) throws IOException {
 		ByteArrayOutputStream result = new ByteArrayOutputStream();
 		byte[] buffer = new byte[1024];
 
-		while (true)
-		{
+		while (true) {
 			int read = in.read(buffer, 0, buffer.length);
 
 			if (read == -1)
-			{
 				return result.toByteArray();
-			}
 
 			result.write(buffer, 0, read);
 		}
@@ -50,27 +45,18 @@ public class Util
 	 * @return a new combined array, or {@code null} if there are no elements to
 	 * copy.
 	 */
-	public static int[] concatenate(int[][] arrays)
-	{
+	public static int[] concatenate(int[][] arrays) {
 		int n = 0;
 		for (int[] value : arrays)
-		{
 			n += (value == null) ? 0 : value.length;
-		}
 		if (n == 0)
-		{
 			return null;
-		}
 		int[] array = new int[n];
 		int k = 0;
-		for (int[] ints : arrays)
-		{
-			if (ints != null)
-			{
+		for (int[] ints : arrays) {
+			if (ints != null) {
 				for (int anInt : ints)
-				{
 					array[k++] = anInt;
-				}
 			}
 		}
 		return array;

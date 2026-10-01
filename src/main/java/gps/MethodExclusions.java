@@ -12,8 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * The live set is shared by reference with the ranking preferences (the EXCLUDED mask) and the
  * generation.
  */
-final class MethodExclusions
-{
+final class MethodExclusions {
 	private final Set<TeleportMethod> live = ConcurrentHashMap.newKeySet();
 	// The exclusions the current route list was generated with; diverging from the live set
 	// means the list is stale until the user refreshes.
@@ -21,110 +20,81 @@ final class MethodExclusions
 	private final ChoiceStore store;
 	private final Runnable onChanged;
 
-	MethodExclusions(ChoiceStore store, Runnable onChanged)
-	{
+	MethodExclusions(ChoiceStore store, Runnable onChanged) {
 		this.store = store;
 		this.onChanged = onChanged;
 	}
 
 	/** The live set itself (concurrent), for the readers that must see every change. */
-	Set<TeleportMethod> live()
-	{
+	Set<TeleportMethod> live() {
 		return live;
 	}
 
 	/** A snapshot copy, for callers that iterate off the client thread. */
-	Set<TeleportMethod> copy()
-	{
+	Set<TeleportMethod> copy() {
 		return new HashSet<>(live);
 	}
 
-	boolean contains(TeleportMethod method)
-	{
+	boolean contains(TeleportMethod method) {
 		return live.contains(method);
 	}
 
-	boolean isEmpty()
-	{
+	boolean isEmpty() {
 		return live.isEmpty();
 	}
 
-	void load()
-	{
+	void load() {
 		live.addAll(store.loadExclusions());
 	}
 
-	void exclude(TeleportMethod method)
-	{
+	void exclude(TeleportMethod method) {
 		if (method != null && live.add(method))
-		{
 			changed();
-		}
 	}
 
-	void include(TeleportMethod method)
-	{
+	void include(TeleportMethod method) {
 		if (method != null && live.remove(method))
-		{
 			changed();
-		}
 	}
 
-	void excludeAll(Collection<TeleportMethod> methods)
-	{
+	void excludeAll(Collection<TeleportMethod> methods) {
 		boolean changed = false;
-		if (methods != null)
-		{
+		if (methods != null) {
 			for (TeleportMethod method : methods)
-			{
 				changed |= live.add(method);
-			}
 		}
 		if (changed)
-		{
 			changed();
-		}
 	}
 
-	void includeAll(Collection<TeleportMethod> methods)
-	{
+	void includeAll(Collection<TeleportMethod> methods) {
 		boolean changed = false;
-		if (methods != null)
-		{
+		if (methods != null) {
 			for (TeleportMethod method : methods)
-			{
 				changed |= live.remove(method);
-			}
 		}
 		if (changed)
-		{
 			changed();
-		}
 	}
 
-	void clear()
-	{
-		if (!live.isEmpty())
-		{
+	void clear() {
+		if (!live.isEmpty()) {
 			live.clear();
 			changed();
 		}
 	}
 
 	/** A generation started with the current set: the list is fresh until the set changes. */
-	void markGenerated()
-	{
+	void markGenerated() {
 		generatedWith = copy();
 	}
 
 	/** Whether the set changed since the current route list was generated. */
-	boolean isStale()
-	{
+	boolean isStale() {
 		return !live.equals(generatedWith);
 	}
 
-	private void changed()
-	{
+	private void changed() {
 		store.saveExclusions(live);
 		onChanged.run();
 	}
