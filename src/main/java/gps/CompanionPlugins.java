@@ -16,53 +16,53 @@ import net.runelite.client.plugins.PluginManager;
  * so the panel shows a dismissable banner.
  */
 final class CompanionPlugins {
-	static final String SHORTEST_PATH = "Shortest Path";
-	static final String QUEST_HELPER = "Quest Helper";
+    static final String SHORTEST_PATH = "Shortest Path";
+    static final String QUEST_HELPER = "Quest Helper";
 
-	private final PluginManager pluginManager;
-	private final ConfigManager configManager;
-	private final Plugin self;
-	private final Runnable onChanged;
+    private final PluginManager pluginManager;
+    private final ConfigManager configManager;
+    private final Plugin self;
+    private final Runnable onChanged;
 
-	private volatile boolean shortestPathConflict;
-	private volatile boolean questHelperPathingOff;
+    private volatile boolean shortestPathConflict;
+    private volatile boolean questHelperPathingOff;
 
-	CompanionPlugins(PluginManager pluginManager, ConfigManager configManager, Plugin self, Runnable onChanged) {
-		this.pluginManager = pluginManager;
-		this.configManager = configManager;
-		this.self = self;
-		this.onChanged = onChanged;
-	}
+    CompanionPlugins(PluginManager pluginManager, ConfigManager configManager, Plugin self, Runnable onChanged) {
+        this.pluginManager = pluginManager;
+        this.configManager = configManager;
+        this.self = self;
+        this.onChanged = onChanged;
+    }
 
-	/** Whether the original Shortest Path plugin is also enabled. */
-	boolean isShortestPathConflict() {
-		return shortestPathConflict;
-	}
+    /** Whether the original Shortest Path plugin is also enabled. */
+    boolean isShortestPathConflict() {
+        return shortestPathConflict;
+    }
 
-	/** Whether Quest Helper runs WITHOUT its "Use Shortest Path plugin" option. */
-	boolean isQuestHelperPathingOff() {
-		return questHelperPathingOff;
-	}
+    /** Whether Quest Helper runs WITHOUT its "Use Shortest Path plugin" option. */
+    boolean isQuestHelperPathingOff() {
+        return questHelperPathingOff;
+    }
 
-	/** Re-reads both verdicts (plugin start, a plugin toggled, the Quest Helper option changed). */
-	void refresh() {
-		boolean conflict = false;
-		boolean off = false;
-		for (Plugin other : pluginManager.getPlugins()) {
-			if (other == self)
-				continue;
-			PluginDescriptor descriptor = other.getClass().getAnnotation(PluginDescriptor.class);
-			if (descriptor == null || !pluginManager.isPluginEnabled(other))
-				continue;
-			if (SHORTEST_PATH.equals(descriptor.name()))
-				conflict = true;
-			else if (QUEST_HELPER.equals(descriptor.name()))
-				off = !Boolean.parseBoolean(configManager.getConfiguration("questhelper", "useShortestPath"));
-		}
-		boolean changed = conflict != shortestPathConflict || off != questHelperPathingOff;
-		shortestPathConflict = conflict;
-		questHelperPathingOff = off;
-		if (changed)
-			onChanged.run();
-	}
+    /** Re-reads both verdicts (plugin start, a plugin toggled, the Quest Helper option changed). */
+    void refresh() {
+        boolean conflict = false;
+        boolean off = false;
+        for (Plugin other : pluginManager.getPlugins()) {
+            if (other == self)
+                continue;
+            PluginDescriptor descriptor = other.getClass().getAnnotation(PluginDescriptor.class);
+            if (descriptor == null || !pluginManager.isPluginEnabled(other))
+                continue;
+            if (SHORTEST_PATH.equals(descriptor.name()))
+                conflict = true;
+            else if (QUEST_HELPER.equals(descriptor.name()))
+                off = !Boolean.parseBoolean(configManager.getConfiguration("questhelper", "useShortestPath"));
+        }
+        boolean changed = conflict != shortestPathConflict || off != questHelperPathingOff;
+        shortestPathConflict = conflict;
+        questHelperPathingOff = off;
+        if (changed)
+            onChanged.run();
+    }
 }

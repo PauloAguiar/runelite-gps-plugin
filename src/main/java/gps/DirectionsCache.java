@@ -10,25 +10,25 @@ import java.util.List;
  * key beside another's steps.
  */
 final class DirectionsCache {
-	private static final class Entry {
-		final RouteOption route;
-		final List<RouteDirections.Step> steps;
+    private static final class Entry {
+        final RouteOption route;
+        final List<RouteDirections.Step> steps;
 
-		Entry(RouteOption route, List<RouteDirections.Step> steps) {
-			this.route = route;
-			this.steps = steps;
-		}
-	}
+        Entry(RouteOption route, List<RouteDirections.Step> steps) {
+            this.route = route;
+            this.steps = steps;
+        }
+    }
 
-	private volatile Entry entry = new Entry(null, List.of());
+    private volatile Entry entry = new Entry(null, List.of());
 
-	/** The directions for {@code route}, built through the plugin on the first ask per route. */
-	List<RouteDirections.Step> of(ShortestPathPlugin plugin, RouteOption route) {
-		Entry cached = entry;
-		if (route != cached.route) {
-			cached = new Entry(route, RouteDirections.build(plugin, route));
-			entry = cached;
-		}
-		return cached.steps;
-	}
+    /** The directions for {@code route}, built through the plugin on the first ask per route. */
+    List<RouteDirections.Step> of(ShortestPathPlugin plugin, RouteOption route) {
+        Entry cached = entry;
+        if (route != cached.route) {
+            cached = new Entry(route, RouteDirections.build(plugin, route));
+            entry = cached;
+        }
+        return cached.steps;
+    }
 }

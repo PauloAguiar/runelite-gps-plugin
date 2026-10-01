@@ -21,88 +21,88 @@ import static gps.PanelWidgets.sectionShell;
  * cursor kept being replaced).
  */
 final class TravelOptionsView extends JPanel {
-	private final ConfigSectionsView sections;
-	private final MethodCatalogView catalog;
-	private boolean expanded;
-	// Snapshot of the inputs the slot was last built from (see needsRebuild).
-	private List<TeleportMethod> builtCatalog;
-	private Set<TeleportMethod> builtExclusions;
-	private Map<TeleportMethod, MethodAvailability> builtUnavailable;
-	private boolean builtCatalogExpanded;
+    private final ConfigSectionsView sections;
+    private final MethodCatalogView catalog;
+    private boolean expanded;
+    // Snapshot of the inputs the slot was last built from (see needsRebuild).
+    private List<TeleportMethod> builtCatalog;
+    private Set<TeleportMethod> builtExclusions;
+    private Map<TeleportMethod, MethodAvailability> builtUnavailable;
+    private boolean builtCatalogExpanded;
 
-	TravelOptionsView(ShortestPathPlugin plugin, Runnable refreshAll) {
-		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-		setBackground(ColorScheme.DARK_GRAY_COLOR);
-		sections = new ConfigSectionsView(plugin, this::rebuild, refreshAll);
-		catalog = new MethodCatalogView(plugin, this::rebuild, () -> {
-			revalidate();
-			repaint();
-		});
-	}
+    TravelOptionsView(ShortestPathPlugin plugin, Runnable refreshAll) {
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        setBackground(ColorScheme.DARK_GRAY_COLOR);
+        sections = new ConfigSectionsView(plugin, this::rebuild, refreshAll);
+        catalog = new MethodCatalogView(plugin, this::rebuild, () -> {
+            revalidate();
+            repaint();
+        });
+    }
 
-	/** Whether the inputs changed since the slot was last built. */
-	boolean needsRebuild(List<TeleportMethod> newCatalog, Set<TeleportMethod> exclusions,
-		Map<TeleportMethod, MethodAvailability> unavailable) {
-		return !newCatalog.equals(builtCatalog) || !exclusions.equals(builtExclusions)
-			|| !unavailable.equals(builtUnavailable) || catalog.isExpanded() != builtCatalogExpanded;
-	}
+    /** Whether the inputs changed since the slot was last built. */
+    boolean needsRebuild(List<TeleportMethod> newCatalog, Set<TeleportMethod> exclusions,
+        Map<TeleportMethod, MethodAvailability> unavailable) {
+        return !newCatalog.equals(builtCatalog) || !exclusions.equals(builtExclusions)
+            || !unavailable.equals(builtUnavailable) || catalog.isExpanded() != builtCatalogExpanded;
+    }
 
-	/** Rebuilds the slot for the given inputs, carrying the catalog rows' scroll position over. */
-	void rebuild(List<TeleportMethod> newCatalog, Set<TeleportMethod> exclusions,
-		Map<TeleportMethod, MethodAvailability> unavailable) {
-		catalog.update(newCatalog, exclusions, unavailable);
-		rebuild();
-	}
+    /** Rebuilds the slot for the given inputs, carrying the catalog rows' scroll position over. */
+    void rebuild(List<TeleportMethod> newCatalog, Set<TeleportMethod> exclusions,
+        Map<TeleportMethod, MethodAvailability> unavailable) {
+        catalog.update(newCatalog, exclusions, unavailable);
+        rebuild();
+    }
 
-	/** The Log-storage-low banner for the notes strip (see ConfigSectionsView). */
-	JPanel balloonLowBanner(List<String> lowTypes) {
-		return sections.balloonLowBanner(lowTypes);
-	}
+    /** The Log-storage-low banner for the notes strip (see ConfigSectionsView). */
+    JPanel balloonLowBanner(List<String> lowTypes) {
+        return sections.balloonLowBanner(lowTypes);
+    }
 
-	/** The tier menu for a method, shared by the route cards and the catalog rows. */
-	void showPriorityMenu(Component anchor, TeleportMethod method) {
-		catalog.showPriorityMenu(anchor, method);
-	}
+    /** The tier menu for a method, shared by the route cards and the catalog rows. */
+    void showPriorityMenu(Component anchor, TeleportMethod method) {
+        catalog.showPriorityMenu(anchor, method);
+    }
 
-	/** Rebuilds with the current inputs (a header toggle, a tier or funnel change). */
-	private void rebuild() {
-		// The rebuild replaces the method-rows scroll pane; carry its position over so toggling a
-		// method or category (which regenerates routes and re-renders) does not jump the list back
-		// to the top.
-		int rowsScrollPosition = catalog.scrollPosition();
-		removeAll();
-		add(section());
-		revalidate();
-		repaint();
-		catalog.restoreScroll(rowsScrollPosition);
-		builtCatalog = catalog.catalog();
-		builtExclusions = catalog.exclusions();
-		builtUnavailable = catalog.unavailable();
-		builtCatalogExpanded = catalog.isExpanded();
-	}
+    /** Rebuilds with the current inputs (a header toggle, a tier or funnel change). */
+    private void rebuild() {
+        // The rebuild replaces the method-rows scroll pane; carry its position over so toggling a
+        // method or category (which regenerates routes and re-renders) does not jump the list back
+        // to the top.
+        int rowsScrollPosition = catalog.scrollPosition();
+        removeAll();
+        add(section());
+        revalidate();
+        repaint();
+        catalog.restoreScroll(rowsScrollPosition);
+        builtCatalog = catalog.catalog();
+        builtExclusions = catalog.exclusions();
+        builtUnavailable = catalog.unavailable();
+        builtCatalogExpanded = catalog.isExpanded();
+    }
 
-	private JPanel section() {
-		List<TeleportMethod> methods = catalog.catalog();
-		JPanel section = sectionShell("Travel options",
-			"Everything routing may use: your house, wilderness policy, bank, balloons and the travel methods",
-			expanded, () -> expanded = !expanded,
-			methods.isEmpty() ? "" : catalog.enabledCount() + "/" + methods.size(),
-			ColorScheme.LIGHT_GRAY_COLOR, true, this::rebuild);
-		if (!expanded) {
-			catalog.slotCollapsed();
-			return section;
-		}
+    private JPanel section() {
+        List<TeleportMethod> methods = catalog.catalog();
+        JPanel section = sectionShell("Travel options",
+            "Everything routing may use: your house, wilderness policy, bank, balloons and the travel methods",
+            expanded, () -> expanded = !expanded,
+            methods.isEmpty() ? "" : catalog.enabledCount() + "/" + methods.size(),
+            ColorScheme.LIGHT_GRAY_COLOR, true, this::rebuild);
+        if (!expanded) {
+            catalog.slotCollapsed();
+            return section;
+        }
 
-		JPanel body = new JPanel();
-		body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
-		body.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		body.setAlignmentX(Component.LEFT_ALIGNMENT);
-		body.setBorder(new EmptyBorder(0, 8, 0, 0));
-		for (JPanel part : sections.sections())
-			body.add(part);
-		if (!methods.isEmpty())
-			body.add(catalog.section());
-		section.add(body);
-		return section;
-	}
+        JPanel body = new JPanel();
+        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
+        body.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        body.setAlignmentX(Component.LEFT_ALIGNMENT);
+        body.setBorder(new EmptyBorder(0, 8, 0, 0));
+        for (JPanel part : sections.sections())
+            body.add(part);
+        if (!methods.isEmpty())
+            body.add(catalog.section());
+        section.add(body);
+        return section;
+    }
 }

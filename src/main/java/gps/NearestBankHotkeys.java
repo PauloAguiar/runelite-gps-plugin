@@ -12,41 +12,41 @@ import net.runelite.client.input.KeyListener;
  * key time, so a changed binding applies at once.
  */
 final class NearestBankHotkeys {
-	private final KeyListener bank;
-	private final KeyListener bankAndBack;
+    private final KeyListener bank;
+    private final KeyListener bankAndBack;
 
-	NearestBankHotkeys(Supplier<Keybind> bankKey, Runnable onBank,
-		Supplier<Keybind> bankAndBackKey, Runnable onBankAndBack) {
-		bank = hotkey(bankKey, onBank);
-		bankAndBack = hotkey(bankAndBackKey, onBankAndBack);
-	}
+    NearestBankHotkeys(Supplier<Keybind> bankKey, Runnable onBank,
+        Supplier<Keybind> bankAndBackKey, Runnable onBankAndBack) {
+        bank = hotkey(bankKey, onBank);
+        bankAndBack = hotkey(bankAndBackKey, onBankAndBack);
+    }
 
-	/** Routes to the nearest bank. */
-	KeyListener bank() {
-		return bank;
-	}
+    /** Routes to the nearest bank. */
+    KeyListener bank() {
+        return bank;
+    }
 
-	/** Routes to the nearest bank and back. */
-	KeyListener bankAndBack() {
-		return bankAndBack;
-	}
+    /** Routes to the nearest bank and back. */
+    KeyListener bankAndBack() {
+        return bankAndBack;
+    }
 
-	private static KeyListener hotkey(Supplier<Keybind> key, Runnable action) {
-		return new KeyListener() {
-			@Override
-			public void keyTyped(KeyEvent e) {
-			}
+    private static KeyListener hotkey(Supplier<Keybind> key, Runnable action) {
+        return new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+            }
 
-			@Override
-			public void keyPressed(KeyEvent e) {
-				Keybind bound = key.get();
-				if (bound != null && bound.matches(e))
-					action.run();
-			}
+            @Override
+            public void keyPressed(KeyEvent e) {
+                Keybind bound = key.get();
+                if (bound != null && bound.matches(e))
+                    action.run();
+            }
 
-			@Override
-			public void keyReleased(KeyEvent e) {
-			}
-		};
-	}
+            @Override
+            public void keyReleased(KeyEvent e) {
+            }
+        };
+    }
 }

@@ -18,539 +18,539 @@ import gps.transport.TransportType;
  * route and cached by the plugin; rendered by {@link RouteDirectionsOverlay}.
  */
 final class RouteDirections {
-	/**
-	 * Running covers 2 tiles per 0.6s game tick; estimates assume the player runs.
-	 */
-	static final double SECONDS_PER_TICK = 0.6;
+    /**
+     * Running covers 2 tiles per 0.6s game tick; estimates assume the player runs.
+     */
+    static final double SECONDS_PER_TICK = 0.6;
 
-	/**
-	 * One direction step, the route-path index range [start, end] it spans, and its estimated
-	 * duration in game ticks (for wall-time ETAs).
-	 */
-	@Getter
-	static final class Step {
-		private final String text;
-		private final int startIndex;
-		private final int endIndex;
-		private final int ticks;
-		// True for "Use <method>" steps: rides the overlay can interpolate progress through
-		// (carpet/canoe/glider flights) rather than freezing the ETA until landing.
-		private final boolean transport;
-		// True for "Open <door>" steps: their edge gates progress until actually crossed —
-		// straight-line proximity sees through the closed door.
-		private final boolean door;
-		// True for object-transport obstacles the player must click to cross (agility shortcuts,
-		// stairs/ladders, ...). Like a closed door, the player can't click-walk PAST it, so the
-		// path beyond it is drawn blocked until they use it. Doors carry {@link #door} instead.
-		private final boolean obstacle;
-		// True for the boarding half of a sailing leg: standing on the boarding tile does NOT
-		// finish it — only actually being aboard (the BOARDED varbit) does, else the step
-		// greyed out while the player was still on the dock.
-		private final boolean embark;
-		// Sub-lines rendered indented under the step's own line (the withdraw step's
-		// per-item list). Empty for ordinary steps.
-		private List<String> details = List.of();
+    /**
+     * One direction step, the route-path index range [start, end] it spans, and its estimated
+     * duration in game ticks (for wall-time ETAs).
+     */
+    @Getter
+    static final class Step {
+        private final String text;
+        private final int startIndex;
+        private final int endIndex;
+        private final int ticks;
+        // True for "Use <method>" steps: rides the overlay can interpolate progress through
+        // (carpet/canoe/glider flights) rather than freezing the ETA until landing.
+        private final boolean transport;
+        // True for "Open <door>" steps: their edge gates progress until actually crossed —
+        // straight-line proximity sees through the closed door.
+        private final boolean door;
+        // True for object-transport obstacles the player must click to cross (agility shortcuts,
+        // stairs/ladders, ...). Like a closed door, the player can't click-walk PAST it, so the
+        // path beyond it is drawn blocked until they use it. Doors carry {@link #door} instead.
+        private final boolean obstacle;
+        // True for the boarding half of a sailing leg: standing on the boarding tile does NOT
+        // finish it — only actually being aboard (the BOARDED varbit) does, else the step
+        // greyed out while the player was still on the dock.
+        private final boolean embark;
+        // Sub-lines rendered indented under the step's own line (the withdraw step's
+        // per-item list). Empty for ordinary steps.
+        private List<String> details = List.of();
 
-		private Step(String text, int startIndex, int endIndex, int ticks) {
-			this(text, startIndex, endIndex, ticks, false, false, false, false);
-		}
+        private Step(String text, int startIndex, int endIndex, int ticks) {
+            this(text, startIndex, endIndex, ticks, false, false, false, false);
+        }
 
-		private Step(String text, int startIndex, int endIndex, int ticks, List<String> details) {
-			this(text, startIndex, endIndex, ticks, false, false, false, false);
-			this.details = details;
-		}
+        private Step(String text, int startIndex, int endIndex, int ticks, List<String> details) {
+            this(text, startIndex, endIndex, ticks, false, false, false, false);
+            this.details = details;
+        }
 
-		/** The same step with another duration (see {@link RouteDirections#alignedToPathCosts}). */
-		Step withTicks(int newTicks) {
-			Step copy = new Step(text, startIndex, endIndex, newTicks, transport, door, obstacle, embark);
-			copy.details = details;
-			return copy;
-		}
+        /** The same step with another duration (see {@link RouteDirections#alignedToPathCosts}). */
+        Step withTicks(int newTicks) {
+            Step copy = new Step(text, startIndex, endIndex, newTicks, transport, door, obstacle, embark);
+            copy.details = details;
+            return copy;
+        }
 
-		private Step(String text, int startIndex, int endIndex, int ticks, boolean transport) {
-			this(text, startIndex, endIndex, ticks, transport, false, false, false);
-		}
+        private Step(String text, int startIndex, int endIndex, int ticks, boolean transport) {
+            this(text, startIndex, endIndex, ticks, transport, false, false, false);
+        }
 
-		private Step(String text, int startIndex, int endIndex, int ticks, boolean transport,
-			boolean door, boolean obstacle) {
-			this(text, startIndex, endIndex, ticks, transport, door, obstacle, false);
-		}
+        private Step(String text, int startIndex, int endIndex, int ticks, boolean transport,
+            boolean door, boolean obstacle) {
+            this(text, startIndex, endIndex, ticks, transport, door, obstacle, false);
+        }
 
-		private Step(String text, int startIndex, int endIndex, int ticks, boolean transport, boolean door) {
-			this(text, startIndex, endIndex, ticks, transport, door, false);
-		}
+        private Step(String text, int startIndex, int endIndex, int ticks, boolean transport, boolean door) {
+            this(text, startIndex, endIndex, ticks, transport, door, false);
+        }
 
-		private Step(String text, int startIndex, int endIndex, int ticks,
-			boolean transport, boolean door, boolean obstacle, boolean embark) {
-			this.text = text;
-			this.startIndex = startIndex;
-			this.endIndex = endIndex;
-			this.ticks = ticks;
-			this.transport = transport;
-			this.door = door;
-			this.obstacle = obstacle;
-			this.embark = embark;
-		}
+        private Step(String text, int startIndex, int endIndex, int ticks,
+            boolean transport, boolean door, boolean obstacle, boolean embark) {
+            this.text = text;
+            this.startIndex = startIndex;
+            this.endIndex = endIndex;
+            this.ticks = ticks;
+            this.transport = transport;
+            this.door = door;
+            this.obstacle = obstacle;
+            this.embark = embark;
+        }
 
-		/** Whether the player must interact with something to cross this edge (door or shortcut). */
-		boolean gatesWalk() {
-			return door || obstacle;
-		}
-	}
+        /** Whether the player must interact with something to cross this edge (door or shortcut). */
+        boolean gatesWalk() {
+            return door || obstacle;
+        }
+    }
 
-	private RouteDirections() {
-	}
+    private RouteDirections() {
+    }
 
-	/**
-	 * The steps for the route, in travel order. Method steps come from the route's own recorded edge
-	 * indexes — the route was computed with the planning config's availability, so re-deriving its
-	 * methods against the main config would silently miss some (and count a missed teleport's jump as
-	 * a thousand-tile walking leg). Only climbs are matched against the main config: they're plain
-	 * always-enabled transports, present in any mode.
-	 */
-	static List<Step> build(ShortestPathPlugin plugin, RouteOption route) {
-		List<Step> steps = new ArrayList<>();
-		List<PathStep> path = route.getPath();
-		if (path == null || path.size() < 2)
-			return steps;
-		// When the target can't be reached, the route stops at the closest tile — the final leg walks
-		// "as close as possible", not "to the destination", so the overlay doesn't imply arrival.
-		boolean reaches = plugin.routeReachesTarget(route);
+    /**
+     * The steps for the route, in travel order. Method steps come from the route's own recorded edge
+     * indexes — the route was computed with the planning config's availability, so re-deriving its
+     * methods against the main config would silently miss some (and count a missed teleport's jump as
+     * a thousand-tile walking leg). Only climbs are matched against the main config: they're plain
+     * always-enabled transports, present in any mode.
+     */
+    static List<Step> build(ShortestPathPlugin plugin, RouteOption route) {
+        List<Step> steps = new ArrayList<>();
+        List<PathStep> path = route.getPath();
+        if (path == null || path.size() < 2)
+            return steps;
+        // When the target can't be reached, the route stops at the closest tile — the final leg walks
+        // "as close as possible", not "to the destination", so the overlay doesn't imply arrival.
+        boolean reaches = plugin.routeReachesTarget(route);
 
-		// Edge index -> position in the route's method list.
-		List<Integer> methodEdges = route.getMethodEdgeIndexes();
-		int nextMethod = 0;
+        // Edge index -> position in the route's method list.
+        List<Integer> methodEdges = route.getMethodEdgeIndexes();
+        int nextMethod = 0;
 
-		int walk = 0;
-		int legStart = 0;
-		boolean banked = false;
-		for (int i = 1; i < path.size(); i++) {
-			PathStep from = path.get(i - 1);
-			PathStep to = path.get(i);
+        int walk = 0;
+        int legStart = 0;
+        boolean banked = false;
+        for (int i = 1; i < path.size(); i++) {
+            PathStep from = path.get(i - 1);
+            PathStep to = path.get(i);
 
-			// The tile where the path first enters the banked state is the bank it withdraws at —
-			// but only worth a step when the route actually needs the bank for a method's item.
-			if (!banked && to.isBankVisited()) {
-				banked = true;
-				if (route.isViaBank()) {
-					steps.add(new Step(walkText("the bank"), legStart, i, walkTicks(walk)));
-					walk = 0;
-					legStart = i;
-					steps.add(withdrawStep(plugin, route, path, i));
-				}
-			}
+            // The tile where the path first enters the banked state is the bank it withdraws at —
+            // but only worth a step when the route actually needs the bank for a method's item.
+            if (!banked && to.isBankVisited()) {
+                banked = true;
+                if (route.isViaBank()) {
+                    steps.add(new Step(walkText("the bank"), legStart, i, walkTicks(walk)));
+                    walk = 0;
+                    legStart = i;
+                    steps.add(withdrawStep(plugin, route, path, i));
+                }
+            }
 
-			if (nextMethod < methodEdges.size() && methodEdges.get(nextMethod) == i) {
-				flushWalk(steps, walk, legStart, i - 1);
-				walk = 0;
-				TeleportMethod method = route.getMethods().get(nextMethod);
-				int duration = route.getMethodDurations().get(nextMethod);
-				if (TransportType.SAILING.equals(method.getType()))
-					addSailingSteps(steps, method, duration, i);
-				else {
-					steps.add(new Step(methodText(method) + fareText(plugin, from, to),
-						i - 1, i, duration, true));
-				}
-				nextMethod++;
-				legStart = i;
-				continue;
-			}
+            if (nextMethod < methodEdges.size() && methodEdges.get(nextMethod) == i) {
+                flushWalk(steps, walk, legStart, i - 1);
+                walk = 0;
+                TeleportMethod method = route.getMethods().get(nextMethod);
+                int duration = route.getMethodDurations().get(nextMethod);
+                if (TransportType.SAILING.equals(method.getType()))
+                    addSailingSteps(steps, method, duration, i);
+                else {
+                    steps.add(new Step(methodText(method) + fareText(plugin, from, to),
+                        i - 1, i, duration, true));
+                }
+                nextMethod++;
+                legStart = i;
+                continue;
+            }
 
-			Transport object = findObjectTransport(plugin, from, to);
-			ClosedDoors.Door door = object == null
-				? ClosedDoors.doorBetween(from.getPackedPosition(), to.getPackedPosition())
-				: null;
-			if (object != null) {
-				// Any transport with menu-style object info becomes its own step: climbs
-				// ("Climb-up Staircase"), agility shortcuts ("Walk-across Log balance"),
-				// mapped doors ("Open Door" — flagged so the door progress gate applies), ...
-				flushWalk(steps, walk, legStart, i - 1);
-				walk = 0;
-				String text = objectText(object) + fareOf(plugin, object);
-				boolean isDoor = text.startsWith("Open ");
-				// Advisory note from the transport data ("fire arrow needed", "can fail") — the
-				// route is offered regardless; the player just gets told what to expect.
-				if (object.getNote() != null)
-					text += " — " + object.getNote();
-				// Doors carry the door flag (closed-state gated); every other object transport
-				// (climbs, agility shortcuts, tunnels) is an obstacle the player must click to
-				// cross, so the path beyond it is blocked until used.
-				steps.add(new Step(text, i - 1, i, Math.max(1, object.getDuration()),
-					false, isDoor, !isDoor));
-				legStart = i;
-			}
-			else if (door != null) {
-				// A doorway splits the walking leg: walk up to the door, open it, walk on. Whether
-				// it will actually be closed is live scene state the world overlay handles; as a
-				// step it is a stable landmark either way. Billed at the same cost the search
-				// charged for the crossing, so the step total and the card ETA agree.
-				flushWalk(steps, walk, legStart, i - 1);
-				walk = 0;
-				steps.add(new Step("Open " + door.name, i - 1, i, ClosedDoors.COST_TICKS, false, true));
-				legStart = i;
-			}
-			else {
-				// Plain walking, or a small connector (shortcut, dungeon entrance). Cap the
-				// contribution so an unrecognised transport edge can never inflate the leg with its
-				// coordinate distance.
-				int distance = WorldPointUtil.distanceBetween(from.getPackedPosition(), to.getPackedPosition());
-				walk += Math.max(1, Math.min(distance, 10));
-			}
-		}
-		if (walk > 0) {
-			steps.add(new Step(reaches ? walkText("the destination") : "Walk as close as possible (can't reach the target)",
-				legStart, path.size() - 1, walkTicks(walk)));
-		}
-		return alignedToPathCosts(steps, path);
-	}
+            Transport object = findObjectTransport(plugin, from, to);
+            ClosedDoors.Door door = object == null
+                ? ClosedDoors.doorBetween(from.getPackedPosition(), to.getPackedPosition())
+                : null;
+            if (object != null) {
+                // Any transport with menu-style object info becomes its own step: climbs
+                // ("Climb-up Staircase"), agility shortcuts ("Walk-across Log balance"),
+                // mapped doors ("Open Door" — flagged so the door progress gate applies), ...
+                flushWalk(steps, walk, legStart, i - 1);
+                walk = 0;
+                String text = objectText(object) + fareOf(plugin, object);
+                boolean isDoor = text.startsWith("Open ");
+                // Advisory note from the transport data ("fire arrow needed", "can fail") — the
+                // route is offered regardless; the player just gets told what to expect.
+                if (object.getNote() != null)
+                    text += " — " + object.getNote();
+                // Doors carry the door flag (closed-state gated); every other object transport
+                // (climbs, agility shortcuts, tunnels) is an obstacle the player must click to
+                // cross, so the path beyond it is blocked until used.
+                steps.add(new Step(text, i - 1, i, Math.max(1, object.getDuration()),
+                    false, isDoor, !isDoor));
+                legStart = i;
+            }
+            else if (door != null) {
+                // A doorway splits the walking leg: walk up to the door, open it, walk on. Whether
+                // it will actually be closed is live scene state the world overlay handles; as a
+                // step it is a stable landmark either way. Billed at the same cost the search
+                // charged for the crossing, so the step total and the card ETA agree.
+                flushWalk(steps, walk, legStart, i - 1);
+                walk = 0;
+                steps.add(new Step("Open " + door.name, i - 1, i, ClosedDoors.COST_TICKS, false, true));
+                legStart = i;
+            }
+            else {
+                // Plain walking, or a small connector (shortcut, dungeon entrance). Cap the
+                // contribution so an unrecognised transport edge can never inflate the leg with its
+                // coordinate distance.
+                int distance = WorldPointUtil.distanceBetween(from.getPackedPosition(), to.getPackedPosition());
+                walk += Math.max(1, Math.min(distance, 10));
+            }
+        }
+        if (walk > 0) {
+            steps.add(new Step(reaches ? walkText("the destination") : "Walk as close as possible (can't reach the target)",
+                legStart, path.size() - 1, walkTicks(walk)));
+        }
+        return alignedToPathCosts(steps, path);
+    }
 
-	/**
-	 * Re-derives each step's duration from the path's cumulative search costs when the path
-	 * carries them (plan step N9): a step spanning [start, end] takes {@code (cost[end] -
-	 * cost[start]) / 2} ticks, so the per-step times, the overlay's ETA and the route card all
-	 * read the one number the search computed. Paths without costs (hand-built, older captures)
-	 * keep the estimates above.
-	 */
-	private static List<Step> alignedToPathCosts(List<Step> steps, List<PathStep> path) {
-		if (path.isEmpty())
-			return steps;
-		for (PathStep step : path) {
-			if (step.getCost() == PathStep.UNKNOWN_COST)
-				return steps;
-		}
-		List<Step> aligned = new ArrayList<>(steps.size());
-		for (Step step : steps) {
-			int start = Math.max(0, Math.min(step.getStartIndex(), path.size() - 1));
-			int end = Math.max(start, Math.min(step.getEndIndex(), path.size() - 1));
-			int units = Math.max(0, path.get(end).getCost() - path.get(start).getCost());
-			aligned.add(step.withTicks((int) Math.round(units / (double) gps.pathfinder.CostUnits.UNITS_PER_TICK)));
-		}
-		return aligned;
-	}
+    /**
+     * Re-derives each step's duration from the path's cumulative search costs when the path
+     * carries them (plan step N9): a step spanning [start, end] takes {@code (cost[end] -
+     * cost[start]) / 2} ticks, so the per-step times, the overlay's ETA and the route card all
+     * read the one number the search computed. Paths without costs (hand-built, older captures)
+     * keep the estimates above.
+     */
+    private static List<Step> alignedToPathCosts(List<Step> steps, List<PathStep> path) {
+        if (path.isEmpty())
+            return steps;
+        for (PathStep step : path) {
+            if (step.getCost() == PathStep.UNKNOWN_COST)
+                return steps;
+        }
+        List<Step> aligned = new ArrayList<>(steps.size());
+        for (Step step : steps) {
+            int start = Math.max(0, Math.min(step.getStartIndex(), path.size() - 1));
+            int end = Math.max(start, Math.min(step.getEndIndex(), path.size() - 1));
+            int units = Math.max(0, path.get(end).getCost() - path.get(start).getCost());
+            aligned.add(step.withTicks((int) Math.round(units / (double) gps.pathfinder.CostUnits.UNITS_PER_TICK)));
+        }
+        return aligned;
+    }
 
-	/**
-	 * The bank-withdrawal step's duration in game ticks: the configured bank-pickup cost (in cost
-	 * units) converted to ticks — the SAME value the search charges and the route card's ETA adds,
-	 * so the overlay total and the card ETA agree on the bank detour. A negative modifier is a
-	 * "favour banking" preference, not negative time, so it's clamped out.
-	 */
-	static int bankWithdrawTicks(int costBankPickup) {
-		return (int) Math.round(Math.max(0, costBankPickup) / (double) gps.pathfinder.CostUnits.UNITS_PER_TICK);
-	}
+    /**
+     * The bank-withdrawal step's duration in game ticks: the configured bank-pickup cost (in cost
+     * units) converted to ticks — the SAME value the search charges and the route card's ETA adds,
+     * so the overlay total and the card ETA agree on the bank detour. A negative modifier is a
+     * "favour banking" preference, not negative time, so it's clamped out.
+     */
+    static int bankWithdrawTicks(int costBankPickup) {
+        return (int) Math.round(Math.max(0, costBankPickup) / (double) gps.pathfinder.CostUnits.UNITS_PER_TICK);
+    }
 
-	/**
-	 * Game ticks to cover a walking leg, assuming the player runs (2 tiles per tick).
-	 */
-	private static int walkTicks(int tiles) {
-		return (tiles + 1) / 2;
-	}
+    /**
+     * Game ticks to cover a walking leg, assuming the player runs (2 tiles per tick).
+     */
+    private static int walkTicks(int tiles) {
+        return (tiles + 1) / 2;
+    }
 
-	private static final int COINS_ITEM_ID = 995;
+    private static final int COINS_ITEM_ID = 995;
 
-	/**
-	 * " — N gp fare" when the edge's transport charges coins (Barnaby's ship, charters,
-	 * travel carts), else "". A paid crossing looked free in the step list — the fare is a
-	 * real cost the player must carry, and the card's item chips don't say WHICH step
-	 * spends it.
-	 */
-	private static String fareText(ShortestPathPlugin plugin, PathStep from, PathStep to) {
-		int fare = Integer.MAX_VALUE;
-		// UNFILTERED edge rows: the route already committed to this edge, and the
-		// availability-filtered sets drop a row whose fare is banked (capture 205518).
-		for (Transport transport : plugin.getPathfinderConfig()
-			.transportsOnEdge(from.getPackedPosition(), to.getPackedPosition())) {
-			int coins = coinsOf(plugin, transport);
-			if (coins > 0)
-				fare = Math.min(fare, coins);
-		}
-		return fare == Integer.MAX_VALUE ? "" : " — " + fare + " gp fare";
-	}
+    /**
+     * " — N gp fare" when the edge's transport charges coins (Barnaby's ship, charters,
+     * travel carts), else "". A paid crossing looked free in the step list — the fare is a
+     * real cost the player must carry, and the card's item chips don't say WHICH step
+     * spends it.
+     */
+    private static String fareText(ShortestPathPlugin plugin, PathStep from, PathStep to) {
+        int fare = Integer.MAX_VALUE;
+        // UNFILTERED edge rows: the route already committed to this edge, and the
+        // availability-filtered sets drop a row whose fare is banked (capture 205518).
+        for (Transport transport : plugin.getPathfinderConfig()
+            .transportsOnEdge(from.getPackedPosition(), to.getPackedPosition())) {
+            int coins = coinsOf(plugin, transport);
+            if (coins > 0)
+                fare = Math.min(fare, coins);
+        }
+        return fare == Integer.MAX_VALUE ? "" : " — " + fare + " gp fare";
+    }
 
-	private static String fareOf(ShortestPathPlugin plugin, Transport transport) {
-		int coins = coinsOf(plugin, transport);
-		return coins > 0 ? " — " + coins + " gp fare" : "";
-	}
+    private static String fareOf(ShortestPathPlugin plugin, Transport transport) {
+        int coins = coinsOf(plugin, transport);
+        return coins > 0 ? " — " + coins + " gp fare" : "";
+    }
 
-	/** The fare the player actually pays: the listed coins scaled by the charter discount. */
-	private static int coinsOf(ShortestPathPlugin plugin, Transport transport) {
-		int base = coinsOf(transport);
-		if (base <= 0 || plugin == null || plugin.getPathfinderConfig() == null)
-			return base;
-		// A mocked config answers 0: treat anything outside 1..99 as no discount.
-		return PathfinderConfig.scaleCoins(base, plugin.getPathfinderConfig().farePercent(transport));
-	}
+    /** The fare the player actually pays: the listed coins scaled by the charter discount. */
+    private static int coinsOf(ShortestPathPlugin plugin, Transport transport) {
+        int base = coinsOf(transport);
+        if (base <= 0 || plugin == null || plugin.getPathfinderConfig() == null)
+            return base;
+        // A mocked config answers 0: treat anything outside 1..99 as no discount.
+        return PathfinderConfig.scaleCoins(base, plugin.getPathfinderConfig().farePercent(transport));
+    }
 
-	private static int coinsOf(Transport transport) {
-		if (transport.getItemRequirements() == null)
-			return 0;
-		for (gps.transport.requirement.ItemRequirement requirement
-			: transport.getItemRequirements().getRequirements()) {
-			for (int itemId : requirement.getItemIds()) {
-				if (itemId == COINS_ITEM_ID)
-					return requirement.getQuantity();
-			}
-		}
-		return 0;
-	}
+    private static int coinsOf(Transport transport) {
+        if (transport.getItemRequirements() == null)
+            return 0;
+        for (gps.transport.requirement.ItemRequirement requirement
+            : transport.getItemRequirements().getRequirements()) {
+            for (int itemId : requirement.getItemIds()) {
+                if (itemId == COINS_ITEM_ID)
+                    return requirement.getQuantity();
+            }
+        }
+        return 0;
+    }
 
-	private static Transport findObjectTransport(ShortestPathPlugin plugin, PathStep from, PathStep to) {
-		Set<Transport> candidates = plugin.transportsForEdge(from, to);
-		for (Transport transport : candidates) {
-			if (objectText(transport) != null)
-				return transport;
-		}
-		return null;
-	}
+    private static Transport findObjectTransport(ShortestPathPlugin plugin, PathStep from, PathStep to) {
+        Set<Transport> candidates = plugin.transportsForEdge(from, to);
+        for (Transport transport : candidates) {
+            if (objectText(transport) != null)
+                return transport;
+        }
+        return null;
+    }
 
-	private static void flushWalk(List<Step> steps, int walk, int legStart, int endIndex) {
-		if (walk <= 0)
-			return;
-		// No coordinates or tile counts: they mean nothing to the player. The leg's endpoint is
-		// marked in the world instead (section marker / destination pulse), the next step names
-		// what's there, and the time column already sizes the leg.
-		steps.add(new Step("Walk", legStart, endIndex, walkTicks(walk)));
-	}
+    private static void flushWalk(List<Step> steps, int walk, int legStart, int endIndex) {
+        if (walk <= 0)
+            return;
+        // No coordinates or tile counts: they mean nothing to the player. The leg's endpoint is
+        // marked in the world instead (section marker / destination pulse), the next step names
+        // what's there, and the time column already sizes the leg.
+        steps.add(new Step("Walk", legStart, endIndex, walkTicks(walk)));
+    }
 
-	/**
-	 * A sailing leg reads like the player experiences it: board the boat at a NAMED port, then
-	 * sail — with the fixed boarding overhead and the travel time split the way Walk legs get
-	 * their own time. The display info carries "Sailing: {origin} \u2192 {destination}"; when
-	 * the arrow is absent (older data), the leg stays one step.
-	 */
-	private static void addSailingSteps(List<Step> steps, TeleportMethod method, int duration, int i) {
-		String label = method.getDisplayInfo() == null ? "" : method.getDisplayInfo();
-		String trimmed = label.startsWith("Sailing: ") ? label.substring(9) : label;
-		String origin;
-		String destination;
-		int arrow = trimmed.indexOf(" \u2192 ");
-		if (arrow >= 0) {
-			// Port-to-port rows: "Sailing: {origin} \u2192 {destination}".
-			origin = trimmed.substring(0, arrow);
-			destination = trimmed.substring(arrow + 3);
-		}
-		else if (trimmed.startsWith("Embark at ")) {
-			// Synthetic water-pin legs: the card just says where to board; the sail step
-			// mirrors the walk phrasing.
-			origin = trimmed.substring(10);
-			destination = "the destination";
-		}
-		else {
-			steps.add(new Step("\u26F5 " + (trimmed.isEmpty() ? "Sail" : trimmed), i - 1, i,
-				duration, true));
-			return;
-		}
-		int sailTicks = Math.max(1, duration - SailingSea.OVERHEAD_TICKS);
-		steps.add(new Step("\u26F5 Embark at " + origin, i - 1, i - 1,
-			Math.max(0, duration - sailTicks), true, false, false, true));
-		steps.add(new Step("Sail to " + destination, i - 1, i, sailTicks, true));
-	}
+    /**
+     * A sailing leg reads like the player experiences it: board the boat at a NAMED port, then
+     * sail — with the fixed boarding overhead and the travel time split the way Walk legs get
+     * their own time. The display info carries "Sailing: {origin} \u2192 {destination}"; when
+     * the arrow is absent (older data), the leg stays one step.
+     */
+    private static void addSailingSteps(List<Step> steps, TeleportMethod method, int duration, int i) {
+        String label = method.getDisplayInfo() == null ? "" : method.getDisplayInfo();
+        String trimmed = label.startsWith("Sailing: ") ? label.substring(9) : label;
+        String origin;
+        String destination;
+        int arrow = trimmed.indexOf(" \u2192 ");
+        if (arrow >= 0) {
+            // Port-to-port rows: "Sailing: {origin} \u2192 {destination}".
+            origin = trimmed.substring(0, arrow);
+            destination = trimmed.substring(arrow + 3);
+        }
+        else if (trimmed.startsWith("Embark at ")) {
+            // Synthetic water-pin legs: the card just says where to board; the sail step
+            // mirrors the walk phrasing.
+            origin = trimmed.substring(10);
+            destination = "the destination";
+        }
+        else {
+            steps.add(new Step("\u26F5 " + (trimmed.isEmpty() ? "Sail" : trimmed), i - 1, i,
+                duration, true));
+            return;
+        }
+        int sailTicks = Math.max(1, duration - SailingSea.OVERHEAD_TICKS);
+        steps.add(new Step("\u26F5 Embark at " + origin, i - 1, i - 1,
+            Math.max(0, duration - sailTicks), true, false, false, true));
+        steps.add(new Step("Sail to " + destination, i - 1, i, sailTicks, true));
+    }
 
-	private static String walkText(String target) {
-		return "Walk to " + target;
-	}
+    private static String walkText(String target) {
+        return "Walk to " + target;
+    }
 
-	/**
-	 * The instruction for a method step. Fairy rings get their own glyph and phrasing: the raw
-	 * data label is a spaced dial code ("A I Q", chained hops "A I R - D L R"), which reads
-	 * better compacted the way players write them ("AIQ", "AIR → DLR"); named destinations
-	 * (ZANARIS) are shouted in the data and get title-cased. Everything else keeps "Use X".
-	 */
-	static String methodText(TeleportMethod method) {
-		if (TransportType.FAIRY_RING.equals(method.getType()) && method.getDisplayInfo() != null)
-			// The mushroom renders via the JVM's system-font fallback (verified in-game on
-			// Windows, monochrome); if other platforms report missing-glyph boxes, drop it.
-			return "🍄 Fairy ring to " + fairyRingLabel(method.getDisplayInfo());
-		// Network methods (balloons, minecarts, mountain guides, ...) phrase themselves as
-		// "<Vehicle> to X" — their bare data label is a destination, so "Use Varrock" read as
-		// nonsense. Everything else keeps "Use X".
-		String routeLabel = method.routeLabel();
-		return routeLabel.equals(method.label()) ? "Use " + method.label() : routeLabel;
-	}
+    /**
+     * The instruction for a method step. Fairy rings get their own glyph and phrasing: the raw
+     * data label is a spaced dial code ("A I Q", chained hops "A I R - D L R"), which reads
+     * better compacted the way players write them ("AIQ", "AIR → DLR"); named destinations
+     * (ZANARIS) are shouted in the data and get title-cased. Everything else keeps "Use X".
+     */
+    static String methodText(TeleportMethod method) {
+        if (TransportType.FAIRY_RING.equals(method.getType()) && method.getDisplayInfo() != null)
+            // The mushroom renders via the JVM's system-font fallback (verified in-game on
+            // Windows, monochrome); if other platforms report missing-glyph boxes, drop it.
+            return "🍄 Fairy ring to " + fairyRingLabel(method.getDisplayInfo());
+        // Network methods (balloons, minecarts, mountain guides, ...) phrase themselves as
+        // "<Vehicle> to X" — their bare data label is a destination, so "Use Varrock" read as
+        // nonsense. Everything else keeps "Use X".
+        String routeLabel = method.routeLabel();
+        return routeLabel.equals(method.label()) ? "Use " + method.label() : routeLabel;
+    }
 
-	private static String fairyRingLabel(String displayInfo) {
-		StringBuilder sb = new StringBuilder();
-		for (String hop : displayInfo.split(" - ")) {
-			if (sb.length() > 0)
-				sb.append(" → ");
-			String code = hop.replace(" ", "");
-			if (code.length() > 3)
-				code = code.charAt(0) + code.substring(1).toLowerCase(Locale.ROOT);
-			sb.append(code);
-		}
-		return sb.toString();
-	}
+    private static String fairyRingLabel(String displayInfo) {
+        StringBuilder sb = new StringBuilder();
+        for (String hop : displayInfo.split(" - ")) {
+            if (sb.length() > 0)
+                sb.append(" → ");
+            String code = hop.replace(" ", "");
+            if (code.length() > 3)
+                code = code.charAt(0) + code.substring(1).toLowerCase(Locale.ROOT);
+            sb.append(code);
+        }
+        return sb.toString();
+    }
 
-	/**
-	 * The withdraw step as a titled per-item LIST — one indented line per bank method,
-	 * fares attributed ("30 gp — Brimhaven fare"), plain items by name — resolved from the
-	 * UNFILTERED edge rows like {@link #fareText} (availability drops rows whose
-	 * requirement is banked, which is every row this step exists for). Falls back to the
-	 * single-line text when nothing resolves.
-	 */
-	private static Step withdrawStep(ShortestPathPlugin plugin, RouteOption route,
-		List<PathStep> path, int pathIndex) {
-		List<String> details = pickupLines(plugin, route);
-		int ticks = bankWithdrawTicks(plugin.getPathfinderConfig().getBankPickupCost());
-		if (details.isEmpty())
-			return new Step(withdrawText(plugin, route, path, pathIndex), pathIndex, pathIndex, ticks);
-		return new Step("Withdraw item(s):", pathIndex, pathIndex, ticks, details);
-	}
+    /**
+     * The withdraw step as a titled per-item LIST — one indented line per bank method,
+     * fares attributed ("30 gp — Brimhaven fare"), plain items by name — resolved from the
+     * UNFILTERED edge rows like {@link #fareText} (availability drops rows whose
+     * requirement is banked, which is every row this step exists for). Falls back to the
+     * single-line text when nothing resolves.
+     */
+    private static Step withdrawStep(ShortestPathPlugin plugin, RouteOption route,
+        List<PathStep> path, int pathIndex) {
+        List<String> details = pickupLines(plugin, route);
+        int ticks = bankWithdrawTicks(plugin.getPathfinderConfig().getBankPickupCost());
+        if (details.isEmpty())
+            return new Step(withdrawText(plugin, route, path, pathIndex), pathIndex, pathIndex, ticks);
+        return new Step("Withdraw item(s):", pathIndex, pathIndex, ticks, details);
+    }
 
-	/**
-	 * All pickup lines of a via-bank route, in method order — shared by the withdraw step
-	 * and the panel's bank tooltips.
-	 */
-	static List<String> pickupLines(ShortestPathPlugin plugin, RouteOption route) {
-		List<String> details = new ArrayList<>();
-		// Connectors first: they are the ones nobody would otherwise know about.
-		for (Transport connector : route.getBankTransports()) {
-			String label = objectText(connector);
-			String line = pickupLine(plugin, List.of(connector), label == null ? "the way" : label);
-			if (line != null && !details.contains(line))
-				details.add(line);
-		}
-		for (TeleportMethod method : route.getMethods()) {
-			if (!route.getBankMethods().contains(method))
-				continue;
-			String line = pickupLineFor(plugin, route, method);
-			if (line != null && !details.contains(line))
-				details.add(line);
-		}
-		// The fairy-ring staff is a SPECIAL requirement (hasRequiredItems' Dramen/Lunar case),
-		// carried on no ring row — so the loops above name nothing for a bank-gated ring and
-		// the withdraw step listed everything BUT the staff (field capture 20260824-183101:
-		// "Withdraw: Salve graveyard tablet" while the ring needed the banked Dramen staff).
-		TeleportMethod bankedRing = null;
-		for (TeleportMethod method : route.getBankMethods()) {
-			if (TransportType.FAIRY_RING.equals(method.getType())) {
-				bankedRing = method;
-				break;
-			}
-		}
-		for (int i = 0; bankedRing == null && i < route.getBankTransports().size(); i++) {
-			if (TransportType.FAIRY_RING.equals(route.getBankTransports().get(i).getType()))
-				bankedRing = route.getBankTransports().get(i).method();
-		}
-		if (bankedRing != null && plugin.getClient()
-			.getVarbitValue(net.runelite.api.gameval.VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1) {
-			String line = bankedStaffName(plugin) + " — " + joinLabels(java.util.Set.of(bankedRing));
-			if (!details.contains(line))
-				details.add(line);
-		}
-		return details;
-	}
+    /**
+     * All pickup lines of a via-bank route, in method order — shared by the withdraw step
+     * and the panel's bank tooltips.
+     */
+    static List<String> pickupLines(ShortestPathPlugin plugin, RouteOption route) {
+        List<String> details = new ArrayList<>();
+        // Connectors first: they are the ones nobody would otherwise know about.
+        for (Transport connector : route.getBankTransports()) {
+            String label = objectText(connector);
+            String line = pickupLine(plugin, List.of(connector), label == null ? "the way" : label);
+            if (line != null && !details.contains(line))
+                details.add(line);
+        }
+        for (TeleportMethod method : route.getMethods()) {
+            if (!route.getBankMethods().contains(method))
+                continue;
+            String line = pickupLineFor(plugin, route, method);
+            if (line != null && !details.contains(line))
+                details.add(line);
+        }
+        // The fairy-ring staff is a SPECIAL requirement (hasRequiredItems' Dramen/Lunar case),
+        // carried on no ring row — so the loops above name nothing for a bank-gated ring and
+        // the withdraw step listed everything BUT the staff (field capture 20260824-183101:
+        // "Withdraw: Salve graveyard tablet" while the ring needed the banked Dramen staff).
+        TeleportMethod bankedRing = null;
+        for (TeleportMethod method : route.getBankMethods()) {
+            if (TransportType.FAIRY_RING.equals(method.getType())) {
+                bankedRing = method;
+                break;
+            }
+        }
+        for (int i = 0; bankedRing == null && i < route.getBankTransports().size(); i++) {
+            if (TransportType.FAIRY_RING.equals(route.getBankTransports().get(i).getType()))
+                bankedRing = route.getBankTransports().get(i).method();
+        }
+        if (bankedRing != null && plugin.getClient()
+            .getVarbitValue(net.runelite.api.gameval.VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1) {
+            String line = bankedStaffName(plugin) + " — " + joinLabels(java.util.Set.of(bankedRing));
+            if (!details.contains(line))
+                details.add(line);
+        }
+        return details;
+    }
 
-	/** The banked Dramen/Lunar staff's proper name, or the generic pair when unresolvable. */
-	private static String bankedStaffName(ShortestPathPlugin plugin) {
-		net.runelite.api.Item[] bank = plugin.getPathfinderConfig().getBankSnapshot();
-		if (bank != null) {
-			for (int staffId : ItemVariations.DRAMEN_STAFF.getIds()) {
-				for (net.runelite.api.Item item : bank) {
-					if (item.getId() == staffId && item.getQuantity() > 0) {
-						String name = plugin.getClient().getItemDefinition(staffId).getName();
-						if (name != null && !name.isEmpty() && !"null".equals(name))
-							return name;
-					}
-				}
-			}
-		}
-		return "Dramen or Lunar staff";
-	}
+    /** The banked Dramen/Lunar staff's proper name, or the generic pair when unresolvable. */
+    private static String bankedStaffName(ShortestPathPlugin plugin) {
+        net.runelite.api.Item[] bank = plugin.getPathfinderConfig().getBankSnapshot();
+        if (bank != null) {
+            for (int staffId : ItemVariations.DRAMEN_STAFF.getIds()) {
+                for (net.runelite.api.Item item : bank) {
+                    if (item.getId() == staffId && item.getQuantity() > 0) {
+                        String name = plugin.getClient().getItemDefinition(staffId).getName();
+                        if (name != null && !name.isEmpty() && !"null".equals(name))
+                            return name;
+                    }
+                }
+            }
+        }
+        return "Dramen or Lunar staff";
+    }
 
-	/** The pickup line for ONE of a route's bank methods, or null when it can't resolve. */
-	static String pickupLineFor(ShortestPathPlugin plugin, RouteOption route, TeleportMethod method) {
-		List<TeleportMethod> methods = route.getMethods();
-		List<Integer> edges = route.getMethodEdgeIndexes();
-		List<PathStep> path = route.getPath();
-		for (int m = 0; m < methods.size() && m < edges.size(); m++) {
-			if (!methods.get(m).equals(method))
-				continue;
-			int edge = edges.get(m);
-			if (path == null || edge <= 0 || edge >= path.size())
-				continue;
-			List<Transport> rows = plugin.getPathfinderConfig().transportsOnEdge(
-				path.get(edge - 1).getPackedPosition(), path.get(edge).getPackedPosition());
-			if (rows.isEmpty()) {
-				rows = plugin.getPathfinderConfig().teleportsOnEdge(
-					path.get(edge).getPackedPosition(), method.getDisplayInfo());
-			}
-			String line = pickupLine(plugin, rows, joinLabels(java.util.Set.of(method)));
-			if (line != null)
-				return line;
-		}
-		return null;
-	}
+    /** The pickup line for ONE of a route's bank methods, or null when it can't resolve. */
+    static String pickupLineFor(ShortestPathPlugin plugin, RouteOption route, TeleportMethod method) {
+        List<TeleportMethod> methods = route.getMethods();
+        List<Integer> edges = route.getMethodEdgeIndexes();
+        List<PathStep> path = route.getPath();
+        for (int m = 0; m < methods.size() && m < edges.size(); m++) {
+            if (!methods.get(m).equals(method))
+                continue;
+            int edge = edges.get(m);
+            if (path == null || edge <= 0 || edge >= path.size())
+                continue;
+            List<Transport> rows = plugin.getPathfinderConfig().transportsOnEdge(
+                path.get(edge - 1).getPackedPosition(), path.get(edge).getPackedPosition());
+            if (rows.isEmpty()) {
+                rows = plugin.getPathfinderConfig().teleportsOnEdge(
+                    path.get(edge).getPackedPosition(), method.getDisplayInfo());
+            }
+            String line = pickupLine(plugin, rows, joinLabels(java.util.Set.of(method)));
+            if (line != null)
+                return line;
+        }
+        return null;
+    }
 
-	/** One pickup line for a bank method: its fare attributed, else its items by name. */
-	private static String pickupLine(ShortestPathPlugin plugin, List<Transport> rows, String label) {
-		for (Transport row : rows) {
-			int coins = coinsOf(plugin, row);
-			if (coins > 0)
-				return coins + " gp — " + label + " fare";
-			if (row.getItemRequirements() == null)
-				continue;
-			List<String> names = new ArrayList<>();
-			for (gps.transport.requirement.ItemRequirement requirement
-				: row.getItemRequirements().getRequirements()) {
-				int[] ids = requirement.getItemIds();
-				if (ids.length == 0)
-					continue;
-				// The first alternative is the data's canonical choice for this slot.
-				String name = plugin.getClient().getItemDefinition(ids[0]).getName();
-				if (name == null || name.isEmpty() || "null".equals(name))
-					continue;
-				names.add(requirement.getQuantity() > 1
-					? name + " (" + requirement.getQuantity() + ")" : name);
-			}
-			if (!names.isEmpty())
-				return String.join(", ", names) + " — " + label;
-		}
-		return null;
-	}
+    /** One pickup line for a bank method: its fare attributed, else its items by name. */
+    private static String pickupLine(ShortestPathPlugin plugin, List<Transport> rows, String label) {
+        for (Transport row : rows) {
+            int coins = coinsOf(plugin, row);
+            if (coins > 0)
+                return coins + " gp — " + label + " fare";
+            if (row.getItemRequirements() == null)
+                continue;
+            List<String> names = new ArrayList<>();
+            for (gps.transport.requirement.ItemRequirement requirement
+                : row.getItemRequirements().getRequirements()) {
+                int[] ids = requirement.getItemIds();
+                if (ids.length == 0)
+                    continue;
+                // The first alternative is the data's canonical choice for this slot.
+                String name = plugin.getClient().getItemDefinition(ids[0]).getName();
+                if (name == null || name.isEmpty() || "null".equals(name))
+                    continue;
+                names.add(requirement.getQuantity() > 1
+                    ? name + " (" + requirement.getQuantity() + ")" : name);
+            }
+            if (!names.isEmpty())
+                return String.join(", ", names) + " — " + label;
+        }
+        return null;
+    }
 
-	/**
-	 * The single-line fallback: the same pickup phrases as the bank-tile overlay hint,
-	 * then the bare method list when even those are unknown. The singleton location set
-	 * stands in for the bank-destination guard: this call site already KNOWS index
-	 * {@code pathIndex} is the tile where the path flips banked.
-	 */
-	private static String withdrawText(ShortestPathPlugin plugin, RouteOption route,
-		List<PathStep> path, int pathIndex) {
-		net.runelite.api.Item[] bank = plugin.getPathfinderConfig().getBankSnapshot();
-		if (bank != null) {
-			List<String> items = gps.transport.BankPickupRequirements.getRequiredBankItems(
-				plugin.getClient(), bank, plugin.getPathfinderConfig(),
-				Set.of(path.get(pathIndex).getPackedPosition()), path, pathIndex);
-			if (!items.isEmpty()) {
-				return "Withdraw " + String.join(", ", items)
-					+ " for: " + joinLabels(route.getBankMethods());
-			}
-		}
-		return "Withdraw item for: " + joinLabels(route.getBankMethods());
-	}
+    /**
+     * The single-line fallback: the same pickup phrases as the bank-tile overlay hint,
+     * then the bare method list when even those are unknown. The singleton location set
+     * stands in for the bank-destination guard: this call site already KNOWS index
+     * {@code pathIndex} is the tile where the path flips banked.
+     */
+    private static String withdrawText(ShortestPathPlugin plugin, RouteOption route,
+        List<PathStep> path, int pathIndex) {
+        net.runelite.api.Item[] bank = plugin.getPathfinderConfig().getBankSnapshot();
+        if (bank != null) {
+            List<String> items = gps.transport.BankPickupRequirements.getRequiredBankItems(
+                plugin.getClient(), bank, plugin.getPathfinderConfig(),
+                Set.of(path.get(pathIndex).getPackedPosition()), path, pathIndex);
+            if (!items.isEmpty()) {
+                return "Withdraw " + String.join(", ", items)
+                    + " for: " + joinLabels(route.getBankMethods());
+            }
+        }
+        return "Withdraw item for: " + joinLabels(route.getBankMethods());
+    }
 
-	private static String joinLabels(Set<TeleportMethod> methods) {
-		StringBuilder sb = new StringBuilder();
-		for (TeleportMethod method : methods) {
-			if (sb.length() > 0)
-				sb.append(", ");
-			sb.append(method.label());
-		}
-		return sb.toString();
-	}
+    private static String joinLabels(Set<TeleportMethod> methods) {
+        StringBuilder sb = new StringBuilder();
+        for (TeleportMethod method : methods) {
+            if (sb.length() > 0)
+                sb.append(", ");
+            sb.append(method.label());
+        }
+        return sb.toString();
+    }
 
-	/**
-	 * The menu-style instruction carried by an object transport's data ("Climb-up Staircase",
-	 * "Walk-across Log balance", "Open Door"), with the trailing object id stripped. Null when
-	 * the transport carries no object info.
-	 */
-	static String objectText(Transport transport) {
-		String objectInfo = transport.getObjectInfo();
-		if (objectInfo == null || objectInfo.isEmpty())
-			return null;
-		int lastSpace = objectInfo.lastIndexOf(' ');
-		if (lastSpace > 0 && objectInfo.substring(lastSpace + 1).chars().allMatch(Character::isDigit))
-			return objectInfo.substring(0, lastSpace);
-		return objectInfo;
-	}
+    /**
+     * The menu-style instruction carried by an object transport's data ("Climb-up Staircase",
+     * "Walk-across Log balance", "Open Door"), with the trailing object id stripped. Null when
+     * the transport carries no object info.
+     */
+    static String objectText(Transport transport) {
+        String objectInfo = transport.getObjectInfo();
+        if (objectInfo == null || objectInfo.isEmpty())
+            return null;
+        int lastSpace = objectInfo.lastIndexOf(' ');
+        if (lastSpace > 0 && objectInfo.substring(lastSpace + 1).chars().allMatch(Character::isDigit))
+            return objectInfo.substring(0, lastSpace);
+        return objectInfo;
+    }
 }

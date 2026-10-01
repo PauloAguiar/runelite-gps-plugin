@@ -13,47 +13,47 @@ package gps;
  * flag stays set, so no change is lost, only delayed a few ticks.
  */
 final class CatalogRefresher {
-	/** Ticks between two claimed refreshes while changes keep coming. */
-	static final int COOLDOWN_TICKS = 5;
+    /** Ticks between two claimed refreshes while changes keep coming. */
+    static final int COOLDOWN_TICKS = 5;
 
-	private volatile boolean dirty;
-	private int backoffTick;
-	private long fingerprint;
-	private boolean fingerprintValid;
+    private volatile boolean dirty;
+    private int backoffTick;
+    private long fingerprint;
+    private boolean fingerprintValid;
 
-	/** Whether a re-classification is pending (claimed on the next tick the panel is open). */
-	boolean isDirty() {
-		return dirty;
-	}
+    /** Whether a re-classification is pending (claimed on the next tick the panel is open). */
+    boolean isDirty() {
+        return dirty;
+    }
 
-	/** The catalog must be re-classified (no fingerprint available to compare). */
-	void markDirty() {
-		dirty = true;
-	}
+    /** The catalog must be re-classified (no fingerprint available to compare). */
+    void markDirty() {
+        dirty = true;
+    }
 
-	/**
-	 * An inventory or equipment change: dirties the catalog only when the routing-relevant item
-	 * fingerprint differs from the last one seen (the first one always counts). True when it did.
-	 */
-	boolean noteItems(long routingItemsFingerprint) {
-		if (fingerprintValid && routingItemsFingerprint == fingerprint)
-			return false;
-		fingerprint = routingItemsFingerprint;
-		fingerprintValid = true;
-		dirty = true;
-		return true;
-	}
+    /**
+     * An inventory or equipment change: dirties the catalog only when the routing-relevant item
+     * fingerprint differs from the last one seen (the first one always counts). True when it did.
+     */
+    boolean noteItems(long routingItemsFingerprint) {
+        if (fingerprintValid && routingItemsFingerprint == fingerprint)
+            return false;
+        fingerprint = routingItemsFingerprint;
+        fingerprintValid = true;
+        dirty = true;
+        return true;
+    }
 
-	/**
-	 * Whether a refresh should run now: the catalog is dirty, the panel is shown, no generation is
-	 * in flight (it re-snapshots anyway), the player is logged in and the cooldown has elapsed.
-	 * Claiming clears the flag and arms the cooldown from {@code tick}.
-	 */
-	boolean claim(int tick, boolean panelVisible, boolean generationInFlight, boolean loggedIn) {
-		if (!dirty || !panelVisible || generationInFlight || !loggedIn || tick < backoffTick)
-			return false;
-		backoffTick = tick + COOLDOWN_TICKS;
-		dirty = false;
-		return true;
-	}
+    /**
+     * Whether a refresh should run now: the catalog is dirty, the panel is shown, no generation is
+     * in flight (it re-snapshots anyway), the player is logged in and the cooldown has elapsed.
+     * Claiming clears the flag and arms the cooldown from {@code tick}.
+     */
+    boolean claim(int tick, boolean panelVisible, boolean generationInFlight, boolean loggedIn) {
+        if (!dirty || !panelVisible || generationInFlight || !loggedIn || tick < backoffTick)
+            return false;
+        backoffTick = tick + COOLDOWN_TICKS;
+        dirty = false;
+        return true;
+    }
 }

@@ -17,20 +17,20 @@ package gps;
  * ALL_UNLOCKED middle mode was folded into ALL_EVERYTHING and is mapped on load).
  */
 public enum AlternativeRoutesMode {
-	/**
-	 * Inventory: items in inventory or equipment only (forces the INVENTORY teleport-item setting).
-	 */
-	OWNED_INVENTORY,
-	/**
-	 * + Bank: inventory + equipment + bank, routing through a bank to withdraw banked items.
-	 */
-	OWNED_WITH_BANK,
-	/**
-	 * All: every method in the game, including ones this character can't use yet.
-	 */
-	ALL_EVERYTHING;
+    /**
+     * Inventory: items in inventory or equipment only (forces the INVENTORY teleport-item setting).
+     */
+    OWNED_INVENTORY,
+    /**
+     * + Bank: inventory + equipment + bank, routing through a bank to withdraw banked items.
+     */
+    OWNED_WITH_BANK,
+    /**
+     * All: every method in the game, including ones this character can't use yet.
+     */
+    ALL_EVERYTHING;
 
-	public boolean isOwned() {
-		return this == OWNED_INVENTORY || this == OWNED_WITH_BANK;
-	}
+    public boolean isOwned() {
+        return this == OWNED_INVENTORY || this == OWNED_WITH_BANK;
+    }
 }

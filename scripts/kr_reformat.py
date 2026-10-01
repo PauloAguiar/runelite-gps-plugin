@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Reformat Java sources under a directory: opening braces join the statement line (K&R), and the
-braces around a single-statement if / else / for / while body go when that is safe: the body is
-one statement (comment lines before it allowed), not a declaration, not itself a control
-statement (so no dangling else), and the header sits on one line.
-Usage: python kr_reformat.py <dir>"""
+"""The compact style of the shipped source (src/main/java only; tests keep RuneLite's layout).
+The hub's review bot counts every token of src/main/java, so: opening braces join the statement
+line, the braces around a single-statement if / else / for / while body go when that is safe
+(the body is one statement, comment lines before it allowed, not a declaration, not itself a
+control statement, so no dangling else, and the header sits on one line), and leading tabs
+become four spaces. Idempotent; run it before a release. Usage: python kr_reformat.py <dir>"""
 import io
 import os
 import re
@@ -17,6 +18,14 @@ COMMENT_ONLY = re.compile(r'^[ \t]*//')
 CONTROL = re.compile(r'^[ \t]*(if|else|for|while|do|try|switch|synchronized|case|default)\b')
 DECLARATION = re.compile(r'^[ \t]*(?:final\s+)?[A-Za-z_][\w<>\[\],.?]*(?:\s*<[^;=]*>)?(?:\[\])*\s+[A-Za-z_]\w*\s*(?:=|;)')
 KEYWORD_STATEMENT = re.compile(r'^[ \t]*(return|throw|break|continue|yield)\b')
+
+
+LEADING_TABS = re.compile(r'^\t+')
+
+
+def spaces(lines, width):
+    """Leading tabs become spaces (the hub bot counts indentation; space runs tokenize cheaper)."""
+    return [LEADING_TABS.sub(lambda m: ' ' * (width * len(m.group(0))), line) for line in lines]
 
 
 def kr(lines):
@@ -86,6 +95,7 @@ def main():
                 prev = lines
                 lines, r = unbrace(lines)
                 removed += r
+            lines = spaces(lines, 4)
             new = ending.join(lines)
             if new != text:
                 with io.open(path, 'w', encoding='utf-8', newline='') as f:

@@ -9,19 +9,19 @@ package gps;
  * pixels, but the most-requested in-between.
  */
 public enum OverlayFontSize {
-	SMALL("Small"),
-	NORMAL("Normal"),
-	LARGE("Large"),
-	EXTRA_LARGE("Extra large");
+    SMALL("Small"),
+    NORMAL("Normal"),
+    LARGE("Large"),
+    EXTRA_LARGE("Extra large");
 
-	private final String label;
+    private final String label;
 
-	OverlayFontSize(String label) {
-		this.label = label;
-	}
+    OverlayFontSize(String label) {
+        this.label = label;
+    }
 
-	@Override
-	public String toString() {
-		return label;
-	}
+    @Override
+    public String toString() {
+        return label;
+    }
 }
