@@ -91,6 +91,14 @@ import gps.pathfinder.TransportAvailability;
 import gps.transport.Transport;
 import gps.transport.TransportType;
 
+import static gps.WorldPointUtil.distanceBetween;
+import static gps.WorldPointUtil.fromLocalInstance;
+import static gps.WorldPointUtil.packWorldPoint;
+import static gps.WorldPointUtil.unpackWorldPlane;
+import static gps.WorldPointUtil.unpackWorldPoint;
+import static gps.WorldPointUtil.unpackWorldX;
+import static gps.WorldPointUtil.unpackWorldY;
+
 @Slf4j
 @SuppressWarnings("SameParameterValue")
 // configName is REQUIRED here: without it RuneLite keys the on/off state by the class's simple
@@ -384,7 +392,7 @@ public class ShortestPathPlugin extends Plugin {
     private volatile boolean altGenerationInFlight = false;
     private Point lastMenuOpenedPoint;
     private WorldMapPoint marker;
-    private int lastLocation = WorldPointUtil.packWorldPoint(0, 0, 0);
+    private int lastLocation = packWorldPoint(0, 0, 0);
     // A single-tick displacement larger than running (2 tiles) means a transport is carrying the
     // player — a boat cutscene, a teleport landing — not that they walked off route. While that
     // resolves, off-route detection is suppressed (the player is legitimately far from the path).
@@ -716,7 +724,7 @@ public class ShortestPathPlugin extends Plugin {
                     || (tileFlags & net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_OBJECT) == 0) {
                     continue;
                 }
-                int packed = WorldPointUtil.packWorldPoint(baseX + sx, baseY + sy, 0);
+                int packed = packWorldPoint(baseX + sx, baseY + sy, 0);
                 // NEVER learn near the player's own boat: the hull is itself a WorldEntity
                 // projecting live-blocked collision onto sailable water — without this
                 // exclusion every scan learned the boat's current footprint as a permanent
@@ -725,8 +733,8 @@ public class ShortestPathPlugin extends Plugin {
                 // own wake, forcing a disembark/re-embark detour through Cairn Isle).
                 int playerAt = getLastKnownPlayerLocation();
                 if (playerAt != WorldPointUtil.UNDEFINED
-                    && Math.max(Math.abs(WorldPointUtil.unpackWorldX(playerAt) - (baseX + sx)),
-                        Math.abs(WorldPointUtil.unpackWorldY(playerAt) - (baseY + sy))) <= 10) {
+                    && Math.max(Math.abs(unpackWorldX(playerAt) - (baseX + sx)),
+                        Math.abs(unpackWorldY(playerAt) - (baseY + sy))) <= 10) {
                     continue;
                 }
                 if (SailingSea.isSailable(packed) && !SailingSea.obstacleAt(baseX + sx, baseY + sy)) {
@@ -749,7 +757,7 @@ public class ShortestPathPlugin extends Plugin {
             return -1;
         int best = Integer.MAX_VALUE;
         for (PathStep pathStep : path)
-            best = Math.min(best, WorldPointUtil.distanceBetween(location, pathStep.getPackedPosition()));
+            best = Math.min(best, distanceBetween(location, pathStep.getPackedPosition()));
         // A sailing leg contributes only its two endpoints to the path, so mid-sail the player
         // is "hundreds of tiles off route" by node distance and auto-recalc wiped the route a
         // few tiles out of port. Measure against the legs' SEA TRACKS too (cached waypoints,
@@ -765,7 +773,7 @@ public class ShortestPathPlugin extends Plugin {
                 if (track == null)
                     return 0;
                 for (int waypoint : track)
-                    best = Math.min(best, WorldPointUtil.distanceBetween(location, waypoint));
+                    best = Math.min(best, distanceBetween(location, waypoint));
             }
         }
         return best;
@@ -829,14 +837,14 @@ public class ShortestPathPlugin extends Plugin {
         CollisionMap map = pathfinderConfig.getMap();
         if (map == null || maxSteps <= 0)
             return zone;
-        final int plane = WorldPointUtil.unpackWorldPlane(end);
+        final int plane = unpackWorldPlane(end);
         List<Integer> frontier = new ArrayList<>();
         frontier.add(end);
         for (int depth = 0; depth < maxSteps && !frontier.isEmpty(); depth++) {
             List<Integer> next = new ArrayList<>();
             for (int tile : frontier) {
-                final int x = WorldPointUtil.unpackWorldX(tile);
-                final int y = WorldPointUtil.unpackWorldY(tile);
+                final int x = unpackWorldX(tile);
+                final int y = unpackWorldY(tile);
                 final boolean n = map.n(x, y, plane);
                 final boolean s = map.s(x, y, plane);
                 final boolean e = map.e(x, y, plane);
@@ -858,7 +866,7 @@ public class ShortestPathPlugin extends Plugin {
     private static void growZone(Set<Integer> zone, List<Integer> next, int x, int y, int plane, boolean open) {
         if (!open)
             return;
-        int packed = WorldPointUtil.packWorldPoint(x, y, plane);
+        int packed = packWorldPoint(x, y, plane);
         if (zone.add(packed))
             next.add(packed);
     }
@@ -881,7 +889,7 @@ public class ShortestPathPlugin extends Plugin {
             // entity and moors off the mark (configurable, default 12).
             for (int target : pathTargets) {
                 if (SailingSea.isSailable(target)
-                    && WorldPointUtil.distanceBetween(currentLocation, target)
+                    && distanceBetween(currentLocation, target)
                         <= config.seaReachedDistance()) {
                     inZone = true;
                     break;
@@ -978,7 +986,7 @@ public class ShortestPathPlugin extends Plugin {
         int endPoint = path.get(path.size() - 1).getPackedPosition();
         int closestTargetDistance = Integer.MAX_VALUE;
         for (int target : targets)
-            closestTargetDistance = Math.min(closestTargetDistance, WorldPointUtil.distanceBetween(target, endPoint));
+            closestTargetDistance = Math.min(closestTargetDistance, distanceBetween(target, endPoint));
         return closestTargetDistance > unreachableTargetDistance;
     }
 
@@ -1007,7 +1015,7 @@ public class ShortestPathPlugin extends Plugin {
         int endPoint = path.get(path.size() - 1).getPackedPosition();
         int closest = Integer.MAX_VALUE;
         for (int target : targets)
-            closest = Math.min(closest, WorldPointUtil.distanceBetween(target, endPoint));
+            closest = Math.min(closest, distanceBetween(target, endPoint));
         return closest <= unreachableTargetDistance;
     }
 
@@ -1276,7 +1284,7 @@ public class ShortestPathPlugin extends Plugin {
             if (objStart == null && objTarget == null)
                 return;
 
-            int start = (objStart instanceof WorldPoint) ? WorldPointUtil.packWorldPoint((WorldPoint) objStart)
+            int start = (objStart instanceof WorldPoint) ? packWorldPoint((WorldPoint) objStart)
                 : ((objStart instanceof Integer) ? ((int) objStart) : WorldPointUtil.UNDEFINED);
             if (start == WorldPointUtil.UNDEFINED) {
                 start = getPlayerLocation();
@@ -1292,7 +1300,7 @@ public class ShortestPathPlugin extends Plugin {
                 targets.add(packedPoint);
             }
             else if (objTarget instanceof WorldPoint) {
-                int packedPoint = WorldPointUtil.packWorldPoint((WorldPoint) objTarget);
+                int packedPoint = packWorldPoint((WorldPoint) objTarget);
                 if (packedPoint == WorldPointUtil.UNDEFINED)
                     return;
                 targets.add(packedPoint);
@@ -1305,7 +1313,7 @@ public class ShortestPathPlugin extends Plugin {
                     if (obj instanceof Integer)
                         packedPoint = (Integer) obj;
                     else if (obj instanceof WorldPoint)
-                        packedPoint = WorldPointUtil.packWorldPoint((WorldPoint) obj);
+                        packedPoint = packWorldPoint((WorldPoint) obj);
                     if (packedPoint == WorldPointUtil.UNDEFINED)
                         return;
                     targets.add(packedPoint);
@@ -1386,8 +1394,8 @@ public class ShortestPathPlugin extends Plugin {
                 PathStep currentStep = currentPath.get(i - 1);
                 PathStep nextStep = currentPath.get(i);
                 for (Transport transport : transportsForEdge(currentStep, nextStep)) {
-                    transportOrigins.add(WorldPointUtil.unpackWorldPoint(currentStep.getPackedPosition()));
-                    transportDestinations.add(WorldPointUtil.unpackWorldPoint(nextStep.getPackedPosition()));
+                    transportOrigins.add(unpackWorldPoint(currentStep.getPackedPosition()));
+                    transportDestinations.add(unpackWorldPoint(nextStep.getPackedPosition()));
                     transportObjectInfos.add(transport.getObjectInfo());
                     transportDisplayInfos.add(transport.getDisplayInfo());
                 }
@@ -1471,7 +1479,7 @@ public class ShortestPathPlugin extends Plugin {
         if (!hasPathTargets())
             return;
 
-        int currentLocation = WorldPointUtil.fromLocalInstance(client, localPlayer);
+        int currentLocation = fromLocalInstance(client, localPlayer);
         // Journey timer: start counting from the player's first ACTION after a destination (or a chosen
         // path) was set — moving, OR performing an animation (casting/using a teleport). The animation
         // catch matters for long teleport channels (e.g. Lumbridge Home): the player stays put for the
@@ -1508,7 +1516,7 @@ public class ShortestPathPlugin extends Plugin {
         // auto-recalculate off, GPS keeps the original route and only ever warns.
         int recalc = config.recalculateDistance();
         if (recalc >= 0) {
-            int step = WorldPointUtil.distanceBetween(lastLocation, currentLocation);
+            int step = distanceBetween(lastLocation, currentLocation);
             boolean moved = lastLocation != currentLocation;
             lastLocation = currentLocation;
             int d = distanceFromPath(currentLocation);
@@ -2143,8 +2151,8 @@ public class ShortestPathPlugin extends Plugin {
                 localTypes.add(t.getType());
         }
         int edgeDistance = WorldPointUtil.distanceBetween2D(currentStep.getPackedPosition(), nextStep.getPackedPosition());
-        boolean samePlane = WorldPointUtil.unpackWorldPlane(currentStep.getPackedPosition())
-            == WorldPointUtil.unpackWorldPlane(nextStep.getPackedPosition());
+        boolean samePlane = unpackWorldPlane(currentStep.getPackedPosition())
+            == unpackWorldPlane(nextStep.getPackedPosition());
         stepTransports.removeIf(t -> {
             if (t.getOrigin() != Transport.UNDEFINED_ORIGIN || t.getType() == null) {
                 return false; // keep local transports
@@ -2187,8 +2195,8 @@ public class ShortestPathPlugin extends Plugin {
         if (path == null || currentIndex < 0)
             return null;
 
-        int destX = WorldPointUtil.unpackWorldX(destination);
-        int destY = WorldPointUtil.unpackWorldY(destination);
+        int destX = unpackWorldX(destination);
+        int destY = unpackWorldY(destination);
 
         // Check if destination is inside POH
         if (!isInsidePoh(destX, destY))
@@ -2201,10 +2209,10 @@ public class ShortestPathPlugin extends Plugin {
             int stepLocation = path.get(i).getPackedPosition();
             int nextLocation = path.get(i + 1).getPackedPosition();
 
-            int stepX = WorldPointUtil.unpackWorldX(stepLocation);
-            int stepY = WorldPointUtil.unpackWorldY(stepLocation);
-            int nextX = WorldPointUtil.unpackWorldX(nextLocation);
-            int nextY = WorldPointUtil.unpackWorldY(nextLocation);
+            int stepX = unpackWorldX(stepLocation);
+            int stepY = unpackWorldY(stepLocation);
+            int nextX = unpackWorldX(nextLocation);
+            int nextY = unpackWorldY(nextLocation);
 
             // Check if this step is inside POH but next step is outside (exit transport)
             boolean stepInsidePoh = isInsidePoh(stepX, stepY);
@@ -2324,7 +2332,7 @@ public class ShortestPathPlugin extends Plugin {
     private int getSelectedWorldPoint() {
         if (client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) == null) {
             if (client.getTopLevelWorldView().getSelectedSceneTile() != null)
-                return WorldPointUtil.fromLocalInstance(client, client.getTopLevelWorldView().getSelectedSceneTile().getLocalLocation());
+                return fromLocalInstance(client, client.getTopLevelWorldView().getSelectedSceneTile().getLocalLocation());
         }
         else {
             return client.isMenuOpen()
@@ -2434,7 +2442,7 @@ public class ShortestPathPlugin extends Plugin {
     /** The world-map pin's tile, or UNDEFINED without one. */
     private int markerTile() {
         WorldMapPoint pin = marker;
-        return pin == null ? WorldPointUtil.UNDEFINED : WorldPointUtil.packWorldPoint(pin.getWorldPoint());
+        return pin == null ? WorldPointUtil.UNDEFINED : packWorldPoint(pin.getWorldPoint());
     }
 
     /**
@@ -2469,7 +2477,7 @@ public class ShortestPathPlugin extends Plugin {
     public int getPlayerLocation() {
         Player local = client.getLocalPlayer();
         return local == null ? WorldPointUtil.UNDEFINED
-            : WorldPointUtil.fromLocalInstance(client, local);
+            : fromLocalInstance(client, local);
     }
 
     private void setTarget(int target, boolean append) {
@@ -2519,14 +2527,14 @@ public class ShortestPathPlugin extends Plugin {
                 : (targets.size() == 1 ? targets.iterator().next() : WorldPointUtil.UNDEFINED);
             markerTarget = WorldPointUtil.UNDEFINED;
             if (markerTile != WorldPointUtil.UNDEFINED) {
-                marker = new WorldMapPoint(WorldPointUtil.unpackWorldPoint(markerTile), MARKER_IMAGE);
+                marker = new WorldMapPoint(unpackWorldPoint(markerTile), MARKER_IMAGE);
                 marker.setName("Target");
                 marker.setTarget(marker.getWorldPoint());
                 marker.setJumpOnClick(true);
                 worldMapPointManager.add(marker);
             }
 
-            int start = WorldPointUtil.fromLocalInstance(client, localPlayer);
+            int start = fromLocalInstance(client, localPlayer);
             lastLocation = start;
             Set<Integer> destinations = new HashSet<>(targets);
             if (append)
@@ -3180,8 +3188,8 @@ public class ShortestPathPlugin extends Plugin {
             if (!targets.isEmpty()) {
                 int start = altStart();
                 log.debug("[alt-routes] Find routes: target set, searchStart={}, target={}",
-                    WorldPointUtil.unpackWorldPoint(start),
-                    WorldPointUtil.unpackWorldPoint(targets.iterator().next()));
+                    unpackWorldPoint(start),
+                    unpackWorldPoint(targets.iterator().next()));
                 routeLimit = defaultRouteLimit();
                 triggerAlternatives(start, new HashSet<>(targets));
             }
@@ -3200,7 +3208,7 @@ public class ShortestPathPlugin extends Plugin {
     private int altStart() {
         Player localPlayer = client.getLocalPlayer();
         if (localPlayer != null)
-            return WorldPointUtil.fromLocalInstance(client, localPlayer);
+            return fromLocalInstance(client, localPlayer);
         return pathStart;
     }
 
@@ -3490,8 +3498,8 @@ public class ShortestPathPlugin extends Plugin {
     private static String issuePointText(int packed) {
         if (packed == WorldPointUtil.UNDEFINED)
             return "(none)";
-        return WorldPointUtil.unpackWorldX(packed) + ", " + WorldPointUtil.unpackWorldY(packed)
-            + ", " + WorldPointUtil.unpackWorldPlane(packed);
+        return unpackWorldX(packed) + ", " + unpackWorldY(packed)
+            + ", " + unpackWorldPlane(packed);
     }
 
     private static String issueMethodSummary(RouteOption route) {
@@ -3528,7 +3536,7 @@ public class ShortestPathPlugin extends Plugin {
                 snapshot.put("varbitSnapshot", varbitSnapshot);
                 Player local = client.getLocalPlayer();
                 int playerPacked = local != null
-                    ? WorldPointUtil.fromLocalInstance(client, local) : WorldPointUtil.UNDEFINED;
+                    ? fromLocalInstance(client, local) : WorldPointUtil.UNDEFINED;
                 snapshot.put("player",
                     playerPacked != WorldPointUtil.UNDEFINED ? packedPointJson(playerPacked) : null);
                 snapshot.put("routesMode", String.valueOf(routesMode));
@@ -3664,9 +3672,9 @@ public class ShortestPathPlugin extends Plugin {
             return null;
         Map<String, Object> point = new LinkedHashMap<>();
         point.put("packed", packed);
-        point.put("x", WorldPointUtil.unpackWorldX(packed));
-        point.put("y", WorldPointUtil.unpackWorldY(packed));
-        point.put("plane", WorldPointUtil.unpackWorldPlane(packed));
+        point.put("x", unpackWorldX(packed));
+        point.put("y", unpackWorldY(packed));
+        point.put("plane", unpackWorldPlane(packed));
         return point;
     }
 
@@ -3981,7 +3989,7 @@ public class ShortestPathPlugin extends Plugin {
     public int calculateMapPoint(int pointX, int pointY) {
         WorldMap worldMap = client.getWorldMap();
         float zoom = worldMap.getWorldMapZoom();
-        int mapPoint = WorldPointUtil.packWorldPoint(worldMap.getWorldMapPosition().getX(), worldMap.getWorldMapPosition().getY(), 0);
+        int mapPoint = packWorldPoint(worldMap.getWorldMapPosition().getX(), worldMap.getWorldMapPosition().getY(), 0);
         int middleX = mapWorldPointToGraphicsPointX(mapPoint);
         int middleY = mapWorldPointToGraphicsPointY(mapPoint);
 
@@ -4009,7 +4017,7 @@ public class ShortestPathPlugin extends Plugin {
 
             Point worldMapPosition = worldMap.getWorldMapPosition();
 
-            int xTileOffset = WorldPointUtil.unpackWorldX(packedWorldPoint) + widthInTiles / 2 - worldMapPosition.getX();
+            int xTileOffset = unpackWorldX(packedWorldPoint) + widthInTiles / 2 - worldMapPosition.getX();
 
             int xGraphDiff = ((int) (xTileOffset * pixelsPerTile));
             xGraphDiff += (int) (pixelsPerTile - Math.ceil(pixelsPerTile / 2));
@@ -4034,7 +4042,7 @@ public class ShortestPathPlugin extends Plugin {
             Point worldMapPosition = worldMap.getWorldMapPosition();
 
             int yTileMax = worldMapPosition.getY() - heightInTiles / 2;
-            int yTileOffset = (yTileMax - WorldPointUtil.unpackWorldY(packedWorldPoint) - 1) * -1;
+            int yTileOffset = (yTileMax - unpackWorldY(packedWorldPoint) - 1) * -1;
 
             int yGraphDiff = (int) (yTileOffset * pixelsPerTile);
             yGraphDiff -= (int) (pixelsPerTile - Math.ceil(pixelsPerTile / 2));

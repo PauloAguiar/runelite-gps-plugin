@@ -17,6 +17,10 @@ import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import gps.pathfinder.PathStep;
 
+import static gps.WorldPointUtil.distanceBetween;
+import static gps.WorldPointUtil.unpackWorldX;
+import static gps.WorldPointUtil.unpackWorldY;
+
 public class PathMapOverlay extends Overlay {
     private final Client client;
     private final ShortestPathPlugin plugin;
@@ -78,7 +82,7 @@ public class PathMapOverlay extends Overlay {
             int from = path.get(i).getPackedPosition();
             int next = path.get(i + 1).getPackedPosition();
 
-            if (WorldPointUtil.distanceBetween(from, next) > 1) {
+            if (distanceBetween(from, next) > 1) {
                 // Sailing leg: draw the actual sea track (bounded Dijkstra over the shipped
                 // ocean, cached per leg) as a solid line; anything else — and any sailing leg
                 // whose track cannot be computed — stays the dashed jump hint.
@@ -102,15 +106,15 @@ public class PathMapOverlay extends Overlay {
             }
 
             // Extend the straight walking run while the direction stays the same.
-            int dx = WorldPointUtil.unpackWorldX(next) - WorldPointUtil.unpackWorldX(from);
-            int dy = WorldPointUtil.unpackWorldY(next) - WorldPointUtil.unpackWorldY(from);
+            int dx = unpackWorldX(next) - unpackWorldX(from);
+            int dy = unpackWorldY(next) - unpackWorldY(from);
             int j = i + 1;
             while (j < path.size() - 1) {
                 int a = path.get(j).getPackedPosition();
                 int b = path.get(j + 1).getPackedPosition();
-                if (WorldPointUtil.distanceBetween(a, b) > 1
-                    || WorldPointUtil.unpackWorldX(b) - WorldPointUtil.unpackWorldX(a) != dx
-                    || WorldPointUtil.unpackWorldY(b) - WorldPointUtil.unpackWorldY(a) != dy) {
+                if (distanceBetween(a, b) > 1
+                    || unpackWorldX(b) - unpackWorldX(a) != dx
+                    || unpackWorldY(b) - unpackWorldY(a) != dy) {
                     break;
                 }
                 j++;
@@ -158,7 +162,7 @@ public class PathMapOverlay extends Overlay {
         x -= width / 2;
         y -= height / 2;
 
-        if (WorldPointUtil.distanceBetween(point, offsetPoint) > 1) {
+        if (distanceBetween(point, offsetPoint) > 1) {
             graphics.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{9}, 0));
             graphics.drawLine(startX, startY, endX, endY);
         }

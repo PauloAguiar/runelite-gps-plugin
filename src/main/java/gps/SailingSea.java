@@ -13,6 +13,10 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.zip.InflaterInputStream;
 
+import static gps.WorldPointUtil.packWorldPoint;
+import static gps.WorldPointUtil.unpackWorldX;
+import static gps.WorldPointUtil.unpackWorldY;
+
 /**
  * The sailable ocean and the mooring endpoints, shipped as resources by the tooling repo's
  * WaterMapResourceTest. Lets routing treat a sea tile as a destination: when a target is
@@ -74,7 +78,7 @@ public final class SailingSea {
         for (int i = 0; i < moorings.size(); i++) {
             int[] mooring = moorings.get(i);
             endpointIndex.put((mooring[3] - minY) * width + (mooring[2] - minX), i);
-            mooringLandTiles.add(WorldPointUtil.packWorldPoint(mooring[0], mooring[1], 0));
+            mooringLandTiles.add(packWorldPoint(mooring[0], mooring[1], 0));
         }
     }
 
@@ -205,8 +209,8 @@ public final class SailingSea {
         if (WorldPointUtil.unpackWorldPlane(packed) != 0)
             return false;
         SailingSea sea = get();
-        int x = WorldPointUtil.unpackWorldX(packed) - sea.minX;
-        int y = WorldPointUtil.unpackWorldY(packed) - sea.minY;
+        int x = unpackWorldX(packed) - sea.minX;
+        int y = unpackWorldY(packed) - sea.minY;
         if (x < 0 || y < 0 || x >= sea.width || y >= sea.height)
             return false;
         return bit(sea, x, y);
@@ -230,7 +234,7 @@ public final class SailingSea {
             return Set.of();
         Set<Integer> wet = new HashSet<>();
         for (int target : targets) {
-            if (map.isBlocked(WorldPointUtil.unpackWorldX(target), WorldPointUtil.unpackWorldY(target),
+            if (map.isBlocked(unpackWorldX(target), unpackWorldY(target),
                 WorldPointUtil.unpackWorldPlane(target))) {
                 wet.add(target);
             }
@@ -245,8 +249,8 @@ public final class SailingSea {
         int minY = Integer.MAX_VALUE;
         int maxY = Integer.MIN_VALUE;
         for (int target : targets) {
-            int x = WorldPointUtil.unpackWorldX(target);
-            int y = WorldPointUtil.unpackWorldY(target);
+            int x = unpackWorldX(target);
+            int y = unpackWorldY(target);
             minX = Math.min(minX, x);
             maxX = Math.max(maxX, x);
             minY = Math.min(minY, y);
@@ -293,7 +297,7 @@ public final class SailingSea {
                 distances[i] / 100.0 / TILES_PER_TICK);
             legs.add(new Transport.TransportBuilder()
                 .origin(startPacked)
-                .destination(WorldPointUtil.packWorldPoint(mooring[0], mooring[1], 0))
+                .destination(packWorldPoint(mooring[0], mooring[1], 0))
                 .type(TransportType.SAILING)
                 .duration(duration)
                 .displayInfo("Disembark at " + portName(i))
@@ -337,10 +341,10 @@ public final class SailingSea {
         SailingSea sea = get();
         if (sea.width == 0 || !isSailable(fromPacked) || !isSailable(toPacked))
             return -1;
-        int start = (WorldPointUtil.unpackWorldY(fromPacked) - sea.minY) * sea.width
-            + (WorldPointUtil.unpackWorldX(fromPacked) - sea.minX);
-        int goal = (WorldPointUtil.unpackWorldY(toPacked) - sea.minY) * sea.width
-            + (WorldPointUtil.unpackWorldX(toPacked) - sea.minX);
+        int start = (unpackWorldY(fromPacked) - sea.minY) * sea.width
+            + (unpackWorldX(fromPacked) - sea.minX);
+        int goal = (unpackWorldY(toPacked) - sea.minY) * sea.width
+            + (unpackWorldX(toPacked) - sea.minX);
         if (start == goal)
             return 0;
         int cost = boxDistance(sea, start, goal, 60);
@@ -404,8 +408,8 @@ public final class SailingSea {
         java.util.Set<Integer> mustIncludeLands) {
         if (!isSailable(targetPacked))
             return List.of();
-        int tx = WorldPointUtil.unpackWorldX(targetPacked);
-        int ty = WorldPointUtil.unpackWorldY(targetPacked);
+        int tx = unpackWorldX(targetPacked);
+        int ty = unpackWorldY(targetPacked);
         int[] distances = composedPortDistances(targetPacked);
         List<int[]> moorings = get().moorings;
         List<Integer> order = new ArrayList<>();
@@ -432,7 +436,7 @@ public final class SailingSea {
                 reachableChosen++;
             }
             else if (!mustIncludeLands.isEmpty() && mustIncludeLands.contains(
-                WorldPointUtil.packWorldPoint(moorings.get(i)[0], moorings.get(i)[1], 0))) {
+                packWorldPoint(moorings.get(i)[0], moorings.get(i)[1], 0))) {
                 chosen.add(i);
             }
         }
@@ -442,7 +446,7 @@ public final class SailingSea {
             int duration = OVERHEAD_TICKS + (int) Math.ceil(
                 distances[i] / 100.0 / TILES_PER_TICK);
             legs.add(new Transport.TransportBuilder()
-                .origin(WorldPointUtil.packWorldPoint(mooring[0], mooring[1], 0))
+                .origin(packWorldPoint(mooring[0], mooring[1], 0))
                 .destination(targetPacked)
                 .type(TransportType.SAILING)
                 .duration(duration)
@@ -545,8 +549,8 @@ public final class SailingSea {
         java.util.Arrays.fill(dist, Integer.MAX_VALUE);
         LongHeap queue = wetHeap;
         queue.clear();
-        int start = (WorldPointUtil.unpackWorldY(targetPacked) - sea.minY) * sea.width
-            + (WorldPointUtil.unpackWorldX(targetPacked) - sea.minX);
+        int start = (unpackWorldY(targetPacked) - sea.minY) * sea.width
+            + (unpackWorldX(targetPacked) - sea.minX);
         dist[start] = 0;
         queue.push(start);
         int settled = 0;
@@ -604,13 +608,13 @@ public final class SailingSea {
     public static boolean obstacleAt(int worldX, int worldY) {
         PrimitiveIntHashMap<Boolean> mask = liveObstacles;
         return mask != null
-            && mask.get(WorldPointUtil.packWorldPoint(worldX, worldY, 0)) != null;
+            && mask.get(packWorldPoint(worldX, worldY, 0)) != null;
     }
 
     private static boolean obstacleAtGrid(SailingSea sea, int gridX, int gridY) {
         PrimitiveIntHashMap<Boolean> mask = liveObstacles;
         return mask != null && mask.get(
-            WorldPointUtil.packWorldPoint(sea.minX + gridX, sea.minY + gridY, 0)) != null;
+            packWorldPoint(sea.minX + gridX, sea.minY + gridY, 0)) != null;
     }
 
     /**
@@ -624,11 +628,11 @@ public final class SailingSea {
         PrimitiveIntHashMap<Boolean> current = liveObstacles;
         PrimitiveIntHashMap<Boolean> grown = null;
         for (int packed : packedTiles) {
-            int px = WorldPointUtil.unpackWorldX(packed);
-            int py = WorldPointUtil.unpackWorldY(packed);
+            int px = unpackWorldX(packed);
+            int py = unpackWorldY(packed);
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
-                    int tile = WorldPointUtil.packWorldPoint(px + dx, py + dy, 0);
+                    int tile = packWorldPoint(px + dx, py + dy, 0);
                     if (!isSailable(tile) || nearMooringWater(sea, px + dx, py + dy)
                         || (current != null && current.get(tile) != null)
                         || (grown != null && grown.get(tile) != null)) {
@@ -841,7 +845,7 @@ public final class SailingSea {
             return null;
         java.util.List<Integer> waypoints = new ArrayList<>();
         for (int at = boxGoal; at != -1; at = parent[at]) {
-            waypoints.add(WorldPointUtil.packWorldPoint(
+            waypoints.add(packWorldPoint(
                 sea.minX + x0 + at % boxWidth, sea.minY + y0 + at / boxWidth, 0));
         }
         java.util.Collections.reverse(waypoints);
@@ -987,10 +991,10 @@ public final class SailingSea {
         java.util.List<Integer> corners = new ArrayList<>();
         corners.add(0);
         for (int w = 2; w + 2 < track.length; w++) {
-            double inX = WorldPointUtil.unpackWorldX(track[w]) - WorldPointUtil.unpackWorldX(track[w - 2]);
-            double inY = WorldPointUtil.unpackWorldY(track[w]) - WorldPointUtil.unpackWorldY(track[w - 2]);
-            double outX = WorldPointUtil.unpackWorldX(track[w + 2]) - WorldPointUtil.unpackWorldX(track[w]);
-            double outY = WorldPointUtil.unpackWorldY(track[w + 2]) - WorldPointUtil.unpackWorldY(track[w]);
+            double inX = unpackWorldX(track[w]) - unpackWorldX(track[w - 2]);
+            double inY = unpackWorldY(track[w]) - unpackWorldY(track[w - 2]);
+            double outX = unpackWorldX(track[w + 2]) - unpackWorldX(track[w]);
+            double outY = unpackWorldY(track[w + 2]) - unpackWorldY(track[w]);
             double cross = inX * outY - inY * outX;
             double dot = inX * outX + inY * outY;
             // > ~18 degrees of direction change across the window = a genuine turn.
@@ -1048,8 +1052,8 @@ public final class SailingSea {
      */
     private static boolean snapLeg(SailingSea sea, java.util.List<Integer> snapped,
         int from, int to, int trackStart, int trackGoal, int depth) {
-        int dx = WorldPointUtil.unpackWorldX(to) - WorldPointUtil.unpackWorldX(from);
-        int dy = WorldPointUtil.unpackWorldY(to) - WorldPointUtil.unpackWorldY(from);
+        int dx = unpackWorldX(to) - unpackWorldX(from);
+        int dy = unpackWorldY(to) - unpackWorldY(from);
         int mid = bearingMidpoint(from, dx, dy, false);
         if (mid == from || mid == to) {
             // Already (nearly) a single bearing run: nothing to rewrite. Inside a split
@@ -1074,17 +1078,17 @@ public final class SailingSea {
         // (to - full) makes the middle leg EXACTLY the second bearing's displacement;
         // the final leg is the first bearing's remainder. Only mid1 rounds.
         for (int full : mids) {
-            int fx = WorldPointUtil.unpackWorldX(full);
-            int fy = WorldPointUtil.unpackWorldY(full);
-            int sx = WorldPointUtil.unpackWorldX(from);
-            int sy = WorldPointUtil.unpackWorldY(from);
+            int fx = unpackWorldX(full);
+            int fy = unpackWorldY(full);
+            int sx = unpackWorldX(from);
+            int sy = unpackWorldY(from);
             for (double t : DOGLEG_FRACTIONS) {
-                int mid1 = WorldPointUtil.packWorldPoint(
+                int mid1 = packWorldPoint(
                     sx + (int) Math.round((fx - sx) * t),
                     sy + (int) Math.round((fy - sy) * t), 0);
-                int mid2 = WorldPointUtil.packWorldPoint(
-                    WorldPointUtil.unpackWorldX(mid1) + WorldPointUtil.unpackWorldX(to) - fx,
-                    WorldPointUtil.unpackWorldY(mid1) + WorldPointUtil.unpackWorldY(to) - fy, 0);
+                int mid2 = packWorldPoint(
+                    unpackWorldX(mid1) + unpackWorldX(to) - fx,
+                    unpackWorldY(mid1) + unpackWorldY(to) - fy, 0);
                 if (mid1 == from || mid1 == mid2 || mid2 == to)
                     continue;
                 if (lineKeepsStandoff(sea, from, mid1, trackStart, trackGoal)
@@ -1101,9 +1105,9 @@ public final class SailingSea {
         // midpoint — it lies ON the standoff-true chord, so it is sailable — and give each
         // half its own, smaller maneuver. Bounded: two levels, legs no shorter than 8.
         if (depth < 2 && Math.max(Math.abs(dx), Math.abs(dy)) >= 8) {
-            int half = WorldPointUtil.packWorldPoint(
-                WorldPointUtil.unpackWorldX(from) + dx / 2,
-                WorldPointUtil.unpackWorldY(from) + dy / 2, 0);
+            int half = packWorldPoint(
+                unpackWorldX(from) + dx / 2,
+                unpackWorldY(from) + dy / 2, 0);
             if (half != from && half != to && isSailable(half)) {
                 int mark = snapped.size();
                 if (snapLeg(sea, snapped, from, half, trackStart, trackGoal, depth + 1)
@@ -1136,12 +1140,12 @@ public final class SailingSea {
                 continue;
             if (a < 0.5 || b < 0.5)
                 return from;
-            int x = WorldPointUtil.unpackWorldX(from);
-            int y = WorldPointUtil.unpackWorldY(from);
+            int x = unpackWorldX(from);
+            int y = unpackWorldY(from);
             return swapOrder
-                ? WorldPointUtil.packWorldPoint(x + (int) Math.round(b * v[0]),
+                ? packWorldPoint(x + (int) Math.round(b * v[0]),
                     y + (int) Math.round(b * v[1]), 0)
-                : WorldPointUtil.packWorldPoint(x + (int) Math.round(a * u[0]),
+                : packWorldPoint(x + (int) Math.round(a * u[0]),
                     y + (int) Math.round(a * u[1]), 0);
         }
         return from;
@@ -1152,16 +1156,16 @@ public final class SailingSea {
      * fallback chords keep the rounded interpolation.
      */
     private static void densifyLeg(java.util.List<Integer> dense, int from, int to) {
-        int ax = WorldPointUtil.unpackWorldX(from);
-        int ay = WorldPointUtil.unpackWorldY(from);
-        int dx = WorldPointUtil.unpackWorldX(to) - ax;
-        int dy = WorldPointUtil.unpackWorldY(to) - ay;
+        int ax = unpackWorldX(from);
+        int ay = unpackWorldY(from);
+        int dx = unpackWorldX(to) - ax;
+        int dy = unpackWorldY(to) - ay;
         // Bearing-aligned legs interpolate along the true (fractional) direction; rounding
         // keeps every point within half a tile of the ideal line, which is sub-pixel on the
         // world map — no basis-stepping special case needed with the 10-scale vectors.
         int steps = Math.max(1, Math.max(Math.abs(dx), Math.abs(dy)) / TRACK_POINT_SPACING);
         for (int s = 0; s < steps; s++) {
-            dense.add(WorldPointUtil.packWorldPoint(
+            dense.add(packWorldPoint(
                 ax + Math.round((float) dx * s / steps),
                 ay + Math.round((float) dy * s / steps), 0));
         }
@@ -1184,17 +1188,17 @@ public final class SailingSea {
      * threaded anyway. */
     private static boolean lineKeepsStandoff(SailingSea sea, int fromPacked, int toPacked,
         int trackStart, int trackGoal, boolean requireClearance) {
-        int x0 = WorldPointUtil.unpackWorldX(fromPacked) - sea.minX;
-        int y0 = WorldPointUtil.unpackWorldY(fromPacked) - sea.minY;
-        int x1 = WorldPointUtil.unpackWorldX(toPacked) - sea.minX;
-        int y1 = WorldPointUtil.unpackWorldY(toPacked) - sea.minY;
+        int x0 = unpackWorldX(fromPacked) - sea.minX;
+        int y0 = unpackWorldY(fromPacked) - sea.minY;
+        int x1 = unpackWorldX(toPacked) - sea.minX;
+        int y1 = unpackWorldY(toPacked) - sea.minY;
         int steps = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) * 2;
         for (int s = 0; s <= steps; s++) {
             int x = x0 + Math.round((float) (x1 - x0) * s / steps);
             int y = y0 + Math.round((float) (y1 - y0) * s / steps);
             if (!bit(sea, x, y) || obstacleAtGrid(sea, x, y))
                 return false;
-            int world = WorldPointUtil.packWorldPoint(sea.minX + x, sea.minY + y, 0);
+            int world = packWorldPoint(sea.minX + x, sea.minY + y, 0);
             boolean nearEndpoint =
                 WorldPointUtil.distanceBetween(world, trackStart) <= 8
                     || WorldPointUtil.distanceBetween(world, trackGoal) <= 8;
@@ -1257,8 +1261,8 @@ public final class SailingSea {
      * a puddle, returned null, and dashed the whole port). Water tiles map to themselves.
      */
     private static int trackEndpoint(SailingSea sea, int packed) {
-        int x = WorldPointUtil.unpackWorldX(packed);
-        int y = WorldPointUtil.unpackWorldY(packed);
+        int x = unpackWorldX(packed);
+        int y = unpackWorldY(packed);
         for (int[] mooring : sea.moorings) {
             if (mooring[0] == x && mooring[1] == y)
                 return (mooring[3] - sea.minY) * sea.width + (mooring[2] - sea.minX);
@@ -1274,8 +1278,8 @@ public final class SailingSea {
      * must reach the water from the same land tile the transport departs from.
      */
     private static int nearestSailable(SailingSea sea, int packed) {
-        int px = WorldPointUtil.unpackWorldX(packed);
-        int py = WorldPointUtil.unpackWorldY(packed);
+        int px = unpackWorldX(packed);
+        int py = unpackWorldY(packed);
         for (int radius = 0; radius <= 10; radius++) {
             for (int dx = -radius; dx <= radius; dx++) {
                 for (int dy = -radius; dy <= radius; dy++) {

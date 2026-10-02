@@ -36,6 +36,8 @@ import gps.pathfinder.SearchHeuristic;
 import gps.pathfinder.TransportAvailability;
 import gps.transport.Transport;
 
+import static gps.WorldPointUtil.distanceBetween;
+
 /**
  * Generates up to {@link #MAX_ROUTES} alternative shortest paths to a target, each using a different
  * set of teleport/transport methods.
@@ -1241,7 +1243,7 @@ public class AlternativeRoutesService {
     private static int distanceToNearest(int packedPoint, int[] targets) {
         int best = Integer.MAX_VALUE;
         for (int target : targets)
-            best = Math.min(best, WorldPointUtil.distanceBetween(packedPoint, target));
+            best = Math.min(best, distanceBetween(packedPoint, target));
         return best;
     }
 
@@ -1735,7 +1737,7 @@ public class AlternativeRoutesService {
         int end = path.get(path.size() - 1).getPackedPosition();
         int best = Integer.MAX_VALUE;
         for (int target : targets)
-            best = Math.min(best, WorldPointUtil.distanceBetween(end, target));
+            best = Math.min(best, distanceBetween(end, target));
         return best;
     }
 
@@ -1842,7 +1844,7 @@ public class AlternativeRoutesService {
             }
             int edgeCost = edgeTransport != null
                 ? CostUnits.fromTicks(edgeTransport.getDuration())
-                : WorldPointUtil.distanceBetween(from.getPackedPosition(), to.getPackedPosition());
+                : distanceBetween(from.getPackedPosition(), to.getPackedPosition());
             rawCost += edgeCost;
             if (chosen == null)
                 legSteps += edgeCost;
@@ -2020,7 +2022,7 @@ public class AlternativeRoutesService {
             }
             for (Transport candidate : baselineTeleports) {
                 if (teleport.getType().equals(candidate.getType())
-                    && WorldPointUtil.distanceBetween(candidate.getDestination(), flight.getDestination())
+                    && distanceBetween(candidate.getDestination(), flight.getDestination())
                         <= SHARED_DESTINATION_RADIUS) {
                     return true;
                 }

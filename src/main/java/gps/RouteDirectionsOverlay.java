@@ -18,6 +18,9 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.components.ComponentConstants;
 import net.runelite.client.ui.overlay.components.LineComponent;
 
+import static gps.WorldPointUtil.distanceBetween;
+import static gps.WorldPointUtil.unpackWorldPlane;
+
 /**
  * Movable "directions" panel for the route currently shown on the map: the numbered steps to follow
  * — walking legs, teleports/transports to use, bank withdrawals and climbs — with live progress from
@@ -657,7 +660,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         int playerPacked = WorldPointUtil.fromLocalInstance(client, player);
         if (playerPacked == WorldPointUtil.UNDEFINED)
             return;
-        int playerPlane = WorldPointUtil.unpackWorldPlane(playerPacked);
+        int playerPlane = unpackWorldPlane(playerPacked);
 
         // Rolling speed estimate (tiles/second): faster than any running player means a transport is
         // carrying us — freeze the estimate until we land instead of scoring transient positions.
@@ -665,8 +668,8 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         if (speedSamplePosition == WorldPointUtil.UNDEFINED || now - speedSampleAt >= SPEED_SAMPLE_MILLIS) {
             if (speedSamplePosition != WorldPointUtil.UNDEFINED && now > speedSampleAt) {
                 // A plane change between samples reads as a big move (stairs/teleports).
-                int moved = WorldPointUtil.unpackWorldPlane(speedSamplePosition) == playerPlane
-                    ? WorldPointUtil.distanceBetween(speedSamplePosition, playerPacked)
+                int moved = unpackWorldPlane(speedSamplePosition) == playerPlane
+                    ? distanceBetween(speedSamplePosition, playerPacked)
                     : NEAR_DISTANCE * 2;
                 speedTilesPerSecond = moved * 1000.0 / (now - speedSampleAt);
             }
@@ -712,7 +715,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
                 // Proximity to the landing IS arrival — checked before anything track-based,
                 // because the live learner invalidates the track cache exactly when arriving
                 // at an obstacle-rich port, and the stamp must not depend on a cache.
-                if (sailingRide && WorldPointUtil.distanceBetween(playerPacked, destination)
+                if (sailingRide && distanceBetween(playerPacked, destination)
                     <= SEA_NEAR_DISTANCE) {
                     reachedIndex = Math.max(reachedIndex, ride.getEndIndex());
                     liveRemainingTicks = remainingTicksAt[ride.getEndIndex()];
@@ -726,7 +729,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
                     int nearest = 0;
                     int nearestDistance = Integer.MAX_VALUE;
                     for (int w = 0; w < track.length; w++) {
-                        int d = WorldPointUtil.distanceBetween(playerPacked, track[w]);
+                        int d = distanceBetween(playerPacked, track[w]);
                         if (d < nearestDistance) {
                             nearestDistance = d;
                             nearest = w;
@@ -735,7 +738,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
                     // Last FEW waypoints, not the literal last: waypoints are decimated
                     // (every 3rd tile) and the hull parks short of the pin.
                     if (nearest >= track.length - 3
-                        || WorldPointUtil.distanceBetween(playerPacked, destination) <= SEA_NEAR_DISTANCE) {
+                        || distanceBetween(playerPacked, destination) <= SEA_NEAR_DISTANCE) {
                         reachedIndex = Math.max(reachedIndex, ride.getEndIndex());
                         liveRemainingTicks = remainingTicksAt[ride.getEndIndex()];
                         lastSelectionDistance = 0;
@@ -746,11 +749,11 @@ public class RouteDirectionsOverlay extends OverlayPanel {
                             + rideTicks(ride) * (1 - completed);
                     }
                 }
-                else if (WorldPointUtil.unpackWorldPlane(destination) == playerPlane) {
-                    double total = WorldPointUtil.distanceBetween(origin, destination);
+                else if (unpackWorldPlane(destination) == playerPlane) {
+                    double total = distanceBetween(origin, destination);
                     if (total > 4) {
                         double completed = Math.min(1,
-                            1 - WorldPointUtil.distanceBetween(playerPacked, destination) / total);
+                            1 - distanceBetween(playerPacked, destination) / total);
                         liveRemainingTicks = remainingTicksAt[ride.getEndIndex()]
                             + rideTicks(ride) * (1 - Math.max(0, completed));
                     }
@@ -885,8 +888,8 @@ public class RouteDirectionsOverlay extends OverlayPanel {
             if (track == null) {
                 // Track cache just invalidated (the live learner clears it precisely at
                 // obstacle-rich ports — i.e. at ARRIVAL): endpoints still identify the leg.
-                int d = Math.min(WorldPointUtil.distanceBetween(playerPacked, origin),
-                    WorldPointUtil.distanceBetween(playerPacked, destination));
+                int d = Math.min(distanceBetween(playerPacked, origin),
+                    distanceBetween(playerPacked, destination));
                 if (d < bestDistance) {
                     bestDistance = d;
                     best = step;
@@ -894,7 +897,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
                 continue;
             }
             for (int waypoint : track) {
-                int d = WorldPointUtil.distanceBetween(playerPacked, waypoint);
+                int d = distanceBetween(playerPacked, waypoint);
                 if (d < bestDistance) {
                     bestDistance = d;
                     best = step;

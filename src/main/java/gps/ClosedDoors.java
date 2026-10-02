@@ -9,6 +9,11 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+import static gps.WorldPointUtil.packWorldPoint;
+import static gps.WorldPointUtil.unpackWorldPlane;
+import static gps.WorldPointUtil.unpackWorldX;
+import static gps.WorldPointUtil.unpackWorldY;
+
 /**
  * Openable doors and gates the collision map bakes passable, indexed by tile.
  *
@@ -150,10 +155,10 @@ public class ClosedDoors {
             int tile = entry.getKey();
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
-                    int candidate = WorldPointUtil.packWorldPoint(
-                        WorldPointUtil.unpackWorldX(tile) + dx,
-                        WorldPointUtil.unpackWorldY(tile) + dy,
-                        WorldPointUtil.unpackWorldPlane(tile));
+                    int candidate = packWorldPoint(
+                        unpackWorldX(tile) + dx,
+                        unpackWorldY(tile) + dy,
+                        unpackWorldPlane(tile));
                     int diagonals = diagonalBits(cardinal, candidate);
                     if (diagonals != 0)
                         masks.merge(candidate, diagonals, (a, b) -> a | b);
@@ -165,9 +170,9 @@ public class ClosedDoors {
 
     /** Marks the boundary on the door's edge: one bit on its own tile, the opposite on the neighbour. */
     private static void setEdgeBits(Map<Integer, Integer> masks, int tile, int orientation) {
-        int x = WorldPointUtil.unpackWorldX(tile);
-        int y = WorldPointUtil.unpackWorldY(tile);
-        int plane = WorldPointUtil.unpackWorldPlane(tile);
+        int x = unpackWorldX(tile);
+        int y = unpackWorldY(tile);
+        int plane = unpackWorldPlane(tile);
         int bit;
         int neighborBit;
         int nx = x;
@@ -195,7 +200,7 @@ public class ClosedDoors {
                 break;
         }
         masks.merge(tile, bit, (a, b) -> a | b);
-        masks.merge(WorldPointUtil.packWorldPoint(nx, ny, plane), neighborBit, (a, b) -> a | b);
+        masks.merge(packWorldPoint(nx, ny, plane), neighborBit, (a, b) -> a | b);
     }
 
     /**
@@ -204,14 +209,14 @@ public class ClosedDoors {
      * (mirroring {@link #doorBetween}'s four component checks).
      */
     private static int diagonalBits(Map<Integer, Integer> cardinal, int tile) {
-        int x = WorldPointUtil.unpackWorldX(tile);
-        int y = WorldPointUtil.unpackWorldY(tile);
-        int plane = WorldPointUtil.unpackWorldPlane(tile);
+        int x = unpackWorldX(tile);
+        int y = unpackWorldY(tile);
+        int plane = unpackWorldPlane(tile);
         int own = cardinal.getOrDefault(tile, 0);
-        int west = cardinal.getOrDefault(WorldPointUtil.packWorldPoint(x - 1, y, plane), 0);
-        int east = cardinal.getOrDefault(WorldPointUtil.packWorldPoint(x + 1, y, plane), 0);
-        int south = cardinal.getOrDefault(WorldPointUtil.packWorldPoint(x, y - 1, plane), 0);
-        int north = cardinal.getOrDefault(WorldPointUtil.packWorldPoint(x, y + 1, plane), 0);
+        int west = cardinal.getOrDefault(packWorldPoint(x - 1, y, plane), 0);
+        int east = cardinal.getOrDefault(packWorldPoint(x + 1, y, plane), 0);
+        int south = cardinal.getOrDefault(packWorldPoint(x, y - 1, plane), 0);
+        int north = cardinal.getOrDefault(packWorldPoint(x, y + 1, plane), 0);
 
         int bits = 0;
         // Bit order: SW=4, SE=5, NW=6, NE=7 (OrdinalDirection ordinals).
@@ -232,21 +237,21 @@ public class ClosedDoors {
      * are gated by any of their four component boundaries.
      */
     public static Door doorBetween(int from, int to) {
-        int plane = WorldPointUtil.unpackWorldPlane(from);
-        if (plane != WorldPointUtil.unpackWorldPlane(to))
+        int plane = unpackWorldPlane(from);
+        if (plane != unpackWorldPlane(to))
             return null;
-        int fromX = WorldPointUtil.unpackWorldX(from);
-        int fromY = WorldPointUtil.unpackWorldY(from);
-        int dx = WorldPointUtil.unpackWorldX(to) - fromX;
-        int dy = WorldPointUtil.unpackWorldY(to) - fromY;
+        int fromX = unpackWorldX(from);
+        int fromY = unpackWorldY(from);
+        int dx = unpackWorldX(to) - fromX;
+        int dy = unpackWorldY(to) - fromY;
         if ((dx == 0 && dy == 0) || Math.abs(dx) > 1 || Math.abs(dy) > 1)
             return null;
 
         if (dx != 0 && dy != 0) {
             // A diagonal step crosses a corner: it is blocked if any of the boundaries of the
             // two cardinal detours around that corner has a closed door.
-            int cornerX = WorldPointUtil.packWorldPoint(fromX + dx, fromY, plane);
-            int cornerY = WorldPointUtil.packWorldPoint(fromX, fromY + dy, plane);
+            int cornerX = packWorldPoint(fromX + dx, fromY, plane);
+            int cornerY = packWorldPoint(fromX, fromY + dy, plane);
             Door door = doorBetween(from, cornerX);
             if (door == null)
                 door = doorBetween(from, cornerY);
@@ -341,7 +346,7 @@ public class ClosedDoors {
             try {
                 int id = Integer.parseInt(fields[0]);
                 String name = fields[1];
-                int packed = WorldPointUtil.packWorldPoint(
+                int packed = packWorldPoint(
                     Integer.parseInt(fields[2]),
                     Integer.parseInt(fields[3]),
                     Integer.parseInt(fields[4]));

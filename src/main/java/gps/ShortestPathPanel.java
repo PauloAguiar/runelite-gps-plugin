@@ -58,6 +58,10 @@ import net.runelite.client.util.LinkBrowser;
 import gps.transport.Transport;
 import gps.transport.TransportType;
 
+import static gps.WorldPointUtil.unpackWorldPlane;
+import static gps.WorldPointUtil.unpackWorldX;
+import static gps.WorldPointUtil.unpackWorldY;
+
 /**
  * The "view": lists up to {@link AlternativeRoutesService#MAX_ROUTES} alternative routes to the
  * target, then — below them — the full catalog of teleport/transport methods for the current mode,
@@ -2537,9 +2541,9 @@ public class ShortestPathPanel extends PluginPanel {
 
     private String methodTooltipBody(TeleportMethod method) {
         int destination = method.getDestination();
-        int x = WorldPointUtil.unpackWorldX(destination);
-        int y = WorldPointUtil.unpackWorldY(destination);
-        int plane = WorldPointUtil.unpackWorldPlane(destination);
+        int x = unpackWorldX(destination);
+        int y = unpackWorldY(destination);
+        int plane = unpackWorldPlane(destination);
         return "<b>" + escapeHtml(method.category()) + "</b><br>"
             + escapeHtml(method.label()) + "<br>"
             + "Arrives at " + x + ", " + y + (plane > 0 ? " (plane " + plane + ")" : "");
@@ -2978,9 +2982,9 @@ public class ShortestPathPanel extends PluginPanel {
         // a direct route-to-tile result ahead of the name matches.
         int coordinate = parseCoordinateQuery(query);
         if (coordinate != WorldPointUtil.UNDEFINED) {
-            int plane = WorldPointUtil.unpackWorldPlane(coordinate);
+            int plane = unpackWorldPlane(coordinate);
             addResultRow(new Destinations.Entry("coordinates",
-                "Tile (" + WorldPointUtil.unpackWorldX(coordinate) + ", " + WorldPointUtil.unpackWorldY(coordinate)
+                "Tile (" + unpackWorldX(coordinate) + ", " + unpackWorldY(coordinate)
                     + (plane > 0 ? ", plane " + plane : "") + ")",
                 coordinate), player);
         }
@@ -3105,8 +3109,8 @@ public class ShortestPathPanel extends PluginPanel {
         int player = plugin.getLastKnownPlayerLocation();
         String prefill = "";
         if (player != WorldPointUtil.UNDEFINED) {
-            int plane = WorldPointUtil.unpackWorldPlane(player);
-            prefill = WorldPointUtil.unpackWorldX(player) + " " + WorldPointUtil.unpackWorldY(player)
+            int plane = unpackWorldPlane(player);
+            prefill = unpackWorldX(player) + " " + unpackWorldY(player)
                 + (plane > 0 ? " " + plane : "");
         }
         favoriteLabelInput.setText("");

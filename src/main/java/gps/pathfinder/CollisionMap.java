@@ -4,6 +4,10 @@ import gps.PrimitiveIntList;
 import gps.WorldPointUtil;
 import gps.transport.Transport;
 
+import static gps.WorldPointUtil.unpackWorldPlane;
+import static gps.WorldPointUtil.unpackWorldX;
+import static gps.WorldPointUtil.unpackWorldY;
+
 public class CollisionMap {
     // Enum.values() makes copies every time which hurts performance in the hotpath
     private static final OrdinalDirection[] ORDINAL_VALUES = OrdinalDirection.values();
@@ -26,9 +30,9 @@ public class CollisionMap {
     }
 
     private static int packedPointFromOrdinal(int startPacked, OrdinalDirection direction) {
-        final int x = WorldPointUtil.unpackWorldX(startPacked);
-        final int y = WorldPointUtil.unpackWorldY(startPacked);
-        final int plane = WorldPointUtil.unpackWorldPlane(startPacked);
+        final int x = unpackWorldX(startPacked);
+        final int y = unpackWorldY(startPacked);
+        final int plane = unpackWorldPlane(startPacked);
         return WorldPointUtil.packWorldPoint(x + direction.x, y + direction.y, plane);
     }
 
@@ -69,13 +73,13 @@ public class CollisionMap {
      * proximity can't see through walls.
      */
     public boolean canStep(int fromPacked, int toPacked) {
-        int x = WorldPointUtil.unpackWorldX(fromPacked);
-        int y = WorldPointUtil.unpackWorldY(fromPacked);
-        int z = WorldPointUtil.unpackWorldPlane(fromPacked);
-        if (z != WorldPointUtil.unpackWorldPlane(toPacked))
+        int x = unpackWorldX(fromPacked);
+        int y = unpackWorldY(fromPacked);
+        int z = unpackWorldPlane(fromPacked);
+        if (z != unpackWorldPlane(toPacked))
             return false;
-        int dx = WorldPointUtil.unpackWorldX(toPacked) - x;
-        int dy = WorldPointUtil.unpackWorldY(toPacked) - y;
+        int dx = unpackWorldX(toPacked) - x;
+        int dy = unpackWorldY(toPacked) - y;
         if (dx == 0 && dy == 1)
             return n(x, y, z);
         if (dx == 0 && dy == -1)
@@ -138,9 +142,9 @@ public class CollisionMap {
     //      * Transition into abstract global teleport nodes, if we haven't tried that yet.
     private PrimitiveIntList getTileNeighbors(int node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel, NodeGraph graph, TentativeCosts tentative) {
         final int packedPosition = graph.packedPosition(node);
-        final int x = WorldPointUtil.unpackWorldX(packedPosition);
-        final int y = WorldPointUtil.unpackWorldY(packedPosition);
-        final int z = WorldPointUtil.unpackWorldPlane(packedPosition);
+        final int x = unpackWorldX(packedPosition);
+        final int y = unpackWorldY(packedPosition);
+        final int z = unpackWorldPlane(packedPosition);
 
         neighbors.clear();
 
