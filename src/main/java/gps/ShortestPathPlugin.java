@@ -175,27 +175,18 @@ public class ShortestPathPlugin extends Plugin
 	// silently inert because this list was maintained by hand.
 	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|calculationCutoff|pohJewelleryBoxTier|pohMount\\w+|sailingAssumeSummon|sailingTeleportAbandon|balloonSmartMode|balloonStored\\w+|spiritTreeSmartMode|use\\w+|cost\\w+)$");
 
-	private static volatile Set<String> knownConfigKeysCache;
+	private static volatile Set<String> knownConfigKeys = Collections.emptySet();
 
 	/** Every @ConfigItem key ShortestPathConfig declares - the only keys a plugin message may override. */
 	static Set<String> knownConfigKeys()
 	{
-		Set<String> keys = knownConfigKeysCache;
-		if (keys == null)
-		{
-			keys = new HashSet<>();
-			for (java.lang.reflect.Method method : ShortestPathConfig.class.getMethods())
-			{
-				net.runelite.client.config.ConfigItem item =
-					method.getAnnotation(net.runelite.client.config.ConfigItem.class);
-				if (item != null)
-				{
-					keys.add(item.keyName());
-				}
-			}
-			knownConfigKeysCache = Collections.unmodifiableSet(keys);
-		}
-		return keys;
+		return knownConfigKeys;
+	}
+
+	/** Declared at start from the ConfigManager's descriptor: shipped code may not use reflection. */
+	static void declareConfigKeys(Set<String> keys)
+	{
+		knownConfigKeys = Collections.unmodifiableSet(new HashSet<>(keys));
 	}
 
 	/** Whether a change to this config key changes what the routing engine computes. */
@@ -608,6 +599,12 @@ public class ShortestPathPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
+		Set<String> configKeys = new HashSet<>();
+		for (net.runelite.client.config.ConfigItemDescriptor item : configManager.getConfigDescriptor(config).getItems())
+		{
+			configKeys.add(item.key());
+		}
+		declareConfigKeys(configKeys);
 		HiddenToggleMigration.clearStranded(configManager, CONFIG_GROUP);
 		cacheConfigValues();
 

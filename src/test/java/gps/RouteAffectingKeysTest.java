@@ -79,6 +79,17 @@ public class RouteAffectingKeysTest
 	@Test
 	public void pluginMessageOverridesOnlyAcceptDeclaredKeys()
 	{
+		// What the plugin declares at start from the ConfigManager; a test has no ConfigManager, so by reflection.
+		Set<String> declared = new java.util.HashSet<>();
+		for (java.lang.reflect.Method method : ShortestPathConfig.class.getMethods())
+		{
+			net.runelite.client.config.ConfigItem item = method.getAnnotation(net.runelite.client.config.ConfigItem.class);
+			if (item != null)
+			{
+				declared.add(item.keyName());
+			}
+		}
+		ShortestPathPlugin.declareConfigKeys(declared);
 		Set<String> known = ShortestPathPlugin.knownConfigKeys();
 		assertTrue(known.contains("avoidWilderness"));
 		assertTrue(known.contains("useTeleportationItems"));
