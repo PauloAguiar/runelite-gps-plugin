@@ -32,39 +32,36 @@ package gps.leagues;
  * mapping fall back to {@link #NEUTRAL}.
  * </p>
  */
-public enum LeagueRegion
-{
-	VARLAMORE,
-	KARAMJA,
-	ASGARNIA,
-	KANDARIN,
-	FREMENNIK,
-	KOUREND,
-	WILDERNESS,
-	MORYTANIA,
-	DESERT,
-	TIRANNWN,
-	MISTHALIN,
-	NEUTRAL;
+public enum LeagueRegion {
+    VARLAMORE,
+    KARAMJA,
+    ASGARNIA,
+    KANDARIN,
+    FREMENNIK,
+    KOUREND,
+    WILDERNESS,
+    MORYTANIA,
+    DESERT,
+    TIRANNWN,
+    MISTHALIN,
+    NEUTRAL;
 
-	/**
-	 * Whether this region is reachable regardless of which area unlocks the
-	 * player has chosen. Only Varlamore (the starting region) and the
-	 * NEUTRAL bucket are always-unlocked; every other region — including
-	 * Karamja — depends on the player's slot picks.
-	 */
-	public boolean isAlwaysUnlocked()
-	{
-		return this == VARLAMORE || this == NEUTRAL;
-	}
+    /**
+     * Whether this region is reachable regardless of which area unlocks the
+     * player has chosen. Only Varlamore (the starting region) and the
+     * NEUTRAL bucket are always-unlocked; every other region — including
+     * Karamja — depends on the player's slot picks.
+     */
+    public boolean isAlwaysUnlocked() {
+        return this == VARLAMORE || this == NEUTRAL;
+    }
 
-	/**
-	 * Whether this region is permanently blocked during the league. Tiles in
-	 * always-blocked regions reject both walking and transport traversal
-	 * (see {@code LeagueRegionChecker} and {@code PathfinderConfig.useTransport}).
-	 */
-	public boolean isAlwaysBlocked()
-	{
-		return this == MISTHALIN;
-	}
+    /**
+     * Whether this region is permanently blocked during the league. Tiles in
+     * always-blocked regions reject both walking and transport traversal
+     * (see {@code LeagueRegionChecker} and {@code PathfinderConfig.useTransport}).
+     */
+    public boolean isAlwaysBlocked() {
+        return this == MISTHALIN;
+    }
 }

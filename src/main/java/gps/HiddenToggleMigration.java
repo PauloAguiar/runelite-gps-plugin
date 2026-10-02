@@ -21,38 +21,32 @@ import net.runelite.client.config.ConfigManager;
  * at every start (review of 2026-09-12).
  */
 @Slf4j
-final class HiddenToggleMigration
-{
-	/** Hidden type toggles without a panel control; every one defaults to on (pinned by test). */
-	static final String[] HIDDEN_TYPE_TOGGLES = {
-		"useAgilityShortcuts", "useGrappleShortcuts", "useBoats", "useCanoes", "useCharterShips",
-		"useShips", "useFairyRings", "useGnomeGliders", "useMagicCarpets", "useMagicMushtrees",
-		"useMinecarts", "useMountainGuides", "useQuetzals", "useTeleportationLevers",
-		"useTeleportationPortals", "useTeleportationSpells", "useTeleportationMinigames",
-		"useWildernessObelisks"};
+final class HiddenToggleMigration {
+    /** Hidden type toggles without a panel control; every one defaults to on (pinned by test). */
+    static final String[] HIDDEN_TYPE_TOGGLES = {
+        "useAgilityShortcuts", "useGrappleShortcuts", "useBoats", "useCanoes", "useCharterShips",
+        "useShips", "useFairyRings", "useGnomeGliders", "useMagicCarpets", "useMagicMushtrees",
+        "useMinecarts", "useMountainGuides", "useQuetzals", "useTeleportationLevers",
+        "useTeleportationPortals", "useTeleportationSpells", "useTeleportationMinigames",
+        "useWildernessObelisks"};
 
-	/** How RuneLite stores the toggles' default ({@code Boolean.toString(true)}). */
-	static final String DEFAULT = "true";
+    /** How RuneLite stores the toggles' default ({@code Boolean.toString(true)}). */
+    static final String DEFAULT = "true";
 
-	private HiddenToggleMigration()
-	{
-	}
+    private HiddenToggleMigration() {
+    }
 
-	/** Clears every listed toggle whose stored value differs from the default; the keys cleared. */
-	static List<String> clearStranded(ConfigManager configManager, String configGroup)
-	{
-		List<String> cleared = new ArrayList<>();
-		for (String key : HIDDEN_TYPE_TOGGLES)
-		{
-			String stored = configManager.getConfiguration(configGroup, key);
-			if (stored == null || DEFAULT.equals(stored))
-			{
-				continue;
-			}
-			log.info("clearing stranded hidden toggle {}={} (no panel control; the default applies)", key, stored);
-			configManager.unsetConfiguration(configGroup, key);
-			cleared.add(key);
-		}
-		return cleared;
-	}
+    /** Clears every listed toggle whose stored value differs from the default; the keys cleared. */
+    static List<String> clearStranded(ConfigManager configManager, String configGroup) {
+        List<String> cleared = new ArrayList<>();
+        for (String key : HIDDEN_TYPE_TOGGLES) {
+            String stored = configManager.getConfiguration(configGroup, key);
+            if (stored == null || DEFAULT.equals(stored))
+                continue;
+            log.info("clearing stranded hidden toggle {}={} (no panel control; the default applies)", key, stored);
+            configManager.unsetConfiguration(configGroup, key);
+            cleared.add(key);
+        }
+        return cleared;
+    }
 }

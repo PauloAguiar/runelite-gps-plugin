@@ -3,4 +3,9 @@
 	"-//Checkstyle//DTD SuppressionFilter Configuration 1.1//EN"
 	"https://checkstyle.org/dtds/suppressions_1_1.dtd">
 <suppressions>
+	<!-- Only src/main/java counts toward the hub review size, so only it carries the compact brace style; -->
+	<!-- tests and benchmarks keep RuneLite's own layout. -->
+	<suppress files="src[\\/](test|jmh)[\\/].*" checks="LeftCurly"/>
+	<suppress files="src[\\/]main[\\/].*" id="tabIndent"/>
+	<suppress files="src[\\/](test|jmh)[\\/].*" id="spaceIndent"/>
 </suppressions>

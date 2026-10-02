@@ -14,3 +14,8 @@ trim_trailing_whitespace = false
 [*.java]
 indent_style = tab
 trim_trailing_whitespace = false
+
+# The shipped source follows the compact style (scripts/kr_reformat.py): spaces, braces on the line.
+[src/main/java/**.java]
+indent_style = space
+indent_size = 4

@@ -98,4984 +98,4056 @@ import gps.transport.TransportType;
 // were reading and writing each other's enabled state (a disabled Shortest Path read as enabled
 // while GPS was on, and toggling one toggled the other's stored state).
 @PluginDescriptor(name = "GPS", configName = "GpsPlugin", description = "Turn-by-turn navigation for Gielinor:<br>"
-	+
-	"live directions with ETA, alternative teleport routes and closed-door hints.<br>"
-	+
-	"Right click on the world map or shift right click a tile to set a destination", tags = {"gps", "navigation",
-	"directions", "route", "pathfinder", "map", "waypoint", "shortest", "path", "teleport", "eta"})
-public class ShortestPathPlugin extends Plugin
-{
-	protected static final String CONFIG_GROUP = "gps";
-	// GPS's own plugin-message namespace: new integrations should target this one.
-	protected static final String MESSAGE_NAMESPACE = "gps";
-	// Compatibility alias: Quest Helper and other plugins drive the pathfinder through Shortest
-	// Path's namespace (set path/target, config overrides) and listen for its path broadcasts.
-	// GPS supersedes Shortest Path, so it keeps answering on that channel too — inbound messages
-	// are accepted on either, and broadcasts go out on both (no listener subscribes to both today,
-	// so nothing double-processes; drop the legacy channel only if that ever changes).
-	protected static final String MESSAGE_NAMESPACE_LEGACY = "shortestpath";
-
-	// POH (Player Owned House) bounds for detecting when path goes through POH
-	// Note: POH_MIN_X is 1856 to exclude the Daddy's Home miniquest area
-	private static final int POH_MIN_X = 1856;
-	private static final int POH_MAX_X = 2047;
-	private static final int POH_MIN_Y = 5696;
-	private static final int POH_MAX_Y = 5767;
-	// The map regions LIVE house instances are assembled from (rx 29-32, ry 110-111) — distinct
-	// from the transport data's POH model area above (y 5696 band), which is what route tiles use.
-	// Confirmed three ways (2026-07-17): a real house's chunk-dump log, a cache scan
-	// (PohTemplateScanTest in shortest-path-tooling; ~13 copies of every room hotspot, one per
-	// house STYLE), and the same region set hardcoded by other POH-aware plugins. Every style and
-	// house location resolves to these regions. Checking the wrong band here is why presence
-	// detection failed repeatedly.
-	private static final Set<Integer> POH_TEMPLATE_REGIONS =
-		Set.of(7534, 7535, 7790, 7791, 8046, 8047, 8302, 8303);
-
-	/**
-	 * Whether the given world view is a player-owned house: an instance whose loaded map regions
-	 * (which for instances are the TEMPLATE regions the scene is assembled from) include a POH
-	 * template region. Static and world-view-based for testability.
-	 */
-	static boolean isPohScene(WorldView worldView)
-	{
-		if (worldView == null || !worldView.isInstance())
-		{
-			return false;
-		}
-		int[] regions = worldView.getMapRegions();
-		if (regions != null)
-		{
-			for (int region : regions)
-			{
-				if (POH_TEMPLATE_REGIONS.contains(region))
-				{
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-	private static final String PLUGIN_MESSAGE_PATH = "path";
-	private static final String PLUGIN_MESSAGE_CLEAR = "clear";
-	private static final String PLUGIN_MESSAGE_START = "start";
-	private static final String PLUGIN_MESSAGE_TARGET = "target";
-	private static final String PLUGIN_MESSAGE_CONFIG_OVERRIDE = "config";
-	private static final String PLUGIN_MESSAGE_TRANSPORTS = "transports";
-	private static final String PLUGIN_MESSAGE_SOURCE = "source";
-	private static final String CLEAR = "Clear";
-	private static final String PATH = ColorUtil.wrapWithColorTag("Path", JagexColors.MENU_TARGET);
-	private static final String SET = "Set";
-	private static final String FIND_CLOSEST = "Find closest";
-	private static final String FLASH_ICONS = "Flash icons";
-	private static final String TARGET = ColorUtil.wrapWithColorTag("GPS Target", JagexColors.MENU_TARGET);
-	private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
-	// Every config key the routing engine reads (PathfinderConfig.refresh / TransportTypeConfig):
-	// a change to one of these regenerates the routes. RouteAffectingKeysTest scans the engine's
-	// sources and fails when a key it reads is missing here - the pohMount*/sailing* toggles were
-	// silently inert because this list was maintained by hand.
-	private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|calculationCutoff|pohJewelleryBoxTier|pohMount\\w+|sailingAssumeSummon|sailingTeleportAbandon|balloonSmartMode|balloonStored\\w+|spiritTreeSmartMode|use\\w+|cost\\w+)$");
-
-	private static volatile Set<String> knownConfigKeys = Collections.emptySet();
-
-	/** Every @ConfigItem key ShortestPathConfig declares - the only keys a plugin message may override. */
-	static Set<String> knownConfigKeys()
-	{
-		return knownConfigKeys;
-	}
-
-	/** Declared at start from the ConfigManager's descriptor: shipped code may not use reflection. */
-	static void declareConfigKeys(Set<String> keys)
-	{
-		knownConfigKeys = Collections.unmodifiableSet(new HashSet<>(keys));
-	}
-
-	/** Whether a change to this config key changes what the routing engine computes. */
-	static boolean affectsRouting(String key)
-	{
-		return key != null && TRANSPORT_OPTIONS_REGEX.matcher(key).find();
-	}
-	private static final Map<String, Object> configOverride = new HashMap<>(50);
-	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
-	private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
-	private final List<PendingTask> pendingTasks = new ArrayList<>(3);
-	boolean drawMap;
-	boolean drawMinimap;
-	boolean drawTiles;
-	boolean drawRecalculationRanges;
-	boolean showTransportInfo;
-	boolean showBankPickupInfo;
-	Color colourPath;
-	Color colourPathSailing;
-	Color colourPathBlocked;
-	Color colourPathCalculating;
-	Color colourPathUnreachable;
-	Color colourText;
-	Color colourTeleportPulse;
-	Color colourOverlayAccent;
-	boolean showTeleportPulse;
-	boolean showDirections;
-	boolean overrideOverlayTransparency;
-	int overlayTransparency;
-	OverlayFontSize overlayFontSize = OverlayFontSize.NORMAL;
-	boolean arrivalAutoDismiss;
-	int arrivalDismissSeconds;
-	int unreachableTargetDistance;
-	String unreachableText;
-	@Getter
-	@Inject
-	private Client client;
-	@Getter
-	@Inject
-	private ClientThread clientThread;
-	@Inject
-	private ShortestPathConfig config;
-	@Inject
-	private ConfigManager configManager;
-	@Inject
-	private Gson gson;
-	@Inject
-	private EventBus eventBus;
-	@Inject
-	private OverlayManager overlayManager;
-	@Inject
-	private PathTileOverlay pathOverlay;
-	@Inject
-	private PathMinimapOverlay pathMinimapOverlay;
-	@Inject
-	private PathMapOverlay pathMapOverlay;
-	@Inject
-	private PathMapTooltipOverlay pathMapTooltipOverlay;
-	@Inject
-	private RouteDirectionsOverlay routeDirectionsOverlay;
-	@Inject
-	private SpriteManager spriteManager;
-	@Inject
-	private WorldMapPointManager worldMapPointManager;
-	@Inject
-	private KeyManager keyManager;
-	@Inject
-	private MouseManager mouseManager;
-	@Inject
-	private net.runelite.client.plugins.PluginManager pluginManager;
-	// True while the original Shortest Path plugin is also enabled: both plugins draw paths and
-	// answer the same plugin-message integrations, so the panel warns and recommends disabling it.
-	private volatile boolean shortestPathConflict = false;
-	private volatile boolean questHelperPathingOff = false;
-	// Click-to-dismiss for the GPS overlay's lingering "Arrived!" panel.
-	private final MouseAdapter arrivalDismissListener = new MouseAdapter()
-	{
-		@Override
-		public java.awt.event.MouseEvent mousePressed(java.awt.event.MouseEvent event)
-		{
-			if (routeDirectionsOverlay != null && routeDirectionsOverlay.dismissArrivalAt(event.getPoint()))
-			{
-				event.consume();
-			}
-			return event;
-		}
-	};
-	@Inject
-	private ClientToolbar clientToolbar;
-	// Item images for the panel's Log storage icons.
-	@Inject
-	private net.runelite.client.game.ItemManager itemManager;
-	// Alternative-routes feature: panel, async route generator, the methods the user has excluded, the
-	// generated routes, and which one is currently shown on the map.
-	private ShortestPathPanel altPanel;
-	private NavigationButton navButton;
-	// Whether the sidebar button is currently on the toolbar: GPS is only useful in-game, so the
-	// button is shown while logged in and removed on the login screen.
-	private boolean navButtonShown = false;
-	private AlternativeRoutesService altRoutesService;
-	private static final String CONFIG_KEY_EXCLUSIONS = "alternativeRoutesExclusions";
-	// Method -> ranking-bias tier (MethodPriority). EXCLUDED never appears here — exclusion stays
-	// in the userExclusions set (it affects the search; priorities only re-rank the list).
-	private static final String CONFIG_KEY_PRIORITIES = "methodPriorities";
-	private static final String CONFIG_KEY_MODE = "alternativeRoutesMode";
-	// The search box's recent selections (most recent first), persisted across sessions.
-	private static final String CONFIG_KEY_SEARCH_HISTORY = "searchHistory";
-	// RSProfile-scoped (per character, per world type): the bank snapshot persisted across sessions.
-	private static final String CONFIG_KEY_BANK_SNAPSHOT = "bankSnapshot";
-	// RSProfile-scoped: the planted spirit trees detected from the travel menu, comma-separated.
-	private static final String CONFIG_KEY_SPIRIT_TREES = "plantedSpiritTrees";
-	// RSProfile-scoped: the last house scan's furniture (see PohScanner.encode); present = scanned.
-	private static final String CONFIG_KEY_POH_FURNITURE = "pohFurniture";
-	// RSProfile-scoped: owned boats' last seen berths, "name|port" rows joined by ';'.
-	private static final String CONFIG_KEY_BOAT_PORTS = "boatPorts";
-
-	/** Owned boats as {name, port label} display rows — live varbit reads once seen this
-	 * session, the persisted snapshot before that, null when never collected. Routing does
-	 * NOT read this: PathfinderConfig reads the boat varbits itself at refresh. */
-	private volatile List<String[]> boatBanner;
-	// Written on the client thread, read from the Swing EDT (the panel's berth section).
-	private volatile boolean boatBannerLive;
-	private volatile boolean boatBannerDirty;
-
-	private static final int[][] BOAT_BANNER_VARBITS = {
-		{VarbitID.SAILING_BOAT_1_OWNED, VarbitID.SAILING_BOAT_1_PORT, VarbitID.SAILING_BOAT_1_NAME_1,
-			VarbitID.SAILING_BOAT_1_NAME_2, VarbitID.SAILING_BOAT_1_NAME_3, VarbitID.SAILING_BOAT_1_TYPE},
-		{VarbitID.SAILING_BOAT_2_OWNED, VarbitID.SAILING_BOAT_2_PORT, VarbitID.SAILING_BOAT_2_NAME_1,
-			VarbitID.SAILING_BOAT_2_NAME_2, VarbitID.SAILING_BOAT_2_NAME_3, VarbitID.SAILING_BOAT_2_TYPE},
-		{VarbitID.SAILING_BOAT_3_OWNED, VarbitID.SAILING_BOAT_3_PORT, VarbitID.SAILING_BOAT_3_NAME_1,
-			VarbitID.SAILING_BOAT_3_NAME_2, VarbitID.SAILING_BOAT_3_NAME_3, VarbitID.SAILING_BOAT_3_TYPE},
-		{VarbitID.SAILING_BOAT_4_OWNED, VarbitID.SAILING_BOAT_4_PORT, VarbitID.SAILING_BOAT_4_NAME_1,
-			VarbitID.SAILING_BOAT_4_NAME_2, VarbitID.SAILING_BOAT_4_NAME_3, VarbitID.SAILING_BOAT_4_TYPE},
-		{VarbitID.SAILING_BOAT_5_OWNED, VarbitID.SAILING_BOAT_5_PORT, VarbitID.SAILING_BOAT_5_NAME_1,
-			VarbitID.SAILING_BOAT_5_NAME_2, VarbitID.SAILING_BOAT_5_NAME_3, VarbitID.SAILING_BOAT_5_TYPE},
-	};
-	private static final Set<Integer> BOAT_BANNER_VARBIT_IDS = Arrays.stream(BOAT_BANNER_VARBITS)
-		.flatMapToInt(Arrays::stream).boxed().collect(java.util.stream.Collectors.toSet());
-	private static final String CONFIG_KEY_FAVORITES = "favoriteDestinations";
-	private static final int FAVORITES_LIMIT = 100;
-	private volatile List<Destinations.Entry> favoriteDestinations = new ArrayList<>();
-	private volatile List<Destinations.Entry> searchHistory = new ArrayList<>();
-	private final Set<TeleportMethod> userExclusions = ConcurrentHashMap.newKeySet();
-	// The exclusions the current route list was generated with; diverging from userExclusions means
-	// the list is stale until the user refreshes (method toggles no longer auto-recalculate).
-	private volatile Set<TeleportMethod> generatedExclusions = Set.of();
-	// Where the current destination came from, for the GPS header: "map pin" for manual targets, the
-	// sender's self-declared "source" for plugin messages (else "another plugin"), null when unset.
-	private volatile String targetSource;
-	// Which methods the alternatives consider: carried (default), carried + bank, or every teleport.
-	private volatile AlternativeRoutesMode routesMode = AlternativeRoutesMode.OWNED_INVENTORY;
-	// How many alternative routes to generate; grows when the user asks for more.
-	// Initialised from config in startUp (config is not injected at field-init time).
-	private int routeLimit = AlternativeRoutesService.MAX_ROUTES;
-	// The cost cap for a generation, as a multiple of the best route's cost: only routes up to this
-	// many times the cheapest are computed (a cheap teleport otherwise floods the map searching for
-	// far-worse alternatives). "Show more" raises it; reset to the default on a new destination.
-	private static final int DEFAULT_COST_MULTIPLE = 3;
-	private static final int COST_MULTIPLE_STEP = 3;
-	private int routeCostMultiple = DEFAULT_COST_MULTIPLE;
-	// Whether the last generation left routes unshown — the cost cap held some back, or the route-count
-	// budget was the binding limit. Either way another "poll more" can surface more.
-	private volatile boolean moreRoutesLikely = false;
-	private volatile List<RouteOption> alternativeRoutes = new ArrayList<>();
-	private volatile List<TeleportMethod> teleportCatalog = new ArrayList<>();
-	// Catalog methods the player can't use in the current mode, mapped to why (for the panel markers).
-	private volatile Map<TeleportMethod, MethodAvailability> unavailableMethods = Map.of();
-	// Inventory / equipment changed since the catalog was last classified (issue #5): the
-	// usable count and per-method reasons were a per-generation snapshot — consumed on the
-	// next tick by a catalog-only refresh, never during a generation.
-	private volatile boolean catalogDirty;
-	/** Earliest tick the next inventory-driven catalog refresh may run (see maybeRefreshCatalog). */
-	private int catalogRefreshBackoffTick;
-	private static final int CATALOG_REFRESH_COOLDOWN_TICKS = 5;
-	/** Fingerprint of the routing-relevant inventory/equipment slice at the last dirty mark. */
-	private long routingItemsFingerprint;
-	private boolean routingItemsFingerprintValid;
-	private volatile RouteOption selectedRoute;
-	// The route the overlays draw, committed ONLY when a generation settles (its "done" update) —
-	// never mid-stream. While alternatives are still generating and re-ranking, the overlays hold
-	// this instead of flipping through the streaming top result (which flashed a route then instantly
-	// replaced it right after a search). Null for a fresh destination, so the overlay stays clear
-	// — the HUD shows "Finding the best route" (isFindingRoute) — until the routes settle: the
-	// line appears once, as the best route, never as a front-runner that may still change.
-	private volatile RouteOption committedDisplayRoute;
-	// Start/targets the alternatives were last generated from, reused by exclusion/mode/show-more edits
-	// so they re-run against the same destination. Volatile: read/written from client thread + Swing EDT.
-	private volatile int lastAltStart = WorldPointUtil.UNDEFINED;
-	private volatile Set<Integer> lastAltTargets = Set.of();
-	// The route limit the last generation ran with, so a generation that ran under a smaller
-	// budget than wanted now (the budget grew meanwhile) is widened by the auto-compute check.
-	private volatile int lastAltLimit = 0;
-	// Whether the GPS side panel is currently shown (sidebar tab selected). It no longer changes how
-	// much a generation does (see routeLimitFor); opening the panel re-checks the auto-compute decision.
-	private volatile boolean altPanelVisible = false;
-	// Whether the client knows the bank's contents this session (the bank container is only populated
-	// once the bank has been opened). Used by the panel to explain why Bank mode finds nothing.
-	private volatile boolean bankContentsKnown = false;
-	// True when the known bank contents came from a previous session's saved snapshot rather than the
-	// bank being opened this session; cleared the moment the live bank is seen. Panel shows the source.
-	private volatile boolean bankRestored = false;
-	// The bank changed since it was last persisted; saved once when the bank closes (not per deposit).
-	private boolean bankSaveDirty = false;
-	// The RS profile key captured while the bank was seen, so the save still lands in the right
-	// profile if it happens after logout (when the current profile is no longer available).
-	private String bankSaveProfileKey;
-	// True while a generation is computing for the current target. Used to suppress the classic-path
-	// fallback on the map until the first alternative streams in, so the displayed path never flashes
-	// a route that the mode's list won't contain (the classic path follows the SP config, not the mode).
-	private volatile boolean altGenerationInFlight = false;
-	private Point lastMenuOpenedPoint;
-	private WorldMapPoint marker;
-	private int lastLocation = WorldPointUtil.packWorldPoint(0, 0, 0);
-	// A single-tick displacement larger than running (2 tiles) means a transport is carrying the
-	// player — a boat cutscene, a teleport landing — not that they walked off route. While that
-	// resolves, off-route detection is suppressed (the player is legitimately far from the path).
-	private static final int TRANSPORT_STEP_TILES = 3;
-	// Ticks to keep suppressing after such a displacement (long enough to cover a boat cutscene);
-	// refreshed while the transport keeps moving the player, cleared once they settle near the path.
-	private static final int TRANSPORT_GRACE_TICKS = 20;
-	private int transportGraceTicks = 0;
-	private Shape minimapClipFixed;
-	private Shape minimapClipResizeable;
-	private BufferedImage minimapSpriteFixed;
-	private BufferedImage minimapSpriteResizeable;
-	private Rectangle minimapRectangle = new Rectangle();
-	private GameState lastGameState = null;
-	private GameState lastLastGameState = null;
-	// The current destination — the single source of truth the retired classic background search
-	// used to hold. Written on the client thread (setDestination); read from ticks and overlays.
-	// All route computation happens in the alternative-routes generation, whose heuristic-guided
-	// searches replaced the classic uninformed one (which cost 40-160 ms per target change).
-	private volatile int pathStart = WorldPointUtil.UNDEFINED;
-	private volatile Set<Integer> pathTargets = Set.of();
-	@Getter
-	private PathfinderConfig pathfinderConfig;
-	// Journey wall-clock, reported on arrival. 0 means "armed": it starts counting from the first
-	// tick the player MOVES, so standing still after setting a destination (or picking a path)
-	// doesn't inflate the time. Re-armed when a new destination is set OR the user selects a
-	// different path; journeyLastLocation drives the first-movement detection. NB: exposed via
-	// the hand-written getter below (which documents the 0 sentinel), not lombok.
-	private long journeyStartMillis = 0;
-	private int journeyLastLocation = WorldPointUtil.UNDEFINED;
-	// One-shot world-map pin override for the next setTargets call: the destination a perimeter
-	// expansion is centred on (the searched bank booth), where the pin belongs. UNDEFINED = default
-	// behaviour (pin on a single target, none for multi-target sets).
-	private int markerTarget = WorldPointUtil.UNDEFINED;
-	// Whether the current destination is a round trip (out and back, e.g. "nearest bank (and
-	// back)"). Set by setNearestCategory after setTargets (which resets it), carried into every
-	// generation for this destination (refresh, show-more), cleared when a new target is set.
-	private volatile boolean altRoundTrip = false;
-	private final KeyListener clearPathKeylistener = new KeyListener()
-	{
-		@Override
-		public void keyTyped(KeyEvent e)
-		{
-		}
-
-		@Override
-		public void keyPressed(KeyEvent e)
-		{
-			if (config.clearPathHotkey().matches(e))
-			{
-				setTarget(WorldPointUtil.UNDEFINED);
-			}
-		}
-
-		@Override
-		public void keyReleased(KeyEvent e)
-		{
-		}
-	};
-
-	// Opens the GPS side panel (if it isn't already) and focuses its destination search box, so a
-	// place can be searched without first opening the panel by hand.
-	private final KeyListener focusSearchKeyListener = new KeyListener()
-	{
-		@Override
-		public void keyTyped(KeyEvent e)
-		{
-		}
-
-		@Override
-		public void keyPressed(KeyEvent e)
-		{
-			if (!config.focusSearchHotkey().matches(e) || altPanel == null || navButton == null)
-			{
-				return;
-			}
-			SwingUtilities.invokeLater(() ->
-			{
-				clientToolbar.openPanel(navButton);
-				altPanel.focusSearch();
-			});
-		}
-
-		@Override
-		public void keyReleased(KeyEvent e)
-		{
-		}
-	};
-	// The destination a nearest-bank trip replaced, resumed when the trip completes (see BankDetour).
-	private final BankDetour bankDetour = new BankDetour();
-	// The quick buttons' hotkeys; the bindings are read at key time (config is injected later).
-	private final NearestBankHotkeys nearestBankHotkeys = new NearestBankHotkeys(
-		() -> config.nearestBankHotkey(), () -> goToNearestBank(false),
-		() -> config.nearestBankAndBackHotkey(), () -> goToNearestBank(true));
-	private boolean fairyRingPanelOpen = false;
-	// Whether the spirit tree travel menu has been parsed THIS session. Distinct from the cache
-	// being non-null: a restored previous-session snapshot fills the cache but must not block the
-	// fresher live read when the menu opens.
-	private boolean spiritTreesParsedLive = false;
-
-	/**
-	 * Checks if the given coordinates are inside the POH (Player Owned House) area.
-	 *
-	 * @param x The world X coordinate
-	 * @param y The world Y coordinate
-	 * @return true if inside POH, false otherwise
-	 */
-	public static boolean isInsidePoh(int x, int y)
-	{
-		return x >= POH_MIN_X && x <= POH_MAX_X && y >= POH_MIN_Y && y <= POH_MAX_Y;
-	}
-
-	public static boolean override(String configOverrideKey, boolean defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof Boolean)
-			{
-				return (boolean) value;
-			}
-		}
-		return defaultValue;
-	}
-
-	/**
-	 * Override for TransportType enabled state using the config key name stored in the enum.
-	 */
-	public static boolean override(TransportType type, boolean defaultValue)
-	{
-		String key = type.getEnabledKey();
-		return key != null ? override(key, defaultValue) : defaultValue;
-	}
-
-	/**
-	 * Override for TransportType cost threshold using the config key name stored in the enum.
-	 */
-	public static int override(TransportType type, int defaultValue)
-	{
-		String key = type.getCostKey();
-		return key != null ? override(key, defaultValue) : defaultValue;
-	}
-
-	public static int override(String configOverrideKey, int defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof Integer)
-			{
-				return (int) value;
-			}
-		}
-		return defaultValue;
-	}
-
-	public static TeleportationItem override(String configOverrideKey, TeleportationItem defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof String)
-			{
-				TeleportationItem teleportationItem = TeleportationItem.fromType((String) value);
-				if (teleportationItem != null)
-				{
-					return teleportationItem;
-				}
-			}
-		}
-		return defaultValue;
-	}
-
-	public static JewelleryBoxTier override(String configOverrideKey, JewelleryBoxTier defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof String)
-			{
-				JewelleryBoxTier tier = JewelleryBoxTier.fromType((String) value);
-				if (tier != null)
-				{
-					return tier;
-				}
-			}
-		}
-		return defaultValue;
-	}
-
-	@Provides
-	public ShortestPathConfig provideConfig(ConfigManager configManager)
-	{
-		return configManager.getConfig(ShortestPathConfig.class);
-	}
-
-	@Override
-	protected void startUp()
-	{
-		Set<String> configKeys = new HashSet<>();
-		for (net.runelite.client.config.ConfigItemDescriptor item : configManager.getConfigDescriptor(config).getItems())
-		{
-			configKeys.add(item.key());
-		}
-		declareConfigKeys(configKeys);
-		HiddenToggleMigration.clearStranded(configManager, CONFIG_GROUP);
-		cacheConfigValues();
-
-		pathfinderConfig = new PathfinderConfig(client, config);
-		if (GameState.LOGGED_IN.equals(client.getGameState()))
-		{
-			clientThread.invokeLater(pathfinderConfig::refresh);
-		}
-
-		overlayManager.add(pathOverlay);
-		overlayManager.add(pathMinimapOverlay);
-		overlayManager.add(pathMapOverlay);
-		overlayManager.add(pathMapTooltipOverlay);
-		overlayManager.add(routeDirectionsOverlay);
-
-
-		loadExclusions();
-		loadPriorities();
-		searchHistory = SearchHistory.deserialize(
-			configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_SEARCH_HISTORY));
-		favoriteDestinations = SearchHistory.deserialize(
-			configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_FAVORITES), FAVORITES_LIMIT);
-		loadRoutesMode();
-		routeLimit = defaultRouteLimit();
-		altPanel = new ShortestPathPanel(this);
-		altRoutesService = new AlternativeRoutesService(clientThread, pathfinderConfig.copyForPlanning());
-		navButton = NavigationButton.builder()
-			.tooltip("GPS")
-			.icon(RouteIcons.gpsPin())
-			.priority(70)
-			.panel(altPanel)
-			.build();
-		// Only mount the sidebar button in-game — it does nothing useful on the login screen.
-		setNavButtonShown(GameState.LOGGED_IN.equals(client.getGameState()));
-
-		// Populate the teleport-methods catalog so it's visible before any target is set, and check
-		// whether the bank contents are already known this session.
-		if (GameState.LOGGED_IN.equals(client.getGameState()))
-		{
-			clientThread.invokeLater(() ->
-			{
-				ItemContainer liveBank = client.getItemContainer(InventoryID.BANK);
-				if (liveBank != null && liveBank.getItems().length > 0)
-				{
-					pathfinderConfig.bank = liveBank;
-					pathfinderConfig.setBankSnapshot(liveBank.getItems());
-					bankContentsKnown = true;
-				}
-				// Anything not visible live right now (bank, spirit trees, house furniture) falls
-				// back to the previous session's saved detections.
-				restoreDetectionsFromConfig();
-			});
-			triggerAlternatives(WorldPointUtil.UNDEFINED, new HashSet<>());
-		}
-
-		keyManager.registerKeyListener(clearPathKeylistener);
-		keyManager.registerKeyListener(focusSearchKeyListener);
-		keyManager.registerKeyListener(nearestBankHotkeys.bank());
-		keyManager.registerKeyListener(nearestBankHotkeys.bankAndBack());
-		mouseManager.registerMouseListener(arrivalDismissListener);
-		// Plugins enabled later are caught by the PluginChanged/ExternalPluginsChanged events.
-		updateShortestPathConflict();
-		updateQuestHelperIntegration();
-	}
-
-	@Override
-	protected void shutDown()
-	{
-		persistBankSnapshot();
-		overlayManager.remove(pathOverlay);
-		overlayManager.remove(pathMinimapOverlay);
-		overlayManager.remove(pathMapOverlay);
-		overlayManager.remove(pathMapTooltipOverlay);
-		overlayManager.remove(routeDirectionsOverlay);
-
-		if (navButton != null)
-		{
-			clientToolbar.removeNavigation(navButton);
-			navButton = null;
-			navButtonShown = false;
-		}
-		if (altRoutesService != null)
-		{
-			altRoutesService.shutdown();
-			altRoutesService = null;
-		}
-
-		keyManager.unregisterKeyListener(clearPathKeylistener);
-		keyManager.unregisterKeyListener(focusSearchKeyListener);
-		keyManager.unregisterKeyListener(nearestBankHotkeys.bank());
-		keyManager.unregisterKeyListener(nearestBankHotkeys.bankAndBack());
-		bankDetour.cancel();
-		mouseManager.unregisterMouseListener(arrivalDismissListener);
-	}
-
-	/**
-	 * Records the current destination (after the wilderness filter) and refreshes the live config
-	 * so display lookups (transport labels, POH exits) see current availability. Route computation
-	 * itself happens in the alternative-routes generation, auto-triggered on the next game tick by
-	 * the target-set change — the classic background search this used to start is retired.
-	 */
-	public void setDestination(int start, Set<Integer> ends, boolean canReviveFiltered)
-	{
-		getClientThread().invokeLater(() ->
-		{
-			// The panel's method catalog is the single customization surface: methods the user has
-			// excluded there are also excluded here.
-			pathfinderConfig.setExcludedMethods(getUserExclusions());
-			pathfinderConfig.refresh();
-			pathfinderConfig.filterLocations(ends, canReviveFiltered);
-			if (ends.isEmpty())
-			{
-				setTarget(WorldPointUtil.UNDEFINED);
-			}
-			else
-			{
-				pathStart = start;
-				pathTargets = Set.copyOf(ends);
-			}
-		});
-	}
-
-	public void setDestination(int start, Set<Integer> ends)
-	{
-		setDestination(start, ends, true);
-	}
-
-	/** Whether a destination is currently set (what {@code pathfinder != null} used to mean). */
-	public boolean hasPathTargets()
-	{
-		return !pathTargets.isEmpty();
-	}
-
-	/** The current destination tiles (empty when no destination is set). */
-	public Set<Integer> getPathTargets()
-	{
-		return pathTargets;
-	}
-
-	/** The recalculate distance (outer off-route band), or -1 when recalculation is disabled. */
-	public int getRecalculateDistance()
-	{
-		return config.recalculateDistance();
-	}
-
-	/** Whether drifting past the recalculate distance recomputes (or cancels) the route. */
-	public boolean isAutoRecalculateEnabled()
-	{
-		return config.autoRecalculate() && config.recalculateDistance() >= 0;
-	}
-
-	/** The off-route warning distance (inner band), clamped below the recalculate distance. */
-	public int getOffRouteWarnDistance()
-	{
-		return Math.max(0, Math.min(config.offRouteWarnDistance(), Math.max(0, config.recalculateDistance())));
-	}
-
-	/** Chebyshev distance from {@code location} to the nearest tile of the displayed path, or -1. */
-	private int seaObstacleScanCooldown;
-
-	/**
-	 * Scene scan for live sea blockers. A real obstacle carries BLOCK_MOVEMENT_OBJECT; scene
-	 * border padding reads 0xFFFFFF (everything blocked) and is skipped, as is a 3-tile edge
-	 * margin — the first field harvest showed the border bands dwarfing the actual galleon.
-	 */
-	private void scanSeaObstacles()
-	{
-		net.runelite.api.WorldView view = client.getTopLevelWorldView();
-		if (view == null || view.getCollisionMaps() == null || view.getPlane() != 0)
-		{
-			return;
-		}
-		net.runelite.api.CollisionData collision = view.getCollisionMaps()[0];
-		if (collision == null)
-		{
-			return;
-		}
-		int[][] flags = collision.getFlags();
-		int baseX = view.getBaseX();
-		int baseY = view.getBaseY();
-		List<Integer> found = null;
-		for (int sx = 3; sx < flags.length - 3; sx++)
-		{
-			for (int sy = 3; sy < flags[sx].length - 3; sy++)
-			{
-				int tileFlags = flags[sx][sy];
-				if (tileFlags == 0xFFFFFF
-					|| (tileFlags & net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_OBJECT) == 0)
-				{
-					continue;
-				}
-				int packed = WorldPointUtil.packWorldPoint(baseX + sx, baseY + sy, 0);
-				// NEVER learn near the player's own boat: the hull is itself a WorldEntity
-				// projecting live-blocked collision onto sailable water — without this
-				// exclusion every scan learned the boat's current footprint as a permanent
-				// obstacle, poisoning a breadcrumb trail along everywhere the player sails
-				// (field capture 232906: the direct channel home was sealed by the player's
-				// own wake, forcing a disembark/re-embark detour through Cairn Isle).
-				int playerAt = getLastKnownPlayerLocation();
-				if (playerAt != WorldPointUtil.UNDEFINED
-					&& Math.max(Math.abs(WorldPointUtil.unpackWorldX(playerAt) - (baseX + sx)),
-						Math.abs(WorldPointUtil.unpackWorldY(playerAt) - (baseY + sy))) <= 10)
-				{
-					continue;
-				}
-				if (SailingSea.isSailable(packed) && !SailingSea.obstacleAt(baseX + sx, baseY + sy))
-				{
-					if (found == null)
-					{
-						found = new ArrayList<>();
-					}
-					found.add(packed);
-				}
-			}
-		}
-		if (found != null)
-		{
-			SailingSea.learnObstacles(found);
-		}
-	}
-
-	public int distanceFromPath(int location)
-	{
-		// Measured against the DISPLAYED route (the line the player is actually following), not the
-		// classic pathfinder path: when a search picked an alternative route those two diverge, and
-		// measuring off the invisible classic path made off-route/recalc misfire.
-		List<PathStep> path = getDisplayPath();
-		if (path == null || path.isEmpty())
-		{
-			return -1;
-		}
-		int best = Integer.MAX_VALUE;
-		for (PathStep pathStep : path)
-		{
-			best = Math.min(best, WorldPointUtil.distanceBetween(location, pathStep.getPackedPosition()));
-		}
-		// A sailing leg contributes only its two endpoints to the path, so mid-sail the player
-		// is "hundreds of tiles off route" by node distance and auto-recalc wiped the route a
-		// few tiles out of port. Measure against the legs' SEA TRACKS too (cached waypoints,
-		// non-blocking); while a track is still computing, treat the sailor as on route rather
-		// than recalc against incomplete geometry.
-		RouteOption displayed = getDisplayedRoute();
-		if (displayed != null && SailingSea.isSailable(location))
-		{
-			for (int departure : displayed.sailingJumpDepartures())
-			{
-				if (departure < 0 || departure + 1 >= path.size())
-				{
-					continue;
-				}
-				int[] track = SailingSea.seaPath(path.get(departure).getPackedPosition(),
-					path.get(departure + 1).getPackedPosition());
-				if (track == null)
-				{
-					return 0;
-				}
-				for (int waypoint : track)
-				{
-					best = Math.min(best, WorldPointUtil.distanceBetween(location, waypoint));
-				}
-			}
-		}
-		return best;
-	}
-
-	// Off-route state, updated each tick the player moves: how far the player is from the path
-	// (-1 = no path / unknown), and whether that's into the warning band (>= warn, < recalculate),
-	// which the overlay shows in red. At/beyond the recalculate distance the route is recomputed.
-	@Getter
-	private volatile int pathDistance = -1;
-	@Getter
-	private volatile boolean offRouteWarning = false;
-
-	// The arrival zone, cached per (path end, finish distance): recomputed only when the displayed
-	// route's end or the config changes, then read every tick (arrival check) and frame (debug render).
-	// One immutable holder for the zone and its key (see DirectionsCache for why).
-	private static final class ArrivalZoneCache
-	{
-		final int end;
-		final int radius;
-		final Set<Integer> zone;
-
-		ArrivalZoneCache(int end, int radius, Set<Integer> zone)
-		{
-			this.end = end;
-			this.radius = radius;
-			this.zone = zone;
-		}
-	}
-
-	private volatile ArrivalZoneCache arrivalZoneCache =
-		new ArrivalZoneCache(WorldPointUtil.UNDEFINED, Integer.MIN_VALUE, Set.of());
-
-	/**
-	 * The arrival zone: every tile within the finish distance of the destination in WALKING steps — a
-	 * flood from the displayed path's end over the collision map, using the same movement rules as the
-	 * pathfinder — so a tile across a wall or fence is not part of the zone. Standing on any of these
-	 * tiles completes the journey; the debug overlay renders exactly this set. Empty when there is no
-	 * path or the finish distance is negative (never finish).
-	 */
-	public Set<Integer> getArrivalTiles()
-	{
-		List<PathStep> path = getDisplayPath();
-		int radius = config.reachedDistance();
-		if (path == null || path.isEmpty() || radius < 0)
-		{
-			return Set.of();
-		}
-		int end = path.get(path.size() - 1).getPackedPosition();
-		ArrivalZoneCache cached = arrivalZoneCache;
-		if (end != cached.end || radius != cached.radius)
-		{
-			cached = new ArrivalZoneCache(end, radius, floodArrivalZone(end, radius));
-			arrivalZoneCache = cached;
-		}
-		return cached.zone;
-	}
-
-	/**
-	 * Breadth-first flood from {@code end} over walkable edges, up to {@code maxSteps} moves. Diagonal
-	 * moves mirror {@link gps.pathfinder.CollisionMap}'s corner rules (both cardinals of the corner
-	 * must be open on both sides), so the zone matches where the player can actually walk.
-	 */
-	private Set<Integer> floodArrivalZone(int end, int maxSteps)
-	{
-		Set<Integer> zone = new HashSet<>();
-		zone.add(end);
-		CollisionMap map = pathfinderConfig.getMap();
-		if (map == null || maxSteps <= 0)
-		{
-			return zone;
-		}
-		final int plane = WorldPointUtil.unpackWorldPlane(end);
-		List<Integer> frontier = new ArrayList<>();
-		frontier.add(end);
-		for (int depth = 0; depth < maxSteps && !frontier.isEmpty(); depth++)
-		{
-			List<Integer> next = new ArrayList<>();
-			for (int tile : frontier)
-			{
-				final int x = WorldPointUtil.unpackWorldX(tile);
-				final int y = WorldPointUtil.unpackWorldY(tile);
-				final boolean n = map.n(x, y, plane);
-				final boolean s = map.s(x, y, plane);
-				final boolean e = map.e(x, y, plane);
-				final boolean w = map.w(x, y, plane);
-				growZone(zone, next, x, y + 1, plane, n);
-				growZone(zone, next, x, y - 1, plane, s);
-				growZone(zone, next, x + 1, y, plane, e);
-				growZone(zone, next, x - 1, y, plane, w);
-				growZone(zone, next, x + 1, y + 1, plane, n && e && map.e(x, y + 1, plane) && map.n(x + 1, y, plane));
-				growZone(zone, next, x - 1, y + 1, plane, n && w && map.w(x, y + 1, plane) && map.n(x - 1, y, plane));
-				growZone(zone, next, x + 1, y - 1, plane, s && e && map.e(x, y - 1, plane) && map.s(x + 1, y, plane));
-				growZone(zone, next, x - 1, y - 1, plane, s && w && map.w(x, y - 1, plane) && map.s(x - 1, y, plane));
-			}
-			frontier = next;
-		}
-		return zone;
-	}
-
-	private static void growZone(Set<Integer> zone, List<Integer> next, int x, int y, int plane, boolean open)
-	{
-		if (!open)
-		{
-			return;
-		}
-		int packed = WorldPointUtil.packWorldPoint(x, y, plane);
-		if (zone.add(packed))
-		{
-			next.add(packed);
-		}
-	}
-
-	/**
-	 * Whether the player has arrived: standing inside the arrival zone (within the finish distance of
-	 * the destination over walkable tiles). Guards: a round trip only completes once its turnaround has
-	 * been reached (the zone centres on home, so it would otherwise fire at departure), and while a
-	 * round trip is regenerating (no round-trip route displayed) arrival is suspended rather than
-	 * measured against the outbound fallback path; an unreachable target never completes.
-	 */
-	private boolean hasArrived(int currentLocation)
-	{
-		Set<Integer> zone = getArrivalTiles();
-		boolean inZone = !zone.isEmpty() && zone.contains(currentLocation);
-		if (!inZone)
-		{
-			// Wet arrival: the arrival zone floods over WALKABLE tiles and the ocean is
-			// sealed, so a water pin's zone is empty and on-foot arrival can never fire at
-			// sea. A boat parked within the sea finish distance of a sailable target IS
-			// arrival — wider than the land radius because a hull is several tiles of
-			// entity and moors off the mark (configurable, default 12).
-			for (int target : pathTargets)
-			{
-				if (SailingSea.isSailable(target)
-					&& WorldPointUtil.distanceBetween(currentLocation, target)
-						<= config.seaReachedDistance())
-				{
-					inZone = true;
-					break;
-				}
-			}
-		}
-		if (!inZone)
-		{
-			return false;
-		}
-		RouteOption displayed = getDisplayedRoute();
-		boolean roundTrip = displayed != null && displayed.isRoundTrip();
-		if (altRoundTrip && !roundTrip)
-		{
-			return false;
-		}
-		if (roundTrip)
-		{
-			int turnaround = displayed.getTurnaroundIndex();
-			if (turnaround >= 0 && displayedRouteProgress() < turnaround - 2)
-			{
-				return false;
-			}
-		}
-		else if (isPathUnreachable())
-		{
-			return false;
-		}
-		return true;
-	}
-
-	/**
-	 * Progress (path index) along the currently displayed route, from the directions overlay's
-	 * tracker — 0 when that route isn't the one being tracked.
-	 */
-	public int displayedRouteProgress()
-	{
-		RouteOption displayed = getDisplayedRoute();
-		return displayed == null || routeDirectionsOverlay == null
-			? 0 : routeDirectionsOverlay.reachedIndexFor(displayed);
-	}
-
-	/**
-	 * The first path index the player cannot click-walk to yet: at or beyond the first obstacle
-	 * ahead of route progress they must interact with to cross — an agility shortcut, stairs, or a
-	 * door not seen open. The path from there is drawn blocked (in the scene and minimap). Only
-	 * meaningful for a displayed route; the classic path has no step data and is never blocked.
-	 */
-	public int blockedFromIndex(List<PathStep> path)
-	{
-		RouteOption route = getDisplayedRoute();
-		if (route == null || route.getPath() != path)
-		{
-			return Integer.MAX_VALUE;
-		}
-		int progress = displayedRouteProgress();
-		for (RouteDirections.Step step : getRouteDirections(route))
-		{
-			if (!step.gatesWalk() || step.getEndIndex() <= progress)
-			{
-				continue;
-			}
-			if (step.isDoor())
-			{
-				ClosedDoors.Door door = ClosedDoors.doorBetween(
-					path.get(step.getStartIndex()).getPackedPosition(),
-					path.get(step.getEndIndex()).getPackedPosition());
-				if (door == null || ClosedDoors.state(client, door) == ClosedDoors.State.OPEN)
-				{
-					continue;
-				}
-			}
-			return step.getEndIndex();
-		}
-		return Integer.MAX_VALUE;
-	}
-
-	/** Colour for the sailed portions of the displayed route (world-map sea tracks). */
-	public Color getSailingPathColor()
-	{
-		return colourPathSailing;
-	}
-
-	public Color getPathColor()
-	{
-		// The displayed route is a static snapshot: colour it from its own endpoint.
-		RouteOption displayed = getDisplayedRoute();
-		if (displayed != null)
-		{
-			return isRouteEndTooFar(displayed) ? colourPathUnreachable : colourPath;
-		}
-		return altGenerationInFlight ? colourPathCalculating : colourPath;
-	}
-
-	/**
-	 * Whether a destination is set and its routes are still computing with nothing on the overlay
-	 * yet — the HUD's "Finding the best route" state. False as soon as a route is displayed (a
-	 * same-destination regeneration keeps the previous route on screen instead).
-	 */
-	public boolean isFindingRoute()
-	{
-		return altGenerationInFlight && !pathTargets.isEmpty() && getDisplayedRoute() == null;
-	}
-
-	/**
-	 * Mirrors {@link #isPathUnreachable()}'s tolerance for a displayed alternative route: a route that
-	 * stops at the closest reachable tile (e.g. because the exact target tile is an NPC/object spot)
-	 * still counts as reached for colouring while its endpoint is within the configured
-	 * unreachable-distance threshold — only genuinely far endpoints get the unreachable colour.
-	 */
-	private boolean isRouteEndTooFar(RouteOption route)
-	{
-		if (route.isReached())
-		{
-			return false;
-		}
-		List<PathStep> path = route.getPath();
-		Set<Integer> targets = lastAltTargets;
-		if (path == null || path.isEmpty() || targets.isEmpty())
-		{
-			return false;
-		}
-		int endPoint = path.get(path.size() - 1).getPackedPosition();
-		int closestTargetDistance = Integer.MAX_VALUE;
-		for (int target : targets)
-		{
-			closestTargetDistance = Math.min(closestTargetDistance, WorldPointUtil.distanceBetween(target, endPoint));
-		}
-		return closestTargetDistance > unreachableTargetDistance;
-	}
-
-	public boolean isPathUnreachable()
-	{
-		RouteOption displayed = getDisplayedRoute();
-		return displayed != null && isRouteEndTooFar(displayed);
-	}
-
-	/**
-	 * Whether an alternative route actually gets to the target: the exact tile, or — for object and
-	 * other adjacent destinations that legitimately end beside the goal (a bank booth, an altar) —
-	 * within the unreachable-distance threshold of it. False means the destination can't be reached
-	 * and the route only got to the closest reachable tile. Unlike {@link #isPathUnreachable()} this
-	 * judges the alt-route's own endpoint, so a target reachable only by a teleport isn't misreported.
-	 */
-	public boolean routeReachesTarget(RouteOption route)
-	{
-		if (route == null)
-		{
-			return false;
-		}
-		if (route.isReached())
-		{
-			return true;
-		}
-		List<PathStep> path = route.getPath();
-		Set<Integer> targets = pathTargets;
-		if (path == null || path.isEmpty() || targets.isEmpty())
-		{
-			return true;  // not enough information to declare it unreachable
-		}
-		int endPoint = path.get(path.size() - 1).getPackedPosition();
-		int closest = Integer.MAX_VALUE;
-		for (int target : targets)
-		{
-			closest = Math.min(closest, WorldPointUtil.distanceBetween(target, endPoint));
-		}
-		return closest <= unreachableTargetDistance;
-	}
-
-	@Subscribe
-	public void onConfigChanged(ConfigChanged event)
-	{
-		// Quest Helper's own "Use Shortest Path plugin" toggle governs whether quest steps
-		// reach GPS at all — flipping it shows/clears the panel's integration banner live.
-		// Turning it ON re-arms a dismissed banner: the dismissal covered THIS off-period,
-		// not a future regression.
-		if ("questhelper".equals(event.getGroup()) && "useShortestPath".equals(event.getKey()))
-		{
-			if (Boolean.parseBoolean(event.getNewValue()))
-			{
-				configManager.unsetConfiguration(CONFIG_GROUP, "questHelperBannerDismissed");
-			}
-			updateQuestHelperIntegration();
-			return;
-		}
-		if (!CONFIG_GROUP.equals(event.getGroup()))
-		{
-			return;
-		}
-
-		cacheConfigValues();
-
-
-		// Transport option changed; rerun pathfinding
-		if ("defaultRouteCount".equals(event.getKey()))
-		{
-			routeLimit = defaultRouteLimit();
-		}
-
-		// Display-order only: the keep-sailing preference re-ranks the routes it already has.
-		if ("sailingKeepSailing".equals(event.getKey()))
-		{
-			resortRoutesByPriority();
-		}
-
-		if (affectsRouting(event.getKey()))
-		{
-			if (hasPathTargets())
-			{
-				// Refresh the live config's availability and regenerate the routes with it — the
-				// classic restart this used to do left the displayed (alternative) route stale.
-				setDestination(pathStart, new HashSet<>(pathTargets));
-				recomputeAlternatives();
-			}
-		}
-
-		if ("rememberBank".equals(event.getKey()))
-		{
-			if (config.rememberBank())
-			{
-				// Turned on with the bank already seen this session: save it right away, so the
-				// benefit doesn't depend on opening the bank again before logging out.
-				if (bankContentsKnown && !bankRestored && client.getGameState() == GameState.LOGGED_IN)
-				{
-					bankSaveDirty = true;
-					bankSaveProfileKey = configManager.getRSProfileKey();
-					persistBankSnapshot();
-				}
-			}
-			else
-			{
-				// Turned off: forget the stored snapshot — and, if this session's bank knowledge
-				// came from it (rather than the bank being opened), drop that too.
-				configManager.unsetRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_BANK_SNAPSHOT);
-				bankSaveDirty = false;
-				if (bankRestored)
-				{
-					bankRestored = false;
-					bankContentsKnown = false;
-					pathfinderConfig.clearBank();
-					recomputeAlternatives();
-				}
-			}
-		}
-
-		// Keys mirrored by the panel's configuration sections (POH, wilderness, balloons): rebuild
-		// those sections so their labels track changes made from chat parsing or the config UI.
-		if (altPanel != null
-			&& (event.getKey().startsWith("balloon") || "pohSmartDetect".equals(event.getKey())
-			|| "rememberBank".equals(event.getKey())
-			|| affectsRouting(event.getKey())))
-		{
-			SwingUtilities.invokeLater(altPanel::refreshConfigSections);
-		}
-	}
-
-	/** Whether the original Shortest Path plugin is also enabled — the panel shows a warning. */
-	public boolean isShortestPathConflict()
-	{
-		return shortestPathConflict;
-	}
-
-	/**
-	 * Detects the original Shortest Path plugin running alongside GPS. Both draw paths and answer
-	 * the same {@code shortestpath} plugin-message integrations, so running both doubles the
-	 * rendering — the panel recommends disabling it. Matched by descriptor name (each hub plugin
-	 * has its own classloader, so class identity can't be compared across plugins).
-	 */
-	private void updateShortestPathConflict()
-	{
-		boolean conflict = false;
-		for (Plugin other : pluginManager.getPlugins())
-		{
-			if (other == this)
-			{
-				continue;
-			}
-			PluginDescriptor descriptor = other.getClass().getAnnotation(PluginDescriptor.class);
-			if (descriptor != null && "Shortest Path".equals(descriptor.name())
-				&& pluginManager.isPluginEnabled(other))
-			{
-				conflict = true;
-				break;
-			}
-		}
-		if (conflict != shortestPathConflict)
-		{
-			shortestPathConflict = conflict;
-			refreshPanel(altGenerationInFlight);
-		}
-	}
-
-	/** Whether Quest Helper runs WITHOUT its "Use Shortest Path plugin" option — the panel
-	 * shows a dismissable banner explaining quest steps won't reach GPS until it's on. */
-	public boolean isQuestHelperPathingOff()
-	{
-		return questHelperPathingOff;
-	}
-
-	/**
-	 * Quest Helper hands quest-step destinations over the {@code shortestpath} plugin-message
-	 * integration only when its own "Use Shortest Path plugin" option is on
-	 * ({@code questhelper.useShortestPath}, default off) — enabled Quest Helper with the
-	 * option off silently draws its own lines and GPS never hears about the step. Matched by
-	 * descriptor name like the Shortest Path conflict above.
-	 */
-	private void updateQuestHelperIntegration()
-	{
-		boolean off = false;
-		for (Plugin other : pluginManager.getPlugins())
-		{
-			PluginDescriptor descriptor = other.getClass().getAnnotation(PluginDescriptor.class);
-			if (descriptor != null && "Quest Helper".equals(descriptor.name())
-				&& pluginManager.isPluginEnabled(other))
-			{
-				off = !Boolean.parseBoolean(
-					configManager.getConfiguration("questhelper", "useShortestPath"));
-				break;
-			}
-		}
-		if (off != questHelperPathingOff)
-		{
-			questHelperPathingOff = off;
-			refreshPanel(altGenerationInFlight);
-		}
-	}
-
-	@Subscribe
-	public void onPluginChanged(net.runelite.client.events.PluginChanged event)
-	{
-		updateShortestPathConflict();
-		updateQuestHelperIntegration();
-	}
-
-	@Subscribe
-	public void onExternalPluginsChanged(net.runelite.client.events.ExternalPluginsChanged event)
-	{
-		updateShortestPathConflict();
-		updateQuestHelperIntegration();
-	}
-
-	/**
-	 * Adds/removes the sidebar button so it only appears in-game. Called on every game-state change
-	 * before the login-detection guard below (which returns early in most cases). LOADING / HOPPING
-	 * / CONNECTION_LOST leave the button as-is, so world hops don't flicker it.
-	 */
-	private void updateNavButtonVisibility(GameState state)
-	{
-		switch (state)
-		{
-			case LOGGED_IN:
-				setNavButtonShown(true);
-				break;
-			case LOGIN_SCREEN:
-			case LOGIN_SCREEN_AUTHENTICATOR:
-			case STARTING:
-				setNavButtonShown(false);
-				break;
-			default:
-				break;
-		}
-	}
-
-	private void setNavButtonShown(boolean show)
-	{
-		if (navButton == null || show == navButtonShown)
-		{
-			return;
-		}
-		navButtonShown = show;
-		if (show)
-		{
-			clientToolbar.addNavigation(navButton);
-		}
-		else
-		{
-			clientToolbar.removeNavigation(navButton);
-		}
-	}
-
-	@Subscribe
-	public void onGameStateChanged(GameStateChanged event)
-	{
-		updateNavButtonVisibility(event.getGameState());
-
-		// Scene rebuild: the spawn-evidence set belongs to the old scene (LOADING fires before the
-		// new scene's object spawns), and the once-per-scene chunk-dump log re-arms.
-		if (GameState.LOADING.equals(event.getGameState()))
-		{
-			pohSpawnedFurniture.clear();
-			pohChunksLogged = false;
-		}
-
-		// Logout: save any unsaved bank snapshot (with the profile key captured while logged in) and
-		// forget everything this session detected about the character — bank, planted spirit trees,
-		// house scan — so a different character logging in next doesn't inherit it. The right
-		// character's snapshots are restored at the next login.
-		if (GameState.LOGIN_SCREEN.equals(event.getGameState()) && pathfinderConfig != null)
-		{
-			persistBankSnapshot();
-			bankContentsKnown = false;
-			bankRestored = false;
-			pathfinderConfig.clearBank();
-			pathfinderConfig.availableSpiritTrees = null;
-			spiritTreesParsedLive = false;
-			pohScanned = false;
-			detectedPohFurniture = null;
-			pohFurnitureFoundThisVisit = false;
-			pohScanAttempts = 0;
-			pohSpawnedFurniture.clear();
-			boatBanner = null;
-			boatBannerLive = false;
-			boatBannerDirty = false;
-		}
-
-		if (pathfinderConfig == null
-			|| !GameState.LOGGING_IN.equals(lastLastGameState)
-			|| !GameState.LOADING.equals(lastLastGameState = lastGameState)
-			|| !GameState.LOGGED_IN.equals(lastGameState = event.getGameState()))
-		{
-			lastLastGameState = lastGameState;
-			lastGameState = event.getGameState();
-			return;
-		}
-
-		// Restored before the catalog refresh below, so in-bank availability, planted spirit trees
-		// and the house scan state are right first time.
-		pendingTasks.add(new PendingTask(client.getTickCount() + 1, this::restoreDetectionsFromConfig));
-		pendingTasks.add(new PendingTask(client.getTickCount() + 1, pathfinderConfig::refresh));
-		// Refresh the teleport-methods catalog (and any current routes) now that game state is available.
-		pendingTasks.add(new PendingTask(client.getTickCount() + 1, this::recomputeAlternatives));
-	}
-
-	/**
-	 * Refresh the pathfinder when the player hops worlds. The new world's type
-	 * (e.g. seasonal) is what drives league-mode auto-detection in
-	 * {@link gps.leagues.LeagueModeState}, so we need a fresh
-	 * {@code PathfinderConfig.refresh()} pass after every hop.
-	 */
-	@Subscribe
-	public void onWorldChanged(WorldChanged event)
-	{
-		if (pathfinderConfig == null)
-		{
-			return;
-		}
-		pendingTasks.add(new PendingTask(client.getTickCount() + 1, pathfinderConfig::refresh));
-	}
-
-	@Subscribe
-	public void onPluginMessage(PluginMessage event)
-	{
-		if (!MESSAGE_NAMESPACE.equals(event.getNamespace())
-			&& !MESSAGE_NAMESPACE_LEGACY.equals(event.getNamespace()))
-		{
-			return;
-		}
-
-		String action = event.getName();
-		if (PLUGIN_MESSAGE_PATH.equals(action))
-		{
-			Map<String, Object> data = event.getData();
-			Object objStart = data.getOrDefault(PLUGIN_MESSAGE_START, null);
-			Object objTarget = data.getOrDefault(PLUGIN_MESSAGE_TARGET, null);
-			Object objConfigOverride = data.getOrDefault(PLUGIN_MESSAGE_CONFIG_OVERRIDE, null);
-
-			@SuppressWarnings("unchecked")
-			Map<String, Object> configOverride = (objConfigOverride instanceof Map<?, ?>) ? ((Map<String, Object>) objConfigOverride) : null;
-			if (configOverride != null && !configOverride.isEmpty())
-			{
-				ShortestPathPlugin.configOverride.clear();
-				for (String key : configOverride.keySet())
-				{
-					// An unknown key would sit in the override map forever and never be
-					// diagnosable from either side: reject it loudly instead.
-					if (!knownConfigKeys().contains(key))
-					{
-						log.warn("Plugin message config override ignored: unknown key '{}'", key);
-						continue;
-					}
-					ShortestPathPlugin.configOverride.put(key, configOverride.get(key));
-				}
-				cacheConfigValues();
-			}
-
-			if (objStart == null && objTarget == null)
-			{
-				return;
-			}
-
-			int start = (objStart instanceof WorldPoint) ? WorldPointUtil.packWorldPoint((WorldPoint) objStart)
-				: ((objStart instanceof Integer) ? ((int) objStart) : WorldPointUtil.UNDEFINED);
-			if (start == WorldPointUtil.UNDEFINED)
-			{
-				start = getPlayerLocation();
-				if (start == WorldPointUtil.UNDEFINED)
-				{
-					return;
-				}
-			}
-
-			Set<Integer> targets = new HashSet<>();
-			if (objTarget instanceof Integer)
-			{
-				int packedPoint = (Integer) objTarget;
-				if (packedPoint == WorldPointUtil.UNDEFINED)
-				{
-					return;
-				}
-				targets.add(packedPoint);
-			}
-			else if (objTarget instanceof WorldPoint)
-			{
-				int packedPoint = WorldPointUtil.packWorldPoint((WorldPoint) objTarget);
-				if (packedPoint == WorldPointUtil.UNDEFINED)
-				{
-					return;
-				}
-				targets.add(packedPoint);
-			}
-			else if (objTarget instanceof Set<?>)
-			{
-				@SuppressWarnings("unchecked")
-				Set<Object> objTargets = (Set<Object>) objTarget;
-				for (Object obj : objTargets)
-				{
-					int packedPoint = WorldPointUtil.UNDEFINED;
-					if (obj instanceof Integer)
-					{
-						packedPoint = (Integer) obj;
-					}
-					else if (obj instanceof WorldPoint)
-					{
-						packedPoint = WorldPointUtil.packWorldPoint((WorldPoint) obj);
-					}
-					if (packedPoint == WorldPointUtil.UNDEFINED)
-					{
-						return;
-					}
-					targets.add(packedPoint);
-				}
-			}
-
-			// Attribute the destination for the GPS header. PluginMessage doesn't identify its sender,
-			// so honour an optional "source" string in the data (a convention senders can adopt, e.g.
-			// "Quest Helper"); otherwise all we can say is that a plugin asked for it.
-			Object objSource = data.getOrDefault(PLUGIN_MESSAGE_SOURCE, null);
-			targetSource = (objSource instanceof String && !((String) objSource).isEmpty())
-				? (String) objSource
-				: "another plugin";
-
-			boolean useOld = targets.isEmpty() && hasPathTargets();
-			Set<Integer> ends;
-			if (useOld)
-			{
-				ends = new HashSet<>(pathTargets);
-			}
-			else
-			{
-				// A NEW destination from another plugin: this path bypasses setTargets, so arm the
-				// journey timer here too — otherwise the arrival time carries over from whatever manual
-				// destination was last set. Reusing the previous target keeps the running journey.
-				armJourney();
-				// Quest Helper often targets an NPC's or object's own tile, which isn't walkable — a
-				// search targeting only it exhausts the entire map and ends 'closest tile' (captured:
-				// ~880ms per search). Expand to the nearest walkable ring, like manual pins.
-				ends = new HashSet<>();
-				for (int target : targets)
-				{
-					ends.addAll(Destinations.walkableTargets(
-						pathfinderConfig != null ? pathfinderConfig.getMap() : null, target,
-						pathfinderConfig != null ? pathfinderConfig::isTransportOrigin : null));
-				}
-				// Object targets from other plugins (Quest Helper caves, stairs): when any
-				// expanded tile is a mapped transport ORIGIN, that origin IS the interactable
-				// side — drop the rest, or the search ends wherever the approach is cheapest,
-				// including BEHIND the object (captured at the Troll Stronghold south cave).
-				if (pathfinderConfig != null)
-				{
-					Set<Integer> origins = new HashSet<>();
-					for (int end : ends)
-					{
-						if (pathfinderConfig.isTransportOrigin(end))
-						{
-							origins.add(end);
-						}
-					}
-					if (!origins.isEmpty())
-					{
-						ends = origins;
-					}
-				}
-			}
-			if (!useOld)
-			{
-				// Another plugin's new destination replaces a bank trip like any other.
-				bankDetour.cancel();
-			}
-			setDestination(start, ends, useOld);
-		}
-		else if (PLUGIN_MESSAGE_CLEAR.equals(action))
-		{
-			configOverride.clear();
-			cacheConfigValues();
-			targetSource = null;
-			setTarget(WorldPointUtil.UNDEFINED);
-		}
-	}
-
-	/**
-	 * Publishes the displayed route's transports to other plugins (the {@code postTransports}
-	 * integration). Called when the displayed route settles or changes — it used to stream the
-	 * classic search's path; the displayed route is what the player actually follows.
-	 */
-	public void postPluginMessages()
-	{
-		if (!hasPathTargets())
-		{
-			return;
-		}
-		if (override("postTransports", config.postTransports()))
-		{
-			List<PathStep> currentPath = getDisplayPath();
-			if (currentPath.isEmpty())
-			{
-				return;
-			}
-			Map<String, Object> data = new HashMap<>();
-			List<WorldPoint> transportOrigins = new ArrayList<>();
-			List<WorldPoint> transportDestinations = new ArrayList<>();
-			List<String> transportObjectInfos = new ArrayList<>();
-			List<String> transportDisplayInfos = new ArrayList<>();
-			for (int i = 1; i < currentPath.size(); i++)
-			{
-				PathStep currentStep = currentPath.get(i - 1);
-				PathStep nextStep = currentPath.get(i);
-				for (Transport transport : transportsForEdge(currentStep, nextStep))
-				{
-					transportOrigins.add(WorldPointUtil.unpackWorldPoint(currentStep.getPackedPosition()));
-					transportDestinations.add(WorldPointUtil.unpackWorldPoint(nextStep.getPackedPosition()));
-					transportObjectInfos.add(transport.getObjectInfo());
-					transportDisplayInfos.add(transport.getDisplayInfo());
-				}
-			}
-			data.put("origin", transportOrigins);
-			data.put("destination", transportDestinations);
-			data.put("objectInfo", transportObjectInfos);
-			data.put("displayInfo", transportDisplayInfos);
-			eventBus.post(new PluginMessage(MESSAGE_NAMESPACE, PLUGIN_MESSAGE_TRANSPORTS, data));
-			eventBus.post(new PluginMessage(MESSAGE_NAMESPACE_LEGACY, PLUGIN_MESSAGE_TRANSPORTS, data));
-		}
-	}
-
-	@Subscribe
-	public void onMenuOpened(MenuOpened event)
-	{
-		lastMenuOpenedPoint = client.getMouseCanvasPosition();
-	}
-
-	/**
-	 * Tracks the balloon log storage from its chat messages — the crates' contents have no varbit,
-	 * chat is the game's only client-side signal (the same approach the dedicated tictac7x-balloon
-	 * plugin uses). Counts persist in config and let balloon flights be paid from storage.
-	 */
-	@Subscribe
-	public void onChatMessage(net.runelite.api.events.ChatMessage event)
-	{
-		if (!config.balloonSmartMode()
-			|| (event.getType() != net.runelite.api.ChatMessageType.SPAM
-				&& event.getType() != net.runelite.api.ChatMessageType.MESBOX))
-		{
-			return;
-		}
-		Map<String, Integer> updates = BalloonLogStorage.parse(event.getMessage());
-		for (Map.Entry<String, Integer> update : updates.entrySet())
-		{
-			configManager.setConfiguration(CONFIG_GROUP, update.getKey(), update.getValue());
-		}
-		if (!updates.isEmpty() && !config.balloonStorageSynced())
-		{
-			configManager.setConfiguration(CONFIG_GROUP, "balloonStorageSynced", true);
-		}
-	}
-
-	@Subscribe
-	public void onGameTick(GameTick tick)
-	{
-		maybeRefreshCatalog();
-		// Tick-cached position for Swing-thread consumers (the panel's destination search):
-		// live resolution walks player.getWorldView(), a client-thread-only call since the
-		// boat-position fix — the EDT reads this cache instead and can never trip it.
-		lastKnownPlayerLocation = getPlayerLocation();
-		// Boat berth changes arrive as varbit bursts (login sync, docking); one banner
-		// rebuild per tick at most.
-		if (boatBannerDirty)
-		{
-			boatBannerDirty = false;
-			refreshBoatBanner();
-		}
-		// Passive sea-obstacle learning: every 10 ticks, harvest scene tiles that the shipped
-		// ocean calls sailable but live collision blocks (moored vessels, harbour clutter).
-		// The offline map plans; the client corrects itself as scenes reveal the truth.
-		if (--seaObstacleScanCooldown <= 0)
-		{
-			seaObstacleScanCooldown = 10;
-			scanSeaObstacles();
-		}
-		for (int i = 0; i < pendingTasks.size(); i++)
-		{
-			if (pendingTasks.get(i).check(client.getTickCount()))
-			{
-				pendingTasks.remove(i--).run();
-			}
-		}
-
-		maybeAutoComputeAlternatives();
-
-		// The house-location varbit (2187): 0 = no house, 1-9 = the owned location. Cached here (the
-		// client thread) for the panel's POH section, which runs on the EDT.
-		houseLocationId = client.getVarbitValue(2187);
-
-		// The balloon route unlock varbits (ZEP_MULTI_*), cached for the panel's low-log warning:
-		// only unlocked routes' log types are worth warning about.
-		balloonUnlockVarbits = new int[]{
-			client.getVarbitValue(2867), client.getVarbitValue(2868), client.getVarbitValue(2869),
-			client.getVarbitValue(2870), client.getVarbitValue(2871), client.getVarbitValue(2872)};
-
-		Player localPlayer = client.getLocalPlayer();
-		if (localPlayer == null)
-		{
-			return;
-		}
-
-		maybeScanPoh();
-
-		if (!hasPathTargets())
-		{
-			return;
-		}
-
-		int currentLocation = WorldPointUtil.fromLocalInstance(client, localPlayer);
-		// Journey timer: start counting from the player's first ACTION after a destination (or a chosen
-		// path) was set — moving, OR performing an animation (casting/using a teleport). The animation
-		// catch matters for long teleport channels (e.g. Lumbridge Home): the player stays put for the
-		// whole cast, so a move-only trigger would only start the clock after landing, losing that time.
-		boolean journeyMoved = journeyLastLocation != WorldPointUtil.UNDEFINED
-			&& currentLocation != journeyLastLocation;
-		boolean acting = localPlayer.getAnimation() != -1;
-		if (journeyStartMillis == 0 && (journeyMoved || acting))
-		{
-			journeyStartMillis = System.currentTimeMillis();
-		}
-		journeyLastLocation = currentLocation;
-		if (hasArrived(currentLocation))
-		{
-			// Reached the destination (inside the arrival zone). Show the "Arrived!" panel — including when
-			// the destination was set while already there (e.g. "nearest bank" at a bank), where
-			// the journey time is ~0 — then clear the target. A never-started journey (arrived without
-			// moving) reports 0 rather than a stale duration.
-			long elapsed = journeyStartMillis == 0 ? 0 : System.currentTimeMillis() - journeyStartMillis;
-			if (routeDirectionsOverlay != null)
-			{
-				routeDirectionsOverlay.markArrived(targetSource, elapsed);
-			}
-			if (altPanel != null)
-			{
-				altPanel.markArrived(elapsed);
-			}
-			// A completed bank trip hands back the destination it replaced; read it before the
-			// clear, which would forget it.
-			BankDetour.Route resume = bankDetour.complete();
-			setTarget(WorldPointUtil.UNDEFINED);
-			if (resume != null)
-			{
-				resumeRoute(resume);
-			}
-			return;
-		}
-
-		// Off-route handling, in three bands of distance from the path: on route (nothing), a
-		// warning band (the overlay shows a red "drifting off route" message), and — on a move that
-		// reaches the recalculate distance — a full recompute. Recalc fires only on movement so a
-		// stationary far position (e.g. just teleported off-path) doesn't loop. With
-		// auto-recalculate off, GPS keeps the original route and only ever warns.
-		int recalc = config.recalculateDistance();
-		if (recalc >= 0)
-		{
-			int step = WorldPointUtil.distanceBetween(lastLocation, currentLocation);
-			boolean moved = lastLocation != currentLocation;
-			lastLocation = currentLocation;
-			int d = distanceFromPath(currentLocation);
-			pathDistance = d;
-			int warn = Math.max(0, Math.min(config.offRouteWarnDistance(), recalc));
-			// At the helm the bands stretch: a boat's wide 16-bearing turning arcs swing off
-			// the decimated track line farther than a walker ever drifts off a path, and a
-			// land-tuned radius recalculated away perfectly good voyages mid-turn.
-			if (client.getVarbitValue(net.runelite.api.gameval.VarbitID.SAILING_BOARDED_BOAT) != 0)
-			{
-				// 2x, not 3x: field-tuned — 3x let the boat wander far off the track before
-				// a recalc rescued it; turning arcs fit comfortably inside 2x.
-				recalc *= 2;
-				warn *= 3;
-			}
-			// A boat cutscene / teleport landing carries the player far from the path in one leap;
-			// that isn't drifting off route. A jump bigger than running arms a grace window that
-			// refreshes while the transport keeps moving them, and clears once they're back within
-			// the warning band (landed on/near the path).
-			if (step > TRANSPORT_STEP_TILES)
-			{
-				transportGraceTicks = TRANSPORT_GRACE_TICKS;
-			}
-			else if (transportGraceTicks > 0)
-			{
-				transportGraceTicks = (d >= 0 && d < warn) ? 0 : transportGraceTicks - 1;
-			}
-
-			if (d < 0 || transportGraceTicks > 0)
-			{
-				offRouteWarning = false;
-			}
-			else if (moved && d >= recalc && config.autoRecalculate())
-			{
-				offRouteWarning = false;
-				if (config.cancelInstead())
-				{
-					setTarget(WorldPointUtil.UNDEFINED);
-					return;
-				}
-				// One drift recalc at a time: distance is measured against the OLD path until the
-				// new routes land, so a player who keeps walking would otherwise re-trigger (and
-				// restart) the generation every moved tick and it would never finish. While one is
-				// computing, keep walking; once the fresh path lands the band check re-evaluates
-				// against it and fires at most one follow-up.
-				if (!altGenerationInFlight)
-				{
-					recalculateFrom(currentLocation, pathTargets);
-				}
-				return;
-			}
-			else
-			{
-				offRouteWarning = d >= warn;
-			}
-		}
-		else
-		{
-			offRouteWarning = false;
-		}
-	}
-
-	/**
-	 * Recompute the route from a new start (the player's current, off-route position) to the same
-	 * targets. Triggered explicitly because the tick-level auto-compute is keyed on the target SET —
-	 * which hasn't changed here — so it would not refire on its own. The stale selection is dropped
-	 * so the fresh generation's route takes over rather than the overlay clinging to the old line.
-	 */
-	private void recalculateFrom(int start, Set<Integer> targets)
-	{
-		selectedRoute = null;
-		routeCostMultiple = DEFAULT_COST_MULTIPLE;
-		routeLimit = defaultRouteLimit();
-		Set<Integer> ends = new HashSet<>(targets);
-		pathStart = start;
-		triggerAlternatives(start, ends);
-	}
-
-	@Subscribe
-	public void onMenuEntryAdded(MenuEntryAdded event)
-	{
-		if (client.isKeyPressed(KeyCode.KC_SHIFT)
-			&& event.getType() == MenuAction.WALK.getId())
-		{
-			addMenuEntry(event, SET, TARGET, 1);
-			if (hasPathTargets())
-			{
-				int selectedTile = getSelectedWorldPoint();
-				for (PathStep pathStep : getDisplayPath())
-				{
-					if (pathStep.getPackedPosition() == selectedTile)
-					{
-						addMenuEntry(event, CLEAR, PATH, 1);
-						break;
-					}
-				}
-			}
-		}
-
-		final Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
-
-		if (map != null)
-		{
-			if (map.getBounds().contains(
-				client.getMouseCanvasPosition().getX(),
-				client.getMouseCanvasPosition().getY()))
-			{
-				addMenuEntry(event, SET, TARGET, 0);
-				for (int target : pathTargets)
-				{
-					if (target != WorldPointUtil.UNDEFINED)
-					{
-						addMenuEntry(event, CLEAR, PATH, 0);
-					}
-				}
-			}
-			if (event.getOption().equals(FLASH_ICONS) && pathfinderConfig.hasDestination(simplify(event.getTarget())))
-			{
-				addMenuEntry(event, FIND_CLOSEST, event.getTarget(), 1);
-			}
-		}
-
-		final Shape minimap = getMinimapClipArea();
-
-		if (minimap != null && hasPathTargets()
-			&& minimap.contains(
-			client.getMouseCanvasPosition().getX(),
-			client.getMouseCanvasPosition().getY()))
-		{
-			addMenuEntry(event, CLEAR, PATH, 0);
-		}
-
-		if (minimap != null && hasPathTargets()
-			&& ("Floating World Map".equals(Text.removeTags(event.getOption()))
-			|| "Close Floating panel".equals(Text.removeTags(event.getOption()))))
-		{
-			addMenuEntry(event, CLEAR, PATH, 1);
-		}
-	}
-
-	@Subscribe
-	public void onItemContainerChanged(ItemContainerChanged event)
-	{
-		if (event.getContainerId() == InventoryID.INV || event.getContainerId() == InventoryID.WORN)
-		{
-			// Only mark the catalog dirty when the routing-relevant slice of the inventory and
-			// equipment actually changed: the dependency index knows every item id (and quantity
-			// threshold) any transport requirement can read, so logs, ore, food and loot pass
-			// through without ever scheduling a refresh (issues #23/#24).
-			if (pathfinderConfig == null)
-			{
-				catalogDirty = true;
-				return;
-			}
-			long fingerprint = pathfinderConfig.getRoutingItemDependencies().fingerprint(
-				client.getItemContainer(InventoryID.INV), client.getItemContainer(InventoryID.WORN));
-			if (!routingItemsFingerprintValid || fingerprint != routingItemsFingerprint)
-			{
-				routingItemsFingerprint = fingerprint;
-				routingItemsFingerprintValid = true;
-				catalogDirty = true;
-			}
-			return;
-		}
-		if (event.getContainerId() != InventoryID.BANK)
-		{
-			return;
-		}
-		pathfinderConfig.bank = event.getItemContainer();
-		// Snapshot the items now, while the bank is open: the client may empty the live container
-		// (and thereby every reference to it) once the interface closes.
-		pathfinderConfig.setBankSnapshot(event.getItemContainer().getItems());
-		boolean firstSight = !bankContentsKnown;
-		bankContentsKnown = true;
-		bankRestored = false;
-		// Stage a cross-session save (written once when the bank closes, not per deposit). The
-		// profile key is captured now, while it's guaranteed available.
-		if (config.rememberBank())
-		{
-			bankSaveDirty = true;
-			bankSaveProfileKey = configManager.getRSProfileKey();
-		}
-		if (firstSight)
-		{
-			// First sight of the bank this session: regenerate so the availability map is rebuilt
-			// with the bank contents — banked teleports classify IN_BANK (usable in Inv + bank
-			// mode) and the catalog header count updates. Also clears the panel warning. NOT
-			// during a round trip: opening the bank is the trip's halfway point, and regenerating
-			// would discard the displayed route (and with it the way back).
-			if (altRoundTrip)
-			{
-				refreshPanel(altGenerationInFlight);
-			}
-			else
-			{
-				recomputeAlternatives();
-			}
-		}
-	}
-
-	@Subscribe
-	public void onWidgetLoaded(WidgetLoaded event)
-	{
-		if (hasPathTargets() && event.getGroupId() == InterfaceID.FAIRYRINGS_LOG)
-		{
-			fairyRingPanelOpen = true;
-		}
-
-		// Populate spirit tree cache, but only once per session. Gated on a live parse having
-		// happened (not on the cache being non-null): a snapshot restored from the previous session
-		// must not block the fresher live read — a newly planted tree only shows up in the menu.
-		if (!spiritTreesParsedLive)
-		{
-			switch (event.getGroupId())
-			{
-				case InterfaceID.MENU:
-					clientThread.invokeLater(() -> parseSpiritTreeWidget(false));
-					break;
-				case InterfaceID.MENU_NEW:
-					clientThread.invokeLater(() -> parseSpiritTreeWidget(true));
-					break;
-			}
-		}
-	}
-
-	@Subscribe
-	public void onWidgetClosed(WidgetClosed event)
-	{
-		if (event.getGroupId() == InterfaceID.FAIRYRINGS_LOG)
-		{
-			fairyRingPanelOpen = false;
-		}
-		// Bank closed: one regeneration per bank session, so items withdrawn or deposited are
-		// reflected in the method availability (and the catalog counts) — recomputing on every
-		// in-bank container change would run a generation per deposit. NOT during a round trip:
-		// banking mid-trip is the whole point, and regenerating would discard the way back.
-		if (event.getGroupId() == InterfaceID.BANKMAIN && bankContentsKnown && !altRoundTrip)
-		{
-			recomputeAlternatives();
-		}
-		if (event.getGroupId() == InterfaceID.BANKMAIN)
-		{
-			persistBankSnapshot();
-		}
-	}
-
-	/**
-	 * Writes the staged bank snapshot to RSProfile-scoped config (per character, per world type) so
-	 * a later session can start with it. One write per bank session — called when the bank closes,
-	 * at logout, and at plugin shutdown.
-	 */
-	private void persistBankSnapshot()
-	{
-		if (!bankSaveDirty || bankSaveProfileKey == null || pathfinderConfig == null)
-		{
-			return;
-		}
-		String encoded = encodeBankSnapshot(pathfinderConfig.getBankSnapshot());
-		if (encoded == null)
-		{
-			// Bank seen but nothing in it: drop any stale saved snapshot rather than keeping it.
-			configManager.unsetConfiguration(CONFIG_GROUP, bankSaveProfileKey, CONFIG_KEY_BANK_SNAPSHOT);
-		}
-		else
-		{
-			configManager.setConfiguration(CONFIG_GROUP, bankSaveProfileKey, CONFIG_KEY_BANK_SNAPSHOT, encoded);
-		}
-		bankSaveDirty = false;
-	}
-
-	/**
-	 * Loads the previous session's bank snapshot for the current character, if one was saved and the
-	 * bank hasn't already been seen live. Runs at login (and plugin start) so "+ Bank" routes and the
-	 * catalog's in-bank availability work before the bank is opened; the snapshot is replaced by live
-	 * contents the first time the bank opens.
-	 */
-	private void restoreBankFromConfig()
-	{
-		if (!config.rememberBank() || bankContentsKnown)
-		{
-			return;
-		}
-		Item[] items = decodeBankSnapshot(
-			configManager.getRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_BANK_SNAPSHOT));
-		if (items == null)
-		{
-			return;
-		}
-		pathfinderConfig.setBankSnapshot(items);
-		bankContentsKnown = true;
-		bankRestored = true;
-	}
-
-	/**
-	 * Restores everything this character's previous sessions detected — bank contents, planted
-	 * spirit trees, house furniture — so routing starts from the known state instead of asking for
-	 * a fresh sync of each. Every piece is superseded by its live source the moment that source is
-	 * seen (bank opened, travel menu read, house entered).
-	 */
-	@Subscribe
-	public void onVarbitChanged(VarbitChanged event)
-	{
-		if (BOAT_BANNER_VARBIT_IDS.contains(event.getVarbitId()))
-		{
-			boatBannerDirty = true;
-		}
-	}
-
-	/** Client thread: re-read every boat's ownership, berth and name, persist, and let the
-	 * panel's sailing section relabel itself. */
-	private void refreshBoatBanner()
-	{
-		if (!GameState.LOGGED_IN.equals(client.getGameState()))
-		{
-			return;
-		}
-		List<String[]> rows = new ArrayList<>();
-		for (int slot = 0; slot < BOAT_BANNER_VARBITS.length; slot++)
-		{
-			int[] varbits = BOAT_BANNER_VARBITS[slot];
-			// Owned varbit alone is unreliable (Where's My Boat's field lesson); a set name
-			// descriptor also proves ownership, and covers Port Sarim's port id 0.
-			if (client.getVarbitValue(varbits[0]) <= 0 && client.getVarbitValue(varbits[3]) <= 0)
-			{
-				continue;
-			}
-			rows.add(new String[]{decodeBoatName(slot, varbits),
-				SailingPorts.portName(client.getVarbitValue(varbits[1])),
-				boatTypeName(client.getVarbitValue(varbits[5]))});
-		}
-		boatBanner = rows;
-		boatBannerLive = true;
-		configManager.setRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_BOAT_PORTS,
-			rows.stream().map(r -> r[0] + "|" + r[1] + "|" + r[2])
-				.collect(java.util.stream.Collectors.joining(";")));
-		if (altPanel != null)
-		{
-			SwingUtilities.invokeLater(altPanel::refreshConfigSections);
-		}
-	}
-
-	/** The three name varbits index the game's own name-part tables (prefix, descriptor,
-	 * noun) — the same decode Where's My Boat ships. Any surprise falls back to a slot label. */
-	/**
-	 * The hull type varbit in acquisition-tier order: the Pandemonium quest raft is 0, the
-	 * level-15 skiff 1, the level-50 sloop 2 (verified against a capture with all three owned).
-	 * Unknown future tiers return "" and the panel simply shows no type.
-	 */
-	private static String boatTypeName(int type)
-	{
-		switch (type)
-		{
-			case 0: return "Raft";
-			case 1: return "Skiff";
-			case 2: return "Sloop";
-			default: return "";
-		}
-	}
-
-	private String decodeBoatName(int slot, int[] varbits)
-	{
-		try
-		{
-			int[] rowIds = {DBTableID.SailingBoatNameOptions.Row.SAILING_BOAT_NAME_PREFIX_OPTIONS,
-				DBTableID.SailingBoatNameOptions.Row.SAILING_BOAT_NAME_DESCRIPTOR_OPTIONS,
-				DBTableID.SailingBoatNameOptions.Row.SAILING_BOAT_NAME_NOUN_OPTIONS};
-			List<String> parts = new ArrayList<>();
-			for (int part = 0; part < 3; part++)
-			{
-				int index = client.getVarbitValue(varbits[2 + part]) - 1;
-				if (index > 0)
-				{
-					Object[] options = client.getDBTableField(rowIds[part],
-						DBTableID.SailingBoatNameOptions.COL_OPTION, 0);
-					if (index < options.length && options[index] instanceof String
-						&& !((String) options[index]).isEmpty())
-					{
-						parts.add((String) options[index]);
-					}
-				}
-			}
-			if (!parts.isEmpty())
-			{
-				return String.join(" ", parts);
-			}
-		}
-		catch (RuntimeException e)
-		{
-			// Name tables unavailable (cache quirk) — the slot label below still identifies it.
-		}
-		return "Boat " + (slot + 1);
-	}
-
-	/** Owned boats as {name, port label} rows for the panel's sailing section; null = never
-	 * collected for this character. */
-	public List<String[]> getBoatBanner()
-	{
-		return boatBanner;
-	}
-
-	/** Whether the banner reflects this session's live varbits rather than a restored snapshot. */
-	public boolean isBoatBannerLive()
-	{
-		return boatBannerLive;
-	}
-
-	private void restoreDetectionsFromConfig()
-	{
-		restoreBankFromConfig();
-		if (pathfinderConfig.availableSpiritTrees == null)
-		{
-			String raw = configManager.getRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_SPIRIT_TREES);
-			if (raw != null)
-			{
-				pathfinderConfig.availableSpiritTrees = raw.isEmpty()
-					? new HashSet<>() : new HashSet<>(Arrays.asList(raw.split(",")));
-			}
-		}
-		if (!pohScanned)
-		{
-			PohScanner.Detected detected = PohScanner.decode(
-				configManager.getRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_POH_FURNITURE));
-			if (detected != null)
-			{
-				detectedPohFurniture = detected;
-				pohScanned = true;
-			}
-		}
-		if (boatBanner == null)
-		{
-			String raw = configManager.getRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_BOAT_PORTS);
-			if (raw != null)
-			{
-				List<String[]> rows = new ArrayList<>();
-				for (String row : raw.split(";"))
-				{
-					// name|port, with |type appended since the hull glyphs; old snapshots lack it.
-					String[] parts = row.split("\\|", 3);
-					if (parts.length >= 2 && !parts[0].isEmpty())
-					{
-						rows.add(new String[]{parts[0], parts[1], parts.length > 2 ? parts[2] : ""});
-					}
-				}
-				boatBanner = rows;
-			}
-		}
-		// The panel's sections label their sync state — reflect what was just restored.
-		if (altPanel != null)
-		{
-			SwingUtilities.invokeLater(altPanel::refreshConfigSections);
-		}
-	}
-
-	/**
-	 * Serializes bank items as {@code id:quantity} pairs joined by commas. Empty slots and
-	 * placeholders (quantity 0) carry no information and are dropped. Null when there is nothing
-	 * worth saving.
-	 */
-	static String encodeBankSnapshot(Item[] items)
-	{
-		if (items == null)
-		{
-			return null;
-		}
-		StringBuilder sb = new StringBuilder(items.length * 10);
-		for (Item item : items)
-		{
-			if (item == null || item.getId() < 0 || item.getQuantity() <= 0)
-			{
-				continue;
-			}
-			if (sb.length() > 0)
-			{
-				sb.append(',');
-			}
-			sb.append(item.getId()).append(':').append(item.getQuantity());
-		}
-		return sb.length() > 0 ? sb.toString() : null;
-	}
-
-	/** Parses {@link #encodeBankSnapshot}'s format back into items. Null on missing or malformed data. */
-	static Item[] decodeBankSnapshot(String encoded)
-	{
-		if (encoded == null || encoded.isEmpty())
-		{
-			return null;
-		}
-		String[] pairs = encoded.split(",");
-		Item[] items = new Item[pairs.length];
-		try
-		{
-			for (int i = 0; i < pairs.length; i++)
-			{
-				int sep = pairs[i].indexOf(':');
-				if (sep <= 0)
-				{
-					return null;
-				}
-				items[i] = new Item(Integer.parseInt(pairs[i].substring(0, sep)),
-					Integer.parseInt(pairs[i].substring(sep + 1)));
-			}
-		}
-		catch (NumberFormatException e)
-		{
-			return null;
-		}
-		return items;
-	}
-
-	@Subscribe
-	public void onPostClientTick(PostClientTick event)
-	{
-		if (fairyRingPanelOpen && hasPathTargets())
-		{
-			scrollFairyRingPanel();
-		}
-	}
-
-	private void parseSpiritTreeWidget(boolean useNewMenu)
-	{
-		// Referencing
-		// https://github.com/trs/runelite-teleport-maps/blob/e006270494500ab8e4826903b377bb945ca9fc96/src/main/java/com/mjhylkema/TeleportMaps/components/adventureLog/SpiritTreeMap.java#L141
-
-		Widget container;
-		if (useNewMenu)
-		{
-			container = client.getWidget(InterfaceID.MENU_NEW, 9);
-		}
-		else
-		{
-			container = client.getWidget(InterfaceID.MENU, 3);
-		}
-
-		if (container == null)
-		{
-			return;
-		}
-
-		Widget[] children = container.getDynamicChildren();
-		if (children == null || children.length == 0)
-		{
-			return;
-		}
-
-		// Tree Gnome Village is always the first row and always available;
-		// quick length check before running the regex
-		// Expected (old): "<col=735a28>1</col>: Tree Gnome Village" (length 39)
-		// Expected (new): "<col=ffffff>1</col>: Tree Gnome Village" (length 39)
-		String firstText = children[0].getText();
-		if (firstText == null || firstText.length() != 39)
-		{
-			return;
-		}
-
-		Pattern pattern = useNewMenu ? SPIRIT_TREE_LABEL_PATTERN_MENU_NEW : SPIRIT_TREE_LABEL_PATTERN_MENU;
-
-		Set<String> available = new HashSet<>();
-
-		for (Widget child : children)
-		{
-			Matcher matcher = pattern.matcher(child.getText());
-			if (!matcher.matches())
-			{
-				continue;
-			}
-
-			// Group 2 is the disabled color tag; if present, the tree is unavailable
-			if (matcher.group(2) != null)
-			{
-				continue;
-			}
-
-			// Group 3 is spirit tree name
-			available.add(matcher.group(3));
-		}
-
-		pathfinderConfig.availableSpiritTrees = available;
-		spiritTreesParsedLive = true;
-		// Persist per character, so next session starts synced instead of asking for a travel-menu
-		// visit again. (Comma-safe: no spirit tree location name contains a comma.)
-		configManager.setRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_SPIRIT_TREES,
-			String.join(",", available));
-
-		// The panel's Spirit trees section shows the detected planted trees / sync state.
-		if (altPanel != null)
-		{
-			SwingUtilities.invokeLater(altPanel::refreshConfigSections);
-		}
-
-		if (hasPathTargets())
-		{
-			// Spirit-tree availability just became known: refresh the live config and regenerate
-			// so the displayed route can use (or drop) spirit trees accordingly.
-			setDestination(pathStart, new HashSet<>(pathTargets));
-			recomputeAlternatives();
-		}
-	}
-
-	private void scrollFairyRingPanel()
-	{
-		List<PathStep> path = getDisplayPath();
-		if (path.isEmpty())
-		{
-			return;
-		}
-
-		String fairyRingCode = null;
-
-		for (int i = 1; i < path.size(); i++)
-		{
-			PathStep currentStep = path.get(i - 1);
-			PathStep nextStep = path.get(i);
-			for (Transport transport : transportsForEdge(currentStep, nextStep))
-			{
-				if (TransportType.FAIRY_RING.equals(transport.getType()))
-				{
-					fairyRingCode = transport.getDisplayInfo();
-				}
-			}
-		}
-		if (fairyRingCode == null)
-		{
-			return;
-		}
-
-		Widget codeWidget = null;
-
-		Widget favesPanel = client.getWidget(InterfaceID.FairyringsLog.FAVES);
-		if (favesPanel != null)
-		{
-			for (Widget widget : favesPanel.getStaticChildren())
-			{
-				if (widget != null)
-				{
-					String widgetText = widget.getText();
-					if ((fairyRingCode.equals(widgetText)
-						|| ("(GPS) " + fairyRingCode).equals(widgetText)))
-					{
-						codeWidget = widget;
-						break;
-					}
-				}
-			}
-		}
-
-		Widget contentsList = client.getWidget(InterfaceID.FairyringsLog.CONTENTS);
-		if (contentsList != null && codeWidget == null)
-		{
-			for (Widget widget : contentsList.getDynamicChildren())
-			{
-				if (widget != null)
-				{
-					String widgetText = widget.getText();
-					if ((fairyRingCode.equals(widgetText)
-						|| ("(GPS) " + fairyRingCode).equals(widgetText)))
-					{
-						codeWidget = widget;
-						break;
-					}
-				}
-			}
-		}
-
-		if (codeWidget == null)
-		{
-			return;
-		}
-
-		codeWidget.setTextColor(0x00FF00);
-		String codeWidgetText = codeWidget.getText();
-		if (codeWidgetText != null && !codeWidgetText.contains("(GPS)"))
-		{
-			codeWidget.setText("(GPS) " + codeWidgetText);
-		}
-
-		if (contentsList == null)
-		{
-			return;
-		}
-
-		int panelScrollY = Math.min(
-			codeWidget.getRelativeY(),
-			contentsList.getScrollHeight() - contentsList.getHeight()
-		);
-
-		contentsList.setScrollY(panelScrollY);
-		contentsList.revalidateScroll();
-
-		client.runScript(
-			ScriptID.UPDATE_SCROLLBAR,
-			InterfaceID.FairyringsLog.SCROLLBAR,
-			InterfaceID.FairyringsLog.CONTENTS,
-			panelScrollY
-		);
-	}
-
-	/**
-	 * WARNING: This is a legacy wrapper for coarse display-oriented callers only.
-	 * <p>
-	 * It collapses banked/unbanked transport availability into a single view via
-	 * PathfinderConfig.getTransports(), which is not valid for path-state-sensitive logic.
-	 * <p>
-	 * Do not use this for reasoning about which transports are available at a specific
-	 * step of a path. Use PathfinderConfig.getTransportAvailability(boolean) and the
-	 * path's PathStep state instead.
-	 */
-	public PrimitiveIntHashMap<Transport[]> getTransports()
-	{
-		return pathfinderConfig.getTransports();
-	}
-
-	/**
-	 * This reconstructs the candidate transports for a rendered path edge from the current path state.
-	 * <p>
-	 * The important detail is that path display logic is edge-based, not node-based:
-	 * - origin position comes from currentStep
-	 * - destination position comes from nextStep
-	 * - the applicable transport set may depend on whether the edge transitions into banked state
-	 * <p>
-	 * That last point is the awkward one. Banking is not represented as its own explicit path edge;
-	 * instead the "becomes banked" state change is conflated into the movement/transport edge that
-	 * reaches the banked destination step. As a result, callers cannot safely resolve transports from
-	 * a single PathStep alone: using only currentStep can miss bank-gated transports, while using only
-	 * nextStep loses the origin tile of the edge. This helper therefore takes both steps and resolves
-	 * transports for the edge between them.
-	 * <p>
-	 * This is still only a fallback for display code and remains inherently ambiguous when multiple
-	 * valid transports share the same origin/destination pair under the same edge state. The more
-	 * structural fix would be to model reconstructed paths in terms of explicit edges, or otherwise
-	 * carry richer per-edge metadata, instead of repeatedly re-deriving transport candidates from
-	 * adjacent path steps.
-	 * <p>
-	 * Note that this function also performs filtering by the transport target, so callers of this
-	 * function can directly iterate over the returned transports.
-	 */
-	/**
-	 * Whether the DISPLAYED route uses a teleport method to reach the tile after {@code fromIndex}
-	 * (edge {@code fromIndex} → {@code fromIndex + 1}). Drives the teleport pulse straight from the
-	 * shown route's method edges — {@link #transportsForEdge} re-derives transports from the classic
-	 * config, whose teleport-item setting (e.g. "Inventory (perm)") excludes charged jewellery, so a
-	 * charged-item leg on an alternative route never pulsed.
-	 */
-	public boolean displayedRouteTeleportsAt(int fromIndex)
-	{
-		TeleportMethod method = displayedRouteMethodAt(fromIndex);
-		return method != null && method.getType() != null && method.getType().isTeleport();
-	}
-
-	/**
-	 * The method the DISPLAYED route uses to reach the tile after {@code fromIndex}, or null when
-	 * that edge is plain walking. Lets the world overlay label a leg (e.g. "Varrock tablet") that
-	 * {@link #transportsForEdge} can't re-derive because the classic config's teleport-item setting
-	 * excludes it (charged/consumable items under a perm-only setting).
-	 */
-	public TeleportMethod displayedRouteMethodAt(int fromIndex)
-	{
-		RouteOption route = getDisplayedRoute();
-		if (route == null)
-		{
-			return null;
-		}
-		int arriveIndex = fromIndex + 1;
-		List<Integer> edges = route.getMethodEdgeIndexes();
-		List<TeleportMethod> methods = route.getMethods();
-		for (int m = 0; m < edges.size() && m < methods.size(); m++)
-		{
-			if (edges.get(m) == arriveIndex)
-			{
-				return methods.get(m);
-			}
-		}
-		return null;
-	}
-
-	public Set<Transport> transportsForEdge(PathStep currentStep, PathStep nextStep)
-	{
-		if (currentStep == null || nextStep == null)
-		{
-			return Set.of();
-		}
-		boolean bankVisited = currentStep.isBankVisited() || nextStep.isBankVisited();
-		// Only the transports that land on the next step - filtered while collecting, because this
-		// runs per edge per frame from the overlays and used to copy EVERY usable teleport into a
-		// fresh set first.
-		final int landing = nextStep.getPackedPosition();
-		Set<Transport> stepTransports = new HashSet<>();
-		for (Transport transport : pathfinderConfig.getTransportsPacked(bankVisited)
-			.getOrDefault(currentStep.getPackedPosition(), TransportAvailability.EMPTY_TRANSPORTS))
-		{
-			if (transport.getDestination() == landing)
-			{
-				stepTransports.add(transport);
-			}
-		}
-		// The teleports, which might be used from anywhere.
-		for (Transport transport : pathfinderConfig.getUsableTeleports(bankVisited))
-		{
-			if (transport.getDestination() == landing)
-			{
-				stepTransports.add(transport);
-			}
-		}
-		// Remove teleports that share destinations with a local transport type on this edge.
-		// For example, if the path uses a QUETZAL (local) transport, suppress QUETZAL_WHISTLE hints.
-		// Also suppress them when the edge distance is within the shared type's radius threshold,
-		// which occurs when the path is simply walking to a landing site (not teleporting to it).
-		Set<TransportType> localTypes = EnumSet.noneOf(TransportType.class);
-		for (Transport t : stepTransports)
-		{
-			if (t.getOrigin() != Transport.UNDEFINED_ORIGIN && t.getType() != null)
-			{
-				localTypes.add(t.getType());
-			}
-		}
-		int edgeDistance = WorldPointUtil.distanceBetween2D(currentStep.getPackedPosition(), nextStep.getPackedPosition());
-		boolean samePlane = WorldPointUtil.unpackWorldPlane(currentStep.getPackedPosition())
-			== WorldPointUtil.unpackWorldPlane(nextStep.getPackedPosition());
-		stepTransports.removeIf(t ->
-		{
-			if (t.getOrigin() != Transport.UNDEFINED_ORIGIN || t.getType() == null)
-			{
-				return false; // keep local transports
-			}
-			// A same-plane adjacent edge is a plain walking step — the pathfinder never spends a
-			// teleport on a one-tile hop. Any anywhere-teleport matching it is the path merely
-			// walking across that teleport's landing tile, so it must not be hinted.
-			if (samePlane && edgeDistance <= 1)
-			{
-				return true;
-			}
-			TransportType sharedType = t.getType().sharesDestinationsWith();
-			if (sharedType == null)
-			{
-				return false; // not a shared-destination teleport, keep it
-			}
-			// Suppress if a local transport of the shared type is present on this edge (Issue 1),
-			// or if the edge is within the shared type's radius threshold, meaning the path is
-			// walking to the landing site rather than teleporting there (Issue 2).
-			return localTypes.contains(sharedType)
-				|| (sharedType.getRadiusThreshold() != null && edgeDistance <= sharedType.getRadiusThreshold());
-		});
-		return stepTransports;
-	}
-
-	public PathStep nextPathStep(List<PathStep> path, int index)
-	{
-		if (path == null || index < 0 || index + 1 >= path.size())
-		{
-			return null;
-		}
-		return path.get(index + 1);
-	}
-
-	/**
-	 * Checks if the destination is inside POH and looks ahead in the path to find the exit transport.
-	 * If the immediate exit leads to a fairy ring or other notable transport shortly after,
-	 * that information is included instead.
-	 *
-	 * @param destination  The destination point to check
-	 * @param path         The full path
-	 * @param currentIndex The current index in the path
-	 * @return The display info of the POH exit transport, or null if not applicable
-	 */
-	public String getPohExitInfo(int destination, List<PathStep> path, int currentIndex)
-	{
-		if (path == null || currentIndex < 0)
-		{
-			return null;
-		}
-
-		int destX = WorldPointUtil.unpackWorldX(destination);
-		int destY = WorldPointUtil.unpackWorldY(destination);
-
-		// Check if destination is inside POH
-		if (!isInsidePoh(destX, destY))
-		{
-			return null;
-		}
-
-		String immediateExitInfo = null;
-
-		// Look ahead in the path to find the next transport that exits POH
-		for (int i = currentIndex + 1; i < path.size() - 1; i++)
-		{
-			int stepLocation = path.get(i).getPackedPosition();
-			int nextLocation = path.get(i + 1).getPackedPosition();
-
-			int stepX = WorldPointUtil.unpackWorldX(stepLocation);
-			int stepY = WorldPointUtil.unpackWorldY(stepLocation);
-			int nextX = WorldPointUtil.unpackWorldX(nextLocation);
-			int nextY = WorldPointUtil.unpackWorldY(nextLocation);
-
-			// Check if this step is inside POH but next step is outside (exit transport)
-			boolean stepInsidePoh = isInsidePoh(stepX, stepY);
-			boolean nextInsidePoh = isInsidePoh(nextX, nextY);
-
-			if (stepInsidePoh && !nextInsidePoh)
-			{
-				// Found the exit transport - get its display info using bank-aware lookup
-				PathStep currentStep = path.get(i);
-				PathStep nextStep = path.get(i + 1);
-				for (Transport transport : transportsForEdge(currentStep, nextStep))
-				{
-					String exitInfo = transport.getDisplayInfo();
-					if (exitInfo != null && !exitInfo.isEmpty())
-					{
-						TransportType exitType = transport.getType();
-						if (TransportType.TELEPORTATION_BOX.equals(exitType))
-						{
-							String objInfo = transport.getObjectInfo();
-							if (objInfo != null && objInfo.contains("Amulet of Glory"))
-							{
-								immediateExitInfo = "Mounted Glory: " + exitInfo;
-							}
-							else if (objInfo != null && objInfo.contains("Mythical cape"))
-							{
-								immediateExitInfo = "Mythical Cape: " + exitInfo;
-							}
-							else if (objInfo != null && objInfo.contains("Xeric's Talisman"))
-							{
-								immediateExitInfo = "Xeric's Talisman: " + exitInfo;
-							}
-							else if (objInfo != null && objInfo.contains("Digsite"))
-							{
-								immediateExitInfo = "Digsite Pendant: " + exitInfo;
-							}
-							else
-							{
-								immediateExitInfo = "Jewelry Box: " + exitInfo;
-							}
-						}
-						else if (TransportType.TELEPORTATION_PORTAL_POH.equals(exitType))
-						{
-							immediateExitInfo = "Nexus: " + exitInfo;
-						}
-						else if (TransportType.FAIRY_RING.equals(exitType))
-						{
-							immediateExitInfo = "Fairy Ring " + exitInfo;
-						}
-						else if (TransportType.SPIRIT_TREE.equals(exitType))
-						{
-							immediateExitInfo = "Spirit Tree: " + exitInfo;
-						}
-						else if (TransportType.WILDERNESS_OBELISK.equals(exitType))
-						{
-							immediateExitInfo = "Obelisk: " + exitInfo;
-						}
-						else
-						{
-							immediateExitInfo = exitInfo;
-						}
-					}
-					break;
-				}
-				break;
-			}
-
-			// If we've left POH without finding a transport, stop looking
-			if (!stepInsidePoh)
-			{
-				break;
-			}
-		}
-
-		return immediateExitInfo;
-	}
-
-	private Color override(String configOverrideKey, Color defaultValue)
-	{
-		if (!configOverride.isEmpty())
-		{
-			Object value = configOverride.get(configOverrideKey);
-			if (value instanceof Color)
-			{
-				return (Color) value;
-			}
-		}
-		return defaultValue;
-	}
-
-
-	// The helm-preference toggle, cached for the comparator (read on the service thread).
-	private volatile boolean cachedKeepSailing = true;
-
-	private void cacheConfigValues()
-	{
-		cachedKeepSailing = override("sailingKeepSailing", config.sailingKeepSailing());
-		drawMap = override("drawMap", config.drawMap());
-		drawMinimap = override("drawMinimap", config.drawMinimap());
-		drawTiles = override("drawTiles", config.drawTiles());
-		drawRecalculationRanges = override("drawRecalculationRanges", config.drawRecalculationRanges());
-		showTransportInfo = override("showTransportInfo", config.showTransportInfo());
-		showBankPickupInfo = override("showBankPickupInfo", config.showBankPickupInfo());
-
-		colourPath = override("colourPath", config.colourPath());
-		colourPathSailing = override("colourPathSailing", config.colourPathSailing());
-		colourPathBlocked = override("colourPathBlocked", config.colourPathBlocked());
-		colourPathCalculating = override("colourPathCalculating", config.colourPathCalculating());
-		colourPathUnreachable = override("colourPathUnreachable", config.colourPathUnreachable());
-		colourText = override("colourText", config.colourText());
-		colourTeleportPulse = override("colourTeleportPulse", config.colourTeleportPulse());
-		colourOverlayAccent = override("colourOverlayAccent", config.colourOverlayAccent());
-
-		unreachableTargetDistance = override("unreachableTargetDistanceThreshold", config.unreachableTargetDistance());
-		unreachableText = config.unreachableText();
-
-		showTeleportPulse = override("showTeleportPulse", config.showTeleportPulse());
-		showDirections = override("showDirections", config.showDirections());
-		overrideOverlayTransparency = override("overrideOverlayTransparency", config.overrideOverlayTransparency());
-		overlayTransparency = override("overlayTransparency", config.overlayTransparency());
-		// Display-only preference; not part of the capture-replay override set.
-		overlayFontSize = config.overlayFontSize();
-		arrivalAutoDismiss = override("arrivalAutoDismiss", config.arrivalAutoDismiss());
-		arrivalDismissSeconds = override("arrivalDismissSeconds", config.arrivalDismissSeconds());
-	}
-
-	private String simplify(String text)
-	{
-		return Text.removeTags(text).toLowerCase()
-			.replaceAll("[^a-zA-Z ]", "")
-			.replace(" ", "_")
-			.replace("__", "_");
-	}
-
-	private void onMenuOptionClicked(MenuEntry entry)
-	{
-		if (entry.getOption().equals(SET) && entry.getTarget().equals(TARGET))
-		{
-			targetSource = "map pin";
-			setTarget(getSelectedWorldPoint());
-		}
-		else if (entry.getOption().equals(CLEAR) && entry.getTarget().equals(PATH))
-		{
-			targetSource = null;
-			setTarget(WorldPointUtil.UNDEFINED);
-		}
-		else if (entry.getOption().equals(FIND_CLOSEST))
-		{
-			targetSource = "map pin";
-			setTargets(pathfinderConfig.getDestinations(simplify(entry.getTarget())), true);
-		}
-	}
-
-	private int getSelectedWorldPoint()
-	{
-		if (client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) == null)
-		{
-			if (client.getTopLevelWorldView().getSelectedSceneTile() != null)
-			{
-				return WorldPointUtil.fromLocalInstance(client, client.getTopLevelWorldView().getSelectedSceneTile().getLocalLocation());
-			}
-		}
-		else
-		{
-			return client.isMenuOpen()
-				? calculateMapPoint(lastMenuOpenedPoint.getX(), lastMenuOpenedPoint.getY())
-				: calculateMapPoint(client.getMouseCanvasPosition().getX(), client.getMouseCanvasPosition().getY());
-		}
-		return WorldPointUtil.UNDEFINED;
-	}
-
-	private void setTarget(int target)
-	{
-		setTarget(target, false);
-	}
-
-	/**
-	 * Sets the GPS destination to a searched place/amenity (from the panel search box), recording
-	 * where it came from for the directions header. Runs on the client thread.
-	 */
-	public void setDestination(int packedPosition, String source)
-	{
-		clientThread.invokeLater(() ->
-		{
-			targetSource = source;
-			// Searched destinations can sit on unwalkable tiles (a place label on a fountain):
-			// expand to the nearest walkable ring, like map pins — walkable tiles stay exact.
-			// The world-map pin stays on the destination itself.
-			Set<Integer> targets = new HashSet<>(Destinations.walkableTargets(
-				pathfinderConfig != null ? pathfinderConfig.getMap() : null, packedPosition,
-				pathfinderConfig != null ? pathfinderConfig::isTransportOrigin : null));
-			if (targets.size() > 1)
-			{
-				markerTarget = packedPosition;
-			}
-			setTargets(targets, false);
-		});
-	}
-
-	/**
-	 * Routes to the NEAREST of an amenity category (bank, altar, ...): sets every tile of the
-	 * category as a target and generates the ranked alternative routes, so the shortest paths —
-	 * with the teleports currently available — surface first, whichever site they reach.
-	 */
-	public void setNearestCategory(Set<Integer> tiles, String source)
-	{
-		setNearestCategory(tiles, source, false);
-	}
-
-	/**
-	 * The round-trip variant additionally routes BACK to the current position: every produced
-	 * route goes out to a site and home again, ranked by the combined cost — the best round-trip
-	 * bank is not necessarily the nearest one-way bank.
-	 */
-	public void setNearestCategory(Set<Integer> tiles, String source, boolean roundTrip)
-	{
-		if (tiles == null || tiles.isEmpty())
-		{
-			return;
-		}
-		clientThread.invokeLater(() ->
-		{
-			targetSource = source;
-			setTargets(new HashSet<>(tiles), false);
-			// After setTargets: it resets the round-trip flag for ordinary destinations.
-			altRoundTrip = roundTrip;
-			recomputeAlternatives();
-		});
-	}
-
-	/**
-	 * Runs one nearest-X option: the panel's quick buttons and menu, its search box's nearest-of
-	 * row, and the two bank hotkeys. A bank option starts a bank trip: the destination it
-	 * replaces is resumed once the trip completes (see BankDetour).
-	 */
-	public void goToNearest(Destinations.NearestOption option)
-	{
-		Set<Integer> tiles = Destinations.tilesForCategory(option.id, getTransports());
-		boolean roundTrip = "bank_round_trip".equals(option.id);
-		boolean bank = roundTrip || "bank".equals(option.id);
-		if (bank)
-		{
-			// Union in the engine's accessible-bank tiles: the amenity dump misses oddly-named
-			// bank objects (e.g. Slepe's "Bank Chest-wreck"), and "nearest bank" must never
-			// disagree with where the engine itself can bank.
-			tiles.addAll(getEngineBankTiles());
-		}
-		String source = "nearest " + option.label.toLowerCase(Locale.ROOT);
-		if (!bank)
-		{
-			setNearestCategory(tiles, source, false);
-			return;
-		}
-		if (tiles.isEmpty())
-		{
-			return;
-		}
-		clientThread.invokeLater(() ->
-		{
-			if (client.getLocalPlayer() == null)
-			{
-				// Logged out: setTargets would change nothing, so no trip may start either.
-				return;
-			}
-			// Read before the destination changes: setting it forgets any trip under way.
-			BankDetour.Route replaced = bankDetour.replacing(
-				BankDetour.Route.of(pathTargets, targetSource, altRoundTrip, markerTile()));
-			targetSource = source;
-			setTargets(new HashSet<>(tiles), false);
-			// After setTargets: it resets the round-trip flag and forgets the trip.
-			altRoundTrip = roundTrip;
-			bankDetour.begin(replaced);
-			recomputeAlternatives();
-		});
-	}
-
-	/** The panel's "Bank" and "Bank (and back)" quick buttons, and their hotkeys. */
-	public void goToNearestBank(boolean roundTrip)
-	{
-		String id = roundTrip ? "bank_round_trip" : "bank";
-		for (Destinations.NearestOption option : Destinations.NEAREST_OPTIONS)
-		{
-			if (option.id.equals(id))
-			{
-				goToNearest(option);
-				return;
-			}
-		}
-	}
-
-	/** The world-map pin's tile, or UNDEFINED without one. */
-	private int markerTile()
-	{
-		WorldMapPoint pin = marker;
-		return pin == null ? WorldPointUtil.UNDEFINED : WorldPointUtil.packWorldPoint(pin.getWorldPoint());
-	}
-
-	/**
-	 * Picks the destination a completed bank trip replaced back up: the same targets, label, pin
-	 * and round-trip flag, with routes generated from the bank, where the player now stands.
-	 */
-	private void resumeRoute(BankDetour.Route route)
-	{
-		targetSource = route.source;
-		markerTarget = route.marker;
-		setTargets(new HashSet<>(route.targets), false);
-		altRoundTrip = route.roundTrip;
-		if (route.roundTrip)
-		{
-			recomputeAlternatives();
-		}
-		client.addChatMessage(net.runelite.api.ChatMessageType.GAMEMESSAGE, "",
-			"GPS: bank reached, resuming your previous route.", null);
-	}
-
-	/**
-	 * The player's packed world position, or {@link WorldPointUtil#UNDEFINED} when not logged
-	 * in — BOAT-AWARE: aboard, the raw local position lives in the boat's sub-WorldView
-	 * (template-band coordinates that broke progress tracking and hid the route overlays the
-	 * moment the player boarded); the Player overload resolves through the boat WorldEntity,
-	 * returning UNDEFINED transiently during view swaps.
-	 */
-	private volatile int lastKnownPlayerLocation = WorldPointUtil.UNDEFINED;
-
-	/** Where the player was as of the last game tick — safe from ANY thread (see onGameTick). */
-	public int getLastKnownPlayerLocation()
-	{
-		return lastKnownPlayerLocation;
-	}
-
-	public int getPlayerLocation()
-	{
-		Player local = client.getLocalPlayer();
-		return local == null ? WorldPointUtil.UNDEFINED
-			: WorldPointUtil.fromLocalInstance(client, local);
-	}
-
-	private void setTarget(int target, boolean append)
-	{
-		Set<Integer> targets = new HashSet<>();
-		if (target != WorldPointUtil.UNDEFINED)
-		{
-			// A pin on an unwalkable tile (furniture, a fence, an NPC's tile from Quest Helper) can
-			// never be settled by the search — it would explore the entire map and fall back to a
-			// closest-tile path (captured in-game: 11 exhausted searches, 8.2s). Target the nearest
-			// walkable ring instead; walkable pins stay exact, and the map pin stays on the tile.
-			Set<Integer> walkable = Destinations.walkableTargets(
-				pathfinderConfig != null ? pathfinderConfig.getMap() : null, target,
-				pathfinderConfig != null ? pathfinderConfig::isTransportOrigin : null);
-			if (walkable.size() > 1)
-			{
-				markerTarget = target;
-			}
-			targets.addAll(walkable);
-		}
-		setTargets(targets, append);
-	}
-
-	private void setTargets(Set<Integer> targets, boolean append)
-	{
-		// Any change of destination forgets a bank trip's saved route; a bank trip re-arms after.
-		bankDetour.cancel();
-		// Ordinary destinations are one-way; the round-trip entry point re-sets this after.
-		altRoundTrip = false;
-		// A fresh destination starts at the default cost band; "show more" widens it from there.
-		// (loadMoreRoutes bumps the multiple and regenerates without going through setTargets.)
-		routeCostMultiple = DEFAULT_COST_MULTIPLE;
-		if (targets == null || targets.isEmpty())
-		{
-			pathStart = WorldPointUtil.UNDEFINED;
-			pathTargets = Set.of();
-
-			worldMapPointManager.removeIf(x -> x == marker);
-			marker = null;
-			selectedRoute = null;
-			routeLimit = defaultRouteLimit();
-			// Keep the teleport-methods catalog visible with no target selected.
-			triggerAlternatives(WorldPointUtil.UNDEFINED, new HashSet<>());
-		}
-		else
-		{
-			Player localPlayer = client.getLocalPlayer();
-			if (localPlayer == null)
-			{
-				return;
-			}
-			worldMapPointManager.removeIf(x -> x == marker);
-			// A destination expanded to its walkable perimeter (a searched bank booth and its
-			// surround) still gets its pin: on the expansion's centre, not the single-target tile.
-			int markerTile = markerTarget != WorldPointUtil.UNDEFINED ? markerTarget
-				: (targets.size() == 1 ? targets.iterator().next() : WorldPointUtil.UNDEFINED);
-			markerTarget = WorldPointUtil.UNDEFINED;
-			if (markerTile != WorldPointUtil.UNDEFINED)
-			{
-				marker = new WorldMapPoint(WorldPointUtil.unpackWorldPoint(markerTile), MARKER_IMAGE);
-				marker.setName("Target");
-				marker.setTarget(marker.getWorldPoint());
-				marker.setJumpOnClick(true);
-				worldMapPointManager.add(marker);
-			}
-
-			int start = WorldPointUtil.fromLocalInstance(client, localPlayer);
-			lastLocation = start;
-			Set<Integer> destinations = new HashSet<>(targets);
-			if (append)
-			{
-				destinations.addAll(pathTargets);
-			}
-			// Arm the journey timer: it starts counting from the player's first movement.
-			armJourney();
-			// The routes themselves are generated by the tick-level auto-compute (keyed on the
-			// target-set change) or the panel's "Find routes" button.
-			setDestination(start, destinations, append);
-		}
-	}
-
-	// --- Alternative-routes feature (driven by ShortestPathPanel) ---
-
-	/** The journey wall-clock start, or 0 while it hasn't begun (armed, waiting for movement). */
-	public long getJourneyStartMillis()
-	{
-		return journeyStartMillis;
-	}
-
-	/** Re-arms the journey timer so it recounts from the player's next movement. */
-	private void armJourney()
-	{
-		journeyStartMillis = 0;
-		journeyLastLocation = WorldPointUtil.UNDEFINED;
-	}
-
-	/**
-	 * The live collision map, for the progress tracker's wall-aware checks and the dev audit's
-	 * capture lane expansion. Null until loaded.
-	 */
-	public gps.pathfinder.CollisionMap getCollisionMap()
-	{
-		PathfinderConfig config = pathfinderConfig;
-		return config != null ? config.getMap() : null;
-	}
-
-	/** Why every route of the current page stops short, for the panel's status (plan step N12). */
-	public AlternativeRoutesService.UnreachableCause getUnreachableCause()
-	{
-		AlternativeRoutesService service = altRoutesService;
-		return service != null ? service.lastUnreachableCause() : AlternativeRoutesService.UnreachableCause.NONE;
-	}
-
-	public RouteOption getDisplayedRoute()
-	{
-		RouteOption route = selectedRoute;
-		if (route != null)
-		{
-			return route;
-		}
-		// While a generation is still streaming/re-ranking, hold the last committed route (null for a
-		// fresh destination: the HUD shows "Finding the best route" and the ground stays clear)
-		// rather than flip the overlay through the changing top result — that flash of one route
-		// immediately replaced by another is the "glitchy" search behaviour. The final top route is
-		// committed once the generation settles (see onAlternativeRoutesUpdate).
-		if (altGenerationInFlight)
-		{
-			return committedDisplayRoute;
-		}
-		List<RouteOption> routes = alternativeRoutes;
-		if (routes.isEmpty())
-		{
-			return null;
-		}
-		// Only substitute the first alternative when it was computed for the current destination;
-		// a stale list (target changed since "Find routes") must not be displayed.
-		Set<Integer> targets = pathTargets;
-		if (targets.isEmpty() || !lastAltTargets.equals(targets))
-		{
-			return null;
-		}
-		return routes.get(0);
-	}
-
-	/**
-	 * The path the overlays should draw: the displayed route's (the selected one, or by default the
-	 * first route of the current alternatives list, so the drawn path reflects the chosen
-	 * mode/exclusions). Empty when no route is displayed.
-	 */
-	public List<PathStep> getDisplayPath()
-	{
-		RouteOption route = getDisplayedRoute();
-		return route != null ? route.getPath() : List.of();
-	}
-
-	/**
-	 * Path indexes of the displayed route where a SAILING leg departs — the overlays draw
-	 * those jumps as real sea tracks ({@link SailingSea#seaPath}) instead of dashed lines.
-	 */
-	public Set<Integer> getDisplaySailingEdges()
-	{
-		RouteOption route = getDisplayedRoute();
-		if (route == null)
-		{
-			return Set.of();
-		}
-		return route.sailingJumpDepartures();
-	}
-
-	public Set<TeleportMethod> getUserExclusions()
-	{
-		return new HashSet<>(userExclusions);
-	}
-
-	// --- Method priorities (ranking bias; see MethodPriority) ---------------------------------
-
-	private final Map<TeleportMethod, MethodPriority> methodPriorities = new ConcurrentHashMap<>();
-
-	/** One serialized priority entry (method identity + tier), for the config JSON. */
-	private static final class PriorityEntry
-	{
-		TeleportMethod method;
-		MethodPriority priority;
-	}
-
-	/** The method's tier: EXCLUDED when in the exclusion set, else its stored tier or NORMAL. */
-	public MethodPriority getMethodPriority(TeleportMethod method)
-	{
-		if (userExclusions.contains(method))
-		{
-			return MethodPriority.EXCLUDED;
-		}
-		return methodPriorities.getOrDefault(method, MethodPriority.NORMAL);
-	}
-
-	/**
-	 * Sets a method's tier. EXCLUDED delegates to the exclusion set (search-affecting, flags the
-	 * stale banner); every other tier is ranking-only — the current list re-sorts immediately.
-	 * Choosing a non-EXCLUDED tier for an excluded method also un-excludes it.
-	 */
-	public void setMethodPriority(TeleportMethod method, MethodPriority priority)
-	{
-		clientThread.invoke(() -> setMethodPriorityOnClientThread(method, priority));
-	}
-
-	private void setMethodPriorityOnClientThread(TeleportMethod method, MethodPriority priority)
-	{
-		if (priority == MethodPriority.EXCLUDED)
-		{
-			// Exclusion is a MASK over the stored tier, not a replacement: the tier stays in the
-			// map (shadowed by the EXCLUDED read-back) so re-including — via this menu, the
-			// category toggle, or clearExclusions — restores the user's tuning. This matches the
-			// section-toggle path, which never touched the tier map in the first place.
-			excludeMethod(method);
-			return;
-		}
-		if (userExclusions.contains(method))
-		{
-			includeMethod(method);
-		}
-		if (priority == MethodPriority.NORMAL)
-		{
-			methodPriorities.remove(method);
-		}
-		else
-		{
-			methodPriorities.put(method, priority);
-		}
-		savePriorities();
-		resortRoutesByPriority();
-	}
-
-	/** The walk-preference bias in seconds (negative effective ETA for the pure-walk route). */
-	public int getWalkPreferenceSeconds()
-	{
-		return cachedWalkPreferenceSeconds;
-	}
-
-	public void setWalkPreferenceSeconds(int seconds)
-	{
-		configManager.setConfiguration(CONFIG_GROUP, "walkPreferenceSeconds", seconds);
-		cachedWalkPreferenceSeconds = seconds;
-		resortRoutesByPriority();
-	}
-
-	private volatile int cachedWalkPreferenceSeconds;
-	private volatile int cachedBankPreferenceSeconds;
-
-	/** The bank-detour bias in seconds: positive prefers via-bank routes, negative avoids them. */
-	public int getBankPreferenceSeconds()
-	{
-		return cachedBankPreferenceSeconds;
-	}
-
-	public void setBankPreferenceSeconds(int seconds)
-	{
-		configManager.setConfiguration(CONFIG_GROUP, "bankPreferenceSeconds", seconds);
-		cachedBankPreferenceSeconds = seconds;
-		resortRoutesByPriority();
-	}
-
-	/**
-	 * The route's ranking adjustment in seconds: the sum of its methods' tiers — or, for the
-	 * pure-walk route, minus the walk preference (walking wins ties up to that many seconds).
-	 */
-	public int routeAdjustmentSeconds(RouteOption route)
-	{
-		if (route.getMethods().isEmpty())
-		{
-			return -cachedWalkPreferenceSeconds;
-		}
-		int seconds = 0;
-		for (TeleportMethod method : route.getMethods())
-		{
-			seconds += methodPriorities.getOrDefault(method, MethodPriority.NORMAL).adjustSeconds;
-		}
-		if (route.isViaBank())
-		{
-			seconds -= cachedBankPreferenceSeconds;
-		}
-		return seconds;
-	}
-
-	/** Effective sort key: reached routes first, then raw cost plus the priority adjustment. */
-	private java.util.Comparator<RouteOption> effectiveOrder()
-	{
-		return java.util.Comparator
-			.comparingInt((RouteOption r) -> r.isReached() ? 0 : 1)
-			// At the helm, routes that STAY ON THE WATER outrank disembark-and-teleport chains
-			// (capture 20260829-204334: every offer abandoned the boat at the nearest mooring
-			// because the tick math favors teleports; a sailor mid-task wants the sea route
-			// first, the land chains listed below). Sailing-section toggle, on by default.
-			.thenComparingInt(r -> keepSailingFirst() && !r.isPureSail() ? 1 : 0)
-			.thenComparingInt(r -> r.getTotalCost() + MethodPriority.unitsFromSeconds(routeAdjustmentSeconds(r)));
-	}
-
-	boolean keepSailingFirst()
-	{
-		PathfinderConfig pathConfig = pathfinderConfig;
-		return cachedKeepSailing && pathConfig != null && pathConfig.isOnSailingBoat();
-	}
-
-	/** Stable re-sort of the current list (tiers changed) — display-only, no regeneration. */
-	private void resortRoutesByPriority()
-	{
-		List<RouteOption> routes = alternativeRoutes;
-		if (routes != null && !routes.isEmpty())
-		{
-			List<RouteOption> sorted = new ArrayList<>(routes);
-			sorted.sort(effectiveOrder());
-			alternativeRoutes = sorted;
-		}
-		refreshPanel(altGenerationInFlight);
-	}
-
-	/** Applies the effective order to a freshly generated list (called from the update stream). */
-	List<RouteOption> sortByEffectiveOrder(List<RouteOption> routes)
-	{
-		List<RouteOption> sorted = new ArrayList<>(routes);
-		sorted.sort(effectiveOrder());
-		return sorted;
-	}
-
-	private void savePriorities()
-	{
-		try
-		{
-			List<PriorityEntry> entries = new ArrayList<>();
-			for (Map.Entry<TeleportMethod, MethodPriority> e : methodPriorities.entrySet())
-			{
-				PriorityEntry entry = new PriorityEntry();
-				entry.method = e.getKey();
-				entry.priority = e.getValue();
-				entries.add(entry);
-			}
-			configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_PRIORITIES, gson.toJson(entries));
-		}
-		catch (Exception e)
-		{
-			log.warn("Failed to save method priorities", e);
-		}
-	}
-
-	private void loadPriorities()
-	{
-		try
-		{
-			String json = configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_PRIORITIES);
-			if (json != null && !json.isEmpty())
-			{
-				PriorityEntry[] saved = gson.fromJson(json, PriorityEntry[].class);
-				if (saved != null)
-				{
-					for (PriorityEntry entry : saved)
-					{
-						if (entry != null && entry.method != null && entry.method.getType() != null
-							&& entry.priority != null && entry.priority != MethodPriority.NORMAL
-							&& entry.priority != MethodPriority.EXCLUDED)
-						{
-							methodPriorities.put(entry.method, entry.priority);
-						}
-					}
-				}
-			}
-		}
-		catch (Exception e)
-		{
-			log.warn("Failed to load method priorities", e);
-		}
-		Integer walk = configManager.getConfiguration(CONFIG_GROUP, "walkPreferenceSeconds", Integer.class);
-		cachedWalkPreferenceSeconds = walk != null ? walk : 0;
-		Integer bank = configManager.getConfiguration(CONFIG_GROUP, "bankPreferenceSeconds", Integer.class);
-		cachedBankPreferenceSeconds = bank != null ? bank : 0;
-	}
-
-	private volatile int houseLocationId;
-	private static final String[] HOUSE_LOCATIONS = {
-		null, "Rimmington", "Taverley", "Pollnivneach", "Rellekka", "Brimhaven",
-		"Yanille", "Prifddinas", "Hosidius", "Aldarin"};
-
-	/** The player's house location name (varbit 2187), or null when no house is detected. */
-	public String getHouseLocationName()
-	{
-		int id = houseLocationId;
-		return (id > 0 && id < HOUSE_LOCATIONS.length) ? HOUSE_LOCATIONS[id] : null;
-	}
-
-	// Smart house furniture detection: scan the scene while the player is inside their POH.
-	private volatile boolean pohScanned = false;
-	private volatile PohScanner.Detected detectedPohFurniture;
-	// Reset when the player leaves the house, so the next visit re-scans (catching new furniture).
-	private boolean pohFurnitureFoundThisVisit = false;
-	// Bounds the "scene still loading" retries so a bare house doesn't rescan every tick forever.
-	private int pohScanAttempts = 0;
-	private static final int POH_SCAN_MAX_ATTEMPTS = 6;
-	// Recognised POH furniture ids seen spawning in the current scene (cleared on every scene
-	// load). A second, independent in-house signal: these object ids only exist inside player-owned
-	// houses, so a spawn is proof of being in one even if the template-chunk check somehow isn't.
-	private final Set<Integer> pohSpawnedFurniture = new HashSet<>();
-	// One decoded chunk dump per scene when an instance is judged NOT a house — the data needed to
-	// diagnose a missed house from the client log.
-	private boolean pohChunksLogged = false;
-	// Tracks building mode so leaving it re-arms the scan: furniture built mid-visit is then
-	// detected without having to exit and re-enter the house.
-	private boolean pohBuildingMode = false;
-
-	/**
-	 * While inside the POH, scan the loaded scene for the furniture GPS can recognise (jewellery
-	 * box, fairy ring, spirit tree, obelisk) and turn ON the matching declarations — never off, so
-	 * detection can only add routes, never silently drop one. The two coarse toggles (portals &
-	 * nexus, mounted items) bundle furniture GPS cannot verify and stay manual. Re-scans each tick
-	 * until something is found (the scene can still be populating on the entry tick), then stops.
-	 */
-	private void maybeScanPoh()
-	{
-		// In-the-house detection, two independent signals (prior single-signal attempts failed in
-		// the field — varbit 4744 and player-tile template mapping against the wrong band):
-		// 1. The loaded instance's map regions are POH template regions — houses are instances
-		//    assembled from that dedicated template area (see POH_TEMPLATE_REGIONS).
-		// 2. Recognised POH furniture spawned in this scene — those object ids only exist inside
-		//    player-owned houses (the official POH plugin's approach).
-		boolean sceneIsHouse = isPohScene(client.getTopLevelWorldView());
-		boolean inside = sceneIsHouse || !pohSpawnedFurniture.isEmpty();
-		if (!inside)
-		{
-			// Diagnosability: when an instance is judged not-a-house, log its decoded template
-			// chunks once per scene — if a real house is ever missed, the client log shows exactly
-			// what its chunks mapped to.
-			if (!pohChunksLogged && log.isDebugEnabled()
-				&& client.getTopLevelWorldView() != null && client.getTopLevelWorldView().isInstance())
-			{
-				pohChunksLogged = true;
-				log.debug("[poh] instance not judged a house; template chunks: {}",
-					WorldPointUtil.describeInstanceChunks(client.getTopLevelWorldView()));
-			}
-			pohFurnitureFoundThisVisit = false; // reset so the next visit re-scans
-			pohScanAttempts = 0;
-			return;
-		}
-		// Leaving building mode re-arms the scan: furniture built this visit gets detected without
-		// exiting the house. (Named API constant — POH_BUILDING_MODE is 1 while building.)
-		boolean building = client.getVarbitValue(net.runelite.api.gameval.VarbitID.POH_BUILDING_MODE) == 1;
-		if (pohBuildingMode && !building)
-		{
-			pohFurnitureFoundThisVisit = false;
-			pohScanAttempts = 0;
-		}
-		pohBuildingMode = building;
-		// Scan each tick until furniture is found (the scene can still be populating on the entry
-		// tick), then stop for this visit — the furniture doesn't change while standing here. The
-		// attempt cap stops a bare house (or undetectable-only furniture) rescanning forever.
-		if (!config.pohSmartDetect() || pohFurnitureFoundThisVisit || pohScanAttempts >= POH_SCAN_MAX_ATTEMPTS)
-		{
-			return;
-		}
-		pohScanAttempts++;
-		log.debug("[poh] scan attempt {} (sceneIsHouse={}, spawned={})",
-			pohScanAttempts, sceneIsHouse, pohSpawnedFurniture);
-		scanPohFurniture();
-		pohFurnitureFoundThisVisit = detectedPohFurniture != null && detectedPohFurniture.any();
-	}
-
-	/**
-	 * A recognised piece of POH furniture spawning is unambiguous "we're inside a house" evidence
-	 * (see {@link PohScanner#isRecognised}), independent of any coordinate math — collected here,
-	 * cleared on every scene load, and consumed by the next tick's {@link #maybeScanPoh()}.
-	 */
-	@Subscribe
-	public void onGameObjectSpawned(GameObjectSpawned event)
-	{
-		int id = event.getGameObject().getId();
-		if (PohScanner.isRecognised(id) && pohSpawnedFurniture.add(id))
-		{
-			log.debug("[poh] recognised furniture spawned: {}", id);
-		}
-	}
-
-	private void scanPohFurniture()
-	{
-		Set<Integer> ids = new HashSet<>();
-		Tile[][][] tiles = client.getTopLevelWorldView().getScene().getTiles();
-		for (Tile[][] plane : tiles)
-		{
-			if (plane == null)
-			{
-				continue;
-			}
-			for (Tile[] column : plane)
-			{
-				if (column == null)
-				{
-					continue;
-				}
-				for (Tile tile : column)
-				{
-					if (tile == null || tile.getGameObjects() == null)
-					{
-						continue;
-					}
-					for (GameObject object : tile.getGameObjects())
-					{
-						if (object != null)
-						{
-							ids.add(object.getId());
-						}
-					}
-				}
-			}
-		}
-
-		// Spawn-event evidence joins the tile scan: authoritative even if the tile walk missed it.
-		ids.addAll(pohSpawnedFurniture);
-		PohScanner.Detected detected = PohScanner.detect(ids);
-		log.debug("[poh] scanned {} object ids, detected: {}", ids.size(), PohScanner.encode(detected));
-		boolean firstScan = !pohScanned;
-		boolean changed = firstScan || !detected.sameAs(detectedPohFurniture);
-		pohScanned = true;
-		detectedPohFurniture = detected;
-		if (!changed)
-		{
-			return; // nothing new this scan — don't churn the config or the panel
-		}
-		// Persist per character, so next session's panel starts in the "scanned" state instead of
-		// asking for a house visit again.
-		configManager.setRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_POH_FURNITURE,
-			PohScanner.encode(detected));
-
-		// Only ever raise declarations (turn a feature on / raise the jewellery tier). A partial
-		// scene load that missed a piece therefore can never wipe an existing declaration.
-		if (detected.fairyRing && !config.usePohFairyRing())
-		{
-			setPanelConfig("usePohFairyRing", true);
-		}
-		if (detected.spiritTree && !config.usePohSpiritTree())
-		{
-			setPanelConfig("usePohSpiritTree", true);
-		}
-		if (detected.obelisk && !config.usePohObelisk())
-		{
-			setPanelConfig("usePohObelisk", true);
-		}
-		if (detected.jewelleryBox.ordinal() > config.pohJewelleryBoxTier().ordinal())
-		{
-			setPanelConfig("pohJewelleryBoxTier", detected.jewelleryBox);
-		}
-
-		if (altPanel != null)
-		{
-			SwingUtilities.invokeLater(altPanel::refreshConfigSections);
-		}
-	}
-
-	/** Whether the player's house has been scanned this session (its furniture is known). */
-	public boolean isPohScanned()
-	{
-		return pohScanned;
-	}
-
-	/** The furniture the last house scan recognised, as display names (empty until scanned). */
-	public List<String> getDetectedPohFurniture()
-	{
-		PohScanner.Detected detected = detectedPohFurniture;
-		if (detected == null)
-		{
-			return List.of();
-		}
-		List<String> names = new ArrayList<>();
-		if (detected.jewelleryBox != JewelleryBoxTier.NONE)
-		{
-			names.add(detected.jewelleryBox + " jewellery box");
-		}
-		if (detected.fairyRing)
-		{
-			names.add("Fairy ring");
-		}
-		if (detected.spiritTree)
-		{
-			names.add("Spirit tree");
-		}
-		if (detected.obelisk)
-		{
-			names.add("Obelisk");
-		}
-		return names;
-	}
-
-	// ZEP_MULTI_* values in {2867 Entrana, 2868 Taverley, 2869 Castle Wars, 2870 Grand Tree,
-	// 2871 Crafting Guild, 2872 Varrock} order; cached each game tick for the panel (EDT).
-	private volatile int[] balloonUnlockVarbits = new int[6];
-
-	/**
-	 * The balloon log types that warrant a low-storage warning: routes the player has unlocked
-	 * (per the cached varbits) whose stored count sits below the configured threshold. Empty when
-	 * smart mode is off, the threshold is 0, the storage was never synced, or nothing is low.
-	 */
-	public List<String> getBalloonLowLogTypes()
-	{
-		if (!config.useHotAirBalloons() || !config.balloonSmartMode() || !config.balloonStorageSynced())
-		{
-			return List.of();
-		}
-		int[] unlocks = balloonUnlockVarbits;
-		// Entrana/Taverley (normal logs) unlock at quest completion (=2); the rest on first flight (=1).
-		boolean[] unlocked = {
-			unlocks[0] >= 2 || unlocks[1] >= 2, unlocks[4] >= 1, unlocks[5] >= 1,
-			unlocks[2] >= 1, unlocks[3] >= 1};
-		return BalloonLogStorage.lowTypes(getBalloonStoredCounts(), unlocked,
-			config.balloonLogWarningThreshold());
-	}
-
-	/** The chat-parsed stored log counts, in {@link BalloonLogStorage#TYPE_NAMES} order. */
-	public int[] getBalloonStoredCounts()
-	{
-		return new int[]{config.balloonStoredLogs(), config.balloonStoredOakLogs(),
-			config.balloonStoredWillowLogs(), config.balloonStoredYewLogs(), config.balloonStoredMagicLogs()};
-	}
-
-	/** Item images for the panel's Log storage icons. */
-	public net.runelite.client.game.ItemManager getItemManager()
-	{
-		return itemManager;
-	}
-
-	/**
-	 * The specific reason a catalog method is unavailable ("Requires 60 Mining", "Missing item:
-	 * Willow logs"), or null when nothing more specific than its status is known.
-	 */
-	public String methodUnavailabilityDetail(TeleportMethod method)
-	{
-		AlternativeRoutesService service = altRoutesService;
-		return service == null ? null : service.getAvailabilityDetails().get(method);
-	}
-
-	/** The live config, for panel controls that mirror config items (the configuration sections). */
-	public ShortestPathConfig getGpsConfig()
-	{
-		return config;
-	}
-
-	/**
-	 * Whether the spirit-tree travel menu has been seen this session, so the planted-tree set is
-	 * known. Until then the panel shows a sync hint and farmable trees are treated conservatively.
-	 */
-	public boolean isSpiritTreeSynced()
-	{
-		return pathfinderConfig != null && pathfinderConfig.availableSpiritTrees != null;
-	}
-
-	/**
-	 * The farmable spirit trees currently detected as planted-and-grown (menu order), or empty when
-	 * not synced. For the panel's Spirit trees section.
-	 */
-	public List<String> getAvailablePlantedSpiritTrees()
-	{
-		if (pathfinderConfig == null || pathfinderConfig.availableSpiritTrees == null)
-		{
-			return List.of();
-		}
-		List<String> planted = new ArrayList<>();
-		for (String name : gps.pathfinder.PathfinderConfig.FARMABLE_SPIRIT_TREES)
-		{
-			if (pathfinderConfig.availableSpiritTrees.contains(name))
-			{
-				planted.add(name);
-			}
-		}
-		return planted;
-	}
-
-	/**
-	 * Writes a setting from the panel's configuration sections (POH, wilderness, balloons).
-	 * Persisting through the ConfigManager keeps the panel and the RuneLite config UI in sync (same
-	 * keys), and the resulting ConfigChanged event re-caches values and regenerates the routes
-	 * (route-affecting keys match TRANSPORT_OPTIONS_REGEX).
-	 */
-	public void setPanelConfig(String key, Object value)
-	{
-		configManager.setConfiguration(CONFIG_GROUP, key, value);
-	}
-
-	/**
-	 * The engine's own accessible-bank standing tiles (upstream-curated; the same set that flips
-	 * bank-detour routing). Unioned into "nearest bank" targets so the feature can never disagree
-	 * with what the engine considers a bank — the amenity dump misses oddly-named bank objects
-	 * (Slepe's "Bank Chest-wreck" defeated its name matching).
-	 */
-	public Set<Integer> getEngineBankTiles()
-	{
-		if (pathfinderConfig == null)
-		{
-			return Set.of();
-		}
-		Set<Integer> tiles = pathfinderConfig.getDestinations("bank");
-		return tiles == null ? Set.of() : tiles;
-	}
-
-	public void selectRoute(int index)
-	{
-		clientThread.invoke(() -> selectRouteOnClientThread(index));
-	}
-
-	private void selectRouteOnClientThread(int index)
-	{
-		List<RouteOption> routes = alternativeRoutes;
-		if (index >= 0 && index < routes.size())
-		{
-			RouteOption route = routes.get(index);
-			RouteOption previous = selectedRoute;
-			// Toggle: clicking the route that's already shown hides it.
-			selectedRoute = (selectedRoute == route) ? null : route;
-			if (selectedRoute != previous)
-			{
-				// Picking a different path starts a new journey — time it from here, not from the
-				// original destination (re-arm; the timer restarts on the next movement).
-				armJourney();
-				// The displayed path changed: republish it to other plugins (postTransports).
-				postPluginMessages();
-			}
-			refreshPanel(false);
-		}
-	}
-
-	public void excludeMethod(TeleportMethod method)
-	{
-		clientThread.invoke(() -> excludeMethodOnClientThread(method));
-	}
-
-	private void excludeMethodOnClientThread(TeleportMethod method)
-	{
-		if (method != null && userExclusions.add(method))
-		{
-			saveExclusions();
-			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
-			// other recompute); this just refreshes the panel so the catalog icons and counts update.
-			refreshPanel(altGenerationInFlight);
-		}
-	}
-
-	public void includeMethod(TeleportMethod method)
-	{
-		clientThread.invoke(() -> includeMethodOnClientThread(method));
-	}
-
-	private void includeMethodOnClientThread(TeleportMethod method)
-	{
-		if (method != null && userExclusions.remove(method))
-		{
-			saveExclusions();
-			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
-			// other recompute); this just refreshes the panel so the catalog icons and counts update.
-			refreshPanel(altGenerationInFlight);
-		}
-	}
-
-	public void excludeMethods(Collection<TeleportMethod> methods)
-	{
-		boolean changed = false;
-		if (methods != null)
-		{
-			for (TeleportMethod method : methods)
-			{
-				changed |= userExclusions.add(method);
-			}
-		}
-		if (changed)
-		{
-			saveExclusions();
-			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
-			// other recompute); this just refreshes the panel so the catalog icons and counts update.
-			refreshPanel(altGenerationInFlight);
-		}
-	}
-
-	public void includeMethods(Collection<TeleportMethod> methods)
-	{
-		boolean changed = false;
-		if (methods != null)
-		{
-			for (TeleportMethod method : methods)
-			{
-				changed |= userExclusions.remove(method);
-			}
-		}
-		if (changed)
-		{
-			saveExclusions();
-			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
-			// other recompute); this just refreshes the panel so the catalog icons and counts update.
-			refreshPanel(altGenerationInFlight);
-		}
-	}
-
-	/** The search box's recent selections, most recent first. */
-	public List<Destinations.Entry> getSearchHistory()
-	{
-		return searchHistory;
-	}
-
-	/** Records a search selection at the front of the persisted history (deduplicated, capped). */
-	public void recordSearchSelection(Destinations.Entry entry)
-	{
-		List<Destinations.Entry> updated = SearchHistory.push(searchHistory, entry);
-		searchHistory = updated;
-		configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_SEARCH_HISTORY, SearchHistory.serialize(updated));
-	}
-
-	/** The player's saved favourite positions, in saved order. */
-	public List<Destinations.Entry> getFavoriteDestinations()
-	{
-		return favoriteDestinations;
-	}
-
-	/** Saves a favourite position; a favourite with the same label is replaced. */
-	public void addFavoriteDestination(String label, int packedPosition)
-	{
-		List<Destinations.Entry> updated = new ArrayList<>();
-		for (Destinations.Entry entry : favoriteDestinations)
-		{
-			if (!entry.name.equals(label))
-			{
-				updated.add(entry);
-			}
-		}
-		if (updated.size() < FAVORITES_LIMIT)
-		{
-			updated.add(new Destinations.Entry("favorite", label, packedPosition));
-		}
-		favoriteDestinations = updated;
-		configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_FAVORITES, SearchHistory.serialize(updated));
-	}
-
-	public void removeFavoriteDestination(Destinations.Entry favorite)
-	{
-		List<Destinations.Entry> updated = new ArrayList<>();
-		for (Destinations.Entry entry : favoriteDestinations)
-		{
-			if (!entry.name.equals(favorite.name) || entry.packedPosition != favorite.packedPosition)
-			{
-				updated.add(entry);
-			}
-		}
-		favoriteDestinations = updated;
-		configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_FAVORITES, SearchHistory.serialize(updated));
-	}
-
-	public void clearExclusions()
-	{
-		clientThread.invoke(this::clearExclusionsOnClientThread);
-	}
-
-	private void clearExclusionsOnClientThread()
-	{
-		if (!userExclusions.isEmpty())
-		{
-			// Seasonal (Leagues) methods are gated by their own "Enable seasonal transports" toggle,
-			// not the exclusion set, so clearing exclusions no longer needs to re-seed them.
-			userExclusions.clear();
-			saveExclusions();
-			// No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
-			// other recompute); this just refreshes the panel so the catalog icons and counts update.
-			refreshPanel(altGenerationInFlight);
-		}
-	}
-
-	/**
-	 * Manually (re)compute the alternative routes for whatever destination GPS currently has
-	 * set — read live from the active pathfinder. With no target set, just refreshes the methods catalog.
-	 */
-	/** Clears the current destination and its route (panel Clear button / clear-path hotkey). */
-	public void clearTarget()
-	{
-		getClientThread().invokeLater(() -> setTarget(WorldPointUtil.UNDEFINED));
-	}
-
-	public void recomputeAlternatives()
-	{
-		getClientThread().invokeLater(() ->
-		{
-			Set<Integer> targets = pathTargets;
-			if (!targets.isEmpty())
-			{
-				int start = altStart();
-				log.debug("[alt-routes] Find routes: target set, searchStart={}, target={}",
-					WorldPointUtil.unpackWorldPoint(start),
-					WorldPointUtil.unpackWorldPoint(targets.iterator().next()));
-				routeLimit = defaultRouteLimit();
-				triggerAlternatives(start, new HashSet<>(targets));
-			}
-			else
-			{
-				log.debug("[alt-routes] Find routes: no target set");
-				triggerAlternatives(WorldPointUtil.UNDEFINED, new HashSet<>());
-			}
-		});
-	}
-
-	/**
-	 * The start tile to search alternatives from: the player's current (instance-correct) location,
-	 * matching what GPS itself uses for recalculation, falling back to the destination's recorded
-	 * start. Must be called on the client thread.
-	 */
-	private int altStart()
-	{
-		Player localPlayer = client.getLocalPlayer();
-		if (localPlayer != null)
-		{
-			return WorldPointUtil.fromLocalInstance(client, localPlayer);
-		}
-		return pathStart;
-	}
-
-	/**
-	 * The configured number of routes to search for per query (clamped to the service's hard cap).
-	 */
-	private int defaultRouteLimit()
-	{
-		return routeLimitFor(altPanelVisible, override("defaultRouteCount", config.defaultRouteCount()));
-	}
-
-	/**
-	 * The route budget a generation runs with — the SAME whether the side panel is shown or
-	 * hidden. A panel-hidden run used to search only the primary route (one search, a handful of
-	 * seeds) and found a different "best" often enough that opening the panel visibly changed
-	 * the overlay's route (issue #18, field reports). A full run costs tens to a few hundred
-	 * milliseconds more and streams its first route at the same moment, so the overlay shows that
-	 * one provisionally and settles once — consistently, with or without the panel. The panel
-	 * flag is taken only to state the rule where it is decided. Pure, unit-tested.
-	 */
-	static int routeLimitFor(boolean panelVisible, int configured)
-	{
-		return Math.max(1, Math.min(configured, 25));
-	}
-
-	public boolean canLoadMoreRoutes()
-	{
-		return moreRoutesLikely;
-	}
-
-	public void loadMoreRoutes()
-	{
-		clientThread.invoke(this::loadMoreRoutesOnClientThread);
-	}
-
-	private void loadMoreRoutesOnClientThread()
-	{
-		if (lastAltTargets.isEmpty() || !moreRoutesLikely)
-		{
-			return;
-		}
-		// Each poll grows both dimensions of the cap so genuinely more routes surface: widen the cost
-		// band (reveal routes up to a higher multiple of the best cost) and raise the route-count budget
-		// by another page. There's no fixed ceiling — the walk cost bounds the band on its own, and the
-		// count grows toward the service's runaway backstop. A new destination resets both.
-		routeCostMultiple += COST_MULTIPLE_STEP;
-		routeLimit = Math.min(routeLimit + defaultRouteLimit(), AlternativeRoutesService.MAX_ROUTES_CAP);
-		triggerAlternatives(lastAltStart, new HashSet<>(lastAltTargets));
-	}
-
-	// Directions for the currently displayed route, built once per route (the overlay renders every
-	// frame; the path scan only reruns when the displayed route object changes). One immutable
-	// holder, not two fields: the render thread and the client thread both read this, and a
-	// two-field cache could publish route A's key beside route B's steps.
-	private static final class DirectionsCache
-	{
-		final RouteOption route;
-		final List<RouteDirections.Step> steps;
-
-		DirectionsCache(RouteOption route, List<RouteDirections.Step> steps)
-		{
-			this.route = route;
-			this.steps = steps;
-		}
-	}
-
-	private volatile DirectionsCache directionsCache = new DirectionsCache(null, List.of());
-
-	/**
-	 * The step-by-step directions for {@code route}, cached per route instance.
-	 */
-	public List<RouteDirections.Step> getRouteDirections(RouteOption route)
-	{
-		DirectionsCache cached = directionsCache;
-		if (route != cached.route)
-		{
-			cached = new DirectionsCache(route, RouteDirections.build(this, route));
-			directionsCache = cached;
-		}
-		return cached.steps;
-	}
-
-	/**
-	 * Where the current destination came from ("map pin", "Quest Helper", ...) or null when unknown.
-	 */
-	public String getTargetSource()
-	{
-		return targetSource;
-	}
-
-	/** The directions header's destination line (see BankDetour.headerLine); null with nothing to say. */
-	public String getDestinationLine()
-	{
-		return BankDetour.headerLine(targetSource, bankDetour.pending(), altRoundTrip);
-	}
-
-	/** Whether the destination is a bank trip that will resume a replaced route (the header draws a bank). */
-	public boolean isBankDetour()
-	{
-		return bankDetour.pending() != null;
-	}
-
-	/** Whether a bank quick button click now would add a stop (the panel badges the buttons). */
-	public boolean bankClickAddsStop()
-	{
-		return bankDetour.wouldResume(hasPathTargets());
-	}
-
-	/**
-	 * Writes a JSON snapshot of the current routing state to ~/.runelite/gps-debug/ — everything
-	 * needed to reproduce and debug the current path: routes with their full tile paths, methods and
-	 * edge data, mode/exclusions, player position, GPS progress state, and the relevant config.
-	 * Triggered by the panel's camera button; confirms via a game message.
-	 */
-	private static List<Object> stepsJson(List<RouteDirections.Step> steps)
-	{
-		List<Object> stepsJson = new ArrayList<>();
-		for (RouteDirections.Step step : steps)
-		{
-			Map<String, Object> stepJson = new LinkedHashMap<>();
-			stepJson.put("text", step.getText());
-			stepJson.put("startIndex", step.getStartIndex());
-			stepJson.put("endIndex", step.getEndIndex());
-			stepJson.put("ticks", step.getTicks());
-			stepJson.put("transport", step.isTransport());
-			stepJson.put("door", step.isDoor());
-			stepJson.put("obstacle", step.isObstacle());
-			stepsJson.add(stepJson);
-		}
-		return stepsJson;
-	}
-
-	// A BARE constant, browsed as-is: the hub review reads any dynamic URL construction (the old
-	// pre-filled ?title=&body=) as network I/O of player data. Context travels via the clipboard.
-	static final String GITHUB_NEW_ISSUE = "https://github.com/PauloAguiar/runelite-gps-plugin/issues/new";
-
-	/**
-	 * The running plugin's version, read from the bundled {@code runelite-plugin.properties} so it
-	 * always matches the release (no constant to keep in sync). "unknown" in a dev build where the
-	 * file isn't on the classpath.
-	 */
-	/** The build's git commit (stamped by processResources), or "unknown" in odd builds. */
-	public static String buildCommit()
-	{
-		try (java.io.InputStream in = ShortestPathPlugin.class.getResourceAsStream("/gps-build.properties"))
-		{
-			if (in != null)
-			{
-				java.util.Properties props = new java.util.Properties();
-				props.load(in);
-				String commit = props.getProperty("commit");
-				if (commit != null && !commit.isEmpty())
-				{
-					return commit;
-				}
-			}
-		}
-		catch (java.io.IOException ignored)
-		{
-			// Fall through to "unknown".
-		}
-		return "unknown";
-	}
-
-	public static String pluginVersion()
-	{
-		try (java.io.InputStream in = ShortestPathPlugin.class.getResourceAsStream("/runelite-plugin.properties"))
-		{
-			if (in != null)
-			{
-				java.util.Properties props = new java.util.Properties();
-				props.load(in);
-				String version = props.getProperty("version");
-				if (version != null && !version.isEmpty())
-				{
-					return version;
-				}
-			}
-		}
-		catch (java.io.IOException ignored)
-		{
-			// Fall through to "unknown".
-		}
-		return "unknown";
-	}
-
-	/**
-	 * Reports an issue WITHOUT sending or touching anything outside the panel: the routing
-	 * context — mode, start, target, config and the routes found — is shown in a text box at
-	 * the top of the panel for the player to copy BY HAND, and a plain, static GitHub
-	 * new-issue link opens (the repo's issue template says where to paste). No pre-filled URL,
-	 * no clipboard API — nothing for the hub review to flag, and the player sees exactly what
-	 * they're sharing.
-	 */
-	public void reportIssue()
-	{
-		// Item names come from the item definitions, which are client-thread-only — build the
-		// whole body there; the panel work then happens on the EDT.
-		clientThread.invokeLater(() ->
-		{
-			final String context = buildIssueBody();
-			javax.swing.SwingUtilities.invokeLater(() ->
-			{
-				if (altPanel != null)
-				{
-					altPanel.showReportContext(context);
-				}
-				// A bare constant on purpose: pre-filling the issue via query params reads as
-				// network I/O of player data to the hub review.
-				net.runelite.client.util.LinkBrowser.browse(GITHUB_NEW_ISSUE);
-			});
-		});
-	}
-
-	private String buildIssueBody()
-	{
-		StringBuilder body = new StringBuilder();
-		// No "describe the issue" headings here: the GitHub issue template provides those; this
-		// block is what the player pastes under them.
-		body.append("*Auto-captured context — please keep:*\n");
-		body.append("- GPS ").append(pluginVersion()).append('\n');
-		body.append("- Build ").append(buildCommit()).append('\n');
-		body.append("- Mode: ").append(routesMode).append(" · limit ").append(routeLimit)
-			.append(" · band x").append(routeCostMultiple).append('\n');
-		body.append("- Start: ").append(issuePointText(lastAltStart)).append('\n');
-		List<String> targets = new ArrayList<>();
-		for (int target : lastAltTargets)
-		{
-			targets.add(issuePointText(target));
-		}
-		body.append("- Target(s): ").append(targets.isEmpty() ? "(none)" : String.join("; ", targets)).append('\n');
-		// Only settings that genuinely affect routing here — avoidWilderness applies in every mode,
-		// bankPickup weights the bank detour. The mode (above) already implies bank routing and the
-		// item scope, so those aren't repeated (they'd show the overridden config value, not the mode's).
-		body.append("- Config: avoidWilderness=").append(override("avoidWilderness", config.avoidWilderness()))
-			.append(", bankPickup=").append(override("costBankPickup", config.costBankPickup())).append('\n');
-
-		// Method availability at a glance: the full catalog is far too big for a URL, so counts per
-		// status plus the user's own exclusions (the part that varies by choice, usually short).
-		List<TeleportMethod> catalog = teleportCatalog;
-		Map<TeleportMethod, MethodAvailability> unavailable = unavailableMethods;
-		if (!catalog.isEmpty())
-		{
-			Map<MethodAvailability, Integer> counts = new java.util.EnumMap<>(MethodAvailability.class);
-			for (MethodAvailability status : unavailable.values())
-			{
-				counts.merge(status, 1, Integer::sum);
-			}
-			body.append("- Methods: ").append(catalog.size() - unavailable.size()).append(" usable of ")
-				.append(catalog.size());
-			for (Map.Entry<MethodAvailability, Integer> entry : counts.entrySet())
-			{
-				body.append(" · ").append(entry.getValue()).append(' ')
-					.append(entry.getKey().name().toLowerCase(Locale.ROOT).replace('_', ' '));
-			}
-			body.append('\n');
-		}
-		if (!userExclusions.isEmpty())
-		{
-			List<String> excluded = new ArrayList<>();
-			for (TeleportMethod method : userExclusions)
-			{
-				excluded.add(method.routeLabel());
-			}
-			java.util.Collections.sort(excluded);
-			int cap = Math.min(excluded.size(), 10);
-			body.append("- Excluded by user: ").append(String.join("; ", excluded.subList(0, cap)));
-			if (excluded.size() > cap)
-			{
-				body.append(" … ").append(excluded.size() - cap).append(" more");
-			}
-			body.append('\n');
-		}
-		// What the player carries decides the Owned modes' teleports, so name it (user-reviewed
-		// before submitting — they can trim anything they'd rather not share).
-		body.append("- Equipped: ").append(issueItemNames(net.runelite.api.gameval.InventoryID.WORN)).append('\n');
-		body.append("- Inventory: ").append(issueItemNames(net.runelite.api.gameval.InventoryID.INV)).append('\n');
-		body.append("- Bank contents known: ").append(bankContentsKnown)
-			.append(bankRestored ? " (restored from previous session)" : "").append('\n');
-		body.append("- House scanned: ").append(pohScanned);
-		String pohEncoded = PohScanner.encode(detectedPohFurniture);
-		if (pohEncoded != null)
-		{
-			body.append(" (").append(pohEncoded).append(')');
-		}
-		body.append('\n');
-		body.append("- Spirit trees synced: ").append(pathfinderConfig.availableSpiritTrees != null)
-			.append(spiritTreesParsedLive ? " (live)" : "").append('\n');
-
-		List<RouteOption> routes = alternativeRoutes;
-		body.append("- Routes (").append(routes.size()).append("):\n");
-		int shown = Math.min(routes.size(), 12);
-		for (int i = 0; i < shown; i++)
-		{
-			RouteOption route = routes.get(i);
-			body.append("  ").append(i).append(". ").append(route.getTotalCost())
-				.append(route.isReached() ? "" : " (closest)").append(" · ").append(issueMethodSummary(route)).append('\n');
-		}
-		if (routes.size() > shown)
-		{
-			body.append("  … ").append(routes.size() - shown).append(" more\n");
-		}
-		body.append("\nFor a full reproduction, attach the newest file from your `.runelite/gps-debug/` folder"
-			+ " (use \"Save debug snapshot\" in the ⋯ menu first).\n");
-		return body.toString();
-	}
-
-	/**
-	 * The names of the items in a container, stacks as "xN", duplicates collapsed — CLIENT THREAD
-	 * (item definitions). "(empty)" when nothing is carried, "(unknown)" when not logged in.
-	 */
-	private String issueItemNames(int inventoryId)
-	{
-		ItemContainer container = client.getItemContainer(inventoryId);
-		if (container == null)
-		{
-			return "(unknown)";
-		}
-		Map<String, Integer> names = new LinkedHashMap<>();
-		for (Item item : container.getItems())
-		{
-			if (item == null || item.getId() <= 0)
-			{
-				continue;
-			}
-			String name;
-			try
-			{
-				net.runelite.api.ItemComposition definition = client.getItemDefinition(item.getId());
-				name = definition != null ? definition.getName() : "item " + item.getId();
-			}
-			catch (RuntimeException e)
-			{
-				name = "item " + item.getId();
-			}
-			names.merge(name, Math.max(1, item.getQuantity()), Integer::sum);
-		}
-		if (names.isEmpty())
-		{
-			return "(empty)";
-		}
-		List<String> parts = new ArrayList<>(names.size());
-		for (Map.Entry<String, Integer> entry : names.entrySet())
-		{
-			parts.add(entry.getValue() > 1 ? entry.getKey() + " x" + entry.getValue() : entry.getKey());
-		}
-		return String.join(", ", parts);
-	}
-
-	private static String issuePointText(int packed)
-	{
-		if (packed == WorldPointUtil.UNDEFINED)
-		{
-			return "(none)";
-		}
-		return WorldPointUtil.unpackWorldX(packed) + ", " + WorldPointUtil.unpackWorldY(packed)
-			+ ", " + WorldPointUtil.unpackWorldPlane(packed);
-	}
-
-	private static String issueMethodSummary(RouteOption route)
-	{
-		if (route.getMethods().isEmpty())
-		{
-			return "walk";
-		}
-		List<String> parts = new ArrayList<>();
-		for (TeleportMethod method : route.getMethods())
-		{
-			parts.add(method.routeLabel());
-		}
-		return String.join(" + ", parts);
-	}
-
-	public void captureDebugSnapshot()
-	{
-		clientThread.invokeLater(() ->
-		{
-			try
-			{
-				Map<String, Object> snapshot = new LinkedHashMap<>();
-				snapshot.put("capturedAt", new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date()));
-				snapshot.put("pluginVersion", pluginVersion());
-				snapshot.put("buildCommit", buildCommit());
-				// Every non-zero varbit, for identifying state-dependent transport gates (mushtree
-				// discovery, balloon route unlocks): capture before and after the in-game action and
-				// diff the two files — the flipped id is the gate. Runs on the client thread; a few
-				// thousand entries, debug-file-sized only.
-				Map<String, Integer> varbitSnapshot = new LinkedHashMap<>();
-				for (int id = 0; id <= 20000; id++)
-				{
-					try
-					{
-						int value = client.getVarbitValue(id);
-						if (value != 0)
-						{
-							varbitSnapshot.put(Integer.toString(id), value);
-						}
-					}
-					catch (Exception ignored)
-					{
-						// Unknown varbit ids past the cache's definitions: skip.
-					}
-				}
-				snapshot.put("varbitSnapshot", varbitSnapshot);
-				Player local = client.getLocalPlayer();
-				int playerPacked = local != null
-					? WorldPointUtil.fromLocalInstance(client, local) : WorldPointUtil.UNDEFINED;
-				snapshot.put("player",
-					playerPacked != WorldPointUtil.UNDEFINED ? packedPointJson(playerPacked) : null);
-				snapshot.put("routesMode", String.valueOf(routesMode));
-				snapshot.put("routeLimit", routeLimit);
-			snapshot.put("routeCostMultiple", routeCostMultiple);
-				snapshot.put("targetSource", targetSource);
-				snapshot.put("altStart", packedPointJson(lastAltStart));
-				List<Object> targets = new ArrayList<>();
-				for (int target : lastAltTargets)
-				{
-					targets.add(packedPointJson(target));
-				}
-				snapshot.put("targets", targets);
-				List<String> exclusions = new ArrayList<>();
-				for (TeleportMethod method : userExclusions)
-				{
-					exclusions.add(method.getType() + "|" + method.getDisplayInfo() + "|" + method.getDestination());
-				}
-				snapshot.put("userExclusions", exclusions);
-				snapshot.put("bankContentsKnown", bankContentsKnown);
-				snapshot.put("bankRestored", bankRestored);
-				// Smart-detection state, for diagnosing "GPS didn't notice my house/trees" reports.
-				snapshot.put("pohSceneLoaded", isPohScene(client.getTopLevelWorldView()));
-				snapshot.put("pohScanned", pohScanned);
-				snapshot.put("pohDetectedFurniture", PohScanner.encode(detectedPohFurniture));
-				snapshot.put("spiritTreesSynced", pathfinderConfig.availableSpiritTrees != null);
-				snapshot.put("spiritTreesParsedLive", spiritTreesParsedLive);
-
-				// includeBankPath and useTeleportationItems are omitted: the Owned/All mode forces them
-				// (see PathfinderConfig.refresh), so their config value is overridden and misleading —
-				// routesMode above is the effective control.
-				Map<String, Object> configValues = new LinkedHashMap<>();
-				configValues.put("avoidWilderness", override("avoidWilderness", config.avoidWilderness()));
-				configValues.put("costBankPickup", override("costBankPickup", config.costBankPickup()));
-				configValues.put("defaultRouteCount", override("defaultRouteCount", config.defaultRouteCount()));
-				snapshot.put("config", configValues);
-
-				RouteOption displayed = getDisplayedRoute();
-				List<RouteOption> routes = alternativeRoutes;
-				snapshot.put("displayedRouteIndex", displayed != null ? routes.indexOf(displayed) : -1);
-				List<Object> routesJson = new ArrayList<>();
-				for (RouteOption route : routes)
-				{
-					Map<String, Object> routeJson = new LinkedHashMap<>();
-					routeJson.put("totalCost", route.getTotalCost());
-					routeJson.put("rawCost", route.getRawCost());
-					routeJson.put("reached", route.isReached());
-					routeJson.put("viaBank", route.isViaBank());
-					List<String> methods = new ArrayList<>();
-					for (TeleportMethod method : route.getMethods())
-					{
-						methods.add(method.getType() + "|" + method.getDisplayInfo() + "|" + method.getDestination());
-					}
-					routeJson.put("methods", methods);
-					routeJson.put("methodEdgeIndexes", route.getMethodEdgeIndexes());
-					routeJson.put("methodDurations", route.getMethodDurations());
-					routeJson.put("walkBeforeSteps", route.getWalkBeforeSteps());
-					routeJson.put("trailingWalkSteps", route.getTrailingWalkSteps());
-					List<Integer> packedPath = new ArrayList<>(route.getPath().size());
-					List<Integer> bankFlips = new ArrayList<>();
-					for (int i = 0; i < route.getPath().size(); i++)
-					{
-						packedPath.add(route.getPath().get(i).getPackedPosition());
-						if (route.getPath().get(i).isBankVisited()
-							&& (i == 0 || !route.getPath().get(i - 1).isBankVisited()))
-						{
-							bankFlips.add(i);
-						}
-					}
-					routeJson.put("packedPath", packedPath);
-					routeJson.put("bankVisitedFrom", bankFlips);
-					// Fresh directions build per route, timed — the dashboard renders the step
-					// list for every route and charts how long step derivation takes.
-					long buildStart = System.nanoTime();
-					List<RouteDirections.Step> routeSteps = RouteDirections.build(this, route);
-					routeJson.put("directionsBuildMicros", (System.nanoTime() - buildStart) / 1_000);
-					routeJson.put("directions", stepsJson(routeSteps));
-					routesJson.add(routeJson);
-				}
-				snapshot.put("routes", routesJson);
-				long[] genTiming = altRoutesService != null ? altRoutesService.getLastTimingSummary() : null;
-				if (genTiming != null)
-				{
-					Map<String, Object> timingJson = new LinkedHashMap<>();
-					timingJson.put("wallMs", genTiming[0]);
-					timingJson.put("clientMs", genTiming[1]);
-					timingJson.put("rebuildMs", genTiming[2]);
-					timingJson.put("searchCpuMs", genTiming[3]);
-					timingJson.put("searches", genTiming[4]);
-					if (genTiming.length > 5)
-					{
-						timingJson.put("fieldMs", genTiming[5]);
-					}
-					// Per-search profiles, slowest first: which searches the time went to and how much
-					// each explored (a flat A* heuristic shows up as a huge node count).
-					List<Object> searchDetails = new ArrayList<>();
-					for (AlternativeRoutesService.SearchRecord r : altRoutesService.getLastSearchRecords())
-					{
-						Map<String, Object> detail = new LinkedHashMap<>();
-						detail.put("label", r.label);
-						detail.put("cpuMs", r.cpuMs);
-						detail.put("cost", r.resultCost);
-						detail.put("reached", r.reached);
-						detail.put("termination", r.termination);
-						detail.put("nodes", r.nodesChecked);
-						detail.put("transports", r.transportsChecked);
-						detail.put("capped", r.capped);
-						detail.put("astar", r.astar);
-						searchDetails.add(detail);
-					}
-					timingJson.put("searchDetails", searchDetails);
-					snapshot.put("altGenTiming", timingJson);
-				}
-
-				if (displayed != null)
-				{
-					snapshot.put("directions", stepsJson(getRouteDirections(displayed)));
-					Map<String, Object> progress = new LinkedHashMap<>();
-					progress.put("reachedIndex", routeDirectionsOverlay.getReachedIndex());
-					progress.put("liveRemainingTicks", routeDirectionsOverlay.getLiveRemainingTicks());
-					progress.put("speedTilesPerSecond", routeDirectionsOverlay.getSpeedTilesPerSecond());
-					snapshot.put("progress", progress);
-				}
-
-				File dir = new File(net.runelite.client.RuneLite.RUNELITE_DIR, "gps-debug");
-				//noinspection ResultOfMethodCallIgnored
-				dir.mkdirs();
-				File out = new File(dir, "gps-capture-" + new java.text.SimpleDateFormat("yyyyMMdd-HHmmss").format(new java.util.Date()) + ".json");
-				try (java.io.Writer writer = new java.io.OutputStreamWriter(
-					new java.io.FileOutputStream(out), java.nio.charset.StandardCharsets.UTF_8))
-				{
-					gson.newBuilder().setPrettyPrinting().create().toJson(snapshot, writer);
-				}
-				log.info("GPS debug snapshot saved to {}", out.getAbsolutePath());
-				if (GameState.LOGGED_IN.equals(client.getGameState()))
-				{
-					client.addChatMessage(net.runelite.api.ChatMessageType.GAMEMESSAGE, "",
-						"GPS debug snapshot saved to " + out.getAbsolutePath(), null);
-				}
-			}
-			catch (Exception e)
-			{
-				log.warn("Failed to capture GPS debug snapshot", e);
-			}
-		});
-	}
-
-	private static Map<String, Object> packedPointJson(int packed)
-	{
-		if (packed == WorldPointUtil.UNDEFINED)
-		{
-			return null;
-		}
-		Map<String, Object> point = new LinkedHashMap<>();
-		point.put("packed", packed);
-		point.put("x", WorldPointUtil.unpackWorldX(packed));
-		point.put("y", WorldPointUtil.unpackWorldY(packed));
-		point.put("plane", WorldPointUtil.unpackWorldPlane(packed));
-		return point;
-	}
-
-	/**
-	 * Whether the displayed route list was generated with different method exclusions than are
-	 * currently selected — i.e. the user toggled methods since and hasn't pressed Refresh yet.
-	 */
-	public boolean isRouteListStale()
-	{
-		return !userExclusions.equals(generatedExclusions);
-	}
-
-	public AlternativeRoutesMode getRoutesMode()
-	{
-		return routesMode;
-	}
-
-	/**
-	 * Whether the bank's contents are known this session (false until the bank has been opened once).
-	 * Bank mode cannot see banked teleports until this is true — same constraint as the classic Shortest Path engine's
-	 * own INVENTORY_AND_BANK setting.
-	 */
-	public boolean isBankContentsKnown()
-	{
-		return bankContentsKnown;
-	}
-
-	/**
-	 * Whether the known bank contents were restored from a previous session's saved snapshot rather
-	 * than seen live — the panel labels the source, since a restored snapshot can be stale.
-	 */
-	public boolean isBankRestored()
-	{
-		return bankRestored;
-	}
-
-	public void setRoutesMode(AlternativeRoutesMode mode)
-	{
-		// Panel (EDT) entry point: routing state is client-thread owned, so hop over - invoke()
-		// runs inline when already there.
-		clientThread.invoke(() ->
-		{
-			if (mode == null || this.routesMode == mode)
-			{
-				return;
-			}
-			this.routesMode = mode;
-			saveRoutesMode();
-			triggerAlternatives(lastAltStart, new HashSet<>(lastAltTargets));
-		});
-	}
-
-	/**
-	 * Light auto-detect, run each game tick: when GPS's destination changes (a new target set
-	 * manually, by Quest Helper, on reaching the previous one, etc.) compute the alternatives once.
-	 * Deliberately keyed on the target SET only — never on start/movement — so the live path recalcs
-	 * that thrashed the old approach are ignored. If it ever misses, the panel's "Find routes" button
-	 * forces a recompute.
-	 */
-	private void maybeAutoComputeAlternatives()
-	{
-		if (altRoutesService == null)
-		{
-			return;
-		}
-		Set<Integer> targets = pathTargets;
-		// The full route budget, panel shown or hidden (see routeLimitFor).
-		int desiredLimit = defaultRouteLimit();
-		if (!shouldAutoCompute(targets, lastAltTargets, lastAltLimit, desiredLimit))
-		{
-			return;
-		}
-		routeLimit = desiredLimit;
-		triggerAlternatives(altStart(), new HashSet<>(targets));
-	}
-
-	/**
-	 * Whether a new alternatives generation is needed: there is a target, and either it changed since
-	 * the last generation or the last generation was allowed fewer routes than wanted now (a
-	 * generation that ran under a smaller budget than the current one). Pure decision, unit-tested.
-	 */
-	static boolean shouldAutoCompute(Set<Integer> targets, Set<Integer> lastTargets, int lastLimit, int desiredLimit)
-	{
-		return !targets.isEmpty() && (!targets.equals(lastTargets) || lastLimit < desiredLimit);
-	}
-
-	/**
-	 * Called by the panel when the GPS sidebar tab is shown or hidden. Every generation runs with
-	 * the full route budget regardless (see routeLimitFor); opening the panel only re-checks the
-	 * auto-compute decision, so a generation that ran under a smaller budget is widened.
-	 */
-	void setAltPanelVisible(boolean visible)
-	{
-		altPanelVisible = visible;
-		if (visible)
-		{
-			clientThread.invokeLater(this::maybeAutoComputeAlternatives);
-		}
-	}
-
-	private void triggerAlternatives(int start, Set<Integer> targets)
-	{
-		if (altRoutesService == null)
-		{
-			return;
-		}
-		Set<Integer> ends = (targets == null) ? new HashSet<>() : new HashSet<>(targets);
-		// A new destination clears the committed route so the overlay stays blank until the fresh
-		// routes settle; regenerating the SAME destination (off-route recalc, method toggle, "more")
-		// keeps it, so the overlay holds the current route steadily rather than blinking blank.
-		if (!ends.equals(lastAltTargets))
-		{
-			committedDisplayRoute = null;
-		}
-		lastAltStart = start;
-		lastAltTargets = Set.copyOf(ends);
-		lastAltLimit = routeLimit;
-
-		// Clear the previous routes immediately (the catalog stays); the new routes stream in one by
-		// one as they are found. With no target this still streams just the teleport-methods catalog.
-		alternativeRoutes = new ArrayList<>();
-		moreRoutesLikely = false;
-		altGenerationInFlight = !ends.isEmpty();
-		// Snapshot the exclusions this generation runs with, so the panel can flag the route list as
-		// stale once the user toggles methods afterwards (recalculation is manual via Refresh).
-		generatedExclusions = getUserExclusions();
-		final List<TeleportMethod> catalog = teleportCatalog;
-		final boolean hasTarget = !ends.isEmpty();
-		if (altPanel != null)
-		{
-			final Map<TeleportMethod, MethodAvailability> unavailable = unavailableMethods;
-			SwingUtilities.invokeLater(() ->
-				altPanel.displayRoutes(List.of(), catalog, unavailable, getUserExclusions(), true, hasTarget));
-		}
-		altRoutesService.generate(start, ends, userExclusions, routesMode, routeLimit, routeCostMultiple,
-			altRoundTrip, this::onAlternativeRoutesUpdate);
-	}
-
-	private void onAlternativeRoutesUpdate(List<RouteOption> routes, List<TeleportMethod> catalog,
-		Map<TeleportMethod, MethodAvailability> unavailable, boolean done)
-	{
-		// Priorities re-rank the list (effective ETA = cost + tier adjustments) — everything
-		// downstream (panel, default display pick, rematch) sees the effective order.
-		final List<RouteOption> ordered = sortByEffectiveOrder(routes);
-		routes = ordered;
-		alternativeRoutes = ordered;
-		teleportCatalog = catalog;
-		unavailableMethods = unavailable;
-		if (done)
-		{
-			// "More" is available while the last generation left routes unshown (cost cap or count
-			// budget), until the route-count budget reaches the service's runaway backstop.
-			moreRoutesLikely = !routes.isEmpty() && altRoutesService.wasMoreLikely()
-				&& routeLimit < AlternativeRoutesService.MAX_ROUTES_CAP;
-			// A recalculation must not yank the player off the route they PICKED: when the fresh
-			// list contains an equivalent route, it stays selected — even if its rank moved. Only
-			// when the picked route genuinely no longer exists does the overlay fall back to the
-			// new best.
-			RouteOption rematched = rematchSelected(routes);
-			// ...unless the pick was never STARTED and the fresh list found something far
-			// better: keeping a 10x-costlier route the player is still standing at the start
-			// of is not stability, it is clinging to a stale result (field capture
-			// 20260729-220017: local 131-cost sail existed at rank 0 while a rematched
-			// 1473-cost detour stayed displayed).
-			if (rematched != null && !routes.isEmpty() && rematched != routes.get(0)
-				&& displayedRouteProgress() == 0
-				&& rematched.getTotalCost() > routes.get(0).getTotalCost() * 2)
-			{
-				rematched = null;
-			}
-			if (rematched != null)
-			{
-				selectedRoute = rematched;
-				committedDisplayRoute = rematched;
-			}
-			else
-			{
-				selectedRoute = null;
-				// Settle the overlay's route to the final top result BEFORE clearing the in-flight
-				// flag, so the overlay adopts the settled route in one step instead of the
-				// streaming front-runner.
-				committedDisplayRoute = routes.isEmpty() ? null : routes.get(0);
-			}
-			altGenerationInFlight = false;
-			// The displayed route just settled: publish it to other plugins (postTransports) — this
-			// replaces the classic search's completion callback.
-			postPluginMessages();
-		}
-		// NB: mid-stream updates deliberately do NOT clear a stale selection — the overlay keeps
-		// drawing the picked route steadily while the new list streams in; the done-branch above
-		// then re-matches or falls back in a single step.
-		final boolean hasTarget = !lastAltTargets.isEmpty();
-		SwingUtilities.invokeLater(() ->
-		{
-			if (altPanel != null)
-			{
-				altPanel.displayRoutes(ordered, catalog, unavailable, getUserExclusions(), !done, hasTarget);
-			}
-		});
-	}
-
-	/**
-	 * The route in the fresh list equivalent to the selected one — matching what is LEFT of the
-	 * plan, not its full history: methods whose edges the player has already crossed (per the
-	 * directions tracker) are consumed, so after riding the minecart the equivalent route is the
-	 * one continuing with the remaining methods (and once every method is behind, the plain-walk
-	 * remainder). TeleportMethod value identity; rank and exact tile path may differ. Bank-ness
-	 * only distinguishes routes while nothing is consumed yet — mid-journey, the remainder's
-	 * detour state is ambiguous. Null when no equivalent exists.
-	 */
-	private RouteOption rematchSelected(List<RouteOption> routes)
-	{
-		RouteOption previous = selectedRoute;
-		if (previous == null)
-		{
-			return null;
-		}
-		// Selected == displayed, so the tracker's progress is this route's progress (0 if the
-		// tracker isn't following it, degrading to a full-sequence match).
-		int progress = displayedRouteProgress();
-		List<TeleportMethod> methods = previous.getMethods();
-		List<Integer> edges = previous.getMethodEdgeIndexes();
-		int consumed = 0;
-		while (consumed < methods.size() && consumed < edges.size() && edges.get(consumed) <= progress)
-		{
-			consumed++;
-		}
-		List<TeleportMethod> remaining = methods.subList(consumed, methods.size());
-		boolean checkBank = consumed == 0;
-		for (RouteOption route : routes)
-		{
-			if ((!checkBank || route.isViaBank() == previous.isViaBank())
-				&& route.getMethods().equals(remaining))
-			{
-				return route;
-			}
-		}
-		return null;
-	}
-
-
-	/**
-	 * Catalog-only re-classification after an inventory/equipment change (issue #5). Skipped
-	 * while a generation is in flight — that generation re-snapshots anyway — and with no
-	 * service or panel to inform.
-	 */
-	private void maybeRefreshCatalog()
-	{
-		if (!catalogDirty || altGenerationInFlight || altRoutesService == null || altPanel == null
-			|| !GameState.LOGGED_IN.equals(client.getGameState()))
-		{
-			return;
-		}
-		// The catalog exists for the sidebar; while the panel is hidden the dirty flag just waits
-		// (issues #23/#24: every pickup, drop and gear switch ran a full planning refresh -
-		// hundreds of quest clientscripts - on the client thread, a per-action micro stutter for
-		// players who never open the panel). Route generations rebuild the catalog themselves, so
-		// routing never sees this deferral. Bursts while the panel IS open coalesce through a
-		// short cooldown; the flag stays set, so no change is lost, only delayed a few ticks.
-		if (!altPanelVisible || client.getTickCount() < catalogRefreshBackoffTick)
-		{
-			return;
-		}
-		catalogRefreshBackoffTick = client.getTickCount() + CATALOG_REFRESH_COOLDOWN_TICKS;
-		catalogDirty = false;
-		altRoutesService.refreshCatalog(routesMode, (catalog, unavailable) ->
-		{
-			teleportCatalog = catalog;
-			unavailableMethods = unavailable;
-			refreshPanel(altGenerationInFlight);
-		});
-	}
-
-	private void refreshPanel(boolean calculating)
-	{
-		final boolean hasTarget = !lastAltTargets.isEmpty();
-		if (altPanel != null)
-		{
-			SwingUtilities.invokeLater(() ->
-				altPanel.displayRoutes(alternativeRoutes, teleportCatalog, unavailableMethods,
-					getUserExclusions(), calculating, hasTarget));
-		}
-	}
-
-	private void saveExclusions()
-	{
-		try
-		{
-			configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_EXCLUSIONS,
-				gson.toJson(new ArrayList<>(userExclusions)));
-		}
-		catch (Exception e)
-		{
-			log.warn("Failed to save alternative-route exclusions", e);
-		}
-	}
-
-	private void loadExclusions()
-	{
-		try
-		{
-			String json = configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_EXCLUSIONS);
-			if (json == null || json.isEmpty())
-			{
-				return;
-			}
-			TeleportMethod[] saved = gson.fromJson(json, TeleportMethod[].class);
-			if (saved != null)
-			{
-				boolean droppedSeasonal = false;
-				for (TeleportMethod method : saved)
-				{
-					if (method == null || method.getType() == null)
-					{
-						continue;
-					}
-					// Migration: seasonal methods used to be seeded into the exclusion set as the
-					// "disabled by default" mechanism. They're now gated by the "Enable seasonal
-					// transports" toggle instead, so drop any that a prior version persisted here —
-					// otherwise they'd linger in the set (and in debug captures) forever.
-					if (method.getType() == gps.transport.TransportType.SEASONAL_TRANSPORTS)
-					{
-						droppedSeasonal = true;
-						continue;
-					}
-					userExclusions.add(method);
-				}
-				if (droppedSeasonal)
-				{
-					saveExclusions();
-				}
-			}
-		}
-		catch (Exception e)
-		{
-			log.warn("Failed to load alternative-route exclusions", e);
-		}
-	}
-
-	private void saveRoutesMode()
-	{
-		configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_MODE, routesMode.name());
-	}
-
-	private void loadRoutesMode()
-	{
-		String value = configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_MODE);
-		if (value == null || value.isEmpty())
-		{
-			return;
-		}
-		try
-		{
-			routesMode = AlternativeRoutesMode.valueOf(value);
-		}
-		catch (IllegalArgumentException e)
-		{
-			// Legacy 3-mode names from before the Owned/All split.
-			switch (value)
-			{
-				case "AVAILABLE":
-					routesMode = AlternativeRoutesMode.OWNED_INVENTORY;
-					break;
-				case "AVAILABLE_WITH_BANK":
-					routesMode = AlternativeRoutesMode.OWNED_WITH_BANK;
-					break;
-				case "ALL_TELEPORTS":
-				case "ALL_UNLOCKED":
-					// Legacy names; the unlocked-only middle mode was folded into All.
-					routesMode = AlternativeRoutesMode.ALL_EVERYTHING;
-					break;
-				default:
-					log.warn("Unknown alternative-routes mode '{}'", value);
-					break;
-			}
-		}
-	}
-
-	public int calculateMapPoint(int pointX, int pointY)
-	{
-		WorldMap worldMap = client.getWorldMap();
-		float zoom = worldMap.getWorldMapZoom();
-		int mapPoint = WorldPointUtil.packWorldPoint(worldMap.getWorldMapPosition().getX(), worldMap.getWorldMapPosition().getY(), 0);
-		int middleX = mapWorldPointToGraphicsPointX(mapPoint);
-		int middleY = mapWorldPointToGraphicsPointY(mapPoint);
-
-		if (pointX == Integer.MIN_VALUE || pointY == Integer.MIN_VALUE ||
-			middleX == Integer.MIN_VALUE || middleY == Integer.MIN_VALUE)
-		{
-			return WorldPointUtil.UNDEFINED;
-		}
-
-		final int dx = (int) ((pointX - middleX) / zoom);
-		final int dy = (int) ((-(pointY - middleY)) / zoom);
-
-		return WorldPointUtil.dxdy(mapPoint, dx, dy);
-	}
-
-	public int mapWorldPointToGraphicsPointX(int packedWorldPoint)
-	{
-		WorldMap worldMap = client.getWorldMap();
-
-		float pixelsPerTile = worldMap.getWorldMapZoom();
-
-		Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
-		if (map != null)
-		{
-			Rectangle worldMapRect = map.getBounds();
-
-			int widthInTiles = (int) Math.ceil(worldMapRect.getWidth() / pixelsPerTile);
-
-			Point worldMapPosition = worldMap.getWorldMapPosition();
-
-			int xTileOffset = WorldPointUtil.unpackWorldX(packedWorldPoint) + widthInTiles / 2 - worldMapPosition.getX();
-
-			int xGraphDiff = ((int) (xTileOffset * pixelsPerTile));
-			xGraphDiff += (int) (pixelsPerTile - Math.ceil(pixelsPerTile / 2));
-			xGraphDiff += (int) worldMapRect.getX();
-
-			return xGraphDiff;
-		}
-		return Integer.MIN_VALUE;
-	}
-
-	public int mapWorldPointToGraphicsPointY(int packedWorldPoint)
-	{
-		WorldMap worldMap = client.getWorldMap();
-
-		float pixelsPerTile = worldMap.getWorldMapZoom();
-
-		Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
-		if (map != null)
-		{
-			Rectangle worldMapRect = map.getBounds();
-
-			int heightInTiles = (int) Math.ceil(worldMapRect.getHeight() / pixelsPerTile);
-
-			Point worldMapPosition = worldMap.getWorldMapPosition();
-
-			int yTileMax = worldMapPosition.getY() - heightInTiles / 2;
-			int yTileOffset = (yTileMax - WorldPointUtil.unpackWorldY(packedWorldPoint) - 1) * -1;
-
-			int yGraphDiff = (int) (yTileOffset * pixelsPerTile);
-			yGraphDiff -= (int) (pixelsPerTile - Math.ceil(pixelsPerTile / 2));
-			yGraphDiff = worldMapRect.height - yGraphDiff;
-			yGraphDiff += (int) worldMapRect.getY();
-
-			return yGraphDiff;
-		}
-		return Integer.MIN_VALUE;
-	}
-
-	private void addMenuEntry(MenuEntryAdded event, String option, String target, int position)
-	{
-		List<MenuEntry> entries = new LinkedList<>(Arrays.asList(client.getMenu().getMenuEntries()));
-
-		if (entries.stream().anyMatch(e -> e.getOption().equals(option) && e.getTarget().equals(target)))
-		{
-			return;
-		}
-
-		client.getMenu().createMenuEntry(position)
-			.setOption(option)
-			.setTarget(target)
-			.setParam0(event.getActionParam0())
-			.setParam1(event.getActionParam1())
-			.setIdentifier(event.getIdentifier())
-			.setType(MenuAction.RUNELITE)
-			.onClick(this::onMenuOptionClicked);
-	}
-
-	private Widget getMinimapDrawWidget()
-	{
-		if (client.isResized())
-		{
-			if (client.getVarbitValue(VarbitID.RESIZABLE_STONE_ARRANGEMENT) == 1)
-			{
-				return client.getWidget(InterfaceID.ToplevelPreEoc.MINIMAP);
-			}
-			return client.getWidget(InterfaceID.ToplevelOsrsStretch.MINIMAP);
-		}
-		return client.getWidget(InterfaceID.Toplevel.MINIMAP);
-	}
-
-	private Shape getMinimapClipAreaSimple()
-	{
-		Widget minimapDrawArea = getMinimapDrawWidget();
-
-		if (minimapDrawArea == null || minimapDrawArea.isHidden())
-		{
-			return null;
-		}
-
-		Rectangle bounds = minimapDrawArea.getBounds();
-
-		return new Ellipse2D.Double(bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight());
-	}
-
-	public Shape getMinimapClipArea()
-	{
-		Widget minimapWidget = getMinimapDrawWidget();
-
-		if (minimapWidget == null || minimapWidget.isHidden() || !minimapRectangle.equals(minimapRectangle = minimapWidget.getBounds()))
-		{
-			minimapClipFixed = null;
-			minimapClipResizeable = null;
-			minimapSpriteFixed = null;
-			minimapSpriteResizeable = null;
-		}
-
-		if (minimapWidget == null || minimapWidget.isHidden())
-		{
-			return null;
-		}
-
-		if (client.isResized())
-		{
-			if (minimapClipResizeable != null)
-			{
-				return minimapClipResizeable;
-			}
-			if (minimapSpriteResizeable == null)
-			{
-				minimapSpriteResizeable = spriteManager.getSprite(SpriteID.RESIZE_MAP_MASK, 0);
-			}
-			if (minimapSpriteResizeable != null)
-			{
-				minimapClipResizeable = bufferedImageToPolygon(minimapSpriteResizeable);
-				return minimapClipResizeable;
-			}
-			return getMinimapClipAreaSimple();
-		}
-		if (minimapClipFixed != null)
-		{
-			return minimapClipFixed;
-		}
-		if (minimapSpriteFixed == null)
-		{
-			minimapSpriteFixed = spriteManager.getSprite(SpriteID.FIXED_MAP_MASK, 0);
-		}
-		if (minimapSpriteFixed != null)
-		{
-			minimapClipFixed = bufferedImageToPolygon(minimapSpriteFixed);
-			return minimapClipFixed;
-		}
-		return getMinimapClipAreaSimple();
-	}
-
-	private Polygon bufferedImageToPolygon(BufferedImage image)
-	{
-		Color outsideColour = null;
-		Color previousColour;
-		final int width = image.getWidth();
-		final int height = image.getHeight();
-		List<java.awt.Point> points = new ArrayList<>();
-		for (int y = 0; y < height; y++)
-		{
-			previousColour = outsideColour;
-			for (int x = 0; x < width; x++)
-			{
-				int rgb = image.getRGB(x, y);
-				int a = (rgb & 0xff000000) >>> 24;
-				int r = (rgb & 0x00ff0000) >> 16;
-				int g = (rgb & 0x0000ff00) >> 8;
-				int b = (rgb & 0x000000ff);
-				Color colour = new Color(r, g, b, a);
-				if (x == 0 && y == 0)
-				{
-					outsideColour = colour;
-					previousColour = colour;
-				}
-				if (!colour.equals(outsideColour) && previousColour.equals(outsideColour))
-				{
-					points.add(new java.awt.Point(x, y));
-				}
-				if ((colour.equals(outsideColour) || x == (width - 1)) && !previousColour.equals(outsideColour))
-				{
-					points.add(0, new java.awt.Point(x, y));
-				}
-				previousColour = colour;
-			}
-		}
-		int offsetX = minimapRectangle.x;
-		int offsetY = minimapRectangle.y;
-		Polygon polygon = new Polygon();
-		for (java.awt.Point point : points)
-		{
-			polygon.addPoint(point.x + offsetX, point.y + offsetY);
-		}
-		return polygon;
-	}
+    +
+    "live directions with ETA, alternative teleport routes and closed-door hints.<br>"
+    +
+    "Right click on the world map or shift right click a tile to set a destination", tags = {"gps", "navigation",
+    "directions", "route", "pathfinder", "map", "waypoint", "shortest", "path", "teleport", "eta"})
+public class ShortestPathPlugin extends Plugin {
+    protected static final String CONFIG_GROUP = "gps";
+    // GPS's own plugin-message namespace: new integrations should target this one.
+    protected static final String MESSAGE_NAMESPACE = "gps";
+    // Compatibility alias: Quest Helper and other plugins drive the pathfinder through Shortest
+    // Path's namespace (set path/target, config overrides) and listen for its path broadcasts.
+    // GPS supersedes Shortest Path, so it keeps answering on that channel too — inbound messages
+    // are accepted on either, and broadcasts go out on both (no listener subscribes to both today,
+    // so nothing double-processes; drop the legacy channel only if that ever changes).
+    protected static final String MESSAGE_NAMESPACE_LEGACY = "shortestpath";
+
+    // POH (Player Owned House) bounds for detecting when path goes through POH
+    // Note: POH_MIN_X is 1856 to exclude the Daddy's Home miniquest area
+    private static final int POH_MIN_X = 1856;
+    private static final int POH_MAX_X = 2047;
+    private static final int POH_MIN_Y = 5696;
+    private static final int POH_MAX_Y = 5767;
+    // The map regions LIVE house instances are assembled from (rx 29-32, ry 110-111) — distinct
+    // from the transport data's POH model area above (y 5696 band), which is what route tiles use.
+    // Confirmed three ways (2026-07-17): a real house's chunk-dump log, a cache scan
+    // (PohTemplateScanTest in shortest-path-tooling; ~13 copies of every room hotspot, one per
+    // house STYLE), and the same region set hardcoded by other POH-aware plugins. Every style and
+    // house location resolves to these regions. Checking the wrong band here is why presence
+    // detection failed repeatedly.
+    private static final Set<Integer> POH_TEMPLATE_REGIONS =
+        Set.of(7534, 7535, 7790, 7791, 8046, 8047, 8302, 8303);
+
+    /**
+     * Whether the given world view is a player-owned house: an instance whose loaded map regions
+     * (which for instances are the TEMPLATE regions the scene is assembled from) include a POH
+     * template region. Static and world-view-based for testability.
+     */
+    static boolean isPohScene(WorldView worldView) {
+        if (worldView == null || !worldView.isInstance())
+            return false;
+        int[] regions = worldView.getMapRegions();
+        if (regions != null) {
+            for (int region : regions) {
+                if (POH_TEMPLATE_REGIONS.contains(region))
+                    return true;
+            }
+        }
+        return false;
+    }
+    private static final String PLUGIN_MESSAGE_PATH = "path";
+    private static final String PLUGIN_MESSAGE_CLEAR = "clear";
+    private static final String PLUGIN_MESSAGE_START = "start";
+    private static final String PLUGIN_MESSAGE_TARGET = "target";
+    private static final String PLUGIN_MESSAGE_CONFIG_OVERRIDE = "config";
+    private static final String PLUGIN_MESSAGE_TRANSPORTS = "transports";
+    private static final String PLUGIN_MESSAGE_SOURCE = "source";
+    private static final String CLEAR = "Clear";
+    private static final String PATH = ColorUtil.wrapWithColorTag("Path", JagexColors.MENU_TARGET);
+    private static final String SET = "Set";
+    private static final String FIND_CLOSEST = "Find closest";
+    private static final String FLASH_ICONS = "Flash icons";
+    private static final String TARGET = ColorUtil.wrapWithColorTag("GPS Target", JagexColors.MENU_TARGET);
+    private static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
+    // Every config key the routing engine reads (PathfinderConfig.refresh / TransportTypeConfig):
+    // a change to one of these regenerates the routes. RouteAffectingKeysTest scans the engine's
+    // sources and fails when a key it reads is missing here - the pohMount*/sailing* toggles were
+    // silently inert because this list was maintained by hand.
+    private static final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|calculationCutoff|pohJewelleryBoxTier|pohMount\\w+|sailingAssumeSummon|sailingTeleportAbandon|balloonSmartMode|balloonStored\\w+|spiritTreeSmartMode|use\\w+|cost\\w+)$");
+
+    private static volatile Set<String> knownConfigKeys = Collections.emptySet();
+
+    /** Every @ConfigItem key ShortestPathConfig declares - the only keys a plugin message may override. */
+    static Set<String> knownConfigKeys() {
+        return knownConfigKeys;
+    }
+
+    /** Declared at start from the ConfigManager's descriptor: shipped code may not use reflection. */
+    static void declareConfigKeys(Set<String> keys) {
+        knownConfigKeys = Collections.unmodifiableSet(new HashSet<>(keys));
+    }
+
+    /** Whether a change to this config key changes what the routing engine computes. */
+    static boolean affectsRouting(String key) {
+        return key != null && TRANSPORT_OPTIONS_REGEX.matcher(key).find();
+    }
+    private static final Map<String, Object> configOverride = new HashMap<>(50);
+    private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU = Pattern.compile("<col=735a28>(.+)</col>: (<col=5f5f5f>)?(.+)");
+    private static final Pattern SPIRIT_TREE_LABEL_PATTERN_MENU_NEW = Pattern.compile("<col=ffffff>(.+)</col>: (<col=5f5f5f>)?(.+)");
+    private final List<PendingTask> pendingTasks = new ArrayList<>(3);
+    boolean drawMap;
+    boolean drawMinimap;
+    boolean drawTiles;
+    boolean drawRecalculationRanges;
+    boolean showTransportInfo;
+    boolean showBankPickupInfo;
+    Color colourPath;
+    Color colourPathSailing;
+    Color colourPathBlocked;
+    Color colourPathCalculating;
+    Color colourPathUnreachable;
+    Color colourText;
+    Color colourTeleportPulse;
+    Color colourOverlayAccent;
+    boolean showTeleportPulse;
+    boolean showDirections;
+    boolean overrideOverlayTransparency;
+    int overlayTransparency;
+    OverlayFontSize overlayFontSize = OverlayFontSize.NORMAL;
+    boolean arrivalAutoDismiss;
+    int arrivalDismissSeconds;
+    int unreachableTargetDistance;
+    String unreachableText;
+    @Getter
+    @Inject
+    private Client client;
+    @Getter
+    @Inject
+    private ClientThread clientThread;
+    @Inject
+    private ShortestPathConfig config;
+    @Inject
+    private ConfigManager configManager;
+    @Inject
+    private Gson gson;
+    @Inject
+    private EventBus eventBus;
+    @Inject
+    private OverlayManager overlayManager;
+    @Inject
+    private PathTileOverlay pathOverlay;
+    @Inject
+    private PathMinimapOverlay pathMinimapOverlay;
+    @Inject
+    private PathMapOverlay pathMapOverlay;
+    @Inject
+    private PathMapTooltipOverlay pathMapTooltipOverlay;
+    @Inject
+    private RouteDirectionsOverlay routeDirectionsOverlay;
+    @Inject
+    private SpriteManager spriteManager;
+    @Inject
+    private WorldMapPointManager worldMapPointManager;
+    @Inject
+    private KeyManager keyManager;
+    @Inject
+    private MouseManager mouseManager;
+    @Inject
+    private net.runelite.client.plugins.PluginManager pluginManager;
+    // True while the original Shortest Path plugin is also enabled: both plugins draw paths and
+    // answer the same plugin-message integrations, so the panel warns and recommends disabling it.
+    private volatile boolean shortestPathConflict = false;
+    private volatile boolean questHelperPathingOff = false;
+    // Click-to-dismiss for the GPS overlay's lingering "Arrived!" panel.
+    private final MouseAdapter arrivalDismissListener = new MouseAdapter() {
+        @Override
+        public java.awt.event.MouseEvent mousePressed(java.awt.event.MouseEvent event) {
+            if (routeDirectionsOverlay != null && routeDirectionsOverlay.dismissArrivalAt(event.getPoint()))
+                event.consume();
+            return event;
+        }
+    };
+    @Inject
+    private ClientToolbar clientToolbar;
+    // Item images for the panel's Log storage icons.
+    @Inject
+    private net.runelite.client.game.ItemManager itemManager;
+    // Alternative-routes feature: panel, async route generator, the methods the user has excluded, the
+    // generated routes, and which one is currently shown on the map.
+    private ShortestPathPanel altPanel;
+    private NavigationButton navButton;
+    // Whether the sidebar button is currently on the toolbar: GPS is only useful in-game, so the
+    // button is shown while logged in and removed on the login screen.
+    private boolean navButtonShown = false;
+    private AlternativeRoutesService altRoutesService;
+    private static final String CONFIG_KEY_EXCLUSIONS = "alternativeRoutesExclusions";
+    // Method -> ranking-bias tier (MethodPriority). EXCLUDED never appears here — exclusion stays
+    // in the userExclusions set (it affects the search; priorities only re-rank the list).
+    private static final String CONFIG_KEY_PRIORITIES = "methodPriorities";
+    private static final String CONFIG_KEY_MODE = "alternativeRoutesMode";
+    // The search box's recent selections (most recent first), persisted across sessions.
+    private static final String CONFIG_KEY_SEARCH_HISTORY = "searchHistory";
+    // RSProfile-scoped (per character, per world type): the bank snapshot persisted across sessions.
+    private static final String CONFIG_KEY_BANK_SNAPSHOT = "bankSnapshot";
+    // RSProfile-scoped: the planted spirit trees detected from the travel menu, comma-separated.
+    private static final String CONFIG_KEY_SPIRIT_TREES = "plantedSpiritTrees";
+    // RSProfile-scoped: the last house scan's furniture (see PohScanner.encode); present = scanned.
+    private static final String CONFIG_KEY_POH_FURNITURE = "pohFurniture";
+    // RSProfile-scoped: owned boats' last seen berths, "name|port" rows joined by ';'.
+    private static final String CONFIG_KEY_BOAT_PORTS = "boatPorts";
+
+    /** Owned boats as {name, port label} display rows — live varbit reads once seen this
+     * session, the persisted snapshot before that, null when never collected. Routing does
+     * NOT read this: PathfinderConfig reads the boat varbits itself at refresh. */
+    private volatile List<String[]> boatBanner;
+    // Written on the client thread, read from the Swing EDT (the panel's berth section).
+    private volatile boolean boatBannerLive;
+    private volatile boolean boatBannerDirty;
+
+    private static final int[][] BOAT_BANNER_VARBITS = {
+        {VarbitID.SAILING_BOAT_1_OWNED, VarbitID.SAILING_BOAT_1_PORT, VarbitID.SAILING_BOAT_1_NAME_1,
+            VarbitID.SAILING_BOAT_1_NAME_2, VarbitID.SAILING_BOAT_1_NAME_3, VarbitID.SAILING_BOAT_1_TYPE},
+        {VarbitID.SAILING_BOAT_2_OWNED, VarbitID.SAILING_BOAT_2_PORT, VarbitID.SAILING_BOAT_2_NAME_1,
+            VarbitID.SAILING_BOAT_2_NAME_2, VarbitID.SAILING_BOAT_2_NAME_3, VarbitID.SAILING_BOAT_2_TYPE},
+        {VarbitID.SAILING_BOAT_3_OWNED, VarbitID.SAILING_BOAT_3_PORT, VarbitID.SAILING_BOAT_3_NAME_1,
+            VarbitID.SAILING_BOAT_3_NAME_2, VarbitID.SAILING_BOAT_3_NAME_3, VarbitID.SAILING_BOAT_3_TYPE},
+        {VarbitID.SAILING_BOAT_4_OWNED, VarbitID.SAILING_BOAT_4_PORT, VarbitID.SAILING_BOAT_4_NAME_1,
+            VarbitID.SAILING_BOAT_4_NAME_2, VarbitID.SAILING_BOAT_4_NAME_3, VarbitID.SAILING_BOAT_4_TYPE},
+        {VarbitID.SAILING_BOAT_5_OWNED, VarbitID.SAILING_BOAT_5_PORT, VarbitID.SAILING_BOAT_5_NAME_1,
+            VarbitID.SAILING_BOAT_5_NAME_2, VarbitID.SAILING_BOAT_5_NAME_3, VarbitID.SAILING_BOAT_5_TYPE},
+    };
+    private static final Set<Integer> BOAT_BANNER_VARBIT_IDS = Arrays.stream(BOAT_BANNER_VARBITS)
+        .flatMapToInt(Arrays::stream).boxed().collect(java.util.stream.Collectors.toSet());
+    private static final String CONFIG_KEY_FAVORITES = "favoriteDestinations";
+    private static final int FAVORITES_LIMIT = 100;
+    private volatile List<Destinations.Entry> favoriteDestinations = new ArrayList<>();
+    private volatile List<Destinations.Entry> searchHistory = new ArrayList<>();
+    private final Set<TeleportMethod> userExclusions = ConcurrentHashMap.newKeySet();
+    // The exclusions the current route list was generated with; diverging from userExclusions means
+    // the list is stale until the user refreshes (method toggles no longer auto-recalculate).
+    private volatile Set<TeleportMethod> generatedExclusions = Set.of();
+    // Where the current destination came from, for the GPS header: "map pin" for manual targets, the
+    // sender's self-declared "source" for plugin messages (else "another plugin"), null when unset.
+    private volatile String targetSource;
+    // Which methods the alternatives consider: carried (default), carried + bank, or every teleport.
+    private volatile AlternativeRoutesMode routesMode = AlternativeRoutesMode.OWNED_INVENTORY;
+    // How many alternative routes to generate; grows when the user asks for more.
+    // Initialised from config in startUp (config is not injected at field-init time).
+    private int routeLimit = AlternativeRoutesService.MAX_ROUTES;
+    // The cost cap for a generation, as a multiple of the best route's cost: only routes up to this
+    // many times the cheapest are computed (a cheap teleport otherwise floods the map searching for
+    // far-worse alternatives). "Show more" raises it; reset to the default on a new destination.
+    private static final int DEFAULT_COST_MULTIPLE = 3;
+    private static final int COST_MULTIPLE_STEP = 3;
+    private int routeCostMultiple = DEFAULT_COST_MULTIPLE;
+    // Whether the last generation left routes unshown — the cost cap held some back, or the route-count
+    // budget was the binding limit. Either way another "poll more" can surface more.
+    private volatile boolean moreRoutesLikely = false;
+    private volatile List<RouteOption> alternativeRoutes = new ArrayList<>();
+    private volatile List<TeleportMethod> teleportCatalog = new ArrayList<>();
+    // Catalog methods the player can't use in the current mode, mapped to why (for the panel markers).
+    private volatile Map<TeleportMethod, MethodAvailability> unavailableMethods = Map.of();
+    // Inventory / equipment changed since the catalog was last classified (issue #5): the
+    // usable count and per-method reasons were a per-generation snapshot — consumed on the
+    // next tick by a catalog-only refresh, never during a generation.
+    private volatile boolean catalogDirty;
+    /** Earliest tick the next inventory-driven catalog refresh may run (see maybeRefreshCatalog). */
+    private int catalogRefreshBackoffTick;
+    private static final int CATALOG_REFRESH_COOLDOWN_TICKS = 5;
+    /** Fingerprint of the routing-relevant inventory/equipment slice at the last dirty mark. */
+    private long routingItemsFingerprint;
+    private boolean routingItemsFingerprintValid;
+    private volatile RouteOption selectedRoute;
+    // The route the overlays draw, committed ONLY when a generation settles (its "done" update) —
+    // never mid-stream. While alternatives are still generating and re-ranking, the overlays hold
+    // this instead of flipping through the streaming top result (which flashed a route then instantly
+    // replaced it right after a search). Null for a fresh destination, so the overlay stays clear
+    // — the HUD shows "Finding the best route" (isFindingRoute) — until the routes settle: the
+    // line appears once, as the best route, never as a front-runner that may still change.
+    private volatile RouteOption committedDisplayRoute;
+    // Start/targets the alternatives were last generated from, reused by exclusion/mode/show-more edits
+    // so they re-run against the same destination. Volatile: read/written from client thread + Swing EDT.
+    private volatile int lastAltStart = WorldPointUtil.UNDEFINED;
+    private volatile Set<Integer> lastAltTargets = Set.of();
+    // The route limit the last generation ran with, so a generation that ran under a smaller
+    // budget than wanted now (the budget grew meanwhile) is widened by the auto-compute check.
+    private volatile int lastAltLimit = 0;
+    // Whether the GPS side panel is currently shown (sidebar tab selected). It no longer changes how
+    // much a generation does (see routeLimitFor); opening the panel re-checks the auto-compute decision.
+    private volatile boolean altPanelVisible = false;
+    // Whether the client knows the bank's contents this session (the bank container is only populated
+    // once the bank has been opened). Used by the panel to explain why Bank mode finds nothing.
+    private volatile boolean bankContentsKnown = false;
+    // True when the known bank contents came from a previous session's saved snapshot rather than the
+    // bank being opened this session; cleared the moment the live bank is seen. Panel shows the source.
+    private volatile boolean bankRestored = false;
+    // The bank changed since it was last persisted; saved once when the bank closes (not per deposit).
+    private boolean bankSaveDirty = false;
+    // The RS profile key captured while the bank was seen, so the save still lands in the right
+    // profile if it happens after logout (when the current profile is no longer available).
+    private String bankSaveProfileKey;
+    // True while a generation is computing for the current target. Used to suppress the classic-path
+    // fallback on the map until the first alternative streams in, so the displayed path never flashes
+    // a route that the mode's list won't contain (the classic path follows the SP config, not the mode).
+    private volatile boolean altGenerationInFlight = false;
+    private Point lastMenuOpenedPoint;
+    private WorldMapPoint marker;
+    private int lastLocation = WorldPointUtil.packWorldPoint(0, 0, 0);
+    // A single-tick displacement larger than running (2 tiles) means a transport is carrying the
+    // player — a boat cutscene, a teleport landing — not that they walked off route. While that
+    // resolves, off-route detection is suppressed (the player is legitimately far from the path).
+    private static final int TRANSPORT_STEP_TILES = 3;
+    // Ticks to keep suppressing after such a displacement (long enough to cover a boat cutscene);
+    // refreshed while the transport keeps moving the player, cleared once they settle near the path.
+    private static final int TRANSPORT_GRACE_TICKS = 20;
+    private int transportGraceTicks = 0;
+    private Shape minimapClipFixed;
+    private Shape minimapClipResizeable;
+    private BufferedImage minimapSpriteFixed;
+    private BufferedImage minimapSpriteResizeable;
+    private Rectangle minimapRectangle = new Rectangle();
+    private GameState lastGameState = null;
+    private GameState lastLastGameState = null;
+    // The current destination — the single source of truth the retired classic background search
+    // used to hold. Written on the client thread (setDestination); read from ticks and overlays.
+    // All route computation happens in the alternative-routes generation, whose heuristic-guided
+    // searches replaced the classic uninformed one (which cost 40-160 ms per target change).
+    private volatile int pathStart = WorldPointUtil.UNDEFINED;
+    private volatile Set<Integer> pathTargets = Set.of();
+    @Getter
+    private PathfinderConfig pathfinderConfig;
+    // Journey wall-clock, reported on arrival. 0 means "armed": it starts counting from the first
+    // tick the player MOVES, so standing still after setting a destination (or picking a path)
+    // doesn't inflate the time. Re-armed when a new destination is set OR the user selects a
+    // different path; journeyLastLocation drives the first-movement detection. NB: exposed via
+    // the hand-written getter below (which documents the 0 sentinel), not lombok.
+    private long journeyStartMillis = 0;
+    private int journeyLastLocation = WorldPointUtil.UNDEFINED;
+    // One-shot world-map pin override for the next setTargets call: the destination a perimeter
+    // expansion is centred on (the searched bank booth), where the pin belongs. UNDEFINED = default
+    // behaviour (pin on a single target, none for multi-target sets).
+    private int markerTarget = WorldPointUtil.UNDEFINED;
+    // Whether the current destination is a round trip (out and back, e.g. "nearest bank (and
+    // back)"). Set by setNearestCategory after setTargets (which resets it), carried into every
+    // generation for this destination (refresh, show-more), cleared when a new target is set.
+    private volatile boolean altRoundTrip = false;
+    private final KeyListener clearPathKeylistener = new KeyListener() {
+        @Override
+        public void keyTyped(KeyEvent e) {
+        }
+
+        @Override
+        public void keyPressed(KeyEvent e) {
+            if (config.clearPathHotkey().matches(e))
+                setTarget(WorldPointUtil.UNDEFINED);
+        }
+
+        @Override
+        public void keyReleased(KeyEvent e) {
+        }
+    };
+
+    // Opens the GPS side panel (if it isn't already) and focuses its destination search box, so a
+    // place can be searched without first opening the panel by hand.
+    private final KeyListener focusSearchKeyListener = new KeyListener() {
+        @Override
+        public void keyTyped(KeyEvent e) {
+        }
+
+        @Override
+        public void keyPressed(KeyEvent e) {
+            if (!config.focusSearchHotkey().matches(e) || altPanel == null || navButton == null)
+                return;
+            SwingUtilities.invokeLater(() -> {
+                clientToolbar.openPanel(navButton);
+                altPanel.focusSearch();
+            });
+        }
+
+        @Override
+        public void keyReleased(KeyEvent e) {
+        }
+    };
+    // The destination a nearest-bank trip replaced, resumed when the trip completes (see BankDetour).
+    private final BankDetour bankDetour = new BankDetour();
+    // The quick buttons' hotkeys; the bindings are read at key time (config is injected later).
+    private final NearestBankHotkeys nearestBankHotkeys = new NearestBankHotkeys(
+        () -> config.nearestBankHotkey(), () -> goToNearestBank(false),
+        () -> config.nearestBankAndBackHotkey(), () -> goToNearestBank(true));
+    private boolean fairyRingPanelOpen = false;
+    // Whether the spirit tree travel menu has been parsed THIS session. Distinct from the cache
+    // being non-null: a restored previous-session snapshot fills the cache but must not block the
+    // fresher live read when the menu opens.
+    private boolean spiritTreesParsedLive = false;
+
+    /**
+     * Checks if the given coordinates are inside the POH (Player Owned House) area.
+     *
+     * @param x The world X coordinate
+     * @param y The world Y coordinate
+     * @return true if inside POH, false otherwise
+     */
+    public static boolean isInsidePoh(int x, int y) {
+        return x >= POH_MIN_X && x <= POH_MAX_X && y >= POH_MIN_Y && y <= POH_MAX_Y;
+    }
+
+    public static boolean override(String configOverrideKey, boolean defaultValue) {
+        if (!configOverride.isEmpty()) {
+            Object value = configOverride.get(configOverrideKey);
+            if (value instanceof Boolean)
+                return (boolean) value;
+        }
+        return defaultValue;
+    }
+
+    /**
+     * Override for TransportType enabled state using the config key name stored in the enum.
+     */
+    public static boolean override(TransportType type, boolean defaultValue) {
+        String key = type.getEnabledKey();
+        return key != null ? override(key, defaultValue) : defaultValue;
+    }
+
+    /**
+     * Override for TransportType cost threshold using the config key name stored in the enum.
+     */
+    public static int override(TransportType type, int defaultValue) {
+        String key = type.getCostKey();
+        return key != null ? override(key, defaultValue) : defaultValue;
+    }
+
+    public static int override(String configOverrideKey, int defaultValue) {
+        if (!configOverride.isEmpty()) {
+            Object value = configOverride.get(configOverrideKey);
+            if (value instanceof Integer)
+                return (int) value;
+        }
+        return defaultValue;
+    }
+
+    public static TeleportationItem override(String configOverrideKey, TeleportationItem defaultValue) {
+        if (!configOverride.isEmpty()) {
+            Object value = configOverride.get(configOverrideKey);
+            if (value instanceof String) {
+                TeleportationItem teleportationItem = TeleportationItem.fromType((String) value);
+                if (teleportationItem != null)
+                    return teleportationItem;
+            }
+        }
+        return defaultValue;
+    }
+
+    public static JewelleryBoxTier override(String configOverrideKey, JewelleryBoxTier defaultValue) {
+        if (!configOverride.isEmpty()) {
+            Object value = configOverride.get(configOverrideKey);
+            if (value instanceof String) {
+                JewelleryBoxTier tier = JewelleryBoxTier.fromType((String) value);
+                if (tier != null)
+                    return tier;
+            }
+        }
+        return defaultValue;
+    }
+
+    @Provides
+    public ShortestPathConfig provideConfig(ConfigManager configManager) {
+        return configManager.getConfig(ShortestPathConfig.class);
+    }
+
+    @Override
+    protected void startUp() {
+        Set<String> configKeys = new HashSet<>();
+        for (net.runelite.client.config.ConfigItemDescriptor item : configManager.getConfigDescriptor(config).getItems())
+            configKeys.add(item.key());
+        declareConfigKeys(configKeys);
+        HiddenToggleMigration.clearStranded(configManager, CONFIG_GROUP);
+        cacheConfigValues();
+
+        pathfinderConfig = new PathfinderConfig(client, config);
+        if (GameState.LOGGED_IN.equals(client.getGameState()))
+            clientThread.invokeLater(pathfinderConfig::refresh);
+
+        overlayManager.add(pathOverlay);
+        overlayManager.add(pathMinimapOverlay);
+        overlayManager.add(pathMapOverlay);
+        overlayManager.add(pathMapTooltipOverlay);
+        overlayManager.add(routeDirectionsOverlay);
+
+
+        loadExclusions();
+        loadPriorities();
+        searchHistory = SearchHistory.deserialize(
+            configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_SEARCH_HISTORY));
+        favoriteDestinations = SearchHistory.deserialize(
+            configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_FAVORITES), FAVORITES_LIMIT);
+        loadRoutesMode();
+        routeLimit = defaultRouteLimit();
+        altPanel = new ShortestPathPanel(this);
+        altRoutesService = new AlternativeRoutesService(clientThread, pathfinderConfig.copyForPlanning());
+        navButton = NavigationButton.builder()
+            .tooltip("GPS")
+            .icon(RouteIcons.gpsPin())
+            .priority(70)
+            .panel(altPanel)
+            .build();
+        // Only mount the sidebar button in-game — it does nothing useful on the login screen.
+        setNavButtonShown(GameState.LOGGED_IN.equals(client.getGameState()));
+
+        // Populate the teleport-methods catalog so it's visible before any target is set, and check
+        // whether the bank contents are already known this session.
+        if (GameState.LOGGED_IN.equals(client.getGameState())) {
+            clientThread.invokeLater(() -> {
+                ItemContainer liveBank = client.getItemContainer(InventoryID.BANK);
+                if (liveBank != null && liveBank.getItems().length > 0) {
+                    pathfinderConfig.bank = liveBank;
+                    pathfinderConfig.setBankSnapshot(liveBank.getItems());
+                    bankContentsKnown = true;
+                }
+                // Anything not visible live right now (bank, spirit trees, house furniture) falls
+                // back to the previous session's saved detections.
+                restoreDetectionsFromConfig();
+            });
+            triggerAlternatives(WorldPointUtil.UNDEFINED, new HashSet<>());
+        }
+
+        keyManager.registerKeyListener(clearPathKeylistener);
+        keyManager.registerKeyListener(focusSearchKeyListener);
+        keyManager.registerKeyListener(nearestBankHotkeys.bank());
+        keyManager.registerKeyListener(nearestBankHotkeys.bankAndBack());
+        mouseManager.registerMouseListener(arrivalDismissListener);
+        // Plugins enabled later are caught by the PluginChanged/ExternalPluginsChanged events.
+        updateShortestPathConflict();
+        updateQuestHelperIntegration();
+    }
+
+    @Override
+    protected void shutDown() {
+        persistBankSnapshot();
+        overlayManager.remove(pathOverlay);
+        overlayManager.remove(pathMinimapOverlay);
+        overlayManager.remove(pathMapOverlay);
+        overlayManager.remove(pathMapTooltipOverlay);
+        overlayManager.remove(routeDirectionsOverlay);
+
+        if (navButton != null) {
+            clientToolbar.removeNavigation(navButton);
+            navButton = null;
+            navButtonShown = false;
+        }
+        if (altRoutesService != null) {
+            altRoutesService.shutdown();
+            altRoutesService = null;
+        }
+
+        keyManager.unregisterKeyListener(clearPathKeylistener);
+        keyManager.unregisterKeyListener(focusSearchKeyListener);
+        keyManager.unregisterKeyListener(nearestBankHotkeys.bank());
+        keyManager.unregisterKeyListener(nearestBankHotkeys.bankAndBack());
+        bankDetour.cancel();
+        mouseManager.unregisterMouseListener(arrivalDismissListener);
+    }
+
+    /**
+     * Records the current destination (after the wilderness filter) and refreshes the live config
+     * so display lookups (transport labels, POH exits) see current availability. Route computation
+     * itself happens in the alternative-routes generation, auto-triggered on the next game tick by
+     * the target-set change — the classic background search this used to start is retired.
+     */
+    public void setDestination(int start, Set<Integer> ends, boolean canReviveFiltered) {
+        getClientThread().invokeLater(() -> {
+            // The panel's method catalog is the single customization surface: methods the user has
+            // excluded there are also excluded here.
+            pathfinderConfig.setExcludedMethods(getUserExclusions());
+            pathfinderConfig.refresh();
+            pathfinderConfig.filterLocations(ends, canReviveFiltered);
+            if (ends.isEmpty())
+                setTarget(WorldPointUtil.UNDEFINED);
+            else {
+                pathStart = start;
+                pathTargets = Set.copyOf(ends);
+            }
+        });
+    }
+
+    public void setDestination(int start, Set<Integer> ends) {
+        setDestination(start, ends, true);
+    }
+
+    /** Whether a destination is currently set (what {@code pathfinder != null} used to mean). */
+    public boolean hasPathTargets() {
+        return !pathTargets.isEmpty();
+    }
+
+    /** The current destination tiles (empty when no destination is set). */
+    public Set<Integer> getPathTargets() {
+        return pathTargets;
+    }
+
+    /** The recalculate distance (outer off-route band), or -1 when recalculation is disabled. */
+    public int getRecalculateDistance() {
+        return config.recalculateDistance();
+    }
+
+    /** Whether drifting past the recalculate distance recomputes (or cancels) the route. */
+    public boolean isAutoRecalculateEnabled() {
+        return config.autoRecalculate() && config.recalculateDistance() >= 0;
+    }
+
+    /** The off-route warning distance (inner band), clamped below the recalculate distance. */
+    public int getOffRouteWarnDistance() {
+        return Math.max(0, Math.min(config.offRouteWarnDistance(), Math.max(0, config.recalculateDistance())));
+    }
+
+    /** Chebyshev distance from {@code location} to the nearest tile of the displayed path, or -1. */
+    private int seaObstacleScanCooldown;
+
+    /**
+     * Scene scan for live sea blockers. A real obstacle carries BLOCK_MOVEMENT_OBJECT; scene
+     * border padding reads 0xFFFFFF (everything blocked) and is skipped, as is a 3-tile edge
+     * margin — the first field harvest showed the border bands dwarfing the actual galleon.
+     */
+    private void scanSeaObstacles() {
+        net.runelite.api.WorldView view = client.getTopLevelWorldView();
+        if (view == null || view.getCollisionMaps() == null || view.getPlane() != 0)
+            return;
+        net.runelite.api.CollisionData collision = view.getCollisionMaps()[0];
+        if (collision == null)
+            return;
+        int[][] flags = collision.getFlags();
+        int baseX = view.getBaseX();
+        int baseY = view.getBaseY();
+        List<Integer> found = null;
+        for (int sx = 3; sx < flags.length - 3; sx++) {
+            for (int sy = 3; sy < flags[sx].length - 3; sy++) {
+                int tileFlags = flags[sx][sy];
+                if (tileFlags == 0xFFFFFF
+                    || (tileFlags & net.runelite.api.CollisionDataFlag.BLOCK_MOVEMENT_OBJECT) == 0) {
+                    continue;
+                }
+                int packed = WorldPointUtil.packWorldPoint(baseX + sx, baseY + sy, 0);
+                // NEVER learn near the player's own boat: the hull is itself a WorldEntity
+                // projecting live-blocked collision onto sailable water — without this
+                // exclusion every scan learned the boat's current footprint as a permanent
+                // obstacle, poisoning a breadcrumb trail along everywhere the player sails
+                // (field capture 232906: the direct channel home was sealed by the player's
+                // own wake, forcing a disembark/re-embark detour through Cairn Isle).
+                int playerAt = getLastKnownPlayerLocation();
+                if (playerAt != WorldPointUtil.UNDEFINED
+                    && Math.max(Math.abs(WorldPointUtil.unpackWorldX(playerAt) - (baseX + sx)),
+                        Math.abs(WorldPointUtil.unpackWorldY(playerAt) - (baseY + sy))) <= 10) {
+                    continue;
+                }
+                if (SailingSea.isSailable(packed) && !SailingSea.obstacleAt(baseX + sx, baseY + sy)) {
+                    if (found == null)
+                        found = new ArrayList<>();
+                    found.add(packed);
+                }
+            }
+        }
+        if (found != null)
+            SailingSea.learnObstacles(found);
+    }
+
+    public int distanceFromPath(int location) {
+        // Measured against the DISPLAYED route (the line the player is actually following), not the
+        // classic pathfinder path: when a search picked an alternative route those two diverge, and
+        // measuring off the invisible classic path made off-route/recalc misfire.
+        List<PathStep> path = getDisplayPath();
+        if (path == null || path.isEmpty())
+            return -1;
+        int best = Integer.MAX_VALUE;
+        for (PathStep pathStep : path)
+            best = Math.min(best, WorldPointUtil.distanceBetween(location, pathStep.getPackedPosition()));
+        // A sailing leg contributes only its two endpoints to the path, so mid-sail the player
+        // is "hundreds of tiles off route" by node distance and auto-recalc wiped the route a
+        // few tiles out of port. Measure against the legs' SEA TRACKS too (cached waypoints,
+        // non-blocking); while a track is still computing, treat the sailor as on route rather
+        // than recalc against incomplete geometry.
+        RouteOption displayed = getDisplayedRoute();
+        if (displayed != null && SailingSea.isSailable(location)) {
+            for (int departure : displayed.sailingJumpDepartures()) {
+                if (departure < 0 || departure + 1 >= path.size())
+                    continue;
+                int[] track = SailingSea.seaPath(path.get(departure).getPackedPosition(),
+                    path.get(departure + 1).getPackedPosition());
+                if (track == null)
+                    return 0;
+                for (int waypoint : track)
+                    best = Math.min(best, WorldPointUtil.distanceBetween(location, waypoint));
+            }
+        }
+        return best;
+    }
+
+    // Off-route state, updated each tick the player moves: how far the player is from the path
+    // (-1 = no path / unknown), and whether that's into the warning band (>= warn, < recalculate),
+    // which the overlay shows in red. At/beyond the recalculate distance the route is recomputed.
+    @Getter
+    private volatile int pathDistance = -1;
+    @Getter
+    private volatile boolean offRouteWarning = false;
+
+    // The arrival zone, cached per (path end, finish distance): recomputed only when the displayed
+    // route's end or the config changes, then read every tick (arrival check) and frame (debug render).
+    // One immutable holder for the zone and its key (see DirectionsCache for why).
+    private static final class ArrivalZoneCache {
+        final int end;
+        final int radius;
+        final Set<Integer> zone;
+
+        ArrivalZoneCache(int end, int radius, Set<Integer> zone) {
+            this.end = end;
+            this.radius = radius;
+            this.zone = zone;
+        }
+    }
+
+    private volatile ArrivalZoneCache arrivalZoneCache =
+        new ArrivalZoneCache(WorldPointUtil.UNDEFINED, Integer.MIN_VALUE, Set.of());
+
+    /**
+     * The arrival zone: every tile within the finish distance of the destination in WALKING steps — a
+     * flood from the displayed path's end over the collision map, using the same movement rules as the
+     * pathfinder — so a tile across a wall or fence is not part of the zone. Standing on any of these
+     * tiles completes the journey; the debug overlay renders exactly this set. Empty when there is no
+     * path or the finish distance is negative (never finish).
+     */
+    public Set<Integer> getArrivalTiles() {
+        List<PathStep> path = getDisplayPath();
+        int radius = config.reachedDistance();
+        if (path == null || path.isEmpty() || radius < 0)
+            return Set.of();
+        int end = path.get(path.size() - 1).getPackedPosition();
+        ArrivalZoneCache cached = arrivalZoneCache;
+        if (end != cached.end || radius != cached.radius) {
+            cached = new ArrivalZoneCache(end, radius, floodArrivalZone(end, radius));
+            arrivalZoneCache = cached;
+        }
+        return cached.zone;
+    }
+
+    /**
+     * Breadth-first flood from {@code end} over walkable edges, up to {@code maxSteps} moves. Diagonal
+     * moves mirror {@link gps.pathfinder.CollisionMap}'s corner rules (both cardinals of the corner
+     * must be open on both sides), so the zone matches where the player can actually walk.
+     */
+    private Set<Integer> floodArrivalZone(int end, int maxSteps) {
+        Set<Integer> zone = new HashSet<>();
+        zone.add(end);
+        CollisionMap map = pathfinderConfig.getMap();
+        if (map == null || maxSteps <= 0)
+            return zone;
+        final int plane = WorldPointUtil.unpackWorldPlane(end);
+        List<Integer> frontier = new ArrayList<>();
+        frontier.add(end);
+        for (int depth = 0; depth < maxSteps && !frontier.isEmpty(); depth++) {
+            List<Integer> next = new ArrayList<>();
+            for (int tile : frontier) {
+                final int x = WorldPointUtil.unpackWorldX(tile);
+                final int y = WorldPointUtil.unpackWorldY(tile);
+                final boolean n = map.n(x, y, plane);
+                final boolean s = map.s(x, y, plane);
+                final boolean e = map.e(x, y, plane);
+                final boolean w = map.w(x, y, plane);
+                growZone(zone, next, x, y + 1, plane, n);
+                growZone(zone, next, x, y - 1, plane, s);
+                growZone(zone, next, x + 1, y, plane, e);
+                growZone(zone, next, x - 1, y, plane, w);
+                growZone(zone, next, x + 1, y + 1, plane, n && e && map.e(x, y + 1, plane) && map.n(x + 1, y, plane));
+                growZone(zone, next, x - 1, y + 1, plane, n && w && map.w(x, y + 1, plane) && map.n(x - 1, y, plane));
+                growZone(zone, next, x + 1, y - 1, plane, s && e && map.e(x, y - 1, plane) && map.s(x + 1, y, plane));
+                growZone(zone, next, x - 1, y - 1, plane, s && w && map.w(x, y - 1, plane) && map.s(x - 1, y, plane));
+            }
+            frontier = next;
+        }
+        return zone;
+    }
+
+    private static void growZone(Set<Integer> zone, List<Integer> next, int x, int y, int plane, boolean open) {
+        if (!open)
+            return;
+        int packed = WorldPointUtil.packWorldPoint(x, y, plane);
+        if (zone.add(packed))
+            next.add(packed);
+    }
+
+    /**
+     * Whether the player has arrived: standing inside the arrival zone (within the finish distance of
+     * the destination over walkable tiles). Guards: a round trip only completes once its turnaround has
+     * been reached (the zone centres on home, so it would otherwise fire at departure), and while a
+     * round trip is regenerating (no round-trip route displayed) arrival is suspended rather than
+     * measured against the outbound fallback path; an unreachable target never completes.
+     */
+    private boolean hasArrived(int currentLocation) {
+        Set<Integer> zone = getArrivalTiles();
+        boolean inZone = !zone.isEmpty() && zone.contains(currentLocation);
+        if (!inZone) {
+            // Wet arrival: the arrival zone floods over WALKABLE tiles and the ocean is
+            // sealed, so a water pin's zone is empty and on-foot arrival can never fire at
+            // sea. A boat parked within the sea finish distance of a sailable target IS
+            // arrival — wider than the land radius because a hull is several tiles of
+            // entity and moors off the mark (configurable, default 12).
+            for (int target : pathTargets) {
+                if (SailingSea.isSailable(target)
+                    && WorldPointUtil.distanceBetween(currentLocation, target)
+                        <= config.seaReachedDistance()) {
+                    inZone = true;
+                    break;
+                }
+            }
+        }
+        if (!inZone)
+            return false;
+        RouteOption displayed = getDisplayedRoute();
+        boolean roundTrip = displayed != null && displayed.isRoundTrip();
+        if (altRoundTrip && !roundTrip)
+            return false;
+        if (roundTrip) {
+            int turnaround = displayed.getTurnaroundIndex();
+            if (turnaround >= 0 && displayedRouteProgress() < turnaround - 2)
+                return false;
+        }
+        else if (isPathUnreachable())
+            return false;
+        return true;
+    }
+
+    /**
+     * Progress (path index) along the currently displayed route, from the directions overlay's
+     * tracker — 0 when that route isn't the one being tracked.
+     */
+    public int displayedRouteProgress() {
+        RouteOption displayed = getDisplayedRoute();
+        return displayed == null || routeDirectionsOverlay == null
+            ? 0 : routeDirectionsOverlay.reachedIndexFor(displayed);
+    }
+
+    /**
+     * The first path index the player cannot click-walk to yet: at or beyond the first obstacle
+     * ahead of route progress they must interact with to cross — an agility shortcut, stairs, or a
+     * door not seen open. The path from there is drawn blocked (in the scene and minimap). Only
+     * meaningful for a displayed route; the classic path has no step data and is never blocked.
+     */
+    public int blockedFromIndex(List<PathStep> path) {
+        RouteOption route = getDisplayedRoute();
+        if (route == null || route.getPath() != path)
+            return Integer.MAX_VALUE;
+        int progress = displayedRouteProgress();
+        for (RouteDirections.Step step : getRouteDirections(route)) {
+            if (!step.gatesWalk() || step.getEndIndex() <= progress)
+                continue;
+            if (step.isDoor()) {
+                ClosedDoors.Door door = ClosedDoors.doorBetween(
+                    path.get(step.getStartIndex()).getPackedPosition(),
+                    path.get(step.getEndIndex()).getPackedPosition());
+                if (door == null || ClosedDoors.state(client, door) == ClosedDoors.State.OPEN)
+                    continue;
+            }
+            return step.getEndIndex();
+        }
+        return Integer.MAX_VALUE;
+    }
+
+    /** Colour for the sailed portions of the displayed route (world-map sea tracks). */
+    public Color getSailingPathColor() {
+        return colourPathSailing;
+    }
+
+    public Color getPathColor() {
+        // The displayed route is a static snapshot: colour it from its own endpoint.
+        RouteOption displayed = getDisplayedRoute();
+        if (displayed != null)
+            return isRouteEndTooFar(displayed) ? colourPathUnreachable : colourPath;
+        return altGenerationInFlight ? colourPathCalculating : colourPath;
+    }
+
+    /**
+     * Whether a destination is set and its routes are still computing with nothing on the overlay
+     * yet — the HUD's "Finding the best route" state. False as soon as a route is displayed (a
+     * same-destination regeneration keeps the previous route on screen instead).
+     */
+    public boolean isFindingRoute() {
+        return altGenerationInFlight && !pathTargets.isEmpty() && getDisplayedRoute() == null;
+    }
+
+    /**
+     * Mirrors {@link #isPathUnreachable()}'s tolerance for a displayed alternative route: a route that
+     * stops at the closest reachable tile (e.g. because the exact target tile is an NPC/object spot)
+     * still counts as reached for colouring while its endpoint is within the configured
+     * unreachable-distance threshold — only genuinely far endpoints get the unreachable colour.
+     */
+    private boolean isRouteEndTooFar(RouteOption route) {
+        if (route.isReached())
+            return false;
+        List<PathStep> path = route.getPath();
+        Set<Integer> targets = lastAltTargets;
+        if (path == null || path.isEmpty() || targets.isEmpty())
+            return false;
+        int endPoint = path.get(path.size() - 1).getPackedPosition();
+        int closestTargetDistance = Integer.MAX_VALUE;
+        for (int target : targets)
+            closestTargetDistance = Math.min(closestTargetDistance, WorldPointUtil.distanceBetween(target, endPoint));
+        return closestTargetDistance > unreachableTargetDistance;
+    }
+
+    public boolean isPathUnreachable() {
+        RouteOption displayed = getDisplayedRoute();
+        return displayed != null && isRouteEndTooFar(displayed);
+    }
+
+    /**
+     * Whether an alternative route actually gets to the target: the exact tile, or — for object and
+     * other adjacent destinations that legitimately end beside the goal (a bank booth, an altar) —
+     * within the unreachable-distance threshold of it. False means the destination can't be reached
+     * and the route only got to the closest reachable tile. Unlike {@link #isPathUnreachable()} this
+     * judges the alt-route's own endpoint, so a target reachable only by a teleport isn't misreported.
+     */
+    public boolean routeReachesTarget(RouteOption route) {
+        if (route == null)
+            return false;
+        if (route.isReached())
+            return true;
+        List<PathStep> path = route.getPath();
+        Set<Integer> targets = pathTargets;
+        if (path == null || path.isEmpty() || targets.isEmpty()) {
+            return true;  // not enough information to declare it unreachable
+        }
+        int endPoint = path.get(path.size() - 1).getPackedPosition();
+        int closest = Integer.MAX_VALUE;
+        for (int target : targets)
+            closest = Math.min(closest, WorldPointUtil.distanceBetween(target, endPoint));
+        return closest <= unreachableTargetDistance;
+    }
+
+    @Subscribe
+    public void onConfigChanged(ConfigChanged event) {
+        // Quest Helper's own "Use Shortest Path plugin" toggle governs whether quest steps
+        // reach GPS at all — flipping it shows/clears the panel's integration banner live.
+        // Turning it ON re-arms a dismissed banner: the dismissal covered THIS off-period,
+        // not a future regression.
+        if ("questhelper".equals(event.getGroup()) && "useShortestPath".equals(event.getKey())) {
+            if (Boolean.parseBoolean(event.getNewValue()))
+                configManager.unsetConfiguration(CONFIG_GROUP, "questHelperBannerDismissed");
+            updateQuestHelperIntegration();
+            return;
+        }
+        if (!CONFIG_GROUP.equals(event.getGroup()))
+            return;
+
+        cacheConfigValues();
+
+
+        // Transport option changed; rerun pathfinding
+        if ("defaultRouteCount".equals(event.getKey()))
+            routeLimit = defaultRouteLimit();
+
+        // Display-order only: the keep-sailing preference re-ranks the routes it already has.
+        if ("sailingKeepSailing".equals(event.getKey()))
+            resortRoutesByPriority();
+
+        if (affectsRouting(event.getKey())) {
+            if (hasPathTargets()) {
+                // Refresh the live config's availability and regenerate the routes with it — the
+                // classic restart this used to do left the displayed (alternative) route stale.
+                setDestination(pathStart, new HashSet<>(pathTargets));
+                recomputeAlternatives();
+            }
+        }
+
+        if ("rememberBank".equals(event.getKey())) {
+            if (config.rememberBank()) {
+                // Turned on with the bank already seen this session: save it right away, so the
+                // benefit doesn't depend on opening the bank again before logging out.
+                if (bankContentsKnown && !bankRestored && client.getGameState() == GameState.LOGGED_IN) {
+                    bankSaveDirty = true;
+                    bankSaveProfileKey = configManager.getRSProfileKey();
+                    persistBankSnapshot();
+                }
+            }
+            else {
+                // Turned off: forget the stored snapshot — and, if this session's bank knowledge
+                // came from it (rather than the bank being opened), drop that too.
+                configManager.unsetRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_BANK_SNAPSHOT);
+                bankSaveDirty = false;
+                if (bankRestored) {
+                    bankRestored = false;
+                    bankContentsKnown = false;
+                    pathfinderConfig.clearBank();
+                    recomputeAlternatives();
+                }
+            }
+        }
+
+        // Keys mirrored by the panel's configuration sections (POH, wilderness, balloons): rebuild
+        // those sections so their labels track changes made from chat parsing or the config UI.
+        if (altPanel != null
+            && (event.getKey().startsWith("balloon") || "pohSmartDetect".equals(event.getKey())
+            || "rememberBank".equals(event.getKey())
+            || affectsRouting(event.getKey()))) {
+            SwingUtilities.invokeLater(altPanel::refreshConfigSections);
+        }
+    }
+
+    /** Whether the original Shortest Path plugin is also enabled — the panel shows a warning. */
+    public boolean isShortestPathConflict() {
+        return shortestPathConflict;
+    }
+
+    /**
+     * Detects the original Shortest Path plugin running alongside GPS. Both draw paths and answer
+     * the same {@code shortestpath} plugin-message integrations, so running both doubles the
+     * rendering — the panel recommends disabling it. Matched by descriptor name (each hub plugin
+     * has its own classloader, so class identity can't be compared across plugins).
+     */
+    private void updateShortestPathConflict() {
+        boolean conflict = false;
+        for (Plugin other : pluginManager.getPlugins()) {
+            if (other == this)
+                continue;
+            PluginDescriptor descriptor = other.getClass().getAnnotation(PluginDescriptor.class);
+            if (descriptor != null && "Shortest Path".equals(descriptor.name())
+                && pluginManager.isPluginEnabled(other)) {
+                conflict = true;
+                break;
+            }
+        }
+        if (conflict != shortestPathConflict) {
+            shortestPathConflict = conflict;
+            refreshPanel(altGenerationInFlight);
+        }
+    }
+
+    /** Whether Quest Helper runs WITHOUT its "Use Shortest Path plugin" option — the panel
+     * shows a dismissable banner explaining quest steps won't reach GPS until it's on. */
+    public boolean isQuestHelperPathingOff() {
+        return questHelperPathingOff;
+    }
+
+    /**
+     * Quest Helper hands quest-step destinations over the {@code shortestpath} plugin-message
+     * integration only when its own "Use Shortest Path plugin" option is on
+     * ({@code questhelper.useShortestPath}, default off) — enabled Quest Helper with the
+     * option off silently draws its own lines and GPS never hears about the step. Matched by
+     * descriptor name like the Shortest Path conflict above.
+     */
+    private void updateQuestHelperIntegration() {
+        boolean off = false;
+        for (Plugin other : pluginManager.getPlugins()) {
+            PluginDescriptor descriptor = other.getClass().getAnnotation(PluginDescriptor.class);
+            if (descriptor != null && "Quest Helper".equals(descriptor.name())
+                && pluginManager.isPluginEnabled(other)) {
+                off = !Boolean.parseBoolean(
+                    configManager.getConfiguration("questhelper", "useShortestPath"));
+                break;
+            }
+        }
+        if (off != questHelperPathingOff) {
+            questHelperPathingOff = off;
+            refreshPanel(altGenerationInFlight);
+        }
+    }
+
+    @Subscribe
+    public void onPluginChanged(net.runelite.client.events.PluginChanged event) {
+        updateShortestPathConflict();
+        updateQuestHelperIntegration();
+    }
+
+    @Subscribe
+    public void onExternalPluginsChanged(net.runelite.client.events.ExternalPluginsChanged event) {
+        updateShortestPathConflict();
+        updateQuestHelperIntegration();
+    }
+
+    /**
+     * Adds/removes the sidebar button so it only appears in-game. Called on every game-state change
+     * before the login-detection guard below (which returns early in most cases). LOADING / HOPPING
+     * / CONNECTION_LOST leave the button as-is, so world hops don't flicker it.
+     */
+    private void updateNavButtonVisibility(GameState state) {
+        switch (state) {
+            case LOGGED_IN:
+                setNavButtonShown(true);
+                break;
+            case LOGIN_SCREEN:
+            case LOGIN_SCREEN_AUTHENTICATOR:
+            case STARTING:
+                setNavButtonShown(false);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void setNavButtonShown(boolean show) {
+        if (navButton == null || show == navButtonShown)
+            return;
+        navButtonShown = show;
+        if (show)
+            clientToolbar.addNavigation(navButton);
+        else
+            clientToolbar.removeNavigation(navButton);
+    }
+
+    @Subscribe
+    public void onGameStateChanged(GameStateChanged event) {
+        updateNavButtonVisibility(event.getGameState());
+
+        // Scene rebuild: the spawn-evidence set belongs to the old scene (LOADING fires before the
+        // new scene's object spawns), and the once-per-scene chunk-dump log re-arms.
+        if (GameState.LOADING.equals(event.getGameState())) {
+            pohSpawnedFurniture.clear();
+            pohChunksLogged = false;
+        }
+
+        // Logout: save any unsaved bank snapshot (with the profile key captured while logged in) and
+        // forget everything this session detected about the character — bank, planted spirit trees,
+        // house scan — so a different character logging in next doesn't inherit it. The right
+        // character's snapshots are restored at the next login.
+        if (GameState.LOGIN_SCREEN.equals(event.getGameState()) && pathfinderConfig != null) {
+            persistBankSnapshot();
+            bankContentsKnown = false;
+            bankRestored = false;
+            pathfinderConfig.clearBank();
+            pathfinderConfig.availableSpiritTrees = null;
+            spiritTreesParsedLive = false;
+            pohScanned = false;
+            detectedPohFurniture = null;
+            pohFurnitureFoundThisVisit = false;
+            pohScanAttempts = 0;
+            pohSpawnedFurniture.clear();
+            boatBanner = null;
+            boatBannerLive = false;
+            boatBannerDirty = false;
+        }
+
+        if (pathfinderConfig == null
+            || !GameState.LOGGING_IN.equals(lastLastGameState)
+            || !GameState.LOADING.equals(lastLastGameState = lastGameState)
+            || !GameState.LOGGED_IN.equals(lastGameState = event.getGameState())) {
+            lastLastGameState = lastGameState;
+            lastGameState = event.getGameState();
+            return;
+        }
+
+        // Restored before the catalog refresh below, so in-bank availability, planted spirit trees
+        // and the house scan state are right first time.
+        pendingTasks.add(new PendingTask(client.getTickCount() + 1, this::restoreDetectionsFromConfig));
+        pendingTasks.add(new PendingTask(client.getTickCount() + 1, pathfinderConfig::refresh));
+        // Refresh the teleport-methods catalog (and any current routes) now that game state is available.
+        pendingTasks.add(new PendingTask(client.getTickCount() + 1, this::recomputeAlternatives));
+    }
+
+    /**
+     * Refresh the pathfinder when the player hops worlds. The new world's type
+     * (e.g. seasonal) is what drives league-mode auto-detection in
+     * {@link gps.leagues.LeagueModeState}, so we need a fresh
+     * {@code PathfinderConfig.refresh()} pass after every hop.
+     */
+    @Subscribe
+    public void onWorldChanged(WorldChanged event) {
+        if (pathfinderConfig == null)
+            return;
+        pendingTasks.add(new PendingTask(client.getTickCount() + 1, pathfinderConfig::refresh));
+    }
+
+    @Subscribe
+    public void onPluginMessage(PluginMessage event) {
+        if (!MESSAGE_NAMESPACE.equals(event.getNamespace())
+            && !MESSAGE_NAMESPACE_LEGACY.equals(event.getNamespace())) {
+            return;
+        }
+
+        String action = event.getName();
+        if (PLUGIN_MESSAGE_PATH.equals(action)) {
+            Map<String, Object> data = event.getData();
+            Object objStart = data.getOrDefault(PLUGIN_MESSAGE_START, null);
+            Object objTarget = data.getOrDefault(PLUGIN_MESSAGE_TARGET, null);
+            Object objConfigOverride = data.getOrDefault(PLUGIN_MESSAGE_CONFIG_OVERRIDE, null);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> configOverride = (objConfigOverride instanceof Map<?, ?>) ? ((Map<String, Object>) objConfigOverride) : null;
+            if (configOverride != null && !configOverride.isEmpty()) {
+                ShortestPathPlugin.configOverride.clear();
+                for (String key : configOverride.keySet()) {
+                    // An unknown key would sit in the override map forever and never be
+                    // diagnosable from either side: reject it loudly instead.
+                    if (!knownConfigKeys().contains(key)) {
+                        log.warn("Plugin message config override ignored: unknown key '{}'", key);
+                        continue;
+                    }
+                    ShortestPathPlugin.configOverride.put(key, configOverride.get(key));
+                }
+                cacheConfigValues();
+            }
+
+            if (objStart == null && objTarget == null)
+                return;
+
+            int start = (objStart instanceof WorldPoint) ? WorldPointUtil.packWorldPoint((WorldPoint) objStart)
+                : ((objStart instanceof Integer) ? ((int) objStart) : WorldPointUtil.UNDEFINED);
+            if (start == WorldPointUtil.UNDEFINED) {
+                start = getPlayerLocation();
+                if (start == WorldPointUtil.UNDEFINED)
+                    return;
+            }
+
+            Set<Integer> targets = new HashSet<>();
+            if (objTarget instanceof Integer) {
+                int packedPoint = (Integer) objTarget;
+                if (packedPoint == WorldPointUtil.UNDEFINED)
+                    return;
+                targets.add(packedPoint);
+            }
+            else if (objTarget instanceof WorldPoint) {
+                int packedPoint = WorldPointUtil.packWorldPoint((WorldPoint) objTarget);
+                if (packedPoint == WorldPointUtil.UNDEFINED)
+                    return;
+                targets.add(packedPoint);
+            }
+            else if (objTarget instanceof Set<?>) {
+                @SuppressWarnings("unchecked")
+                Set<Object> objTargets = (Set<Object>) objTarget;
+                for (Object obj : objTargets) {
+                    int packedPoint = WorldPointUtil.UNDEFINED;
+                    if (obj instanceof Integer)
+                        packedPoint = (Integer) obj;
+                    else if (obj instanceof WorldPoint)
+                        packedPoint = WorldPointUtil.packWorldPoint((WorldPoint) obj);
+                    if (packedPoint == WorldPointUtil.UNDEFINED)
+                        return;
+                    targets.add(packedPoint);
+                }
+            }
+
+            // Attribute the destination for the GPS header. PluginMessage doesn't identify its sender,
+            // so honour an optional "source" string in the data (a convention senders can adopt, e.g.
+            // "Quest Helper"); otherwise all we can say is that a plugin asked for it.
+            Object objSource = data.getOrDefault(PLUGIN_MESSAGE_SOURCE, null);
+            targetSource = (objSource instanceof String && !((String) objSource).isEmpty())
+                ? (String) objSource
+                : "another plugin";
+
+            boolean useOld = targets.isEmpty() && hasPathTargets();
+            Set<Integer> ends;
+            if (useOld)
+                ends = new HashSet<>(pathTargets);
+            else {
+                // A NEW destination from another plugin: this path bypasses setTargets, so arm the
+                // journey timer here too — otherwise the arrival time carries over from whatever manual
+                // destination was last set. Reusing the previous target keeps the running journey.
+                armJourney();
+                // Quest Helper often targets an NPC's or object's own tile, which isn't walkable — a
+                // search targeting only it exhausts the entire map and ends 'closest tile' (captured:
+                // ~880ms per search). Expand to the nearest walkable ring, like manual pins.
+                ends = new HashSet<>();
+                for (int target : targets) {
+                    ends.addAll(Destinations.walkableTargets(
+                        pathfinderConfig != null ? pathfinderConfig.getMap() : null, target,
+                        pathfinderConfig != null ? pathfinderConfig::isTransportOrigin : null));
+                }
+                // Object targets from other plugins (Quest Helper caves, stairs): when any
+                // expanded tile is a mapped transport ORIGIN, that origin IS the interactable
+                // side — drop the rest, or the search ends wherever the approach is cheapest,
+                // including BEHIND the object (captured at the Troll Stronghold south cave).
+                if (pathfinderConfig != null) {
+                    Set<Integer> origins = new HashSet<>();
+                    for (int end : ends) {
+                        if (pathfinderConfig.isTransportOrigin(end))
+                            origins.add(end);
+                    }
+                    if (!origins.isEmpty())
+                        ends = origins;
+                }
+            }
+            if (!useOld)
+                // Another plugin's new destination replaces a bank trip like any other.
+                bankDetour.cancel();
+            setDestination(start, ends, useOld);
+        }
+        else if (PLUGIN_MESSAGE_CLEAR.equals(action)) {
+            configOverride.clear();
+            cacheConfigValues();
+            targetSource = null;
+            setTarget(WorldPointUtil.UNDEFINED);
+        }
+    }
+
+    /**
+     * Publishes the displayed route's transports to other plugins (the {@code postTransports}
+     * integration). Called when the displayed route settles or changes — it used to stream the
+     * classic search's path; the displayed route is what the player actually follows.
+     */
+    public void postPluginMessages() {
+        if (!hasPathTargets())
+            return;
+        if (override("postTransports", config.postTransports())) {
+            List<PathStep> currentPath = getDisplayPath();
+            if (currentPath.isEmpty())
+                return;
+            Map<String, Object> data = new HashMap<>();
+            List<WorldPoint> transportOrigins = new ArrayList<>();
+            List<WorldPoint> transportDestinations = new ArrayList<>();
+            List<String> transportObjectInfos = new ArrayList<>();
+            List<String> transportDisplayInfos = new ArrayList<>();
+            for (int i = 1; i < currentPath.size(); i++) {
+                PathStep currentStep = currentPath.get(i - 1);
+                PathStep nextStep = currentPath.get(i);
+                for (Transport transport : transportsForEdge(currentStep, nextStep)) {
+                    transportOrigins.add(WorldPointUtil.unpackWorldPoint(currentStep.getPackedPosition()));
+                    transportDestinations.add(WorldPointUtil.unpackWorldPoint(nextStep.getPackedPosition()));
+                    transportObjectInfos.add(transport.getObjectInfo());
+                    transportDisplayInfos.add(transport.getDisplayInfo());
+                }
+            }
+            data.put("origin", transportOrigins);
+            data.put("destination", transportDestinations);
+            data.put("objectInfo", transportObjectInfos);
+            data.put("displayInfo", transportDisplayInfos);
+            eventBus.post(new PluginMessage(MESSAGE_NAMESPACE, PLUGIN_MESSAGE_TRANSPORTS, data));
+            eventBus.post(new PluginMessage(MESSAGE_NAMESPACE_LEGACY, PLUGIN_MESSAGE_TRANSPORTS, data));
+        }
+    }
+
+    @Subscribe
+    public void onMenuOpened(MenuOpened event) {
+        lastMenuOpenedPoint = client.getMouseCanvasPosition();
+    }
+
+    /**
+     * Tracks the balloon log storage from its chat messages — the crates' contents have no varbit,
+     * chat is the game's only client-side signal (the same approach the dedicated tictac7x-balloon
+     * plugin uses). Counts persist in config and let balloon flights be paid from storage.
+     */
+    @Subscribe
+    public void onChatMessage(net.runelite.api.events.ChatMessage event) {
+        if (!config.balloonSmartMode()
+            || (event.getType() != net.runelite.api.ChatMessageType.SPAM
+                && event.getType() != net.runelite.api.ChatMessageType.MESBOX)) {
+            return;
+        }
+        Map<String, Integer> updates = BalloonLogStorage.parse(event.getMessage());
+        for (Map.Entry<String, Integer> update : updates.entrySet())
+            configManager.setConfiguration(CONFIG_GROUP, update.getKey(), update.getValue());
+        if (!updates.isEmpty() && !config.balloonStorageSynced())
+            configManager.setConfiguration(CONFIG_GROUP, "balloonStorageSynced", true);
+    }
+
+    @Subscribe
+    public void onGameTick(GameTick tick) {
+        maybeRefreshCatalog();
+        // Tick-cached position for Swing-thread consumers (the panel's destination search):
+        // live resolution walks player.getWorldView(), a client-thread-only call since the
+        // boat-position fix — the EDT reads this cache instead and can never trip it.
+        lastKnownPlayerLocation = getPlayerLocation();
+        // Boat berth changes arrive as varbit bursts (login sync, docking); one banner
+        // rebuild per tick at most.
+        if (boatBannerDirty) {
+            boatBannerDirty = false;
+            refreshBoatBanner();
+        }
+        // Passive sea-obstacle learning: every 10 ticks, harvest scene tiles that the shipped
+        // ocean calls sailable but live collision blocks (moored vessels, harbour clutter).
+        // The offline map plans; the client corrects itself as scenes reveal the truth.
+        if (--seaObstacleScanCooldown <= 0) {
+            seaObstacleScanCooldown = 10;
+            scanSeaObstacles();
+        }
+        for (int i = 0; i < pendingTasks.size(); i++) {
+            if (pendingTasks.get(i).check(client.getTickCount()))
+                pendingTasks.remove(i--).run();
+        }
+
+        maybeAutoComputeAlternatives();
+
+        // The house-location varbit (2187): 0 = no house, 1-9 = the owned location. Cached here (the
+        // client thread) for the panel's POH section, which runs on the EDT.
+        houseLocationId = client.getVarbitValue(2187);
+
+        // The balloon route unlock varbits (ZEP_MULTI_*), cached for the panel's low-log warning:
+        // only unlocked routes' log types are worth warning about.
+        balloonUnlockVarbits = new int[]{
+            client.getVarbitValue(2867), client.getVarbitValue(2868), client.getVarbitValue(2869),
+            client.getVarbitValue(2870), client.getVarbitValue(2871), client.getVarbitValue(2872)};
+
+        Player localPlayer = client.getLocalPlayer();
+        if (localPlayer == null)
+            return;
+
+        maybeScanPoh();
+
+        if (!hasPathTargets())
+            return;
+
+        int currentLocation = WorldPointUtil.fromLocalInstance(client, localPlayer);
+        // Journey timer: start counting from the player's first ACTION after a destination (or a chosen
+        // path) was set — moving, OR performing an animation (casting/using a teleport). The animation
+        // catch matters for long teleport channels (e.g. Lumbridge Home): the player stays put for the
+        // whole cast, so a move-only trigger would only start the clock after landing, losing that time.
+        boolean journeyMoved = journeyLastLocation != WorldPointUtil.UNDEFINED
+            && currentLocation != journeyLastLocation;
+        boolean acting = localPlayer.getAnimation() != -1;
+        if (journeyStartMillis == 0 && (journeyMoved || acting))
+            journeyStartMillis = System.currentTimeMillis();
+        journeyLastLocation = currentLocation;
+        if (hasArrived(currentLocation)) {
+            // Reached the destination (inside the arrival zone). Show the "Arrived!" panel — including when
+            // the destination was set while already there (e.g. "nearest bank" at a bank), where
+            // the journey time is ~0 — then clear the target. A never-started journey (arrived without
+            // moving) reports 0 rather than a stale duration.
+            long elapsed = journeyStartMillis == 0 ? 0 : System.currentTimeMillis() - journeyStartMillis;
+            if (routeDirectionsOverlay != null)
+                routeDirectionsOverlay.markArrived(targetSource, elapsed);
+            if (altPanel != null)
+                altPanel.markArrived(elapsed);
+            // A completed bank trip hands back the destination it replaced; read it before the
+            // clear, which would forget it.
+            BankDetour.Route resume = bankDetour.complete();
+            setTarget(WorldPointUtil.UNDEFINED);
+            if (resume != null)
+                resumeRoute(resume);
+            return;
+        }
+
+        // Off-route handling, in three bands of distance from the path: on route (nothing), a
+        // warning band (the overlay shows a red "drifting off route" message), and — on a move that
+        // reaches the recalculate distance — a full recompute. Recalc fires only on movement so a
+        // stationary far position (e.g. just teleported off-path) doesn't loop. With
+        // auto-recalculate off, GPS keeps the original route and only ever warns.
+        int recalc = config.recalculateDistance();
+        if (recalc >= 0) {
+            int step = WorldPointUtil.distanceBetween(lastLocation, currentLocation);
+            boolean moved = lastLocation != currentLocation;
+            lastLocation = currentLocation;
+            int d = distanceFromPath(currentLocation);
+            pathDistance = d;
+            int warn = Math.max(0, Math.min(config.offRouteWarnDistance(), recalc));
+            // At the helm the bands stretch: a boat's wide 16-bearing turning arcs swing off
+            // the decimated track line farther than a walker ever drifts off a path, and a
+            // land-tuned radius recalculated away perfectly good voyages mid-turn.
+            if (client.getVarbitValue(net.runelite.api.gameval.VarbitID.SAILING_BOARDED_BOAT) != 0) {
+                // 2x, not 3x: field-tuned — 3x let the boat wander far off the track before
+                // a recalc rescued it; turning arcs fit comfortably inside 2x.
+                recalc *= 2;
+                warn *= 3;
+            }
+            // A boat cutscene / teleport landing carries the player far from the path in one leap;
+            // that isn't drifting off route. A jump bigger than running arms a grace window that
+            // refreshes while the transport keeps moving them, and clears once they're back within
+            // the warning band (landed on/near the path).
+            if (step > TRANSPORT_STEP_TILES)
+                transportGraceTicks = TRANSPORT_GRACE_TICKS;
+            else if (transportGraceTicks > 0)
+                transportGraceTicks = (d >= 0 && d < warn) ? 0 : transportGraceTicks - 1;
+
+            if (d < 0 || transportGraceTicks > 0)
+                offRouteWarning = false;
+            else if (moved && d >= recalc && config.autoRecalculate()) {
+                offRouteWarning = false;
+                if (config.cancelInstead()) {
+                    setTarget(WorldPointUtil.UNDEFINED);
+                    return;
+                }
+                // One drift recalc at a time: distance is measured against the OLD path until the
+                // new routes land, so a player who keeps walking would otherwise re-trigger (and
+                // restart) the generation every moved tick and it would never finish. While one is
+                // computing, keep walking; once the fresh path lands the band check re-evaluates
+                // against it and fires at most one follow-up.
+                if (!altGenerationInFlight)
+                    recalculateFrom(currentLocation, pathTargets);
+                return;
+            }
+            else
+                offRouteWarning = d >= warn;
+        }
+        else
+            offRouteWarning = false;
+    }
+
+    /**
+     * Recompute the route from a new start (the player's current, off-route position) to the same
+     * targets. Triggered explicitly because the tick-level auto-compute is keyed on the target SET —
+     * which hasn't changed here — so it would not refire on its own. The stale selection is dropped
+     * so the fresh generation's route takes over rather than the overlay clinging to the old line.
+     */
+    private void recalculateFrom(int start, Set<Integer> targets) {
+        selectedRoute = null;
+        routeCostMultiple = DEFAULT_COST_MULTIPLE;
+        routeLimit = defaultRouteLimit();
+        Set<Integer> ends = new HashSet<>(targets);
+        pathStart = start;
+        triggerAlternatives(start, ends);
+    }
+
+    @Subscribe
+    public void onMenuEntryAdded(MenuEntryAdded event) {
+        if (client.isKeyPressed(KeyCode.KC_SHIFT)
+            && event.getType() == MenuAction.WALK.getId()) {
+            addMenuEntry(event, SET, TARGET, 1);
+            if (hasPathTargets()) {
+                int selectedTile = getSelectedWorldPoint();
+                for (PathStep pathStep : getDisplayPath()) {
+                    if (pathStep.getPackedPosition() == selectedTile) {
+                        addMenuEntry(event, CLEAR, PATH, 1);
+                        break;
+                    }
+                }
+            }
+        }
+
+        final Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
+
+        if (map != null) {
+            if (map.getBounds().contains(
+                client.getMouseCanvasPosition().getX(),
+                client.getMouseCanvasPosition().getY())) {
+                addMenuEntry(event, SET, TARGET, 0);
+                for (int target : pathTargets) {
+                    if (target != WorldPointUtil.UNDEFINED)
+                        addMenuEntry(event, CLEAR, PATH, 0);
+                }
+            }
+            if (event.getOption().equals(FLASH_ICONS) && pathfinderConfig.hasDestination(simplify(event.getTarget())))
+                addMenuEntry(event, FIND_CLOSEST, event.getTarget(), 1);
+        }
+
+        final Shape minimap = getMinimapClipArea();
+
+        if (minimap != null && hasPathTargets()
+            && minimap.contains(
+            client.getMouseCanvasPosition().getX(),
+            client.getMouseCanvasPosition().getY())) {
+            addMenuEntry(event, CLEAR, PATH, 0);
+        }
+
+        if (minimap != null && hasPathTargets()
+            && ("Floating World Map".equals(Text.removeTags(event.getOption()))
+            || "Close Floating panel".equals(Text.removeTags(event.getOption())))) {
+            addMenuEntry(event, CLEAR, PATH, 1);
+        }
+    }
+
+    @Subscribe
+    public void onItemContainerChanged(ItemContainerChanged event) {
+        if (event.getContainerId() == InventoryID.INV || event.getContainerId() == InventoryID.WORN) {
+            // Only mark the catalog dirty when the routing-relevant slice of the inventory and
+            // equipment actually changed: the dependency index knows every item id (and quantity
+            // threshold) any transport requirement can read, so logs, ore, food and loot pass
+            // through without ever scheduling a refresh (issues #23/#24).
+            if (pathfinderConfig == null) {
+                catalogDirty = true;
+                return;
+            }
+            long fingerprint = pathfinderConfig.getRoutingItemDependencies().fingerprint(
+                client.getItemContainer(InventoryID.INV), client.getItemContainer(InventoryID.WORN));
+            if (!routingItemsFingerprintValid || fingerprint != routingItemsFingerprint) {
+                routingItemsFingerprint = fingerprint;
+                routingItemsFingerprintValid = true;
+                catalogDirty = true;
+            }
+            return;
+        }
+        if (event.getContainerId() != InventoryID.BANK)
+            return;
+        pathfinderConfig.bank = event.getItemContainer();
+        // Snapshot the items now, while the bank is open: the client may empty the live container
+        // (and thereby every reference to it) once the interface closes.
+        pathfinderConfig.setBankSnapshot(event.getItemContainer().getItems());
+        boolean firstSight = !bankContentsKnown;
+        bankContentsKnown = true;
+        bankRestored = false;
+        // Stage a cross-session save (written once when the bank closes, not per deposit). The
+        // profile key is captured now, while it's guaranteed available.
+        if (config.rememberBank()) {
+            bankSaveDirty = true;
+            bankSaveProfileKey = configManager.getRSProfileKey();
+        }
+        if (firstSight) {
+            // First sight of the bank this session: regenerate so the availability map is rebuilt
+            // with the bank contents — banked teleports classify IN_BANK (usable in Inv + bank
+            // mode) and the catalog header count updates. Also clears the panel warning. NOT
+            // during a round trip: opening the bank is the trip's halfway point, and regenerating
+            // would discard the displayed route (and with it the way back).
+            if (altRoundTrip)
+                refreshPanel(altGenerationInFlight);
+            else
+                recomputeAlternatives();
+        }
+    }
+
+    @Subscribe
+    public void onWidgetLoaded(WidgetLoaded event) {
+        if (hasPathTargets() && event.getGroupId() == InterfaceID.FAIRYRINGS_LOG)
+            fairyRingPanelOpen = true;
+
+        // Populate spirit tree cache, but only once per session. Gated on a live parse having
+        // happened (not on the cache being non-null): a snapshot restored from the previous session
+        // must not block the fresher live read — a newly planted tree only shows up in the menu.
+        if (!spiritTreesParsedLive) {
+            switch (event.getGroupId()) {
+                case InterfaceID.MENU:
+                    clientThread.invokeLater(() -> parseSpiritTreeWidget(false));
+                    break;
+                case InterfaceID.MENU_NEW:
+                    clientThread.invokeLater(() -> parseSpiritTreeWidget(true));
+                    break;
+            }
+        }
+    }
+
+    @Subscribe
+    public void onWidgetClosed(WidgetClosed event) {
+        if (event.getGroupId() == InterfaceID.FAIRYRINGS_LOG)
+            fairyRingPanelOpen = false;
+        // Bank closed: one regeneration per bank session, so items withdrawn or deposited are
+        // reflected in the method availability (and the catalog counts) — recomputing on every
+        // in-bank container change would run a generation per deposit. NOT during a round trip:
+        // banking mid-trip is the whole point, and regenerating would discard the way back.
+        if (event.getGroupId() == InterfaceID.BANKMAIN && bankContentsKnown && !altRoundTrip)
+            recomputeAlternatives();
+        if (event.getGroupId() == InterfaceID.BANKMAIN)
+            persistBankSnapshot();
+    }
+
+    /**
+     * Writes the staged bank snapshot to RSProfile-scoped config (per character, per world type) so
+     * a later session can start with it. One write per bank session — called when the bank closes,
+     * at logout, and at plugin shutdown.
+     */
+    private void persistBankSnapshot() {
+        if (!bankSaveDirty || bankSaveProfileKey == null || pathfinderConfig == null)
+            return;
+        String encoded = encodeBankSnapshot(pathfinderConfig.getBankSnapshot());
+        if (encoded == null)
+            // Bank seen but nothing in it: drop any stale saved snapshot rather than keeping it.
+            configManager.unsetConfiguration(CONFIG_GROUP, bankSaveProfileKey, CONFIG_KEY_BANK_SNAPSHOT);
+        else
+            configManager.setConfiguration(CONFIG_GROUP, bankSaveProfileKey, CONFIG_KEY_BANK_SNAPSHOT, encoded);
+        bankSaveDirty = false;
+    }
+
+    /**
+     * Loads the previous session's bank snapshot for the current character, if one was saved and the
+     * bank hasn't already been seen live. Runs at login (and plugin start) so "+ Bank" routes and the
+     * catalog's in-bank availability work before the bank is opened; the snapshot is replaced by live
+     * contents the first time the bank opens.
+     */
+    private void restoreBankFromConfig() {
+        if (!config.rememberBank() || bankContentsKnown)
+            return;
+        Item[] items = decodeBankSnapshot(
+            configManager.getRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_BANK_SNAPSHOT));
+        if (items == null)
+            return;
+        pathfinderConfig.setBankSnapshot(items);
+        bankContentsKnown = true;
+        bankRestored = true;
+    }
+
+    /**
+     * Restores everything this character's previous sessions detected — bank contents, planted
+     * spirit trees, house furniture — so routing starts from the known state instead of asking for
+     * a fresh sync of each. Every piece is superseded by its live source the moment that source is
+     * seen (bank opened, travel menu read, house entered).
+     */
+    @Subscribe
+    public void onVarbitChanged(VarbitChanged event) {
+        if (BOAT_BANNER_VARBIT_IDS.contains(event.getVarbitId()))
+            boatBannerDirty = true;
+    }
+
+    /** Client thread: re-read every boat's ownership, berth and name, persist, and let the
+     * panel's sailing section relabel itself. */
+    private void refreshBoatBanner() {
+        if (!GameState.LOGGED_IN.equals(client.getGameState()))
+            return;
+        List<String[]> rows = new ArrayList<>();
+        for (int slot = 0; slot < BOAT_BANNER_VARBITS.length; slot++) {
+            int[] varbits = BOAT_BANNER_VARBITS[slot];
+            // Owned varbit alone is unreliable (Where's My Boat's field lesson); a set name
+            // descriptor also proves ownership, and covers Port Sarim's port id 0.
+            if (client.getVarbitValue(varbits[0]) <= 0 && client.getVarbitValue(varbits[3]) <= 0)
+                continue;
+            rows.add(new String[]{decodeBoatName(slot, varbits),
+                SailingPorts.portName(client.getVarbitValue(varbits[1])),
+                boatTypeName(client.getVarbitValue(varbits[5]))});
+        }
+        boatBanner = rows;
+        boatBannerLive = true;
+        configManager.setRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_BOAT_PORTS,
+            rows.stream().map(r -> r[0] + "|" + r[1] + "|" + r[2])
+                .collect(java.util.stream.Collectors.joining(";")));
+        if (altPanel != null)
+            SwingUtilities.invokeLater(altPanel::refreshConfigSections);
+    }
+
+    /** The three name varbits index the game's own name-part tables (prefix, descriptor,
+     * noun) — the same decode Where's My Boat ships. Any surprise falls back to a slot label. */
+    /**
+     * The hull type varbit in acquisition-tier order: the Pandemonium quest raft is 0, the
+     * level-15 skiff 1, the level-50 sloop 2 (verified against a capture with all three owned).
+     * Unknown future tiers return "" and the panel simply shows no type.
+     */
+    private static String boatTypeName(int type) {
+        switch (type) {
+            case 0: return "Raft";
+            case 1: return "Skiff";
+            case 2: return "Sloop";
+            default: return "";
+        }
+    }
+
+    private String decodeBoatName(int slot, int[] varbits) {
+        try {
+            int[] rowIds = {DBTableID.SailingBoatNameOptions.Row.SAILING_BOAT_NAME_PREFIX_OPTIONS,
+                DBTableID.SailingBoatNameOptions.Row.SAILING_BOAT_NAME_DESCRIPTOR_OPTIONS,
+                DBTableID.SailingBoatNameOptions.Row.SAILING_BOAT_NAME_NOUN_OPTIONS};
+            List<String> parts = new ArrayList<>();
+            for (int part = 0; part < 3; part++) {
+                int index = client.getVarbitValue(varbits[2 + part]) - 1;
+                if (index > 0) {
+                    Object[] options = client.getDBTableField(rowIds[part],
+                        DBTableID.SailingBoatNameOptions.COL_OPTION, 0);
+                    if (index < options.length && options[index] instanceof String
+                        && !((String) options[index]).isEmpty()) {
+                        parts.add((String) options[index]);
+                    }
+                }
+            }
+            if (!parts.isEmpty())
+                return String.join(" ", parts);
+        }
+        catch (RuntimeException e) {
+            // Name tables unavailable (cache quirk) — the slot label below still identifies it.
+        }
+        return "Boat " + (slot + 1);
+    }
+
+    /** Owned boats as {name, port label} rows for the panel's sailing section; null = never
+     * collected for this character. */
+    public List<String[]> getBoatBanner() {
+        return boatBanner;
+    }
+
+    /** Whether the banner reflects this session's live varbits rather than a restored snapshot. */
+    public boolean isBoatBannerLive() {
+        return boatBannerLive;
+    }
+
+    private void restoreDetectionsFromConfig() {
+        restoreBankFromConfig();
+        if (pathfinderConfig.availableSpiritTrees == null) {
+            String raw = configManager.getRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_SPIRIT_TREES);
+            if (raw != null) {
+                pathfinderConfig.availableSpiritTrees = raw.isEmpty()
+                    ? new HashSet<>() : new HashSet<>(Arrays.asList(raw.split(",")));
+            }
+        }
+        if (!pohScanned) {
+            PohScanner.Detected detected = PohScanner.decode(
+                configManager.getRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_POH_FURNITURE));
+            if (detected != null) {
+                detectedPohFurniture = detected;
+                pohScanned = true;
+            }
+        }
+        if (boatBanner == null) {
+            String raw = configManager.getRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_BOAT_PORTS);
+            if (raw != null) {
+                List<String[]> rows = new ArrayList<>();
+                for (String row : raw.split(";")) {
+                    // name|port, with |type appended since the hull glyphs; old snapshots lack it.
+                    String[] parts = row.split("\\|", 3);
+                    if (parts.length >= 2 && !parts[0].isEmpty()) {
+                        rows.add(new String[]{parts[0], parts[1], parts.length > 2 ? parts[2] : ""});
+                    }
+                }
+                boatBanner = rows;
+            }
+        }
+        // The panel's sections label their sync state — reflect what was just restored.
+        if (altPanel != null)
+            SwingUtilities.invokeLater(altPanel::refreshConfigSections);
+    }
+
+    /**
+     * Serializes bank items as {@code id:quantity} pairs joined by commas. Empty slots and
+     * placeholders (quantity 0) carry no information and are dropped. Null when there is nothing
+     * worth saving.
+     */
+    static String encodeBankSnapshot(Item[] items) {
+        if (items == null)
+            return null;
+        StringBuilder sb = new StringBuilder(items.length * 10);
+        for (Item item : items) {
+            if (item == null || item.getId() < 0 || item.getQuantity() <= 0)
+                continue;
+            if (sb.length() > 0)
+                sb.append(',');
+            sb.append(item.getId()).append(':').append(item.getQuantity());
+        }
+        return sb.length() > 0 ? sb.toString() : null;
+    }
+
+    /** Parses {@link #encodeBankSnapshot}'s format back into items. Null on missing or malformed data. */
+    static Item[] decodeBankSnapshot(String encoded) {
+        if (encoded == null || encoded.isEmpty())
+            return null;
+        String[] pairs = encoded.split(",");
+        Item[] items = new Item[pairs.length];
+        try {
+            for (int i = 0; i < pairs.length; i++) {
+                int sep = pairs[i].indexOf(':');
+                if (sep <= 0)
+                    return null;
+                items[i] = new Item(Integer.parseInt(pairs[i].substring(0, sep)),
+                    Integer.parseInt(pairs[i].substring(sep + 1)));
+            }
+        }
+        catch (NumberFormatException e) {
+            return null;
+        }
+        return items;
+    }
+
+    @Subscribe
+    public void onPostClientTick(PostClientTick event) {
+        if (fairyRingPanelOpen && hasPathTargets())
+            scrollFairyRingPanel();
+    }
+
+    private void parseSpiritTreeWidget(boolean useNewMenu) {
+        // Referencing
+        // https://github.com/trs/runelite-teleport-maps/blob/e006270494500ab8e4826903b377bb945ca9fc96/src/main/java/com/mjhylkema/TeleportMaps/components/adventureLog/SpiritTreeMap.java#L141
+
+        Widget container;
+        if (useNewMenu)
+            container = client.getWidget(InterfaceID.MENU_NEW, 9);
+        else
+            container = client.getWidget(InterfaceID.MENU, 3);
+
+        if (container == null)
+            return;
+
+        Widget[] children = container.getDynamicChildren();
+        if (children == null || children.length == 0)
+            return;
+
+        // Tree Gnome Village is always the first row and always available;
+        // quick length check before running the regex
+        // Expected (old): "<col=735a28>1</col>: Tree Gnome Village" (length 39)
+        // Expected (new): "<col=ffffff>1</col>: Tree Gnome Village" (length 39)
+        String firstText = children[0].getText();
+        if (firstText == null || firstText.length() != 39)
+            return;
+
+        Pattern pattern = useNewMenu ? SPIRIT_TREE_LABEL_PATTERN_MENU_NEW : SPIRIT_TREE_LABEL_PATTERN_MENU;
+
+        Set<String> available = new HashSet<>();
+
+        for (Widget child : children) {
+            Matcher matcher = pattern.matcher(child.getText());
+            if (!matcher.matches())
+                continue;
+
+            // Group 2 is the disabled color tag; if present, the tree is unavailable
+            if (matcher.group(2) != null)
+                continue;
+
+            // Group 3 is spirit tree name
+            available.add(matcher.group(3));
+        }
+
+        pathfinderConfig.availableSpiritTrees = available;
+        spiritTreesParsedLive = true;
+        // Persist per character, so next session starts synced instead of asking for a travel-menu
+        // visit again. (Comma-safe: no spirit tree location name contains a comma.)
+        configManager.setRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_SPIRIT_TREES,
+            String.join(",", available));
+
+        // The panel's Spirit trees section shows the detected planted trees / sync state.
+        if (altPanel != null)
+            SwingUtilities.invokeLater(altPanel::refreshConfigSections);
+
+        if (hasPathTargets()) {
+            // Spirit-tree availability just became known: refresh the live config and regenerate
+            // so the displayed route can use (or drop) spirit trees accordingly.
+            setDestination(pathStart, new HashSet<>(pathTargets));
+            recomputeAlternatives();
+        }
+    }
+
+    private void scrollFairyRingPanel() {
+        List<PathStep> path = getDisplayPath();
+        if (path.isEmpty())
+            return;
+
+        String fairyRingCode = null;
+
+        for (int i = 1; i < path.size(); i++) {
+            PathStep currentStep = path.get(i - 1);
+            PathStep nextStep = path.get(i);
+            for (Transport transport : transportsForEdge(currentStep, nextStep)) {
+                if (TransportType.FAIRY_RING.equals(transport.getType()))
+                    fairyRingCode = transport.getDisplayInfo();
+            }
+        }
+        if (fairyRingCode == null)
+            return;
+
+        Widget codeWidget = null;
+
+        Widget favesPanel = client.getWidget(InterfaceID.FairyringsLog.FAVES);
+        if (favesPanel != null) {
+            for (Widget widget : favesPanel.getStaticChildren()) {
+                if (widget != null) {
+                    String widgetText = widget.getText();
+                    if ((fairyRingCode.equals(widgetText)
+                        || ("(GPS) " + fairyRingCode).equals(widgetText))) {
+                        codeWidget = widget;
+                        break;
+                    }
+                }
+            }
+        }
+
+        Widget contentsList = client.getWidget(InterfaceID.FairyringsLog.CONTENTS);
+        if (contentsList != null && codeWidget == null) {
+            for (Widget widget : contentsList.getDynamicChildren()) {
+                if (widget != null) {
+                    String widgetText = widget.getText();
+                    if ((fairyRingCode.equals(widgetText)
+                        || ("(GPS) " + fairyRingCode).equals(widgetText))) {
+                        codeWidget = widget;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (codeWidget == null)
+            return;
+
+        codeWidget.setTextColor(0x00FF00);
+        String codeWidgetText = codeWidget.getText();
+        if (codeWidgetText != null && !codeWidgetText.contains("(GPS)"))
+            codeWidget.setText("(GPS) " + codeWidgetText);
+
+        if (contentsList == null)
+            return;
+
+        int panelScrollY = Math.min(
+            codeWidget.getRelativeY(),
+            contentsList.getScrollHeight() - contentsList.getHeight()
+        );
+
+        contentsList.setScrollY(panelScrollY);
+        contentsList.revalidateScroll();
+
+        client.runScript(
+            ScriptID.UPDATE_SCROLLBAR,
+            InterfaceID.FairyringsLog.SCROLLBAR,
+            InterfaceID.FairyringsLog.CONTENTS,
+            panelScrollY
+        );
+    }
+
+    /**
+     * WARNING: This is a legacy wrapper for coarse display-oriented callers only.
+     * <p>
+     * It collapses banked/unbanked transport availability into a single view via
+     * PathfinderConfig.getTransports(), which is not valid for path-state-sensitive logic.
+     * <p>
+     * Do not use this for reasoning about which transports are available at a specific
+     * step of a path. Use PathfinderConfig.getTransportAvailability(boolean) and the
+     * path's PathStep state instead.
+     */
+    public PrimitiveIntHashMap<Transport[]> getTransports() {
+        return pathfinderConfig.getTransports();
+    }
+
+    /**
+     * This reconstructs the candidate transports for a rendered path edge from the current path state.
+     * <p>
+     * The important detail is that path display logic is edge-based, not node-based:
+     * - origin position comes from currentStep
+     * - destination position comes from nextStep
+     * - the applicable transport set may depend on whether the edge transitions into banked state
+     * <p>
+     * That last point is the awkward one. Banking is not represented as its own explicit path edge;
+     * instead the "becomes banked" state change is conflated into the movement/transport edge that
+     * reaches the banked destination step. As a result, callers cannot safely resolve transports from
+     * a single PathStep alone: using only currentStep can miss bank-gated transports, while using only
+     * nextStep loses the origin tile of the edge. This helper therefore takes both steps and resolves
+     * transports for the edge between them.
+     * <p>
+     * This is still only a fallback for display code and remains inherently ambiguous when multiple
+     * valid transports share the same origin/destination pair under the same edge state. The more
+     * structural fix would be to model reconstructed paths in terms of explicit edges, or otherwise
+     * carry richer per-edge metadata, instead of repeatedly re-deriving transport candidates from
+     * adjacent path steps.
+     * <p>
+     * Note that this function also performs filtering by the transport target, so callers of this
+     * function can directly iterate over the returned transports.
+     */
+    /**
+     * Whether the DISPLAYED route uses a teleport method to reach the tile after {@code fromIndex}
+     * (edge {@code fromIndex} → {@code fromIndex + 1}). Drives the teleport pulse straight from the
+     * shown route's method edges — {@link #transportsForEdge} re-derives transports from the classic
+     * config, whose teleport-item setting (e.g. "Inventory (perm)") excludes charged jewellery, so a
+     * charged-item leg on an alternative route never pulsed.
+     */
+    public boolean displayedRouteTeleportsAt(int fromIndex) {
+        TeleportMethod method = displayedRouteMethodAt(fromIndex);
+        return method != null && method.getType() != null && method.getType().isTeleport();
+    }
+
+    /**
+     * The method the DISPLAYED route uses to reach the tile after {@code fromIndex}, or null when
+     * that edge is plain walking. Lets the world overlay label a leg (e.g. "Varrock tablet") that
+     * {@link #transportsForEdge} can't re-derive because the classic config's teleport-item setting
+     * excludes it (charged/consumable items under a perm-only setting).
+     */
+    public TeleportMethod displayedRouteMethodAt(int fromIndex) {
+        RouteOption route = getDisplayedRoute();
+        if (route == null)
+            return null;
+        int arriveIndex = fromIndex + 1;
+        List<Integer> edges = route.getMethodEdgeIndexes();
+        List<TeleportMethod> methods = route.getMethods();
+        for (int m = 0; m < edges.size() && m < methods.size(); m++) {
+            if (edges.get(m) == arriveIndex)
+                return methods.get(m);
+        }
+        return null;
+    }
+
+    public Set<Transport> transportsForEdge(PathStep currentStep, PathStep nextStep) {
+        if (currentStep == null || nextStep == null)
+            return Set.of();
+        boolean bankVisited = currentStep.isBankVisited() || nextStep.isBankVisited();
+        // Only the transports that land on the next step - filtered while collecting, because this
+        // runs per edge per frame from the overlays and used to copy EVERY usable teleport into a
+        // fresh set first.
+        final int landing = nextStep.getPackedPosition();
+        Set<Transport> stepTransports = new HashSet<>();
+        for (Transport transport : pathfinderConfig.getTransportsPacked(bankVisited)
+            .getOrDefault(currentStep.getPackedPosition(), TransportAvailability.EMPTY_TRANSPORTS)) {
+            if (transport.getDestination() == landing)
+                stepTransports.add(transport);
+        }
+        // The teleports, which might be used from anywhere.
+        for (Transport transport : pathfinderConfig.getUsableTeleports(bankVisited)) {
+            if (transport.getDestination() == landing)
+                stepTransports.add(transport);
+        }
+        // Remove teleports that share destinations with a local transport type on this edge.
+        // For example, if the path uses a QUETZAL (local) transport, suppress QUETZAL_WHISTLE hints.
+        // Also suppress them when the edge distance is within the shared type's radius threshold,
+        // which occurs when the path is simply walking to a landing site (not teleporting to it).
+        Set<TransportType> localTypes = EnumSet.noneOf(TransportType.class);
+        for (Transport t : stepTransports) {
+            if (t.getOrigin() != Transport.UNDEFINED_ORIGIN && t.getType() != null)
+                localTypes.add(t.getType());
+        }
+        int edgeDistance = WorldPointUtil.distanceBetween2D(currentStep.getPackedPosition(), nextStep.getPackedPosition());
+        boolean samePlane = WorldPointUtil.unpackWorldPlane(currentStep.getPackedPosition())
+            == WorldPointUtil.unpackWorldPlane(nextStep.getPackedPosition());
+        stepTransports.removeIf(t -> {
+            if (t.getOrigin() != Transport.UNDEFINED_ORIGIN || t.getType() == null) {
+                return false; // keep local transports
+            }
+            // A same-plane adjacent edge is a plain walking step — the pathfinder never spends a
+            // teleport on a one-tile hop. Any anywhere-teleport matching it is the path merely
+            // walking across that teleport's landing tile, so it must not be hinted.
+            if (samePlane && edgeDistance <= 1)
+                return true;
+            TransportType sharedType = t.getType().sharesDestinationsWith();
+            if (sharedType == null) {
+                return false; // not a shared-destination teleport, keep it
+            }
+            // Suppress if a local transport of the shared type is present on this edge (Issue 1),
+            // or if the edge is within the shared type's radius threshold, meaning the path is
+            // walking to the landing site rather than teleporting there (Issue 2).
+            return localTypes.contains(sharedType)
+                || (sharedType.getRadiusThreshold() != null && edgeDistance <= sharedType.getRadiusThreshold());
+        });
+        return stepTransports;
+    }
+
+    public PathStep nextPathStep(List<PathStep> path, int index) {
+        if (path == null || index < 0 || index + 1 >= path.size())
+            return null;
+        return path.get(index + 1);
+    }
+
+    /**
+     * Checks if the destination is inside POH and looks ahead in the path to find the exit transport.
+     * If the immediate exit leads to a fairy ring or other notable transport shortly after,
+     * that information is included instead.
+     *
+     * @param destination  The destination point to check
+     * @param path         The full path
+     * @param currentIndex The current index in the path
+     * @return The display info of the POH exit transport, or null if not applicable
+     */
+    public String getPohExitInfo(int destination, List<PathStep> path, int currentIndex) {
+        if (path == null || currentIndex < 0)
+            return null;
+
+        int destX = WorldPointUtil.unpackWorldX(destination);
+        int destY = WorldPointUtil.unpackWorldY(destination);
+
+        // Check if destination is inside POH
+        if (!isInsidePoh(destX, destY))
+            return null;
+
+        String immediateExitInfo = null;
+
+        // Look ahead in the path to find the next transport that exits POH
+        for (int i = currentIndex + 1; i < path.size() - 1; i++) {
+            int stepLocation = path.get(i).getPackedPosition();
+            int nextLocation = path.get(i + 1).getPackedPosition();
+
+            int stepX = WorldPointUtil.unpackWorldX(stepLocation);
+            int stepY = WorldPointUtil.unpackWorldY(stepLocation);
+            int nextX = WorldPointUtil.unpackWorldX(nextLocation);
+            int nextY = WorldPointUtil.unpackWorldY(nextLocation);
+
+            // Check if this step is inside POH but next step is outside (exit transport)
+            boolean stepInsidePoh = isInsidePoh(stepX, stepY);
+            boolean nextInsidePoh = isInsidePoh(nextX, nextY);
+
+            if (stepInsidePoh && !nextInsidePoh) {
+                // Found the exit transport - get its display info using bank-aware lookup
+                PathStep currentStep = path.get(i);
+                PathStep nextStep = path.get(i + 1);
+                for (Transport transport : transportsForEdge(currentStep, nextStep)) {
+                    String exitInfo = transport.getDisplayInfo();
+                    if (exitInfo != null && !exitInfo.isEmpty()) {
+                        TransportType exitType = transport.getType();
+                        if (TransportType.TELEPORTATION_BOX.equals(exitType)) {
+                            String objInfo = transport.getObjectInfo();
+                            if (objInfo != null && objInfo.contains("Amulet of Glory"))
+                                immediateExitInfo = "Mounted Glory: " + exitInfo;
+                            else if (objInfo != null && objInfo.contains("Mythical cape"))
+                                immediateExitInfo = "Mythical Cape: " + exitInfo;
+                            else if (objInfo != null && objInfo.contains("Xeric's Talisman"))
+                                immediateExitInfo = "Xeric's Talisman: " + exitInfo;
+                            else if (objInfo != null && objInfo.contains("Digsite"))
+                                immediateExitInfo = "Digsite Pendant: " + exitInfo;
+                            else
+                                immediateExitInfo = "Jewelry Box: " + exitInfo;
+                        }
+                        else if (TransportType.TELEPORTATION_PORTAL_POH.equals(exitType))
+                            immediateExitInfo = "Nexus: " + exitInfo;
+                        else if (TransportType.FAIRY_RING.equals(exitType))
+                            immediateExitInfo = "Fairy Ring " + exitInfo;
+                        else if (TransportType.SPIRIT_TREE.equals(exitType))
+                            immediateExitInfo = "Spirit Tree: " + exitInfo;
+                        else if (TransportType.WILDERNESS_OBELISK.equals(exitType))
+                            immediateExitInfo = "Obelisk: " + exitInfo;
+                        else
+                            immediateExitInfo = exitInfo;
+                    }
+                    break;
+                }
+                break;
+            }
+
+            // If we've left POH without finding a transport, stop looking
+            if (!stepInsidePoh)
+                break;
+        }
+
+        return immediateExitInfo;
+    }
+
+    private Color override(String configOverrideKey, Color defaultValue) {
+        if (!configOverride.isEmpty()) {
+            Object value = configOverride.get(configOverrideKey);
+            if (value instanceof Color)
+                return (Color) value;
+        }
+        return defaultValue;
+    }
+
+
+    // The helm-preference toggle, cached for the comparator (read on the service thread).
+    private volatile boolean cachedKeepSailing = true;
+
+    private void cacheConfigValues() {
+        cachedKeepSailing = override("sailingKeepSailing", config.sailingKeepSailing());
+        drawMap = override("drawMap", config.drawMap());
+        drawMinimap = override("drawMinimap", config.drawMinimap());
+        drawTiles = override("drawTiles", config.drawTiles());
+        drawRecalculationRanges = override("drawRecalculationRanges", config.drawRecalculationRanges());
+        showTransportInfo = override("showTransportInfo", config.showTransportInfo());
+        showBankPickupInfo = override("showBankPickupInfo", config.showBankPickupInfo());
+
+        colourPath = override("colourPath", config.colourPath());
+        colourPathSailing = override("colourPathSailing", config.colourPathSailing());
+        colourPathBlocked = override("colourPathBlocked", config.colourPathBlocked());
+        colourPathCalculating = override("colourPathCalculating", config.colourPathCalculating());
+        colourPathUnreachable = override("colourPathUnreachable", config.colourPathUnreachable());
+        colourText = override("colourText", config.colourText());
+        colourTeleportPulse = override("colourTeleportPulse", config.colourTeleportPulse());
+        colourOverlayAccent = override("colourOverlayAccent", config.colourOverlayAccent());
+
+        unreachableTargetDistance = override("unreachableTargetDistanceThreshold", config.unreachableTargetDistance());
+        unreachableText = config.unreachableText();
+
+        showTeleportPulse = override("showTeleportPulse", config.showTeleportPulse());
+        showDirections = override("showDirections", config.showDirections());
+        overrideOverlayTransparency = override("overrideOverlayTransparency", config.overrideOverlayTransparency());
+        overlayTransparency = override("overlayTransparency", config.overlayTransparency());
+        // Display-only preference; not part of the capture-replay override set.
+        overlayFontSize = config.overlayFontSize();
+        arrivalAutoDismiss = override("arrivalAutoDismiss", config.arrivalAutoDismiss());
+        arrivalDismissSeconds = override("arrivalDismissSeconds", config.arrivalDismissSeconds());
+    }
+
+    private String simplify(String text) {
+        return Text.removeTags(text).toLowerCase()
+            .replaceAll("[^a-zA-Z ]", "")
+            .replace(" ", "_")
+            .replace("__", "_");
+    }
+
+    private void onMenuOptionClicked(MenuEntry entry) {
+        if (entry.getOption().equals(SET) && entry.getTarget().equals(TARGET)) {
+            targetSource = "map pin";
+            setTarget(getSelectedWorldPoint());
+        }
+        else if (entry.getOption().equals(CLEAR) && entry.getTarget().equals(PATH)) {
+            targetSource = null;
+            setTarget(WorldPointUtil.UNDEFINED);
+        }
+        else if (entry.getOption().equals(FIND_CLOSEST)) {
+            targetSource = "map pin";
+            setTargets(pathfinderConfig.getDestinations(simplify(entry.getTarget())), true);
+        }
+    }
+
+    private int getSelectedWorldPoint() {
+        if (client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) == null) {
+            if (client.getTopLevelWorldView().getSelectedSceneTile() != null)
+                return WorldPointUtil.fromLocalInstance(client, client.getTopLevelWorldView().getSelectedSceneTile().getLocalLocation());
+        }
+        else {
+            return client.isMenuOpen()
+                ? calculateMapPoint(lastMenuOpenedPoint.getX(), lastMenuOpenedPoint.getY())
+                : calculateMapPoint(client.getMouseCanvasPosition().getX(), client.getMouseCanvasPosition().getY());
+        }
+        return WorldPointUtil.UNDEFINED;
+    }
+
+    private void setTarget(int target) {
+        setTarget(target, false);
+    }
+
+    /**
+     * Sets the GPS destination to a searched place/amenity (from the panel search box), recording
+     * where it came from for the directions header. Runs on the client thread.
+     */
+    public void setDestination(int packedPosition, String source) {
+        clientThread.invokeLater(() -> {
+            targetSource = source;
+            // Searched destinations can sit on unwalkable tiles (a place label on a fountain):
+            // expand to the nearest walkable ring, like map pins — walkable tiles stay exact.
+            // The world-map pin stays on the destination itself.
+            Set<Integer> targets = new HashSet<>(Destinations.walkableTargets(
+                pathfinderConfig != null ? pathfinderConfig.getMap() : null, packedPosition,
+                pathfinderConfig != null ? pathfinderConfig::isTransportOrigin : null));
+            if (targets.size() > 1)
+                markerTarget = packedPosition;
+            setTargets(targets, false);
+        });
+    }
+
+    /**
+     * Routes to the NEAREST of an amenity category (bank, altar, ...): sets every tile of the
+     * category as a target and generates the ranked alternative routes, so the shortest paths —
+     * with the teleports currently available — surface first, whichever site they reach.
+     */
+    public void setNearestCategory(Set<Integer> tiles, String source) {
+        setNearestCategory(tiles, source, false);
+    }
+
+    /**
+     * The round-trip variant additionally routes BACK to the current position: every produced
+     * route goes out to a site and home again, ranked by the combined cost — the best round-trip
+     * bank is not necessarily the nearest one-way bank.
+     */
+    public void setNearestCategory(Set<Integer> tiles, String source, boolean roundTrip) {
+        if (tiles == null || tiles.isEmpty())
+            return;
+        clientThread.invokeLater(() -> {
+            targetSource = source;
+            setTargets(new HashSet<>(tiles), false);
+            // After setTargets: it resets the round-trip flag for ordinary destinations.
+            altRoundTrip = roundTrip;
+            recomputeAlternatives();
+        });
+    }
+
+    /**
+     * Runs one nearest-X option: the panel's quick buttons and menu, its search box's nearest-of
+     * row, and the two bank hotkeys. A bank option starts a bank trip: the destination it
+     * replaces is resumed once the trip completes (see BankDetour).
+     */
+    public void goToNearest(Destinations.NearestOption option) {
+        Set<Integer> tiles = Destinations.tilesForCategory(option.id, getTransports());
+        boolean roundTrip = "bank_round_trip".equals(option.id);
+        boolean bank = roundTrip || "bank".equals(option.id);
+        if (bank)
+            // Union in the engine's accessible-bank tiles: the amenity dump misses oddly-named
+            // bank objects (e.g. Slepe's "Bank Chest-wreck"), and "nearest bank" must never
+            // disagree with where the engine itself can bank.
+            tiles.addAll(getEngineBankTiles());
+        String source = "nearest " + option.label.toLowerCase(Locale.ROOT);
+        if (!bank) {
+            setNearestCategory(tiles, source, false);
+            return;
+        }
+        if (tiles.isEmpty())
+            return;
+        clientThread.invokeLater(() -> {
+            if (client.getLocalPlayer() == null)
+                // Logged out: setTargets would change nothing, so no trip may start either.
+                return;
+            // Read before the destination changes: setting it forgets any trip under way.
+            BankDetour.Route replaced = bankDetour.replacing(
+                BankDetour.Route.of(pathTargets, targetSource, altRoundTrip, markerTile()));
+            targetSource = source;
+            setTargets(new HashSet<>(tiles), false);
+            // After setTargets: it resets the round-trip flag and forgets the trip.
+            altRoundTrip = roundTrip;
+            bankDetour.begin(replaced);
+            recomputeAlternatives();
+        });
+    }
+
+    /** The panel's "Bank" and "Bank (and back)" quick buttons, and their hotkeys. */
+    public void goToNearestBank(boolean roundTrip) {
+        String id = roundTrip ? "bank_round_trip" : "bank";
+        for (Destinations.NearestOption option : Destinations.NEAREST_OPTIONS) {
+            if (option.id.equals(id)) {
+                goToNearest(option);
+                return;
+            }
+        }
+    }
+
+    /** The world-map pin's tile, or UNDEFINED without one. */
+    private int markerTile() {
+        WorldMapPoint pin = marker;
+        return pin == null ? WorldPointUtil.UNDEFINED : WorldPointUtil.packWorldPoint(pin.getWorldPoint());
+    }
+
+    /**
+     * Picks the destination a completed bank trip replaced back up: the same targets, label, pin
+     * and round-trip flag, with routes generated from the bank, where the player now stands.
+     */
+    private void resumeRoute(BankDetour.Route route) {
+        targetSource = route.source;
+        markerTarget = route.marker;
+        setTargets(new HashSet<>(route.targets), false);
+        altRoundTrip = route.roundTrip;
+        if (route.roundTrip)
+            recomputeAlternatives();
+        client.addChatMessage(net.runelite.api.ChatMessageType.GAMEMESSAGE, "",
+            "GPS: bank reached, resuming your previous route.", null);
+    }
+
+    /**
+     * The player's packed world position, or {@link WorldPointUtil#UNDEFINED} when not logged
+     * in — BOAT-AWARE: aboard, the raw local position lives in the boat's sub-WorldView
+     * (template-band coordinates that broke progress tracking and hid the route overlays the
+     * moment the player boarded); the Player overload resolves through the boat WorldEntity,
+     * returning UNDEFINED transiently during view swaps.
+     */
+    private volatile int lastKnownPlayerLocation = WorldPointUtil.UNDEFINED;
+
+    /** Where the player was as of the last game tick — safe from ANY thread (see onGameTick). */
+    public int getLastKnownPlayerLocation() {
+        return lastKnownPlayerLocation;
+    }
+
+    public int getPlayerLocation() {
+        Player local = client.getLocalPlayer();
+        return local == null ? WorldPointUtil.UNDEFINED
+            : WorldPointUtil.fromLocalInstance(client, local);
+    }
+
+    private void setTarget(int target, boolean append) {
+        Set<Integer> targets = new HashSet<>();
+        if (target != WorldPointUtil.UNDEFINED) {
+            // A pin on an unwalkable tile (furniture, a fence, an NPC's tile from Quest Helper) can
+            // never be settled by the search — it would explore the entire map and fall back to a
+            // closest-tile path (captured in-game: 11 exhausted searches, 8.2s). Target the nearest
+            // walkable ring instead; walkable pins stay exact, and the map pin stays on the tile.
+            Set<Integer> walkable = Destinations.walkableTargets(
+                pathfinderConfig != null ? pathfinderConfig.getMap() : null, target,
+                pathfinderConfig != null ? pathfinderConfig::isTransportOrigin : null);
+            if (walkable.size() > 1)
+                markerTarget = target;
+            targets.addAll(walkable);
+        }
+        setTargets(targets, append);
+    }
+
+    private void setTargets(Set<Integer> targets, boolean append) {
+        // Any change of destination forgets a bank trip's saved route; a bank trip re-arms after.
+        bankDetour.cancel();
+        // Ordinary destinations are one-way; the round-trip entry point re-sets this after.
+        altRoundTrip = false;
+        // A fresh destination starts at the default cost band; "show more" widens it from there.
+        // (loadMoreRoutes bumps the multiple and regenerates without going through setTargets.)
+        routeCostMultiple = DEFAULT_COST_MULTIPLE;
+        if (targets == null || targets.isEmpty()) {
+            pathStart = WorldPointUtil.UNDEFINED;
+            pathTargets = Set.of();
+
+            worldMapPointManager.removeIf(x -> x == marker);
+            marker = null;
+            selectedRoute = null;
+            routeLimit = defaultRouteLimit();
+            // Keep the teleport-methods catalog visible with no target selected.
+            triggerAlternatives(WorldPointUtil.UNDEFINED, new HashSet<>());
+        }
+        else {
+            Player localPlayer = client.getLocalPlayer();
+            if (localPlayer == null)
+                return;
+            worldMapPointManager.removeIf(x -> x == marker);
+            // A destination expanded to its walkable perimeter (a searched bank booth and its
+            // surround) still gets its pin: on the expansion's centre, not the single-target tile.
+            int markerTile = markerTarget != WorldPointUtil.UNDEFINED ? markerTarget
+                : (targets.size() == 1 ? targets.iterator().next() : WorldPointUtil.UNDEFINED);
+            markerTarget = WorldPointUtil.UNDEFINED;
+            if (markerTile != WorldPointUtil.UNDEFINED) {
+                marker = new WorldMapPoint(WorldPointUtil.unpackWorldPoint(markerTile), MARKER_IMAGE);
+                marker.setName("Target");
+                marker.setTarget(marker.getWorldPoint());
+                marker.setJumpOnClick(true);
+                worldMapPointManager.add(marker);
+            }
+
+            int start = WorldPointUtil.fromLocalInstance(client, localPlayer);
+            lastLocation = start;
+            Set<Integer> destinations = new HashSet<>(targets);
+            if (append)
+                destinations.addAll(pathTargets);
+            // Arm the journey timer: it starts counting from the player's first movement.
+            armJourney();
+            // The routes themselves are generated by the tick-level auto-compute (keyed on the
+            // target-set change) or the panel's "Find routes" button.
+            setDestination(start, destinations, append);
+        }
+    }
+
+    // --- Alternative-routes feature (driven by ShortestPathPanel) ---
+
+    /** The journey wall-clock start, or 0 while it hasn't begun (armed, waiting for movement). */
+    public long getJourneyStartMillis() {
+        return journeyStartMillis;
+    }
+
+    /** Re-arms the journey timer so it recounts from the player's next movement. */
+    private void armJourney() {
+        journeyStartMillis = 0;
+        journeyLastLocation = WorldPointUtil.UNDEFINED;
+    }
+
+    /**
+     * The live collision map, for the progress tracker's wall-aware checks and the dev audit's
+     * capture lane expansion. Null until loaded.
+     */
+    public gps.pathfinder.CollisionMap getCollisionMap() {
+        PathfinderConfig config = pathfinderConfig;
+        return config != null ? config.getMap() : null;
+    }
+
+    /** Why every route of the current page stops short, for the panel's status (plan step N12). */
+    public AlternativeRoutesService.UnreachableCause getUnreachableCause() {
+        AlternativeRoutesService service = altRoutesService;
+        return service != null ? service.lastUnreachableCause() : AlternativeRoutesService.UnreachableCause.NONE;
+    }
+
+    public RouteOption getDisplayedRoute() {
+        RouteOption route = selectedRoute;
+        if (route != null)
+            return route;
+        // While a generation is still streaming/re-ranking, hold the last committed route (null for a
+        // fresh destination: the HUD shows "Finding the best route" and the ground stays clear)
+        // rather than flip the overlay through the changing top result — that flash of one route
+        // immediately replaced by another is the "glitchy" search behaviour. The final top route is
+        // committed once the generation settles (see onAlternativeRoutesUpdate).
+        if (altGenerationInFlight)
+            return committedDisplayRoute;
+        List<RouteOption> routes = alternativeRoutes;
+        if (routes.isEmpty())
+            return null;
+        // Only substitute the first alternative when it was computed for the current destination;
+        // a stale list (target changed since "Find routes") must not be displayed.
+        Set<Integer> targets = pathTargets;
+        if (targets.isEmpty() || !lastAltTargets.equals(targets))
+            return null;
+        return routes.get(0);
+    }
+
+    /**
+     * The path the overlays should draw: the displayed route's (the selected one, or by default the
+     * first route of the current alternatives list, so the drawn path reflects the chosen
+     * mode/exclusions). Empty when no route is displayed.
+     */
+    public List<PathStep> getDisplayPath() {
+        RouteOption route = getDisplayedRoute();
+        return route != null ? route.getPath() : List.of();
+    }
+
+    /**
+     * Path indexes of the displayed route where a SAILING leg departs — the overlays draw
+     * those jumps as real sea tracks ({@link SailingSea#seaPath}) instead of dashed lines.
+     */
+    public Set<Integer> getDisplaySailingEdges() {
+        RouteOption route = getDisplayedRoute();
+        if (route == null)
+            return Set.of();
+        return route.sailingJumpDepartures();
+    }
+
+    public Set<TeleportMethod> getUserExclusions() {
+        return new HashSet<>(userExclusions);
+    }
+
+    // --- Method priorities (ranking bias; see MethodPriority) ---------------------------------
+
+    private final Map<TeleportMethod, MethodPriority> methodPriorities = new ConcurrentHashMap<>();
+
+    /** One serialized priority entry (method identity + tier), for the config JSON. */
+    private static final class PriorityEntry {
+        TeleportMethod method;
+        MethodPriority priority;
+    }
+
+    /** The method's tier: EXCLUDED when in the exclusion set, else its stored tier or NORMAL. */
+    public MethodPriority getMethodPriority(TeleportMethod method) {
+        if (userExclusions.contains(method))
+            return MethodPriority.EXCLUDED;
+        return methodPriorities.getOrDefault(method, MethodPriority.NORMAL);
+    }
+
+    /**
+     * Sets a method's tier. EXCLUDED delegates to the exclusion set (search-affecting, flags the
+     * stale banner); every other tier is ranking-only — the current list re-sorts immediately.
+     * Choosing a non-EXCLUDED tier for an excluded method also un-excludes it.
+     */
+    public void setMethodPriority(TeleportMethod method, MethodPriority priority) {
+        clientThread.invoke(() -> setMethodPriorityOnClientThread(method, priority));
+    }
+
+    private void setMethodPriorityOnClientThread(TeleportMethod method, MethodPriority priority) {
+        if (priority == MethodPriority.EXCLUDED) {
+            // Exclusion is a MASK over the stored tier, not a replacement: the tier stays in the
+            // map (shadowed by the EXCLUDED read-back) so re-including — via this menu, the
+            // category toggle, or clearExclusions — restores the user's tuning. This matches the
+            // section-toggle path, which never touched the tier map in the first place.
+            excludeMethod(method);
+            return;
+        }
+        if (userExclusions.contains(method))
+            includeMethod(method);
+        if (priority == MethodPriority.NORMAL)
+            methodPriorities.remove(method);
+        else
+            methodPriorities.put(method, priority);
+        savePriorities();
+        resortRoutesByPriority();
+    }
+
+    /** The walk-preference bias in seconds (negative effective ETA for the pure-walk route). */
+    public int getWalkPreferenceSeconds() {
+        return cachedWalkPreferenceSeconds;
+    }
+
+    public void setWalkPreferenceSeconds(int seconds) {
+        configManager.setConfiguration(CONFIG_GROUP, "walkPreferenceSeconds", seconds);
+        cachedWalkPreferenceSeconds = seconds;
+        resortRoutesByPriority();
+    }
+
+    private volatile int cachedWalkPreferenceSeconds;
+    private volatile int cachedBankPreferenceSeconds;
+
+    /** The bank-detour bias in seconds: positive prefers via-bank routes, negative avoids them. */
+    public int getBankPreferenceSeconds() {
+        return cachedBankPreferenceSeconds;
+    }
+
+    public void setBankPreferenceSeconds(int seconds) {
+        configManager.setConfiguration(CONFIG_GROUP, "bankPreferenceSeconds", seconds);
+        cachedBankPreferenceSeconds = seconds;
+        resortRoutesByPriority();
+    }
+
+    /**
+     * The route's ranking adjustment in seconds: the sum of its methods' tiers — or, for the
+     * pure-walk route, minus the walk preference (walking wins ties up to that many seconds).
+     */
+    public int routeAdjustmentSeconds(RouteOption route) {
+        if (route.getMethods().isEmpty())
+            return -cachedWalkPreferenceSeconds;
+        int seconds = 0;
+        for (TeleportMethod method : route.getMethods())
+            seconds += methodPriorities.getOrDefault(method, MethodPriority.NORMAL).adjustSeconds;
+        if (route.isViaBank())
+            seconds -= cachedBankPreferenceSeconds;
+        return seconds;
+    }
+
+    /** Effective sort key: reached routes first, then raw cost plus the priority adjustment. */
+    private java.util.Comparator<RouteOption> effectiveOrder() {
+        return java.util.Comparator
+            .comparingInt((RouteOption r) -> r.isReached() ? 0 : 1)
+            // At the helm, routes that STAY ON THE WATER outrank disembark-and-teleport chains
+            // (capture 20260829-204334: every offer abandoned the boat at the nearest mooring
+            // because the tick math favors teleports; a sailor mid-task wants the sea route
+            // first, the land chains listed below). Sailing-section toggle, on by default.
+            .thenComparingInt(r -> keepSailingFirst() && !r.isPureSail() ? 1 : 0)
+            .thenComparingInt(r -> r.getTotalCost() + MethodPriority.unitsFromSeconds(routeAdjustmentSeconds(r)));
+    }
+
+    boolean keepSailingFirst() {
+        PathfinderConfig pathConfig = pathfinderConfig;
+        return cachedKeepSailing && pathConfig != null && pathConfig.isOnSailingBoat();
+    }
+
+    /** Stable re-sort of the current list (tiers changed) — display-only, no regeneration. */
+    private void resortRoutesByPriority() {
+        List<RouteOption> routes = alternativeRoutes;
+        if (routes != null && !routes.isEmpty()) {
+            List<RouteOption> sorted = new ArrayList<>(routes);
+            sorted.sort(effectiveOrder());
+            alternativeRoutes = sorted;
+        }
+        refreshPanel(altGenerationInFlight);
+    }
+
+    /** Applies the effective order to a freshly generated list (called from the update stream). */
+    List<RouteOption> sortByEffectiveOrder(List<RouteOption> routes) {
+        List<RouteOption> sorted = new ArrayList<>(routes);
+        sorted.sort(effectiveOrder());
+        return sorted;
+    }
+
+    private void savePriorities() {
+        try {
+            List<PriorityEntry> entries = new ArrayList<>();
+            for (Map.Entry<TeleportMethod, MethodPriority> e : methodPriorities.entrySet()) {
+                PriorityEntry entry = new PriorityEntry();
+                entry.method = e.getKey();
+                entry.priority = e.getValue();
+                entries.add(entry);
+            }
+            configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_PRIORITIES, gson.toJson(entries));
+        }
+        catch (Exception e) {
+            log.warn("Failed to save method priorities", e);
+        }
+    }
+
+    private void loadPriorities() {
+        try {
+            String json = configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_PRIORITIES);
+            if (json != null && !json.isEmpty()) {
+                PriorityEntry[] saved = gson.fromJson(json, PriorityEntry[].class);
+                if (saved != null) {
+                    for (PriorityEntry entry : saved) {
+                        if (entry != null && entry.method != null && entry.method.getType() != null
+                            && entry.priority != null && entry.priority != MethodPriority.NORMAL
+                            && entry.priority != MethodPriority.EXCLUDED) {
+                            methodPriorities.put(entry.method, entry.priority);
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception e) {
+            log.warn("Failed to load method priorities", e);
+        }
+        Integer walk = configManager.getConfiguration(CONFIG_GROUP, "walkPreferenceSeconds", Integer.class);
+        cachedWalkPreferenceSeconds = walk != null ? walk : 0;
+        Integer bank = configManager.getConfiguration(CONFIG_GROUP, "bankPreferenceSeconds", Integer.class);
+        cachedBankPreferenceSeconds = bank != null ? bank : 0;
+    }
+
+    private volatile int houseLocationId;
+    private static final String[] HOUSE_LOCATIONS = {
+        null, "Rimmington", "Taverley", "Pollnivneach", "Rellekka", "Brimhaven",
+        "Yanille", "Prifddinas", "Hosidius", "Aldarin"};
+
+    /** The player's house location name (varbit 2187), or null when no house is detected. */
+    public String getHouseLocationName() {
+        int id = houseLocationId;
+        return (id > 0 && id < HOUSE_LOCATIONS.length) ? HOUSE_LOCATIONS[id] : null;
+    }
+
+    // Smart house furniture detection: scan the scene while the player is inside their POH.
+    private volatile boolean pohScanned = false;
+    private volatile PohScanner.Detected detectedPohFurniture;
+    // Reset when the player leaves the house, so the next visit re-scans (catching new furniture).
+    private boolean pohFurnitureFoundThisVisit = false;
+    // Bounds the "scene still loading" retries so a bare house doesn't rescan every tick forever.
+    private int pohScanAttempts = 0;
+    private static final int POH_SCAN_MAX_ATTEMPTS = 6;
+    // Recognised POH furniture ids seen spawning in the current scene (cleared on every scene
+    // load). A second, independent in-house signal: these object ids only exist inside player-owned
+    // houses, so a spawn is proof of being in one even if the template-chunk check somehow isn't.
+    private final Set<Integer> pohSpawnedFurniture = new HashSet<>();
+    // One decoded chunk dump per scene when an instance is judged NOT a house — the data needed to
+    // diagnose a missed house from the client log.
+    private boolean pohChunksLogged = false;
+    // Tracks building mode so leaving it re-arms the scan: furniture built mid-visit is then
+    // detected without having to exit and re-enter the house.
+    private boolean pohBuildingMode = false;
+
+    /**
+     * While inside the POH, scan the loaded scene for the furniture GPS can recognise (jewellery
+     * box, fairy ring, spirit tree, obelisk) and turn ON the matching declarations — never off, so
+     * detection can only add routes, never silently drop one. The two coarse toggles (portals &
+     * nexus, mounted items) bundle furniture GPS cannot verify and stay manual. Re-scans each tick
+     * until something is found (the scene can still be populating on the entry tick), then stops.
+     */
+    private void maybeScanPoh() {
+        // In-the-house detection, two independent signals (prior single-signal attempts failed in
+        // the field — varbit 4744 and player-tile template mapping against the wrong band):
+        // 1. The loaded instance's map regions are POH template regions — houses are instances
+        //    assembled from that dedicated template area (see POH_TEMPLATE_REGIONS).
+        // 2. Recognised POH furniture spawned in this scene — those object ids only exist inside
+        //    player-owned houses (the official POH plugin's approach).
+        boolean sceneIsHouse = isPohScene(client.getTopLevelWorldView());
+        boolean inside = sceneIsHouse || !pohSpawnedFurniture.isEmpty();
+        if (!inside) {
+            // Diagnosability: when an instance is judged not-a-house, log its decoded template
+            // chunks once per scene — if a real house is ever missed, the client log shows exactly
+            // what its chunks mapped to.
+            if (!pohChunksLogged && log.isDebugEnabled()
+                && client.getTopLevelWorldView() != null && client.getTopLevelWorldView().isInstance()) {
+                pohChunksLogged = true;
+                log.debug("[poh] instance not judged a house; template chunks: {}",
+                    WorldPointUtil.describeInstanceChunks(client.getTopLevelWorldView()));
+            }
+            pohFurnitureFoundThisVisit = false; // reset so the next visit re-scans
+            pohScanAttempts = 0;
+            return;
+        }
+        // Leaving building mode re-arms the scan: furniture built this visit gets detected without
+        // exiting the house. (Named API constant — POH_BUILDING_MODE is 1 while building.)
+        boolean building = client.getVarbitValue(net.runelite.api.gameval.VarbitID.POH_BUILDING_MODE) == 1;
+        if (pohBuildingMode && !building) {
+            pohFurnitureFoundThisVisit = false;
+            pohScanAttempts = 0;
+        }
+        pohBuildingMode = building;
+        // Scan each tick until furniture is found (the scene can still be populating on the entry
+        // tick), then stop for this visit — the furniture doesn't change while standing here. The
+        // attempt cap stops a bare house (or undetectable-only furniture) rescanning forever.
+        if (!config.pohSmartDetect() || pohFurnitureFoundThisVisit || pohScanAttempts >= POH_SCAN_MAX_ATTEMPTS)
+            return;
+        pohScanAttempts++;
+        log.debug("[poh] scan attempt {} (sceneIsHouse={}, spawned={})",
+            pohScanAttempts, sceneIsHouse, pohSpawnedFurniture);
+        scanPohFurniture();
+        pohFurnitureFoundThisVisit = detectedPohFurniture != null && detectedPohFurniture.any();
+    }
+
+    /**
+     * A recognised piece of POH furniture spawning is unambiguous "we're inside a house" evidence
+     * (see {@link PohScanner#isRecognised}), independent of any coordinate math — collected here,
+     * cleared on every scene load, and consumed by the next tick's {@link #maybeScanPoh()}.
+     */
+    @Subscribe
+    public void onGameObjectSpawned(GameObjectSpawned event) {
+        int id = event.getGameObject().getId();
+        if (PohScanner.isRecognised(id) && pohSpawnedFurniture.add(id)) {
+            log.debug("[poh] recognised furniture spawned: {}", id);
+        }
+    }
+
+    private void scanPohFurniture() {
+        Set<Integer> ids = new HashSet<>();
+        Tile[][][] tiles = client.getTopLevelWorldView().getScene().getTiles();
+        for (Tile[][] plane : tiles) {
+            if (plane == null)
+                continue;
+            for (Tile[] column : plane) {
+                if (column == null)
+                    continue;
+                for (Tile tile : column) {
+                    if (tile == null || tile.getGameObjects() == null)
+                        continue;
+                    for (GameObject object : tile.getGameObjects()) {
+                        if (object != null)
+                            ids.add(object.getId());
+                    }
+                }
+            }
+        }
+
+        // Spawn-event evidence joins the tile scan: authoritative even if the tile walk missed it.
+        ids.addAll(pohSpawnedFurniture);
+        PohScanner.Detected detected = PohScanner.detect(ids);
+        log.debug("[poh] scanned {} object ids, detected: {}", ids.size(), PohScanner.encode(detected));
+        boolean firstScan = !pohScanned;
+        boolean changed = firstScan || !detected.sameAs(detectedPohFurniture);
+        pohScanned = true;
+        detectedPohFurniture = detected;
+        if (!changed) {
+            return; // nothing new this scan — don't churn the config or the panel
+        }
+        // Persist per character, so next session's panel starts in the "scanned" state instead of
+        // asking for a house visit again.
+        configManager.setRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_POH_FURNITURE,
+            PohScanner.encode(detected));
+
+        // Only ever raise declarations (turn a feature on / raise the jewellery tier). A partial
+        // scene load that missed a piece therefore can never wipe an existing declaration.
+        if (detected.fairyRing && !config.usePohFairyRing())
+            setPanelConfig("usePohFairyRing", true);
+        if (detected.spiritTree && !config.usePohSpiritTree())
+            setPanelConfig("usePohSpiritTree", true);
+        if (detected.obelisk && !config.usePohObelisk())
+            setPanelConfig("usePohObelisk", true);
+        if (detected.jewelleryBox.ordinal() > config.pohJewelleryBoxTier().ordinal())
+            setPanelConfig("pohJewelleryBoxTier", detected.jewelleryBox);
+
+        if (altPanel != null)
+            SwingUtilities.invokeLater(altPanel::refreshConfigSections);
+    }
+
+    /** Whether the player's house has been scanned this session (its furniture is known). */
+    public boolean isPohScanned() {
+        return pohScanned;
+    }
+
+    /** The furniture the last house scan recognised, as display names (empty until scanned). */
+    public List<String> getDetectedPohFurniture() {
+        PohScanner.Detected detected = detectedPohFurniture;
+        if (detected == null)
+            return List.of();
+        List<String> names = new ArrayList<>();
+        if (detected.jewelleryBox != JewelleryBoxTier.NONE)
+            names.add(detected.jewelleryBox + " jewellery box");
+        if (detected.fairyRing)
+            names.add("Fairy ring");
+        if (detected.spiritTree)
+            names.add("Spirit tree");
+        if (detected.obelisk)
+            names.add("Obelisk");
+        return names;
+    }
+
+    // ZEP_MULTI_* values in {2867 Entrana, 2868 Taverley, 2869 Castle Wars, 2870 Grand Tree,
+    // 2871 Crafting Guild, 2872 Varrock} order; cached each game tick for the panel (EDT).
+    private volatile int[] balloonUnlockVarbits = new int[6];
+
+    /**
+     * The balloon log types that warrant a low-storage warning: routes the player has unlocked
+     * (per the cached varbits) whose stored count sits below the configured threshold. Empty when
+     * smart mode is off, the threshold is 0, the storage was never synced, or nothing is low.
+     */
+    public List<String> getBalloonLowLogTypes() {
+        if (!config.useHotAirBalloons() || !config.balloonSmartMode() || !config.balloonStorageSynced())
+            return List.of();
+        int[] unlocks = balloonUnlockVarbits;
+        // Entrana/Taverley (normal logs) unlock at quest completion (=2); the rest on first flight (=1).
+        boolean[] unlocked = {
+            unlocks[0] >= 2 || unlocks[1] >= 2, unlocks[4] >= 1, unlocks[5] >= 1,
+            unlocks[2] >= 1, unlocks[3] >= 1};
+        return BalloonLogStorage.lowTypes(getBalloonStoredCounts(), unlocked,
+            config.balloonLogWarningThreshold());
+    }
+
+    /** The chat-parsed stored log counts, in {@link BalloonLogStorage#TYPE_NAMES} order. */
+    public int[] getBalloonStoredCounts() {
+        return new int[]{config.balloonStoredLogs(), config.balloonStoredOakLogs(),
+            config.balloonStoredWillowLogs(), config.balloonStoredYewLogs(), config.balloonStoredMagicLogs()};
+    }
+
+    /** Item images for the panel's Log storage icons. */
+    public net.runelite.client.game.ItemManager getItemManager() {
+        return itemManager;
+    }
+
+    /**
+     * The specific reason a catalog method is unavailable ("Requires 60 Mining", "Missing item:
+     * Willow logs"), or null when nothing more specific than its status is known.
+     */
+    public String methodUnavailabilityDetail(TeleportMethod method) {
+        AlternativeRoutesService service = altRoutesService;
+        return service == null ? null : service.getAvailabilityDetails().get(method);
+    }
+
+    /** The live config, for panel controls that mirror config items (the configuration sections). */
+    public ShortestPathConfig getGpsConfig() {
+        return config;
+    }
+
+    /**
+     * Whether the spirit-tree travel menu has been seen this session, so the planted-tree set is
+     * known. Until then the panel shows a sync hint and farmable trees are treated conservatively.
+     */
+    public boolean isSpiritTreeSynced() {
+        return pathfinderConfig != null && pathfinderConfig.availableSpiritTrees != null;
+    }
+
+    /**
+     * The farmable spirit trees currently detected as planted-and-grown (menu order), or empty when
+     * not synced. For the panel's Spirit trees section.
+     */
+    public List<String> getAvailablePlantedSpiritTrees() {
+        if (pathfinderConfig == null || pathfinderConfig.availableSpiritTrees == null)
+            return List.of();
+        List<String> planted = new ArrayList<>();
+        for (String name : gps.pathfinder.PathfinderConfig.FARMABLE_SPIRIT_TREES) {
+            if (pathfinderConfig.availableSpiritTrees.contains(name))
+                planted.add(name);
+        }
+        return planted;
+    }
+
+    /**
+     * Writes a setting from the panel's configuration sections (POH, wilderness, balloons).
+     * Persisting through the ConfigManager keeps the panel and the RuneLite config UI in sync (same
+     * keys), and the resulting ConfigChanged event re-caches values and regenerates the routes
+     * (route-affecting keys match TRANSPORT_OPTIONS_REGEX).
+     */
+    public void setPanelConfig(String key, Object value) {
+        configManager.setConfiguration(CONFIG_GROUP, key, value);
+    }
+
+    /**
+     * The engine's own accessible-bank standing tiles (upstream-curated; the same set that flips
+     * bank-detour routing). Unioned into "nearest bank" targets so the feature can never disagree
+     * with what the engine considers a bank — the amenity dump misses oddly-named bank objects
+     * (Slepe's "Bank Chest-wreck" defeated its name matching).
+     */
+    public Set<Integer> getEngineBankTiles() {
+        if (pathfinderConfig == null)
+            return Set.of();
+        Set<Integer> tiles = pathfinderConfig.getDestinations("bank");
+        return tiles == null ? Set.of() : tiles;
+    }
+
+    public void selectRoute(int index) {
+        clientThread.invoke(() -> selectRouteOnClientThread(index));
+    }
+
+    private void selectRouteOnClientThread(int index) {
+        List<RouteOption> routes = alternativeRoutes;
+        if (index >= 0 && index < routes.size()) {
+            RouteOption route = routes.get(index);
+            RouteOption previous = selectedRoute;
+            // Toggle: clicking the route that's already shown hides it.
+            selectedRoute = (selectedRoute == route) ? null : route;
+            if (selectedRoute != previous) {
+                // Picking a different path starts a new journey — time it from here, not from the
+                // original destination (re-arm; the timer restarts on the next movement).
+                armJourney();
+                // The displayed path changed: republish it to other plugins (postTransports).
+                postPluginMessages();
+            }
+            refreshPanel(false);
+        }
+    }
+
+    public void excludeMethod(TeleportMethod method) {
+        clientThread.invoke(() -> excludeMethodOnClientThread(method));
+    }
+
+    private void excludeMethodOnClientThread(TeleportMethod method) {
+        if (method != null && userExclusions.add(method)) {
+            saveExclusions();
+            // No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
+            // other recompute); this just refreshes the panel so the catalog icons and counts update.
+            refreshPanel(altGenerationInFlight);
+        }
+    }
+
+    public void includeMethod(TeleportMethod method) {
+        clientThread.invoke(() -> includeMethodOnClientThread(method));
+    }
+
+    private void includeMethodOnClientThread(TeleportMethod method) {
+        if (method != null && userExclusions.remove(method)) {
+            saveExclusions();
+            // No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
+            // other recompute); this just refreshes the panel so the catalog icons and counts update.
+            refreshPanel(altGenerationInFlight);
+        }
+    }
+
+    public void excludeMethods(Collection<TeleportMethod> methods) {
+        boolean changed = false;
+        if (methods != null) {
+            for (TeleportMethod method : methods)
+                changed |= userExclusions.add(method);
+        }
+        if (changed) {
+            saveExclusions();
+            // No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
+            // other recompute); this just refreshes the panel so the catalog icons and counts update.
+            refreshPanel(altGenerationInFlight);
+        }
+    }
+
+    public void includeMethods(Collection<TeleportMethod> methods) {
+        boolean changed = false;
+        if (methods != null) {
+            for (TeleportMethod method : methods)
+                changed |= userExclusions.remove(method);
+        }
+        if (changed) {
+            saveExclusions();
+            // No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
+            // other recompute); this just refreshes the panel so the catalog icons and counts update.
+            refreshPanel(altGenerationInFlight);
+        }
+    }
+
+    /** The search box's recent selections, most recent first. */
+    public List<Destinations.Entry> getSearchHistory() {
+        return searchHistory;
+    }
+
+    /** Records a search selection at the front of the persisted history (deduplicated, capped). */
+    public void recordSearchSelection(Destinations.Entry entry) {
+        List<Destinations.Entry> updated = SearchHistory.push(searchHistory, entry);
+        searchHistory = updated;
+        configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_SEARCH_HISTORY, SearchHistory.serialize(updated));
+    }
+
+    /** The player's saved favourite positions, in saved order. */
+    public List<Destinations.Entry> getFavoriteDestinations() {
+        return favoriteDestinations;
+    }
+
+    /** Saves a favourite position; a favourite with the same label is replaced. */
+    public void addFavoriteDestination(String label, int packedPosition) {
+        List<Destinations.Entry> updated = new ArrayList<>();
+        for (Destinations.Entry entry : favoriteDestinations) {
+            if (!entry.name.equals(label))
+                updated.add(entry);
+        }
+        if (updated.size() < FAVORITES_LIMIT)
+            updated.add(new Destinations.Entry("favorite", label, packedPosition));
+        favoriteDestinations = updated;
+        configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_FAVORITES, SearchHistory.serialize(updated));
+    }
+
+    public void removeFavoriteDestination(Destinations.Entry favorite) {
+        List<Destinations.Entry> updated = new ArrayList<>();
+        for (Destinations.Entry entry : favoriteDestinations) {
+            if (!entry.name.equals(favorite.name) || entry.packedPosition != favorite.packedPosition)
+                updated.add(entry);
+        }
+        favoriteDestinations = updated;
+        configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_FAVORITES, SearchHistory.serialize(updated));
+    }
+
+    public void clearExclusions() {
+        clientThread.invoke(this::clearExclusionsOnClientThread);
+    }
+
+    private void clearExclusionsOnClientThread() {
+        if (!userExclusions.isEmpty()) {
+            // Seasonal (Leagues) methods are gated by their own "Enable seasonal transports" toggle,
+            // not the exclusion set, so clearing exclusions no longer needs to re-seed them.
+            userExclusions.clear();
+            saveExclusions();
+            // No recalculation here: exclusions apply on the next "Refresh routes to target" (or any
+            // other recompute); this just refreshes the panel so the catalog icons and counts update.
+            refreshPanel(altGenerationInFlight);
+        }
+    }
+
+    /**
+     * Manually (re)compute the alternative routes for whatever destination GPS currently has
+     * set — read live from the active pathfinder. With no target set, just refreshes the methods catalog.
+     */
+    /** Clears the current destination and its route (panel Clear button / clear-path hotkey). */
+    public void clearTarget() {
+        getClientThread().invokeLater(() -> setTarget(WorldPointUtil.UNDEFINED));
+    }
+
+    public void recomputeAlternatives() {
+        getClientThread().invokeLater(() -> {
+            Set<Integer> targets = pathTargets;
+            if (!targets.isEmpty()) {
+                int start = altStart();
+                log.debug("[alt-routes] Find routes: target set, searchStart={}, target={}",
+                    WorldPointUtil.unpackWorldPoint(start),
+                    WorldPointUtil.unpackWorldPoint(targets.iterator().next()));
+                routeLimit = defaultRouteLimit();
+                triggerAlternatives(start, new HashSet<>(targets));
+            }
+            else {
+                log.debug("[alt-routes] Find routes: no target set");
+                triggerAlternatives(WorldPointUtil.UNDEFINED, new HashSet<>());
+            }
+        });
+    }
+
+    /**
+     * The start tile to search alternatives from: the player's current (instance-correct) location,
+     * matching what GPS itself uses for recalculation, falling back to the destination's recorded
+     * start. Must be called on the client thread.
+     */
+    private int altStart() {
+        Player localPlayer = client.getLocalPlayer();
+        if (localPlayer != null)
+            return WorldPointUtil.fromLocalInstance(client, localPlayer);
+        return pathStart;
+    }
+
+    /**
+     * The configured number of routes to search for per query (clamped to the service's hard cap).
+     */
+    private int defaultRouteLimit() {
+        return routeLimitFor(altPanelVisible, override("defaultRouteCount", config.defaultRouteCount()));
+    }
+
+    /**
+     * The route budget a generation runs with — the SAME whether the side panel is shown or
+     * hidden. A panel-hidden run used to search only the primary route (one search, a handful of
+     * seeds) and found a different "best" often enough that opening the panel visibly changed
+     * the overlay's route (issue #18, field reports). A full run costs tens to a few hundred
+     * milliseconds more and streams its first route at the same moment, so the overlay shows that
+     * one provisionally and settles once — consistently, with or without the panel. The panel
+     * flag is taken only to state the rule where it is decided. Pure, unit-tested.
+     */
+    static int routeLimitFor(boolean panelVisible, int configured) {
+        return Math.max(1, Math.min(configured, 25));
+    }
+
+    public boolean canLoadMoreRoutes() {
+        return moreRoutesLikely;
+    }
+
+    public void loadMoreRoutes() {
+        clientThread.invoke(this::loadMoreRoutesOnClientThread);
+    }
+
+    private void loadMoreRoutesOnClientThread() {
+        if (lastAltTargets.isEmpty() || !moreRoutesLikely)
+            return;
+        // Each poll grows both dimensions of the cap so genuinely more routes surface: widen the cost
+        // band (reveal routes up to a higher multiple of the best cost) and raise the route-count budget
+        // by another page. There's no fixed ceiling — the walk cost bounds the band on its own, and the
+        // count grows toward the service's runaway backstop. A new destination resets both.
+        routeCostMultiple += COST_MULTIPLE_STEP;
+        routeLimit = Math.min(routeLimit + defaultRouteLimit(), AlternativeRoutesService.MAX_ROUTES_CAP);
+        triggerAlternatives(lastAltStart, new HashSet<>(lastAltTargets));
+    }
+
+    // Directions for the currently displayed route, built once per route (the overlay renders every
+    // frame; the path scan only reruns when the displayed route object changes). One immutable
+    // holder, not two fields: the render thread and the client thread both read this, and a
+    // two-field cache could publish route A's key beside route B's steps.
+    private static final class DirectionsCache {
+        final RouteOption route;
+        final List<RouteDirections.Step> steps;
+
+        DirectionsCache(RouteOption route, List<RouteDirections.Step> steps) {
+            this.route = route;
+            this.steps = steps;
+        }
+    }
+
+    private volatile DirectionsCache directionsCache = new DirectionsCache(null, List.of());
+
+    /**
+     * The step-by-step directions for {@code route}, cached per route instance.
+     */
+    public List<RouteDirections.Step> getRouteDirections(RouteOption route) {
+        DirectionsCache cached = directionsCache;
+        if (route != cached.route) {
+            cached = new DirectionsCache(route, RouteDirections.build(this, route));
+            directionsCache = cached;
+        }
+        return cached.steps;
+    }
+
+    /**
+     * Where the current destination came from ("map pin", "Quest Helper", ...) or null when unknown.
+     */
+    public String getTargetSource() {
+        return targetSource;
+    }
+
+    /** The directions header's destination line (see BankDetour.headerLine); null with nothing to say. */
+    public String getDestinationLine() {
+        return BankDetour.headerLine(targetSource, bankDetour.pending(), altRoundTrip);
+    }
+
+    /** Whether the destination is a bank trip that will resume a replaced route (the header draws a bank). */
+    public boolean isBankDetour() {
+        return bankDetour.pending() != null;
+    }
+
+    /** Whether a bank quick button click now would add a stop (the panel badges the buttons). */
+    public boolean bankClickAddsStop() {
+        return bankDetour.wouldResume(hasPathTargets());
+    }
+
+    /**
+     * Writes a JSON snapshot of the current routing state to ~/.runelite/gps-debug/ — everything
+     * needed to reproduce and debug the current path: routes with their full tile paths, methods and
+     * edge data, mode/exclusions, player position, GPS progress state, and the relevant config.
+     * Triggered by the panel's camera button; confirms via a game message.
+     */
+    private static List<Object> stepsJson(List<RouteDirections.Step> steps) {
+        List<Object> stepsJson = new ArrayList<>();
+        for (RouteDirections.Step step : steps) {
+            Map<String, Object> stepJson = new LinkedHashMap<>();
+            stepJson.put("text", step.getText());
+            stepJson.put("startIndex", step.getStartIndex());
+            stepJson.put("endIndex", step.getEndIndex());
+            stepJson.put("ticks", step.getTicks());
+            stepJson.put("transport", step.isTransport());
+            stepJson.put("door", step.isDoor());
+            stepJson.put("obstacle", step.isObstacle());
+            stepsJson.add(stepJson);
+        }
+        return stepsJson;
+    }
+
+    // A BARE constant, browsed as-is: the hub review reads any dynamic URL construction (the old
+    // pre-filled ?title=&body=) as network I/O of player data. Context travels via the clipboard.
+    static final String GITHUB_NEW_ISSUE = "https://github.com/PauloAguiar/runelite-gps-plugin/issues/new";
+
+    /**
+     * The running plugin's version, read from the bundled {@code runelite-plugin.properties} so it
+     * always matches the release (no constant to keep in sync). "unknown" in a dev build where the
+     * file isn't on the classpath.
+     */
+    /** The build's git commit (stamped by processResources), or "unknown" in odd builds. */
+    public static String buildCommit() {
+        try (java.io.InputStream in = ShortestPathPlugin.class.getResourceAsStream("/gps-build.properties")) {
+            if (in != null) {
+                java.util.Properties props = new java.util.Properties();
+                props.load(in);
+                String commit = props.getProperty("commit");
+                if (commit != null && !commit.isEmpty())
+                    return commit;
+            }
+        }
+        catch (java.io.IOException ignored) {
+            // Fall through to "unknown".
+        }
+        return "unknown";
+    }
+
+    public static String pluginVersion() {
+        try (java.io.InputStream in = ShortestPathPlugin.class.getResourceAsStream("/runelite-plugin.properties")) {
+            if (in != null) {
+                java.util.Properties props = new java.util.Properties();
+                props.load(in);
+                String version = props.getProperty("version");
+                if (version != null && !version.isEmpty())
+                    return version;
+            }
+        }
+        catch (java.io.IOException ignored) {
+            // Fall through to "unknown".
+        }
+        return "unknown";
+    }
+
+    /**
+     * Reports an issue WITHOUT sending or touching anything outside the panel: the routing
+     * context — mode, start, target, config and the routes found — is shown in a text box at
+     * the top of the panel for the player to copy BY HAND, and a plain, static GitHub
+     * new-issue link opens (the repo's issue template says where to paste). No pre-filled URL,
+     * no clipboard API — nothing for the hub review to flag, and the player sees exactly what
+     * they're sharing.
+     */
+    public void reportIssue() {
+        // Item names come from the item definitions, which are client-thread-only — build the
+        // whole body there; the panel work then happens on the EDT.
+        clientThread.invokeLater(() -> {
+            final String context = buildIssueBody();
+            javax.swing.SwingUtilities.invokeLater(() -> {
+                if (altPanel != null)
+                    altPanel.showReportContext(context);
+                // A bare constant on purpose: pre-filling the issue via query params reads as
+                // network I/O of player data to the hub review.
+                net.runelite.client.util.LinkBrowser.browse(GITHUB_NEW_ISSUE);
+            });
+        });
+    }
+
+    private String buildIssueBody() {
+        StringBuilder body = new StringBuilder();
+        // No "describe the issue" headings here: the GitHub issue template provides those; this
+        // block is what the player pastes under them.
+        body.append("*Auto-captured context — please keep:*\n");
+        body.append("- GPS ").append(pluginVersion()).append('\n');
+        body.append("- Build ").append(buildCommit()).append('\n');
+        body.append("- Mode: ").append(routesMode).append(" · limit ").append(routeLimit)
+            .append(" · band x").append(routeCostMultiple).append('\n');
+        body.append("- Start: ").append(issuePointText(lastAltStart)).append('\n');
+        List<String> targets = new ArrayList<>();
+        for (int target : lastAltTargets)
+            targets.add(issuePointText(target));
+        body.append("- Target(s): ").append(targets.isEmpty() ? "(none)" : String.join("; ", targets)).append('\n');
+        // Only settings that genuinely affect routing here — avoidWilderness applies in every mode,
+        // bankPickup weights the bank detour. The mode (above) already implies bank routing and the
+        // item scope, so those aren't repeated (they'd show the overridden config value, not the mode's).
+        body.append("- Config: avoidWilderness=").append(override("avoidWilderness", config.avoidWilderness()))
+            .append(", bankPickup=").append(override("costBankPickup", config.costBankPickup())).append('\n');
+
+        // Method availability at a glance: the full catalog is far too big for a URL, so counts per
+        // status plus the user's own exclusions (the part that varies by choice, usually short).
+        List<TeleportMethod> catalog = teleportCatalog;
+        Map<TeleportMethod, MethodAvailability> unavailable = unavailableMethods;
+        if (!catalog.isEmpty()) {
+            Map<MethodAvailability, Integer> counts = new java.util.EnumMap<>(MethodAvailability.class);
+            for (MethodAvailability status : unavailable.values())
+                counts.merge(status, 1, Integer::sum);
+            body.append("- Methods: ").append(catalog.size() - unavailable.size()).append(" usable of ")
+                .append(catalog.size());
+            for (Map.Entry<MethodAvailability, Integer> entry : counts.entrySet()) {
+                body.append(" · ").append(entry.getValue()).append(' ')
+                    .append(entry.getKey().name().toLowerCase(Locale.ROOT).replace('_', ' '));
+            }
+            body.append('\n');
+        }
+        if (!userExclusions.isEmpty()) {
+            List<String> excluded = new ArrayList<>();
+            for (TeleportMethod method : userExclusions)
+                excluded.add(method.routeLabel());
+            java.util.Collections.sort(excluded);
+            int cap = Math.min(excluded.size(), 10);
+            body.append("- Excluded by user: ").append(String.join("; ", excluded.subList(0, cap)));
+            if (excluded.size() > cap)
+                body.append(" … ").append(excluded.size() - cap).append(" more");
+            body.append('\n');
+        }
+        // What the player carries decides the Owned modes' teleports, so name it (user-reviewed
+        // before submitting — they can trim anything they'd rather not share).
+        body.append("- Equipped: ").append(issueItemNames(net.runelite.api.gameval.InventoryID.WORN)).append('\n');
+        body.append("- Inventory: ").append(issueItemNames(net.runelite.api.gameval.InventoryID.INV)).append('\n');
+        body.append("- Bank contents known: ").append(bankContentsKnown)
+            .append(bankRestored ? " (restored from previous session)" : "").append('\n');
+        body.append("- House scanned: ").append(pohScanned);
+        String pohEncoded = PohScanner.encode(detectedPohFurniture);
+        if (pohEncoded != null)
+            body.append(" (").append(pohEncoded).append(')');
+        body.append('\n');
+        body.append("- Spirit trees synced: ").append(pathfinderConfig.availableSpiritTrees != null)
+            .append(spiritTreesParsedLive ? " (live)" : "").append('\n');
+
+        List<RouteOption> routes = alternativeRoutes;
+        body.append("- Routes (").append(routes.size()).append("):\n");
+        int shown = Math.min(routes.size(), 12);
+        for (int i = 0; i < shown; i++) {
+            RouteOption route = routes.get(i);
+            body.append("  ").append(i).append(". ").append(route.getTotalCost())
+                .append(route.isReached() ? "" : " (closest)").append(" · ").append(issueMethodSummary(route)).append('\n');
+        }
+        if (routes.size() > shown)
+            body.append("  … ").append(routes.size() - shown).append(" more\n");
+        body.append("\nFor a full reproduction, attach the newest file from your `.runelite/gps-debug/` folder"
+            + " (use \"Save debug snapshot\" in the ⋯ menu first).\n");
+        return body.toString();
+    }
+
+    /**
+     * The names of the items in a container, stacks as "xN", duplicates collapsed — CLIENT THREAD
+     * (item definitions). "(empty)" when nothing is carried, "(unknown)" when not logged in.
+     */
+    private String issueItemNames(int inventoryId) {
+        ItemContainer container = client.getItemContainer(inventoryId);
+        if (container == null)
+            return "(unknown)";
+        Map<String, Integer> names = new LinkedHashMap<>();
+        for (Item item : container.getItems()) {
+            if (item == null || item.getId() <= 0)
+                continue;
+            String name;
+            try {
+                net.runelite.api.ItemComposition definition = client.getItemDefinition(item.getId());
+                name = definition != null ? definition.getName() : "item " + item.getId();
+            }
+            catch (RuntimeException e) {
+                name = "item " + item.getId();
+            }
+            names.merge(name, Math.max(1, item.getQuantity()), Integer::sum);
+        }
+        if (names.isEmpty())
+            return "(empty)";
+        List<String> parts = new ArrayList<>(names.size());
+        for (Map.Entry<String, Integer> entry : names.entrySet())
+            parts.add(entry.getValue() > 1 ? entry.getKey() + " x" + entry.getValue() : entry.getKey());
+        return String.join(", ", parts);
+    }
+
+    private static String issuePointText(int packed) {
+        if (packed == WorldPointUtil.UNDEFINED)
+            return "(none)";
+        return WorldPointUtil.unpackWorldX(packed) + ", " + WorldPointUtil.unpackWorldY(packed)
+            + ", " + WorldPointUtil.unpackWorldPlane(packed);
+    }
+
+    private static String issueMethodSummary(RouteOption route) {
+        if (route.getMethods().isEmpty())
+            return "walk";
+        List<String> parts = new ArrayList<>();
+        for (TeleportMethod method : route.getMethods())
+            parts.add(method.routeLabel());
+        return String.join(" + ", parts);
+    }
+
+    public void captureDebugSnapshot() {
+        clientThread.invokeLater(() -> {
+            try {
+                Map<String, Object> snapshot = new LinkedHashMap<>();
+                snapshot.put("capturedAt", new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date()));
+                snapshot.put("pluginVersion", pluginVersion());
+                snapshot.put("buildCommit", buildCommit());
+                // Every non-zero varbit, for identifying state-dependent transport gates (mushtree
+                // discovery, balloon route unlocks): capture before and after the in-game action and
+                // diff the two files — the flipped id is the gate. Runs on the client thread; a few
+                // thousand entries, debug-file-sized only.
+                Map<String, Integer> varbitSnapshot = new LinkedHashMap<>();
+                for (int id = 0; id <= 20000; id++) {
+                    try {
+                        int value = client.getVarbitValue(id);
+                        if (value != 0)
+                            varbitSnapshot.put(Integer.toString(id), value);
+                    }
+                    catch (Exception ignored) {
+                        // Unknown varbit ids past the cache's definitions: skip.
+                    }
+                }
+                snapshot.put("varbitSnapshot", varbitSnapshot);
+                Player local = client.getLocalPlayer();
+                int playerPacked = local != null
+                    ? WorldPointUtil.fromLocalInstance(client, local) : WorldPointUtil.UNDEFINED;
+                snapshot.put("player",
+                    playerPacked != WorldPointUtil.UNDEFINED ? packedPointJson(playerPacked) : null);
+                snapshot.put("routesMode", String.valueOf(routesMode));
+                snapshot.put("routeLimit", routeLimit);
+            snapshot.put("routeCostMultiple", routeCostMultiple);
+                snapshot.put("targetSource", targetSource);
+                snapshot.put("altStart", packedPointJson(lastAltStart));
+                List<Object> targets = new ArrayList<>();
+                for (int target : lastAltTargets)
+                    targets.add(packedPointJson(target));
+                snapshot.put("targets", targets);
+                List<String> exclusions = new ArrayList<>();
+                for (TeleportMethod method : userExclusions)
+                    exclusions.add(method.getType() + "|" + method.getDisplayInfo() + "|" + method.getDestination());
+                snapshot.put("userExclusions", exclusions);
+                snapshot.put("bankContentsKnown", bankContentsKnown);
+                snapshot.put("bankRestored", bankRestored);
+                // Smart-detection state, for diagnosing "GPS didn't notice my house/trees" reports.
+                snapshot.put("pohSceneLoaded", isPohScene(client.getTopLevelWorldView()));
+                snapshot.put("pohScanned", pohScanned);
+                snapshot.put("pohDetectedFurniture", PohScanner.encode(detectedPohFurniture));
+                snapshot.put("spiritTreesSynced", pathfinderConfig.availableSpiritTrees != null);
+                snapshot.put("spiritTreesParsedLive", spiritTreesParsedLive);
+
+                // includeBankPath and useTeleportationItems are omitted: the Owned/All mode forces them
+                // (see PathfinderConfig.refresh), so their config value is overridden and misleading —
+                // routesMode above is the effective control.
+                Map<String, Object> configValues = new LinkedHashMap<>();
+                configValues.put("avoidWilderness", override("avoidWilderness", config.avoidWilderness()));
+                configValues.put("costBankPickup", override("costBankPickup", config.costBankPickup()));
+                configValues.put("defaultRouteCount", override("defaultRouteCount", config.defaultRouteCount()));
+                snapshot.put("config", configValues);
+
+                RouteOption displayed = getDisplayedRoute();
+                List<RouteOption> routes = alternativeRoutes;
+                snapshot.put("displayedRouteIndex", displayed != null ? routes.indexOf(displayed) : -1);
+                List<Object> routesJson = new ArrayList<>();
+                for (RouteOption route : routes) {
+                    Map<String, Object> routeJson = new LinkedHashMap<>();
+                    routeJson.put("totalCost", route.getTotalCost());
+                    routeJson.put("rawCost", route.getRawCost());
+                    routeJson.put("reached", route.isReached());
+                    routeJson.put("viaBank", route.isViaBank());
+                    List<String> methods = new ArrayList<>();
+                    for (TeleportMethod method : route.getMethods())
+                        methods.add(method.getType() + "|" + method.getDisplayInfo() + "|" + method.getDestination());
+                    routeJson.put("methods", methods);
+                    routeJson.put("methodEdgeIndexes", route.getMethodEdgeIndexes());
+                    routeJson.put("methodDurations", route.getMethodDurations());
+                    routeJson.put("walkBeforeSteps", route.getWalkBeforeSteps());
+                    routeJson.put("trailingWalkSteps", route.getTrailingWalkSteps());
+                    List<Integer> packedPath = new ArrayList<>(route.getPath().size());
+                    List<Integer> bankFlips = new ArrayList<>();
+                    for (int i = 0; i < route.getPath().size(); i++) {
+                        packedPath.add(route.getPath().get(i).getPackedPosition());
+                        if (route.getPath().get(i).isBankVisited()
+                            && (i == 0 || !route.getPath().get(i - 1).isBankVisited())) {
+                            bankFlips.add(i);
+                        }
+                    }
+                    routeJson.put("packedPath", packedPath);
+                    routeJson.put("bankVisitedFrom", bankFlips);
+                    // Fresh directions build per route, timed — the dashboard renders the step
+                    // list for every route and charts how long step derivation takes.
+                    long buildStart = System.nanoTime();
+                    List<RouteDirections.Step> routeSteps = RouteDirections.build(this, route);
+                    routeJson.put("directionsBuildMicros", (System.nanoTime() - buildStart) / 1_000);
+                    routeJson.put("directions", stepsJson(routeSteps));
+                    routesJson.add(routeJson);
+                }
+                snapshot.put("routes", routesJson);
+                long[] genTiming = altRoutesService != null ? altRoutesService.getLastTimingSummary() : null;
+                if (genTiming != null) {
+                    Map<String, Object> timingJson = new LinkedHashMap<>();
+                    timingJson.put("wallMs", genTiming[0]);
+                    timingJson.put("clientMs", genTiming[1]);
+                    timingJson.put("rebuildMs", genTiming[2]);
+                    timingJson.put("searchCpuMs", genTiming[3]);
+                    timingJson.put("searches", genTiming[4]);
+                    if (genTiming.length > 5)
+                        timingJson.put("fieldMs", genTiming[5]);
+                    // Per-search profiles, slowest first: which searches the time went to and how much
+                    // each explored (a flat A* heuristic shows up as a huge node count).
+                    List<Object> searchDetails = new ArrayList<>();
+                    for (AlternativeRoutesService.SearchRecord r : altRoutesService.getLastSearchRecords()) {
+                        Map<String, Object> detail = new LinkedHashMap<>();
+                        detail.put("label", r.label);
+                        detail.put("cpuMs", r.cpuMs);
+                        detail.put("cost", r.resultCost);
+                        detail.put("reached", r.reached);
+                        detail.put("termination", r.termination);
+                        detail.put("nodes", r.nodesChecked);
+                        detail.put("transports", r.transportsChecked);
+                        detail.put("capped", r.capped);
+                        detail.put("astar", r.astar);
+                        searchDetails.add(detail);
+                    }
+                    timingJson.put("searchDetails", searchDetails);
+                    snapshot.put("altGenTiming", timingJson);
+                }
+
+                if (displayed != null) {
+                    snapshot.put("directions", stepsJson(getRouteDirections(displayed)));
+                    Map<String, Object> progress = new LinkedHashMap<>();
+                    progress.put("reachedIndex", routeDirectionsOverlay.getReachedIndex());
+                    progress.put("liveRemainingTicks", routeDirectionsOverlay.getLiveRemainingTicks());
+                    progress.put("speedTilesPerSecond", routeDirectionsOverlay.getSpeedTilesPerSecond());
+                    snapshot.put("progress", progress);
+                }
+
+                File dir = new File(net.runelite.client.RuneLite.RUNELITE_DIR, "gps-debug");
+                //noinspection ResultOfMethodCallIgnored
+                dir.mkdirs();
+                File out = new File(dir, "gps-capture-" + new java.text.SimpleDateFormat("yyyyMMdd-HHmmss").format(new java.util.Date()) + ".json");
+                try (java.io.Writer writer = new java.io.OutputStreamWriter(
+                    new java.io.FileOutputStream(out), java.nio.charset.StandardCharsets.UTF_8)) {
+                    gson.newBuilder().setPrettyPrinting().create().toJson(snapshot, writer);
+                }
+                log.info("GPS debug snapshot saved to {}", out.getAbsolutePath());
+                if (GameState.LOGGED_IN.equals(client.getGameState())) {
+                    client.addChatMessage(net.runelite.api.ChatMessageType.GAMEMESSAGE, "",
+                        "GPS debug snapshot saved to " + out.getAbsolutePath(), null);
+                }
+            }
+            catch (Exception e) {
+                log.warn("Failed to capture GPS debug snapshot", e);
+            }
+        });
+    }
+
+    private static Map<String, Object> packedPointJson(int packed) {
+        if (packed == WorldPointUtil.UNDEFINED)
+            return null;
+        Map<String, Object> point = new LinkedHashMap<>();
+        point.put("packed", packed);
+        point.put("x", WorldPointUtil.unpackWorldX(packed));
+        point.put("y", WorldPointUtil.unpackWorldY(packed));
+        point.put("plane", WorldPointUtil.unpackWorldPlane(packed));
+        return point;
+    }
+
+    /**
+     * Whether the displayed route list was generated with different method exclusions than are
+     * currently selected — i.e. the user toggled methods since and hasn't pressed Refresh yet.
+     */
+    public boolean isRouteListStale() {
+        return !userExclusions.equals(generatedExclusions);
+    }
+
+    public AlternativeRoutesMode getRoutesMode() {
+        return routesMode;
+    }
+
+    /**
+     * Whether the bank's contents are known this session (false until the bank has been opened once).
+     * Bank mode cannot see banked teleports until this is true — same constraint as the classic Shortest Path engine's
+     * own INVENTORY_AND_BANK setting.
+     */
+    public boolean isBankContentsKnown() {
+        return bankContentsKnown;
+    }
+
+    /**
+     * Whether the known bank contents were restored from a previous session's saved snapshot rather
+     * than seen live — the panel labels the source, since a restored snapshot can be stale.
+     */
+    public boolean isBankRestored() {
+        return bankRestored;
+    }
+
+    public void setRoutesMode(AlternativeRoutesMode mode) {
+        // Panel (EDT) entry point: routing state is client-thread owned, so hop over - invoke()
+        // runs inline when already there.
+        clientThread.invoke(() -> {
+            if (mode == null || this.routesMode == mode)
+                return;
+            this.routesMode = mode;
+            saveRoutesMode();
+            triggerAlternatives(lastAltStart, new HashSet<>(lastAltTargets));
+        });
+    }
+
+    /**
+     * Light auto-detect, run each game tick: when GPS's destination changes (a new target set
+     * manually, by Quest Helper, on reaching the previous one, etc.) compute the alternatives once.
+     * Deliberately keyed on the target SET only — never on start/movement — so the live path recalcs
+     * that thrashed the old approach are ignored. If it ever misses, the panel's "Find routes" button
+     * forces a recompute.
+     */
+    private void maybeAutoComputeAlternatives() {
+        if (altRoutesService == null)
+            return;
+        Set<Integer> targets = pathTargets;
+        // The full route budget, panel shown or hidden (see routeLimitFor).
+        int desiredLimit = defaultRouteLimit();
+        if (!shouldAutoCompute(targets, lastAltTargets, lastAltLimit, desiredLimit))
+            return;
+        routeLimit = desiredLimit;
+        triggerAlternatives(altStart(), new HashSet<>(targets));
+    }
+
+    /**
+     * Whether a new alternatives generation is needed: there is a target, and either it changed since
+     * the last generation or the last generation was allowed fewer routes than wanted now (a
+     * generation that ran under a smaller budget than the current one). Pure decision, unit-tested.
+     */
+    static boolean shouldAutoCompute(Set<Integer> targets, Set<Integer> lastTargets, int lastLimit, int desiredLimit) {
+        return !targets.isEmpty() && (!targets.equals(lastTargets) || lastLimit < desiredLimit);
+    }
+
+    /**
+     * Called by the panel when the GPS sidebar tab is shown or hidden. Every generation runs with
+     * the full route budget regardless (see routeLimitFor); opening the panel only re-checks the
+     * auto-compute decision, so a generation that ran under a smaller budget is widened.
+     */
+    void setAltPanelVisible(boolean visible) {
+        altPanelVisible = visible;
+        if (visible)
+            clientThread.invokeLater(this::maybeAutoComputeAlternatives);
+    }
+
+    private void triggerAlternatives(int start, Set<Integer> targets) {
+        if (altRoutesService == null)
+            return;
+        Set<Integer> ends = (targets == null) ? new HashSet<>() : new HashSet<>(targets);
+        // A new destination clears the committed route so the overlay stays blank until the fresh
+        // routes settle; regenerating the SAME destination (off-route recalc, method toggle, "more")
+        // keeps it, so the overlay holds the current route steadily rather than blinking blank.
+        if (!ends.equals(lastAltTargets))
+            committedDisplayRoute = null;
+        lastAltStart = start;
+        lastAltTargets = Set.copyOf(ends);
+        lastAltLimit = routeLimit;
+
+        // Clear the previous routes immediately (the catalog stays); the new routes stream in one by
+        // one as they are found. With no target this still streams just the teleport-methods catalog.
+        alternativeRoutes = new ArrayList<>();
+        moreRoutesLikely = false;
+        altGenerationInFlight = !ends.isEmpty();
+        // Snapshot the exclusions this generation runs with, so the panel can flag the route list as
+        // stale once the user toggles methods afterwards (recalculation is manual via Refresh).
+        generatedExclusions = getUserExclusions();
+        final List<TeleportMethod> catalog = teleportCatalog;
+        final boolean hasTarget = !ends.isEmpty();
+        if (altPanel != null) {
+            final Map<TeleportMethod, MethodAvailability> unavailable = unavailableMethods;
+            SwingUtilities.invokeLater(() ->
+                altPanel.displayRoutes(List.of(), catalog, unavailable, getUserExclusions(), true, hasTarget));
+        }
+        altRoutesService.generate(start, ends, userExclusions, routesMode, routeLimit, routeCostMultiple,
+            altRoundTrip, this::onAlternativeRoutesUpdate);
+    }
+
+    private void onAlternativeRoutesUpdate(List<RouteOption> routes, List<TeleportMethod> catalog,
+        Map<TeleportMethod, MethodAvailability> unavailable, boolean done) {
+        // Priorities re-rank the list (effective ETA = cost + tier adjustments) — everything
+        // downstream (panel, default display pick, rematch) sees the effective order.
+        final List<RouteOption> ordered = sortByEffectiveOrder(routes);
+        routes = ordered;
+        alternativeRoutes = ordered;
+        teleportCatalog = catalog;
+        unavailableMethods = unavailable;
+        if (done) {
+            // "More" is available while the last generation left routes unshown (cost cap or count
+            // budget), until the route-count budget reaches the service's runaway backstop.
+            moreRoutesLikely = !routes.isEmpty() && altRoutesService.wasMoreLikely()
+                && routeLimit < AlternativeRoutesService.MAX_ROUTES_CAP;
+            // A recalculation must not yank the player off the route they PICKED: when the fresh
+            // list contains an equivalent route, it stays selected — even if its rank moved. Only
+            // when the picked route genuinely no longer exists does the overlay fall back to the
+            // new best.
+            RouteOption rematched = rematchSelected(routes);
+            // ...unless the pick was never STARTED and the fresh list found something far
+            // better: keeping a 10x-costlier route the player is still standing at the start
+            // of is not stability, it is clinging to a stale result (field capture
+            // 20260729-220017: local 131-cost sail existed at rank 0 while a rematched
+            // 1473-cost detour stayed displayed).
+            if (rematched != null && !routes.isEmpty() && rematched != routes.get(0)
+                && displayedRouteProgress() == 0
+                && rematched.getTotalCost() > routes.get(0).getTotalCost() * 2) {
+                rematched = null;
+            }
+            if (rematched != null) {
+                selectedRoute = rematched;
+                committedDisplayRoute = rematched;
+            }
+            else {
+                selectedRoute = null;
+                // Settle the overlay's route to the final top result BEFORE clearing the in-flight
+                // flag, so the overlay adopts the settled route in one step instead of the
+                // streaming front-runner.
+                committedDisplayRoute = routes.isEmpty() ? null : routes.get(0);
+            }
+            altGenerationInFlight = false;
+            // The displayed route just settled: publish it to other plugins (postTransports) — this
+            // replaces the classic search's completion callback.
+            postPluginMessages();
+        }
+        // NB: mid-stream updates deliberately do NOT clear a stale selection — the overlay keeps
+        // drawing the picked route steadily while the new list streams in; the done-branch above
+        // then re-matches or falls back in a single step.
+        final boolean hasTarget = !lastAltTargets.isEmpty();
+        SwingUtilities.invokeLater(() -> {
+            if (altPanel != null)
+                altPanel.displayRoutes(ordered, catalog, unavailable, getUserExclusions(), !done, hasTarget);
+        });
+    }
+
+    /**
+     * The route in the fresh list equivalent to the selected one — matching what is LEFT of the
+     * plan, not its full history: methods whose edges the player has already crossed (per the
+     * directions tracker) are consumed, so after riding the minecart the equivalent route is the
+     * one continuing with the remaining methods (and once every method is behind, the plain-walk
+     * remainder). TeleportMethod value identity; rank and exact tile path may differ. Bank-ness
+     * only distinguishes routes while nothing is consumed yet — mid-journey, the remainder's
+     * detour state is ambiguous. Null when no equivalent exists.
+     */
+    private RouteOption rematchSelected(List<RouteOption> routes) {
+        RouteOption previous = selectedRoute;
+        if (previous == null)
+            return null;
+        // Selected == displayed, so the tracker's progress is this route's progress (0 if the
+        // tracker isn't following it, degrading to a full-sequence match).
+        int progress = displayedRouteProgress();
+        List<TeleportMethod> methods = previous.getMethods();
+        List<Integer> edges = previous.getMethodEdgeIndexes();
+        int consumed = 0;
+        while (consumed < methods.size() && consumed < edges.size() && edges.get(consumed) <= progress)
+            consumed++;
+        List<TeleportMethod> remaining = methods.subList(consumed, methods.size());
+        boolean checkBank = consumed == 0;
+        for (RouteOption route : routes) {
+            if ((!checkBank || route.isViaBank() == previous.isViaBank())
+                && route.getMethods().equals(remaining)) {
+                return route;
+            }
+        }
+        return null;
+    }
+
+
+    /**
+     * Catalog-only re-classification after an inventory/equipment change (issue #5). Skipped
+     * while a generation is in flight — that generation re-snapshots anyway — and with no
+     * service or panel to inform.
+     */
+    private void maybeRefreshCatalog() {
+        if (!catalogDirty || altGenerationInFlight || altRoutesService == null || altPanel == null
+            || !GameState.LOGGED_IN.equals(client.getGameState())) {
+            return;
+        }
+        // The catalog exists for the sidebar; while the panel is hidden the dirty flag just waits
+        // (issues #23/#24: every pickup, drop and gear switch ran a full planning refresh -
+        // hundreds of quest clientscripts - on the client thread, a per-action micro stutter for
+        // players who never open the panel). Route generations rebuild the catalog themselves, so
+        // routing never sees this deferral. Bursts while the panel IS open coalesce through a
+        // short cooldown; the flag stays set, so no change is lost, only delayed a few ticks.
+        if (!altPanelVisible || client.getTickCount() < catalogRefreshBackoffTick)
+            return;
+        catalogRefreshBackoffTick = client.getTickCount() + CATALOG_REFRESH_COOLDOWN_TICKS;
+        catalogDirty = false;
+        altRoutesService.refreshCatalog(routesMode, (catalog, unavailable) -> {
+            teleportCatalog = catalog;
+            unavailableMethods = unavailable;
+            refreshPanel(altGenerationInFlight);
+        });
+    }
+
+    private void refreshPanel(boolean calculating) {
+        final boolean hasTarget = !lastAltTargets.isEmpty();
+        if (altPanel != null) {
+            SwingUtilities.invokeLater(() ->
+                altPanel.displayRoutes(alternativeRoutes, teleportCatalog, unavailableMethods,
+                    getUserExclusions(), calculating, hasTarget));
+        }
+    }
+
+    private void saveExclusions() {
+        try {
+            configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_EXCLUSIONS,
+                gson.toJson(new ArrayList<>(userExclusions)));
+        }
+        catch (Exception e) {
+            log.warn("Failed to save alternative-route exclusions", e);
+        }
+    }
+
+    private void loadExclusions() {
+        try {
+            String json = configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_EXCLUSIONS);
+            if (json == null || json.isEmpty())
+                return;
+            TeleportMethod[] saved = gson.fromJson(json, TeleportMethod[].class);
+            if (saved != null) {
+                boolean droppedSeasonal = false;
+                for (TeleportMethod method : saved) {
+                    if (method == null || method.getType() == null)
+                        continue;
+                    // Migration: seasonal methods used to be seeded into the exclusion set as the
+                    // "disabled by default" mechanism. They're now gated by the "Enable seasonal
+                    // transports" toggle instead, so drop any that a prior version persisted here —
+                    // otherwise they'd linger in the set (and in debug captures) forever.
+                    if (method.getType() == gps.transport.TransportType.SEASONAL_TRANSPORTS) {
+                        droppedSeasonal = true;
+                        continue;
+                    }
+                    userExclusions.add(method);
+                }
+                if (droppedSeasonal)
+                    saveExclusions();
+            }
+        }
+        catch (Exception e) {
+            log.warn("Failed to load alternative-route exclusions", e);
+        }
+    }
+
+    private void saveRoutesMode() {
+        configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_MODE, routesMode.name());
+    }
+
+    private void loadRoutesMode() {
+        String value = configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_MODE);
+        if (value == null || value.isEmpty())
+            return;
+        try {
+            routesMode = AlternativeRoutesMode.valueOf(value);
+        }
+        catch (IllegalArgumentException e) {
+            // Legacy 3-mode names from before the Owned/All split.
+            switch (value) {
+                case "AVAILABLE":
+                    routesMode = AlternativeRoutesMode.OWNED_INVENTORY;
+                    break;
+                case "AVAILABLE_WITH_BANK":
+                    routesMode = AlternativeRoutesMode.OWNED_WITH_BANK;
+                    break;
+                case "ALL_TELEPORTS":
+                case "ALL_UNLOCKED":
+                    // Legacy names; the unlocked-only middle mode was folded into All.
+                    routesMode = AlternativeRoutesMode.ALL_EVERYTHING;
+                    break;
+                default:
+                    log.warn("Unknown alternative-routes mode '{}'", value);
+                    break;
+            }
+        }
+    }
+
+    public int calculateMapPoint(int pointX, int pointY) {
+        WorldMap worldMap = client.getWorldMap();
+        float zoom = worldMap.getWorldMapZoom();
+        int mapPoint = WorldPointUtil.packWorldPoint(worldMap.getWorldMapPosition().getX(), worldMap.getWorldMapPosition().getY(), 0);
+        int middleX = mapWorldPointToGraphicsPointX(mapPoint);
+        int middleY = mapWorldPointToGraphicsPointY(mapPoint);
+
+        if (pointX == Integer.MIN_VALUE || pointY == Integer.MIN_VALUE ||
+            middleX == Integer.MIN_VALUE || middleY == Integer.MIN_VALUE) {
+            return WorldPointUtil.UNDEFINED;
+        }
+
+        final int dx = (int) ((pointX - middleX) / zoom);
+        final int dy = (int) ((-(pointY - middleY)) / zoom);
+
+        return WorldPointUtil.dxdy(mapPoint, dx, dy);
+    }
+
+    public int mapWorldPointToGraphicsPointX(int packedWorldPoint) {
+        WorldMap worldMap = client.getWorldMap();
+
+        float pixelsPerTile = worldMap.getWorldMapZoom();
+
+        Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
+        if (map != null) {
+            Rectangle worldMapRect = map.getBounds();
+
+            int widthInTiles = (int) Math.ceil(worldMapRect.getWidth() / pixelsPerTile);
+
+            Point worldMapPosition = worldMap.getWorldMapPosition();
+
+            int xTileOffset = WorldPointUtil.unpackWorldX(packedWorldPoint) + widthInTiles / 2 - worldMapPosition.getX();
+
+            int xGraphDiff = ((int) (xTileOffset * pixelsPerTile));
+            xGraphDiff += (int) (pixelsPerTile - Math.ceil(pixelsPerTile / 2));
+            xGraphDiff += (int) worldMapRect.getX();
+
+            return xGraphDiff;
+        }
+        return Integer.MIN_VALUE;
+    }
+
+    public int mapWorldPointToGraphicsPointY(int packedWorldPoint) {
+        WorldMap worldMap = client.getWorldMap();
+
+        float pixelsPerTile = worldMap.getWorldMapZoom();
+
+        Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
+        if (map != null) {
+            Rectangle worldMapRect = map.getBounds();
+
+            int heightInTiles = (int) Math.ceil(worldMapRect.getHeight() / pixelsPerTile);
+
+            Point worldMapPosition = worldMap.getWorldMapPosition();
+
+            int yTileMax = worldMapPosition.getY() - heightInTiles / 2;
+            int yTileOffset = (yTileMax - WorldPointUtil.unpackWorldY(packedWorldPoint) - 1) * -1;
+
+            int yGraphDiff = (int) (yTileOffset * pixelsPerTile);
+            yGraphDiff -= (int) (pixelsPerTile - Math.ceil(pixelsPerTile / 2));
+            yGraphDiff = worldMapRect.height - yGraphDiff;
+            yGraphDiff += (int) worldMapRect.getY();
+
+            return yGraphDiff;
+        }
+        return Integer.MIN_VALUE;
+    }
+
+    private void addMenuEntry(MenuEntryAdded event, String option, String target, int position) {
+        List<MenuEntry> entries = new LinkedList<>(Arrays.asList(client.getMenu().getMenuEntries()));
+
+        if (entries.stream().anyMatch(e -> e.getOption().equals(option) && e.getTarget().equals(target)))
+            return;
+
+        client.getMenu().createMenuEntry(position)
+            .setOption(option)
+            .setTarget(target)
+            .setParam0(event.getActionParam0())
+            .setParam1(event.getActionParam1())
+            .setIdentifier(event.getIdentifier())
+            .setType(MenuAction.RUNELITE)
+            .onClick(this::onMenuOptionClicked);
+    }
+
+    private Widget getMinimapDrawWidget() {
+        if (client.isResized()) {
+            if (client.getVarbitValue(VarbitID.RESIZABLE_STONE_ARRANGEMENT) == 1)
+                return client.getWidget(InterfaceID.ToplevelPreEoc.MINIMAP);
+            return client.getWidget(InterfaceID.ToplevelOsrsStretch.MINIMAP);
+        }
+        return client.getWidget(InterfaceID.Toplevel.MINIMAP);
+    }
+
+    private Shape getMinimapClipAreaSimple() {
+        Widget minimapDrawArea = getMinimapDrawWidget();
+
+        if (minimapDrawArea == null || minimapDrawArea.isHidden())
+            return null;
+
+        Rectangle bounds = minimapDrawArea.getBounds();
+
+        return new Ellipse2D.Double(bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight());
+    }
+
+    public Shape getMinimapClipArea() {
+        Widget minimapWidget = getMinimapDrawWidget();
+
+        if (minimapWidget == null || minimapWidget.isHidden() || !minimapRectangle.equals(minimapRectangle = minimapWidget.getBounds())) {
+            minimapClipFixed = null;
+            minimapClipResizeable = null;
+            minimapSpriteFixed = null;
+            minimapSpriteResizeable = null;
+        }
+
+        if (minimapWidget == null || minimapWidget.isHidden())
+            return null;
+
+        if (client.isResized()) {
+            if (minimapClipResizeable != null)
+                return minimapClipResizeable;
+            if (minimapSpriteResizeable == null)
+                minimapSpriteResizeable = spriteManager.getSprite(SpriteID.RESIZE_MAP_MASK, 0);
+            if (minimapSpriteResizeable != null) {
+                minimapClipResizeable = bufferedImageToPolygon(minimapSpriteResizeable);
+                return minimapClipResizeable;
+            }
+            return getMinimapClipAreaSimple();
+        }
+        if (minimapClipFixed != null)
+            return minimapClipFixed;
+        if (minimapSpriteFixed == null)
+            minimapSpriteFixed = spriteManager.getSprite(SpriteID.FIXED_MAP_MASK, 0);
+        if (minimapSpriteFixed != null) {
+            minimapClipFixed = bufferedImageToPolygon(minimapSpriteFixed);
+            return minimapClipFixed;
+        }
+        return getMinimapClipAreaSimple();
+    }
+
+    private Polygon bufferedImageToPolygon(BufferedImage image) {
+        Color outsideColour = null;
+        Color previousColour;
+        final int width = image.getWidth();
+        final int height = image.getHeight();
+        List<java.awt.Point> points = new ArrayList<>();
+        for (int y = 0; y < height; y++) {
+            previousColour = outsideColour;
+            for (int x = 0; x < width; x++) {
+                int rgb = image.getRGB(x, y);
+                int a = (rgb & 0xff000000) >>> 24;
+                int r = (rgb & 0x00ff0000) >> 16;
+                int g = (rgb & 0x0000ff00) >> 8;
+                int b = (rgb & 0x000000ff);
+                Color colour = new Color(r, g, b, a);
+                if (x == 0 && y == 0) {
+                    outsideColour = colour;
+                    previousColour = colour;
+                }
+                if (!colour.equals(outsideColour) && previousColour.equals(outsideColour))
+                    points.add(new java.awt.Point(x, y));
+                if ((colour.equals(outsideColour) || x == (width - 1)) && !previousColour.equals(outsideColour))
+                    points.add(0, new java.awt.Point(x, y));
+                previousColour = colour;
+            }
+        }
+        int offsetX = minimapRectangle.x;
+        int offsetY = minimapRectangle.y;
+        Polygon polygon = new Polygon();
+        for (java.awt.Point point : points)
+            polygon.addPoint(point.x + offsetX, point.y + offsetY);
+        return polygon;
+    }
 }

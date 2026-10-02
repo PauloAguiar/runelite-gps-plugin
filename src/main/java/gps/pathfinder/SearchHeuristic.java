@@ -28,115 +28,95 @@ import gps.transport.Transport;
  * needs no reopening. There is no weak regime to gate against: a flat field-heuristic implies a
  * genuinely cheap route, and therefore a small search anyway.
  */
-public final class SearchHeuristic
-{
-	// The floor with no usable teleport at all (e.g. the walk-only search). Kept far below
-	// Integer.MAX_VALUE so orderCost = cost + h can never overflow.
-	static final int UNBOUNDED_FLOOR = 1 << 20;
+public final class SearchHeuristic {
+    // The floor with no usable teleport at all (e.g. the walk-only search). Kept far below
+    // Integer.MAX_VALUE so orderCost = cost + h can never overflow.
+    static final int UNBOUNDED_FLOOR = 1 << 20;
 
-	private final DistanceField field;
-	private final int floor;
-	// The field's flood horizon: a strict lower bound on any unflooded tile's distance. For a
-	// full-map flood this is MAX_VALUE and unflooded tiles clamp to the floor exactly as before;
-	// for a bounded flood, min(horizon, floor) stays admissible because the tile's true remaining
-	// provably exceeds the horizon.
-	private final int horizon;
+    private final DistanceField field;
+    private final int floor;
+    // The field's flood horizon: a strict lower bound on any unflooded tile's distance. For a
+    // full-map flood this is MAX_VALUE and unflooded tiles clamp to the floor exactly as before;
+    // for a bounded flood, min(horizon, floor) stays admissible because the tile's true remaining
+    // provably exceeds the horizon.
+    private final int horizon;
 
-	private SearchHeuristic(DistanceField field, int floor, int horizon)
-	{
-		this.field = field;
-		this.floor = floor;
-		this.horizon = horizon;
-	}
+    private SearchHeuristic(DistanceField field, int floor, int horizon) {
+        this.field = field;
+        this.floor = floor;
+        this.horizon = horizon;
+    }
 
-	/**
-	 * The heuristic value for a node position; {@link WorldPointUtil#UNDEFINED} (abstract
-	 * global-teleport hub nodes) gets the floor, unflooded tiles min(horizon, floor).
-	 */
-	public int of(int packedPosition)
-	{
-		if (packedPosition == WorldPointUtil.UNDEFINED)
-		{
-			return floor;
-		}
-		final int distance = field.distance(packedPosition);
-		if (distance == DistanceField.UNREACHED)
-		{
-			return Math.min(horizon, floor);
-		}
-		return distance >= floor ? floor : distance;
-	}
+    /**
+     * The heuristic value for a node position; {@link WorldPointUtil#UNDEFINED} (abstract
+     * global-teleport hub nodes) gets the floor, unflooded tiles min(horizon, floor).
+     */
+    public int of(int packedPosition) {
+        if (packedPosition == WorldPointUtil.UNDEFINED)
+            return floor;
+        final int distance = field.distance(packedPosition);
+        if (distance == DistanceField.UNREACHED)
+            return Math.min(horizon, floor);
+        return distance >= floor ? floor : distance;
+    }
 
-	int floor()
-	{
-		return floor;
-	}
+    int floor() {
+        return floor;
+    }
 
-	/**
-	 * Builds the heuristic for one search over the given config's CURRENT (post-exclusion)
-	 * availability, or null when there is no field (map-wide target sets — the caller falls back
-	 * to the uninformed search).
-	 */
-	/**
-	 * Like {@link #buildWithField(PathfinderConfig, DistanceField)}, but degeneracy-checked for
-	 * the search's start: when the reverse flood ran to exhaustion (full-flood horizon) without
-	 * reaching the start AND no usable teleport lands inside the flooded pocket (unbounded
-	 * floor), h is effectively infinite everywhere the search can go — a finite-capped search
-	 * then prunes its own start at the gate and finds nothing, collapsing the alternatives chain
-	 * to a single route (user capture: locked in a sealed quest cell, one escape teleport shown
-	 * instead of the menu). The target is unreachable either way, so closest-point routing wants
-	 * an UNINFORMED search: return null.
-	 */
-	public static SearchHeuristic buildWithField(PathfinderConfig config, DistanceField field, int searchStart)
-	{
-		SearchHeuristic heuristic = buildWithField(config, field);
-		if (heuristic != null
-			&& heuristic.horizon == Integer.MAX_VALUE
-			&& heuristic.floor >= UNBOUNDED_FLOOR
-			&& field.distance(searchStart) == DistanceField.UNREACHED)
-		{
-			return null;
-		}
-		return heuristic;
-	}
+    /**
+     * Builds the heuristic for one search over the given config's CURRENT (post-exclusion)
+     * availability, or null when there is no field (map-wide target sets — the caller falls back
+     * to the uninformed search).
+     */
+    /**
+     * Like {@link #buildWithField(PathfinderConfig, DistanceField)}, but degeneracy-checked for
+     * the search's start: when the reverse flood ran to exhaustion (full-flood horizon) without
+     * reaching the start AND no usable teleport lands inside the flooded pocket (unbounded
+     * floor), h is effectively infinite everywhere the search can go — a finite-capped search
+     * then prunes its own start at the gate and finds nothing, collapsing the alternatives chain
+     * to a single route (user capture: locked in a sealed quest cell, one escape teleport shown
+     * instead of the menu). The target is unreachable either way, so closest-point routing wants
+     * an UNINFORMED search: return null.
+     */
+    public static SearchHeuristic buildWithField(PathfinderConfig config, DistanceField field, int searchStart) {
+        SearchHeuristic heuristic = buildWithField(config, field);
+        if (heuristic != null
+            && heuristic.horizon == Integer.MAX_VALUE
+            && heuristic.floor >= UNBOUNDED_FLOOR
+            && field.distance(searchStart) == DistanceField.UNREACHED) {
+            return null;
+        }
+        return heuristic;
+    }
 
-	public static SearchHeuristic buildWithField(PathfinderConfig config, DistanceField field)
-	{
-		if (field == null)
-		{
-			return null;
-		}
-		final int horizon = field.horizon();
-		int floor = UNBOUNDED_FLOOR;
-		// Both bank states: a path may flip into the banked state mid-search, so the floor must
-		// cover every teleport either state can use (a superset only lowers the floor = safe).
-		for (boolean bankVisited : new boolean[]{false, true})
-		{
-			for (Transport teleport : config.getUsableTeleports(bankVisited))
-			{
-				final int destination = teleport.getDestination();
-				if (destination == WorldPointUtil.UNDEFINED)
-				{
-					continue;
-				}
-				int landingDistance = field.distance(destination);
-				if (landingDistance == DistanceField.UNREACHED)
-				{
-					if (horizon == Integer.MAX_VALUE)
-					{
-						// Full flood: unflooded = genuinely reverse-unreachable, contributes nothing.
-						continue;
-					}
-					// Bounded flood: the landing lies beyond the horizon, which lower-bounds its
-					// distance. Skipping it instead would OVERESTIMATE the floor (inadmissible) when
-					// the truly-cheapest teleport happens to land just past the horizon.
-					landingDistance = horizon;
-				}
-				final int effectiveCost = Math.max(0,
-					CostUnits.fromTicks(teleport.getDuration()) + config.getAdditionalTransportCost(teleport));
-				floor = (int) Math.min(floor, (long) effectiveCost + landingDistance);
-			}
-		}
-		return new SearchHeuristic(field, floor, horizon);
-	}
+    public static SearchHeuristic buildWithField(PathfinderConfig config, DistanceField field) {
+        if (field == null)
+            return null;
+        final int horizon = field.horizon();
+        int floor = UNBOUNDED_FLOOR;
+        // Both bank states: a path may flip into the banked state mid-search, so the floor must
+        // cover every teleport either state can use (a superset only lowers the floor = safe).
+        for (boolean bankVisited : new boolean[]{false, true}) {
+            for (Transport teleport : config.getUsableTeleports(bankVisited)) {
+                final int destination = teleport.getDestination();
+                if (destination == WorldPointUtil.UNDEFINED)
+                    continue;
+                int landingDistance = field.distance(destination);
+                if (landingDistance == DistanceField.UNREACHED) {
+                    if (horizon == Integer.MAX_VALUE)
+                        // Full flood: unflooded = genuinely reverse-unreachable, contributes nothing.
+                        continue;
+                    // Bounded flood: the landing lies beyond the horizon, which lower-bounds its
+                    // distance. Skipping it instead would OVERESTIMATE the floor (inadmissible) when
+                    // the truly-cheapest teleport happens to land just past the horizon.
+                    landingDistance = horizon;
+                }
+                final int effectiveCost = Math.max(0,
+                    CostUnits.fromTicks(teleport.getDuration()) + config.getAdditionalTransportCost(teleport));
+                floor = (int) Math.min(floor, (long) effectiveCost + landingDistance);
+            }
+        }
+        return new SearchHeuristic(field, floor, horizon);
+    }
 }

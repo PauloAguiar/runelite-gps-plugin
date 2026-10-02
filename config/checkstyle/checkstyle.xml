@@ -8,15 +8,24 @@
 	<property name="charset" value="UTF-8"/>
 	<module name="TreeWalker">
 		<module name="LeftCurly">
-			<property name="option" value="nl"/>
+			<property name="option" value="eol"/>
 		</module>
 		<module name="RightCurly">
 			<property name="option" value="alone"/>
 		</module>
 		<!-- require tabs for indenting - https://stackoverflow.com/a/28550141 -->
 		<module name="RegexpSinglelineJava">
+			<property name="id" value="tabIndent"/>
 			<property name="format" value="^\t* "/>
 			<property name="message" value="Indent must use tab characters"/>
+			<property name="ignoreComments" value="true"/>
+		</module>
+		<!-- src/main/java indents with four spaces (the compact style the hub review size asks for); -->
+		<!-- suppressions.xml applies the tab rule to tests and this one to main. -->
+		<module name="RegexpSinglelineJava">
+			<property name="id" value="spaceIndent"/>
+			<property name="format" value="^ *\t"/>
+			<property name="message" value="Indent must use spaces"/>
 			<property name="ignoreComments" value="true"/>
 		</module>
 		<module name="RegexpSinglelineJava">
