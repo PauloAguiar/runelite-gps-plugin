@@ -23,6 +23,7 @@ public class ConfigOverridesTest
 	public void clean()
 	{
 		ConfigOverrides.clear();
+		TestConfigKeys.declare();
 	}
 
 	@Test

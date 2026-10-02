@@ -79,6 +79,7 @@ public class RouteAffectingKeysTest
 	@Test
 	public void pluginMessageOverridesOnlyAcceptDeclaredKeys()
 	{
+		TestConfigKeys.declare();
 		Set<String> known = ConfigOverrides.knownKeys();
 		assertTrue(known.contains("avoidWilderness"));
 		assertTrue(known.contains("useTeleportationItems"));

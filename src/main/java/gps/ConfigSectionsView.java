@@ -6,10 +6,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.image.BufferedImage;
-import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.IntConsumer;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
@@ -39,21 +36,12 @@ import static gps.PanelWidgets.wrappedLabel;
  * walking and bank biases, balloons, sailing, planted spirit trees), each a collapsible section
  * whose header chip summarises its state. The controls ARE the plugin's config items: a checkbox
  * or spinner is built from the item's key, takes its label and tooltip from the item's name and
- * description (hidden items, so that text shows nowhere else), reads the current value through
- * the config and writes the key through the ConfigManager; any change regenerates the routes.
+ * description (hidden items, so that text shows nowhere else; the plugin reads them from the
+ * ConfigManager's descriptor, since shipped code may not use reflection), reads the stored value
+ * by key and writes the key back through the ConfigManager; any change regenerates the routes.
  */
 final class ConfigSectionsView {
     private static final int LABEL_WIDTH = 168;
-    /** The config items by key; the controls' labels and tooltips come from the annotations. */
-    private static final Map<String, Method> ITEMS = new HashMap<>();
-
-    static {
-        for (Method method : ShortestPathConfig.class.getMethods()) {
-            ConfigItem item = method.getAnnotation(ConfigItem.class);
-            if (item != null)
-                ITEMS.put(item.keyName(), method);
-        }
-    }
 
     private final ShortestPathPlugin plugin;
     // Rebuilds the sections slot after a header toggle.
@@ -81,11 +69,8 @@ final class ConfigSectionsView {
     }
 
     /** The config item a section binds; a misspelt key fails here, when the section is built. */
-    static ConfigItem item(String key) {
-        Method method = ITEMS.get(key);
-        if (method == null)
-            throw new IllegalArgumentException("no config item " + key);
-        return method.getAnnotation(ConfigItem.class);
+    private ConfigItem item(String key) {
+        return plugin.configItem(key);
     }
 
     /**
@@ -555,19 +540,16 @@ final class ConfigSectionsView {
         return icon;
     }
 
+    /** A config item's stored int, 0 when the store has none (it always has: defaults are written at start). */
+    private int intValue(String key) {
+        Integer value = plugin.configValue(key, Integer.class);
+        return value == null ? 0 : value;
+    }
+
     private static String tooltip(ConfigItem item) {
         return "<html><body style='width:220px'>" + item.description() + "</body></html>";
     }
 
-    /** The item's current value, read through the config (so defaults apply). */
-    private Object value(String key) {
-        try {
-            return ITEMS.get(key).invoke(plugin.getGpsConfig());
-        }
-        catch (ReflectiveOperationException e) {
-            throw new IllegalStateException(key, e);
-        }
-    }
 
     /**
      * A config checkbox: the item's name as its label, its description as the tooltip; writes the
@@ -578,7 +560,8 @@ final class ConfigSectionsView {
     private JCheckBox toggle(String key, int indent, boolean enabled) {
         ConfigItem item = item(key);
         JCheckBox box = new JCheckBox(
-            "<html><body style='width:" + (LABEL_WIDTH - indent) + "px'>" + item.name() + "</body></html>", (Boolean) value(key));
+            "<html><body style='width:" + (LABEL_WIDTH - indent) + "px'>" + item.name() + "</body></html>",
+            Boolean.TRUE.equals(plugin.configValue(key, Boolean.class)));
         if (indent > 0)
             box.setBorder(new EmptyBorder(2, indent, 2, 0));
         box.setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -606,7 +589,7 @@ final class ConfigSectionsView {
     /** A config spinner row: the item's name as caption, its description as tooltip. */
     private JPanel spinner(String key, int min, int max, int step, int indent, boolean enabled) {
         ConfigItem item = item(key);
-        return spinnerRow(item.name() + ":", tooltip(item), (Integer) value(key), min, max, step, indent, enabled,
+        return spinnerRow(item.name() + ":", tooltip(item), intValue(key), min, max, step, indent, enabled,
             v -> plugin.setPanelConfig(key, v));
     }
 

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import javax.swing.SwingUtilities;
@@ -30,6 +31,8 @@ import net.runelite.api.events.WorldChanged;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.ConfigItemDescriptor;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
@@ -76,6 +79,9 @@ public class ShortestPathPlugin extends Plugin {
     private ShortestPathConfig config;
     @Inject
     private ConfigManager configManager;
+    // The config items by key, from the ConfigManager's descriptor at start: the side panel builds its
+    // controls from their names and descriptions (shipped code may not use reflection).
+    private final Map<String, ConfigItem> configItems = new HashMap<>();
     @Inject
     private Gson gson;
     @Inject
@@ -186,6 +192,9 @@ public class ShortestPathPlugin extends Plugin {
 
     @Override
     protected void startUp() {
+        for (ConfigItemDescriptor item : configManager.getConfigDescriptor(config).getItems())
+            configItems.put(item.key(), item.getItem());
+        ConfigOverrides.declareKeys(configItems.keySet());
         cacheConfigValues();
         boatBannerService = new BoatBannerService(client, configManager, CONFIG_GROUP, () -> {
             if (altPanel != null)
@@ -1120,6 +1129,19 @@ public class ShortestPathPlugin extends Plugin {
      */
     public void setPanelConfig(String key, Object value) {
         configManager.setConfiguration(CONFIG_GROUP, key, value);
+    }
+
+    /** A config item the side panel binds by key: its name is the control's label, its description the tooltip. */
+    ConfigItem configItem(String key) {
+        ConfigItem item = configItems.get(key);
+        if (item == null)
+            throw new IllegalArgumentException("no config item " + key);
+        return item;
+    }
+
+    /** A config item's stored value by key; RuneLite writes every default at plugin start, so one exists. */
+    <T> T configValue(String key, Class<T> type) {
+        return configManager.getConfiguration(CONFIG_GROUP, key, type);
     }
 
     /**

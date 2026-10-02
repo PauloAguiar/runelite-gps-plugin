@@ -13,8 +13,8 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Panel series P2: the configuration sections' header chips, out of the panel class. The
@@ -70,7 +70,8 @@ public class ConfigSectionsViewTest
 			bound.size() >= 20);
 		for (String key : bound)
 		{
-			ConfigItem item = ConfigSectionsView.item(key);
+			ConfigItem item = TestConfigKeys.item(key);
+			assertNotNull(key + " is not a config item", item);
 			assertEquals(key, item.keyName());
 			assertTrue(key + " shows in the panel, so it stays hidden from RuneLite's config panel", item.hidden());
 			assertFalse(key + " needs a name: it is the checkbox label", item.name().isEmpty());
@@ -81,22 +82,9 @@ public class ConfigSectionsViewTest
 	@Test
 	public void theConfigNamesAreThePanelLabels()
 	{
-		assertEquals("Use my house for routes", ConfigSectionsView.item("usePoh").name());
-		assertEquals("Warn below", ConfigSectionsView.item("balloonLogWarningThreshold").name());
-		assertEquals("Keep sailing while at the helm", ConfigSectionsView.item("sailingKeepSailing").name());
+		assertEquals("Use my house for routes", TestConfigKeys.item("usePoh").name());
+		assertEquals("Warn below", TestConfigKeys.item("balloonLogWarningThreshold").name());
+		assertEquals("Keep sailing while at the helm", TestConfigKeys.item("sailingKeepSailing").name());
 	}
 
-	@Test
-	public void aMisspeltKeyFailsLoudly()
-	{
-		try
-		{
-			ConfigSectionsView.item("usePOH");
-			fail("an unknown key must not build a silent control");
-		}
-		catch (IllegalArgumentException expected)
-		{
-			assertTrue(expected.getMessage().contains("usePOH"));
-		}
-	}
 }

@@ -30,6 +30,7 @@ public class OverlaySettingsTest
 	public void clean()
 	{
 		ConfigOverrides.clear();
+		TestConfigKeys.declare();
 	}
 
 	@Before

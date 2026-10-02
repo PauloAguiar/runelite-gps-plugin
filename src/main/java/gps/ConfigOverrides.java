@@ -2,7 +2,7 @@ package gps;
 
 import gps.transport.TransportType;
 import java.awt.Color;
-import java.lang.reflect.Method;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.client.config.ConfigItem;
 
 /**
  * Config values another plugin overrides through the path plugin message (plan step L21, out
@@ -28,30 +27,32 @@ public final class ConfigOverrides {
     private static final Pattern ROUTE_AFFECTING = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|calculationCutoff|pohJewelleryBoxTier|pohMount\\w+|sailingAssumeSummon|sailingTeleportAbandon|balloonSmartMode|balloonStored\\w+|spiritTreeSmartMode|use\\w+|cost\\w+)$");
 
     private static final Map<String, Object> OVERRIDES = new HashMap<>(50);
-    private static volatile Set<String> knownKeysCache;
+    private static volatile Set<String> known = withTypeKeys(Collections.emptySet());
 
     private ConfigOverrides() {
     }
 
-    /** Every @ConfigItem key ShortestPathConfig declares, plus the toggle-less types' keys: all a message may override. */
+    /**
+     * The plugin declares its @ConfigItem keys at start, read from the ConfigManager's descriptor
+     * (the hub forbids reflection in shipped code, so the keys cannot be scanned here).
+     */
+    static void declareKeys(Collection<String> itemKeys) {
+        known = withTypeKeys(itemKeys);
+    }
+
+    /** Every key a message may override: the declared config items plus the toggle-less types' keys. */
     static Set<String> knownKeys() {
-        Set<String> keys = knownKeysCache;
-        if (keys == null) {
-            keys = new HashSet<>();
-            for (Method method : ShortestPathConfig.class.getMethods()) {
-                ConfigItem item = method.getAnnotation(ConfigItem.class);
-                if (item != null)
-                    keys.add(item.keyName());
-            }
-            // The transport types without a toggle keep an override key, so a message or a test can
-            // still switch one off.
-            for (TransportType type : TransportType.values()) {
-                if (type.getEnabledKey() != null)
-                    keys.add(type.getEnabledKey());
-            }
-            knownKeysCache = Collections.unmodifiableSet(keys);
+        return known;
+    }
+
+    /** The transport types without a toggle keep an override key, so a message or a test can still switch one off. */
+    private static Set<String> withTypeKeys(Collection<String> itemKeys) {
+        Set<String> keys = new HashSet<>(itemKeys);
+        for (TransportType type : TransportType.values()) {
+            if (type.getEnabledKey() != null)
+                keys.add(type.getEnabledKey());
         }
-        return keys;
+        return Collections.unmodifiableSet(keys);
     }
 
     /** Whether a change to this config key changes what the routing engine computes. */
