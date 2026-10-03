@@ -167,7 +167,7 @@ final class RouteDirections {
                 flushWalk(steps, walk, legStart, i - 1);
                 walk = 0;
                 String text = objectText(object) + fareOf(plugin, object);
-                boolean isDoor = text.startsWith("Open ");
+                boolean isDoor = isDoorway(object);
                 // Advisory note from the transport data ("fire arrow needed", "can fail") — the
                 // route is offered regardless; the player just gets told what to expect.
                 if (object.getNote() != null)
@@ -544,6 +544,20 @@ final class RouteDirections {
      * "Walk-across Log balance", "Open Door"), with the trailing object id stripped. Null when
      * the transport carries no object info.
      */
+    /**
+     * Whether an "Open ..." transport is a doorway: a door or gate crossed between neighbouring tiles
+     * on one plane, which needs no cue once open. "Open Trapdoor" to the tunnels below is the
+     * transport itself and keeps its label (capture 2026-10-03, the Mourner HQ trapdoor).
+     */
+    static boolean isDoorway(Transport transport) {
+        String text = objectText(transport);
+        int origin = transport.getOrigin();
+        int destination = transport.getDestination();
+        return text != null && text.startsWith("Open ")
+            && WorldPointUtil.unpackWorldPlane(origin) == WorldPointUtil.unpackWorldPlane(destination)
+            && WorldPointUtil.distanceBetween2D(origin, destination) <= 2;
+    }
+
     static String objectText(Transport transport) {
         String objectInfo = transport.getObjectInfo();
         if (objectInfo == null || objectInfo.isEmpty())

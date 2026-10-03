@@ -208,7 +208,7 @@ public class PathTileOverlay extends Overlay {
      */
     private String closedDoorText(Transport transport) {
         String objectInfo = transport.getObjectInfo();
-        if (objectInfo == null || !objectInfo.startsWith("Open "))
+        if (objectInfo == null || !RouteDirections.isDoorway(transport))
             return null;
         int lastSpace = objectInfo.lastIndexOf(' ');
         if (lastSpace <= 0)
@@ -725,7 +725,7 @@ public class PathTileOverlay extends Overlay {
                 // use them. Doors are left to the closed-door hint below — an open door needs no
                 // label.
                 String objectText = RouteDirections.objectText(transport);
-                if (objectText != null && !objectText.startsWith("Open "))
+                if (objectText != null && !RouteDirections.isDoorway(transport))
                     text = objectText;
             }
             if (text == null || text.isEmpty())
