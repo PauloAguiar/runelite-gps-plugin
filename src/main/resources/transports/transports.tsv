@@ -5377,6 +5377,35 @@
 1869 4623 2	1869 4624 2							2	Temple of Light door
 1869 4624 2	1869 4623 2							2	Temple of Light door
 1866 4621 2	1867 4621 2							2	Temple of Light door
+# Audit captures 2026-09-07 and 2026-10-03 across the temple: the middle floor's west obstacle
+# course (low wall, rock down, rope up), the two ladders between the middle and top floors, the
+# north staircase both ways, the wall support from its east end, and the Death Altar's tunnel.
+# The low wall at 1883,4658 mirrors the crossed one at 1883,4620 and is derived, not crossed.
+1882 4620 1	1884 4620 1	Climb-over Low wall 10035						3	
+1884 4620 1	1882 4620 1	Climb-over Low wall 10035						3	
+1882 4658 1	1884 4658 1	Climb-over Low wall 10035						3			~geometry ~duration
+1884 4658 1	1882 4658 1	Climb-over Low wall 10035						3			~geometry ~duration
+1876 4618 1	1878 4620 0	Climb-down Rock 10036						2	
+1876 4619 1	1878 4620 0	Climb-down Rock 10036						1	
+1875 4621 0	1876 4619 1	Climb-up Rope 10040						4	
+1898 4667 1	1898 4666 2	Climb-up Ladder 9978						2	
+1897 4666 1	1898 4666 2	Climb-up Ladder 9978						4	
+1899 4666 1	1898 4666 2	Climb-up Ladder 9978						4	
+1898 4666 2	1898 4667 1	Climb-down Ladder 9979						2	
+1899 4666 2	1898 4667 1	Climb-down Ladder 9979						2	
+1898 4611 1	1898 4612 2	Climb-up Ladder 9978						2	
+1898 4612 2	1898 4611 1	Climb-down Ladder 9979						2	
+1890 4640 1	1890 4644 2	Climb-up Staircase 10015						1	
+1891 4640 1	1891 4644 2	Climb-up Staircase 10015						1	
+1892 4640 1	1892 4644 2	Climb-up Staircase 10015						1	
+1890 4645 2	1890 4640 1	Climb-down Staircase 10016						2	
+1891 4645 2	1891 4640 1	Climb-down Staircase 10016						2	
+1892 4645 2	1892 4640 1	Climb-down Staircase 10016						2	
+1891 4633 2	1891 4638 1	Climb-down Staircase 10016						2	
+1892 4633 2	1892 4638 1	Climb-down Staircase 10016						2	
+1911 4612 1	1909 4612 0	Climb Wall support 10033						5	
+1857 4639 0	2311 9793 0	Enter Tunnel 9977						1	
+2311 9793 0	1857 4639 0	Descend Cave 9974						1	
 1867 4621 2	1866 4621 2							2	Temple of Light door
 1905 4638 0	1901 4638 1	Climb-up Staircase 10015						2	
 1905 4639 0	1901 4639 1	Climb-up Staircase 10015						2	

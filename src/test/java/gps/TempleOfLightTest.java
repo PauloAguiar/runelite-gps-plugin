@@ -41,6 +41,33 @@ public class TempleOfLightTest
 			reached(WorldPointUtil.packWorldPoint(1918, 4639, 0), TOP_FLOOR_TARGET));
 	}
 
+	/**
+	 * The audit captures of 2026-09-07 and 2026-10-03, promoted: the middle floor's west obstacle course
+	 * (low wall 10035, rock 10036, rope 10040), the ladders between the middle and top floors (9978/9979),
+	 * the north staircase both ways, the wall support's east end and the Death Altar's tunnel (9977/9974).
+	 */
+	@Test
+	public void thePromotedCapturesConnectTheTemple()
+	{
+		int[][] pairs = {
+			{1918, 4639, 0, 1884, 4620, 1}, // gate side to the middle floor east of the low wall
+			{1884, 4620, 1, 1878, 4620, 0}, // over the low wall, down the rock
+			{1878, 4620, 0, 1876, 4619, 1}, // back up the rope
+			{1918, 4639, 0, 1898, 4666, 2}, // gate side to the top of the north ladder
+			{1918, 4639, 0, 1898, 4612, 2}, // gate side to the top of the south ladder
+			{1898, 4666, 2, 1869, 4651, 2}, // north ladder top to the capture's start
+			{1890, 4645, 2, 1890, 4640, 1}, // north staircase down
+			{1918, 4639, 0, 1857, 4639, 0}, // gate side to the Death Altar room
+			{1857, 4639, 0, 2311, 9793, 0}, // the altar's tunnel out to the cave
+			{2311, 9793, 0, 1860, 4665, 2}, // and from the cave all the way to the top floor
+		};
+		for (int[] p : pairs)
+		{
+			assertTrue(p[0] + "," + p[1] + "," + p[2] + " -> " + p[3] + "," + p[4] + "," + p[5],
+				reached(WorldPointUtil.packWorldPoint(p[0], p[1], p[2]), WorldPointUtil.packWorldPoint(p[3], p[4], p[5])));
+		}
+	}
+
 	private static boolean reached(int start, int target)
 	{
 		final Thread clientThread = Thread.currentThread();
