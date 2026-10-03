@@ -2,10 +2,12 @@ package gps;
 
 import gps.pathfinder.CollisionMap;
 import gps.pathfinder.PathfinderConfig;
+import gps.pathfinder.PathStep;
 import gps.pathfinder.Pathfinder;
 import gps.pathfinder.SplitFlagMap;
 import gps.pathfinder.TestPathfinderConfig;
 import java.lang.reflect.Proxy;
+import java.util.List;
 import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.Item;
@@ -67,6 +69,10 @@ public class TempleOfLightTest
 			{1918, 4639, 0, 1857, 4639, 0}, // gate side to the Death Altar room
 			{1857, 4639, 0, 2311, 9793, 0}, // the altar's tunnel out to the cave
 			{2311, 9793, 0, 1860, 4665, 2}, // and from the cave all the way to the top floor
+			{1886, 4639, 0, 1890, 4639, 1}, // the ground floor's west staircase up to the stair square (derived)
+			{1890, 4639, 1, 1886, 4639, 0}, // and back down
+			{1890, 4638, 1, 1891, 4634, 2}, // the south staircase up from the stair square (derived)
+			{1857, 4639, 0, 1891, 4634, 2}, // the altar room to the top floor's south side by that way
 		};
 		for (int[] p : pairs)
 		{
@@ -78,7 +84,9 @@ public class TempleOfLightTest
 	/**
 	 * The gate from the Mourner Tunnels (wiki): open during the quest, and after it only with a Crystal
 	 * trinket (from Arianwyn in Lletya). Exiting is free. Varbit 1103 runs 0, 5, 10 .. 50 through the
-	 * quest; the temple is entered from stage 10.
+	 * quest; the temple is entered from stage 10. The inside tile stays reachable with the gate shut,
+	 * by the Abyss and the Death Altar's portal into the temple, so what is asserted is whether the
+	 * route steps through the gate.
 	 */
 	@Test
 	public void theGateWantsTheQuestOrTheTrinket()
@@ -86,11 +94,31 @@ public class TempleOfLightTest
 		int outside = WorldPointUtil.packWorldPoint(1918, 4639, 0);
 		int inside = WorldPointUtil.packWorldPoint(1916, 4639, 0);
 		Item trinket = new Item(ItemID.MOURNING_CRYSTAL_TRINKET, 1);
-		assertFalse("quest not started, no trinket: the gate is shut", reached(outside, inside, 0));
-		assertTrue("mid-quest the gate opens", reached(outside, inside, 20));
-		assertFalse("quest over, no trinket: shut again", reached(outside, inside, 60));
-		assertTrue("quest over, trinket carried", reached(outside, inside, 60, trinket));
-		assertTrue("leaving needs nothing", reached(inside, outside, 60));
+		assertFalse("quest not started, no trinket: the gate is shut", crossesGate(pathFor(outside, inside, 0)));
+		assertTrue("mid-quest the gate opens", crossesGate(pathFor(outside, inside, 20)));
+		assertFalse("quest over, no trinket: shut again", crossesGate(pathFor(outside, inside, 60)));
+		assertTrue("quest over, trinket carried", crossesGate(pathFor(outside, inside, 60, trinket)));
+		assertTrue("leaving needs nothing", crossesGate(pathFor(inside, outside, 60)));
+	}
+
+	/** Whether a path steps straight between the gate's two tiles, in either direction. */
+	private static boolean crossesGate(List<PathStep> path)
+	{
+		if (path == null)
+		{
+			return false;
+		}
+		Set<Integer> gate = Set.of(WorldPointUtil.packWorldPoint(1918, 4639, 0), WorldPointUtil.packWorldPoint(1916, 4639, 0));
+		for (int i = 1; i < path.size(); i++)
+		{
+			int a = path.get(i - 1).getPackedPosition();
+			int b = path.get(i).getPackedPosition();
+			if (a != b && gate.contains(a) && gate.contains(b))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static boolean reached(int start, int target)
@@ -103,6 +131,12 @@ public class TempleOfLightTest
 	 * -1 leaves the varbit checks bypassed as the other tests do) and {@code inventory} the items carried.
 	 */
 	private static boolean reached(int start, int target, int mep2, Item... inventory)
+	{
+		return pathFor(start, target, mep2, inventory) != null;
+	}
+
+	/** The path found, or null when the target is unreachable. */
+	static List<PathStep> pathFor(int start, int target, int mep2, Item... inventory)
 	{
 		final Thread clientThread = Thread.currentThread();
 		Client client = (Client) Proxy.newProxyInstance(Client.class.getClassLoader(), new Class<?>[]{Client.class},
@@ -152,7 +186,7 @@ public class TempleOfLightTest
 		Set<Integer> ring = Destinations.walkableTargets(map, target);
 		Pathfinder pathfinder = new Pathfinder(planning, start, ring);
 		pathfinder.run();
-		return pathfinder.getResult().isReached();
+		return pathfinder.getResult().isReached() ? pathfinder.getPath() : null;
 	}
 	private static ItemContainer container(Item... items)
 	{

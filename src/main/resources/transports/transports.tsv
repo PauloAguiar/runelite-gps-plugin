@@ -5410,6 +5410,19 @@
 1911 4612 1	1909 4612 0	Climb Wall support 10033						5	
 1857 4639 0	2311 9793 0	Enter Tunnel 9977						1	
 2311 9793 0	1857 4639 0	Descend Cave 9974						1	
+# Two staircases the audit sighted but nobody climbed yet (2026-10-03), derived from the map and
+# their siblings: the south staircase up from the middle floor's stair square (the mirror of the
+# north one), and the ground floor's west staircase (10015 at 1888,4639,0) between the open tiles
+# west of its footprint and the stair square above, laid out like the east staircase.
+1890 4638 1	1890 4634 2	Climb-up Staircase 10015						1			~geometry ~duration
+1891 4638 1	1891 4634 2	Climb-up Staircase 10015						1			~geometry ~duration
+1892 4638 1	1892 4634 2	Climb-up Staircase 10015						1			~geometry ~duration
+1886 4638 0	1890 4638 1	Climb-up Staircase 10015						2			~geometry ~duration
+1886 4639 0	1890 4639 1	Climb-up Staircase 10015						2			~geometry ~duration
+1886 4640 0	1890 4640 1	Climb-up Staircase 10015						2			~geometry ~duration
+1890 4638 1	1886 4638 0	Climb-down Staircase 10016						2			~geometry ~duration
+1890 4639 1	1886 4639 0	Climb-down Staircase 10016						2			~geometry ~duration
+1890 4640 1	1886 4640 0	Climb-down Staircase 10016						2			~geometry ~duration
 1867 4621 2	1866 4621 2							2	Temple of Light door
 1905 4638 0	1901 4638 1	Climb-up Staircase 10015						2	
 1905 4639 0	1901 4639 1	Climb-up Staircase 10015						2	
