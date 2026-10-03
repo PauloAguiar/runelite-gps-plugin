@@ -5363,9 +5363,13 @@
 
 # Temple of Light (Mourning's End Part II). The gate from the Mourner Tunnels: the object keeps
 # its collision when open, so it is a walk-through edge (audit 2026-09-29, live collision dump
-# 1790734494363). The east staircase between the ground and middle floors, the stairs between the
-# middle and top floors and the wall-support climb down are audit captures of 2026-09-07/29.
-1918 4639 0	1916 4639 0							4	Temple of Light gate
+# 1790734494363). Entering takes the quest under way (varbit 1103 from stage 10, when the temple
+# leg begins, to its last step 50) or, once it is over, a Crystal trinket from Arianwyn in
+# Lletya (wiki, 2026-10-03); leaving takes nothing. The east staircase between the ground and
+# middle floors, the stairs between the middle and top floors and the wall-support climb down are
+# audit captures of 2026-09-07/29.
+1918 4639 0	1916 4639 0			CRYSTAL_TRINKET=1				4	Temple of Light gate
+1918 4639 0	1916 4639 0					1103>5;1103<51		4	Temple of Light gate
 1916 4639 0	1918 4639 0							4	Temple of Light gate
 # The top floor's corridor ring has four doorways that the cache holds as a nameless wall object
 # (3550, no door definition: the game spawns the doors), so they are walk-through edges too

@@ -8,10 +8,17 @@ import gps.pathfinder.TestPathfinderConfig;
 import java.lang.reflect.Proxy;
 import java.util.Set;
 import net.runelite.api.Client;
+import net.runelite.api.Item;
+import net.runelite.api.ItemContainer;
+import net.runelite.api.QuestState;
+import net.runelite.api.gameval.InventoryID;
+import net.runelite.api.gameval.ItemID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.GameState;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -68,7 +75,34 @@ public class TempleOfLightTest
 		}
 	}
 
+	/**
+	 * The gate from the Mourner Tunnels (wiki): open during the quest, and after it only with a Crystal
+	 * trinket (from Arianwyn in Lletya). Exiting is free. Varbit 1103 runs 0, 5, 10 .. 50 through the
+	 * quest; the temple is entered from stage 10.
+	 */
+	@Test
+	public void theGateWantsTheQuestOrTheTrinket()
+	{
+		int outside = WorldPointUtil.packWorldPoint(1918, 4639, 0);
+		int inside = WorldPointUtil.packWorldPoint(1916, 4639, 0);
+		Item trinket = new Item(ItemID.MOURNING_CRYSTAL_TRINKET, 1);
+		assertFalse("quest not started, no trinket: the gate is shut", reached(outside, inside, 0));
+		assertTrue("mid-quest the gate opens", reached(outside, inside, 20));
+		assertFalse("quest over, no trinket: shut again", reached(outside, inside, 60));
+		assertTrue("quest over, trinket carried", reached(outside, inside, 60, trinket));
+		assertTrue("leaving needs nothing", reached(inside, outside, 60));
+	}
+
 	private static boolean reached(int start, int target)
+	{
+		return reached(start, target, -1);
+	}
+
+	/**
+	 * As above with the player's state: {@code mep2} is varbit 1103 (Mourning's End Part II's progress,
+	 * -1 leaves the varbit checks bypassed as the other tests do) and {@code inventory} the items carried.
+	 */
+	private static boolean reached(int start, int target, int mep2, Item... inventory)
 	{
 		final Thread clientThread = Thread.currentThread();
 		Client client = (Client) Proxy.newProxyInstance(Client.class.getClassLoader(), new Class<?>[]{Client.class},
@@ -82,6 +116,10 @@ public class TempleOfLightTest
 						return clientThread;
 					case "getBoostedSkillLevel":
 						return 99;
+					case "getVarbitValue":
+						return (int) args[0] == VarbitID.MOURNING_QUEST_MAIN && mep2 >= 0 ? mep2 : 0;
+					case "getItemContainer":
+						return (int) args[0] == InventoryID.INV ? container(inventory) : null;
 					default:
 						return HybridPageFillTest.defaultValue(method.getReturnType());
 				}
@@ -104,12 +142,22 @@ public class TempleOfLightTest
 			}
 			return HybridPageFillTest.defaultValue(type);
 		});
-		PathfinderConfig planning = new TestPathfinderConfig(client, config).copyForPlanning();
+		// The planning copy is the "Everything" family and bypasses items, quests and varbits; the gate
+		// cases run on the owned config the main path uses, so its conditions apply.
+		PathfinderConfig planning = new TestPathfinderConfig(client, config, QuestState.FINISHED, mep2 < 0, true);
+		if (mep2 < 0)
+			planning = planning.copyForPlanning();
 		planning.refresh();
 		CollisionMap map = new CollisionMap(SplitFlagMap.fromResources());
 		Set<Integer> ring = Destinations.walkableTargets(map, target);
 		Pathfinder pathfinder = new Pathfinder(planning, start, ring);
 		pathfinder.run();
 		return pathfinder.getResult().isReached();
+	}
+	private static ItemContainer container(Item... items)
+	{
+		ItemContainer container = Mockito.mock(ItemContainer.class);
+		Mockito.when(container.getItems()).thenReturn(items);
+		return container;
 	}
 }
