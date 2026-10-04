@@ -14,6 +14,7 @@ import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +53,8 @@ public class PathTileOverlay extends Overlay {
     private static final int BAND_WINDOW = 32;
     private final Client client;
     private final ShortestPathPlugin plugin;
-    private int playerTileLabelOffset = 0;
+    // Labels stack only with the other labels on their own tile; keyed by packed world tile, per frame.
+    private final Map<Integer, Integer> tileLabelOffsets = new HashMap<>();
     // Door tiles already hinted this frame — a door can sit on two path edges (a diagonal
     // approach then the straight crossing), which would otherwise stack "Open Door" twice.
     private final Set<Integer> hintedDoorTiles = new HashSet<>();
@@ -71,7 +73,7 @@ public class PathTileOverlay extends Overlay {
 
     @Override
     public Dimension render(Graphics2D graphics) {
-        playerTileLabelOffset = 0;
+        tileLabelOffsets.clear();
         hintedDoorTiles.clear();
         hintedPickups.clear();
 
@@ -198,7 +200,7 @@ public class PathTileOverlay extends Overlay {
                 drawGpsMarkers(graphics, displayedRoute);
 
             if (plugin.isPathUnreachable())
-                playerTileLabelOffset += drawLabelOnPlayerTile(graphics, plugin.display().unreachableText, playerTileLabelOffset);
+                drawLabelOnPlayerTile(graphics, plugin.display().unreachableText);
         }
 
         return null;
@@ -508,7 +510,10 @@ public class PathTileOverlay extends Overlay {
         return (int) height + TRANSPORT_LABEL_GAP;
     }
 
-    private int drawLabelAtPackedLocation(Graphics2D graphics, int location, String text, int verticalOffset) {
+    /** Draws a label above the tile, stacked over the labels already drawn on that tile this frame. */
+    private void drawLabelAtPackedLocation(Graphics2D graphics, int location, String text) {
+        int base = tileLabelOffsets.getOrDefault(location, 0);
+        int used = base;
         PrimitiveIntList points = toLocalInstance(client, location);
         for (int i = 0; i < points.size(); i++) {
             LocalPoint lp = toLocalPoint(client, points.get(i));
@@ -519,9 +524,10 @@ public class PathTileOverlay extends Overlay {
             if (p == null)
                 continue;
 
-            verticalOffset += drawLabelAtCanvasPoint(graphics, p, text, verticalOffset);
+            // an instanced tile has a copy per chunk: each copy gets the label at the same height
+            used = Math.max(used, base + drawLabelAtCanvasPoint(graphics, p, text, base));
         }
-        return verticalOffset;
+        tileLabelOffsets.put(location, used);
     }
 
     /**
@@ -585,12 +591,15 @@ public class PathTileOverlay extends Overlay {
         return height;
     }
 
-    private int drawLabelOnPlayerTile(Graphics2D graphics, String text, int verticalOffset) {
+    private void drawLabelOnPlayerTile(Graphics2D graphics, String text) {
         if (client.getLocalPlayer() == null)
-            return 0;
+            return;
 
-        Point playerPoint = Perspective.localToCanvas(client, client.getLocalPlayer().getLocalLocation(), client.getTopLevelWorldView().getPlane());
-        return drawLabelAtCanvasPoint(graphics, playerPoint, text, verticalOffset);
+        LocalPoint local = client.getLocalPlayer().getLocalLocation();
+        int tile = fromLocalInstance(client, local);
+        int base = tileLabelOffsets.getOrDefault(tile, 0);
+        Point playerPoint = Perspective.localToCanvas(client, local, client.getTopLevelWorldView().getPlane());
+        tileLabelOffsets.put(tile, base + drawLabelAtCanvasPoint(graphics, playerPoint, text, base));
     }
 
     private static boolean nearScene(int packed, int minX, int minY, int maxX, int maxY) {
@@ -611,8 +620,7 @@ public class PathTileOverlay extends Overlay {
         // unreachable as a result, show a one-time hint on the player tile.
         if (pathIndex == 0 && plugin.getPathfinderConfig().isOnSailingBoat()
             && plugin.isPathUnreachable()) {
-            playerTileLabelOffset = drawLabelOnPlayerTile(graphics,
-                "Disembark the boat to resume pathfinding", playerTileLabelOffset);
+            drawLabelOnPlayerTile(graphics, "Disembark the boat to resume pathfinding");
             return;
         }
 
@@ -666,8 +674,7 @@ public class PathTileOverlay extends Overlay {
             ClosedDoors.Door door = ClosedDoors.doorBetween(location, locationEnd);
             if (door != null && ClosedDoors.state(client, door) == ClosedDoors.State.CLOSED
                 && hintedDoorTiles.add(door.packedPosition)) {
-                playerTileLabelOffset = drawLabelAtPackedLocation(
-                    graphics, door.packedPosition, "Open " + door.name, playerTileLabelOffset);
+                drawLabelAtPackedLocation(graphics, door.packedPosition, "Open " + door.name);
             }
         }
 
@@ -687,7 +694,7 @@ public class PathTileOverlay extends Overlay {
             if (!bankPickupItems.isEmpty()) {
                 String pickupText = "Pick up: " + String.join(", ", bankPickupItems);
                 if (hintedPickups.add(pickupText))
-                    playerTileLabelOffset = drawLabelAtPackedLocation(graphics, location, pickupText, playerTileLabelOffset);
+                    drawLabelAtPackedLocation(graphics, location, pickupText);
 
                 // By default, bank pickup info replaces the default transport hint text;
                 // enable the option to show both
@@ -747,7 +754,7 @@ public class PathTileOverlay extends Overlay {
             if (pohExitInfo != null)
                 text = text + " (Exit: " + pohExitInfo + ")";
 
-            playerTileLabelOffset = drawLabelAtPackedLocation(graphics, location, text, playerTileLabelOffset);
+            drawLabelAtPackedLocation(graphics, location, text);
         }
 
         // Fallback: the displayed route teleports here (e.g. a charged tablet/jewellery) but the
@@ -759,7 +766,7 @@ public class PathTileOverlay extends Overlay {
             if (routeMethod != null && routeMethod.getType() != null && routeMethod.getType().isTeleport()) {
                 String label = routeMethod.label();
                 if (label != null && !label.isEmpty())
-                    playerTileLabelOffset = drawLabelAtPackedLocation(graphics, location, label, playerTileLabelOffset);
+                    drawLabelAtPackedLocation(graphics, location, label);
             }
         }
     }
