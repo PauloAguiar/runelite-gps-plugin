@@ -97,6 +97,18 @@ public class RouteControllerTest
 	}
 
 	@Test
+	public void aRecomputeWithoutATargetOnlyDirtiesTheCatalog()
+	{
+		// Every bank close asks for a recompute; with no destination there is nothing to route, so
+		// the catalog is marked for its debounced re-classification instead of a full generation.
+		controller.start(service);
+		when(plugin.getPathTargets()).thenReturn(Set.of());
+		controller.recompute();
+		verify(service, never()).generate(anyInt(), any(), any(), any(), anyInt(), anyInt(), anyBoolean(), any());
+		assertTrue(controller.isCatalogDirty());
+	}
+
+	@Test
 	public void openingThePanelRechecksTheAutoComputeDecisionOncePerTargetSet()
 	{
 		when(plugin.getPathTargets()).thenReturn(Set.of(TARGET));

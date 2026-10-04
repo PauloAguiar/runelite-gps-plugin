@@ -95,7 +95,9 @@ final class RouteController {
 
     /**
      * Manually (re)computes the routes for whatever destination GPS currently has set, read live
-     * from the player's position; with no target set, just refreshes the methods catalog.
+     * from the player's position. With no target set there is nothing to route: the methods
+     * catalog is marked for its debounced re-classification (see CatalogRefresher) instead of a
+     * generation, which used to run, and log, on every bank close.
      */
     void recompute() {
         plugin.getClientThread().invokeLater(() -> {
@@ -108,10 +110,8 @@ final class RouteController {
                 session.setLimit(defaultLimit());
                 trigger(start, new HashSet<>(targets));
             }
-            else {
-                log.debug("[alt-routes] Find routes: no target set");
-                trigger(WorldPointUtil.UNDEFINED, new HashSet<>());
-            }
+            else
+                catalogRefresh.markDirty();
         });
     }
 
