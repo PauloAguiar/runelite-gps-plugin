@@ -53,11 +53,12 @@ public class RouteItemCueTest
 	{
 		Transport camulet = camulet();
 		RouteOption route = route(List.of(1));
-		RouteItemCue cue = RouteItemCue.next(route, 0, (a, b) -> Set.of(camulet));
+		RouteItemCue cue = RouteItemCue.next(route, 0, (a, b) -> Set.of(camulet), true);
 		assertEquals(Set.of(CAMULET), cue.itemIds);
-		assertNull("teleported: the step is behind the player", RouteItemCue.next(route, 1, (a, b) -> Set.of(camulet)));
-		assertNull("a route without methods has no item step", RouteItemCue.next(route(List.of()), 0, (a, b) -> Set.of(camulet)));
-		assertNull("no route", RouteItemCue.next(null, 0, (a, b) -> Set.of(camulet)));
+		assertFalse("the Camulet is operated, worn or not", cue.wearToUse);
+		assertNull("teleported: the step is behind the player", RouteItemCue.next(route, 1, (a, b) -> Set.of(camulet), true));
+		assertNull("a route without methods has no item step", RouteItemCue.next(route(List.of()), 0, (a, b) -> Set.of(camulet), true));
+		assertNull("no route", RouteItemCue.next(null, 0, (a, b) -> Set.of(camulet), true));
 	}
 
 	@Test
@@ -69,10 +70,30 @@ public class RouteItemCueTest
 				+ "3106 9315 2\t\t\tLAW_RUNE=1\t\t4\tVarrock Teleport: GE\tT\t20\n",
 			TransportType.TELEPORTATION_SPELL, 0);
 		Transport spell = transports.values().iterator().next().iterator().next();
-		RouteItemCue cue = RouteItemCue.next(route(List.of(1)), 0, (a, b) -> Set.of(spell));
+		RouteItemCue cue = RouteItemCue.next(route(List.of(1)), 0, (a, b) -> Set.of(spell), true);
 		assertEquals("the spellbook is clicked, not the runes", Set.of(), cue.itemIds);
 		assertEquals("Varrock Teleport: GE", cue.spell);
-		assertNull("an item step names no spell", RouteItemCue.next(route(List.of(1)), 0, (a, b) -> Set.of(camulet())).spell);
+		assertNull("an item step names no spell", RouteItemCue.next(route(List.of(1)), 0, (a, b) -> Set.of(camulet()), true).spell);
+	}
+
+	@Test
+	public void aFairyRingStepAsksForTheStaffUnlessTheDiaryWaivesIt()
+	{
+		Map<Integer, Set<Transport>> transports = new HashMap<>();
+		TransportLoader.addTransportsFromContents(transports,
+			"# Origin\tDestination\tmenuOption menuTarget objectID\tSkills\tQuests\tVarbits\tDuration\tDisplay info\n"
+				+ "3200 3200 0\t3106 9315 2\tConfigure Fairy ring 29560\t\t\t\t5\tAKQ\n",
+			TransportType.FAIRY_RING, 0);
+		Transport ring = transports.values().iterator().next().iterator().next();
+		RouteItemCue cue = RouteItemCue.next(route(List.of(1)), 0, (a, b) -> Set.of(ring), true);
+		Set<Integer> staves = new java.util.HashSet<>();
+		for (int id : ItemVariations.DRAMEN_STAFF.getIds())
+		{
+			staves.add(id);
+		}
+		assertEquals("a Dramen or Lunar staff, any of them", staves, cue.itemIds);
+		assertTrue("the staff works worn: nothing to do once it is", cue.wearToUse);
+		assertNull("Lumbridge Elite done: the ring needs nothing", RouteItemCue.next(route(List.of(1)), 0, (a, b) -> Set.of(ring), false));
 	}
 
 	@Test

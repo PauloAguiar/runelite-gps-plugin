@@ -14,8 +14,8 @@ import net.runelite.client.ui.overlay.WidgetItemOverlay;
 /**
  * Marks the items the displayed route needs with a {@link RouteItemMark} in the "Next item" colour
  * (Quest Helper's look, a ring thicker so both show on an item both plugins want): in the inventory
- * and the equipment tab the next step's item, in an open bank every slot the route's bank step still
- * has to supply. A worn-only item sitting in the bag says "Equip": the step cannot be taken until it
+ * and the equipment tab the next step's item (not a worn fairy-ring staff: worn, it is done), in an
+ * open bank every slot the route's bank step still has to supply. A worn-only item sitting in the bag says "Equip": the step cannot be taken until it
  * is worn.
  */
 final class RouteItemOverlay extends WidgetItemOverlay {
@@ -41,7 +41,7 @@ final class RouteItemOverlay extends WidgetItemOverlay {
         }
         else {
             RouteItemCue cue = plugin.nextStepItems();
-            if (cue == null || !cue.itemIds.contains(itemId))
+            if (cue == null || !cue.itemIds.contains(itemId) || (cue.wearToUse && group == InterfaceID.WORNITEMS))
                 return;
         }
         Rectangle bounds = item.getCanvasBounds();

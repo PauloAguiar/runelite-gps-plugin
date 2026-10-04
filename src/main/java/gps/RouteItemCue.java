@@ -12,7 +12,8 @@ import java.util.function.BiFunction;
  * What the displayed route's NEXT step uses, for the widget highlights: the first method edge the
  * player has not reached, its items when the transport is an item teleport (every variant of the
  * item counts, so whichever the player carries lights up) and its spell when it is a spell
- * teleport. Null when the next thing to do is neither. Also the route's bank step, whose pickup the bank highlight lights, and the rule for
+ * teleport; a fairy ring asks for the Dramen or Lunar staff until the Lumbridge Elite diary waives
+ * it. Null when the next thing to do is none of these. Also the route's bank step, whose pickup the bank highlight lights, and the rule for
  * "worn-only" items (the Camulet: its teleports are worn options), whose bag copy gets an "Equip" tag.
  */
 final class RouteItemCue {
@@ -22,13 +23,17 @@ final class RouteItemCue {
     final Set<Integer> itemIds;
     /** The spell's Display info, for the spellbook; null unless the step casts one. */
     final String spell;
+    /** Whether the item does its work worn (the fairy-ring staff): the equipment tab has nothing to point at. */
+    final boolean wearToUse;
 
-    private RouteItemCue(Set<Integer> itemIds, String spell) {
+    private RouteItemCue(Set<Integer> itemIds, String spell, boolean wearToUse) {
         this.itemIds = itemIds;
         this.spell = spell;
+        this.wearToUse = wearToUse;
     }
 
-    static RouteItemCue next(RouteOption route, int reachedIndex, BiFunction<PathStep, PathStep, Set<Transport>> transportsForEdge) {
+    static RouteItemCue next(RouteOption route, int reachedIndex, BiFunction<PathStep, PathStep, Set<Transport>> transportsForEdge,
+        boolean fairyRingsNeedStaff) {
         if (route == null)
             return null;
         List<PathStep> path = route.getPath();
@@ -37,6 +42,7 @@ final class RouteItemCue {
                 continue;
             Set<Integer> ids = new HashSet<>();
             String spell = null;
+            boolean staff = false;
             for (Transport transport : transportsForEdge.apply(path.get(edge - 1), path.get(edge))) {
                 TransportType type = transport.getType();
                 if (type == TransportType.TELEPORTATION_SPELL) {
@@ -44,14 +50,22 @@ final class RouteItemCue {
                         spell = transport.getDisplayInfo();
                     continue;
                 }
-                if ((type != TransportType.TELEPORTATION_ITEM && type != TransportType.QUETZAL_WHISTLE)
-                    || transport.getItemRequirements() == null)
+                if (type == TransportType.FAIRY_RING) {
+                    if (fairyRingsNeedStaff) {
+                        staff = true;
+                        for (int id : ItemVariations.DRAMEN_STAFF.getIds())
+                            ids.add(id);
+                    }
+                    continue;
+                }
+                if ((type != TransportType.TELEPORTATION_ITEM && type != TransportType.QUETZAL_WHISTLE
+                    && type != TransportType.TELEPORTATION_BOX) || transport.getItemRequirements() == null)
                     continue;
                 for (int[] variants : transport.getItemRequirements().getItems())
                     for (int id : variants)
                         ids.add(id);
             }
-            return ids.isEmpty() && spell == null ? null : new RouteItemCue(ids, spell);
+            return ids.isEmpty() && spell == null ? null : new RouteItemCue(ids, spell, staff);
         }
         return null;
     }

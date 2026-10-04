@@ -31,6 +31,7 @@ import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.events.WorldChanged;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.InventoryID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigItemDescriptor;
@@ -789,7 +790,8 @@ public class ShortestPathPlugin extends Plugin {
         int tick = client.getTickCount();
         if (tick != itemCueTick) {
             itemCueTick = tick;
-            itemCue = RouteItemCue.next(getDisplayedRoute(), displayedRouteProgress(), this::transportsForEdge);
+            itemCue = RouteItemCue.next(getDisplayedRoute(), displayedRouteProgress(), this::transportsForEdge,
+                client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1);
         }
         return itemCue;
     }
