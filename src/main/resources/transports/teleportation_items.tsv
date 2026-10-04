@@ -332,8 +332,11 @@
 2551 3755 0			23458=1		4	Enchanted lyre (i): Waterbirth Island	F	20	4493=1	
 2409 3809 0			23458=1		4	Enchanted lyre (i): Jatizso	F	20	4494=1	
 2336 3802 0			23458=1		4	Enchanted lyre (i): Neitiznot	F	20	4494=1	
-3105 9315 0			6707=1		4	Camulet: Enakhra's Temple	F	20		
-3191 2924 0			6707=1		4	Camulet: Bandit Camp Quarry	F	20	4485=1	
+# Camulet (wiki, 2026-10-03): the Teleport lands inside Enakhra's Temple near Lazim, on the top floor
+# (3106,9315,2 as captured on landing); with the hard Desert Diary the destination can be switched to
+# the temple entrance near the quarry.
+3106 9315 2			6707=1		4	Camulet: Enakhra's Temple	F	20		
+3191 2924 0			6707=1		4	Camulet: Temple entrance (quarry)	F	20	4485=1	
 1714 3611 0			21760=1		4	Kharedst's memoirs: Lunch by the Lancalliums	T	20	6028=1;6035>0	
 1803 3748 0			21760=1		4	Kharedst's memoirs: The Fisher's Flute	T	20	6038=1;6035>0	
 1478 3576 0			21760=1		4	Kharedst's memoirs: History and Hearsay	T	20	6359=1;6035>0	
