@@ -1240,6 +1240,17 @@ public interface ShortestPathConfig extends Config {
         return new Color(0x4C, 0x8B, 0xF5);
     }
 
+    @ConfigItem(
+        keyName = "colourRouteItem",
+        name = "Next item",
+        description = "Outline of the item the route uses next, in the inventory, equipment and bank",
+        position = 81,
+        section = sectionColours
+    )
+    default Color colourRouteItem() {
+        return new Color(0xF2, 0xC1, 0x4E);
+    }
+
     @ConfigSection(
         name = "Hotkeys",
         description = "Keyboard shortcuts",

@@ -23,6 +23,7 @@ final class OverlaySettings {
     final Color colourText;
     final Color colourTeleportPulse;
     final Color colourOverlayAccent;
+    final Color colourRouteItem;
     final boolean showTeleportPulse;
     final boolean highlightRouteItem;
     final boolean showDirections;
@@ -51,6 +52,7 @@ final class OverlaySettings {
         colourText = ConfigOverrides.override("colourText", config.colourText());
         colourTeleportPulse = ConfigOverrides.override("colourTeleportPulse", config.colourTeleportPulse());
         colourOverlayAccent = ConfigOverrides.override("colourOverlayAccent", config.colourOverlayAccent());
+        colourRouteItem = ConfigOverrides.override("colourRouteItem", config.colourRouteItem());
 
         unreachableTargetDistance = ConfigOverrides.override("unreachableTargetDistanceThreshold", config.unreachableTargetDistance());
         unreachableText = config.unreachableText();
