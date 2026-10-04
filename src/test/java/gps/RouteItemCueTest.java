@@ -73,6 +73,22 @@ public class RouteItemCueTest
 	}
 
 	@Test
+	public void theBankStepIsWhereThePathTurnsBankedOnARouteViaTheBank()
+	{
+		List<PathStep> path = List.of(
+			new PathStep(WorldPointUtil.packWorldPoint(3200, 3200, 0), false, 0),
+			new PathStep(WorldPointUtil.packWorldPoint(3201, 3200, 0), false, 1),
+			new PathStep(WorldPointUtil.packWorldPoint(3202, 3200, 0), true, 2),
+			new PathStep(WorldPointUtil.packWorldPoint(3106, 9315, 2), true, 6));
+		TeleportMethod camulet = new TeleportMethod(TransportType.TELEPORTATION_ITEM, "Camulet: Inside Enakhra's Temple", path.get(3).getPackedPosition());
+		RouteOption viaBank = new RouteOption(path, List.of(camulet), List.of(3), List.of(4), 6, 6, true, Set.of(camulet), List.of(2), 0);
+		assertEquals(2, RouteItemCue.bankStep(viaBank));
+		RouteOption owned = new RouteOption(path, List.of(camulet), List.of(3), List.of(4), 6, 6, true, Set.of(), List.of(2), 0);
+		assertEquals("a route that only passes a bank withdraws nothing", -1, RouteItemCue.bankStep(owned));
+		assertEquals(-1, RouteItemCue.bankStep(null));
+	}
+
+	@Test
 	public void anItemWithNoOptionThatUsesItFromTheBagIsWornOnly()
 	{
 		assertTrue("the Camulet: its teleports are worn options", RouteItemCue.wornOnly(new String[]{"Wear", "Check", null, null, null}));

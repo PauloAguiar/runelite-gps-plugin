@@ -518,9 +518,9 @@ final class RouteDirections {
         List<PathStep> path, int pathIndex) {
         net.runelite.api.Item[] bank = plugin.getPathfinderConfig().getBankSnapshot();
         if (bank != null) {
-            List<String> items = gps.transport.BankPickupRequirements.getRequiredBankItems(
+            List<String> items = gps.transport.BankPickupRequirements.compute(
                 plugin.getClient(), bank, plugin.getPathfinderConfig(),
-                Set.of(path.get(pathIndex).getPackedPosition()), path, pathIndex);
+                Set.of(path.get(pathIndex).getPackedPosition()), path, pathIndex).phrases;
             if (!items.isEmpty()) {
                 return "Withdraw " + String.join(", ", items)
                     + " for: " + joinLabels(route.getBankMethods());

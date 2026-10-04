@@ -12,10 +12,11 @@ import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.overlay.WidgetItemOverlay;
 
 /**
- * Outlines the item the displayed route uses next, in the inventory, the equipment tab and the
- * bank (the pickup) with a {@link RouteItemMark} in the "Next item" colour: Quest Helper's look,
- * a ring thicker so both show on an item both plugins want. A worn-only item sitting in the bag
- * says "Equip": the step cannot be taken until it is worn.
+ * Marks the items the displayed route needs with a {@link RouteItemMark} in the "Next item" colour
+ * (Quest Helper's look, a ring thicker so both show on an item both plugins want): in the inventory
+ * and the equipment tab the next step's item, in an open bank every slot the route's bank step still
+ * has to supply. A worn-only item sitting in the bag says "Equip": the step cannot be taken until it
+ * is worn.
  */
 final class RouteItemOverlay extends WidgetItemOverlay {
     private final ShortestPathPlugin plugin;
@@ -31,15 +32,24 @@ final class RouteItemOverlay extends WidgetItemOverlay {
 
     @Override
     public void renderItemOverlay(Graphics2D graphics, int itemId, WidgetItem item) {
-        RouteItemCue cue = plugin.nextStepItems();
-        if (cue == null || !cue.itemIds.contains(itemId) || !plugin.display().highlightRouteItem)
+        if (!plugin.display().highlightRouteItem)
             return;
+        int group = WidgetUtil.componentToInterface(item.getWidget().getId());
+        if (group == InterfaceID.BANKMAIN || group == InterfaceID.SHARED_BANK) {
+            if (!plugin.bankPickupIds().contains(itemId))
+                return;
+        }
+        else {
+            RouteItemCue cue = plugin.nextStepItems();
+            if (cue == null || !cue.itemIds.contains(itemId))
+                return;
+        }
         Rectangle bounds = item.getCanvasBounds();
         Color colour = plugin.display().colourRouteItem;
         RouteItemMark mark = mark(itemId, item.getQuantity(), colour);
         graphics.drawImage(mark.outline, bounds.x - 1, bounds.y - 1, null);
         graphics.drawImage(mark.fill, bounds.x, bounds.y, null);
-        if (WidgetUtil.componentToInterface(item.getWidget().getId()) == InterfaceID.INVENTORY && plugin.wornOnly(itemId)) {
+        if ((group == InterfaceID.INVENTORY || group == InterfaceID.BANKSIDE) && plugin.wornOnly(itemId)) {
             graphics.setFont(FontManager.getRunescapeSmallFont());
             int x = bounds.x + 1;
             int y = bounds.y + bounds.height - 2;

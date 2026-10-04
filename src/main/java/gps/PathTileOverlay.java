@@ -683,14 +683,14 @@ public class PathTileOverlay extends Overlay {
         // stands in for the live container so the hint works from login.
         Set<Integer> bankLocations = plugin.getPathfinderConfig().getDestinations("bank");
         if (bankLocations != null && plugin.getPathfinderConfig().getBankSnapshot() != null) {
-            List<String> bankPickupItems = BankPickupRequirements.getRequiredBankItems(
+            List<String> bankPickupItems = BankPickupRequirements.compute(
                 client,
                 plugin.getPathfinderConfig().getBankSnapshot(),
                 plugin.getPathfinderConfig(),
                 bankLocations,
                 path,
                 pathIndex
-            );
+            ).phrases;
             if (!bankPickupItems.isEmpty()) {
                 String pickupText = "Pick up: " + String.join(", ", bankPickupItems);
                 if (hintedPickups.add(pickupText))

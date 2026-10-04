@@ -16,6 +16,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.Item;
 import net.runelite.api.Player;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameStateChanged;
@@ -49,6 +50,7 @@ import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 import gps.pathfinder.PathStep;
 import gps.pathfinder.PathfinderConfig;
+import gps.transport.BankPickupRequirements;
 import gps.transport.Transport;
 
 import static gps.WorldPointUtil.fromLocalInstance;
@@ -102,6 +104,8 @@ public class ShortestPathPlugin extends Plugin {
     private RouteItemOverlay routeItemOverlay;
     private RouteItemCue itemCue;
     private int itemCueTick = -1;
+    private Set<Integer> pickupIds = Set.of();
+    private int pickupTick = -1;
     @Inject
     private SpriteManager spriteManager;
     @Inject
@@ -784,6 +788,27 @@ public class ShortestPathPlugin extends Plugin {
             itemCue = RouteItemCue.next(getDisplayedRoute(), displayedRouteProgress(), this::transportsForEdge);
         }
         return itemCue;
+    }
+
+    /**
+     * The bank slots the displayed route's bank step still has to supply (see BankPickupRequirements),
+     * empty once the player is past that step; recomputed once per tick, and only while a bank is open.
+     */
+    Set<Integer> bankPickupIds() {
+        int tick = client.getTickCount();
+        if (tick != pickupTick) {
+            pickupTick = tick;
+            pickupIds = Set.of();
+            RouteOption route = getDisplayedRoute();
+            int bank = RouteItemCue.bankStep(route);
+            Item[] snapshot = pathfinderConfig.getBankSnapshot();
+            if (bank >= 0 && snapshot != null && displayedRouteProgress() <= bank) {
+                List<PathStep> path = route.getPath();
+                pickupIds = BankPickupRequirements.compute(client, snapshot, pathfinderConfig,
+                    Set.of(path.get(bank).getPackedPosition()), path, bank).itemIds;
+            }
+        }
+        return pickupIds;
     }
 
     /** Whether an item teleports only from the worn slot, read from its inventory options. */

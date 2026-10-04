@@ -12,8 +12,8 @@ import java.util.function.BiFunction;
  * The item(s) the displayed route's NEXT step uses, for the widget highlight: the first method
  * edge the player has not reached, when its transport is an item teleport; every variant of the
  * item counts, so whichever the player carries lights up. Null when the next thing to do is not
- * an item step. Also the rule for "worn-only" items (the Camulet: its teleports are worn options),
- * whose bag copy gets an "Equip" tag.
+ * an item step. Also the route's bank step, whose pickup the bank highlight lights, and the rule for
+ * "worn-only" items (the Camulet: its teleports are worn options), whose bag copy gets an "Equip" tag.
  */
 final class RouteItemCue {
     /** Inventory options that use an item where it lies; an item with none of them teleports worn. */
@@ -45,6 +45,17 @@ final class RouteItemCue {
             return ids.isEmpty() ? null : new RouteItemCue(ids);
         }
         return null;
+    }
+
+    /** The index of the bank the route withdraws at (the first banked step), or -1 when it withdraws nothing. */
+    static int bankStep(RouteOption route) {
+        if (route == null || !route.isViaBank())
+            return -1;
+        List<PathStep> path = route.getPath();
+        for (int i = 0; i < path.size(); i++)
+            if (path.get(i).isBankVisited())
+                return i;
+        return -1;
     }
 
     /** Whether the item teleports only from the worn slot: none of its inventory options uses it. */

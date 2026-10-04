@@ -31,18 +31,30 @@ import gps.transport.requirement.ItemRequirement;
 @SuppressWarnings("unused") // Only static methods are used, incorrectly flagged
 public final class BankPickupRequirements {
 
+    /** What a bank step must supply: one phrase per edge for the labels, and the bank slots to light. */
+    public static final class Pickup {
+        public final List<String> phrases;
+        /** Ids as the bank holds them (a necklace at its charge), not the canonical ids the phrases name. */
+        public final Set<Integer> itemIds;
+
+        Pickup(List<String> phrases, Set<Integer> itemIds) {
+            this.phrases = phrases;
+            this.itemIds = itemIds;
+        }
+    }
+
     /**
-     * Gets a list of items that need to be picked up from the bank at a given path step.
+     * Computes what needs to be picked up from the bank at a given path step: nothing unless
+     * {@code pathIndex} is a bank tile, else one pass over the remaining edges.
      *
      * @param client           The game client
-     * @param bank             The bank ItemContainer
+     * @param bankItems        The bank's items (live or the snapshot)
      * @param pathfinderConfig The pathfinder config for bank-aware transport lookups
      * @param bankLocations    Set of bank location coordinates
      * @param path             The current path
      * @param pathIndex        The current step index in the path
-     * @return List of item names to pick up, or empty list if none needed
      */
-    public static List<String> getRequiredBankItems(
+    public static Pickup compute(
         Client client,
         Item[] bankItems,
         PathfinderConfig pathfinderConfig,
@@ -51,14 +63,16 @@ public final class BankPickupRequirements {
         int pathIndex) {
 
         List<String> requiredItems = new ArrayList<>();
+        Set<Integer> itemIds = new LinkedHashSet<>();
+        Pickup result = new Pickup(requiredItems, itemIds);
 
         if (bankItems == null || path == null || pathIndex < 0 || pathIndex >= path.size())
-            return requiredItems;
+            return result;
 
         // Check if this is a bank step
         int currentPoint = path.get(pathIndex).getPackedPosition();
         if (!bankLocations.contains(currentPoint))
-            return requiredItems;
+            return result;
 
         // Snapshot bank contents.
         Map<Integer, Integer> bankHas = new HashMap<>();
@@ -136,7 +150,7 @@ public final class BankPickupRequirements {
             LinkedHashSet<String> altStrings = new LinkedHashSet<>();
             for (Transport t : nonFairy) {
                 Map<Integer, Long> pickups = computeBankPickups(t, playerHas, bankHas, bankPouchRunes,
-                    pathfinderConfig.farePercent(t));
+                    pathfinderConfig.farePercent(t), itemIds);
                 if (pickups == null || pickups.isEmpty()) {
                     continue; // bank can't satisfy this alternative
                 }
@@ -157,12 +171,13 @@ public final class BankPickupRequirements {
                     Map<Integer, Long> single = new LinkedHashMap<>();
                     single.put(foundId, 1L);
                     phrases.add(formatPickups(client, single));
+                    itemIds.add(foundId);
                 }
             }
         }
 
         requiredItems.addAll(phrases);
-        return requiredItems;
+        return result;
     }
 
     /**
@@ -260,12 +275,18 @@ public final class BankPickupRequirements {
 
     private static final int COINS_ID = 995;
 
+    /**
+     * One alternative's pickups (canonical id to quantity, for the phrase), or null when the bank
+     * cannot supply it; the slots it would come from join {@code slots} once it is known to be supplied.
+     */
     private static Map<Integer, Long> computeBankPickups(Transport transport,
         Map<Integer, Integer> playerHas,
         Map<Integer, Integer> bankHas,
         Map<Integer, Integer> bankPouchRunes,
-        int coinPercent) {
+        int coinPercent,
+        Set<Integer> slots) {
         Map<Integer, Long> pickups = new LinkedHashMap<>();
+        Set<Integer> found = new LinkedHashSet<>();
         Set<Integer> addedPouches = new HashSet<>(); // tracks pouch IDs already added to pickups
         if (transport.getItemRequirements() == null)
             return pickups;
@@ -287,6 +308,7 @@ public final class BankPickupRequirements {
                         if (!addedPouches.contains(pouchId)) {
                             addedPouches.add(pouchId);
                             pickups.put(pouchId, 1L);
+                            found.add(pouchId);
                         }
                         satisfied = true;
                         break;
@@ -300,6 +322,7 @@ public final class BankPickupRequirements {
             int foundId = findItemIdInBank(bankHas, req.getItemIds(), qty);
             if (foundId != -1) {
                 pickups.merge(req.getItemIds()[0], (long) qty, Long::sum);
+                found.add(foundId);
                 continue;
             }
             foundId = findItemIdInBank(bankHas, req.getStaffIds(), 1);
@@ -309,7 +332,9 @@ public final class BankPickupRequirements {
                 return null; // bank can't satisfy this requirement
             }
             pickups.merge(foundId, 1L, Long::sum);
+            found.add(foundId);
         }
+        slots.addAll(found);
         return pickups;
     }
 
