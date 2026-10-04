@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import net.runelite.api.gameval.ItemID;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -80,12 +81,12 @@ public class RouteItemCueTest
 	{
 		Transport camulet = camulet();
 		RouteOption route = route(List.of(1));
-		RouteItemCue cue = RouteItemCue.next(route, 0, (a, b) -> Set.of(camulet), true);
+		RouteItemCue cue = RouteItemCue.next(route, 0, (a, b) -> Set.of(camulet), true, Map.of());
 		assertEquals(Set.of(CAMULET), cue.itemIds);
 		assertTrue("the Camulet is operated, worn or not", cue.wornDone.isEmpty());
-		assertNull("teleported: the step is behind the player", RouteItemCue.next(route, 1, (a, b) -> Set.of(camulet), true));
-		assertNull("a route without methods has no item step", RouteItemCue.next(route(List.of()), 0, (a, b) -> Set.of(camulet), true));
-		assertNull("no route", RouteItemCue.next(null, 0, (a, b) -> Set.of(camulet), true));
+		assertNull("teleported: the step is behind the player", RouteItemCue.next(route, 1, (a, b) -> Set.of(camulet), true, Map.of()));
+		assertNull("a route without methods has no item step", RouteItemCue.next(route(List.of()), 0, (a, b) -> Set.of(camulet), true, Map.of()));
+		assertNull("no route", RouteItemCue.next(null, 0, (a, b) -> Set.of(camulet), true, Map.of()));
 	}
 
 	@Test
@@ -97,20 +98,46 @@ public class RouteItemCueTest
 				+ "3106 9315 2\t\t\tLAW_RUNE=1\t\t4\tVarrock Teleport: GE\tT\t20\n",
 			TransportType.TELEPORTATION_SPELL, 0);
 		Transport spell = transports.values().iterator().next().iterator().next();
-		RouteItemCue cue = RouteItemCue.next(route(List.of(1)), 0, (a, b) -> Set.of(spell), true);
+		RouteItemCue cue = RouteItemCue.next(route(List.of(1)), 0, (a, b) -> Set.of(spell), true, Map.of());
 		assertEquals("the spellbook is clicked, not the runes", Set.of(), cue.itemIds);
 		assertEquals("Varrock Teleport: GE", cue.spell);
-		assertNull("an item step names no spell", RouteItemCue.next(route(List.of(1)), 0, (a, b) -> Set.of(camulet()), true).spell);
+		assertNull("an item step names no spell", RouteItemCue.next(route(List.of(1)), 0, (a, b) -> Set.of(camulet()), true, Map.of()).spell);
+	}
+
+	@Test
+	public void aStaffOrTomeStandingInForRunesMustBeWielded()
+	{
+		Map<Integer, Set<Transport>> transports = new HashMap<>();
+		TransportLoader.addTransportsFromContents(transports,
+			"# Destination\tItems\tSkills\tQuests\tDuration\tDisplay info\tWilderness level\n"
+				+ "3213 3424 0\tAIR_RUNE=3&&FIRE_RUNE=1&&LAW_RUNE=1\t25 Magic\t\t4\tVarrock Teleport\t20\n",
+			TransportType.TELEPORTATION_SPELL, 0);
+		Transport varrock = transports.values().iterator().next().iterator().next();
+		RouteOption route = route(List.of(1));
+
+		// Law runes and a Mystic air staff in the bag, a Tome of fire worn: both stand in for runes.
+		Map<Integer, Integer> carried = Map.of(ItemID.LAWRUNE, 1, ItemID.MYSTIC_AIR_STAFF, 1, ItemID.TOME_OF_FIRE, 1);
+		RouteItemCue cue = RouteItemCue.next(route, 0, (a, b) -> Set.of(varrock), true, carried);
+		assertEquals("Varrock Teleport", cue.spell);
+		assertEquals("the staff and the tome, which do nothing in the bag", Set.of(ItemID.MYSTIC_AIR_STAFF, ItemID.TOME_OF_FIRE), cue.itemIds);
+		assertEquals("worn, they are done", cue.itemIds, cue.wornDone);
+
+		// The runes themselves in the bag: no staff to point at, whatever else is carried.
+		Map<Integer, Integer> runes = Map.of(ItemID.LAWRUNE, 1, ItemID.AIRRUNE, 3, ItemID.FIRERUNE, 1, ItemID.MYSTIC_AIR_STAFF, 1);
+		assertEquals(Set.of(), RouteItemCue.next(route, 0, (a, b) -> Set.of(varrock), true, runes).itemIds);
+		// Two air runes only: short, so the staff is still the way.
+		Map<Integer, Integer> short2 = Map.of(ItemID.LAWRUNE, 1, ItemID.AIRRUNE, 2, ItemID.FIRERUNE, 1, ItemID.MYSTIC_AIR_STAFF, 1);
+		assertEquals(Set.of(ItemID.MYSTIC_AIR_STAFF), RouteItemCue.next(route, 0, (a, b) -> Set.of(varrock), true, short2).itemIds);
 	}
 
 	@Test
 	public void aFairyRingStepAsksForTheStaffUnlessTheDiaryWaivesIt()
 	{
 		Transport ring = ring();
-		RouteItemCue cue = RouteItemCue.next(route(List.of(3)), 1, (a, b) -> Set.of(ring), true);
+		RouteItemCue cue = RouteItemCue.next(route(List.of(3)), 1, (a, b) -> Set.of(ring), true, Map.of());
 		assertEquals("a Dramen or Lunar staff, any of them", staves(), cue.itemIds);
 		assertEquals("the staff works worn: nothing to do once it is", staves(), cue.wornDone);
-		assertNull("Lumbridge Elite done: the ring needs nothing", RouteItemCue.next(route(List.of(3)), 1, (a, b) -> Set.of(ring), false));
+		assertNull("Lumbridge Elite done: the ring needs nothing", RouteItemCue.next(route(List.of(3)), 1, (a, b) -> Set.of(ring), false, Map.of()));
 	}
 
 	@Test
@@ -122,7 +149,7 @@ public class RouteItemCueTest
 		Transport ring = ring();
 		RouteOption route = route(List.of(1, 3));
 		RouteItemCue cue = RouteItemCue.next(route, 0, (a, b) -> b.getPackedPosition() == route.getPath().get(1).getPackedPosition()
-			? Set.of(camulet) : Set.of(ring), true);
+			? Set.of(camulet) : Set.of(ring), true, Map.of());
 		Set<Integer> expected = new java.util.HashSet<>(staves());
 		expected.add(CAMULET);
 		assertEquals(expected, cue.itemIds);
@@ -130,7 +157,7 @@ public class RouteItemCueTest
 		assertNull(cue.spell);
 		assertEquals("the diary waives the staff ahead too", Set.of(CAMULET),
 			RouteItemCue.next(route, 0, (a, b) -> b.getPackedPosition() == route.getPath().get(1).getPackedPosition()
-				? Set.of(camulet) : Set.of(ring), false).itemIds);
+				? Set.of(camulet) : Set.of(ring), false, Map.of()).itemIds);
 	}
 
 	@Test

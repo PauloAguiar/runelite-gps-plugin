@@ -3,8 +3,10 @@ package gps;
 import gps.pathfinder.PathStep;
 import gps.transport.Transport;
 import gps.transport.TransportType;
+import gps.transport.requirement.ItemRequirement;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 
@@ -12,9 +14,10 @@ import java.util.function.BiFunction;
  * What the displayed route's NEXT step uses, for the widget highlights: the first method edge the
  * player has not reached, its items when the transport is an item teleport (every variant of the
  * item counts, so whichever the player carries lights up) and its spell when it is a spell
- * teleport; a fairy ring asks for the Dramen or Lunar staff until the Lumbridge Elite diary waives
- * it, and asks one method ahead, so the staff is wielded before the ring is reached. Null when the
- * next thing to do is none of these. Also the route's bank step, whose pickup the bank highlight lights, and the rule for
+ * teleport, plus the carried staff or tome that stands in for runes the player lacks, since the
+ * engine counts it from the bag but the game only when wielded; a fairy ring asks for the Dramen
+ * or Lunar staff until the Lumbridge Elite diary waives it, and asks one method ahead, so the
+ * staff is wielded before the ring is reached. Null when the next thing to do is none of these. Also the route's bank step, whose pickup the bank highlight lights, and the rule for
  * "worn-only" items (the Camulet: its teleports are worn options), whose bag copy gets an "Equip" tag.
  */
 final class RouteItemCue {
@@ -34,7 +37,7 @@ final class RouteItemCue {
     }
 
     static RouteItemCue next(RouteOption route, int reachedIndex, BiFunction<PathStep, PathStep, Set<Transport>> transportsForEdge,
-        boolean fairyRingsNeedStaff) {
+        boolean fairyRingsNeedStaff, Map<Integer, Integer> carried) {
         if (route == null)
             return null;
         List<PathStep> path = route.getPath();
@@ -62,6 +65,12 @@ final class RouteItemCue {
                 if (type == TransportType.TELEPORTATION_SPELL) {
                     if (spell == null)
                         spell = transport.getDisplayInfo();
+                    if (transport.getItemRequirements() != null)
+                        for (ItemRequirement req : transport.getItemRequirements().getRequirements())
+                            if (req.getQuantity() > 0 && !held(carried, req.getItemIds(), req.getQuantity())) {
+                                carriedOf(carried, req.getStaffIds(), ids, wornDone);
+                                carriedOf(carried, req.getOffhandIds(), ids, wornDone);
+                            }
                     continue;
                 }
                 if ((type != TransportType.TELEPORTATION_ITEM && type != TransportType.QUETZAL_WHISTLE
@@ -73,6 +82,24 @@ final class RouteItemCue {
             }
         }
         return ids.isEmpty() && spell == null ? null : new RouteItemCue(ids, spell, wornDone);
+    }
+
+    private static boolean held(Map<Integer, Integer> carried, int[] ids, int quantity) {
+        if (ids != null)
+            for (int id : ids)
+                if (carried.getOrDefault(id, 0) >= quantity)
+                    return true;
+        return false;
+    }
+
+    /** Adds the ids of {@code candidates} the player carries to both sets: a stand-in that must be wielded. */
+    private static void carriedOf(Map<Integer, Integer> carried, int[] candidates, Set<Integer> ids, Set<Integer> wornDone) {
+        if (candidates != null)
+            for (int id : candidates)
+                if (carried.getOrDefault(id, 0) > 0) {
+                    ids.add(id);
+                    wornDone.add(id);
+                }
     }
 
     /** The index of the bank the route withdraws at (the first banked step), or -1 when it withdraws nothing. */
