@@ -2,25 +2,25 @@ package gps;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.Image;
 import java.awt.Rectangle;
-import java.awt.image.BufferedImage;
+import java.util.HashMap;
+import java.util.Map;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.WidgetItem;
 import net.runelite.api.widgets.WidgetUtil;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.overlay.WidgetItemOverlay;
-import net.runelite.client.util.ColorUtil;
-import net.runelite.client.util.ImageUtil;
 
 /**
  * Outlines the item the displayed route uses next, in the inventory, the equipment tab and the
- * bank (the pickup): the sprite's own outline plus a light fill in the "Next item" colour, the
- * way Quest Helper marks its items, so the two read alike. A worn-only item sitting in the bag
+ * bank (the pickup) with a {@link RouteItemMark} in the "Next item" colour: Quest Helper's look,
+ * a ring thicker so both show on an item both plugins want. A worn-only item sitting in the bag
  * says "Equip": the step cannot be taken until it is worn.
  */
 final class RouteItemOverlay extends WidgetItemOverlay {
     private final ShortestPathPlugin plugin;
+    private final Map<Long, RouteItemMark> marks = new HashMap<>();
+    private Color marksColour;
 
     RouteItemOverlay(ShortestPathPlugin plugin) {
         this.plugin = plugin;
@@ -36,11 +36,9 @@ final class RouteItemOverlay extends WidgetItemOverlay {
             return;
         Rectangle bounds = item.getCanvasBounds();
         Color colour = plugin.display().colourRouteItem;
-        BufferedImage outline = plugin.getItemManager().getItemOutline(itemId, item.getQuantity(), colour);
-        graphics.drawImage(outline, bounds.x, bounds.y, null);
-        Image fill = ImageUtil.fillImage(plugin.getItemManager().getImage(itemId, item.getQuantity(), false),
-            ColorUtil.colorWithAlpha(colour, 65));
-        graphics.drawImage(fill, bounds.x, bounds.y, null);
+        RouteItemMark mark = mark(itemId, item.getQuantity(), colour);
+        graphics.drawImage(mark.outline, bounds.x - 1, bounds.y - 1, null);
+        graphics.drawImage(mark.fill, bounds.x, bounds.y, null);
         if (WidgetUtil.componentToInterface(item.getWidget().getId()) == InterfaceID.INVENTORY && plugin.wornOnly(itemId)) {
             graphics.setFont(FontManager.getRunescapeSmallFont());
             int x = bounds.x + 1;
@@ -50,5 +48,15 @@ final class RouteItemOverlay extends WidgetItemOverlay {
             graphics.setColor(colour);
             graphics.drawString("Equip", x, y);
         }
+    }
+
+    /** The mark for an item, built on first sight and dropped with the colour that made it. */
+    private RouteItemMark mark(int itemId, int quantity, Color colour) {
+        if (!colour.equals(marksColour) || marks.size() > 64) {
+            marks.clear();
+            marksColour = colour;
+        }
+        return marks.computeIfAbsent(((long) itemId << 32) | quantity,
+            k -> RouteItemMark.of(plugin.getItemManager(), itemId, quantity, colour));
     }
 }
