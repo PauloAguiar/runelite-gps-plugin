@@ -56,6 +56,9 @@ public class PathTileOverlay extends Overlay {
     // Door tiles already hinted this frame — a door can sit on two path edges (a diagonal
     // approach then the straight crossing), which would otherwise stack "Open Door" twice.
     private final Set<Integer> hintedDoorTiles = new HashSet<>();
+    // Pickup hints already drawn this frame: a route fetching an item walks across neighbouring bank
+    // stand tiles, each a "bank step", and the label would otherwise stack once per tile.
+    private final Set<String> hintedPickups = new HashSet<>();
 
     @Inject
     public PathTileOverlay(Client client, ShortestPathPlugin plugin) {
@@ -70,6 +73,7 @@ public class PathTileOverlay extends Overlay {
     public Dimension render(Graphics2D graphics) {
         playerTileLabelOffset = 0;
         hintedDoorTiles.clear();
+        hintedPickups.clear();
 
         if (plugin.display().drawRecalculationRanges) {
             drawArrivalTiles(graphics);
@@ -682,7 +686,8 @@ public class PathTileOverlay extends Overlay {
             );
             if (!bankPickupItems.isEmpty()) {
                 String pickupText = "Pick up: " + String.join(", ", bankPickupItems);
-                playerTileLabelOffset = drawLabelAtPackedLocation(graphics, location, pickupText, playerTileLabelOffset);
+                if (hintedPickups.add(pickupText))
+                    playerTileLabelOffset = drawLabelAtPackedLocation(graphics, location, pickupText, playerTileLabelOffset);
 
                 // By default, bank pickup info replaces the default transport hint text;
                 // enable the option to show both
