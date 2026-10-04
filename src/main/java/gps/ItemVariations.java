@@ -66,7 +66,7 @@ public final class ItemVariations {
     }
 
     /** The data rows of a TSV resource: comment lines and the header skipped, fields tab-split. */
-    private static List<String[]> rows(String resource) {
+    static List<String[]> rows(String resource) {
         List<String[]> rows = new ArrayList<>();
         try (InputStream in = ItemVariations.class.getResourceAsStream(resource);
             Scanner scanner = new Scanner(in, "UTF-8")) {

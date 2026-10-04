@@ -1,0 +1,48 @@
+# The spellbook component of each teleport spell, for the "next step" highlight. Spell is the
+# transport's Display info, or its stem before ": ", " — " or " (" (so "Varrock Teleport: GE",
+# "Teleport to Boat — Port Sarim" and "Teleport to House (Outside)" find their spell).
+# Component is the packed id of the InterfaceID.MagicSpellbook constant named in the last column;
+# SpellWidgetsTest checks every row against the API.
+Spell	Component	Gameval name
+Lumbridge Home Teleport	14286854	TELEPORT_HOME_STANDARD
+Varrock Teleport	14286874	VARROCK_TELEPORT
+Lumbridge Teleport	14286877	LUMBRIDGE_TELEPORT
+Falador Teleport	14286880	FALADOR_TELEPORT
+Teleport to House	14286882	TELEPORT_TO_YOUR_HOUSE
+Camelot Teleport	14286885	CAMELOT_TELEPORT
+Kourend Castle Teleport	14286887	KOUREND_TELEPORT
+Ardougne Teleport	14286892	ARDOUGNE_TELEPORT
+Civitas illa Fortis Teleport	14286894	FORTIS_TELEPORT
+Watchtower Teleport	14286898	WATCHTOWER_TELEPORT
+Trollheim Teleport	14286905	TROLLHEIM_TELEPORT
+Ape Atoll Teleport	14286908	APE_TELEPORT
+Teleport to Boat	14286931	TELEPORT_ME_TO_BOAT
+Edgeville Home Teleport	14286956	TELEPORT_HOME_ZAROS
+Paddewwa Teleport	14286948	ZAROSTELEPORT1
+Senntisten Teleport	14286949	ZAROSTELEPORT2
+Kharyrll Teleport	14286950	ZAROSTELEPORT3
+Lassar Teleport	14286951	ZAROSTELEPORT4
+Dareeyak Teleport	14286952	ZAROSTELEPORT5
+Carrallanger Teleport	14286953	ZAROSTELEPORT6
+Annakarl Teleport	14286954	ZAROSTELEPORT7
+Ghorrock Teleport	14286955	ZAROSTELEPORT8
+Lunar Home Teleport	14286957	TELEPORT_HOME_LUNAR
+Moonclan Teleport	14286964	TELE_MOONCLAN
+Waterbirth Teleport	14286968	TELE_WATERBIRTH
+Barbarian Teleport	14286972	TELE_BARB_OUT
+Khazard Teleport	14286976	TELE_KHAZARD
+Fishing Guild Teleport	14286984	TELE_FISH
+Catherby Teleport	14286987	TELE_CATHER
+Ice Plateau Teleport	14286990	TELE_GHORROCK
+Ourania Teleport	14287000	OURANIA_TELEPORT
+Arceuus Home Teleport	14287001	TELEPORT_HOME_ARCEUUS
+Arceuus Library Teleport	14287003	TELEPORT_ARCEUUS_LIBRARY
+Draynor Manor Teleport	14287007	TELEPORT_DRAYNOR_MANOR
+Mind Altar Teleport	14287009	TELEPORT_MIND_ALTAR
+Salve Graveyard Teleport	14287011	TELEPORT_SALVE_GRAVEYARD
+Fenkenstrain's Castle Teleport	14287012	TELEPORT_FENKENSTRAIN_CASTLE
+West Ardougne Teleport	14287013	TELEPORT_WEST_ARDOUGNE
+Harmony Island Teleport	14287014	TELEPORT_HARMONY_ISLAND
+Cemetery Teleport	14287015	TELEPORT_CEMETERY
+Barrows Teleport	14287017	TELEPORT_BARROWS
+Battlefront Teleport	14287019	TELEPORT_BATTLEFRONT

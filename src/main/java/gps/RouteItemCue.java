@@ -9,10 +9,10 @@ import java.util.Set;
 import java.util.function.BiFunction;
 
 /**
- * The item(s) the displayed route's NEXT step uses, for the widget highlight: the first method
- * edge the player has not reached, when its transport is an item teleport; every variant of the
- * item counts, so whichever the player carries lights up. Null when the next thing to do is not
- * an item step. Also the route's bank step, whose pickup the bank highlight lights, and the rule for
+ * What the displayed route's NEXT step uses, for the widget highlights: the first method edge the
+ * player has not reached, its items when the transport is an item teleport (every variant of the
+ * item counts, so whichever the player carries lights up) and its spell when it is a spell
+ * teleport. Null when the next thing to do is neither. Also the route's bank step, whose pickup the bank highlight lights, and the rule for
  * "worn-only" items (the Camulet: its teleports are worn options), whose bag copy gets an "Equip" tag.
  */
 final class RouteItemCue {
@@ -20,9 +20,12 @@ final class RouteItemCue {
     private static final String[] USE_VERBS = {"Rub", "Teleport", "Break", "Operate", "Commune", "Invoke", "Activate"};
 
     final Set<Integer> itemIds;
+    /** The spell's Display info, for the spellbook; null unless the step casts one. */
+    final String spell;
 
-    private RouteItemCue(Set<Integer> itemIds) {
+    private RouteItemCue(Set<Integer> itemIds, String spell) {
         this.itemIds = itemIds;
+        this.spell = spell;
     }
 
     static RouteItemCue next(RouteOption route, int reachedIndex, BiFunction<PathStep, PathStep, Set<Transport>> transportsForEdge) {
@@ -33,8 +36,14 @@ final class RouteItemCue {
             if (edge <= reachedIndex || edge <= 0 || edge >= path.size())
                 continue;
             Set<Integer> ids = new HashSet<>();
+            String spell = null;
             for (Transport transport : transportsForEdge.apply(path.get(edge - 1), path.get(edge))) {
                 TransportType type = transport.getType();
+                if (type == TransportType.TELEPORTATION_SPELL) {
+                    if (spell == null)
+                        spell = transport.getDisplayInfo();
+                    continue;
+                }
                 if ((type != TransportType.TELEPORTATION_ITEM && type != TransportType.QUETZAL_WHISTLE)
                     || transport.getItemRequirements() == null)
                     continue;
@@ -42,7 +51,7 @@ final class RouteItemCue {
                     for (int id : variants)
                         ids.add(id);
             }
-            return ids.isEmpty() ? null : new RouteItemCue(ids);
+            return ids.isEmpty() && spell == null ? null : new RouteItemCue(ids, spell);
         }
         return null;
     }

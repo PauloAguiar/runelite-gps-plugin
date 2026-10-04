@@ -61,15 +61,18 @@ public class RouteItemCueTest
 	}
 
 	@Test
-	public void onlyItemTeleportsCount()
+	public void aSpellStepNamesTheSpellAndNoItems()
 	{
 		Map<Integer, Set<Transport>> transports = new HashMap<>();
 		TransportLoader.addTransportsFromContents(transports,
 			"# Destination\tmenuOption menuTarget objectID\tSkills\tItems\tQuests\tDuration\tDisplay info\tConsumable\tWilderness level\n"
-				+ "3106 9315 2\t\t\tLAW_RUNE=1\t\t4\tSome spell\tT\t20\n",
+				+ "3106 9315 2\t\t\tLAW_RUNE=1\t\t4\tVarrock Teleport: GE\tT\t20\n",
 			TransportType.TELEPORTATION_SPELL, 0);
 		Transport spell = transports.values().iterator().next().iterator().next();
-		assertNull("runes are not clicked, the spellbook is", RouteItemCue.next(route(List.of(1)), 0, (a, b) -> Set.of(spell)));
+		RouteItemCue cue = RouteItemCue.next(route(List.of(1)), 0, (a, b) -> Set.of(spell));
+		assertEquals("the spellbook is clicked, not the runes", Set.of(), cue.itemIds);
+		assertEquals("Varrock Teleport: GE", cue.spell);
+		assertNull("an item step names no spell", RouteItemCue.next(route(List.of(1)), 0, (a, b) -> Set.of(camulet())).spell);
 	}
 
 	@Test

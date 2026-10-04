@@ -102,6 +102,7 @@ public class ShortestPathPlugin extends Plugin {
     private RouteDirectionsOverlay routeDirectionsOverlay;
     // The next item step's highlight on the inventory, equipment and bank widgets.
     private RouteItemOverlay routeItemOverlay;
+    private SpellbookOverlay spellbookOverlay;
     private RouteItemCue itemCue;
     private int itemCueTick = -1;
     private Set<Integer> pickupIds = Set.of();
@@ -246,6 +247,8 @@ public class ShortestPathPlugin extends Plugin {
         overlayManager.add(routeDirectionsOverlay);
         routeItemOverlay = new RouteItemOverlay(this);
         overlayManager.add(routeItemOverlay);
+        spellbookOverlay = new SpellbookOverlay(client, this);
+        overlayManager.add(spellbookOverlay);
 
         exclusions.load();
         preferences.load();
@@ -290,6 +293,7 @@ public class ShortestPathPlugin extends Plugin {
         overlayManager.remove(pathMapTooltipOverlay);
         overlayManager.remove(routeDirectionsOverlay);
         overlayManager.remove(routeItemOverlay);
+        overlayManager.remove(spellbookOverlay);
 
         if (sidebar != null) {
             sidebar.remove();
