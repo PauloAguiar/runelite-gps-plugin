@@ -35,6 +35,27 @@ public class RouteItemCueTest
 		return transports.values().iterator().next().iterator().next();
 	}
 
+	private static Transport ring()
+	{
+		Map<Integer, Set<Transport>> transports = new HashMap<>();
+		TransportLoader.addTransportsFromContents(transports,
+			"# Origin\tDestination\tmenuOption menuTarget objectID\tSkills\tQuests\tVarbits\tDuration\tDisplay info\n"
+				+ "3106 9316 2\t3106 9317 2\tConfigure Fairy ring 29560\t\t\t\t5\tAKQ\n",
+			TransportType.FAIRY_RING, 0);
+		return transports.values().iterator().next().iterator().next();
+	}
+
+	private static Set<Integer> staves()
+	{
+		Set<Integer> staves = new java.util.HashSet<>();
+		for (int id : ItemVariations.DRAMEN_STAFF.getIds())
+		{
+			staves.add(id);
+		}
+		return staves;
+	}
+
+	/** A four-step path with one method per listed edge (the Camulet's name for all of them). */
 	private static RouteOption route(List<Integer> methodEdges)
 	{
 		List<PathStep> path = List.of(
@@ -42,10 +63,16 @@ public class RouteItemCueTest
 			new PathStep(WorldPointUtil.packWorldPoint(3106, 9315, 2), false, 4),
 			new PathStep(WorldPointUtil.packWorldPoint(3106, 9316, 2), false, 5),
 			new PathStep(WorldPointUtil.packWorldPoint(3106, 9317, 2), false, 6));
-		List<TeleportMethod> methods = methodEdges.isEmpty() ? List.of()
-			: List.of(new TeleportMethod(TransportType.TELEPORTATION_ITEM, "Camulet: Inside Enakhra's Temple", path.get(1).getPackedPosition()));
-		return new RouteOption(path, methods, methodEdges, methodEdges.isEmpty() ? List.of() : List.of(4), 6, 6, true, Set.of(),
-			methodEdges.isEmpty() ? List.of() : List.of(0), 2);
+		List<TeleportMethod> methods = new java.util.ArrayList<>();
+		List<Integer> durations = new java.util.ArrayList<>();
+		List<Integer> walkBefore = new java.util.ArrayList<>();
+		for (int edge : methodEdges)
+		{
+			methods.add(new TeleportMethod(TransportType.TELEPORTATION_ITEM, "Camulet: Inside Enakhra's Temple", path.get(edge).getPackedPosition()));
+			durations.add(4);
+			walkBefore.add(0);
+		}
+		return new RouteOption(path, methods, methodEdges, durations, 6, 6, true, Set.of(), walkBefore, 2);
 	}
 
 	@Test
@@ -55,7 +82,7 @@ public class RouteItemCueTest
 		RouteOption route = route(List.of(1));
 		RouteItemCue cue = RouteItemCue.next(route, 0, (a, b) -> Set.of(camulet), true);
 		assertEquals(Set.of(CAMULET), cue.itemIds);
-		assertFalse("the Camulet is operated, worn or not", cue.wearToUse);
+		assertTrue("the Camulet is operated, worn or not", cue.wornDone.isEmpty());
 		assertNull("teleported: the step is behind the player", RouteItemCue.next(route, 1, (a, b) -> Set.of(camulet), true));
 		assertNull("a route without methods has no item step", RouteItemCue.next(route(List.of()), 0, (a, b) -> Set.of(camulet), true));
 		assertNull("no route", RouteItemCue.next(null, 0, (a, b) -> Set.of(camulet), true));
@@ -79,21 +106,31 @@ public class RouteItemCueTest
 	@Test
 	public void aFairyRingStepAsksForTheStaffUnlessTheDiaryWaivesIt()
 	{
-		Map<Integer, Set<Transport>> transports = new HashMap<>();
-		TransportLoader.addTransportsFromContents(transports,
-			"# Origin\tDestination\tmenuOption menuTarget objectID\tSkills\tQuests\tVarbits\tDuration\tDisplay info\n"
-				+ "3200 3200 0\t3106 9315 2\tConfigure Fairy ring 29560\t\t\t\t5\tAKQ\n",
-			TransportType.FAIRY_RING, 0);
-		Transport ring = transports.values().iterator().next().iterator().next();
-		RouteItemCue cue = RouteItemCue.next(route(List.of(1)), 0, (a, b) -> Set.of(ring), true);
-		Set<Integer> staves = new java.util.HashSet<>();
-		for (int id : ItemVariations.DRAMEN_STAFF.getIds())
-		{
-			staves.add(id);
-		}
-		assertEquals("a Dramen or Lunar staff, any of them", staves, cue.itemIds);
-		assertTrue("the staff works worn: nothing to do once it is", cue.wearToUse);
-		assertNull("Lumbridge Elite done: the ring needs nothing", RouteItemCue.next(route(List.of(1)), 0, (a, b) -> Set.of(ring), false));
+		Transport ring = ring();
+		RouteItemCue cue = RouteItemCue.next(route(List.of(3)), 1, (a, b) -> Set.of(ring), true);
+		assertEquals("a Dramen or Lunar staff, any of them", staves(), cue.itemIds);
+		assertEquals("the staff works worn: nothing to do once it is", staves(), cue.wornDone);
+		assertNull("Lumbridge Elite done: the ring needs nothing", RouteItemCue.next(route(List.of(3)), 1, (a, b) -> Set.of(ring), false));
+	}
+
+	@Test
+	public void theStaffIsAskedForOneMethodAhead()
+	{
+		// Camulet at edge 1, fairy ring at edge 3: while the Camulet is the next step, the staff is
+		// already cued so it can be wielded before the ring, and the Camulet keeps its own rules.
+		Transport camulet = camulet();
+		Transport ring = ring();
+		RouteOption route = route(List.of(1, 3));
+		RouteItemCue cue = RouteItemCue.next(route, 0, (a, b) -> b.getPackedPosition() == route.getPath().get(1).getPackedPosition()
+			? Set.of(camulet) : Set.of(ring), true);
+		Set<Integer> expected = new java.util.HashSet<>(staves());
+		expected.add(CAMULET);
+		assertEquals(expected, cue.itemIds);
+		assertEquals("only the staff is done once worn", staves(), cue.wornDone);
+		assertNull(cue.spell);
+		assertEquals("the diary waives the staff ahead too", Set.of(CAMULET),
+			RouteItemCue.next(route, 0, (a, b) -> b.getPackedPosition() == route.getPath().get(1).getPackedPosition()
+				? Set.of(camulet) : Set.of(ring), false).itemIds);
 	}
 
 	@Test

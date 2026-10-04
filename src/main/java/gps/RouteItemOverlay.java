@@ -41,7 +41,7 @@ final class RouteItemOverlay extends WidgetItemOverlay {
         }
         else {
             RouteItemCue cue = plugin.nextStepItems();
-            if (cue == null || !cue.itemIds.contains(itemId) || (cue.wearToUse && group == InterfaceID.WORNITEMS))
+            if (cue == null || !cue.itemIds.contains(itemId) || (group == InterfaceID.WORNITEMS && cue.wornDone.contains(itemId)))
                 return;
         }
         Rectangle bounds = item.getCanvasBounds();
