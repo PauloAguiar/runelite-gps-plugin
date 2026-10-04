@@ -1046,6 +1046,17 @@ public interface ShortestPathConfig extends Config {
     }
 
     @ConfigItem(
+        keyName = "highlightRouteItem",
+        name = "Highlight the next item",
+        description = "Outline the item the route uses next in the inventory, equipment and bank; a worn-only item in the bag says Equip",
+        position = 71,
+        section = sectionDisplay
+    )
+    default boolean highlightRouteItem() {
+        return true;
+    }
+
+    @ConfigItem(
         keyName = "showTeleportPulse",
         name = "Teleport pulse",
         description = "Pulse the tile where the path says to use a teleport",

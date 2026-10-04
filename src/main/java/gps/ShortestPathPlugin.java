@@ -98,6 +98,10 @@ public class ShortestPathPlugin extends Plugin {
     private PathMapTooltipOverlay pathMapTooltipOverlay;
     @Inject
     private RouteDirectionsOverlay routeDirectionsOverlay;
+    // The next item step's highlight on the inventory, equipment and bank widgets.
+    private RouteItemOverlay routeItemOverlay;
+    private RouteItemCue itemCue;
+    private int itemCueTick = -1;
     @Inject
     private SpriteManager spriteManager;
     @Inject
@@ -236,6 +240,8 @@ public class ShortestPathPlugin extends Plugin {
         overlayManager.add(pathMapOverlay);
         overlayManager.add(pathMapTooltipOverlay);
         overlayManager.add(routeDirectionsOverlay);
+        routeItemOverlay = new RouteItemOverlay(this);
+        overlayManager.add(routeItemOverlay);
 
         exclusions.load();
         preferences.load();
@@ -279,6 +285,7 @@ public class ShortestPathPlugin extends Plugin {
         overlayManager.remove(pathMapOverlay);
         overlayManager.remove(pathMapTooltipOverlay);
         overlayManager.remove(routeDirectionsOverlay);
+        overlayManager.remove(routeItemOverlay);
 
         if (sidebar != null) {
             sidebar.remove();
@@ -767,6 +774,21 @@ public class ShortestPathPlugin extends Plugin {
     public TeleportMethod displayedRouteMethodAt(int fromIndex) {
         RouteOption route = getDisplayedRoute();
         return route == null ? null : route.methodArrivingAt(fromIndex + 1);
+    }
+
+    /** The item(s) the displayed route uses next (see RouteItemCue), recomputed once per tick for the widget overlay. */
+    RouteItemCue nextStepItems() {
+        int tick = client.getTickCount();
+        if (tick != itemCueTick) {
+            itemCueTick = tick;
+            itemCue = RouteItemCue.next(getDisplayedRoute(), displayedRouteProgress(), this::transportsForEdge);
+        }
+        return itemCue;
+    }
+
+    /** Whether an item teleports only from the worn slot, read from its inventory options. */
+    boolean wornOnly(int itemId) {
+        return RouteItemCue.wornOnly(itemManager.getItemComposition(itemId).getInventoryActions());
     }
 
     /** The transports a rendered path edge rides (see EdgeTransports), for the overlays and directions. */
