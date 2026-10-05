@@ -47,8 +47,8 @@ final class RouteDirections {
         // finish it — only actually being aboard (the BOARDED varbit) does, else the step
         // greyed out while the player was still on the dock.
         private final boolean embark;
-        // Sub-lines rendered indented under the step's own line (the withdraw step's
-        // per-item list). Empty for ordinary steps.
+        // Sub-lines rendered indented under the step's own line: the withdraw step's per-item
+        // list, a method step's "Equip"/"Use" callouts. Empty for ordinary steps.
         private List<String> details = List.of();
 
         private Step(String text, int startIndex, int endIndex, int ticks) {
@@ -148,8 +148,9 @@ final class RouteDirections {
                 if (TransportType.SAILING.equals(method.getType()))
                     addSailingSteps(steps, method, duration, i);
                 else {
-                    steps.add(new Step(methodText(method) + fareText(plugin, from, to),
-                        i - 1, i, duration, true));
+                    Step step = new Step(methodText(method) + fareText(plugin, from, to), i - 1, i, duration, true);
+                    step.details = itemCallouts(plugin, route, from, to);
+                    steps.add(step);
                 }
                 nextMethod++;
                 legStart = i;
@@ -394,6 +395,27 @@ final class RouteDirections {
         if (details.isEmpty())
             return new Step(withdrawText(plugin, route, path, pathIndex), pathIndex, pathIndex, ticks);
         return new Step("Withdraw item(s):", pathIndex, pathIndex, ticks, details);
+    }
+
+    /**
+     * A method step's item callouts (see RouteItemCue.callouts), read from what the player carries
+     * and wears right now: the directions cache rebuilds when those change.
+     */
+    private static List<String> itemCallouts(ShortestPathPlugin plugin, RouteOption route, PathStep from, PathStep to) {
+        net.runelite.api.Client client = plugin.getClient();
+        if (client == null)
+            return List.of();
+        java.util.Map<Integer, Integer> carried = gps.transport.BankPickupRequirements.collectPlayerItems(client);
+        RouteItemCue cue = RouteItemCue.ofStep(EdgeTransports.forRouteEdge(plugin.getPathfinderConfig(), route, from, to),
+            client.getVarbitValue(net.runelite.api.gameval.VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1, carried);
+        if (cue == null)
+            return List.of();
+        Set<Integer> worn = new java.util.HashSet<>();
+        net.runelite.api.ItemContainer equipment = client.getItemContainer(net.runelite.api.gameval.InventoryID.WORN);
+        if (equipment != null)
+            for (net.runelite.api.Item item : equipment.getItems())
+                worn.add(item.getId());
+        return cue.callouts(carried, worn, plugin::wornOnly, id -> client.getItemDefinition(id).getName());
     }
 
     /**

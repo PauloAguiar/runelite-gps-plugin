@@ -4,11 +4,15 @@ import gps.pathfinder.PathStep;
 import gps.transport.Transport;
 import gps.transport.TransportType;
 import gps.transport.requirement.ItemRequirement;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.IntFunction;
+import java.util.function.IntPredicate;
 
 /**
  * What the displayed route's NEXT step uses, for the widget highlights: the first method edge the
@@ -41,7 +45,7 @@ final class RouteItemCue {
         if (route == null)
             return null;
         List<PathStep> path = route.getPath();
-        Set<Integer> ids = new HashSet<>();
+        Set<Integer> ids = new LinkedHashSet<>();
         Set<Integer> wornDone = new HashSet<>();
         String spell = null;
         int ahead = 0;
@@ -50,38 +54,78 @@ final class RouteItemCue {
                 continue;
             if (ahead++ > 1)
                 break;
-            for (Transport transport : transportsForEdge.apply(path.get(edge - 1), path.get(edge))) {
-                TransportType type = transport.getType();
-                if (type == TransportType.FAIRY_RING) {
-                    if (fairyRingsNeedStaff)
-                        for (int id : ItemVariations.DRAMEN_STAFF.getIds()) {
-                            ids.add(id);
-                            wornDone.add(id);
-                        }
-                    continue;
-                }
-                if (ahead > 1)
-                    continue; // only the staff is asked for ahead of its step
-                if (type == TransportType.TELEPORTATION_SPELL) {
-                    if (spell == null)
-                        spell = transport.getDisplayInfo();
-                    if (transport.getItemRequirements() != null)
-                        for (ItemRequirement req : transport.getItemRequirements().getRequirements())
-                            if (req.getQuantity() > 0 && !held(carried, req.getItemIds(), req.getQuantity())) {
-                                carriedOf(carried, req.getStaffIds(), ids, wornDone);
-                                carriedOf(carried, req.getOffhandIds(), ids, wornDone);
-                            }
-                    continue;
-                }
-                if ((type != TransportType.TELEPORTATION_ITEM && type != TransportType.QUETZAL_WHISTLE
-                    && type != TransportType.TELEPORTATION_BOX) || transport.getItemRequirements() == null)
-                    continue;
-                for (int[] variants : transport.getItemRequirements().getItems())
-                    for (int id : variants)
-                        ids.add(id);
-            }
+            // Past the next step only the staff is asked for, ahead of its ring.
+            String cast = collect(transportsForEdge.apply(path.get(edge - 1), path.get(edge)), ahead > 1,
+                fairyRingsNeedStaff, carried, ids, wornDone);
+            if (spell == null)
+                spell = cast;
         }
         return ids.isEmpty() && spell == null ? null : new RouteItemCue(ids, spell, wornDone);
+    }
+
+    /** What ONE step's transports ask for, for the step list's callouts; null when nothing. */
+    static RouteItemCue ofStep(Set<Transport> transports, boolean fairyRingsNeedStaff, Map<Integer, Integer> carried) {
+        Set<Integer> ids = new LinkedHashSet<>();
+        Set<Integer> wornDone = new HashSet<>();
+        String spell = collect(transports, false, fairyRingsNeedStaff, carried, ids, wornDone);
+        return ids.isEmpty() && spell == null ? null : new RouteItemCue(ids, spell, wornDone);
+    }
+
+    /** Adds what the transports ask for to the two sets and returns the spell they cast, if any. */
+    private static String collect(Set<Transport> transports, boolean staffOnly, boolean fairyRingsNeedStaff,
+        Map<Integer, Integer> carried, Set<Integer> ids, Set<Integer> wornDone) {
+        String spell = null;
+        for (Transport transport : transports) {
+            TransportType type = transport.getType();
+            if (type == TransportType.FAIRY_RING) {
+                if (fairyRingsNeedStaff)
+                    for (int id : ItemVariations.DRAMEN_STAFF.getIds()) {
+                        ids.add(id);
+                        wornDone.add(id);
+                    }
+                continue;
+            }
+            if (staffOnly)
+                continue;
+            if (type == TransportType.TELEPORTATION_SPELL) {
+                if (spell == null)
+                    spell = transport.getDisplayInfo();
+                if (transport.getItemRequirements() != null)
+                    for (ItemRequirement req : transport.getItemRequirements().getRequirements())
+                        if (req.getQuantity() > 0 && !held(carried, req.getItemIds(), req.getQuantity())) {
+                            carriedOf(carried, req.getStaffIds(), ids, wornDone);
+                            carriedOf(carried, req.getOffhandIds(), ids, wornDone);
+                        }
+                continue;
+            }
+            if ((type != TransportType.TELEPORTATION_ITEM && type != TransportType.QUETZAL_WHISTLE
+                && type != TransportType.TELEPORTATION_BOX) || transport.getItemRequirements() == null)
+                continue;
+            for (int[] variants : transport.getItemRequirements().getItems())
+                for (int id : variants)
+                    ids.add(id);
+        }
+        return spell;
+    }
+
+    /**
+     * The step list's lines for this cue, as the withdraw step lists its items: "Equip X" for an
+     * item that must be worn first and is not, "Use X" for one used from where it is. Nothing for
+     * an item the player does not carry (the withdraw step names those) or already wears.
+     */
+    List<String> callouts(Map<Integer, Integer> carried, Set<Integer> worn, IntPredicate wornOnly, IntFunction<String> name) {
+        List<String> lines = new ArrayList<>();
+        for (int id : itemIds) {
+            if (carried.getOrDefault(id, 0) <= 0)
+                continue;
+            boolean wearFirst = wornDone.contains(id) || wornOnly.test(id);
+            if (wearFirst && worn.contains(id))
+                continue;
+            String line = (wearFirst ? "Equip " : "Use ") + name.apply(id);
+            if (!lines.contains(line))
+                lines.add(line);
+        }
+        return lines;
     }
 
     private static boolean held(Map<Integer, Integer> carried, int[] ids, int quantity) {

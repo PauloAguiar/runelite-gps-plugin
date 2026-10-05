@@ -160,6 +160,58 @@ public class RouteItemCueTest
 				? Set.of(camulet) : Set.of(ring), false, Map.of()).itemIds);
 	}
 
+	/** Item names as the client would give them, for the callout lines. */
+	private static String name(int id)
+	{
+		switch (id)
+		{
+			case ItemID.DRAMEN_STAFF:
+				return "Dramen staff";
+			case ItemID.MYSTIC_AIR_STAFF:
+				return "Mystic air staff";
+			case ItemID.AMULET_OF_GLORY_4:
+				return "Amulet of glory(4)";
+			case CAMULET:
+				return "Camulet";
+			default:
+				return "Item " + id;
+		}
+	}
+
+	@Test
+	public void theStepListCallsOutWhatToUseOrEquip()
+	{
+		// A teleport item used from where it is: named, with "Use".
+		RouteItemCue camulet = RouteItemCue.ofStep(Set.of(camulet()), true, Map.of());
+		assertEquals(List.of("Use Camulet"),
+			camulet.callouts(Map.of(CAMULET, 1), Set.of(), id -> false, RouteItemCueTest::name));
+		// The same item when it only works worn: "Equip" until it is worn, then nothing left to say.
+		assertEquals(List.of("Equip Camulet"),
+			camulet.callouts(Map.of(CAMULET, 1), Set.of(), id -> true, RouteItemCueTest::name));
+		assertEquals(List.of(), camulet.callouts(Map.of(CAMULET, 1), Set.of(CAMULET), id -> true, RouteItemCueTest::name));
+		// Still in the bank: the withdraw step names it, this one stays quiet.
+		assertEquals(List.of(), camulet.callouts(Map.of(), Set.of(), id -> false, RouteItemCueTest::name));
+
+		// The fairy-ring staff: the one carried, to equip; nothing once wielded.
+		RouteItemCue ring = RouteItemCue.ofStep(Set.of(ring()), true, Map.of());
+		assertEquals(List.of("Equip Dramen staff"),
+			ring.callouts(Map.of(ItemID.DRAMEN_STAFF, 1), Set.of(), id -> false, RouteItemCueTest::name));
+		assertEquals(List.of(),
+			ring.callouts(Map.of(ItemID.DRAMEN_STAFF, 1), Set.of(ItemID.DRAMEN_STAFF), id -> false, RouteItemCueTest::name));
+		assertNull("the diary waives the staff: no cue at all", RouteItemCue.ofStep(Set.of(ring()), false, Map.of()));
+
+		// A spell short of air runes with a Mystic air staff in the bag.
+		Map<Integer, Set<Transport>> transports = new HashMap<>();
+		TransportLoader.addTransportsFromContents(transports,
+			"# Destination\tItems\tSkills\tQuests\tDuration\tDisplay info\tWilderness level\n"
+				+ "3213 3424 0\tAIR_RUNE=3&&FIRE_RUNE=1&&LAW_RUNE=1\t25 Magic\t\t4\tVarrock Teleport\t20\n",
+			TransportType.TELEPORTATION_SPELL, 0);
+		Transport varrock = transports.values().iterator().next().iterator().next();
+		Map<Integer, Integer> carried = Map.of(ItemID.LAWRUNE, 1, ItemID.FIRERUNE, 1, ItemID.MYSTIC_AIR_STAFF, 1);
+		assertEquals(List.of("Equip Mystic air staff"),
+			RouteItemCue.ofStep(Set.of(varrock), true, carried).callouts(carried, Set.of(), id -> false, RouteItemCueTest::name));
+	}
+
 	@Test
 	public void theBankStepIsWhereThePathTurnsBankedOnARouteViaTheBank()
 	{

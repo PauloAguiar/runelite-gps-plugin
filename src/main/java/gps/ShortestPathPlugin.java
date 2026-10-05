@@ -671,6 +671,7 @@ public class ShortestPathPlugin extends Plugin {
     @Subscribe
     public void onItemContainerChanged(ItemContainerChanged event) {
         if (event.getContainerId() == InventoryID.INV || event.getContainerId() == InventoryID.WORN) {
+            itemsVersion++;
             // Only the routing-relevant slice of the items dirties the catalog (see RouteController.itemsChanged).
             routes.itemsChanged(pathfinderConfig, client.getItemContainer(InventoryID.INV),
                 client.getItemContainer(InventoryID.WORN));
@@ -1295,6 +1296,12 @@ public class ShortestPathPlugin extends Plugin {
 
     // The displayed route's directions, built once per route instance (see DirectionsCache).
     private final DirectionsCache directions = new DirectionsCache();
+    // Bumped on every inventory or equipment change: the directions' item callouts follow it.
+    private int itemsVersion;
+
+    int itemsVersion() {
+        return itemsVersion;
+    }
 
     /** The step-by-step directions for {@code route}, cached per route instance. */
     public List<RouteDirections.Step> getRouteDirections(RouteOption route) {

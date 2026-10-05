@@ -14,6 +14,7 @@ import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Item;
+import net.runelite.api.ItemComposition;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.QuestState;
 import net.runelite.api.gameval.InventoryID;
@@ -68,6 +69,14 @@ public class GloryCueTest
 		assertNotNull("the glory step has a cue", cue);
 		assertTrue("the held glory is in it: " + cue.itemIds, cue.itemIds.contains(ItemID.AMULET_OF_GLORY_4));
 
+		// The step list calls the item out under its step, the way the withdraw step lists its items.
+		ShortestPathPlugin plugin = Mockito.mock(ShortestPathPlugin.class);
+		Mockito.when(plugin.getClient()).thenReturn(client);
+		Mockito.when(plugin.getPathfinderConfig()).thenReturn(main);
+		List<RouteDirections.Step> steps = RouteDirections.build(plugin, route);
+		assertEquals("Use Amulet of glory: Draynor Village", steps.get(0).getText());
+		assertEquals(List.of("Use Amulet of glory(4)"), steps.get(0).getDetails());
+
 		// A walking edge of the same route is untouched: whatever the main config finds, nothing here.
 		assertEquals(EdgeTransports.forEdge(main, path.get(1), path.get(2)), EdgeTransports.forRouteEdge(main, route, path.get(1), path.get(2)));
 		assertEquals("no route, no change", Set.of(), EdgeTransports.forRouteEdge(main, null, path.get(0), path.get(1)));
@@ -114,6 +123,10 @@ public class GloryCueTest
 						return 99;
 					case "getItemContainer":
 						return (int) args[0] == InventoryID.INV ? inventory : null;
+					case "getItemDefinition":
+						ItemComposition item = Mockito.mock(ItemComposition.class);
+						Mockito.when(item.getName()).thenReturn((int) args[0] == ItemID.AMULET_OF_GLORY_4 ? "Amulet of glory(4)" : "Item");
+						return item;
 					default:
 						return HybridPageFillTest.defaultValue(method.getReturnType());
 				}
