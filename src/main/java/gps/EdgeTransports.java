@@ -76,16 +76,22 @@ final class EdgeTransports {
     /**
      * The transports of a rendered edge of {@code route}: {@link #forEdge} when that set carries
      * the route's method for the edge, or the edge is plain walking; otherwise the route's own
-     * method resolved against every transport. The config's usable set follows its own legacy
-     * item rule (permanent items only by default) and never the bank, not the mode that generated
-     * the route, so a charged glory, or a staff the route withdraws at a bank, is missing from it
-     * and the step would resolve to nothing.
+     * method resolved against every transport, or its bank-gated connector on that edge (a bush
+     * cut with a banked machete). The config's usable set follows its own legacy item rule
+     * (permanent items only by default) and never the bank, not the mode that generated the
+     * route, so a charged glory, or a staff the route withdraws at a bank, is missing from it and
+     * the step would resolve to nothing.
      */
     static Set<Transport> forRouteEdge(PathfinderConfig config, RouteOption route, PathStep current, PathStep next) {
         Set<Transport> usable = forEdge(config, current, next);
         TeleportMethod method = methodOf(route, current, next);
-        if (method == null)
+        if (method == null) {
+            if (route != null && usable.isEmpty())
+                for (Transport connector : route.getBankTransports())
+                    if (connector.getOrigin() == current.getPackedPosition() && connector.getDestination() == next.getPackedPosition())
+                        return Set.of(connector);
             return usable;
+        }
         for (Transport transport : usable)
             if (method.equals(transport.method()))
                 return usable;

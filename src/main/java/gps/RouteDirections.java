@@ -520,6 +520,7 @@ final class RouteDirections {
         if (bank != null) {
             List<String> items = gps.transport.BankPickupRequirements.compute(
                 plugin.getClient(), bank, plugin.getPathfinderConfig(),
+                (a, b) -> EdgeTransports.forRouteEdge(plugin.getPathfinderConfig(), route, a, b),
                 Set.of(path.get(pathIndex).getPackedPosition()), path, pathIndex).phrases;
             if (!items.isEmpty()) {
                 return "Withdraw " + String.join(", ", items)

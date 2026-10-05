@@ -811,7 +811,7 @@ public class ShortestPathPlugin extends Plugin {
             Item[] snapshot = pathfinderConfig.getBankSnapshot();
             if (bank >= 0 && snapshot != null && displayedRouteProgress() <= bank) {
                 List<PathStep> path = route.getPath();
-                pickupIds = BankPickupRequirements.compute(client, snapshot, pathfinderConfig,
+                pickupIds = BankPickupRequirements.compute(client, snapshot, pathfinderConfig, this::transportsForEdge,
                     Set.of(path.get(bank).getPackedPosition()), path, bank).itemIds;
             }
         }

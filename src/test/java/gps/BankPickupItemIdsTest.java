@@ -4,6 +4,7 @@ import gps.pathfinder.PathStep;
 import gps.pathfinder.PathfinderConfig;
 import gps.pathfinder.TestPathfinderConfig;
 import gps.transport.BankPickupRequirements;
+import gps.transport.TransportType;
 import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.Set;
@@ -64,7 +65,8 @@ public class BankPickupItemIdsTest
 			new PathStep(CAMULET_LANDING, true, 4),
 			new PathStep(BURTHORPE, true, 8));
 
-		BankPickupRequirements.Pickup pickup = BankPickupRequirements.compute(client, bank, owned, banks, path, 0);
+		BankPickupRequirements.Pickup pickup = BankPickupRequirements.compute(client, bank, owned,
+			(a, b) -> EdgeTransports.forEdge(owned, a, b), banks, path, 0);
 
 		assertEquals("one phrase per item step", 2, pickup.phrases.size());
 		assertEquals("the phrase names the canonical necklace", List.of("1 Item " + ItemID.CAMULET, "1 Item " + ItemID.NECKLACE_OF_MINIGAMES_8),
@@ -75,13 +77,64 @@ public class BankPickupItemIdsTest
 	}
 
 	@Test
+	public void thePickupIsTheSameOnTheMainConfigsLegacyDefaults()
+	{
+		// The plugin computes the pickup on its MAIN config: permanent items only, no bank path,
+		// as the hidden settings default. The route was generated under the route mode, so the
+		// pickup must still name what its steps need: the consumable necklace as much as the Camulet.
+		Client client = client();
+		ShortestPathConfig config = Mockito.mock(ShortestPathConfig.class, invocation ->
+		{
+			String name = invocation.getMethod().getName();
+			Class<?> type = invocation.getMethod().getReturnType();
+			if (type == boolean.class)
+			{
+				return !"avoidWilderness".equals(name) && !"includeBankPath".equals(name);
+			}
+			if (type == int.class)
+			{
+				return "calculationCutoff".equals(name) ? 120 : 0;
+			}
+			if (type == TeleportationItem.class)
+			{
+				return TeleportationItem.INVENTORY_NON_CONSUMABLE;
+			}
+			return HybridPageFillTest.defaultValue(type);
+		});
+		PathfinderConfig main = new TestPathfinderConfig(client, config, QuestState.FINISHED, true, true);
+		Item[] bank = {new Item(ItemID.CAMULET, 1), new Item(ItemID.NECKLACE_OF_MINIGAMES_7, 1)};
+		main.setBankSnapshot(bank);
+		main.refresh();
+		Set<Integer> banks = main.getDestinations("bank");
+		int bankTile = banks.iterator().next();
+		List<PathStep> path = List.of(
+			new PathStep(bankTile, false, 0),
+			new PathStep(CAMULET_LANDING, true, 4),
+			new PathStep(BURTHORPE, true, 8));
+
+		// The route as generated: both teleports are its methods, both gated on the bank.
+		TeleportMethod camulet = new TeleportMethod(TransportType.TELEPORTATION_ITEM, "Camulet: Inside Enakhra's Temple", CAMULET_LANDING);
+		TeleportMethod necklace = new TeleportMethod(TransportType.TELEPORTATION_ITEM, "Games necklace: Burthorpe", BURTHORPE);
+		RouteOption route = new RouteOption(path, List.of(camulet, necklace), List.of(1, 2), List.of(4, 4), 8, 8, true,
+			Set.of(camulet, necklace), List.of(0, 0), 0);
+		assertTrue("the main config alone sees neither step",
+			EdgeTransports.forEdge(main, path.get(0), path.get(1)).isEmpty() && EdgeTransports.forEdge(main, path.get(1), path.get(2)).isEmpty());
+
+		BankPickupRequirements.Pickup pickup = BankPickupRequirements.compute(client, bank, main,
+			(a, b) -> EdgeTransports.forRouteEdge(main, route, a, b), banks, path, 0);
+
+		assertEquals(Set.of(ItemID.CAMULET, ItemID.NECKLACE_OF_MINIGAMES_7), pickup.itemIds);
+	}
+
+	@Test
 	public void offTheBankTileThereIsNothingToPickUp()
 	{
 		Client client = client();
 		PathfinderConfig owned = new TestPathfinderConfig(client, Mockito.mock(ShortestPathConfig.class));
 		Item[] bank = {new Item(ItemID.CAMULET, 1)};
 		List<PathStep> path = List.of(new PathStep(CAMULET_LANDING, true, 0), new PathStep(BURTHORPE, true, 4));
-		BankPickupRequirements.Pickup pickup = BankPickupRequirements.compute(client, bank, owned, Set.of(), path, 0);
+		BankPickupRequirements.Pickup pickup = BankPickupRequirements.compute(client, bank, owned,
+			(a, b) -> EdgeTransports.forEdge(owned, a, b), Set.of(), path, 0);
 		assertTrue(pickup.phrases.isEmpty());
 		assertTrue(pickup.itemIds.isEmpty());
 	}

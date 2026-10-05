@@ -8,6 +8,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 import net.runelite.api.Client;
 import net.runelite.api.EnumComposition;
 import net.runelite.api.EnumID;
@@ -18,7 +19,6 @@ import net.runelite.api.gameval.VarbitID;
 import gps.ItemVariations;
 import gps.pathfinder.PathStep;
 import gps.pathfinder.PathfinderConfig;
-import gps.pathfinder.TransportAvailability;
 import gps.transport.requirement.ItemRequirement;
 
 /**
@@ -49,7 +49,9 @@ public final class BankPickupRequirements {
      *
      * @param client           The game client
      * @param bankItems        The bank's items (live or the snapshot)
-     * @param pathfinderConfig The pathfinder config for bank-aware transport lookups
+     * @param pathfinderConfig The pathfinder config, for fares
+     * @param edgeTransports   The transports riding a path edge, as the ROUTE takes it: the config's
+     *                         own usable set leaves out exactly the banked rows this exists for
      * @param bankLocations    Set of bank location coordinates
      * @param path             The current path
      * @param pathIndex        The current step index in the path
@@ -58,6 +60,7 @@ public final class BankPickupRequirements {
         Client client,
         Item[] bankItems,
         PathfinderConfig pathfinderConfig,
+        BiFunction<PathStep, PathStep, Set<Transport>> edgeTransports,
         Set<Integer> bankLocations,
         List<PathStep> path,
         int pathIndex) {
@@ -95,20 +98,7 @@ public final class BankPickupRequirements {
 
         // Walk each edge in the remaining path and collect alternative transports per edge.
         for (int i = pathIndex; i < path.size() - 1; i++) {
-            int stepPoint = path.get(i).getPackedPosition();
-            int nextPoint = path.get(i + 1).getPackedPosition();
-            boolean banked = path.get(i + 1).isBankVisited();
-            TransportAvailability availability = pathfinderConfig.getTransportAvailability(banked);
-
-            List<Transport> edgeAlternatives = new ArrayList<>();
-            for (Transport t : availability.getTransportsAt(stepPoint)) {
-                if (t.getDestination() == nextPoint)
-                    edgeAlternatives.add(t);
-            }
-            for (Transport t : availability.getUsableTeleports()) {
-                if (t.getDestination() == nextPoint)
-                    edgeAlternatives.add(t);
-            }
+            Set<Transport> edgeAlternatives = edgeTransports.apply(path.get(i), path.get(i + 1));
             if (edgeAlternatives.isEmpty())
                 continue;
 

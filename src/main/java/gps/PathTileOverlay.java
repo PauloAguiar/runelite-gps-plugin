@@ -687,6 +687,7 @@ public class PathTileOverlay extends Overlay {
                 client,
                 plugin.getPathfinderConfig().getBankSnapshot(),
                 plugin.getPathfinderConfig(),
+                plugin::transportsForEdge,
                 bankLocations,
                 path,
                 pathIndex
