@@ -148,8 +148,14 @@ final class RouteDirections {
                 if (TransportType.SAILING.equals(method.getType()))
                     addSailingSteps(steps, method, duration, i);
                 else {
-                    Step step = new Step(methodText(method) + fareText(plugin, from, to), i - 1, i, duration, true);
-                    step.details = itemCallouts(plugin, route, from, to);
+                    List<String> callouts = itemCallouts(plugin, route, from, to);
+                    String text = methodText(method);
+                    // The verb belongs to the item line when there is one: "Amulet of glory:
+                    // Draynor Village" over "Use Amulet of glory(4)", not "Use" twice.
+                    if (text.startsWith("Use ") && callouts.stream().anyMatch(line -> line.startsWith("Use ")))
+                        text = text.substring(4);
+                    Step step = new Step(text + fareText(plugin, from, to), i - 1, i, duration, true);
+                    step.details = callouts;
                     steps.add(step);
                 }
                 nextMethod++;

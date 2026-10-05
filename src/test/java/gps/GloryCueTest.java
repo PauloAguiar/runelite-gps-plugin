@@ -69,13 +69,19 @@ public class GloryCueTest
 		assertNotNull("the glory step has a cue", cue);
 		assertTrue("the held glory is in it: " + cue.itemIds, cue.itemIds.contains(ItemID.AMULET_OF_GLORY_4));
 
-		// The step list calls the item out under its step, the way the withdraw step lists its items.
+		// The step list calls the item out under its step, the way the withdraw step lists its items;
+		// the verb sits on the item line only, so the step's own line drops its "Use".
 		ShortestPathPlugin plugin = Mockito.mock(ShortestPathPlugin.class);
 		Mockito.when(plugin.getClient()).thenReturn(client);
 		Mockito.when(plugin.getPathfinderConfig()).thenReturn(main);
 		List<RouteDirections.Step> steps = RouteDirections.build(plugin, route);
-		assertEquals("Use Amulet of glory: Draynor Village", steps.get(0).getText());
+		assertEquals("Amulet of glory: Draynor Village", steps.get(0).getText());
 		assertEquals(List.of("Use Amulet of glory(4)"), steps.get(0).getDetails());
+
+		// With nothing to call out (the glory is not carried) the step keeps its own verb.
+		Client emptyHanded = emptyHanded();
+		Mockito.when(plugin.getClient()).thenReturn(emptyHanded);
+		assertEquals("Use Amulet of glory: Draynor Village", RouteDirections.build(plugin, route).get(0).getText());
 
 		// A walking edge of the same route is untouched: whatever the main config finds, nothing here.
 		assertEquals(EdgeTransports.forEdge(main, path.get(1), path.get(2)), EdgeTransports.forRouteEdge(main, route, path.get(1), path.get(2)));
@@ -107,9 +113,19 @@ public class GloryCueTest
 	/** A logged-in client carrying one Amulet of glory(4). */
 	private static Client clientWithGlory()
 	{
+		return client(new Item[]{new Item(ItemID.AMULET_OF_GLORY_4, 1)});
+	}
+
+	private static Client emptyHanded()
+	{
+		return client(new Item[0]);
+	}
+
+	private static Client client(Item[] items)
+	{
 		final Thread clientThread = Thread.currentThread();
 		ItemContainer inventory = Mockito.mock(ItemContainer.class);
-		Mockito.when(inventory.getItems()).thenReturn(new Item[]{new Item(ItemID.AMULET_OF_GLORY_4, 1)});
+		Mockito.when(inventory.getItems()).thenReturn(items);
 		return (Client) Proxy.newProxyInstance(Client.class.getClassLoader(), new Class<?>[]{Client.class},
 			(proxy, method, args) ->
 			{
