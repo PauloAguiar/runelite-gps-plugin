@@ -73,6 +73,46 @@ final class EdgeTransports {
         return stepTransports;
     }
 
+    /**
+     * The transports of a rendered edge of {@code route}: {@link #forEdge} when that set carries
+     * the route's method for the edge, or the edge is plain walking; otherwise the route's own
+     * method resolved against every transport. The config's usable set follows its own legacy
+     * item rule (permanent items only by default) and never the bank, not the mode that generated
+     * the route, so a charged glory, or a staff the route withdraws at a bank, is missing from it
+     * and the step would resolve to nothing.
+     */
+    static Set<Transport> forRouteEdge(PathfinderConfig config, RouteOption route, PathStep current, PathStep next) {
+        Set<Transport> usable = forEdge(config, current, next);
+        TeleportMethod method = methodOf(route, current, next);
+        if (method == null)
+            return usable;
+        for (Transport transport : usable)
+            if (method.equals(transport.method()))
+                return usable;
+        Set<Transport> own = new HashSet<>();
+        for (Transport transport : config.getAllTransports())
+            if (transport.getDestination() == next.getPackedPosition()
+                && (transport.getOrigin() == Transport.UNDEFINED_ORIGIN || transport.getOrigin() == current.getPackedPosition())
+                && method.equals(transport.method()))
+                own.add(transport);
+        return own.isEmpty() ? usable : own;
+    }
+
+    /** The route's method riding the edge between the two steps, or null when the edge is walking. */
+    private static TeleportMethod methodOf(RouteOption route, PathStep current, PathStep next) {
+        if (route == null || current == null || next == null)
+            return null;
+        List<PathStep> path = route.getPath();
+        List<Integer> edges = route.getMethodEdgeIndexes();
+        for (int m = 0; m < edges.size() && m < route.getMethods().size(); m++) {
+            int edge = edges.get(m);
+            if (edge > 0 && edge < path.size() && path.get(edge).getPackedPosition() == next.getPackedPosition()
+                && path.get(edge - 1).getPackedPosition() == current.getPackedPosition())
+                return route.getMethods().get(m);
+        }
+        return null;
+    }
+
     /** The step after {@code index}, or null at the end of the path. */
     static PathStep nextStep(List<PathStep> path, int index) {
         if (path == null || index < 0 || index + 1 >= path.size())

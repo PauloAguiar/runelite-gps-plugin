@@ -825,7 +825,7 @@ public class ShortestPathPlugin extends Plugin {
 
     /** The transports a rendered path edge rides (see EdgeTransports), for the overlays and directions. */
     public Set<Transport> transportsForEdge(PathStep currentStep, PathStep nextStep) {
-        return EdgeTransports.forEdge(pathfinderConfig, currentStep, nextStep);
+        return EdgeTransports.forRouteEdge(pathfinderConfig, getDisplayedRoute(), currentStep, nextStep);
     }
 
     // The helm-preference toggle, cached for the comparator (read on the service thread).
