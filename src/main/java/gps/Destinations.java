@@ -68,7 +68,7 @@ public final class Destinations {
         "place", "landmark", "dungeon", "minigame", "training", "fairy_ring", "spirit_tree");
     /** Amenity categories the name search groups by site name (plan step N11). */
     private static final Set<String> AMENITY_CATEGORIES = Set.of(
-        "bank", "altar", "water", "furnace", "anvil", "range", "spinning_wheel", "pottery");
+        "bank", "altar", "spellbook_altar", "water", "furnace", "anvil", "range", "spinning_wheel", "pottery");
 
     /** A "nearest X" amenity category offered as a quick option: its id and its display label. */
     public static final class NearestOption {

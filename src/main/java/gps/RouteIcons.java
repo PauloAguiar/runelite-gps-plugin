@@ -126,7 +126,8 @@ final class RouteIcons {
             case "place": return DEST_PLACE;
             case "bank": return DEST_BANK;
             case "bank_round_trip": return DEST_BANK_ROUND_TRIP;
-            case "altar": return DEST_ALTAR;
+            case "altar":
+            case "spellbook_altar": return DEST_ALTAR;
             case "water": return DEST_WATER;
             case "furnace": return DEST_FURNACE;
             case "anvil": return DEST_ANVIL;
