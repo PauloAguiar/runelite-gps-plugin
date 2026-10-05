@@ -114,4 +114,23 @@ public class VarbitWatchTest
 		assertTrue(dump.contains("varp\t7\t4\t?\t3\t3222\t3218\t0"));
 		assertTrue(dump.contains("varp\t7\t9\t3\t4\t3223\t3218\t0"));
 	}
+
+	/**
+	 * A varp event's value comes from the event. Asking the client for it throws for a 64-bit
+	 * varp ("varp 5755 is a long", field log 2026-10-04), which killed the subscriber on every
+	 * such change; the watch keeps 32-bit values, so a long varp is logged by its low word.
+	 */
+	@Test
+	public void aVarpValueIsReadFromTheEventEvenForA64BitVarp()
+	{
+		net.runelite.api.events.VarbitChanged plain = new net.runelite.api.events.VarbitChanged();
+		plain.setVarpId(281);
+		plain.setValue(1000);
+		assertEquals(1000, VarbitWatch.varpValue(plain));
+
+		net.runelite.api.events.VarbitChanged wide = new net.runelite.api.events.VarbitChanged();
+		wide.setVarpId(5755);
+		wide.setLongValue(0x100000005L);
+		assertEquals("the low word, enough to see it move", 5, VarbitWatch.varpValue(wide));
+	}
 }

@@ -670,7 +670,7 @@ public class TransportAuditPlugin extends Plugin
 		}
 		else if (event.getVarpId() >= 0)
 		{
-			int value = client.getVarpValue(event.getVarpId());
+			int value = VarbitWatch.varpValue(event);
 			Integer old = lastVarpValues.put(event.getVarpId(), value);
 			varbitWatch.record(false, event.getVarpId(), old == null ? VarbitWatch.UNKNOWN : old,
 				value, tick, now, x, y, plane);

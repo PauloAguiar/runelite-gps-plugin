@@ -105,6 +105,16 @@ final class VarbitWatch
 	private int markTick = -1;
 	private boolean paused;
 
+	/**
+	 * The new value of a changed varp, from the event itself: the client refuses to hand a 64-bit
+	 * varp back as an int ("varp 5755 is a long") and the throw killed the subscriber. The watch
+	 * keeps 32-bit values, so a long varp is logged by its low word.
+	 */
+	static int varpValue(net.runelite.api.events.VarbitChanged event)
+	{
+		return (int) event.getLongValue();
+	}
+
 	private static long key(boolean varbit, int id)
 	{
 		return (varbit ? 1L << 40 : 0L) | (id & 0xFFFFFFFFL);
