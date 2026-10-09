@@ -8,7 +8,7 @@ import gps.ShortestPathConfig;
 
 @Getter
 public enum TransportType {
-    TRANSPORT("/transports/transports.tsv", null, null, null, null),
+    TRANSPORT("/transports/transports.tsv", null, null, "costTransports", ShortestPathConfig::costTransports),
     AGILITY_SHORTCUT("/transports/agility_shortcuts.tsv", "useAgilityShortcuts", null, "costAgilityShortcuts", ShortestPathConfig::costAgilityShortcuts) {
             @Override
             public TransportType refine(int[] skillLevels) {

@@ -602,6 +602,21 @@ public interface ShortestPathConfig extends Config {
         max = 10000
     )
     @ConfigItem(
+        keyName = "costTransports",
+        name = "Object transport modifier",
+        description = "Run-tile cost added for each stairs, ladder or mapped door a route uses; the click costs a moment the ticks do not show",
+        position = 42,
+        section = sectionThresholds
+    )
+    default int costTransports() {
+        return 2;
+    }
+
+    @Range(
+        min = -10000,
+        max = 10000
+    )
+    @ConfigItem(
         keyName = "costAgilityShortcuts",
         name = "Agility shortcut modifier",
         description = "Run-tile cost added when a route uses an agility shortcut",
