@@ -32,7 +32,7 @@ public class DistanceFieldTest
 {
 	private static final int LUMBRIDGE = WorldPointUtil.packWorldPoint(3222, 3218, 0);
 	private static final int VARROCK = WorldPointUtil.packWorldPoint(3213, 3424, 0);
-	private static final int ENTRANA = WorldPointUtil.packWorldPoint(2830, 3335, 0);
+	private static final int LUNAR_ISLE = WorldPointUtil.packWorldPoint(2110, 3915, 0);
 
 	@Mock
 	Client client;
@@ -100,11 +100,13 @@ public class DistanceFieldTest
 	@Test
 	public void reverseUnreachableIslandStaysUnreached()
 	{
-		// Entrana is boat-only; with every method excluded nothing walks there, so the island must
-		// not be flooded from a mainland target — its heuristic falls back to the floor.
+		// Lunar Isle is boat-only; with every method excluded nothing walks there, so the island must
+		// not be flooded from a mainland target — its heuristic falls back to the floor. (Entrana was
+		// the example until its dungeon's Magic door, a one-way walk out to the Wilderness, joined
+		// the data: the island can reach the mainland on foot now, if not the other way round.)
 		DistanceField field = DistanceField.build(walkOnlyConfig(), Set.of(VARROCK));
 		assertEquals("The island must be reverse-unreachable",
-			DistanceField.UNREACHED, field.distance(ENTRANA));
+			DistanceField.UNREACHED, field.distance(LUNAR_ISLE));
 	}
 
 	/**

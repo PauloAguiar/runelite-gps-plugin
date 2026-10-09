@@ -4698,6 +4698,10 @@
 # Entrana									
 2834 3335 0	2834 3332 1	Cross Gangplank 2415						3	
 2834 3332 1	2834 3335 0	Cross Gangplank 2415						3	
+# Entrana Dungeon: the ladder from the island goes down one way (audit capture 2026-10-08, 1 tick); the Magic door at its east
+# end is the only way out, a teleport into the Wilderness (3250,3772: wiki, Entrana Dungeon). Duration of the door is an estimate.
+2820 3373 0	2822 9774 0	Climb-down Ladder 2408						1			
+2874 9750 0	3250 3772 0	Open Magic door 2407						4		Lands in level 32 Wilderness; there is no way back up to the island	
 									
 # Karamja (varbit:4566=0?COINS=200)									
 2910 3049 0	2906 3049 0	Cross A wooden log 23644						5	
