@@ -74,13 +74,15 @@ final class EdgeTransports {
     }
 
     /**
-     * The transports of a rendered edge of {@code route}: {@link #forEdge} when that set carries
-     * the route's method for the edge, or the edge is plain walking; otherwise the route's own
-     * method resolved against every transport, or its bank-gated connector on that edge (a bush
-     * cut with a banked machete). The config's usable set follows its own legacy item rule
-     * (permanent items only by default) and never the bank, not the mode that generated the
-     * route, so a charged glory, or a staff the route withdraws at a bank, is missing from it and
-     * the step would resolve to nothing.
+     * The transports of a rendered edge of {@code route}: on a method edge the route's own method
+     * only, from {@link #forEdge}'s usable set when it carries it, else resolved against every
+     * transport; on a walking edge the usable set, or the route's bank-gated connector there (a
+     * bush cut with a banked machete). Two reasons not to hand back the usable set as it is: it
+     * lists every teleport landing on the tile (Lumbridge Home Teleport beside the Lumbridge
+     * Teleport spell the route cast, both labelled on the ground), and it follows the config's
+     * legacy item rule (permanent items only by default) and never the bank, not the mode that
+     * generated the route, so a charged glory, or a staff the route withdraws at a bank, is
+     * missing from it and the step would resolve to nothing.
      */
     static Set<Transport> forRouteEdge(PathfinderConfig config, RouteOption route, PathStep current, PathStep next) {
         Set<Transport> usable = forEdge(config, current, next);
@@ -92,10 +94,12 @@ final class EdgeTransports {
                         return Set.of(connector);
             return usable;
         }
+        Set<Transport> own = new HashSet<>();
         for (Transport transport : usable)
             if (method.equals(transport.method()))
-                return usable;
-        Set<Transport> own = new HashSet<>();
+                own.add(transport);
+        if (!own.isEmpty())
+            return own;
         for (Transport transport : config.getAllTransports())
             if (transport.getDestination() == next.getPackedPosition()
                 && (transport.getOrigin() == Transport.UNDEFINED_ORIGIN || transport.getOrigin() == current.getPackedPosition())

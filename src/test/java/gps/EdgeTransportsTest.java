@@ -83,6 +83,32 @@ public class EdgeTransportsTest
 		assertEquals(Set.of(), EdgeTransports.forEdge(config(), null, at(LANDING)));
 	}
 
+	/**
+	 * Two usable teleports land on the same tile (Lumbridge Home Teleport and the Lumbridge
+	 * Teleport spell, capture gps-capture-20261008-213827): the tile labelled both while the route
+	 * cast only the spell. A method edge of the route resolves to the route's own method only.
+	 */
+	@Test
+	public void aMethodEdgeOfTheRouteNarrowsToItsOwnMethod()
+	{
+		PathStep elsewhere = at(WorldPointUtil.packWorldPoint(3000, 3000, 0));
+		TeleportMethod spell = new TeleportMethod(TransportType.TELEPORTATION_SPELL, "Lumbridge Teleport", LANDING);
+		TeleportMethod home = new TeleportMethod(TransportType.TELEPORTATION_SPELL, "Lumbridge Home Teleport", LANDING);
+		Transport cast = transport(TransportType.TELEPORTATION_SPELL, Transport.UNDEFINED_ORIGIN, LANDING);
+		when(cast.method()).thenReturn(spell);
+		Transport free = transport(TransportType.TELEPORTATION_SPELL, Transport.UNDEFINED_ORIGIN, LANDING);
+		when(free.method()).thenReturn(home);
+		PathfinderConfig config = mock(PathfinderConfig.class);
+		when(config.getTransportsPacked(anyBoolean())).thenReturn(new PrimitiveIntHashMap<>(16));
+		when(config.getUsableTeleports(anyBoolean())).thenReturn(new Transport[]{free, cast});
+		List<PathStep> path = List.of(elsewhere, at(LANDING));
+		RouteOption route = new RouteOption(path, List.of(spell), List.of(1), List.of(4), 4, 4, true, Set.of(), List.of(0), 0);
+
+		assertEquals("both are usable", Set.of(free, cast), EdgeTransports.forEdge(config, elsewhere, at(LANDING)));
+		assertEquals("the route casts the spell", Set.of(cast), EdgeTransports.forRouteEdge(config, route, elsewhere, at(LANDING)));
+		assertEquals("no route: every usable one", Set.of(free, cast), EdgeTransports.forRouteEdge(config, null, elsewhere, at(LANDING)));
+	}
+
 	@Test
 	public void theNextStep()
 	{
