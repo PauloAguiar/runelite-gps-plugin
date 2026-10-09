@@ -39,6 +39,19 @@ public class EntranaDungeonTest
 		assertEquals("Climb-down Ladder 2408", firstObject(path));
 	}
 
+	/** The ladder is climbed from any of its four sides (player, 2026-10-08); the capture saw the south one. */
+	@Test
+	public void theLadderIsClimbedFromAllFourSides()
+	{
+		path(ON_ENTRANA, DRAMEN_TREE);
+		PathStep landing = new PathStep(WorldPointUtil.packWorldPoint(2822, 9774, 0), false);
+		for (int[] side : new int[][]{{2820, 3373}, {2820, 3375}, {2819, 3374}, {2821, 3374}})
+		{
+			PathStep stand = new PathStep(WorldPointUtil.packWorldPoint(side[0], side[1], 0), false);
+			assertEquals("from " + side[0] + "," + side[1], 1, EdgeTransports.forEdge(owned, stand, landing).size());
+		}
+	}
+
 	@Test
 	public void theMagicDoorIsTheWayOutIntoTheWilderness()
 	{
