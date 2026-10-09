@@ -68,6 +68,8 @@ final class PohDetectionService {
     private final Set<Integer> spawned = new HashSet<>();
     // One decoded chunk dump per scene when an instance is judged NOT a house.
     private boolean chunksLogged;
+    // The last not-a-house chunk summary logged: a scene rebuild inside the same instance repeats it.
+    private String lastChunksLogged;
     // Tracks building mode so leaving it re-arms the scan.
     private boolean building;
 
@@ -121,6 +123,7 @@ final class PohDetectionService {
         foundThisVisit = false;
         attempts = 0;
         spawned.clear();
+        lastChunksLogged = null;
     }
 
     /** A game object spawned: recognised house furniture is unambiguous in-house evidence. */
@@ -148,11 +151,16 @@ final class PohDetectionService {
         boolean sceneIsHouse = current.isHouse();
         boolean inside = sceneIsHouse || !spawned.isEmpty();
         if (!inside) {
-            // Diagnosability: when an instance is judged not-a-house, log its decoded template
-            // chunks once per scene, so a missed house shows in the client log.
+            // Diagnosability: when an instance is judged not-a-house, log its template chunks once
+            // per scene, so a missed house shows in the client log; a large instanced area rebuilds
+            // the scene every few dozen tiles, so the same summary is not repeated.
             if (!chunksLogged && log.isDebugEnabled() && current.isInstance()) {
                 chunksLogged = true;
-                log.debug("[poh] instance not judged a house; template chunks: {}", current.describeChunks());
+                String chunks = current.describeChunks();
+                if (!chunks.equals(lastChunksLogged)) {
+                    lastChunksLogged = chunks;
+                    log.debug("[poh] instance not judged a house; template chunks: {}", chunks);
+                }
             }
             foundThisVisit = false;
             attempts = 0;

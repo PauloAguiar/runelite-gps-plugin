@@ -302,9 +302,9 @@ public class WorldPointUtil {
     }
 
     /**
-     * A compact human-readable summary of an instance's template chunk origins, for debug logging:
-     * the distinct template chunk world coordinates, deduplicated, capped at 40 entries. "not an
-     * instance" when the world view isn't one.
+     * A one-line summary of an instance's template chunk origins, for debug logging: how many
+     * distinct ones, their x and y spans and planes, so a house's 7040 band shows at a glance.
+     * "not an instance" when the world view isn't one.
      */
     public static String describeInstanceChunks(WorldView worldView) {
         if (worldView == null || !worldView.isInstance())
@@ -312,7 +312,9 @@ public class WorldPointUtil {
         int[][][] chunks = worldView.getInstanceTemplateChunks();
         if (chunks == null)
             return "no chunk data";
-        java.util.LinkedHashSet<String> seen = new java.util.LinkedHashSet<>();
+        java.util.Set<Integer> seen = new java.util.HashSet<>();
+        java.util.TreeSet<Integer> planes = new java.util.TreeSet<>();
+        int minX = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, minY = Integer.MAX_VALUE, maxY = Integer.MIN_VALUE;
         for (int[][] planeChunks : chunks) {
             if (planeChunks == null)
                 continue;
@@ -320,16 +322,23 @@ public class WorldPointUtil {
                 if (column == null)
                     continue;
                 for (int chunkData : column) {
-                    if (chunkData == -1)
+                    if (chunkData == -1 || !seen.add(chunkData))
                         continue;
-                    seen.add("(" + unpackChunkTemplateX(chunkData) + "," + unpackChunkTemplateY(chunkData)
-                        + ",p" + unpackChunkTemplatePlane(chunkData) + ")");
-                    if (seen.size() >= 40)
-                        return String.join(" ", seen) + " …";
+                    int x = unpackChunkTemplateX(chunkData), y = unpackChunkTemplateY(chunkData);
+                    minX = Math.min(minX, x);
+                    maxX = Math.max(maxX, x);
+                    minY = Math.min(minY, y);
+                    maxY = Math.max(maxY, y);
+                    planes.add(unpackChunkTemplatePlane(chunkData));
                 }
             }
         }
-        return seen.isEmpty() ? "all chunks empty" : String.join(" ", seen);
+        if (seen.isEmpty())
+            return "all chunks empty";
+        StringBuilder text = new StringBuilder(seen.size() + " template chunks, x " + minX + ".." + maxX + ", y " + minY + ".." + maxY + ", planes");
+        for (int plane : planes)
+            text.append(' ').append(plane);
+        return text.toString();
     }
 
     public static int fromLocalInstance(Client client, Player localPlayer) {

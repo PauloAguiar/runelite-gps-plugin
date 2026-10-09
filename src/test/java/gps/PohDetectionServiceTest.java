@@ -39,6 +39,7 @@ public class PohDetectionServiceTest
 	private static final class FakeScene implements PohDetectionService.Scene
 	{
 		boolean house;
+		boolean instance;
 		final Set<Integer> ids = new HashSet<>();
 		int walks;
 
@@ -51,13 +52,15 @@ public class PohDetectionServiceTest
 		@Override
 		public boolean isInstance()
 		{
-			return house;
+			return house || instance;
 		}
+
+		String chunks = "chunks";
 
 		@Override
 		public String describeChunks()
 		{
-			return "chunks";
+			return chunks;
 		}
 
 		@Override
@@ -136,6 +139,49 @@ public class PohDetectionServiceTest
 	{
 		return new PohDetectionService(() -> scene, () -> building, () -> smartDetect, declarations,
 			configManager, GROUP, changes::incrementAndGet);
+	}
+
+	/**
+	 * The not-a-house chunk dump fires once per scene rebuild inside an instance, and a large
+	 * instanced area rebuilds the scene every few dozen tiles (field log 2026-10-08, the same list
+	 * on every rebuild): it is logged again only when the summary differs from the last one logged.
+	 */
+	@Test
+	public void theNotAHouseChunkDumpRepeatsOnlyWhenTheChunksDiffer()
+	{
+		ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(PohDetectionService.class);
+		ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> lines = new ch.qos.logback.core.read.ListAppender<>();
+		lines.start();
+		logger.addAppender(lines);
+		logger.setLevel(ch.qos.logback.classic.Level.DEBUG);
+		try
+		{
+			PohDetectionService service = service();
+			scene.instance = true;
+			scene.chunks = "9 template chunks, x 3496..3512, y 4336..4432, planes 0";
+			service.onTick();
+			service.onTick();
+			service.onSceneLoading();
+			service.onTick();
+			service.onSceneLoading();
+			scene.chunks = "12 template chunks, x 3496..3520, y 4336..4432, planes 0";
+			service.onTick();
+			List<String> dumps = new ArrayList<>();
+			for (ch.qos.logback.classic.spi.ILoggingEvent event : lines.list)
+			{
+				if (event.getFormattedMessage().contains("not judged a house"))
+				{
+					dumps.add(event.getFormattedMessage());
+				}
+			}
+			assertEquals("once for the first scene, not for the rebuild with the same chunks, once more when they differ", 2, dumps.size());
+			assertTrue(dumps.get(1), dumps.get(1).contains("x 3496..3520"));
+		}
+		finally
+		{
+			logger.detachAppender(lines);
+			logger.setLevel(null);
+		}
 	}
 
 	@Test

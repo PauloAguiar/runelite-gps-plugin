@@ -438,12 +438,12 @@ public class WorldPointUtilTest
 	@Test
 	public void describeInstanceChunksDecodesTemplateOrigins()
 	{
-		// The debug chunk dump is the diagnostic that identified the live POH template band —
-		// pin its decoding (empty slots skipped, distinct origins listed with plane).
+		// The debug chunk dump is the diagnostic that identified the live POH template band: one
+		// line with the distinct template origins' count, their x and y spans and planes (empty
+		// slots skipped), so a house's 7040 band shows at a glance without a chunk-by-chunk list.
 		String described = WorldPointUtil.describeInstanceChunks(instanceOf(
 			-1, templateChunk(1864, 7040, 0, 0), templateChunk(1856, 7096, 1, 2)));
-		assertTrue(described, described.contains("(1864,7040,p0)"));
-		assertTrue(described, described.contains("(1856,7096,p1)"));
+		assertEquals("2 template chunks, x 1856..1864, y 7040..7096, planes 0 1", described);
 		assertEquals("not an instance", WorldPointUtil.describeInstanceChunks(null));
 	}
 }
