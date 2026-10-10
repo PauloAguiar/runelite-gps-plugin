@@ -41,6 +41,7 @@ public class OverlaySettingsTest
 		lenient().when(config.overlayFontSize()).thenReturn(OverlayFontSize.LARGE);
 		lenient().when(config.unreachableText()).thenReturn("Unreachable");
 		lenient().when(config.arrivalDismissSeconds()).thenReturn(8);
+		lenient().when(config.directionsSteps()).thenReturn(5);
 	}
 
 	@Test
@@ -52,6 +53,7 @@ public class OverlaySettingsTest
 		assertEquals(OverlayFontSize.LARGE, settings.overlayFontSize);
 		assertEquals("Unreachable", settings.unreachableText);
 		assertEquals(8, settings.arrivalDismissSeconds);
+		assertEquals("the directions overlay's line budget (a 15-step route took the screen)", 5, settings.directionsSteps);
 	}
 
 	@Test

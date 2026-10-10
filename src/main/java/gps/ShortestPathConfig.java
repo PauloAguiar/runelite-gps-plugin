@@ -1115,6 +1115,18 @@ public interface ShortestPathConfig extends Config {
         return true;
     }
 
+    @Range(min = 1, max = 30)
+    @ConfigItem(
+        keyName = "directionsSteps",
+        name = "Steps shown",
+        description = "Lines the directions overlay lists before folding the rest into a count; a long route need not take the screen",
+        position = 75,
+        section = sectionDisplay
+    )
+    default int directionsSteps() {
+        return 14;
+    }
+
     @ConfigItem(
         keyName = "overrideOverlayTransparency",
         name = "Override RuneLite transparency",

@@ -29,6 +29,7 @@ final class OverlaySettings {
     final boolean showPathArrows;
     final boolean highlightRouteItem;
     final boolean showDirections;
+    final int directionsSteps;
     final boolean overrideOverlayTransparency;
     final int overlayTransparency;
     // Display-only preference; not part of the capture-replay override set.
@@ -64,6 +65,7 @@ final class OverlaySettings {
         showPathArrows = ConfigOverrides.override("showPathArrows", config.showPathArrows());
         highlightRouteItem = ConfigOverrides.override("highlightRouteItem", config.highlightRouteItem());
         showDirections = ConfigOverrides.override("showDirections", config.showDirections());
+        directionsSteps = ConfigOverrides.override("directionsSteps", config.directionsSteps());
         overrideOverlayTransparency = ConfigOverrides.override("overrideOverlayTransparency", config.overrideOverlayTransparency());
         overlayTransparency = ConfigOverrides.override("overlayTransparency", config.overlayTransparency());
         overlayFontSize = config.overlayFontSize();

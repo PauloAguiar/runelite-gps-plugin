@@ -29,7 +29,6 @@ import static gps.WorldPointUtil.unpackWorldPlane;
  * like (RuneLite overlay editing); hidden when no route is shown or via the config toggle.
  */
 public class RouteDirectionsOverlay extends OverlayPanel {
-    private static final int MAX_LINES = 14;
     // The panel grows to fit its widest line between these bounds; only beyond MAX_WIDTH do lines
     // get ellipsized (clipping "Use Rat Pits M…" is worse than a wider panel).
     private static final int MIN_WIDTH = 140;
@@ -205,9 +204,11 @@ public class RouteDirectionsOverlay extends OverlayPanel {
             lines.add(new Line("✓ " + windowStart + (windowStart == 1 ? " step done" : " steps done"),
                 fontOther, DONE, null, null));
         }
+        // The line budget is the player's ("Steps shown"): a long route folds into "… N more".
+        int maxLines = plugin.display().directionsSteps;
         int shown = 0;
         int i = windowStart;
-        for (; i < steps.size() && shown < MAX_LINES; i++, shown++) {
+        for (; i < steps.size() && shown < maxLines; i++, shown++) {
             RouteDirections.Step step = steps.get(i);
             String stepText = i >= current && step.isDoor()
                 ? doorStepText(route, step) : step.getText();
@@ -239,7 +240,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
                 formatTime((int) Math.ceil(step.getTicks() * RouteDirections.SECONDS_PER_TICK)), colour));
             // The withdraw step's per-item list: indented, un-numbered, no own time.
             for (String detail : step.getDetails()) {
-                if (shown + 1 >= MAX_LINES)
+                if (shown + 1 >= maxLines)
                     break;
                 lines.add(new Line("      • " + detail, fontOther, colour, null, null));
                 shown++;
