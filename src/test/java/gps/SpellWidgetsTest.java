@@ -55,6 +55,7 @@ public class SpellWidgetsTest
 		assertEquals(InterfaceID.MagicSpellbook.TELEPORT_ME_TO_BOAT, SpellWidgets.componentFor("Teleport to Boat — Port Sarim"));
 		assertEquals(InterfaceID.MagicSpellbook.TELEPORT_TO_YOUR_HOUSE, SpellWidgets.componentFor("Teleport to House (Outside)"));
 		assertEquals(InterfaceID.MagicSpellbook.TELEPORT_HOME_STANDARD, SpellWidgets.componentFor("Lumbridge Home Teleport"));
+		assertEquals(InterfaceID.MagicSpellbook.SPELLBOOK_SWAP, SpellWidgets.componentFor("Spellbook Swap"));
 		assertEquals(-1, SpellWidgets.componentFor("Not a spell"));
 		assertEquals(-1, SpellWidgets.componentFor(null));
 	}

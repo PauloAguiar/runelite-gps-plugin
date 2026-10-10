@@ -13,8 +13,9 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 
 /**
  * Frames the spell the displayed route casts next in the open spellbook (see {@link SpellWidgets}),
- * in the "Next item" colour; nothing when the next step is not a spell or its spellbook is not the
- * one shown.
+ * in the "Next item" colour: Spellbook Swap instead while a spell of another book is to be cast
+ * through it and that book is not the one showing. Nothing when the next step is not a spell or
+ * its spellbook is not open.
  */
 final class SpellbookOverlay extends Overlay {
     private final Client client;
@@ -35,6 +36,8 @@ final class SpellbookOverlay extends Overlay {
             return null;
         int component = SpellWidgets.componentFor(cue.spell);
         Widget spell = component < 0 ? null : client.getWidget(component);
+        if ((spell == null || spell.isHidden()) && cue.swap != null && cue.swap.startsWith("Spellbook Swap"))
+            spell = client.getWidget(SpellWidgets.componentFor("Spellbook Swap"));
         if (spell == null || spell.isHidden())
             return null;
         Rectangle bounds = spell.getBounds();

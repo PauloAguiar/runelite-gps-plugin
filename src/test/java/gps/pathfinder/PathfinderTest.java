@@ -1387,7 +1387,8 @@ public class PathfinderTest
 		TransportItems actual = null;
 		for (Transport transport : transports.get(Transport.UNDEFINED_ORIGIN))
 		{
-			if ("Varrock Teleport".equals(transport.getDisplayInfo()))
+			// The spell as cast from its own book: its Spellbook Swap variant (same name, a note) adds the swap's runes.
+			if ("Varrock Teleport".equals(transport.getDisplayInfo()) && transport.getNote() == null)
 			{
 				actual = transport.getItemRequirements();
 				break;
@@ -1413,7 +1414,7 @@ public class PathfinderTest
 		actual = null;
 		for (Transport transport : transports.get(Transport.UNDEFINED_ORIGIN))
 		{
-			if ("Trollheim Teleport".equals(transport.getDisplayInfo()))
+			if ("Trollheim Teleport".equals(transport.getDisplayInfo()) && transport.getNote() == null)
 			{
 				actual = transport.getItemRequirements();
 				break;

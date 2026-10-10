@@ -18,7 +18,9 @@ import java.util.function.IntPredicate;
  * What the displayed route's NEXT step uses, for the widget highlights: the first method edge the
  * player has not reached, its items when the transport is an item teleport (every variant of the
  * item counts, so whichever the player carries lights up) and its spell when it is a spell
- * teleport, plus the carried staff or tome that stands in for runes the player lacks, since the
+ * teleport, with the row's note when the spell is cast through Spellbook Swap (issue #14: the
+ * generated variants of teleportation_spells.tsv), plus the carried staff or tome that stands in
+ * for runes the player lacks, since the
  * engine counts it from the bag but the game only when wielded; a fairy ring asks for the Dramen
  * or Lunar staff until the Lumbridge Elite diary waives it, and asks one method ahead, so the
  * staff is wielded before the ring is reached. Null when the next thing to do is none of these. Also the route's bank step, whose pickup the bank highlight lights, and the rule for
@@ -31,12 +33,15 @@ final class RouteItemCue {
     final Set<Integer> itemIds;
     /** The spell's Display info, for the spellbook; null unless the step casts one. */
     final String spell;
+    /** The spell row's note, "Spellbook Swap first: ...", when the spell is cast from another book; else null. */
+    final String swap;
     /** The items that do their work worn (the fairy-ring staff): the equipment tab has nothing to point at. */
     final Set<Integer> wornDone;
 
-    private RouteItemCue(Set<Integer> itemIds, String spell, Set<Integer> wornDone) {
+    private RouteItemCue(Set<Integer> itemIds, Transport cast, Set<Integer> wornDone) {
         this.itemIds = itemIds;
-        this.spell = spell;
+        this.spell = cast == null ? null : cast.getDisplayInfo();
+        this.swap = cast == null ? null : cast.getNote();
         this.wornDone = wornDone;
     }
 
@@ -47,7 +52,7 @@ final class RouteItemCue {
         List<PathStep> path = route.getPath();
         Set<Integer> ids = new LinkedHashSet<>();
         Set<Integer> wornDone = new HashSet<>();
-        String spell = null;
+        Transport cast = null;
         int ahead = 0;
         for (int edge : route.getMethodEdgeIndexes()) {
             if (edge <= reachedIndex || edge <= 0 || edge >= path.size())
@@ -55,26 +60,26 @@ final class RouteItemCue {
             if (ahead++ > 1)
                 break;
             // Past the next step only the staff is asked for, ahead of its ring.
-            String cast = collect(transportsForEdge.apply(path.get(edge - 1), path.get(edge)), ahead > 1,
+            Transport spell = collect(transportsForEdge.apply(path.get(edge - 1), path.get(edge)), ahead > 1,
                 fairyRingsNeedStaff, carried, ids, wornDone);
-            if (spell == null)
-                spell = cast;
+            if (cast == null)
+                cast = spell;
         }
-        return ids.isEmpty() && spell == null ? null : new RouteItemCue(ids, spell, wornDone);
+        return ids.isEmpty() && cast == null ? null : new RouteItemCue(ids, cast, wornDone);
     }
 
     /** What ONE step's transports ask for, for the step list's callouts; null when nothing. */
     static RouteItemCue ofStep(Set<Transport> transports, boolean fairyRingsNeedStaff, Map<Integer, Integer> carried) {
         Set<Integer> ids = new LinkedHashSet<>();
         Set<Integer> wornDone = new HashSet<>();
-        String spell = collect(transports, false, fairyRingsNeedStaff, carried, ids, wornDone);
-        return ids.isEmpty() && spell == null ? null : new RouteItemCue(ids, spell, wornDone);
+        Transport cast = collect(transports, false, fairyRingsNeedStaff, carried, ids, wornDone);
+        return ids.isEmpty() && cast == null ? null : new RouteItemCue(ids, cast, wornDone);
     }
 
-    /** Adds what the transports ask for to the two sets and returns the spell they cast, if any. */
-    private static String collect(Set<Transport> transports, boolean staffOnly, boolean fairyRingsNeedStaff,
+    /** Adds what the transports ask for to the two sets and returns the spell row they cast, if any. */
+    private static Transport collect(Set<Transport> transports, boolean staffOnly, boolean fairyRingsNeedStaff,
         Map<Integer, Integer> carried, Set<Integer> ids, Set<Integer> wornDone) {
-        String spell = null;
+        Transport spell = null;
         for (Transport transport : transports) {
             TransportType type = transport.getType();
             if (type == TransportType.FAIRY_RING) {
@@ -89,7 +94,7 @@ final class RouteItemCue {
                 continue;
             if (type == TransportType.TELEPORTATION_SPELL) {
                 if (spell == null)
-                    spell = transport.getDisplayInfo();
+                    spell = transport;
                 if (transport.getItemRequirements() != null)
                     for (ItemRequirement req : transport.getItemRequirements().getRequirements())
                         if (req.getQuantity() > 0 && !held(carried, req.getItemIds(), req.getQuantity())) {
@@ -109,12 +114,15 @@ final class RouteItemCue {
     }
 
     /**
-     * The step list's lines for this cue, as the withdraw step lists its items: "Equip X" for an
-     * item that must be worn first and is not, "Use X" for one used from where it is. Nothing for
-     * an item the player does not carry (the withdraw step names those) or already wears.
+     * The step list's lines for this cue, as the withdraw step lists its items: the swap note first
+     * when the spell is cast from another book, then "Equip X" for an item that must be worn first
+     * and is not, "Use X" for one used from where it is. Nothing for an item the player does not
+     * carry (the withdraw step names those) or already wears.
      */
     List<String> callouts(Map<Integer, Integer> carried, Set<Integer> worn, IntPredicate wornOnly, IntFunction<String> name) {
         List<String> lines = new ArrayList<>();
+        if (swap != null)
+            lines.add(swap);
         for (int id : itemIds) {
             if (carried.getOrDefault(id, 0) <= 0)
                 continue;

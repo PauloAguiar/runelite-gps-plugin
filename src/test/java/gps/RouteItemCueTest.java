@@ -212,6 +212,28 @@ public class RouteItemCueTest
 			RouteItemCue.ofStep(Set.of(varrock), true, carried).callouts(carried, Set.of(), id -> false, RouteItemCueTest::name));
 	}
 
+	/**
+	 * A Spellbook Swap variant of a spell (issue #14: scripts/derive_spellbook_swap.py) carries a
+	 * note; the cue keeps it so the step list prints it first and the spellbook frame can point
+	 * at Spellbook Swap while the player is still on Lunars.
+	 */
+	@Test
+	public void aSwapVariantsNoteLeadsTheCallouts()
+	{
+		Map<Integer, Set<Transport>> transports = new HashMap<>();
+		TransportLoader.addTransportsFromContents(transports,
+			"# Destination\tItems\tSkills\tQuests\tDuration\tDisplay info\tWilderness level\tVarbits\tNote\n"
+				+ "3213 3424 0\tAIR_RUNE=3&&FIRE_RUNE=1&&LAW_RUNE=2&&ASTRAL_RUNE=3&&COSMIC_RUNE=2\t96 Magic\tDream Mentor\t9\tVarrock Teleport\t20\t4070=2\tSpellbook Swap first: 3 astral, 2 cosmic, 1 law\n",
+			TransportType.TELEPORTATION_SPELL, 0);
+		Transport swapped = transports.values().iterator().next().iterator().next();
+		RouteItemCue cue = RouteItemCue.ofStep(Set.of(swapped), true, Map.of());
+		assertEquals("Varrock Teleport", cue.spell);
+		assertEquals("Spellbook Swap first: 3 astral, 2 cosmic, 1 law", cue.swap);
+		assertEquals(List.of("Spellbook Swap first: 3 astral, 2 cosmic, 1 law"),
+			cue.callouts(Map.of(), Set.of(), id -> false, RouteItemCueTest::name));
+		assertNull("a plain spell row has no swap", RouteItemCue.ofStep(Set.of(camulet()), true, Map.of(CAMULET, 1)).swap);
+	}
+
 	@Test
 	public void theBankStepIsWhereThePathTurnsBankedOnARouteViaTheBank()
 	{
