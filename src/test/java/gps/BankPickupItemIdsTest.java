@@ -126,6 +126,48 @@ public class BankPickupItemIdsTest
 		assertEquals(Set.of(ItemID.CAMULET, ItemID.NECKLACE_OF_MINIGAMES_7), pickup.itemIds);
 	}
 
+	/** A canoe step asks the bank for an axe unless one is stored at the stations (then nothing). */
+	@Test
+	public void aStoredCanoeAxeIsNotPickedUp()
+	{
+		for (boolean stored : new boolean[]{false, true})
+		{
+			Client client = client();
+			ShortestPathConfig config = Mockito.mock(ShortestPathConfig.class, invocation ->
+			{
+				String name = invocation.getMethod().getName();
+				Class<?> type = invocation.getMethod().getReturnType();
+				if (type == boolean.class)
+				{
+					return "canoeAxeStored".equals(name) ? stored : !"avoidWilderness".equals(name);
+				}
+				if (type == int.class)
+				{
+					return "calculationCutoff".equals(name) ? 120 : 0;
+				}
+				if (type == TeleportationItem.class)
+				{
+					return TeleportationItem.INVENTORY_AND_BANK;
+				}
+				return HybridPageFillTest.defaultValue(type);
+			});
+			PathfinderConfig owned = new TestPathfinderConfig(client, config, QuestState.FINISHED, true, true);
+			Item[] bank = {new Item(ItemID.BRONZE_AXE, 1)};
+			owned.setBankSnapshot(bank);
+			owned.refresh();
+			int station = WorldPointUtil.packWorldPoint(3132, 3510, 0);
+			List<PathStep> path = List.of(
+				new PathStep(station, false, 0),
+				new PathStep(WorldPointUtil.packWorldPoint(3240, 3242, 0), true, 30));
+			TeleportMethod canoe = new TeleportMethod(TransportType.CANOE, "Lumbridge", path.get(1).getPackedPosition());
+			RouteOption route = new RouteOption(path, List.of(canoe), List.of(1), List.of(30), 30, 30, true, Set.of(canoe), List.of(0), 0);
+			BankPickupRequirements.Pickup pickup = BankPickupRequirements.compute(client, bank, owned,
+				(a, b) -> EdgeTransports.forRouteEdge(owned, route, a, b), Set.of(station), path, 0);
+			assertEquals(stored ? "stored: nothing to withdraw" : "no axe stored: the bank's bronze axe",
+				stored ? Set.of() : Set.of(ItemID.BRONZE_AXE), pickup.itemIds);
+		}
+	}
+
 	@Test
 	public void offTheBankTileThereIsNothingToPickUp()
 	{

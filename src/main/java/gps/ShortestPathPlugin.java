@@ -577,6 +577,7 @@ public class ShortestPathPlugin extends Plugin {
     @Subscribe
     public void onChatMessage(net.runelite.api.events.ChatMessage event) {
         BalloonLogStorage.track(event.getType(), event.getMessage(), config, configManager, CONFIG_GROUP);
+        CanoeAxeStorage.track(event.getType(), event.getMessage(), configManager, CONFIG_GROUP);
     }
 
     @Subscribe

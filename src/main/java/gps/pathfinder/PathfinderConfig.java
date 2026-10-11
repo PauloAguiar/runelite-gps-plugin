@@ -244,6 +244,9 @@ public class PathfinderConfig {
     // Balloon log storage (chat-parsed, config-persisted): item id -> stored count. A balloon
     // flight's log requirement is satisfiable from this storage as well as from the inventory.
     private final Map<Integer, Integer> balloonStoredLogs = new HashMap<>();
+    // An axe stored at a canoe station (any station, shared by all; chat-tracked or set by hand) paddles
+    // without one on the player (see CanoeAxeStorage).
+    private boolean canoeAxeStored;
     /**
      * Extra search cost (in tiles) charged once when a path first detours through a bank to withdraw a
      * teleport item, so the pathfinder only banks when it saves more than this many tiles overall.
@@ -490,6 +493,7 @@ public class PathfinderConfig {
         copy.currencyThreshold = currencyThreshold;
         copy.charterFarePercent = charterFarePercent;
         copy.balloonStoredLogs.putAll(balloonStoredLogs);
+        copy.canoeAxeStored = canoeAxeStored;
         copy.bankPickupCost = bankPickupCost;
         copy.bank = bank;
         copy.bankSnapshot = bankSnapshot;
@@ -750,6 +754,7 @@ public class PathfinderConfig {
 
         // Balloon log storage counts (chat-parsed by the plugin; see BalloonLogStorage). Outside
         // smart mode the storage is not tracked, so flights fall back to inventory checks only.
+        canoeAxeStored = ConfigOverrides.override("canoeAxeStored", config.canoeAxeStored());
         balloonStoredLogs.clear();
         if (config.balloonSmartMode()) {
             balloonStoredLogs.put(ItemID.LOGS, config.balloonStoredLogs());
@@ -1195,12 +1200,20 @@ public class PathfinderConfig {
             && varbitValues.getOrDefault(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE, 0) != 1) {
             return classifyItems(DRAMEN_STAFF, 100);
         }
-        // Balloon flights payable from the log storage are available without carrying logs.
+        // Balloon flights payable from the log storage are available without carrying logs; a canoe
+        // with an axe stored at the stations likewise.
         if (TransportType.HOT_AIR_BALLOON.equals(type)
             && balloonStorageCovers(transport.getItemRequirements())) {
             return MethodAvailability.AVAILABLE;
         }
+        if (TransportType.CANOE.equals(type) && canoeAxeStored)
+            return MethodAvailability.AVAILABLE;
         return classifyItems(transport.getItemRequirements(), farePercent(transport));
+    }
+
+    /** Whether an axe is stored at the canoe stations, so a canoe step asks the bank for none. */
+    public boolean isCanoeAxeStored() {
+        return canoeAxeStored;
     }
 
     /**
@@ -1763,11 +1776,14 @@ public class PathfinderConfig {
         boolean checkEquipment,
         boolean checkBank,
         boolean checkRunePouch) {
-        // Balloon flights may pay from the balloon log storage instead of carried logs.
+        // Balloon flights may pay from the balloon log storage instead of carried logs; a canoe
+        // with an axe stored at the stations needs none on the player.
         if (TransportType.HOT_AIR_BALLOON.equals(transport.getType())
             && balloonStorageCovers(transport.getItemRequirements())) {
             return true;
         }
+        if (TransportType.CANOE.equals(transport.getType()) && canoeAxeStored)
+            return true;
 
         if (TransportType.TELEPORTATION_ITEM.equals(transport.getType()) ||
             TransportType.SEASONAL_TRANSPORTS.equals(transport.getType()) ||

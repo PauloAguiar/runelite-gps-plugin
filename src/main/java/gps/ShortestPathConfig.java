@@ -105,6 +105,17 @@ public interface ShortestPathConfig extends Config {
     }
 
     @ConfigItem(
+        keyName = "canoeAxeStored",
+        name = "Axe stored at a canoe station",
+        description = "An axe is stored with the canoe stations (any station, shared by all), so canoes need none on you; set from chat when you store or withdraw one, or tick it yourself",
+        position = 11,
+        section = sectionSettings
+    )
+    default boolean canoeAxeStored() {
+        return false;
+    }
+
+    @ConfigItem(
         hidden = true,
         keyName = "useSpiritTrees",
         name = "Use spirit trees",

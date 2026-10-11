@@ -127,7 +127,8 @@ public final class BankPickupRequirements {
             // If any alternative is fully satisfied by the player already, no pickup needed.
             boolean satisfied = false;
             for (Transport t : nonFairy) {
-                if (transportSatisfiedBy(t, playerHas, pathfinderConfig.farePercent(t))) {
+                if (transportSatisfiedBy(t, playerHas, pathfinderConfig.farePercent(t))
+                    || (TransportType.CANOE.equals(t.getType()) && pathfinderConfig.isCanoeAxeStored())) {
                     satisfied = true;
                     break;
                 }

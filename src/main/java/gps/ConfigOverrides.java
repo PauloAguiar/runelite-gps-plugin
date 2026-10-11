@@ -24,7 +24,7 @@ public final class ConfigOverrides {
     // a change to one of these regenerates the routes. RouteAffectingKeysTest scans the engine's
     // sources and fails when a key it reads is missing here; the pohMount*/sailing* toggles were
     // silently inert while this list was maintained by hand.
-    private static final Pattern ROUTE_AFFECTING = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|calculationCutoff|pohJewelleryBoxTier|pohMount\\w+|sailingAssumeSummon|sailingTeleportAbandon|balloonSmartMode|balloonStored\\w+|spiritTreeSmartMode|use\\w+|cost\\w+)$");
+    private static final Pattern ROUTE_AFFECTING = Pattern.compile("^(avoidWilderness|includeBankPath|currencyThreshold|calculationCutoff|pohJewelleryBoxTier|pohMount\\w+|sailingAssumeSummon|sailingTeleportAbandon|balloonSmartMode|balloonStored\\w+|canoeAxeStored|spiritTreeSmartMode|use\\w+|cost\\w+)$");
 
     private static final Map<String, Object> OVERRIDES = new HashMap<>(50);
     private static volatile Set<String> known = withTypeKeys(Collections.emptySet());

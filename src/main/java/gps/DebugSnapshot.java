@@ -123,7 +123,7 @@ final class DebugSnapshot {
      */
     private static Map<String, Integer> varbitSnapshot(Client client) {
         Map<String, Integer> varbits = new LinkedHashMap<>();
-        for (int id = 0; id <= 20000; id++) {
+        for (int id = 0; id <= 32767; id++) {
             try {
                 int value = client.getVarbitValue(id);
                 if (value != 0)

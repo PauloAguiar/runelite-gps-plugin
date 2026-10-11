@@ -412,7 +412,12 @@ final class RouteDirections {
         if (client == null)
             return List.of();
         java.util.Map<Integer, Integer> carried = gps.transport.BankPickupRequirements.collectPlayerItems(client);
-        RouteItemCue cue = RouteItemCue.ofStep(EdgeTransports.forRouteEdge(plugin.getPathfinderConfig(), route, from, to),
+        Set<Transport> rows = EdgeTransports.forRouteEdge(plugin.getPathfinderConfig(), route, from, to);
+        // A canoe paddled with the axe stored at the stations: say what the route is counting on.
+        for (Transport row : rows)
+            if (TransportType.CANOE.equals(row.getType()) && plugin.getPathfinderConfig().isCanoeAxeStored())
+                return List.of("Axe stored at the canoe station");
+        RouteItemCue cue = RouteItemCue.ofStep(rows,
             client.getVarbitValue(net.runelite.api.gameval.VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1, carried);
         if (cue == null)
             return List.of();
