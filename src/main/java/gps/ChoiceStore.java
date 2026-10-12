@@ -2,10 +2,8 @@ package gps;
 
 import com.google.gson.Gson;
 import gps.transport.TransportType;
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Supplier;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;

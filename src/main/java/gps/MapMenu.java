@@ -2,15 +2,12 @@ package gps;
 
 import gps.pathfinder.PathStep;
 import java.awt.Shape;
-import java.util.Arrays;
-import java.util.LinkedList;
+import java.util.*;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import net.runelite.api.*;
 import net.runelite.api.Client;
-import net.runelite.api.KeyCode;
-import net.runelite.api.MenuAction;
-import net.runelite.api.MenuEntry;
 import net.runelite.api.Point;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.gameval.InterfaceID;

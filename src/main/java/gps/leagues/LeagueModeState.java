@@ -1,8 +1,6 @@
 package gps.leagues;
 
-import java.util.EnumSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import lombok.Getter;
 import net.runelite.api.Client;
 import net.runelite.api.WorldType;

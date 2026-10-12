@@ -3,9 +3,7 @@ package gps;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.runelite.client.config.ConfigManager;
-import net.runelite.client.plugins.Plugin;
-import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.plugins.PluginManager;
+import net.runelite.client.plugins.*;
 
 /**
  * The other plugins GPS cares about (plan step L20, out of the plugin class), matched by

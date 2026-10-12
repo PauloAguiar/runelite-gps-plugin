@@ -1,20 +1,15 @@
 package gps;
 
-import java.awt.BorderLayout;
+import java.awt.*;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import javax.swing.BoxLayout;
-import javax.swing.Icon;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;

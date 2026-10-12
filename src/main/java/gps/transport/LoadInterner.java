@@ -1,8 +1,6 @@
 package gps.transport;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import net.runelite.api.Quest;
 import gps.transport.parser.VarRequirement;
 import gps.transport.requirement.TransportItems;

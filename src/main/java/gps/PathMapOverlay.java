@@ -1,23 +1,19 @@
 package gps;
 
 import com.google.inject.Inject;
-import java.awt.BasicStroke;
+import java.awt.*;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import java.awt.Stroke;
 import java.awt.geom.Area;
+import java.util.*;
 import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.Point;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
+import net.runelite.client.ui.overlay.*;
 import net.runelite.client.ui.overlay.Overlay;
-import net.runelite.client.ui.overlay.OverlayLayer;
-import net.runelite.client.ui.overlay.OverlayPosition;
 import gps.pathfinder.PathStep;
 
 import static gps.WorldPointUtil.distanceBetween;

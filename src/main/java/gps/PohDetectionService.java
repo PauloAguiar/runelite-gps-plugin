@@ -1,9 +1,7 @@
 package gps;
 
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import lombok.AccessLevel;

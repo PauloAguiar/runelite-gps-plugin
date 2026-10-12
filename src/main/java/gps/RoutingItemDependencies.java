@@ -4,10 +4,7 @@ import gps.pathfinder.PathfinderConfig;
 import gps.transport.Transport;
 import gps.transport.requirement.ItemRequirement;
 import gps.transport.requirement.TransportItems;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeSet;
+import java.util.*;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 

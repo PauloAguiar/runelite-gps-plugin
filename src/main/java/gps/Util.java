@@ -1,8 +1,6 @@
 package gps;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 
 /**
  * General utility helpers for I/O and primitive array manipulation used by the

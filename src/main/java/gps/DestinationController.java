@@ -1,9 +1,7 @@
 package gps;
 
 import gps.pathfinder.PathfinderConfig;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.runelite.api.ChatMessageType;

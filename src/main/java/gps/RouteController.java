@@ -1,11 +1,8 @@
 package gps;
 
 import gps.pathfinder.PathfinderConfig;
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import javax.swing.SwingUtilities;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;

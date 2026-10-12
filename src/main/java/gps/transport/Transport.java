@@ -1,9 +1,6 @@
 package gps.transport;
 
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -12,14 +9,7 @@ import net.runelite.api.Skill;
 import gps.TeleportMethod;
 import gps.WorldPointUtil;
 import gps.leagues.LeagueRegion;
-import gps.transport.parser.FieldParser;
-import gps.transport.parser.ItemRequirementParser;
-import gps.transport.parser.QuestParser;
-import gps.transport.parser.SkillRequirementParser;
-import gps.transport.parser.TransportRecord;
-import gps.transport.parser.VarRequirement;
-import gps.transport.parser.VarRequirementParser;
-import gps.transport.parser.WorldPointParser;
+import gps.transport.parser.*;
 import gps.transport.requirement.TransportItems;
 
 /**

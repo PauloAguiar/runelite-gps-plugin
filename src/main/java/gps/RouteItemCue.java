@@ -4,15 +4,9 @@ import gps.pathfinder.PathStep;
 import gps.transport.Transport;
 import gps.transport.TransportType;
 import gps.transport.requirement.ItemRequirement;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.function.IntFunction;
-import java.util.function.IntPredicate;
+import java.util.function.*;
 
 /**
  * What the displayed route's NEXT step uses, for the widget highlights: the first method edge the

@@ -1,24 +1,16 @@
 package gps;
 
 import com.google.gson.Gson;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.LinkedHashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.ChatMessageType;
+import net.runelite.api.*;
 import net.runelite.api.Client;
-import net.runelite.api.GameState;
 import net.runelite.api.Player;
 import net.runelite.client.RuneLite;
 

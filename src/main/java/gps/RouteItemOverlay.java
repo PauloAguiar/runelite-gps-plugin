@@ -1,7 +1,7 @@
 package gps;
 
+import java.awt.*;
 import java.awt.Color;
-import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.util.HashMap;
 import java.util.Map;

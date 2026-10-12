@@ -1,14 +1,9 @@
 package gps.pathfinder;
 
-import gps.PlayerOwnedHouse;
-import java.util.ArrayList;
-import java.util.HashSet;
+import gps.*;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
 
-import gps.PrimitiveIntHashMap;
-import gps.TeleportMethod;
-import gps.WorldPointUtil;
 import gps.transport.Transport;
 
 public final class TransportAvailability {

@@ -1,7 +1,7 @@
 package gps;
 
+import java.awt.*;
 import java.awt.Dimension;
-import java.awt.LayoutManager;
 import java.awt.Rectangle;
 import javax.swing.JPanel;
 import javax.swing.Scrollable;

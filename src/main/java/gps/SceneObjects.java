@@ -1,9 +1,8 @@
 package gps;
 
+import net.runelite.api.*;
 import net.runelite.api.Client;
-import net.runelite.api.GameObject;
 import net.runelite.api.Tile;
-import net.runelite.api.WallObject;
 import net.runelite.api.coords.LocalPoint;
 
 /**

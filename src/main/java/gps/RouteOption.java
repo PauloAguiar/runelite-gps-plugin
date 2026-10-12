@@ -1,10 +1,8 @@
 package gps;
 
 import gps.transport.TransportType;
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
 import lombok.Getter;
 import gps.pathfinder.PathStep;
 import gps.transport.Transport;

@@ -1,19 +1,11 @@
 package gps.transport;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.function.BiFunction;
+import net.runelite.api.*;
 import net.runelite.api.Client;
-import net.runelite.api.EnumComposition;
-import net.runelite.api.EnumID;
 import net.runelite.api.Item;
-import net.runelite.api.ItemContainer;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.VarbitID;
 import gps.ItemVariations;

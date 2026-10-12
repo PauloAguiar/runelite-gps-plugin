@@ -1,9 +1,8 @@
 package gps;
 
 import java.awt.Component;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;

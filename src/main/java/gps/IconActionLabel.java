@@ -3,9 +3,7 @@ package gps;
 import java.awt.Cursor;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import javax.swing.ImageIcon;
-import javax.swing.JLabel;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 
 /**
  * A clickable icon control, modelled on the tile-packs panel action labels: shows a base icon, swaps

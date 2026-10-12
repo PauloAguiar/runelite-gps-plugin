@@ -2,11 +2,8 @@ package gps;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
 
 /**
  * The game's boat-location registry: SAILING_BOAT_N_PORT varbit values joined to this

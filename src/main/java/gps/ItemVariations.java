@@ -2,15 +2,9 @@ package gps;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 
 /**
  * An item family: the name the transport TSVs use in their Items column ("AXE", "COINS") and

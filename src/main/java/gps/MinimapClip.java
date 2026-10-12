@@ -1,8 +1,8 @@
 package gps;
 
+import java.awt.*;
 import java.awt.Color;
 import java.awt.Point;
-import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
@@ -12,9 +12,7 @@ import java.util.List;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.runelite.api.Client;
-import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.gameval.SpriteID;
-import net.runelite.api.gameval.VarbitID;
+import net.runelite.api.gameval.*;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.SpriteManager;
 

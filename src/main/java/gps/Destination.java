@@ -2,23 +2,13 @@ package gps;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Scanner;
-import java.util.Set;
 
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Quest;
 import net.runelite.api.Skill;
-import gps.transport.parser.FieldParser;
-import gps.transport.parser.QuestParser;
-import gps.transport.parser.SkillRequirementParser;
-import gps.transport.parser.VarRequirement;
-import gps.transport.parser.VarRequirementParser;
+import gps.transport.parser.*;
 
 /**
  * Utility loader for destination coordinate sets grouped by feature category.

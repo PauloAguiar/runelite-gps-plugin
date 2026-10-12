@@ -2,10 +2,8 @@ package gps;
 
 import gps.pathfinder.CollisionMap;
 import gps.pathfinder.PathStep;
-import java.util.ArrayDeque;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 

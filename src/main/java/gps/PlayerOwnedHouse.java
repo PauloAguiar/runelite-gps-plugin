@@ -3,14 +3,12 @@ package gps;
 import gps.pathfinder.PathStep;
 import gps.transport.Transport;
 import gps.transport.TransportType;
-import java.util.HashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import net.runelite.api.GameObject;
+import net.runelite.api.*;
 import net.runelite.api.Tile;
-import net.runelite.api.WorldView;
 
 import static gps.WorldPointUtil.unpackWorldX;
 import static gps.WorldPointUtil.unpackWorldY;

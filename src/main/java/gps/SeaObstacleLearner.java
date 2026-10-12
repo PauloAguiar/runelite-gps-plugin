@@ -5,10 +5,8 @@ import java.util.List;
 import java.util.function.IntSupplier;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import net.runelite.api.*;
 import net.runelite.api.Client;
-import net.runelite.api.CollisionData;
-import net.runelite.api.CollisionDataFlag;
-import net.runelite.api.WorldView;
 
 /**
  * Passive sea-obstacle learning (plan step L19, out of the plugin class): every ten ticks,

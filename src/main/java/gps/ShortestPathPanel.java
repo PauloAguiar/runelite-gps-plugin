@@ -2,9 +2,8 @@ package gps;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import net.runelite.client.ui.ColorScheme;

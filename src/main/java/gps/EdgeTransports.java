@@ -1,14 +1,10 @@
 package gps;
 
-import gps.pathfinder.PathStep;
-import gps.pathfinder.PathfinderConfig;
-import gps.pathfinder.TransportAvailability;
+import gps.pathfinder.*;
 import gps.transport.Transport;
 import gps.transport.TransportType;
-import java.util.EnumSet;
-import java.util.HashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
 
 /**
  * The candidate transports for a rendered path edge (plan step L23, out of the plugin class),

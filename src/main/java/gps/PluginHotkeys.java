@@ -6,10 +6,7 @@ import java.awt.event.MouseEvent;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import net.runelite.client.config.Keybind;
-import net.runelite.client.input.KeyListener;
-import net.runelite.client.input.KeyManager;
-import net.runelite.client.input.MouseAdapter;
-import net.runelite.client.input.MouseManager;
+import net.runelite.client.input.*;
 
 /**
  * The plugin's input listeners (plan step L32, out of the plugin class): the clear-path hotkey,

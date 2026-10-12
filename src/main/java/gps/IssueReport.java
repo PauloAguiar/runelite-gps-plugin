@@ -1,19 +1,12 @@
 package gps;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.LinkedHashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import net.runelite.api.*;
 import net.runelite.api.Client;
 import net.runelite.api.Item;
-import net.runelite.api.ItemComposition;
-import net.runelite.api.ItemContainer;
 import net.runelite.api.gameval.InventoryID;
 
 /**
