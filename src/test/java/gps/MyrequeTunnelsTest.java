@@ -19,11 +19,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * The Myreque tunnels under Mort Myre: the cave between the Hollows end (3492,9862) and 3513,9811
- * is the 93 Agility and 78 Mining shortcut of Darkness of Hallowvale, and the pair at 3491,9876
- * and 3483,9832 opens with In Aid of the Myreque. The rows had lost those gates (upstream carries
- * them), so a player was routed into the shortcut and told by the game it was too small to fit
- * (capture gps-capture-20261011-194735, build 0a0d7da).
+ * The Myreque tunnels under Mort Myre: the hidden "Cave" wall at 3512,9811 and the "Cave entrance" at
+ * 3492,9861 are In Aid of the Myreque's way into and out of Ivandis's tomb (wiki; cache ids 38016
+ * and 12771), and the inner pair at 3491,9876 and 3483,9832 the same. All four rows had lost that
+ * gate. Upstream pins 93 Agility and 78 Mining on the first pair, but that is the Blood Altar
+ * shortcut, object 43759 at 3500,9803, a different cave. A player with the quest done was still
+ * refused at 3492,9861 ("too small to fit", capture gps-capture-20261011-194735): what gates that
+ * is not known yet.
  */
 public class MyrequeTunnelsTest
 {
@@ -33,11 +35,10 @@ public class MyrequeTunnelsTest
 	private static final int MYREQUE_B = WorldPointUtil.packWorldPoint(3483, 9832, 0);
 
 	@Test
-	public void theHollowsShortcutNeedsItsLevelsAndQuest()
+	public void theTombsHiddenEntranceAndExitNeedInAidOfTheMyreque()
 	{
-		assertTrue("93 Agility, 78 Mining, quest done: one step through", jumps(HOLLOWS_END, FAR_END, 99, QuestState.FINISHED));
-		assertFalse("low Agility: no squeezing through", jumps(HOLLOWS_END, FAR_END, 1, QuestState.FINISHED));
-		assertFalse("quest not done: no shortcut", jumps(HOLLOWS_END, FAR_END, 99, QuestState.NOT_STARTED));
+		assertTrue("quest done: one step through", jumps(HOLLOWS_END, FAR_END, 1, QuestState.FINISHED));
+		assertFalse("quest not done: no way in", jumps(HOLLOWS_END, FAR_END, 99, QuestState.NOT_STARTED));
 	}
 
 	@Test
