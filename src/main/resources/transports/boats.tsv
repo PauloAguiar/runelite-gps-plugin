@@ -135,10 +135,12 @@
 3663 3277 0	3605 3161 1	Board Boat 38089				7255>87	13	2: Meiyerditch.
 3663 3277 0	3684 3176 0	Board Boat 38089				7255>87	13	3: Icyene Graveyard.
 								
-# Port Phasmatys, Slepe								
+# Port Phasmatys, Slepe (Andras): 10,000 coins to Slepe, or free once his one-off fee is paid (varbit 10150); free back to Port Phasmatys (wiki, 2026-10-11)
 3671 3544 0	3661 3277 0	Travel Row boat 32601		COINS=10000			5	Slepe
+3671 3544 0	3661 3277 0	Travel Row boat 32601				10150=1	5	Slepe
 3672 3544 0	3661 3277 0	Travel Row boat 32601		COINS=10000			5	Slepe
-3661 3278 0	3671 3542 0	Travel Row boat 32602		COINS=10000			5	Port Phasmatys
+3672 3544 0	3661 3277 0	Travel Row boat 32601				10150=1	5	Slepe
+3661 3278 0	3671 3542 0	Travel Row boat 32602					5	Port Phasmatys
 								
 # Achilka boat between Kastori, Tal Teklan, Gloomthorn Trail								
 1390 3073 0	1257 3126 0	Tal Teklan Achilka 14727					5	Tal Teklan
