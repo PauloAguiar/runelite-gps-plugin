@@ -14,6 +14,8 @@ import java.awt.geom.Rectangle2D;
 import java.util.*;
 import java.util.List;
 import lombok.*;
+import lombok.AccessLevel;
+import lombok.Getter;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
 import net.runelite.api.gameval.VarbitID;
@@ -67,10 +69,12 @@ public class RouteDirectionsOverlay extends OverlayPanel {
     // It counts down as the player travels, grows again when backtracking or straying off the
     // path, and mid-ride transports are interpolated separately (see the riding branch).
     private RouteOption progressRoute;
+    @Getter(AccessLevel.PACKAGE)
     private int reachedIndex;
     // Remaining route time (ticks) from each path index, precomputed per route.
     private double[] remainingTicksAt;
     // The live remaining estimate chosen by the scoring pass.
+    @Getter(AccessLevel.PACKAGE)
     private double liveRemainingTicks;
     // Distance from the player to the tile the scoring pass selected: 0 = standing on the
     // path. Arrival is only trusted at 0 — anything else may be proximity through a wall.
@@ -97,6 +101,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
     private static final long SPEED_SAMPLE_MILLIS = 400;
     private long speedSampleAt;
     private int speedSamplePosition = WorldPointUtil.UNDEFINED;
+    @Getter(AccessLevel.PACKAGE)
     private double speedTilesPerSecond;
 
     // Arrival lingering: the plugin clears the target the moment the destination is reached, which
@@ -833,9 +838,6 @@ public class RouteDirectionsOverlay extends OverlayPanel {
     /**
      * Progress state exposed for the debug snapshot.
      */
-    int getReachedIndex() {
-        return reachedIndex;
-    }
 
     /**
      * The tracked progress along {@code route}, or 0 when that route isn't the one being
@@ -843,14 +845,6 @@ public class RouteDirectionsOverlay extends OverlayPanel {
      */
     int reachedIndexFor(RouteOption route) {
         return route == progressRoute ? reachedIndex : 0;
-    }
-
-    double getLiveRemainingTicks() {
-        return liveRemainingTicks;
-    }
-
-    double getSpeedTilesPerSecond() {
-        return speedTilesPerSecond;
     }
 
     /**

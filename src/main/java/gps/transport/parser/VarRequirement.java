@@ -2,6 +2,7 @@ package gps.transport.parser;
 
 import java.util.Map;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 /**
@@ -14,6 +15,7 @@ import lombok.Getter;
  * </p>
  */
 @Getter
+@EqualsAndHashCode
 public class VarRequirement {
 
     private final VarType varType;
@@ -82,26 +84,7 @@ public class VarRequirement {
     public boolean isVarPlayer() {
         return varType == VarType.VARPLAYER;
     }
-
-    @Override
-    public int hashCode() {
-        int result = varType.hashCode();
-        result = 31 * result + id;
-        result = 31 * result + value;
-        result = 31 * result + checkType.hashCode();
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
-        VarRequirement that = (VarRequirement) o;
-        return id == that.id && value == that.value && varType == that.varType && checkType == that.checkType;
-    }
-
+
     @Override
     public String toString() {
         return varType + "[" + id + " " + checkType.getCode() + " " + value + "]";

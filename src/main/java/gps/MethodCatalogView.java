@@ -14,6 +14,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
@@ -77,6 +78,7 @@ final class MethodCatalogView {
     private JScrollPane rowsScroll;
     private final Set<String> expandedCategories = new HashSet<>();
     // Collapsed by default so the routes stay the focus; the user opens it to browse and toggle.
+    @Getter(AccessLevel.PACKAGE)
     private boolean expanded;
     private Filter filter = Filter.ALL;
     // The inputs of the next build (see update).
@@ -126,10 +128,6 @@ final class MethodCatalogView {
 
     Map<TeleportMethod, MethodAvailability> unavailable() {
         return unavailable;
-    }
-
-    boolean isExpanded() {
-        return expanded;
     }
 
     /** The methods a search can actually use: usable in the current mode and not excluded. */

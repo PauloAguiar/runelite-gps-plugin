@@ -1,7 +1,7 @@
 package gps.transport.requirement;
 
-import java.util.Arrays;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 /**
@@ -10,6 +10,7 @@ import lombok.Getter;
  * SMOKE_RUNE, etc.
  */
 @Getter
+@EqualsAndHashCode
 public class ItemRequirement {
     /**
      * The item IDs that satisfy this requirement (variations)
@@ -37,26 +38,5 @@ public class ItemRequirement {
         this.offhandIds = offhandIds;
         this.quantity = quantity;
     }
-
-    @Override
-    public int hashCode() {
-        int result = Arrays.hashCode(itemIds);
-        result = 31 * result + Arrays.hashCode(staffIds);
-        result = 31 * result + Arrays.hashCode(offhandIds);
-        result = 31 * result + quantity;
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
-        ItemRequirement that = (ItemRequirement) o;
-        return quantity == that.quantity &&
-            Arrays.equals(itemIds, that.itemIds) &&
-            Arrays.equals(staffIds, that.staffIds) &&
-            Arrays.equals(offhandIds, that.offhandIds);
-    }
+
 }

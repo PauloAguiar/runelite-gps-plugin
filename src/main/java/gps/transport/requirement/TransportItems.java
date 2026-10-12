@@ -3,6 +3,7 @@ package gps.transport.requirement;
 import java.util.*;
 import java.util.List;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 /**
@@ -10,6 +11,7 @@ import lombok.Getter;
  * All requirements must be satisfied.
  */
 @Getter
+@EqualsAndHashCode
 public class TransportItems {
     private final List<ItemRequirement> requirements;
 
@@ -89,28 +91,7 @@ public class TransportItems {
             text.append((text.length() == 0) ? "" : ", ").append(Arrays.toString(inner));
         return "[" + text + "]";
     }
-
-    @Override
-    public int hashCode() {
-        return requirements.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
-        TransportItems that = (TransportItems) o;
-        if (requirements.size() != that.requirements.size())
-            return false;
-        for (int i = 0; i < requirements.size(); i++) {
-            if (!requirements.get(i).equals(that.requirements.get(i)))
-                return false;
-        }
-        return true;
-    }
-
+
     @Override
     public String toString() {
         return "[" +

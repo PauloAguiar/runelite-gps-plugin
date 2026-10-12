@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
@@ -40,6 +41,7 @@ final class SpiritTreeSync {
     // Whether the travel menu has been parsed THIS session. Distinct from the set being non-null:
     // a restored snapshot fills the set but must not block the fresher live read when the menu
     // opens (a newly planted tree only shows up in the menu).
+    @Getter(AccessLevel.PACKAGE)
     private boolean parsedLive;
 
     /** Whether the travel menu has been seen this session or restored, so the planted set is known. */
@@ -48,9 +50,6 @@ final class SpiritTreeSync {
     }
 
     /** Whether the set came from the live menu this session rather than the snapshot. */
-    boolean isParsedLive() {
-        return parsedLive;
-    }
 
     /** The farmable trees detected as planted-and-grown (menu order), or empty when not synced. */
     List<String> planted() {

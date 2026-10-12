@@ -2,6 +2,7 @@ package gps;
 
 import gps.transport.*;
 import java.util.Locale;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import gps.transport.Transport;
 
@@ -16,6 +17,7 @@ import gps.transport.Transport;
  * the packed {@code destination} disambiguates options that carry no display info.
  */
 @Getter
+@EqualsAndHashCode(of = {"type", "displayInfo", "destination"})
 public final class TeleportMethod {
     private final TransportType type;
     private final String displayInfo;
@@ -128,26 +130,6 @@ public final class TeleportMethod {
 
     public static String categoryOf(TransportType type) {
         return TransportTypePresentation.categoryOf(type);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (!(o instanceof TeleportMethod))
-            return false;
-        TeleportMethod other = (TeleportMethod) o;
-        return destination == other.destination
-            && type == other.type
-            && (displayInfo == null ? other.displayInfo == null : displayInfo.equals(other.displayInfo));
-    }
-
-    @Override
-    public int hashCode() {
-        int result = type == null ? 0 : type.hashCode();
-        result = 31 * result + (displayInfo == null ? 0 : displayInfo.hashCode());
-        result = 31 * result + destination;
-        return result;
     }
 
     @Override
