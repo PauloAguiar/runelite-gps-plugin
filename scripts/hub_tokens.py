@@ -103,7 +103,7 @@ def count_tree(root):
 def report_tree(root, top, by_package):
     rows = count_tree(root)
     total = sum(r[3] for r in rows)
-    print('=== %s: %d files, %d raw chars, %d stripped chars, %d tokens (the bot's limit is 200k, counted the same way)'
+    print('=== %s: %d files, %d raw chars, %d stripped chars, %d tokens (the bot counts the same way; its limit is 200k)'
           % (root, len(rows), sum(r[1] for r in rows), sum(r[2] for r in rows), total))
     rows.sort(key=lambda r: -r[3])
     print('%-52s %8s %8s %8s %6s %6s' % ('file', 'raw', 'strip', 'tokens', 'share', 'cum'))

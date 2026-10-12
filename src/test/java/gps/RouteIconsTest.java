@@ -79,6 +79,20 @@ public class RouteIconsTest
 	static Map<String, BufferedImage> allIcons() throws Exception
 	{
 		Map<String, BufferedImage> icons = new LinkedHashMap<>();
+		// The destination icons are loaded by name (dest_<category>.png) rather than held as
+		// constants, so they are listed from the resource folder under their recorded names.
+		try (java.util.stream.Stream<java.nio.file.Path> files = java.nio.file.Files.list(java.nio.file.Paths.get("src/main/resources/icons")))
+		{
+			for (java.nio.file.Path file : (Iterable<java.nio.file.Path>) files.sorted()::iterator)
+			{
+				String name = file.getFileName().toString();
+				if (name.startsWith("dest_") && name.endsWith(".png"))
+				{
+					icons.put("DEST_" + name.substring(5, name.length() - 4).toUpperCase(),
+						toBuffered(new ImageIcon(javax.imageio.ImageIO.read(file.toFile()))));
+				}
+			}
+		}
 		for (Field field : RouteIcons.class.getDeclaredFields())
 		{
 			if (!Modifier.isStatic(field.getModifiers()))
@@ -89,7 +103,7 @@ public class RouteIconsTest
 			Object value = field.get(null);
 			if (value instanceof ImageIcon)
 			{
-				icons.put(field.getName(), toBuffered((ImageIcon) value));
+				icons.putIfAbsent(field.getName(), toBuffered((ImageIcon) value));
 			}
 			else if (value instanceof ImageIcon[])
 			{

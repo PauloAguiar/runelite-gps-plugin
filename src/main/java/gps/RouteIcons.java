@@ -1,6 +1,8 @@
 package gps;
 
 import java.awt.image.BufferedImage;
+import java.util.HashMap;
+import java.util.Map;
 import javax.swing.ImageIcon;
 import net.runelite.client.util.ImageUtil;
 
@@ -94,25 +96,9 @@ final class RouteIcons {
 
     // ── Destination-search category icons ──────────────────────────────
     // A coherent, meaningful set (one glyph per category) replacing the old hash-coloured dots.
-    private static final ImageIcon DEST_PLACE = icon("dest_place");
     private static final ImageIcon DEST_BANK = icon("dest_bank");
-    private static final ImageIcon DEST_BANK_ROUND_TRIP = icon("dest_bank_round_trip");
     // The Bank quick button while a click would add a stop: the coin stack with a "+" badge.
     private static final ImageIcon DEST_BANK_STOP = icon("dest_bank_stop");
-    private static final ImageIcon DEST_ALTAR = icon("dest_altar");
-    private static final ImageIcon DEST_WATER = icon("dest_water");
-    private static final ImageIcon DEST_FURNACE = icon("dest_furnace");
-    private static final ImageIcon DEST_ANVIL = icon("dest_anvil");
-    private static final ImageIcon DEST_RANGE = icon("dest_range");
-    private static final ImageIcon DEST_SPINNING = icon("dest_spinning");
-    private static final ImageIcon DEST_POTTERY = icon("dest_pottery");
-    private static final ImageIcon DEST_FAIRY = icon("dest_fairy");
-    private static final ImageIcon DEST_SPIRIT_TREE = icon("dest_spirit_tree");
-    private static final ImageIcon DEST_DUNGEON = icon("dest_dungeon");
-    private static final ImageIcon DEST_MINIGAME = icon("dest_minigame");
-    private static final ImageIcon DEST_LANDMARK = icon("dest_landmark");
-    // Training spots (agility courses, skilling areas): a course flag.
-    private static final ImageIcon DEST_TRAINING = icon("dest_training");
     private static final ImageIcon DEST_PIN = icon("dest_pin");
 
     // Panel message-banner glyphs: a warning triangle, an info circle, and a busy spinner.
@@ -120,29 +106,20 @@ final class RouteIcons {
     static final ImageIcon BANNER_INFO = icon("banner_info");
     static final ImageIcon BANNER_BUSY = icon("banner_busy");
 
-    /** The icon for a destination category, falling back to a location pin for anything unmapped. */
-    static ImageIcon destinationIcon(String category) {
-        switch (category) {
-            case "place": return DEST_PLACE;
-            case "bank": return DEST_BANK;
-            case "bank_round_trip": return DEST_BANK_ROUND_TRIP;
-            case "altar":
-            case "spellbook_altar": return DEST_ALTAR;
-            case "water": return DEST_WATER;
-            case "furnace": return DEST_FURNACE;
-            case "anvil": return DEST_ANVIL;
-            case "range": return DEST_RANGE;
-            case "spinning_wheel": return DEST_SPINNING;
-            case "pottery": return DEST_POTTERY;
-            case "fairy_ring": return DEST_FAIRY;
-            case "spirit_tree": return DEST_SPIRIT_TREE;
-            case "dungeon": return DEST_DUNGEON;
-            case "minigame": return DEST_MINIGAME;
-            case "landmark": return DEST_LANDMARK;
-            case "training": return DEST_TRAINING;
-            case "favorite": return FAVORITE;
-            default: return DEST_PIN;
-        }
+    private static final Map<String, ImageIcon> DESTINATION_ICONS = new HashMap<>();
+
+    /**
+     * The icon for a destination category: the PNG named after it under /icons (dest_bank,
+     * dest_altar, ...), a few categories sharing one, the location pin for anything without.
+     */
+    static synchronized ImageIcon destinationIcon(String category) {
+        if ("favorite".equals(category))
+            return FAVORITE;
+        if ("bank".equals(category))
+            return DEST_BANK;
+        String name = category.replace("spellbook_altar", "altar").replace("spinning_wheel", "spinning").replace("fairy_ring", "fairy");
+        return DESTINATION_ICONS.computeIfAbsent(name,
+            n -> RouteIcons.class.getResource("/icons/dest_" + n + ".png") == null ? DEST_PIN : icon("dest_" + n));
     }
 
     /** The Bank quick button's icon: the coin stack, with a "+" badge while a click would add a stop. */
