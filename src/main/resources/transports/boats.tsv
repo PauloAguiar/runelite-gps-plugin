@@ -115,21 +115,26 @@
 1369 3639 0	1341 3645 0	Board Boaty 33614					4	Molch
 1369 3639 0	1408 3612 0	Board Boaty 33614					4	Shayzien
 								
-# Burgh de Rott, Meiyerditch, Icyene Graveyard, Slepe								
-3525 3170 0	3605 3161 1	Board Boat 38089				7255>41	13	1: Meiyerditch.
-3525 3170 0	3684 3176 0	Board Boat 38089				7255>41	13	2: Icyene Graveyard.
-3525 3170 0	3663 3277 0	Board Boat 38089				7255>87	13	3: Slepe.
-3605 3161 1	3525 3170 0	Board Boat 38089				7255>41	13	1: Burgh de Rott.
-3605 3161 1	3684 3176 0	Board Boat 38089				7255>41	13	2: Icyene Graveyard.
-3605 3161 1	3663 3277 0	Board Boat 38089				7255>87	13	3: Slepe.
-3684 3176 0	3525 3170 0	Board Boat 38089				7255>41	13	1: Burgh de Rott.
-3684 3176 0	3605 3161 1	Board Boat 38089				7255>41	13	2: Meiyerditch.
+# Burgh de Rott, Meiyerditch, Icyene Graveyard, Slepe. The Burgh de Rott boat is the one fixed and pushed out in Darkness
+# of Hallowvale (object 12945 shows boat 17955 while varbit 2587 is 1) and 17961 is boarded from the Meiyerditch rocks (3605,3163,1); both sail
+# straight to the other shore until Sins of the Father adds a menu with Icyene Graveyard (varbit 7255 past 41) and later
+# Slepe (past 87). The graveyard has its own boat (multiloc 39520, 38089) from 44 (game cache, 2026-10-11).
+3525 3170 0	3605 3161 1	Board Boat 17955				2587=1;7255<42	13	Meiyerditch
+3525 3170 0	3605 3161 1	Board Boat 17955				2587=1;7255>41	13	1: Meiyerditch.
+3525 3170 0	3684 3176 0	Board Boat 17955				2587=1;7255>41	13	2: Icyene Graveyard.
+3525 3170 0	3663 3277 0	Board Boat 17955				2587=1;7255>87	13	3: Slepe.
+3605 3163 1	3525 3170 0	Board Boat 17961				2587=1;7255<42	13	Burgh de Rott
+3605 3163 1	3525 3170 0	Board Boat 17961				2587=1;7255>41	13	1: Burgh de Rott.
+3605 3163 1	3684 3176 0	Board Boat 17961				2587=1;7255>41	13	2: Icyene Graveyard.
+3605 3163 1	3663 3277 0	Board Boat 17961				2587=1;7255>87	13	3: Slepe.
+3684 3176 0	3525 3170 0	Board Boat 38089				7255>43	13	1: Burgh de Rott.
+3684 3176 0	3605 3161 1	Board Boat 38089				7255>43	13	2: Meiyerditch.
 3684 3176 0	3663 3277 0	Board Boat 38089				7255>87	13	3: Slepe.
-3684 3175 0	3525 3170 0	Board Boat 38089				7255>41	13	1: Burgh de Rott.
-3684 3175 0	3605 3161 1	Board Boat 38089				7255>41	13	2: Meiyerditch.
+3684 3175 0	3525 3170 0	Board Boat 38089				7255>43	13	1: Burgh de Rott.
+3684 3175 0	3605 3161 1	Board Boat 38089				7255>43	13	2: Meiyerditch.
 3684 3175 0	3663 3277 0	Board Boat 38089				7255>87	13	3: Slepe.
-3684 3174 0	3525 3170 0	Board Boat 38089				7255>41	13	1: Burgh de Rott.
-3684 3174 0	3605 3161 1	Board Boat 38089				7255>41	13	2: Meiyerditch.
+3684 3174 0	3525 3170 0	Board Boat 38089				7255>43	13	1: Burgh de Rott.
+3684 3174 0	3605 3161 1	Board Boat 38089				7255>43	13	2: Meiyerditch.
 3684 3174 0	3663 3277 0	Board Boat 38089				7255>87	13	3: Slepe.
 3663 3277 0	3525 3170 0	Board Boat 38089				7255>87	13	1: Burgh de Rott.
 3663 3277 0	3605 3161 1	Board Boat 38089				7255>87	13	2: Meiyerditch.

@@ -108,8 +108,9 @@ destination 3367,3318,1 SEASONAL_TRANSPORTS Banker's Briefcase: Desert - Mage Tr
 destination 3384,10142,0 SEASONAL_TRANSPORTS Map of Alacrity: Wilderness - Wilderness slayer cave: Jellies
 destination 3384,10142,0 SEASONAL_TRANSPORTS Map of Alacrity: Wilderness - Wilderness slayer cave: Lesser demons
 destination 3557,9798,0 SEASONAL_TRANSPORTS Map of Alacrity: Morytania - Meyerditch lab: Cave
-destination 3605,3161,1 BOAT 1: Meiyerditch. [Board Boat 38089]
+destination 3605,3161,1 BOAT 1: Meiyerditch. [Board Boat 17955]
 destination 3605,3161,1 BOAT 2: Meiyerditch. [Board Boat 38089]
+destination 3605,3161,1 BOAT Meiyerditch [Board Boat 17955]
 destination 3605,3163,1 TRANSPORT [Climb-down Rock 17960]
 destination 3605,3163,1 TRANSPORT [Jump-onto Rock 17958]
 destination 3646,3219,0 SEASONAL_TRANSPORTS Evil Eye: Morytania - Theatre of Blood
@@ -192,8 +193,9 @@ origin 3296,9823,0 TRANSPORT [Climb-up Rope 13999]
 origin 3297,9822,0 TRANSPORT [Climb-up Rope 13999]
 origin 3297,9824,0 TRANSPORT [Climb-up Rope 13999]
 origin 3298,9823,0 TRANSPORT [Climb-up Rope 13999]
-origin 3605,3161,1 BOAT 1: Burgh de Rott. [Board Boat 38089]
-origin 3605,3161,1 BOAT 2: Icyene Graveyard. [Board Boat 38089]
-origin 3605,3161,1 BOAT 3: Slepe. [Board Boat 38089]
 origin 3605,3161,1 TRANSPORT [Jump-onto Rock 17958]
+origin 3605,3163,1 BOAT 1: Burgh de Rott. [Board Boat 17961]
+origin 3605,3163,1 BOAT 2: Icyene Graveyard. [Board Boat 17961]
+origin 3605,3163,1 BOAT 3: Slepe. [Board Boat 17961]
+origin 3605,3163,1 BOAT Burgh de Rott [Board Boat 17961]
 origin 3605,3163,1 TRANSPORT [Climb-up Rock 17959]
