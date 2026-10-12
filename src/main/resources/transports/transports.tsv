@@ -7754,3 +7754,38 @@
 # silent band offender.											
 2398 4379 0	2396 4379 0	Squeeze-through A gap through the wall 12004			Fairytale I - Growing Pains			4			
 2396 4379 0	2398 4379 0	Squeeze-through A gap through the wall 12004			Fairytale I - Growing Pains			4			
+# Meiyerditch mine: there is no way in on foot. A Vyrewatch sends you there when asked, any one											
+# patrolling Meiyerditch (origins are the wiki spawn tiles) once the Myreque hideout is found in											
+# Darkness of Hallowvale (varbit 2573 reaches 70), or the one guarding the Ver Sinhaza bank. A											
+# Vampyre Juvinate guard lets you out to the north-east corner of Meiyerditch, by the ladder,											
+# after The Blood Moon Rises or while you wear vyre noble clothing (wiki: Meiyerditch mine,											
+# Vyrewatch (bank), Daeyalt essence mine). Both landings are provisional until captured.											
+3647 3208 0	2389 4623 2	Talk-to Vyrewatch 8251				2573>69		12	Meiyerditch mine		
+3624 3322 0	2389 4623 2	Talk-to Vyrewatch 3709				2573>69		12	Meiyerditch mine		
+3600 3245 0	2389 4623 2	Talk-to Vyrewatch 3709				2573>69		12	Meiyerditch mine		
+3615 3248 0	2389 4623 2	Talk-to Vyrewatch 3709				2573>69		12	Meiyerditch mine		
+3626 3245 0	2389 4623 2	Talk-to Vyrewatch 3709				2573>69		12	Meiyerditch mine		
+3629 3252 0	2389 4623 2	Talk-to Vyrewatch 3709				2573>69		12	Meiyerditch mine		
+3630 3279 0	2389 4623 2	Talk-to Vyrewatch 3709				2573>69		12	Meiyerditch mine		
+3636 3270 0	2389 4623 2	Talk-to Vyrewatch 3709				2573>69		12	Meiyerditch mine		
+3593 3208 0	2389 4623 2	Talk-to Vyrewatch 3709				2573>69		12	Meiyerditch mine		
+3606 3217 0	2389 4623 2	Talk-to Vyrewatch 3709				2573>69		12	Meiyerditch mine		
+3607 3225 0	2389 4623 2	Talk-to Vyrewatch 3709				2573>69		12	Meiyerditch mine		
+3611 3205 0	2389 4623 2	Talk-to Vyrewatch 3709				2573>69		12	Meiyerditch mine		
+3626 3224 0	2389 4623 2	Talk-to Vyrewatch 3709				2573>69		12	Meiyerditch mine		
+3634 3200 0	2389 4623 2	Talk-to Vyrewatch 3709				2573>69		12	Meiyerditch mine		
+3597 3193 0	2389 4623 2	Talk-to Vyrewatch 3709				2573>69		12	Meiyerditch mine		
+3601 3183 0	2389 4623 2	Talk-to Vyrewatch 3709				2573>69		12	Meiyerditch mine		
+3614 3189 0	2389 4623 2	Talk-to Vyrewatch 3709				2573>69		12	Meiyerditch mine		
+3621 3182 0	2389 4623 2	Talk-to Vyrewatch 3709				2573>69		12	Meiyerditch mine		
+3629 3190 0	2389 4623 2	Talk-to Vyrewatch 3709				2573>69		12	Meiyerditch mine		
+3638 3187 0	2389 4623 2	Talk-to Vyrewatch 3709				2573>69		12	Meiyerditch mine		
+3631 3305 0	2389 4623 2	Talk-to Vyrewatch 3709				2573>69		12	Meiyerditch mine		
+2380 4627 2	3623 3324 0	Talk-to Vampyre Juvinate 3690			The Blood Moon Rises			10	Meiyerditch north-east		
+2380 4627 2	3623 3324 0	Talk-to Vampyre Juvinate 3690		VYRE_NOBLE_TOP=1&&VYRE_NOBLE_LEGS=1&&VYRE_NOBLE_SHOES=1				10	Meiyerditch north-east		
+2386 4632 2	3623 3324 0	Talk-to Vampyre Juvinate 3690			The Blood Moon Rises			10	Meiyerditch north-east		
+2386 4632 2	3623 3324 0	Talk-to Vampyre Juvinate 3690		VYRE_NOBLE_TOP=1&&VYRE_NOBLE_LEGS=1&&VYRE_NOBLE_SHOES=1				10	Meiyerditch north-east		
+2391 4619 2	3623 3324 0	Talk-to Vampyre Juvinate 3690			The Blood Moon Rises			10	Meiyerditch north-east		
+2391 4619 2	3623 3324 0	Talk-to Vampyre Juvinate 3690		VYRE_NOBLE_TOP=1&&VYRE_NOBLE_LEGS=1&&VYRE_NOBLE_SHOES=1				10	Meiyerditch north-east		
+2392 4623 2	3623 3324 0	Talk-to Vampyre Juvinate 3690			The Blood Moon Rises			10	Meiyerditch north-east		
+2392 4623 2	3623 3324 0	Talk-to Vampyre Juvinate 3690		VYRE_NOBLE_TOP=1&&VYRE_NOBLE_LEGS=1&&VYRE_NOBLE_SHOES=1				10	Meiyerditch north-east		
