@@ -1441,13 +1441,13 @@
 2516 3423 0	2517 3426 1	Climb-up Staircase 16668							
 									
 # Waterfall Island and Dungeon (varplayer:65=8?GLARIALS_AMULET=1)									
-2512 3476 0	2527 3413 0	Swim River 10283							
-2510 3494 0	2512 3481 0	Board Log raft 1987							
-2511 3477 0	2527 3413 0	Swim River 10283							
-2510 3493 0	2512 3481 0	Board Log raft 1987							
-2511 3463 0	2527 3413 0	Get in Barrel 2022							
-2512 3466 0	2527 3413 0	Climb Dead Tree 2020							
-2512 3476 0	2527 3413 0	Swim to Rock 1996							
+2512 3476 0	2527 3413 0	Swim River 10283					65>0
+2510 3494 0	2512 3481 0	Board Log raft 1987					65>0
+2511 3477 0	2527 3413 0	Swim River 10283					65>0
+2510 3493 0	2512 3481 0	Board Log raft 1987					65>0
+2511 3463 0	2527 3413 0	Get in Barrel 2022					65>0
+2512 3466 0	2527 3413 0	Climb Dead Tree 2020					65>0
+2512 3476 0	2527 3413 0	Swim to Rock 1996					65>0
 2511 3463 0	2575 9861 0	Open Door 2010							
 2575 9861 0	2511 3463 0	Open Door 2000							
 2568 9893 0	2568 9894 0	Open Door 2002		298=1					
@@ -2575,8 +2575,8 @@
 2894 3567 0	2894 3566 0	Open Large door 3743							
 									
 # Wilderness									
-3158 3950 0	3158 3952 0	Slash Web 733						4	
-3158 3952 0	3158 3950 0	Slash Web 733						4	
+3158 3950 0	3158 3952 0	Slash Web 733		SLASH=1				4
+3158 3952 0	3158 3950 0	Slash Web 733		SLASH=1				4
 3232 10351 0	3233 3950 0	Use Crevice 26763							
 3233 3950 0	3232 10351 0	Enter Cavern 26762							
 3232 3950 0	3232 10351 0	Enter Cavern 26762							
@@ -2586,14 +2586,14 @@
 3232 3938 0	3233 10332 0	Enter Cavern 26762							
 3233 10332 0	3233 3938 0	Use Crevice 26763							
 3233 3938 0	3233 10332 0	Enter Cavern 26762							
-3095 3957 0	3094 3957 0	Slash Web 733						4	
-3093 3957 0	3092 3957 0	Slash Web 733						4	
-3092 3957 0	3093 3957 0	Slash Web 733						4	
-3094 3957 0	3095 3957 0	Slash Web 733						4	
-3106 3959 0	3106 3957 0	Slash Web 733						4	
-3105 3959 0	3105 3957 0	Slash Web 733						4	
-3105 3957 0	3105 3959 0	Slash Web 733						4	
-3106 3957 0	3106 3959 0	Slash Web 733						4	
+3095 3957 0	3094 3957 0	Slash Web 733		SLASH=1				4
+3093 3957 0	3092 3957 0	Slash Web 733		SLASH=1				4
+3092 3957 0	3093 3957 0	Slash Web 733		SLASH=1				4
+3094 3957 0	3095 3957 0	Slash Web 733		SLASH=1				4
+3106 3959 0	3106 3957 0	Slash Web 733		SLASH=1				4
+3105 3959 0	3105 3957 0	Slash Web 733		SLASH=1				4
+3105 3957 0	3105 3959 0	Slash Web 733		SLASH=1				4
+3106 3957 0	3106 3959 0	Slash Web 733		SLASH=1				4
 3018 3958 0	3018 3958 1	Climb-up Ship's ladder 272							
 3018 3958 1	3018 3958 0	Climb-down Ship's ladder 273							
 3019 3958 1	3019 3960 2	Climb-up Ship's ladder 245							
@@ -2608,10 +2608,10 @@
 3017 3850 0	3069 10255 0	Climb-down Ladder 18987						2	
 3068 10256 0	3016 3849 0	Climb-up Ladder 18988						2	
 3069 10257 0	3016 3849 0	Climb-up Ladder 18988						2	
-3029 3852 0	3031 3852 0	Slash Web 733						4	
-3031 3852 0	3029 3852 0	Slash Web 733						4	
-3115 3858 0	3115 3860 0	Slash Web 733						4	
-3115 3860 0	3115 3858 0	Slash Web 733						4	
+3029 3852 0	3031 3852 0	Slash Web 733		SLASH=1				4
+3031 3852 0	3029 3852 0	Slash Web 733		SLASH=1				4
+3115 3858 0	3115 3860 0	Slash Web 733		SLASH=1				4
+3115 3860 0	3115 3858 0	Slash Web 733		SLASH=1				4
 3069 3857 0	3016 10249 0	Climb-down Ladder 18989						2	
 3016 10249 0	3070 3856 0	Climb-up Ladder 18990						2	
 3017 10250 0	3070 3856 0	Climb-up Ladder 18990						2	
@@ -3771,14 +3771,14 @@
 3501 3426 0	3502 3432 0	Cross-bridge Tree 5003							
 									
 # Burgh de Rott									
-3484 3244 0	3484 3243 0	Open Gate 12817							
+3484 3244 0	3484 3243 0	Open Gate 12817				1990>39
 3484 3243 0	3484 3244 0	Open Gate 12817							
-3485 3244 0	3485 3243 0	Open Gate 12816							
+3485 3244 0	3485 3243 0	Open Gate 12816				1990>39
 3485 3243 0	3485 3244 0	Open Gate 12816							
 3513 3237 0	3513 3239 2	Climb-up Ladder 12780						2	
 3513 3239 2	3513 3237 0	Climb-down Ladder 12781						2	
-3474 3221 0	3473 3221 0	Jump-over Low fence 12776							
-3473 3221 0	3475 3221 0	Jump-over Low fence 12776							
+3474 3221 0	3473 3221 0	Jump-over Low fence 12776	25 Agility			1990>39
+3473 3221 0	3475 3221 0	Jump-over Low fence 12776	25 Agility			1990>39
 									
 # Haunted Mine									
 3446 3236 0	3444 3236 0	Climb-over Mine cart 4918							
@@ -5155,6 +5155,7 @@
 2803 10187 0	2822 3745 0	Enter Tunnel 5011						1	
 2802 10187 0	2822 3745 0	Enter Tunnel 5011						1	
 2772 10232 0	2778 3869 0	Enter Crevasse 5025						1	
+# Keldagrim's tunnel: upstream asks for a rope, which is used once and then stays; left free so established players are not sent to a bank for one.
 2778 3869 0	2772 10232 0	Enter Tunnel 5009						1	
 2778 3870 0	2772 10232 0	Enter Tunnel 5009						1	
 2779 3871 0	2772 10232 0	Enter Tunnel 5009						1	
@@ -5416,8 +5417,9 @@
 1891 4633 2	1891 4638 1	Climb-down Staircase 10016						2	
 1892 4633 2	1892 4638 1	Climb-down Staircase 10016						2	
 1911 4612 1	1909 4612 0	Climb Wall support 10033						5	
-1857 4639 0	2311 9793 0	Enter Tunnel 9977						1	
-2311 9793 0	1857 4639 0	Descend Cave 9974						1	
+# The tunnel between the temple and the Underground Pass dwarf area: open once Mourning's End Part II has reached the temple (varbit 1103 > 5), both ways.
+1857 4639 0	2311 9793 0	Enter Tunnel 9977				1103>5		1
+2311 9793 0	1857 4639 0	Descend Cave 9974				1103>5		1
 # Two staircases the audit sighted but nobody climbed yet (2026-10-03), derived from the map and
 # their siblings: the south staircase up from the middle floor's stair square (the mirror of the
 # north one), and the ground floor's west staircase (10015 at 1888,4639,0) between the open tiles

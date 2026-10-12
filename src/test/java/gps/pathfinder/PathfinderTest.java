@@ -1249,12 +1249,15 @@ public class PathfinderTest
 		int destination = WorldPointUtil.packWorldPoint(3087, 3492, 0);
 
 		when(config.avoidWilderness()).thenReturn(false);
-		setupInventory();
+		// A knife and nothing else: the lever lands in the Deserted Keep, whose exits are webs, and
+		// webs need a slashing item since the gate was restored from upstream (2026-10-11); with
+		// nothing at all the keep is a dead end and the route walks the whole way instead.
+		setupInventory(new Item(ItemID.KNIFE, 1));
 		setupEquipment();
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 
 		Pathfinder pathfinder = assertScenarioPathLengthAndGet(
-			"Wizards' Guild -> Edgeville with no items and wilderness allowed",
+			"Wizards' Guild -> Edgeville with a knife and wilderness allowed",
 			769 /* one tile shorter: the decor phantom-block fix opened a straighter line */, // was 769: one-tile geometry shift in the 2026-07-30 cache refresh (rev 2644)
 			origin,
 			destination);
