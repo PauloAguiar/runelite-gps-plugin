@@ -1,5 +1,7 @@
 package gps;
 
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -15,6 +17,7 @@ import net.runelite.client.plugins.PluginManager;
  * off): enabled with the option off, it draws its own lines and GPS never hears about the step,
  * so the panel shows a dismissable banner.
  */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class CompanionPlugins {
     static final String SHORTEST_PATH = "Shortest Path";
     static final String QUEST_HELPER = "Quest Helper";
@@ -26,13 +29,6 @@ final class CompanionPlugins {
 
     private volatile boolean shortestPathConflict;
     private volatile boolean questHelperPathingOff;
-
-    CompanionPlugins(PluginManager pluginManager, ConfigManager configManager, Plugin self, Runnable onChanged) {
-        this.pluginManager = pluginManager;
-        this.configManager = configManager;
-        this.self = self;
-        this.onChanged = onChanged;
-    }
 
     /** Whether the original Shortest Path plugin is also enabled. */
     boolean isShortestPathConflict() {

@@ -3,6 +3,7 @@ package gps;
 import com.google.gson.Gson;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
@@ -12,6 +13,8 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
@@ -27,12 +30,9 @@ import net.runelite.client.RuneLite;
  * "Save debug snapshot" item; confirms via a game message. Built on the client thread.
  */
 @Slf4j
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class DebugSnapshot {
     private final ShortestPathPlugin plugin;
-
-    DebugSnapshot(ShortestPathPlugin plugin) {
-        this.plugin = plugin;
-    }
 
     /** Builds and writes the snapshot, CLIENT THREAD. Failures are logged, never thrown. */
     void capture() {
@@ -203,7 +203,7 @@ final class DebugSnapshot {
         return timingJson;
     }
 
-    private File write(Map<String, Object> snapshot) throws java.io.IOException {
+    private File write(Map<String, Object> snapshot) throws IOException {
         File dir = new File(RuneLite.RUNELITE_DIR, "gps-debug");
         //noinspection ResultOfMethodCallIgnored
         dir.mkdirs();

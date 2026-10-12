@@ -2,6 +2,8 @@ package gps.transport;
 
 import java.util.EnumMap;
 import java.util.Map;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import net.runelite.api.Quest;
 
 /**
@@ -16,18 +18,13 @@ public final class TransportTypePresentation {
     /** The travel option named for a type no checkbox owns. */
     static final String NO_TRAVEL_OPTION = "That travel option";
 
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
     private static final class Row {
         final String category;
         final String vehicle;
         final String travelOption;
         final Quest gateQuest;
 
-        Row(String category, String vehicle, String travelOption, Quest gateQuest) {
-            this.category = category;
-            this.vehicle = vehicle;
-            this.travelOption = travelOption;
-            this.gateQuest = gateQuest;
-        }
     }
 
     private static final Map<TransportType, Row> ROWS = new EnumMap<>(TransportType.class);

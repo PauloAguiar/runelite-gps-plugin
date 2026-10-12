@@ -1,16 +1,26 @@
 package gps;
 
+import gps.pathfinder.CollisionMap;
 import gps.transport.Transport;
 import gps.transport.TransportType;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.zip.InflaterInputStream;
 
 import static gps.WorldPointUtil.packWorldPoint;
@@ -58,7 +68,7 @@ public final class SailingSea {
     private final PrimitiveIntHashMap<Integer> endpointIndex;
     /** Packed land tiles of every mooring — the origins of boarding legs, for the
      * boat-location gate to tell "boards a boat here" from "already under way". */
-    private final java.util.Set<Integer> mooringLandTiles;
+    private final Set<Integer> mooringLandTiles;
     /** Port-to-port sea distances in centitiles (shipped matrix, MAX_VALUE = unconnected),
      * indexed like {@link #moorings} — lets partial wet floods reach EVERY port by
      * composing through a settled near one. Null when the resource is absent. */
@@ -74,7 +84,7 @@ public final class SailingSea {
         this.moorings = moorings;
         this.mooringNames = mooringNames;
         this.endpointIndex = new PrimitiveIntHashMap<>(Math.max(1, moorings.size() * 2));
-        this.mooringLandTiles = new java.util.HashSet<>();
+        this.mooringLandTiles = new HashSet<>();
         for (int i = 0; i < moorings.size(); i++) {
             int[] mooring = moorings.get(i);
             endpointIndex.put((mooring[3] - minY) * width + (mooring[2] - minX), i);
@@ -91,14 +101,14 @@ public final class SailingSea {
     /** The shipped port-to-port matrix, re-keyed from land tiles to mooring indices; null
      * (composition disabled, floods stand alone) when the resource is missing. */
     private static int[][] loadPortMatrix(List<int[]> moorings) {
-        java.util.Map<Long, Integer> byLand = new java.util.HashMap<>();
+        Map<Long, Integer> byLand = new HashMap<>();
         for (int i = 0; i < moorings.size(); i++)
             byLand.put((long) moorings.get(i)[0] << 16 | moorings.get(i)[1], i);
         try (InputStream tsv = SailingSea.class.getResourceAsStream("/sailing-sea-matrix.tsv");
             Scanner scanner = new Scanner(tsv, "UTF-8")) {
             int[][] matrix = new int[moorings.size()][moorings.size()];
             for (int[] row : matrix)
-                java.util.Arrays.fill(row, Integer.MAX_VALUE);
+                Arrays.fill(row, Integer.MAX_VALUE);
             for (int i = 0; i < matrix.length; i++)
                 matrix[i][i] = 0;
             while (scanner.hasNextLine()) {
@@ -229,7 +239,7 @@ public final class SailingSea {
      * anyway cost every on-foot "nearest bank" click four ocean floods, about 700 ms (measured
      * 2026-09-27).
      */
-    public static Set<Integer> waterPins(gps.pathfinder.CollisionMap map, Set<Integer> targets, boolean aboard) {
+    public static Set<Integer> waterPins(CollisionMap map, Set<Integer> targets, boolean aboard) {
         if (map == null || targets.isEmpty() || (!aboard && !isCompact(targets)))
             return Set.of();
         Set<Integer> wet = new HashSet<>();
@@ -275,7 +285,7 @@ public final class SailingSea {
      * tile ("unreachable" the moment the player boards and drops a pin).
      */
     public static List<Transport> aboardLegTransports(int startPacked,
-        java.util.Set<Integer> targets) {
+        Set<Integer> targets) {
         if (!isSailable(startPacked))
             return List.of();
         List<Transport> legs = new ArrayList<>();
@@ -360,7 +370,7 @@ public final class SailingSea {
         int boxWidth = x1 - x0 + 1;
         int boxHeight = y1 - y0 + 1;
         int[] dist = new int[boxWidth * boxHeight];
-        java.util.Arrays.fill(dist, Integer.MAX_VALUE);
+        Arrays.fill(dist, Integer.MAX_VALUE);
         int boxStart = (start / sea.width - y0) * boxWidth + (start % sea.width - x0);
         int boxGoal = (goal / sea.width - y0) * boxWidth + (goal % sea.width - x0);
         LongHeap queue = new LongHeap();
@@ -395,7 +405,7 @@ public final class SailingSea {
     }
 
     public static List<Transport> seaLegTransports(int targetPacked, int count) {
-        return seaLegTransports(targetPacked, count, java.util.Set.of());
+        return seaLegTransports(targetPacked, count, Set.of());
     }
 
     /**
@@ -405,7 +415,7 @@ public final class SailingSea {
      *                         nearest-selection would happily gate every offered leg away.
      */
     public static List<Transport> seaLegTransports(int targetPacked, int count,
-        java.util.Set<Integer> mustIncludeLands) {
+        Set<Integer> mustIncludeLands) {
         if (!isSailable(targetPacked))
             return List.of();
         int tx = unpackWorldX(targetPacked);
@@ -489,7 +499,7 @@ public final class SailingSea {
 
         void push(long value) {
             if (size == heap.length)
-                heap = java.util.Arrays.copyOf(heap, size * 2);
+                heap = Arrays.copyOf(heap, size * 2);
             int i = size++;
             while (i > 0) {
                 int parent = (i - 1) >> 1;
@@ -540,13 +550,13 @@ public final class SailingSea {
             return cachedDistances;
         SailingSea sea = get();
         int[] result = new int[sea.moorings.size()];
-        java.util.Arrays.fill(result, Integer.MAX_VALUE);
+        Arrays.fill(result, Integer.MAX_VALUE);
         if (!isSailable(targetPacked) || sea.width == 0)
             return result;
         if (wetScratch == null || wetScratch.length != sea.width * sea.height)
             wetScratch = new int[sea.width * sea.height];
         int[] dist = wetScratch;
-        java.util.Arrays.fill(dist, Integer.MAX_VALUE);
+        Arrays.fill(dist, Integer.MAX_VALUE);
         LongHeap queue = wetHeap;
         queue.clear();
         int start = (unpackWorldY(targetPacked) - sea.minY) * sea.width
@@ -621,7 +631,7 @@ public final class SailingSea {
      * Learns live-blocked sailable tiles (packed world points). New knowledge invalidates
      * every cached track and wet flood — they recompute lazily against the corrected sea.
      */
-    public static synchronized void learnObstacles(java.util.List<Integer> packedTiles) {
+    public static synchronized void learnObstacles(List<Integer> packedTiles) {
         SailingSea sea = get();
         if (sea.width == 0 || packedTiles.isEmpty())
             return;
@@ -683,10 +693,10 @@ public final class SailingSea {
         cachedDistances = null;
     }
 
-    private static final java.util.LinkedHashMap<Long, int[]> trackCache =
-        new java.util.LinkedHashMap<Long, int[]>(16, 0.75f, true) {
+    private static final LinkedHashMap<Long, int[]> trackCache =
+        new LinkedHashMap<Long, int[]>(16, 0.75f, true) {
             @Override
-            protected boolean removeEldestEntry(java.util.Map.Entry<Long, int[]> eldest) {
+            protected boolean removeEldestEntry(Map.Entry<Long, int[]> eldest) {
                 return size() > 8;
             }
         };
@@ -698,10 +708,10 @@ public final class SailingSea {
      * null when either endpoint has no sailable water within 6 tiles or no track fits the box
      * (the caller falls back to the dashed jump).
      */
-    private static final java.util.Set<Long> tracksInFlight =
-        java.util.concurrent.ConcurrentHashMap.newKeySet();
-    private static final java.util.concurrent.ExecutorService trackExecutor =
-        java.util.concurrent.Executors.newSingleThreadExecutor(runnable -> {
+    private static final Set<Long> tracksInFlight =
+        ConcurrentHashMap.newKeySet();
+    private static final ExecutorService trackExecutor =
+        Executors.newSingleThreadExecutor(runnable -> {
             Thread thread = new Thread(runnable, "gps-sea-track");
             thread.setDaemon(true);
             return thread;
@@ -795,13 +805,13 @@ public final class SailingSea {
         int boxHeight = y1 - y0 + 1;
         int[] dist = new int[boxWidth * boxHeight];
         int[] parent = new int[boxWidth * boxHeight];
-        java.util.Arrays.fill(dist, Integer.MAX_VALUE);
-        java.util.Arrays.fill(parent, -1);
+        Arrays.fill(dist, Integer.MAX_VALUE);
+        Arrays.fill(parent, -1);
         int boxStart = (start / sea.width - y0) * boxWidth + (start % sea.width - x0);
         int boxGoal = (goal / sea.width - y0) * boxWidth + (goal % sea.width - x0);
         byte[] shore = shoreDistances(sea, x0, y0, boxWidth, boxHeight);
         byte[] parentMove = new byte[boxWidth * boxHeight];
-        java.util.Arrays.fill(parentMove, (byte) -1);
+        Arrays.fill(parentMove, (byte) -1);
         LongHeap queue = new LongHeap();
         dist[boxStart] = 0;
         queue.push(boxStart);
@@ -843,12 +853,12 @@ public final class SailingSea {
         }
         if (dist[boxGoal] == Integer.MAX_VALUE)
             return null;
-        java.util.List<Integer> waypoints = new ArrayList<>();
+        List<Integer> waypoints = new ArrayList<>();
         for (int at = boxGoal; at != -1; at = parent[at]) {
             waypoints.add(packWorldPoint(
                 sea.minX + x0 + at % boxWidth, sea.minY + y0 + at / boxWidth, 0));
         }
-        java.util.Collections.reverse(waypoints);
+        Collections.reverse(waypoints);
         return smoothTrack(sea, waypoints);
     }
 
@@ -873,8 +883,8 @@ public final class SailingSea {
      */
     private static byte[] shoreDistances(SailingSea sea, int x0, int y0, int boxWidth, int boxHeight) {
         byte[] shore = new byte[boxWidth * boxHeight];
-        java.util.Arrays.fill(shore, (byte) (SHORE_PENALTIES.length - 1));
-        java.util.ArrayDeque<Integer> queue = new java.util.ArrayDeque<>();
+        Arrays.fill(shore, (byte) (SHORE_PENALTIES.length - 1));
+        ArrayDeque<Integer> queue = new ArrayDeque<>();
         for (int y = 0; y < boxHeight; y++) {
             for (int x = 0; x < boxWidth; x++) {
                 int gx = x0 + x;
@@ -934,8 +944,8 @@ public final class SailingSea {
      * the overlays and off-route bands measure against WAYPOINTS, so long bare segments would
      * break progress tracking mid-leg.
      */
-    private static int[] smoothTrack(SailingSea sea, java.util.List<Integer> waypoints) {
-        java.util.List<Integer> corners = new ArrayList<>();
+    private static int[] smoothTrack(SailingSea sea, List<Integer> waypoints) {
+        List<Integer> corners = new ArrayList<>();
         int trackStart = waypoints.get(0);
         int trackGoal = waypoints.get(waypoints.size() - 1);
         int at = 0;
@@ -972,7 +982,7 @@ public final class SailingSea {
         // because the geometry is, not because rendering hides jitter (field screenshot:
         // tracks neither straight nor on sailable headings).
         corners = snapCornersToBearings(sea, corners, trackStart, trackGoal);
-        java.util.List<Integer> dense = new ArrayList<>();
+        List<Integer> dense = new ArrayList<>();
         for (int c = 0; c + 1 < corners.size(); c++)
             densifyLeg(dense, corners.get(c), corners.get(c + 1));
         dense.add(corners.get(corners.size() - 1));
@@ -987,8 +997,8 @@ public final class SailingSea {
      * window on each side, so the integer stair-stepping of a densified straight chord
      * (E, E, NE, E...) does not count as helm changes. First and last index included.
      */
-    public static java.util.List<Integer> trackCorners(int[] track) {
-        java.util.List<Integer> corners = new ArrayList<>();
+    public static List<Integer> trackCorners(int[] track) {
+        List<Integer> corners = new ArrayList<>();
         corners.add(0);
         for (int w = 2; w + 2 < track.length; w++) {
             double inX = unpackWorldX(track[w]) - unpackWorldX(track[w - 2]);
@@ -1026,9 +1036,9 @@ public final class SailingSea {
     /** Dogleg turn positions along the first bearing run, tried in order. */
     private static final double[] DOGLEG_FRACTIONS = {0.8, 0.65, 0.5, 0.35, 0.2};
 
-    private static java.util.List<Integer> snapCornersToBearings(SailingSea sea,
-        java.util.List<Integer> corners, int trackStart, int trackGoal) {
-        java.util.List<Integer> snapped = new ArrayList<>();
+    private static List<Integer> snapCornersToBearings(SailingSea sea,
+        List<Integer> corners, int trackStart, int trackGoal) {
+        List<Integer> snapped = new ArrayList<>();
         snapped.add(corners.get(0));
         for (int c = 1; c < corners.size(); c++) {
             int from = snapped.get(snapped.size() - 1);
@@ -1050,7 +1060,7 @@ public final class SailingSea {
      * dogleg with the turn slid along the first run — the shape that clears a moored
      * hull the single corner cannot). False when no shape fits at this clearance.
      */
-    private static boolean snapLeg(SailingSea sea, java.util.List<Integer> snapped,
+    private static boolean snapLeg(SailingSea sea, List<Integer> snapped,
         int from, int to, int trackStart, int trackGoal, int depth) {
         int dx = unpackWorldX(to) - unpackWorldX(from);
         int dy = unpackWorldY(to) - unpackWorldY(from);
@@ -1155,7 +1165,7 @@ public final class SailingSea {
      * Densifies one leg. Exact bearing runs step their basis vector (points ON the line);
      * fallback chords keep the rounded interpolation.
      */
-    private static void densifyLeg(java.util.List<Integer> dense, int from, int to) {
+    private static void densifyLeg(List<Integer> dense, int from, int to) {
         int ax = unpackWorldX(from);
         int ay = unpackWorldY(from);
         int dx = unpackWorldX(to) - ax;
@@ -1216,7 +1226,7 @@ public final class SailingSea {
      * a route keeps asking; the BFS is bounded.
      */
     private static final long TRACK_RETRY_MS = 10_000;
-    private static final java.util.HashMap<Long, Long> failedTracks = new java.util.HashMap<>();
+    private static final HashMap<Long, Long> failedTracks = new HashMap<>();
 
     private static boolean failureCoolingDown(long key) {
         synchronized (trackCache) {

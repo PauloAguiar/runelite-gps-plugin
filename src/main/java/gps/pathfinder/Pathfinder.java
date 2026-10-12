@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
+import java.util.function.IntSupplier;
 import lombok.Getter;
 import gps.PrimitiveIntList;
 import gps.WorldPointUtil;
@@ -25,6 +26,7 @@ public class Pathfinder implements Runnable {
     private final IntDeque boundary = new IntDeque(4096);
     private final IntMinHeap pending;
     // A* mode (heuristic attached): the ordering key is g + a consistent heuristic instead of g.
+    @Getter
     private final boolean astar;
     // Heap mode: every node goes through a cost-ordered queue and visited-marking moves from
     // enqueue to dequeue (the first DEQUEUE of a state is via its cheapest parent; the first
@@ -73,7 +75,7 @@ public class Pathfinder implements Runnable {
     // Optional live ceiling polled on every pop, lowered mid-search from another thread. The walk-only
     // search uses it: it starts unbounded but drops to the best route's cost as soon as the chain finds
     // one, so a walk to an unreachable/far target stops flooding the map instead of exploring it whole.
-    private java.util.function.IntSupplier dynamicCostCap;
+    private IntSupplier dynamicCostCap;
     // Closest-tile tracking is O(targets) per node, so during the search it only runs on every
     // UNREACHABLE_TRACK_INTERVAL-th tile (enough for the cutoff extension and the progressively
     // rendered partial path); the exact best tile is recovered in one post-pass when the search
@@ -131,9 +133,6 @@ public class Pathfinder implements Runnable {
     }
 
     /** Whether this search runs with an A* heuristic (identical costs, smaller exploration). */
-    public boolean isAstar() {
-        return astar;
-    }
 
     /** Whether any transport or teleport is usable — the trigger for full heap ordering. */
     private static boolean anyTransportsUsable(PathfinderConfig config) {
@@ -161,7 +160,7 @@ public class Pathfinder implements Runnable {
      * Installs a live cost ceiling polled on every pop (in addition to the fixed {@code costCap}).
      * Set before {@link #run()}; the supplier may be lowered from another thread during the search.
      */
-    public void setDynamicCostCap(java.util.function.IntSupplier dynamicCostCap) {
+    public void setDynamicCostCap(IntSupplier dynamicCostCap) {
         this.dynamicCostCap = dynamicCostCap;
     }
 

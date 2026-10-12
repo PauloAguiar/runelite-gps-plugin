@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.events.PluginMessage;
 
@@ -21,15 +23,11 @@ import net.runelite.client.events.PluginMessage;
  * {@link PluginMessageCodec}; this is the flow: which start, which ends, whether the journey
  * re-arms.
  */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class PluginMessageBridge {
     private final ShortestPathPlugin plugin;
     // A supplier: the plugin builds the bridge at field initialisation, before injection.
     private final Supplier<EventBus> eventBus;
-
-    PluginMessageBridge(ShortestPathPlugin plugin, Supplier<EventBus> eventBus) {
-        this.plugin = plugin;
-        this.eventBus = eventBus;
-    }
 
     /** An inbound message on either namespace: a path request or a clear. */
     void receive(PluginMessage event) {

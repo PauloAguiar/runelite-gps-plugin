@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.swing.SwingUtilities;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.GameState;
 import net.runelite.api.ItemContainer;
@@ -21,6 +23,7 @@ import net.runelite.api.ItemContainer;
  * the game state, the round-trip wish) and the collaborators.
  */
 @Slf4j
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class RouteController {
     private final ShortestPathPlugin plugin;
     private final RouteSession session;
@@ -39,15 +42,6 @@ final class RouteController {
     // Whether the GPS side panel is shown (sidebar tab selected). It no longer changes how much a
     // generation does (see routeLimitFor); opening the panel re-checks the auto-compute decision.
     private volatile boolean panelVisible;
-
-    RouteController(ShortestPathPlugin plugin, RouteSession session, MethodExclusions exclusions,
-        ChoiceStore choices, PluginMessageBridge messages) {
-        this.plugin = plugin;
-        this.session = session;
-        this.exclusions = exclusions;
-        this.choices = choices;
-        this.messages = messages;
-    }
 
     /** Startup, before the panel exists: the saved mode, the generator, the page budget. */
     void start(AlternativeRoutesService generator) {

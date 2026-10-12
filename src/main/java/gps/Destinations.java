@@ -1,5 +1,6 @@
 package gps;
 
+import gps.pathfinder.CollisionMap;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -10,7 +11,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Locale;
 import java.util.LinkedHashMap;
+import java.util.Scanner;
 import java.util.Set;
+import java.util.function.IntPredicate;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import gps.transport.Transport;
 import gps.transport.TransportType;
@@ -71,14 +76,11 @@ public final class Destinations {
         "bank", "altar", "spellbook_altar", "water", "furnace", "anvil", "range", "spinning_wheel", "pottery");
 
     /** A "nearest X" amenity category offered as a quick option: its id and its display label. */
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
     public static final class NearestOption {
         public final String id;
         public final String label;
 
-        NearestOption(String id, String label) {
-            this.id = id;
-            this.label = label;
-        }
     }
 
     /**
@@ -198,7 +200,7 @@ public final class Destinations {
      * the amenity perimeter fixes). If no walkable tile exists within range (a pin mid-pond), the
      * original tile is returned alone and the search keeps the old closest-tile behaviour.
      */
-    public static Set<Integer> walkableTargets(gps.pathfinder.CollisionMap map, int packed) {
+    public static Set<Integer> walkableTargets(CollisionMap map, int packed) {
         return walkableTargets(map, packed, null);
     }
 
@@ -210,8 +212,8 @@ public final class Destinations {
      * Troll Stronghold entrance: routed behind the mouth, then the game walked the long way
      * around). The mapped transport's origin tile is, by definition, the interactable side.
      */
-    public static Set<Integer> walkableTargets(gps.pathfinder.CollisionMap map, int packed,
-        java.util.function.IntPredicate transportOrigin) {
+    public static Set<Integer> walkableTargets(CollisionMap map, int packed,
+        IntPredicate transportOrigin) {
         packed = remapTemplateOnlyZones(packed);
         Set<Integer> land = walkableLandTargets(map, packed, transportOrigin);
         // A pin on SAILABLE water is a sea destination (a wreck, a fishing spot, an ocean
@@ -227,8 +229,8 @@ public final class Destinations {
         return land;
     }
 
-    private static Set<Integer> walkableLandTargets(gps.pathfinder.CollisionMap map, int packed,
-        java.util.function.IntPredicate transportOrigin) {
+    private static Set<Integer> walkableLandTargets(CollisionMap map, int packed,
+        IntPredicate transportOrigin) {
         final int x = unpackWorldX(packed);
         final int y = unpackWorldY(packed);
         final int plane = unpackWorldPlane(packed);
@@ -273,6 +275,7 @@ public final class Destinations {
     private static final int MAX_WALKABLE_RING = 5;
 
     /** A template-only zone: destinations inside the box snap to the anchor tile. */
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
     static final class Remap {
         final int minX;
         final int minY;
@@ -282,15 +285,6 @@ public final class Destinations {
         final int anchor;
         final String label;
 
-        Remap(int minX, int minY, int maxX, int maxY, int plane, int anchor, String label) {
-            this.minX = minX;
-            this.minY = minY;
-            this.maxX = maxX;
-            this.maxY = maxY;
-            this.plane = plane;
-            this.anchor = anchor;
-            this.label = label;
-        }
     }
 
     private static List<Remap> remaps;
@@ -321,7 +315,7 @@ public final class Destinations {
         List<Remap> loaded = new ArrayList<>();
         try (InputStream in = ShortestPathPlugin.class.getResourceAsStream("/destination-remaps.tsv")) {
             if (in != null) {
-                try (java.util.Scanner scanner = new java.util.Scanner(in, "UTF-8")) {
+                try (Scanner scanner = new Scanner(in, "UTF-8")) {
                     while (scanner.hasNextLine()) {
                         String line = scanner.nextLine();
                         if (line.startsWith("#") || line.isBlank())
@@ -382,7 +376,7 @@ public final class Destinations {
         Set<String> seenMinigames = new HashSet<>();
         for (Entry entry : entries) {
             if ("minigame".equals(entry.category))
-                seenMinigames.add(entry.name.toLowerCase(java.util.Locale.ROOT));
+                seenMinigames.add(entry.name.toLowerCase(Locale.ROOT));
         }
         for (int key : transports.keys()) {
             Transport[] set = transports.get(key);
@@ -405,7 +399,7 @@ public final class Destinations {
                     int destination = transport.getDestination();
                     String name = minigameName(transport.getDisplayInfo());
                     if (destination == WorldPointUtil.UNDEFINED
-                        || !seenMinigames.add(name.toLowerCase(java.util.Locale.ROOT))) {
+                        || !seenMinigames.add(name.toLowerCase(Locale.ROOT))) {
                         continue;
                     }
                     entries.add(new Entry("minigame", name, destination));
@@ -470,7 +464,7 @@ public final class Destinations {
         List<ExclusionZone> loaded = new ArrayList<>();
         try (InputStream in = ShortestPathPlugin.class.getResourceAsStream(EXCLUSIONS_PATH)) {
             if (in != null) {
-                try (java.util.Scanner scanner = new java.util.Scanner(in, "UTF-8")) {
+                try (Scanner scanner = new Scanner(in, "UTF-8")) {
                     while (scanner.hasNextLine()) {
                         String line = scanner.nextLine();
                         if (line.isEmpty() || line.startsWith("#"))
@@ -558,8 +552,8 @@ public final class Destinations {
      * or the search ends wherever the approach is cheapest, including BEHIND the object
      * (captured at the Troll Stronghold south cave).
      */
-    public static Set<Integer> externalTargets(Set<Integer> targets, gps.pathfinder.CollisionMap map,
-        java.util.function.IntPredicate transportOrigin) {
+    public static Set<Integer> externalTargets(Set<Integer> targets, CollisionMap map,
+        IntPredicate transportOrigin) {
         Set<Integer> ends = new HashSet<>();
         for (int target : targets)
             ends.addAll(walkableTargets(map, target, transportOrigin));

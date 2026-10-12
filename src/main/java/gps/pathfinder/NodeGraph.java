@@ -235,7 +235,6 @@ public class NodeGraph {
         return (flags[id >>> PAGE_SHIFT][id & PAGE_MASK] & FLAG_TRANSPORT) != 0;
     }
 
-
     public AbstractNodeKind abstractKind(int id) {
         return ABSTRACT_KINDS[abstractKind[id >>> PAGE_SHIFT][id & PAGE_MASK]];
     }

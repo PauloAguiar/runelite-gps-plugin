@@ -1,5 +1,7 @@
 package gps;
 
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 /**
  * Text-size presets for the directions overlay. The RuneScape fonts are pixel-art TTFs designed for
  * size 16, which stay sharpest at their native size or an exact pixel-doubling — so Small shifts the
@@ -8,6 +10,7 @@ package gps;
  * a touch softer than the exact-multiple sizes since the pixel grid no longer lands on whole screen
  * pixels, but the most-requested in-between.
  */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public enum OverlayFontSize {
     SMALL("Small"),
     NORMAL("Normal"),
@@ -15,10 +18,6 @@ public enum OverlayFontSize {
     EXTRA_LARGE("Extra large");
 
     private final String label;
-
-    OverlayFontSize(String label) {
-        this.label = label;
-    }
 
     @Override
     public String toString() {

@@ -1,5 +1,6 @@
 package gps.leagues;
 
+import gps.pathfinder.WildernessChecker;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -18,7 +19,7 @@ import gps.WorldPointUtil;
  *
  * <p>
  * Mirrors the static-utility shape of
- * {@link gps.pathfinder.WildernessChecker}. The mapping is keyed by
+ * {@link WildernessChecker}. The mapping is keyed by
  * OSRS map region id (a 64x64-tile chunk identifier matching
  * {@code WorldPoint.getRegionID()}: {@code (x >> 6) << 8 | (y >> 6)}) and
  * loaded from {@code /leagues/regions.tsv} on first access.

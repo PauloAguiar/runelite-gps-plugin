@@ -24,7 +24,9 @@ import net.runelite.api.Client;
 import net.runelite.api.Perspective;
 import net.runelite.api.Player;
 import net.runelite.api.Point;
+import net.runelite.api.WorldView;
 import net.runelite.api.coords.LocalPoint;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -107,14 +109,14 @@ public class PathTileOverlay extends Overlay {
             // its proximity to the nearest ripple centre in a train spaced WAVE_SPACING apart.
             double waveOffset = ((System.currentTimeMillis() % 600_000L) / 1000.0 * WAVE_TILES_PER_SECOND)
                 % WAVE_SPACING;
-            java.util.Set<Integer> sailingEdges = plugin.getDisplaySailingEdges();
+            Set<Integer> sailingEdges = plugin.getDisplaySailingEdges();
             // Per-frame context hoisted out of the per-edge loop: this used to rebuild the
             // player's item map and a teleport set for EVERY edge of the route, every frame
             // (~1M short-lived objects per second on a long route). Edges with neither end
             // near the loaded scene draw nothing and are skipped; sea tracks cross the scene
             // between far endpoints, so they are handled before the cull. Instances map
             // template coordinates, so they are never culled by world bounds.
-            final net.runelite.api.WorldView worldView = client.getTopLevelWorldView();
+            final WorldView worldView = client.getTopLevelWorldView();
             final boolean cullByScene = !worldView.isInstance();
             final int sceneMinX = worldView.getBaseX() - 2;
             final int sceneMinY = worldView.getBaseY() - 2;
@@ -141,7 +143,7 @@ public class PathTileOverlay extends Overlay {
                         // aboard position scored against the track, same rule the tracker uses.
                         int sailedUpTo = -1;
                         if (!done && client.getVarbitValue(
-                            net.runelite.api.gameval.VarbitID.SAILING_BOARDED_BOAT) != 0) {
+                            VarbitID.SAILING_BOARDED_BOAT) != 0) {
                             int playerPacked = fromLocalInstance(
                                 client, client.getLocalPlayer());
                             if (playerPacked != WorldPointUtil.UNDEFINED) {

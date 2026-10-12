@@ -4,6 +4,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 
 /**
  * The methods the user has excluded from the search (plan step L26, out of the plugin class).
@@ -12,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * The live set is shared by reference with the ranking preferences (the EXCLUDED mask) and the
  * generation.
  */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class MethodExclusions {
     private final Set<TeleportMethod> live = ConcurrentHashMap.newKeySet();
     // The exclusions the current route list was generated with; diverging from the live set
@@ -19,11 +22,6 @@ final class MethodExclusions {
     private volatile Set<TeleportMethod> generatedWith = Set.of();
     private final ChoiceStore store;
     private final Runnable onChanged;
-
-    MethodExclusions(ChoiceStore store, Runnable onChanged) {
-        this.store = store;
-        this.onChanged = onChanged;
-    }
 
     /** The live set itself (concurrent), for the readers that must see every change. */
     Set<TeleportMethod> live() {

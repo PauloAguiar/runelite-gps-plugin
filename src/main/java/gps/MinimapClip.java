@@ -1,6 +1,7 @@
 package gps;
 
 import java.awt.Color;
+import java.awt.Point;
 import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Shape;
@@ -8,6 +9,8 @@ import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.SpriteID;
@@ -21,6 +24,7 @@ import net.runelite.client.game.SpriteManager;
  * or changes size; an ellipse over the widget bounds when the sprite is not loaded yet. The
  * minimap overlay clips to it and the map menu tests the mouse against it.
  */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class MinimapClip {
     private final Client client;
     private final SpriteManager spriteManager;
@@ -30,11 +34,6 @@ final class MinimapClip {
     private BufferedImage spriteFixed;
     private BufferedImage spriteResizeable;
     private Rectangle rectangle = new Rectangle();
-
-    MinimapClip(Client client, SpriteManager spriteManager) {
-        this.client = client;
-        this.spriteManager = spriteManager;
-    }
 
     /** The clip shape, or null while the minimap is hidden. */
     Shape area() {
@@ -102,7 +101,7 @@ final class MinimapClip {
         Color previousColour;
         final int width = image.getWidth();
         final int height = image.getHeight();
-        List<java.awt.Point> points = new ArrayList<>();
+        List<Point> points = new ArrayList<>();
         for (int y = 0; y < height; y++) {
             previousColour = outsideColour;
             for (int x = 0; x < width; x++) {
@@ -117,14 +116,14 @@ final class MinimapClip {
                     previousColour = colour;
                 }
                 if (!colour.equals(outsideColour) && previousColour.equals(outsideColour))
-                    points.add(new java.awt.Point(x, y));
+                    points.add(new Point(x, y));
                 if ((colour.equals(outsideColour) || x == (width - 1)) && !previousColour.equals(outsideColour))
-                    points.add(0, new java.awt.Point(x, y));
+                    points.add(0, new Point(x, y));
                 previousColour = colour;
             }
         }
         Polygon polygon = new Polygon();
-        for (java.awt.Point point : points)
+        for (Point point : points)
             polygon.addPoint(point.x + offsetX, point.y + offsetY);
         return polygon;
     }

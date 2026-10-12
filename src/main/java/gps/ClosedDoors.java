@@ -7,7 +7,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Client;
 
 import static gps.WorldPointUtil.packWorldPoint;
 import static gps.WorldPointUtil.unpackWorldPlane;
@@ -48,13 +51,14 @@ public class ClosedDoors {
      */
     public static final int COST_TICKS = 3;
 
-    // Edge-mask bits, matching gps.pathfinder.OrdinalDirection's ordinal order (the search tests
+    // Edge-mask bits, matching OrdinalDirection's ordinal order (the search tests
     // masks by direction index): W, E, S, N, SW, SE, NW, NE.
     private static final int BIT_WEST = 1;
     private static final int BIT_EAST = 1 << 1;
     private static final int BIT_SOUTH = 1 << 2;
     private static final int BIT_NORTH = 1 << 3;
 
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
     public static final class Door {
         public final int id;
         public final String name;
@@ -67,14 +71,6 @@ public class ClosedDoors {
         // swung-open position, not the doorway edge.
         public final boolean placedOpen;
 
-        Door(int id, String name, int packedPosition, int type, int orientation, boolean placedOpen) {
-            this.id = id;
-            this.name = name;
-            this.packedPosition = packedPosition;
-            this.type = type;
-            this.orientation = orientation;
-            this.placedOpen = placedOpen;
-        }
     }
 
     /**
@@ -86,7 +82,7 @@ public class ClosedDoors {
         UNKNOWN
     }
 
-    public static State state(net.runelite.api.Client client, Door door) {
+    public static State state(Client client, Door door) {
         SceneObjects.Presence presence = SceneObjects.presence(client, door.packedPosition, door.id);
         if (presence == SceneObjects.Presence.OUT_OF_SCENE)
             return State.UNKNOWN;

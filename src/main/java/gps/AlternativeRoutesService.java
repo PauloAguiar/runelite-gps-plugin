@@ -1,5 +1,6 @@
 package gps;
 
+import gps.transport.TransportType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -24,6 +25,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.util.concurrent.atomic.AtomicReference;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.callback.ClientThread;
 import gps.pathfinder.CostUnits;
@@ -310,7 +314,7 @@ public class AlternativeRoutesService {
             seedCandidates = prior.seedCandidates;
             routes = new ArrayList<>(prior.routes);
             seenSignatures = new HashSet<>(prior.seenSignatures);
-            chainTailCounts = new java.util.HashMap<>(prior.chainTailCounts);
+            chainTailCounts = new HashMap<>(prior.chainTailCounts);
             bestRemaining = prior.bestRemaining;
             // First update: the routes the user is already looking at, unchanged.
             emit(gen, listener, new ArrayList<>(routes), catalog, unavailable, false);
@@ -345,7 +349,7 @@ public class AlternativeRoutesService {
             }
             routes = new ArrayList<>();
             seenSignatures = new HashSet<>();
-            chainTailCounts = new java.util.HashMap<>();
+            chainTailCounts = new HashMap<>();
             bestRemaining = -1;
             // Show the catalog right away while the routes are still computing.
             emit(gen, listener, List.of(), catalog, unavailable, false);
@@ -848,7 +852,7 @@ public class AlternativeRoutesService {
             resumeState = new ResumeState(start, rawTargets, Set.copyOf(ends), Set.copyOf(userExclusions),
                 mode, limit, costMultiple, Set.copyOf(excluded), shownSignatures,
                 List.copyOf(routes), bestRemaining, catalog, unavailable, seedCandidates,
-                java.util.Map.copyOf(chainTailCounts));
+                Map.copyOf(chainTailCounts));
         }
         if (gen == generation.get())
             lastUnreachableCause = unreachableCause(routes, start, ends, mode);
@@ -918,7 +922,6 @@ public class AlternativeRoutesService {
         long[] summary = lastTimingSummary;
         return summary == null ? null : summary.clone();
     }
-
 
     // Whether the last generation's cost cap held routes back — a higher cost multiple ("show more")
     // could surface them. False when walking is the binding ceiling (nothing cheaper-than-walk left).
@@ -1047,8 +1050,8 @@ public class AlternativeRoutesService {
         /** Remaining distance of the first route's endpoint; -1 until the chain knows it. */
         int bestRemaining = -1;
         /** The cheapest pure-sail continuation seen at the helm (the keep-sailing baseline). */
-        final java.util.concurrent.atomic.AtomicReference<RouteOption> bestSail =
-            new java.util.concurrent.atomic.AtomicReference<>();
+        final AtomicReference<RouteOption> bestSail =
+            new AtomicReference<>();
 
         Generation(int gen, int start, Set<Integer> ends, Set<TeleportMethod> userExclusions,
             AlternativeRoutesMode mode, int limit, int costMultiple, boolean roundTrip, ResultListener listener,
@@ -1090,6 +1093,7 @@ public class AlternativeRoutesService {
      * explored — for the benchmark report and for pinpointing slow searches (the aggregate GenTimer
      * numbers can't tell a few expensive searches from many cheap ones).
      */
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
     static final class SearchRecord {
         final String label;
         final long cpuMs;
@@ -1102,18 +1106,6 @@ public class AlternativeRoutesService {
         final boolean capped;
         final boolean astar;
 
-        SearchRecord(String label, long cpuMs, int resultCost, boolean reached, String termination,
-            int nodesChecked, int transportsChecked, boolean capped, boolean astar) {
-            this.label = label;
-            this.cpuMs = cpuMs;
-            this.resultCost = resultCost;
-            this.reached = reached;
-            this.termination = termination;
-            this.nodesChecked = nodesChecked;
-            this.transportsChecked = transportsChecked;
-            this.capped = capped;
-            this.astar = astar;
-        }
     }
 
     /** Appends one search's profile to the generation's records (seed workers call concurrently). */
@@ -1214,7 +1206,7 @@ public class AlternativeRoutesService {
         final int bestRemaining = g.bestRemaining;
         final DistanceField field = g.field;
         final GenTimer timer = g.timer;
-        final java.util.concurrent.atomic.AtomicReference<RouteOption> bestSail = g.bestSail;
+        final AtomicReference<RouteOption> bestSail = g.bestSail;
         // Every global teleport is excluded from each seed search except the seed itself, so the
         // exclusion universe must span ALL candidates — including ones that don't get an attempt.
         final Set<TeleportMethod> allSeedMethods = new HashSet<>();
@@ -1810,18 +1802,13 @@ public class AlternativeRoutesService {
      * A candidate route produced by one parallel seed search, before signature dedup on the
      * generation thread.
      */
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
     private static final class SeedResult {
         private final List<PathStep> path;
         private final MethodScan scan;
         private final int totalCost;
         private final boolean reached;
 
-        SeedResult(List<PathStep> path, MethodScan scan, int totalCost, boolean reached) {
-            this.path = path;
-            this.scan = scan;
-            this.totalCost = totalCost;
-            this.reached = reached;
-        }
     }
 
     private static int remainingDistance(List<PathStep> path, Set<Integer> targets) {
@@ -1982,6 +1969,7 @@ public class AlternativeRoutesService {
         return false;
     }
 
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
     private static final class MethodScan {
         private final List<TeleportMethod> methods;
         // Path index of the edge each method sits on (parallel to methods): the index of the step the
@@ -1999,18 +1987,6 @@ public class AlternativeRoutesService {
         private final List<Integer> walkBefore;
         private final int trailingWalk;
 
-        MethodScan(List<TeleportMethod> methods, List<Integer> methodEdges, List<Integer> methodDurations,
-            Set<TeleportMethod> bankGated, List<Transport> bankGatedTransports, int rawCost,
-            List<Integer> walkBefore, int trailingWalk) {
-            this.methods = methods;
-            this.methodEdges = methodEdges;
-            this.methodDurations = methodDurations;
-            this.bankGated = bankGated;
-            this.bankGatedTransports = bankGatedTransports;
-            this.rawCost = rawCost;
-            this.walkBefore = walkBefore;
-            this.trailingWalk = trailingWalk;
-        }
     }
 
     private static Transport matchMethodTransport(PathfinderConfig config, int origin, int destination, boolean bankVisited) {
@@ -2046,7 +2022,7 @@ public class AlternativeRoutesService {
                 && (!methodsOnly || TeleportMethod.isMethodType(transport.getType())
                     // Sailing is not a CATALOG method, but its legs must appear in the route
                     // methods: the cards, and the sea-track edge detection in the overlay.
-                    || transport.getType() == gps.transport.TransportType.SAILING)
+                    || transport.getType() == TransportType.SAILING)
                 && searchEdgeCost(config, transport) < bestCost) {
                 best = transport;
                 bestCost = searchEdgeCost(config, transport);
@@ -2057,7 +2033,7 @@ public class AlternativeRoutesService {
                 && (!methodsOnly || TeleportMethod.isMethodType(transport.getType())
                     // Sailing is not a CATALOG method, but its legs must appear in the route
                     // methods: the cards, and the sea-track edge detection in the overlay.
-                    || transport.getType() == gps.transport.TransportType.SAILING)
+                    || transport.getType() == TransportType.SAILING)
                 && searchEdgeCost(config, transport) < bestCost) {
                 best = transport;
                 bestCost = searchEdgeCost(config, transport);
@@ -2087,7 +2063,7 @@ public class AlternativeRoutesService {
      * charter on" is "Whistle to Civitas, charter on" with extra steps — six of ten routes were
      * such variants, one per whistle destination the exclusion chain tried. A teleport followed
      * IMMEDIATELY by a flight of the network that shares its destinations
-     * ({@link gps.transport.TransportType#sharesDestinationsWith}), landing where a usable
+     * ({@link TransportType#sharesDestinationsWith}), landing where a usable
      * teleport of the same kind could already go, adds nothing over the direct form (which has
      * its own signature and its own slot). Bankless usability is checked: if the direct teleport
      * only works from the bank, the hop variant is a genuinely different (bankless) route.
@@ -2097,7 +2073,7 @@ public class AlternativeRoutesService {
         if (methods.isEmpty())
             return false;
         for (TeleportMethod method : methods) {
-            if (method.getType() != gps.transport.TransportType.SAILING)
+            if (method.getType() != TransportType.SAILING)
                 return false;
         }
         return true;
@@ -2137,12 +2113,12 @@ public class AlternativeRoutesService {
         boolean laterEmbark = false;
         for (int i = 1; i < methods.size(); i++) {
             TeleportMethod method = methods.get(i);
-            laterEmbark |= gps.transport.TransportType.SAILING.equals(method.getType())
+            laterEmbark |= TransportType.SAILING.equals(method.getType())
                 && method.getDisplayInfo() != null
                 && method.getDisplayInfo().startsWith("Embark at ");
         }
         TeleportMethod first = methods.get(0);
-        boolean parkingFirst = gps.transport.TransportType.SAILING.equals(first.getType())
+        boolean parkingFirst = TransportType.SAILING.equals(first.getType())
             && first.getDisplayInfo() != null
             && first.getDisplayInfo().startsWith("Disembark at ");
         for (int i = 0; i < methods.size(); i++) {

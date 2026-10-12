@@ -4,6 +4,8 @@ import gps.pathfinder.PathfinderConfig;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import net.runelite.api.ChatMessageType;
 
 /**
@@ -17,6 +19,7 @@ import net.runelite.api.ChatMessageType;
  * pin; the routes themselves come from the auto-compute on the next tick, keyed on the target
  * set, or from an explicit recompute. Written on the client thread, read from ticks and overlays.
  */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class DestinationController {
     private final ShortestPathPlugin plugin;
     private final RouteSession session;
@@ -36,16 +39,6 @@ final class DestinationController {
     private volatile boolean roundTrip;
     // The destination a nearest-bank trip replaced, resumed when the trip completes (see BankDetour).
     private final BankDetour bankTrip = new BankDetour();
-
-    DestinationController(ShortestPathPlugin plugin, RouteSession session, RouteController routes,
-        WorldMapMarker marker, OffRouteTracker offRoute, JourneyTracker journey) {
-        this.plugin = plugin;
-        this.session = session;
-        this.routes = routes;
-        this.marker = marker;
-        this.offRoute = offRoute;
-        this.journey = journey;
-    }
 
     int start() {
         return start;

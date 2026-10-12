@@ -20,6 +20,8 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
@@ -40,6 +42,7 @@ import static gps.PanelWidgets.wrappedLabel;
  * ConfigManager's descriptor, since shipped code may not use reflection), reads the stored value
  * by key and writes the key back through the ConfigManager; any change regenerates the routes.
  */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class ConfigSectionsView {
     private static final int LABEL_WIDTH = 168;
 
@@ -56,12 +59,6 @@ final class ConfigSectionsView {
     private boolean balloonExpanded;
     private boolean sailingExpanded;
     private boolean spiritTreeExpanded;
-
-    ConfigSectionsView(ShortestPathPlugin plugin, Runnable refresh, Runnable refreshAll) {
-        this.plugin = plugin;
-        this.refresh = refresh;
-        this.refreshAll = refreshAll;
-    }
 
     /** The sections, freshly built, in display order. */
     List<JPanel> sections() {
@@ -549,7 +546,6 @@ final class ConfigSectionsView {
     private static String tooltip(ConfigItem item) {
         return "<html><body style='width:220px'>" + item.description() + "</body></html>";
     }
-
 
     /**
      * A config checkbox: the item's name as its label, its description as the tooltip; writes the

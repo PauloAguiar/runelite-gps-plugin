@@ -2,6 +2,8 @@ package gps;
 
 import gps.pathfinder.PathfinderConfig;
 import java.util.function.BooleanSupplier;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.client.config.ConfigManager;
@@ -13,6 +15,7 @@ import net.runelite.client.config.ConfigManager;
  * previous session's snapshot, persisted per character (RSProfile-scoped) when the setting is
  * on, and replaced by the live contents the first time the bank opens.
  */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class BankSnapshotService {
     /** RSProfile-scoped (per character, per world type): {@code id:quantity} pairs. */
     static final String CONFIG_KEY_BANK_SNAPSHOT = "bankSnapshot";
@@ -33,14 +36,6 @@ final class BankSnapshotService {
     // The RS profile key captured while the bank was seen, so the save still lands in the right
     // profile if it happens after logout (when the current profile is no longer available).
     private String saveProfileKey;
-
-    BankSnapshotService(ConfigManager configManager, String configGroup, BooleanSupplier rememberBank,
-        PathfinderConfig pathfinderConfig) {
-        this.configManager = configManager;
-        this.configGroup = configGroup;
-        this.rememberBank = rememberBank;
-        this.pathfinderConfig = pathfinderConfig;
-    }
 
     boolean isKnown() {
         return known;

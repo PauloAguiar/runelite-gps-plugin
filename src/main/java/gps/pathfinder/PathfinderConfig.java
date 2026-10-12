@@ -1,5 +1,7 @@
 package gps.pathfinder;
 
+import gps.SailingPorts;
+import gps.SailingSea;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -85,10 +87,11 @@ public class PathfinderConfig {
     // Flat list of every loaded transport. refreshTransports only ever iterates these (the origin
     // is re-derived from each transport), so the per-origin Set/HashMap/Integer-key map the loader
     // produces is flattened here and not retained (issue #491).
+    @Getter
     private final Transport[] allTransports;
     // Every data-level transport origin tile, availability-ignored: used to snap blocked
     // object-footprint targets (a Quest Helper cave tile) to the object's real entrance side.
-    private final java.util.Set<Integer> transportOriginTiles = new java.util.HashSet<>();
+    private final Set<Integer> transportOriginTiles = new HashSet<>();
     private final Map<String, Set<Integer>> allDestinations;
     private final Map<String, Set<Integer>> filteredDestinations;
     /**
@@ -119,6 +122,7 @@ public class PathfinderConfig {
      * The live {@link #bank} container can be emptied by the client once the interface closes, which
      * also empties every reference to it — so bank-aware item checks fall back to this snapshot.
      */
+    @Getter
     private Item[] bankSnapshot = null;
     public Set<String> availableSpiritTrees = null;
     /**
@@ -151,6 +155,7 @@ public class PathfinderConfig {
      * can tell "nothing changed" from a fresh object (plan step N4: the distance field is reused
      * across generations with the same inputs).
      */
+    @Getter
     private long usableFingerprint;
     /**
      * Planning copies: every method-type transport that structurally exists in the world (independent of
@@ -200,11 +205,9 @@ public class PathfinderConfig {
     // again (they stack to a quarter). Rows carry the BASE fare; possession checks, bank
     // pickups and the "N gp fare" label all scale by this (capture 20260907-114507: the crew
     // charged half the row). 100 = no discount.
+    @Getter
     private int charterFarePercent = 100;
 
-    public int getCharterFarePercent() {
-        return charterFarePercent;
-    }
 
     /** The percentage of a transport's listed coin fare the player actually pays (100 unless charter). */
     public int farePercent(Transport transport) {
@@ -246,6 +249,7 @@ public class PathfinderConfig {
     private final Map<Integer, Integer> balloonStoredLogs = new HashMap<>();
     // An axe stored at a canoe station (any station, shared by all; chat-tracked or set by hand) paddles
     // without one on the player (see CanoeAxeStorage).
+    @Getter
     private boolean canoeAxeStored;
     /**
      * Extra search cost (in tiles) charged once when a path first detours through a bank to withdraw a
@@ -308,7 +312,7 @@ public class PathfinderConfig {
             if (client.getVarbitValue(boat[0]) <= 0 && client.getVarbitValue(boat[2]) <= 0)
                 continue;
             seen = true;
-            moorings.addAll(gps.SailingPorts.portMoorings(client.getVarbitValue(boat[1])));
+            moorings.addAll(SailingPorts.portMoorings(client.getVarbitValue(boat[1])));
         }
         boatSeen = seen;
         boatStateFresh = true;
@@ -328,7 +332,7 @@ public class PathfinderConfig {
      */
     public boolean teleportsBlockedAt(int packed) {
         return isOnSailingBoat && (!config.sailingTeleportAbandon() || portPromiseSearch)
-            && gps.SailingSea.isSailable(packed);
+            && SailingSea.isSailable(packed);
     }
 
     /**
@@ -523,9 +527,6 @@ public class PathfinderConfig {
     }
 
     /** The captured bank snapshot, for persisting it across sessions. Null if never seen. */
-    public Item[] getBankSnapshot() {
-        return bankSnapshot;
-    }
 
     /**
      * Forgets everything known about the bank — the live container reference and the snapshot.
@@ -618,9 +619,6 @@ public class PathfinderConfig {
 
     /** Whether any transport row (available or not) departs from this tile. */
     /** Every loaded transport row, for the data lint tests. */
-    public Transport[] getAllTransports() {
-        return allTransports;
-    }
 
     public boolean isTransportOrigin(int packed) {
         return transportOriginTiles.contains(packed);
@@ -1212,9 +1210,6 @@ public class PathfinderConfig {
     }
 
     /** Whether an axe is stored at the canoe stations, so a canoe step asks the bank for none. */
-    public boolean isCanoeAxeStored() {
-        return canoeAxeStored;
-    }
 
     /**
      * Whether every item requirement of a balloon flight is covered by the balloon log storage
@@ -1274,9 +1269,6 @@ public class PathfinderConfig {
      * remove or add the immutable base objects are shared as-is (plan step N3).
      */
     /** See {@link #usableFingerprint}; 0 until a planning refresh has run. */
-    public long getUsableFingerprint() {
-        return usableFingerprint;
-    }
 
     public void rebuildAvailabilityWithExclusions(Set<TeleportMethod> excluded) {
         TransportAvailability baseWithoutBank = baseAvailabilityWithoutBank;
@@ -1452,7 +1444,7 @@ public class PathfinderConfig {
             // accounts get no boarding legs. Aboard legs (origin = open water) pass
             // untouched; the "All" family bypasses above (ownership is a possession).
             if (TransportType.SAILING.equals(type) && boatStateFresh && !assumeSummonBoat
-                && gps.SailingSea.isMooringLand(transport.getOrigin())
+                && SailingSea.isMooringLand(transport.getOrigin())
                 && !boatMoorings.contains(transport.getOrigin())) {
                 return false;
             }
@@ -1549,7 +1541,6 @@ public class PathfinderConfig {
 
     private boolean passesStructuralGates(Transport transport) {
         TransportType type = transport.getType();
-
 
         // Master sailing gate: sailing is a structural world switch (own Travel options
         // section), not a catalog method — with it off, sailing edges must not exist in ANY
@@ -1997,7 +1988,7 @@ public class PathfinderConfig {
             if (requiredQuantity > 0 ? quantity >= 1 : quantity == 0)
                 out[n++] = itemId;
         }
-        return java.util.Arrays.copyOf(out, n);
+        return Arrays.copyOf(out, n);
     }
 
     /** Whether one single item id appears in every set — one wielded staff / one offhand tome. */

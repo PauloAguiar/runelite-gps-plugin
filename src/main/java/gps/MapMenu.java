@@ -5,6 +5,8 @@ import java.awt.Shape;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import net.runelite.api.Client;
 import net.runelite.api.KeyCode;
 import net.runelite.api.MenuAction;
@@ -24,6 +26,7 @@ import net.runelite.client.util.Text;
  * "Arrived!" panel, and "Find closest" on a world-map icon whose kind GPS knows. A click hands
  * the pick to the plugin.
  */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class MapMenu {
     static final String CLEAR = "Clear";
     static final String DISMISS = "Dismiss";
@@ -40,13 +43,6 @@ final class MapMenu {
     private final ShortestPathPlugin plugin;
     // Where the menu opened: a world-map pick resolves against it, not the current mouse position.
     private Point lastMenuOpenedPoint;
-
-    MapMenu(Client client, WorldMapProjection worldMap, MinimapClip minimapClip, ShortestPathPlugin plugin) {
-        this.client = client;
-        this.worldMap = worldMap;
-        this.minimapClip = minimapClip;
-        this.plugin = plugin;
-    }
 
     void onMenuOpened() {
         lastMenuOpenedPoint = client.getMouseCanvasPosition();

@@ -1,5 +1,8 @@
 package gps;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.TreeSet;
 import net.runelite.api.Client;
 import static net.runelite.api.Constants.CHUNK_SIZE;
 import static net.runelite.api.Perspective.LOCAL_COORD_BITS;
@@ -312,8 +315,8 @@ public class WorldPointUtil {
         int[][][] chunks = worldView.getInstanceTemplateChunks();
         if (chunks == null)
             return "no chunk data";
-        java.util.Set<Integer> seen = new java.util.HashSet<>();
-        java.util.TreeSet<Integer> planes = new java.util.TreeSet<>();
+        Set<Integer> seen = new HashSet<>();
+        TreeSet<Integer> planes = new TreeSet<>();
         int minX = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, minY = Integer.MAX_VALUE, maxY = Integer.MIN_VALUE;
         for (int[][] planeChunks : chunks) {
             if (planeChunks == null)
@@ -354,11 +357,11 @@ public class WorldPointUtil {
             WorldEntity worldEntity = client.getTopLevelWorldView().worldEntities().byIndex(worldViewId);
             if (worldEntity == null)
                 return UNDEFINED;
-            net.runelite.api.coords.LocalPoint boatLocal = worldEntity.getLocalLocation();
+            LocalPoint boatLocal = worldEntity.getLocalLocation();
             if (boatLocal == null)
                 return UNDEFINED;
-            net.runelite.api.coords.WorldPoint world =
-                net.runelite.api.coords.WorldPoint.fromLocalInstance(client, boatLocal);
+            WorldPoint world =
+                WorldPoint.fromLocalInstance(client, boatLocal);
             return world != null
                 ? packWorldPoint(world.getX(), world.getY(), world.getPlane())
                 : UNDEFINED;

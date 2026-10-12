@@ -1,11 +1,14 @@
 package gps;
 
 import com.google.gson.Gson;
+import gps.transport.TransportType;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.config.ConfigManager;
 
@@ -15,6 +18,7 @@ import net.runelite.client.config.ConfigManager;
  * The plugin owns the live copies; this is where they are read at startup and written on change.
  */
 @Slf4j
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class ChoiceStore {
     static final String CONFIG_KEY_EXCLUSIONS = "alternativeRoutesExclusions";
     static final String CONFIG_KEY_MODE = "alternativeRoutesMode";
@@ -27,12 +31,6 @@ final class ChoiceStore {
     private final Supplier<ConfigManager> configManager;
     private final Supplier<Gson> gson;
     private final String configGroup;
-
-    ChoiceStore(Supplier<ConfigManager> configManager, Supplier<Gson> gson, String configGroup) {
-        this.configManager = configManager;
-        this.gson = gson;
-        this.configGroup = configGroup;
-    }
 
     void saveExclusions(Set<TeleportMethod> exclusions) {
         try {
@@ -62,7 +60,7 @@ final class ChoiceStore {
             boolean dropped = false;
             for (TeleportMethod method : saved) {
                 if (method == null || method.getType() == null
-                    || method.getType() == gps.transport.TransportType.SEASONAL_TRANSPORTS) {
+                    || method.getType() == TransportType.SEASONAL_TRANSPORTS) {
                     dropped = true;
                     continue;
                 }

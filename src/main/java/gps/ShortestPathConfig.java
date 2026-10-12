@@ -426,8 +426,6 @@ public interface ShortestPathConfig extends Config {
         return 2;
     }
 
-
-
     @Units(
         value = Units.TICKS
     )
@@ -1264,8 +1262,6 @@ public interface ShortestPathConfig extends Config {
         return new Color(200, 40, 240);
     }
 
-
-
     @Alpha
     @ConfigItem(
         keyName = "colourText",
@@ -1369,9 +1365,6 @@ public interface ShortestPathConfig extends Config {
         closedByDefault = true
     )
     String sectionDebug = "sectionDebug";
-
-
-
 
     @ConfigItem(
         keyName = "drawRecalculationRanges",

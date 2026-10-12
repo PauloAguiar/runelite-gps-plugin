@@ -1,17 +1,27 @@
 package gps;
 
 import com.google.inject.Inject;
+import gps.pathfinder.CostUnits;
+import gps.pathfinder.PathStep;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.font.TextLayout;
 import java.awt.geom.Rectangle2D;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -86,7 +96,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
      */
     private static final int SEA_NEAR_DISTANCE = 12;
     // Walk-distance flood memo (see updateProgress): recomputed only when the player's tile changes.
-    private java.util.Map<Integer, Integer> walkCache;
+    private Map<Integer, Integer> walkCache;
     private int walkCacheTile = WorldPointUtil.UNDEFINED;
     private static final double VEHICLE_TILES_PER_SECOND = 4.5;
     private static final long SPEED_SAMPLE_MILLIS = 400;
@@ -100,6 +110,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
     // auto-dismiss timer runs out (when enabled).
     private static final long NEAR_END_GRACE_MILLIS = 4_000;
     private long nearEndAtMillis = Long.MIN_VALUE / 2;
+    @Getter
     private boolean arrivalShowing;
     private long arrivalUntilMillis;
     // Snapshots for the arrival panel — the plugin clears the target (and its source) the moment the
@@ -496,6 +507,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
      * One pending panel line: collected first so the panel can be sized to the widest line before
      * any component is built.
      */
+    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     private static final class Line {
         private final String left;
         private final Font font;
@@ -510,14 +522,6 @@ public class RouteDirectionsOverlay extends OverlayPanel {
             this(left, font, colour, right, rightColour, false);
         }
 
-        private Line(String left, Font font, Color colour, String right, Color rightColour, boolean centred) {
-            this.left = left;
-            this.font = font;
-            this.colour = colour;
-            this.right = right;
-            this.rightColour = rightColour;
-            this.centred = centred;
-        }
     }
 
     private int rightWidth(Graphics2D graphics, Line line) {
@@ -539,7 +543,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
      * only kicks in past {@link #MAX_WIDTH}.
      */
     private static String ellipsize(Graphics2D graphics, Font font, String text, int maxWidth) {
-        java.awt.FontMetrics metrics = graphics.getFontMetrics(font);
+        FontMetrics metrics = graphics.getFontMetrics(font);
         if (metrics.stringWidth(text) <= maxWidth)
             return text;
         int end = text.length();
@@ -554,7 +558,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
      * themselves, so closed is the safe assumption until the door is visible.
      */
     private String doorStepText(RouteOption route, RouteDirections.Step step) {
-        List<gps.pathfinder.PathStep> path = route.getPath();
+        List<PathStep> path = route.getPath();
         if (step.getStartIndex() < 0 || step.getEndIndex() >= path.size())
             return step.getText();
         ClosedDoors.Door door = ClosedDoors.doorBetween(
@@ -615,18 +619,15 @@ public class RouteDirectionsOverlay extends OverlayPanel {
     }
 
     /** Whether the lingering "Arrived!" panel is what the overlay currently shows. */
-    public boolean isArrivalShowing() {
-        return arrivalShowing;
-    }
 
     /**
      * Dismisses the arrival panel when {@code point} (canvas coordinates) is inside it. Called from
      * the plugin's mouse listener; returns true when the click was consumed.
      */
-    public boolean dismissArrivalAt(java.awt.Point point) {
+    public boolean dismissArrivalAt(Point point) {
         if (!arrivalShowing)
             return false;
-        java.awt.Rectangle bounds = getBounds();
+        Rectangle bounds = getBounds();
         if (bounds == null || !bounds.contains(point))
             return false;
         arrivalShowing = false;
@@ -655,7 +656,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
      * estimate.
      */
     private void updateProgress(RouteOption route, List<RouteDirections.Step> steps) {
-        List<gps.pathfinder.PathStep> path = route.getPath();
+        List<PathStep> path = route.getPath();
         if (route != progressRoute) {
             progressRoute = route;
             reachedIndex = 0;
@@ -821,7 +822,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
      * an arrival.
      */
     private boolean lastLegClear(RouteOption route, List<RouteDirections.Step> steps) {
-        List<gps.pathfinder.PathStep> path = route.getPath();
+        List<PathStep> path = route.getPath();
         for (RouteDirections.Step step : steps) {
             if (!step.isDoor() || step.getEndIndex() <= reachedIndex || step.getEndIndex() >= path.size())
                 continue;
@@ -885,7 +886,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
      */
     private RouteDirections.Step activeSailRide(RouteOption route,
         List<RouteDirections.Step> steps, int playerPacked) {
-        List<gps.pathfinder.PathStep> path = route.getPath();
+        List<PathStep> path = route.getPath();
         RouteDirections.Step best = null;
         int bestDistance = 30;
         for (RouteDirections.Step step : steps) {
@@ -920,7 +921,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
 
     /** Whether the player is at the helm (SAILING_BOARDED_BOAT). */
     private boolean aboard() {
-        return client.getVarbitValue(net.runelite.api.gameval.VarbitID.SAILING_BOARDED_BOAT) != 0;
+        return client.getVarbitValue(VarbitID.SAILING_BOARDED_BOAT) != 0;
     }
 
     /**
@@ -937,11 +938,11 @@ public class RouteDirectionsOverlay extends OverlayPanel {
     }
 
     static double[] buildRemainingTicks(RouteOption route, List<RouteDirections.Step> steps) {
-        List<gps.pathfinder.PathStep> path = route.getPath();
+        List<PathStep> path = route.getPath();
         int pathSize = path.size();
         boolean costed = pathSize > 0;
-        for (gps.pathfinder.PathStep step : path) {
-            if (step.getCost() == gps.pathfinder.PathStep.UNKNOWN_COST) {
+        for (PathStep step : path) {
+            if (step.getCost() == PathStep.UNKNOWN_COST) {
                 costed = false;
                 break;
             }
@@ -950,7 +951,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
             double[] exact = new double[pathSize];
             int end = path.get(pathSize - 1).getCost();
             for (int i = 0; i < pathSize; i++)
-                exact[i] = Math.max(0, end - path.get(i).getCost()) / (double) gps.pathfinder.CostUnits.UNITS_PER_TICK;
+                exact[i] = Math.max(0, end - path.get(i).getCost()) / (double) CostUnits.UNITS_PER_TICK;
             return exact;
         }
         double[] remaining = new double[pathSize];

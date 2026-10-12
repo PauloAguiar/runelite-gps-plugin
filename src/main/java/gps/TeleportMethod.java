@@ -1,5 +1,7 @@
 package gps;
 
+import gps.transport.TransportTypePresentation;
+import java.util.Locale;
 import lombok.Getter;
 import gps.transport.Transport;
 import gps.transport.TransportType;
@@ -55,7 +57,7 @@ public final class TeleportMethod {
     static String mountOf(String objectInfo) {
         if (objectInfo == null)
             return null;
-        String lower = objectInfo.toLowerCase(java.util.Locale.ROOT);
+        String lower = objectInfo.toLowerCase(Locale.ROOT);
         if (lower.contains("xeric"))
             return "Xeric's talisman";
         if (lower.contains("glory"))
@@ -108,7 +110,7 @@ public final class TeleportMethod {
 
     /** The vehicle name for network methods whose data label is a bare destination; null otherwise. */
     private static String vehiclePhrase(TransportType type) {
-        return gps.transport.TransportTypePresentation.vehicleOf(type);
+        return TransportTypePresentation.vehicleOf(type);
     }
 
     /**
@@ -126,7 +128,7 @@ public final class TeleportMethod {
     }
 
     public static String categoryOf(TransportType type) {
-        return gps.transport.TransportTypePresentation.categoryOf(type);
+        return TransportTypePresentation.categoryOf(type);
     }
 
     @Override

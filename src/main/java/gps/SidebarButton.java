@@ -1,5 +1,7 @@
 package gps;
 
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import net.runelite.api.GameState;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
@@ -9,15 +11,11 @@ import net.runelite.client.ui.NavigationButton;
  * it does nothing useful on the login screen. LOADING, HOPPING and CONNECTION_LOST leave it as
  * it is, so world hops do not flicker it.
  */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class SidebarButton {
     private final ClientToolbar toolbar;
     private final NavigationButton button;
     private boolean shown;
-
-    SidebarButton(ClientToolbar toolbar, NavigationButton button) {
-        this.toolbar = toolbar;
-        this.button = button;
-    }
 
     /** Every game-state change: shown when logged in, hidden on the login screens. */
     void onGameState(GameState state) {

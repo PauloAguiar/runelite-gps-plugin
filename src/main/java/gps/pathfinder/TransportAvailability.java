@@ -1,5 +1,6 @@
 package gps.pathfinder;
 
+import gps.PlayerOwnedHouse;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -174,7 +175,7 @@ public final class TransportAvailability {
             for (int origin : transportsByOrigin.keys()) {
                 int originX = WorldPointUtil.unpackWorldX(origin);
                 int originY = WorldPointUtil.unpackWorldY(origin);
-                if (gps.PlayerOwnedHouse.isInside(originX, originY)) {
+                if (PlayerOwnedHouse.isInside(originX, originY)) {
                     pohTransports.addAll(transportsByOrigin.get(origin));
                     // Kept in the pathfinding view, collapsed out of the display view.
                     pohOrigins.add(origin);

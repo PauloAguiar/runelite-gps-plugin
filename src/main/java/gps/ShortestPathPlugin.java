@@ -3,6 +3,8 @@ package gps;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
+import gps.leagues.LeagueModeState;
+import gps.pathfinder.CollisionMap;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,6 +20,7 @@ import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Item;
 import net.runelite.api.Player;
+import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
@@ -39,12 +42,16 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
+import net.runelite.client.events.ExternalPluginsChanged;
+import net.runelite.client.events.PluginChanged;
 import net.runelite.client.events.PluginMessage;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.input.MouseManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -53,6 +60,7 @@ import gps.pathfinder.PathStep;
 import gps.pathfinder.PathfinderConfig;
 import gps.transport.BankPickupRequirements;
 import gps.transport.Transport;
+import net.runelite.client.util.LinkBrowser;
 
 import static gps.WorldPointUtil.fromLocalInstance;
 
@@ -117,7 +125,7 @@ public class ShortestPathPlugin extends Plugin {
     @Inject
     private MouseManager mouseManager;
     @Inject
-    private net.runelite.client.plugins.PluginManager pluginManager;
+    private PluginManager pluginManager;
     // The Shortest Path conflict and the Quest Helper option (see CompanionPlugins); startup.
     private CompanionPlugins companions;
     // The plugin-message integration (see PluginMessageBridge). Supplier: the event bus is injected
@@ -127,7 +135,8 @@ public class ShortestPathPlugin extends Plugin {
     private ClientToolbar clientToolbar;
     // Item images for the panel's Log storage icons.
     @Inject
-    private net.runelite.client.game.ItemManager itemManager;
+    @Getter
+    private ItemManager itemManager;
     // Alternative-routes feature: panel, async route generator, the methods the user has excluded, the
     // generated routes, and which one is currently shown on the map.
     private ShortestPathPanel altPanel;
@@ -212,7 +221,7 @@ public class ShortestPathPlugin extends Plugin {
         });
         // (Named API constant: POH_BUILDING_MODE is 1 while building.)
         pohDetection = new PohDetectionService(() -> PlayerOwnedHouse.scene(client.getTopLevelWorldView()),
-            () -> client.getVarbitValue(net.runelite.api.gameval.VarbitID.POH_BUILDING_MODE) == 1,
+            () -> client.getVarbitValue(VarbitID.POH_BUILDING_MODE) == 1,
             () -> config.pohSmartDetect(), PlayerOwnedHouse.declarations(config, this::setPanelConfig),
             configManager, CONFIG_GROUP, () -> {
             if (altPanel != null)
@@ -504,12 +513,12 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     @Subscribe
-    public void onPluginChanged(net.runelite.client.events.PluginChanged event) {
+    public void onPluginChanged(PluginChanged event) {
         companions.refresh();
     }
 
     @Subscribe
-    public void onExternalPluginsChanged(net.runelite.client.events.ExternalPluginsChanged event) {
+    public void onExternalPluginsChanged(ExternalPluginsChanged event) {
         companions.refresh();
     }
 
@@ -553,7 +562,7 @@ public class ShortestPathPlugin extends Plugin {
     /**
      * Refresh the pathfinder when the player hops worlds. The new world's type
      * (e.g. seasonal) is what drives league-mode auto-detection in
-     * {@link gps.leagues.LeagueModeState}, so we need a fresh
+     * {@link LeagueModeState}, so we need a fresh
      * {@code PathfinderConfig.refresh()} pass after every hop.
      */
     @Subscribe
@@ -575,7 +584,7 @@ public class ShortestPathPlugin extends Plugin {
 
     /** The balloon log-storage counts, tracked from chat (see BalloonLogStorage.track). */
     @Subscribe
-    public void onChatMessage(net.runelite.api.events.ChatMessage event) {
+    public void onChatMessage(ChatMessage event) {
         BalloonLogStorage.track(event.getType(), event.getMessage(), config, configManager, CONFIG_GROUP);
         CanoeAxeStorage.track(event.getType(), event.getMessage(), configManager, CONFIG_GROUP);
     }
@@ -646,7 +655,7 @@ public class ShortestPathPlugin extends Plugin {
      * generation every moved tick), or cancelling the route when the player prefers that.
      */
     private void trackOffRoute(int currentLocation) {
-        boolean aboard = client.getVarbitValue(net.runelite.api.gameval.VarbitID.SAILING_BOARDED_BOAT) != 0;
+        boolean aboard = client.getVarbitValue(VarbitID.SAILING_BOARDED_BOAT) != 0;
         OffRouteTracker.Verdict verdict = offRoute.tick(currentLocation,
             () -> OffRouteTracker.distanceFromPath(currentLocation, getDisplayPath(), getDisplayedRoute()),
             config.recalculateDistance(), config.offRouteWarnDistance(), config.autoRecalculate(),
@@ -984,7 +993,7 @@ public class ShortestPathPlugin extends Plugin {
      * The live collision map, for the progress tracker's wall-aware checks and the dev audit's
      * capture lane expansion. Null until loaded.
      */
-    public gps.pathfinder.CollisionMap getCollisionMap() {
+    public CollisionMap getCollisionMap() {
         PathfinderConfig config = pathfinderConfig;
         return config != null ? config.getMap() : null;
     }
@@ -1143,9 +1152,6 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     /** Item images for the panel's Log storage icons. */
-    public net.runelite.client.game.ItemManager getItemManager() {
-        return itemManager;
-    }
 
     /**
      * The specific reason a catalog method is unavailable ("Requires 60 Mining", "Missing item:
@@ -1331,7 +1337,7 @@ public class ShortestPathPlugin extends Plugin {
             SwingUtilities.invokeLater(() -> {
                 if (altPanel != null)
                     altPanel.showReportContext(context);
-                net.runelite.client.util.LinkBrowser.browse(BuildInfo.GITHUB_NEW_ISSUE);
+                LinkBrowser.browse(BuildInfo.GITHUB_NEW_ISSUE);
             });
         });
     }

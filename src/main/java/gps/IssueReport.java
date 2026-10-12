@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import net.runelite.api.Client;
 import net.runelite.api.Item;
 import net.runelite.api.ItemComposition;
@@ -20,12 +22,9 @@ import net.runelite.api.gameval.InventoryID;
  * GitHub issue. Nothing is sent anywhere by the plugin and the player sees exactly what they
  * share. Built on the client thread (item names come from the item definitions).
  */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class IssueReport {
     private final ShortestPathPlugin plugin;
-
-    IssueReport(ShortestPathPlugin plugin) {
-        this.plugin = plugin;
-    }
 
     /** The context block, CLIENT THREAD. */
     String body() {

@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.config.ConfigManager;
 
@@ -21,6 +23,7 @@ import net.runelite.client.config.ConfigManager;
  * mode re-arms it. The result persists per character so the next session starts scanned.
  */
 @Slf4j
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class PohDetectionService {
     /** RSProfile-scoped: the last scan's furniture (see PohScanner.encode); present = scanned. */
     static final String CONFIG_KEY_POH_FURNITURE = "pohFurniture";
@@ -72,17 +75,6 @@ final class PohDetectionService {
     private String lastChunksLogged;
     // Tracks building mode so leaving it re-arms the scan.
     private boolean building;
-
-    PohDetectionService(Supplier<Scene> scene, BooleanSupplier buildingMode, BooleanSupplier smartDetect,
-        Declarations declarations, ConfigManager configManager, String configGroup, Runnable onChanged) {
-        this.scene = scene;
-        this.buildingMode = buildingMode;
-        this.smartDetect = smartDetect;
-        this.declarations = declarations;
-        this.configManager = configManager;
-        this.configGroup = configGroup;
-        this.onChanged = onChanged;
-    }
 
     /** Whether the house has been scanned (this session or restored from the last). */
     boolean isScanned() {

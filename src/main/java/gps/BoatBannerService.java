@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.gameval.DBTableID;
@@ -19,6 +21,7 @@ import net.runelite.client.config.ConfigManager;
  * bursts (login sync, docking), so a change only marks the banner dirty and the next game tick
  * rebuilds it at most once. Written on the client thread, read from the Swing thread.
  */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class BoatBannerService {
     /** RSProfile-scoped: owned boats' last seen berths, "name|port|hull" rows joined by ';'. */
     static final String CONFIG_KEY_BOAT_PORTS = "boatPorts";
@@ -48,13 +51,6 @@ final class BoatBannerService {
     private volatile List<String[]> banner;
     private volatile boolean live;
     private volatile boolean dirty;
-
-    BoatBannerService(Client client, ConfigManager configManager, String configGroup, Runnable onChanged) {
-        this.client = client;
-        this.configManager = configManager;
-        this.configGroup = configGroup;
-        this.onChanged = onChanged;
-    }
 
     /** Whether a varbit change concerns a boat's ownership, berth, name or hull. */
     boolean tracks(int varbitId) {

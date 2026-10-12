@@ -6,6 +6,8 @@ import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Pure route-progress selection: which path index the player has honestly reached. Extracted from
@@ -32,14 +34,11 @@ final class RouteProgress {
     }
 
     /** A selection: the reached path index and the walking distance to it (for the ETA). */
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
     static final class Result {
         final int index;
         final int distance;
 
-        Result(int index, int distance) {
-            this.index = index;
-            this.distance = distance;
-        }
     }
 
     /**

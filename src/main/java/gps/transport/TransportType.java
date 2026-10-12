@@ -136,7 +136,6 @@ public enum TransportType {
         return false;
     }
 
-
     /**
      * Stores which transport type this transport shares destinations with, if any.
      * Used for delayed visit pathfinding so both types can compete in the priority queue.
@@ -154,7 +153,6 @@ public enum TransportType {
     public Function<ShortestPathConfig, Integer> differentialCostFunction() {
         return null;
     }
-
 
     /**
      * Refines the TransportType based on the required skill levels.

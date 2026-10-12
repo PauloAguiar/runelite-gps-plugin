@@ -2,20 +2,19 @@ package gps;
 
 import java.util.ArrayList;
 import java.util.List;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 
 /**
  * What the destination search remembers (plan step L27, out of the plugin class): the recent
  * selections, most recent first, and the saved favourite positions in saved order. Both live
  * as immutable snapshots the panel reads on the Swing thread and persist on every change.
  */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class SearchMemory {
     private final ChoiceStore store;
     private volatile List<Destinations.Entry> history = new ArrayList<>();
     private volatile List<Destinations.Entry> favorites = new ArrayList<>();
-
-    SearchMemory(ChoiceStore store) {
-        this.store = store;
-    }
 
     void load() {
         history = store.loadSearchHistory();

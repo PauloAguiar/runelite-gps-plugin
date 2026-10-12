@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import net.runelite.api.coords.WorldPoint;
 
 /**
@@ -32,6 +34,7 @@ final class PluginMessageCodec {
     static final String DEFAULT_SOURCE = "another plugin";
 
     /** A parsed "path" request. */
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
     static final class PathRequest {
         /** The packed start, or {@link WorldPointUtil#UNDEFINED} for "where the player stands". */
         final int start;
@@ -40,11 +43,6 @@ final class PluginMessageCodec {
         /** The attribution shown in the GPS header. */
         final String source;
 
-        PathRequest(int start, Set<Integer> targets, String source) {
-            this.start = start;
-            this.targets = targets;
-            this.source = source;
-        }
     }
 
     private PluginMessageCodec() {

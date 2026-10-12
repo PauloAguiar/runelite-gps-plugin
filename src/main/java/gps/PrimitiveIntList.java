@@ -1,17 +1,19 @@
 package gps;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * A minimal, growable list implementation for primitive {@code int} values.
  * <p>
- * This class avoids boxing overhead present in {@link java.util.List Integer}
+ * This class avoids boxing overhead present in {@link List Integer}
  * collections
  * by storing values in a backing {@code int[]} that grows as needed. It
  * purposefully
  * implements only the operations required by the pathfinding logic in this
  * plugin; it is
- * <strong>not</strong> a drop‑in replacement for {@link java.util.ArrayList}.
+ * <strong>not</strong> a drop‑in replacement for {@link ArrayList}.
  * <p>
  * The growth policy increases capacity by 50% (similar to {@code ArrayList})
  * when the

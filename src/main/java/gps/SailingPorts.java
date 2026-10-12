@@ -1,5 +1,6 @@
 package gps;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,7 +37,7 @@ public final class SailingPorts {
                     Integer.parseInt(fields[2]), Integer.parseInt(fields[3]), 0));
             }
         }
-        catch (java.io.IOException | RuntimeException e) {
+        catch (IOException | RuntimeException e) {
             // A missing registry only disables boat-location awareness, never routing.
         }
     }

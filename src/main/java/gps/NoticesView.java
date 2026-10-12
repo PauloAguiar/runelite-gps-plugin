@@ -16,6 +16,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 
@@ -42,14 +44,11 @@ final class NoticesView extends JPanel {
     }
 
     /** What the status banner says. */
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
     static final class Status {
         final String text;
         final Kind kind;
 
-        Status(String text, Kind kind) {
-            this.text = text;
-            this.kind = kind;
-        }
     }
 
     private final ShortestPathPlugin plugin;

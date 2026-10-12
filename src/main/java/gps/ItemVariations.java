@@ -1,5 +1,6 @@
 package gps;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -7,7 +8,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 /**
  * An item family: the name the transport TSVs use in their Items column ("AXE", "COINS") and
@@ -15,6 +18,7 @@ import lombok.Getter;
  * rune-sources.tsv names the staff and offhand (tome) families that stand in for it. Data rather
  * than code, so a new ornament kit is a row, not a release of logic.
  */
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ItemVariations {
     private static final Map<String, ItemVariations> FAMILIES = load();
     /** The one family code names directly: the fairy rings' staff, with its bank and withdraw hints. */
@@ -25,10 +29,6 @@ public final class ItemVariations {
     private int[] ids = new int[0];
     private ItemVariations staves;
     private ItemVariations offhands;
-
-    private ItemVariations(String name) {
-        this.name = name;
-    }
 
     /** The family of that name, or null when no family carries it (the parser then tries a raw item id). */
     public static ItemVariations fromName(String name) {
@@ -82,7 +82,7 @@ public final class ItemVariations {
                 rows.add(line.split("\t"));
             }
         }
-        catch (java.io.IOException e) {
+        catch (IOException e) {
             throw new IllegalStateException(resource, e);
         }
         return rows;

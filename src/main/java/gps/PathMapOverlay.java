@@ -6,8 +6,11 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.Stroke;
 import java.awt.geom.Area;
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import net.runelite.api.Client;
 import net.runelite.api.Point;
 import net.runelite.api.gameval.InterfaceID;
@@ -47,11 +50,9 @@ public class PathMapOverlay extends Overlay {
         Area worldMapClipArea = getWorldMapClipArea(worldMapRectangle);
         graphics.setClip(worldMapClipArea);
 
-
-
         if (plugin.hasPathTargets()) {
             Color colour = plugin.getPathColor();
-            java.util.List<PathStep> path = plugin.getDisplayPath();
+            List<PathStep> path = plugin.getDisplayPath();
             Point cursorPos = client.getMouseCanvasPosition();
             graphics.setColor(colour);
             drawArrowPath(graphics, path, plugin.getDisplaySailingEdges());
@@ -72,10 +73,10 @@ public class PathMapOverlay extends Overlay {
      * teleport/transport jumps are dashed. (Arrowhead technique adapted from Quest Helper's
      * DirectionArrow, see {@link ArrowHead}.)
      */
-    private void drawArrowPath(Graphics2D graphics, java.util.List<PathStep> path,
-        java.util.Set<Integer> sailingEdges) {
-        final java.awt.Stroke walkStroke = new BasicStroke(2, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
-        final java.awt.Stroke jumpStroke = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{9}, 0);
+    private void drawArrowPath(Graphics2D graphics, List<PathStep> path,
+        Set<Integer> sailingEdges) {
+        final Stroke walkStroke = new BasicStroke(2, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
+        final Stroke jumpStroke = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{9}, 0);
 
         int i = 0;
         while (i < path.size() - 1) {
@@ -93,7 +94,7 @@ public class PathMapOverlay extends Overlay {
                     // Sea legs draw in their own (configurable) colour: amber reads over both
                     // the ocean and the cyan walking path, then the path colour is restored
                     // for the legs that follow.
-                    java.awt.Color pathColour = graphics.getColor();
+                    Color pathColour = graphics.getColor();
                     graphics.setColor(plugin.getSailingPathColor());
                     for (int s = 0; s < track.length - 1; s++)
                         drawMapSegment(graphics, track[s], track[s + 1], walkStroke);
@@ -124,7 +125,7 @@ public class PathMapOverlay extends Overlay {
         }
     }
 
-    private void drawMapSegment(Graphics2D graphics, int from, int to, java.awt.Stroke stroke) {
+    private void drawMapSegment(Graphics2D graphics, int from, int to, Stroke stroke) {
         int x1 = plugin.worldMap().toGraphicsX(from);
         int y1 = plugin.worldMap().toGraphicsY(from);
         int x2 = plugin.worldMap().toGraphicsX(to);

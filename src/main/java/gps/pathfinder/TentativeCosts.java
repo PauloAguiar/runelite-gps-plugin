@@ -3,6 +3,7 @@ package gps.pathfinder;
 import static net.runelite.api.Constants.REGION_SIZE;
 
 import gps.WorldPointUtil;
+import java.util.Arrays;
 
 /**
  * The best tentative cost seen so far for each (tile, bank) search state — the duplicate-enqueue
@@ -53,7 +54,7 @@ class TentativeCosts {
         if (region == null) {
             final byte planeCount = map.getRegionPlaneCounts(regionIndex);
             region = new short[planeCount * REGION_SIZE * REGION_SIZE];
-            java.util.Arrays.fill(region, EMPTY);
+            Arrays.fill(region, EMPTY);
             regions[regionIndex] = region;
         }
         final int index = (plane * REGION_SIZE + (y % REGION_SIZE)) * REGION_SIZE + (x % REGION_SIZE);

@@ -1,14 +1,26 @@
 package gps;
 
+import gps.pathfinder.CostUnits;
+import gps.transport.BankPickupRequirements;
+import gps.transport.requirement.ItemRequirement;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import lombok.AccessLevel;
 import lombok.Getter;
 import gps.pathfinder.PathStep;
 import gps.pathfinder.PathfinderConfig;
 import gps.transport.Transport;
 import gps.transport.TransportType;
+import lombok.RequiredArgsConstructor;
+import net.runelite.api.Client;
+import net.runelite.api.Item;
+import net.runelite.api.ItemContainer;
+import net.runelite.api.gameval.InventoryID;
+import net.runelite.api.gameval.VarbitID;
 
 /**
  * Builds the "Google Maps"-style step list for a route: walking legs with their length and target,
@@ -28,6 +40,7 @@ final class RouteDirections {
      * duration in game ticks (for wall-time ETAs).
      */
     @Getter
+    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     static final class Step {
         private final String text;
         private final int startIndex;
@@ -78,18 +91,6 @@ final class RouteDirections {
 
         private Step(String text, int startIndex, int endIndex, int ticks, boolean transport, boolean door) {
             this(text, startIndex, endIndex, ticks, transport, door, false);
-        }
-
-        private Step(String text, int startIndex, int endIndex, int ticks,
-            boolean transport, boolean door, boolean obstacle, boolean embark) {
-            this.text = text;
-            this.startIndex = startIndex;
-            this.endIndex = endIndex;
-            this.ticks = ticks;
-            this.transport = transport;
-            this.door = door;
-            this.obstacle = obstacle;
-            this.embark = embark;
         }
 
         /** Whether the player must interact with something to cross this edge (door or shortcut). */
@@ -230,7 +231,7 @@ final class RouteDirections {
             int start = Math.max(0, Math.min(step.getStartIndex(), path.size() - 1));
             int end = Math.max(start, Math.min(step.getEndIndex(), path.size() - 1));
             int units = Math.max(0, path.get(end).getCost() - path.get(start).getCost());
-            aligned.add(step.withTicks((int) Math.round(units / (double) gps.pathfinder.CostUnits.UNITS_PER_TICK)));
+            aligned.add(step.withTicks((int) Math.round(units / (double) CostUnits.UNITS_PER_TICK)));
         }
         return aligned;
     }
@@ -242,7 +243,7 @@ final class RouteDirections {
      * "favour banking" preference, not negative time, so it's clamped out.
      */
     static int bankWithdrawTicks(int costBankPickup) {
-        return (int) Math.round(Math.max(0, costBankPickup) / (double) gps.pathfinder.CostUnits.UNITS_PER_TICK);
+        return (int) Math.round(Math.max(0, costBankPickup) / (double) CostUnits.UNITS_PER_TICK);
     }
 
     /**
@@ -290,7 +291,7 @@ final class RouteDirections {
     private static int coinsOf(Transport transport) {
         if (transport.getItemRequirements() == null)
             return 0;
-        for (gps.transport.requirement.ItemRequirement requirement
+        for (ItemRequirement requirement
             : transport.getItemRequirements().getRequirements()) {
             for (int itemId : requirement.getItemIds()) {
                 if (itemId == COINS_ITEM_ID)
@@ -408,23 +409,23 @@ final class RouteDirections {
      * and wears right now: the directions cache rebuilds when those change.
      */
     private static List<String> itemCallouts(ShortestPathPlugin plugin, RouteOption route, PathStep from, PathStep to) {
-        net.runelite.api.Client client = plugin.getClient();
+        Client client = plugin.getClient();
         if (client == null)
             return List.of();
-        java.util.Map<Integer, Integer> carried = gps.transport.BankPickupRequirements.collectPlayerItems(client);
+        Map<Integer, Integer> carried = BankPickupRequirements.collectPlayerItems(client);
         Set<Transport> rows = EdgeTransports.forRouteEdge(plugin.getPathfinderConfig(), route, from, to);
         // A canoe paddled with the axe stored at the stations: say what the route is counting on.
         for (Transport row : rows)
             if (TransportType.CANOE.equals(row.getType()) && plugin.getPathfinderConfig().isCanoeAxeStored())
                 return List.of("Axe stored at the canoe station");
         RouteItemCue cue = RouteItemCue.ofStep(rows,
-            client.getVarbitValue(net.runelite.api.gameval.VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1, carried);
+            client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1, carried);
         if (cue == null)
             return List.of();
-        Set<Integer> worn = new java.util.HashSet<>();
-        net.runelite.api.ItemContainer equipment = client.getItemContainer(net.runelite.api.gameval.InventoryID.WORN);
+        Set<Integer> worn = new HashSet<>();
+        ItemContainer equipment = client.getItemContainer(InventoryID.WORN);
         if (equipment != null)
-            for (net.runelite.api.Item item : equipment.getItems())
+            for (Item item : equipment.getItems())
                 worn.add(item.getId());
         return cue.callouts(carried, worn, plugin::wornOnly, id -> client.getItemDefinition(id).getName());
     }
@@ -465,8 +466,8 @@ final class RouteDirections {
                 bankedRing = route.getBankTransports().get(i).method();
         }
         if (bankedRing != null && plugin.getClient()
-            .getVarbitValue(net.runelite.api.gameval.VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1) {
-            String line = bankedStaffName(plugin) + " — " + joinLabels(java.util.Set.of(bankedRing));
+            .getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1) {
+            String line = bankedStaffName(plugin) + " — " + joinLabels(Set.of(bankedRing));
             if (!details.contains(line))
                 details.add(line);
         }
@@ -475,10 +476,10 @@ final class RouteDirections {
 
     /** The banked Dramen/Lunar staff's proper name, or the generic pair when unresolvable. */
     private static String bankedStaffName(ShortestPathPlugin plugin) {
-        net.runelite.api.Item[] bank = plugin.getPathfinderConfig().getBankSnapshot();
+        Item[] bank = plugin.getPathfinderConfig().getBankSnapshot();
         if (bank != null) {
             for (int staffId : ItemVariations.DRAMEN_STAFF.getIds()) {
-                for (net.runelite.api.Item item : bank) {
+                for (Item item : bank) {
                     if (item.getId() == staffId && item.getQuantity() > 0) {
                         String name = plugin.getClient().getItemDefinition(staffId).getName();
                         if (name != null && !name.isEmpty() && !"null".equals(name))
@@ -507,7 +508,7 @@ final class RouteDirections {
                 rows = plugin.getPathfinderConfig().teleportsOnEdge(
                     path.get(edge).getPackedPosition(), method.getDisplayInfo());
             }
-            String line = pickupLine(plugin, rows, joinLabels(java.util.Set.of(method)));
+            String line = pickupLine(plugin, rows, joinLabels(Set.of(method)));
             if (line != null)
                 return line;
         }
@@ -523,7 +524,7 @@ final class RouteDirections {
             if (row.getItemRequirements() == null)
                 continue;
             List<String> names = new ArrayList<>();
-            for (gps.transport.requirement.ItemRequirement requirement
+            for (ItemRequirement requirement
                 : row.getItemRequirements().getRequirements()) {
                 int[] ids = requirement.getItemIds();
                 if (ids.length == 0)
@@ -549,9 +550,9 @@ final class RouteDirections {
      */
     private static String withdrawText(ShortestPathPlugin plugin, RouteOption route,
         List<PathStep> path, int pathIndex) {
-        net.runelite.api.Item[] bank = plugin.getPathfinderConfig().getBankSnapshot();
+        Item[] bank = plugin.getPathfinderConfig().getBankSnapshot();
         if (bank != null) {
-            List<String> items = gps.transport.BankPickupRequirements.compute(
+            List<String> items = BankPickupRequirements.compute(
                 plugin.getClient(), bank, plugin.getPathfinderConfig(),
                 (a, b) -> EdgeTransports.forRouteEdge(plugin.getPathfinderConfig(), route, a, b),
                 Set.of(path.get(pathIndex).getPackedPosition()), path, pathIndex).phrases;

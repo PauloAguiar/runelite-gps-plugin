@@ -3,6 +3,8 @@ package gps;
 import java.awt.image.BufferedImage;
 import java.util.Set;
 import java.util.function.Supplier;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 import net.runelite.client.util.ImageUtil;
@@ -13,6 +15,7 @@ import net.runelite.client.util.ImageUtil;
  * unless a one-shot override names the tile the set was expanded from (a searched bank booth
  * and its walkable surround still pins the booth). Clicking the pin jumps the map to it.
  */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class WorldMapMarker {
     private static final BufferedImage IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
 
@@ -21,10 +24,6 @@ final class WorldMapMarker {
     private WorldMapPoint marker;
     // The one-shot override for the next placement; UNDEFINED = the default rule.
     private int pinNext = WorldPointUtil.UNDEFINED;
-
-    WorldMapMarker(Supplier<WorldMapPointManager> manager) {
-        this.manager = manager;
-    }
 
     /** The next placement pins {@code tile} whatever the target set (consumed by that placement). */
     void pinNextAt(int tile) {

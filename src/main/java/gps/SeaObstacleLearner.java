@@ -3,6 +3,8 @@ package gps;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.IntSupplier;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import net.runelite.api.Client;
 import net.runelite.api.CollisionData;
 import net.runelite.api.CollisionDataFlag;
@@ -14,6 +16,7 @@ import net.runelite.api.WorldView;
  * vessels, harbour clutter). The offline map plans; the client corrects itself as scenes
  * reveal the truth.
  */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class SeaObstacleLearner {
     static final int SCAN_PERIOD_TICKS = 10;
     // Scene border padding reads 0xFFFFFF (everything blocked); the first field harvest showed
@@ -29,11 +32,6 @@ final class SeaObstacleLearner {
     private final Client client;
     private final IntSupplier playerLocation;
     private int cooldown;
-
-    SeaObstacleLearner(Client client, IntSupplier playerLocation) {
-        this.client = client;
-        this.playerLocation = playerLocation;
-    }
 
     /** Client thread, once per game tick. */
     void onTick() {

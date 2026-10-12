@@ -1,13 +1,17 @@
 package gps.pathfinder;
 
+import gps.ClosedDoors;
+import gps.PrimitiveIntHashMap;
 import gps.PrimitiveIntList;
 import gps.WorldPointUtil;
 import gps.transport.Transport;
+import lombok.RequiredArgsConstructor;
 
 import static gps.WorldPointUtil.unpackWorldPlane;
 import static gps.WorldPointUtil.unpackWorldX;
 import static gps.WorldPointUtil.unpackWorldY;
 
+@RequiredArgsConstructor
 public class CollisionMap {
     // Enum.values() makes copies every time which hurts performance in the hotpath
     private static final OrdinalDirection[] ORDINAL_VALUES = OrdinalDirection.values();
@@ -16,18 +20,14 @@ public class CollisionMap {
     // edge is passable, but the player still stops, clicks, and waits ~a tick for the swing —
     // priced here so the search prefers pure walking around a doorway when it's close. One mask
     // lookup per expanded tile (same profile as the transports lookup above it in the hot path).
-    private static final int DOOR_COST_UNITS = CostUnits.fromTicks(gps.ClosedDoors.COST_TICKS);
+    private static final int DOOR_COST_UNITS = CostUnits.fromTicks(ClosedDoors.COST_TICKS);
 
     private final SplitFlagMap collisionData;
     // This is only safe if pathfinding is single-threaded. Holds the ids of the neighbour nodes
     // appended to the NodeGraph during the most recent getNeighbors call.
     private final PrimitiveIntList neighbors = new PrimitiveIntList(16);
     private final boolean[] traversable = new boolean[8];
-    private final gps.PrimitiveIntHashMap<Integer> doorMasks = gps.ClosedDoors.edgeMaskIndex();
-
-    public CollisionMap(SplitFlagMap collisionData) {
-        this.collisionData = collisionData;
-    }
+    private final PrimitiveIntHashMap<Integer> doorMasks = ClosedDoors.edgeMaskIndex();
 
     private static int packedPointFromOrdinal(int startPacked, OrdinalDirection direction) {
         final int x = unpackWorldX(startPacked);

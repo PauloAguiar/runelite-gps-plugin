@@ -9,6 +9,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.config.ConfigManager;
 
@@ -20,6 +22,7 @@ import net.runelite.client.config.ConfigManager;
  * as EXCLUDED, a mask over the stored tier so re-including restores the user's tuning.
  */
 @Slf4j
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class RoutePreferences {
     static final String CONFIG_KEY_PRIORITIES = "methodPriorities";
     static final String CONFIG_KEY_WALK_PREFERENCE = "walkPreferenceSeconds";
@@ -43,15 +46,6 @@ final class RoutePreferences {
 
     private volatile int walkPreferenceSeconds;
     private volatile int bankPreferenceSeconds;
-
-    RoutePreferences(Set<TeleportMethod> exclusions, BooleanSupplier keepSailingFirst,
-        Supplier<ConfigManager> configManager, Supplier<Gson> gson, String configGroup) {
-        this.exclusions = exclusions;
-        this.keepSailingFirst = keepSailingFirst;
-        this.configManager = configManager;
-        this.gson = gson;
-        this.configGroup = configGroup;
-    }
 
     /** The method's tier: EXCLUDED when in the exclusion set, else its stored tier or NORMAL. */
     MethodPriority priorityOf(TeleportMethod method) {

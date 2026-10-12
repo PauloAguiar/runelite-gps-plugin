@@ -1,6 +1,8 @@
 package gps;
 
 import java.awt.Rectangle;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import net.runelite.api.Client;
 import net.runelite.api.Point;
 import net.runelite.api.gameval.InterfaceID;
@@ -13,15 +15,12 @@ import net.runelite.api.worldmap.WorldMap;
  * world point it shows (the shift-click "Set GPS Target" on the world map). Client thread and
  * render thread both read the live widget; no widget means no projection.
  */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class WorldMapProjection {
     /** The pixel result when the world map is not open. */
     static final int NONE = Integer.MIN_VALUE;
 
     private final Client client;
-
-    WorldMapProjection(Client client) {
-        this.client = client;
-    }
 
     /** The world point under a screen pixel, or UNDEFINED when the map is not open. */
     int worldPointAt(int pixelX, int pixelY) {

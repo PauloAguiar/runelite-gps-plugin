@@ -32,6 +32,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.components.IconTextField;
@@ -59,6 +61,7 @@ import static gps.PanelWidgets.wrappedLabel;
  */
 final class MethodCatalogView {
     /** The funnel-filter options. */
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
     enum Filter {
         ALL("Show all methods", null, false),
         DISABLED("Disabled (excluded)", null, true),
@@ -73,12 +76,6 @@ final class MethodCatalogView {
         final MethodAvailability availability;
         // True for the "disabled" filter, which keeps user-excluded methods regardless of availability.
         final boolean disabled;
-
-        Filter(String label, MethodAvailability availability, boolean disabled) {
-            this.label = label;
-            this.availability = availability;
-            this.disabled = disabled;
-        }
 
         boolean isActive() {
             return this != ALL;

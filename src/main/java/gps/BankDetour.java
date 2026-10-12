@@ -1,6 +1,8 @@
 package gps;
 
 import java.util.Set;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 
 /**
  * The destination a nearest-bank trip replaced, resumed once the trip completes (a player
@@ -11,18 +13,12 @@ import java.util.Set;
  */
 final class BankDetour {
     /** A replaced destination: its targets, label, round-trip flag and world-map pin. */
+    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     static final class Route {
         final Set<Integer> targets;
         final String source;
         final boolean roundTrip;
         final int marker;
-
-        private Route(Set<Integer> targets, String source, boolean roundTrip, int marker) {
-            this.targets = targets;
-            this.source = source;
-            this.roundTrip = roundTrip;
-            this.marker = marker;
-        }
 
         /** The route for a destination, or null when none is set. */
         static Route of(Set<Integer> targets, String source, boolean roundTrip, int marker) {

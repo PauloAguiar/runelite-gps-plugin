@@ -1,5 +1,8 @@
 package gps;
 
+import gps.transport.TransportType;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.Getter;
@@ -84,22 +87,22 @@ public final class RouteOption {
      * cost us an invisible off-by-one in the overlay (every sea leg permanently dashed); this
      * method is the single place that arithmetic lives now, pinned by RouteOptionTest.
      */
-    public java.util.Set<Integer> sailingJumpDepartures() {
+    public Set<Integer> sailingJumpDepartures() {
         // Memoized: the overlay asks once per rendered frame, and this object is immutable.
         // Benign race — concurrent first calls compute identical sets.
-        java.util.Set<Integer> cached = sailingJumpDeparturesCache;
+        Set<Integer> cached = sailingJumpDeparturesCache;
         if (cached != null)
             return cached;
-        java.util.Set<Integer> departures = new java.util.HashSet<>();
+        Set<Integer> departures = new HashSet<>();
         for (int i = 0; i < methods.size() && i < methodEdgeIndexes.size(); i++) {
-            if (methods.get(i).getType() == gps.transport.TransportType.SAILING)
+            if (methods.get(i).getType() == TransportType.SAILING)
                 departures.add(methodEdgeIndexes.get(i) - 1);
         }
-        sailingJumpDeparturesCache = java.util.Collections.unmodifiableSet(departures);
+        sailingJumpDeparturesCache = Collections.unmodifiableSet(departures);
         return sailingJumpDeparturesCache;
     }
 
-    private transient volatile java.util.Set<Integer> sailingJumpDeparturesCache;
+    private transient volatile Set<Integer> sailingJumpDeparturesCache;
 
     public RouteOption(List<PathStep> path, List<TeleportMethod> methods, List<Integer> methodEdgeIndexes,
         List<Integer> methodDurations, int totalCost, int rawCost, boolean reached, Set<TeleportMethod> bankMethods,
@@ -163,7 +166,7 @@ public final class RouteOption {
         if (methods.isEmpty())
             return false;
         for (TeleportMethod method : methods) {
-            if (method.getType() != gps.transport.TransportType.SAILING)
+            if (method.getType() != TransportType.SAILING)
                 return false;
         }
         return true;

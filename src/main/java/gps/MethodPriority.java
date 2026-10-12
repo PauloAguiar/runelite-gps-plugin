@@ -1,6 +1,8 @@
 package gps;
 
 import gps.pathfinder.CostUnits;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 
 /**
  * A user-set ranking bias for a travel method — RimWorld-style tiers. Priorities shift a route's
@@ -9,6 +11,7 @@ import gps.pathfinder.CostUnits;
  * existing list instantly with no recalculation. EXCLUDED is the terminal tier and delegates to
  * the existing exclusion machinery (which does affect the search).
  */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public enum MethodPriority {
     PREFER_3(-20, "Strongly prefer"),
     PREFER_2(-10, "Prefer"),
@@ -22,11 +25,6 @@ public enum MethodPriority {
     /** Seconds added to the route's effective ETA (negative = preferred, ranks earlier). */
     public final int adjustSeconds;
     public final String label;
-
-    MethodPriority(int adjustSeconds, String label) {
-        this.adjustSeconds = adjustSeconds;
-        this.label = label;
-    }
 
     /** The adjustment in search cost units (1 tick = 0.6s), rounded to the nearest unit. */
     public int adjustUnits() {

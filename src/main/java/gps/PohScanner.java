@@ -3,6 +3,8 @@ package gps;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import net.runelite.api.gameval.ObjectID;
 
 /**
@@ -21,18 +23,12 @@ public final class PohScanner {
     }
 
     /** What a house scan found: the present 1:1 features, and the jewellery-box tier. */
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
     public static final class Detected {
         final boolean fairyRing;
         final boolean spiritTree;
         final boolean obelisk;
         final JewelleryBoxTier jewelleryBox;
-
-        Detected(boolean fairyRing, boolean spiritTree, boolean obelisk, JewelleryBoxTier jewelleryBox) {
-            this.fairyRing = fairyRing;
-            this.spiritTree = spiritTree;
-            this.obelisk = obelisk;
-            this.jewelleryBox = jewelleryBox;
-        }
 
         boolean any() {
             return fairyRing || spiritTree || obelisk || jewelleryBox != JewelleryBoxTier.NONE;

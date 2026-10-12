@@ -6,6 +6,7 @@ import static gps.WorldPointUtil.unpackWorldX;
 import static gps.WorldPointUtil.unpackWorldY;
 import static net.runelite.api.Constants.REGION_SIZE;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -113,7 +114,7 @@ public final class DistanceField {
         if (region == null) {
             final byte planeCount = map.getRegionPlaneCounts(regionIndex);
             region = new short[planeCount * REGION_SIZE * REGION_SIZE];
-            java.util.Arrays.fill(region, EMPTY);
+            Arrays.fill(region, EMPTY);
             regions[regionIndex] = region;
         }
         final int index = tileIndex(x, y, plane, region.length);

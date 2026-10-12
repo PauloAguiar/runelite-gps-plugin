@@ -8,6 +8,7 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.Shape;
 
+import java.util.List;
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
 import net.runelite.api.Point;
@@ -54,7 +55,7 @@ public class PathMinimapOverlay extends Overlay {
         graphics.setClip(minimapClipArea);
         graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
-        java.util.List<PathStep> pathPoints = plugin.getDisplayPath();
+        List<PathStep> pathPoints = plugin.getDisplayPath();
         Color pathColor = plugin.getPathColor();
         Color doneColor = new Color(0x80, 0x80, 0x80);
         // Same tri-state colouring as the scene: grey for the covered stretch, blocked colour past

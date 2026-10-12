@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.IntPredicate;
 import java.util.function.Supplier;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 
 /**
  * The arrival zone (plan step L19, out of the plugin class): every tile within the finish
@@ -21,16 +23,12 @@ import java.util.function.Supplier;
 final class ArrivalZone {
     // One immutable holder for the zone and its key: the render thread and the client thread
     // both read it, and two fields could publish one route's key beside another's zone.
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
     private static final class Cache {
         final int end;
         final int radius;
         final Set<Integer> zone;
 
-        Cache(int end, int radius, Set<Integer> zone) {
-            this.end = end;
-            this.radius = radius;
-            this.zone = zone;
-        }
     }
 
     private final Supplier<CollisionMap> map;

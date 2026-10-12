@@ -1,11 +1,14 @@
 package gps;
 
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 /**
  * The player's boat hull tiers (plan step L5), as the hull type varbit counts them in
  * acquisition order: the Pandemonium quest raft is 0, the level-15 skiff 1, the level-50 sloop
  * 2 (verified against a capture with all three owned). An unknown future tier maps to nothing
  * and the panel simply shows no type.
  */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public enum BoatHull {
     RAFT(0, "Raft"),
     SKIFF(1, "Skiff"),
@@ -13,11 +16,6 @@ public enum BoatHull {
 
     private final int varbitValue;
     private final String displayName;
-
-    BoatHull(int varbitValue, String displayName) {
-        this.varbitValue = varbitValue;
-        this.displayName = displayName;
-    }
 
     public String displayName() {
         return displayName;

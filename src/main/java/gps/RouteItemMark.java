@@ -3,6 +3,8 @@ package gps;
 import java.awt.Color;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
@@ -15,14 +17,10 @@ import net.runelite.client.util.ImageUtil;
  * want, its ring covers the inner pixel of ours and the outer ring stays visible in this plugin's
  * colour. The outline is drawn one pixel up and left of the slot, the fill at the slot.
  */
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 final class RouteItemMark {
     final BufferedImage outline;
     final Image fill;
-
-    private RouteItemMark(BufferedImage outline, Image fill) {
-        this.outline = outline;
-        this.fill = fill;
-    }
 
     static RouteItemMark of(ItemManager itemManager, int itemId, int quantity, Color colour) {
         BufferedImage sprite = itemManager.getImage(itemId, quantity, false);

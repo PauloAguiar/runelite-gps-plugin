@@ -4,8 +4,9 @@
 The hub's review bot refuses a plugin over 200,000 tokens. Only src/main/java counts, with comments
 stripped before tokenizing (riktenx, plugin-hub PR 17419, 2026-09-30); tests, resources, scripts and
 the JMH set are free. This script strips comments the same way and tokenizes with tiktoken's
-cl100k_base, which ran 3.7 percent above the bot on the 0.14.0 tree (210,265 here against the
-bot's 202,760), so read 200k on the hub as about 207k here and keep a margin.
+o200k_base, which matched the bot within 0.3 percent on the 0.16.0 tree (200,034 here against the
+bot's 200,591 on plugin-hub PR 18318, 2026-10-11): read the numbers as the bot's, and keep a margin.
+(cl100k_base, used before, drifted from +3.7 percent to -1.6 percent across the compact reformat.)
 
     pip install tiktoken
     python scripts/hub_tokens.py                      # this checkout
@@ -29,7 +30,7 @@ BS = chr(92)
 NL = chr(10)
 DQ = chr(34)
 SQ = chr(39)
-ENC = tiktoken.get_encoding('cl100k_base')
+ENC = tiktoken.get_encoding('o200k_base')
 
 
 def strip_comments(src):
@@ -102,7 +103,7 @@ def count_tree(root):
 def report_tree(root, top, by_package):
     rows = count_tree(root)
     total = sum(r[3] for r in rows)
-    print('=== %s: %d files, %d raw chars, %d stripped chars, %d tokens (hub limit 200k is about 207k here)'
+    print('=== %s: %d files, %d raw chars, %d stripped chars, %d tokens (the bot's limit is 200k, counted the same way)'
           % (root, len(rows), sum(r[1] for r in rows), sum(r[2] for r in rows), total))
     rows.sort(key=lambda r: -r[3])
     print('%-52s %8s %8s %8s %6s %6s' % ('file', 'raw', 'strip', 'tokens', 'share', 'cum'))
