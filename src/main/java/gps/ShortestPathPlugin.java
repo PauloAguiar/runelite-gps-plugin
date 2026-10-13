@@ -705,6 +705,13 @@ public class ShortestPathPlugin extends Plugin {
     public void onVarbitChanged(VarbitChanged event) {
         if (boatBannerService != null && boatBannerService.tracks(event.getVarbitId()))
             boatBannerService.markDirty();
+        if (event.getVarbitId() == VarbitID.SPELLBOOK && pathfinderConfig != null) {
+            // The book showing decides which spell rows apply (a spell, or its Spellbook Swap twin):
+            // re-read it for the usable set, the item cue and the step list, and re-classify the catalog.
+            itemsVersion++;
+            pathfinderConfig.refresh();
+            routes.spellbookChanged();
+        }
     }
 
     /** Owned boats as {name, port label} rows for the panel's sailing section; null = never

@@ -248,6 +248,11 @@ final class RouteController {
         return catalogRefresh.noteItems(pathfinderConfig.getRoutingItemDependencies().fingerprint(inventory, equipment));
     }
 
+    /** A spellbook switch: which spell rows apply, and whether a swap is asked for, follow the book showing. */
+    void spellbookChanged() {
+        catalogRefresh.markDirty();
+    }
+
     /** Whether a catalog re-classification is pending. */
     boolean isCatalogDirty() {
         return catalogRefresh.isDirty();

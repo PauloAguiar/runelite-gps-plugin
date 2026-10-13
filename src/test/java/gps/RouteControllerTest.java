@@ -109,6 +109,14 @@ public class RouteControllerTest
 	}
 
 	@Test
+	public void aSpellbookSwitchDirtiesTheCatalog()
+	{
+		// Which spell rows apply (and whether a Spellbook Swap is asked for) follows the book showing.
+		controller.spellbookChanged();
+		assertTrue(controller.isCatalogDirty());
+	}
+
+	@Test
 	public void openingThePanelRechecksTheAutoComputeDecisionOncePerTargetSet()
 	{
 		when(plugin.getPathTargets()).thenReturn(Set.of(TARGET));

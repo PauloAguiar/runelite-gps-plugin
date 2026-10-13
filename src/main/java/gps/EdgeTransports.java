@@ -96,11 +96,20 @@ final class EdgeTransports {
                 own.add(transport);
         if (!own.isEmpty())
             return own;
+        // Rows sharing the method (a spell and its Spellbook Swap twin) differ only in their varbits:
+        // keep the ones the player's current values allow, so the cue does not ask for a swap on the
+        // book the spell is cast from.
+        Set<Transport> allowed = new HashSet<>();
         for (Transport transport : config.getAllTransports())
             if (transport.getDestination() == next.getPackedPosition()
                 && (transport.getOrigin() == Transport.UNDEFINED_ORIGIN || transport.getOrigin() == current.getPackedPosition())
-                && method.equals(transport.method()))
+                && method.equals(transport.method())) {
                 own.add(transport);
+                if (!config.varbitChecks(transport) && !config.varPlayerChecks(transport))
+                    allowed.add(transport);
+            }
+        if (!allowed.isEmpty())
+            return allowed;
         return own.isEmpty() ? usable : own;
     }
 

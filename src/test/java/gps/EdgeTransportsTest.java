@@ -110,6 +110,31 @@ public class EdgeTransportsTest
 	}
 
 	@Test
+	public void theFallbackOverEveryRowKeepsTheOnesTheVarbitsAllow()
+	{
+		// The usable set lacks the spell (its runes are in the bank), so the route's method is looked up
+		// among every row: the standard-book cast and its Spellbook Swap twin share the method, and only
+		// the one the player's spellbook allows may feed the cue (a swap was suggested on the right book).
+		PathStep elsewhere = at(WorldPointUtil.packWorldPoint(3000, 3000, 0));
+		TeleportMethod spell = new TeleportMethod(TransportType.TELEPORTATION_SPELL, "Varrock Teleport", LANDING);
+		Transport plain = transport(TransportType.TELEPORTATION_SPELL, Transport.UNDEFINED_ORIGIN, LANDING);
+		when(plain.method()).thenReturn(spell);
+		Transport swap = transport(TransportType.TELEPORTATION_SPELL, Transport.UNDEFINED_ORIGIN, LANDING);
+		when(swap.method()).thenReturn(spell);
+		PathfinderConfig config = mock(PathfinderConfig.class);
+		when(config.getTransportsPacked(anyBoolean())).thenReturn(new PrimitiveIntHashMap<>(16));
+		when(config.getUsableTeleports(anyBoolean())).thenReturn(new Transport[0]);
+		when(config.getAllTransports()).thenReturn(new Transport[]{swap, plain});
+		when(config.varbitChecks(swap)).thenReturn(true);
+		List<PathStep> path = List.of(elsewhere, at(LANDING));
+		RouteOption route = new RouteOption(path, List.of(spell), List.of(1), List.of(4), 4, 4, true, Set.of(), List.of(0), 0);
+
+		assertEquals("on the standard book only the plain cast", Set.of(plain), EdgeTransports.forRouteEdge(config, route, elsewhere, at(LANDING)));
+		when(config.varbitChecks(plain)).thenReturn(true);
+		assertEquals("on a third book neither fits: both, as before", Set.of(plain, swap), EdgeTransports.forRouteEdge(config, route, elsewhere, at(LANDING)));
+	}
+
+	@Test
 	public void theNextStep()
 	{
 		List<PathStep> path = List.of(at(QUETZAL_STAND), at(LANDING));
