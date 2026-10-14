@@ -1,6 +1,8 @@
 package gps.transport.parser;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -23,6 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class VarRequirementParser implements FieldParser<Set<VarRequirement>> {
     private static final String DELIM_MULTI = ";";
+    /** Alternatives within a clause: any one holding satisfies it. */
+    private static final String DELIM_OR = "||";
 
     private final VarRequirement.VarType varType;
 
@@ -58,9 +62,17 @@ public class VarRequirementParser implements FieldParser<Set<VarRequirement>> {
                 if (requirement.isEmpty())
                     continue;
 
-                VarRequirement parsed = parseRequirement(requirement);
-                if (parsed != null)
-                    result.add(parsed);
+                List<VarRequirement> clauses = new ArrayList<>();
+                for (String clause : requirement.split(Pattern.quote(DELIM_OR))) {
+                    VarRequirement parsed = parseRequirement(clause);
+                    if (parsed == null) {
+                        clauses.clear();
+                        break;
+                    }
+                    clauses.add(parsed);
+                }
+                if (!clauses.isEmpty())
+                    result.add(VarRequirement.anyOf(clauses));
             }
         }
         catch (NumberFormatException e) {

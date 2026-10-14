@@ -113,6 +113,7 @@ Notes: display labels sometimes include an index or letter prefix used by in-gam
   - bitmask: `4560&2`
   - with at-sign: `892@30`. This varbit represents a real-time countdown in minutes (wall-clock minutes, not in-game minutes) (e.g., the Lumbridge Home Teleport timer).
 - Meaning: conditions read from client state. Each clause is parsed against supported operators and must be of the form `ID<op>VALUE` with numeric `ID` and `VALUE`.
+- Alternatives: a clause may list several expressions separated by `||`, any one of which satisfies it, e.g. `6654=32||6655=32` (the portal nexus keeps a teleport in any of its slot varbits). Semicolons still separate clauses that must all hold.
 
 ### VarPlayers
 

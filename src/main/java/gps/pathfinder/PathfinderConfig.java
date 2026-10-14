@@ -166,7 +166,7 @@ public class PathfinderConfig {
         includeBankPath;
     private JewelleryBoxTier pohJewelleryBoxTier;
     // The house scan's portal chamber portals by object id (null: never scanned), and whether a
-    // portal nexus stands there (its teleports are not read yet, so it keeps every portal row).
+    // portal nexus stands there (its teleports come from the nexus slot varbits on its own rows).
     private Set<Integer> pohBuiltPortals;
     private boolean pohNexus;
     private Map<Integer, String> pohPortalNames;
@@ -832,11 +832,11 @@ public class PathfinderConfig {
                 return false;
         }
         for (VarRequirement req : dr.getVarbits()) {
-            if (!req.checkValue(client.getVarbitValue(req.getId())))
+            if (!req.checkWith(client::getVarbitValue))
                 return false;
         }
         for (VarRequirement req : dr.getVarPlayers()) {
-            if (!req.checkValue(client.getVarpValue(req.getId())))
+            if (!req.checkWith(client::getVarpValue))
                 return false;
         }
         return true;
@@ -947,12 +947,14 @@ public class PathfinderConfig {
                 questStates.put(quest, getQuestState(quest));
 
             for (VarRequirement varRequirement : transport.getVarRequirements()) {
-                if (varRequirement.isVarbit()) {
-                    if (!varbitValues.containsKey(varRequirement.getId()))
-                        varbitValues.put(varRequirement.getId(), client.getVarbitValue(varRequirement.getId()));
+                for (int id : varRequirement.ids()) {
+                    if (varRequirement.isVarbit()) {
+                        if (!varbitValues.containsKey(id))
+                            varbitValues.put(id, client.getVarbitValue(id));
+                    }
+                    else if (!varPlayerValues.containsKey(id))
+                        varPlayerValues.put(id, client.getVarpValue(id));
                 }
-                else if (!varPlayerValues.containsKey(varRequirement.getId()))
-                    varPlayerValues.put(varRequirement.getId(), client.getVarpValue(varRequirement.getId()));
             }
 
             // Catalog + availability: record every method-type transport that structurally exists, with
@@ -1484,7 +1486,7 @@ public class PathfinderConfig {
                 : travelOptionName(type) + " are off (Travel options)";
         }
         if (TransportType.TELEPORTATION_PORTAL_POH.equals(type) && !pohPortalBuilt(transport))
-            return "Not built in your house (House section)";
+            return isNexusRow(transport) ? "No portal nexus in your house (House section)" : "Not built in your house (House section)";
         boolean inHouse = PlayerOwnedHouse.isInside(unpackWorldX(transport.getOrigin()),
             unpackWorldY(transport.getOrigin()))
             || PlayerOwnedHouse.isInside(unpackWorldX(transport.getDestination()),
@@ -1655,14 +1657,21 @@ public class PathfinderConfig {
      * keeps its catalog entry with a lock and the 'Everything' planning mode ignores it.
      */
     /**
-     * The house scan's verdict on a portal chamber row: built when its portal's object was seen;
-     * every portal while the house was never scanned or holds a nexus.
+     * The house scan's verdict on a house portal row: a chamber portal is built when its object was
+     * seen, a nexus row needs the nexus seen (its teleports are the row's own varbits); every row
+     * while the house was never scanned.
      */
     private boolean pohPortalBuilt(Transport transport) {
-        if (pohBuiltPortals == null || pohNexus)
+        if (pohBuiltPortals == null)
             return true;
+        if (isNexusRow(transport))
+            return pohNexus;
         Integer id = objectIdOf(transport);
         return id != null && pohBuiltPortals.contains(id);
+    }
+
+    private static boolean isNexusRow(Transport transport) {
+        return transport.getObjectInfo() != null && transport.getObjectInfo().contains("Portal Nexus");
     }
 
     /** The object id ending a row's "menuOption menuTarget objectID" column, or null. */
@@ -1689,7 +1698,8 @@ public class PathfinderConfig {
         if (pohPortalNames == null) {
             Map<Integer, String> names = new HashMap<>();
             for (Transport transport : allTransports) {
-                Integer id = TransportType.TELEPORTATION_PORTAL_POH.equals(transport.getType()) ? objectIdOf(transport) : null;
+                Integer id = TransportType.TELEPORTATION_PORTAL_POH.equals(transport.getType()) && !isNexusRow(transport)
+                    ? objectIdOf(transport) : null;
                 if (id != null && transport.getDisplayInfo() != null)
                     names.put(id, transport.getDisplayInfo());
             }

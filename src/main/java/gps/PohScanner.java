@@ -14,9 +14,9 @@ import net.runelite.api.gameval.ObjectID;
  * Furniture with a stable object id is auto-detected: the jewellery box (its tier), fairy ring,
  * spirit tree and obelisk, which map 1:1 to a config declaration, and the portal chamber's
  * portals, read by the ids the portal rows name (one per destination and material), so only the
- * built ones are routed through. A portal nexus is recognised as present; which teleports it
- * holds is not read yet, so a house with one keeps every portal row. The functional
- * glory/Xeric's/digsite mounts have no stable id and stay manual ("Mounted items").
+ * built ones are routed through. A portal nexus is recognised as present (the teleports it holds
+ * are its rows' own slot varbits). The functional glory/Xeric's/digsite mounts have no stable id
+ * and stay manual ("Mounted items").
  */
 public final class PohScanner {
     private PohScanner() {
