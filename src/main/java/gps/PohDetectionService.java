@@ -1,7 +1,10 @@
 package gps;
 
 import java.util.*;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import lombok.AccessLevel;
@@ -59,6 +62,8 @@ final class PohDetectionService {
     private final ConfigManager configManager;
     private final String configGroup;
     private final Runnable onChanged;
+    /** The portal rows' objects by id, the names for the panel (PathfinderConfig.getPohPortalNames). */
+    private final Supplier<Map<Integer, String>> portalNames;
 
     private volatile boolean scanned;
     private volatile PohScanner.Detected detected;
@@ -97,7 +102,26 @@ final class PohDetectionService {
             names.add("Spirit tree");
         if (found.obelisk)
             names.add("Obelisk");
+        List<String> portals = new ArrayList<>();
+        for (int id : found.portals)
+            portals.add(portalNames.get().getOrDefault(id, "Portal " + id));
+        Collections.sort(portals);
+        names.addAll(portals);
+        if (found.nexus)
+            names.add("Portal nexus");
         return names;
+    }
+
+    /** The portal chamber portals the last scan saw, by object id (empty until scanned). */
+    Set<Integer> builtPortals() {
+        PohScanner.Detected found = detected;
+        return found == null ? Set.of() : found.portals;
+    }
+
+    /** Whether the last scan saw a portal nexus. */
+    boolean hasNexus() {
+        PohScanner.Detected found = detected;
+        return found != null && found.nexus;
     }
 
     /** A scene rebuild: the spawn evidence belonged to the old scene; the chunk-dump log re-arms. */
@@ -118,7 +142,7 @@ final class PohDetectionService {
 
     /** A game object spawned: recognised house furniture is unambiguous in-house evidence. */
     void furnitureSpawned(int objectId) {
-        if (PohScanner.isRecognised(objectId) && spawned.add(objectId)) {
+        if (PohScanner.isRecognised(objectId, portalNames.get().keySet()) && spawned.add(objectId)) {
             log.debug("[poh] recognised furniture spawned: {}", objectId);
         }
     }
@@ -176,7 +200,7 @@ final class PohDetectionService {
         Set<Integer> ids = new HashSet<>(current.objectIds());
         // Spawn-event evidence joins the tile scan: authoritative even if the tile walk missed it.
         ids.addAll(spawned);
-        PohScanner.Detected found = PohScanner.detect(ids);
+        PohScanner.Detected found = PohScanner.detect(ids, portalNames.get().keySet());
         log.debug("[poh] scanned {} object ids, detected: {}", ids.size(), PohScanner.encode(found));
         boolean changed = !scanned || !found.sameAs(detected);
         scanned = true;

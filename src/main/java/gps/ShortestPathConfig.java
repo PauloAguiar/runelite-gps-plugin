@@ -72,7 +72,7 @@ public interface ShortestPathConfig extends Config {
     }
 
     @ConfigItem(hidden = true, keyName = "pohSmartDetect", name = "Auto-detect furniture", position = 155, section = sectionSettings,
-        description = "Inside your house, tick the furniture GPS recognises (jewellery box, fairy ring, spirit tree, obelisk); it never unticks, and portals and mounts stay yours to set")
+        description = "Inside your house, tick the furniture GPS recognises (jewellery box, fairy ring, spirit tree, obelisk) and note which portal chamber portals and nexus stand there; it never unticks, and mounts stay yours to set")
     default boolean pohSmartDetect() {
         return true;
     }

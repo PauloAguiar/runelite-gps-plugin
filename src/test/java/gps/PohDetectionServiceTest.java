@@ -134,11 +134,12 @@ public class PohDetectionServiceTest
 	private boolean building;
 	private boolean smartDetect = true;
 	private final AtomicInteger changes = new AtomicInteger();
+	private final java.util.Map<Integer, String> portalNames = java.util.Map.of(60790, "Trollheim Portal", 13616, "Lumbridge Portal");
 
 	private PohDetectionService service()
 	{
 		return new PohDetectionService(() -> scene, () -> building, () -> smartDetect, declarations,
-			configManager, GROUP, changes::incrementAndGet);
+			configManager, GROUP, changes::incrementAndGet, () -> portalNames);
 	}
 
 	/**
@@ -146,6 +147,20 @@ public class PohDetectionServiceTest
 	 * instanced area rebuilds the scene every few dozen tiles (field log 2026-10-08, the same list
 	 * on every rebuild): it is logged again only when the summary differs from the last one logged.
 	 */
+	@Test
+	public void aScanListsTheBuiltPortalsByNameAndKeepsThem()
+	{
+		scene.house = true;
+		scene.ids.addAll(java.util.List.of(60790, 33408));
+		PohDetectionService service = service();
+		service.onTick();
+		assertTrue(service.isScanned());
+		assertEquals(java.util.Set.of(60790), service.builtPortals());
+		assertTrue(service.hasNexus());
+		assertEquals(java.util.List.of("Trollheim Portal", "Portal nexus"), service.detectedNames());
+		assertEquals(1, changes.get());
+	}
+
 	@Test
 	public void theNotAHouseChunkDumpRepeatsOnlyWhenTheChunksDiffer()
 	{

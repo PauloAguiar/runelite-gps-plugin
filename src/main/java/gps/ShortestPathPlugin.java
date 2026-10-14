@@ -198,9 +198,10 @@ public class ShortestPathPlugin extends Plugin {
             () -> client.getVarbitValue(VarbitID.POH_BUILDING_MODE) == 1,
             () -> config.pohSmartDetect(), PlayerOwnedHouse.declarations(config, this::setPanelConfig),
             configManager, CONFIG_GROUP, () -> {
+            applyPohPortalScan(true);
             if (altPanel != null)
                 SwingUtilities.invokeLater(altPanel::refreshConfigSections);
-        });
+        }, () -> pathfinderConfig == null ? Map.of() : pathfinderConfig.getPohPortalNames());
 
         worldMap = new WorldMapProjection(client);
         minimapClip = new MinimapClip(client, spriteManager);
@@ -729,6 +730,7 @@ public class ShortestPathPlugin extends Plugin {
         bankSnapshots.restore();
         spiritTrees.restore();
         pohDetection.restore();
+        applyPohPortalScan(false);
         boatBannerService.restore();
         // The panel's sections label their sync state — reflect what was just restored.
         if (altPanel != null)
@@ -1109,6 +1111,21 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     /** Whether the player's house has been scanned this session (its furniture is known). */
+    /**
+     * Hands the house scan's portals to the live config (every planning copy inherits them); a
+     * scan that just changed also re-reads the config and reroutes, a restored one waits for the
+     * next route.
+     */
+    private void applyPohPortalScan(boolean changed) {
+        if (pathfinderConfig == null || pohDetection == null)
+            return;
+        pathfinderConfig.setPohPortalScan(pohDetection.isScanned() ? pohDetection.builtPortals() : null, pohDetection.hasNexus());
+        if (changed) {
+            pathfinderConfig.refresh();
+            routes.recompute();
+        }
+    }
+
     public boolean isPohScanned() {
         return pohDetection != null && pohDetection.isScanned();
     }

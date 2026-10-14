@@ -165,6 +165,11 @@ public class PathfinderConfig {
         usePohObelisk,
         includeBankPath;
     private JewelleryBoxTier pohJewelleryBoxTier;
+    // The house scan's portal chamber portals by object id (null: never scanned), and whether a
+    // portal nexus stands there (its teleports are not read yet, so it keeps every portal row).
+    private Set<Integer> pohBuiltPortals;
+    private boolean pohNexus;
+    private Map<Integer, String> pohPortalNames;
     private int costConsumableTeleportationItems;
     private int currencyThreshold;
     // Charter fares: Cabin Fever halves every crew's price and the Ring of charos (a) halves
@@ -396,6 +401,9 @@ public class PathfinderConfig {
         this.mapData = source.mapData;
         this.map = ThreadLocal.withInitial(() -> new CollisionMap(this.mapData));
         this.allTransports = source.allTransports;
+        this.pohBuiltPortals = source.pohBuiltPortals;
+        this.pohNexus = source.pohNexus;
+        this.pohPortalNames = source.pohPortalNames;
         this.transportOriginTiles.addAll(source.transportOriginTiles);
         this.transportAvailabilityWithoutBank = new TransportAvailability.Builder(this.allTransports.length).build();
         this.transportAvailabilityWithBank = new TransportAvailability.Builder(this.allTransports.length).build();
@@ -1475,6 +1483,8 @@ public class PathfinderConfig {
                 ? "Teleport portals & nexus are off (House section)"
                 : travelOptionName(type) + " are off (Travel options)";
         }
+        if (TransportType.TELEPORTATION_PORTAL_POH.equals(type) && !pohPortalBuilt(transport))
+            return "Not built in your house (House section)";
         boolean inHouse = PlayerOwnedHouse.isInside(unpackWorldX(transport.getOrigin()),
             unpackWorldY(transport.getOrigin()))
             || PlayerOwnedHouse.isInside(unpackWorldX(transport.getDestination()),
@@ -1543,6 +1553,9 @@ public class PathfinderConfig {
 
         // POH variants (fairy ring / spirit tree / obelisk inside the POH) depend on POH sub-settings.
         if (!checkPohVariant(transport, type))
+            return false;
+
+        if (TransportType.TELEPORTATION_PORTAL_POH.equals(type) && !pohPortalBuilt(transport))
             return false;
 
         // The jewellery-box tier and mounted-item toggle describe what furniture EXISTS in the
@@ -1641,6 +1654,50 @@ public class PathfinderConfig {
      * toggle says it isn't built; true for everything else. An unlock-class gate: the row
      * keeps its catalog entry with a lock and the 'Everything' planning mode ignores it.
      */
+    /**
+     * The house scan's verdict on a portal chamber row: built when its portal's object was seen;
+     * every portal while the house was never scanned or holds a nexus.
+     */
+    private boolean pohPortalBuilt(Transport transport) {
+        if (pohBuiltPortals == null || pohNexus)
+            return true;
+        Integer id = objectIdOf(transport);
+        return id != null && pohBuiltPortals.contains(id);
+    }
+
+    /** The object id ending a row's "menuOption menuTarget objectID" column, or null. */
+    private static Integer objectIdOf(Transport transport) {
+        String info = transport.getObjectInfo();
+        if (info == null)
+            return null;
+        try {
+            return Integer.parseInt(info.substring(info.lastIndexOf(' ') + 1));
+        }
+        catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /** The house scan: the portal chamber portals seen by object id (null: never scanned) and a nexus. */
+    public void setPohPortalScan(Set<Integer> builtPortals, boolean nexus) {
+        pohBuiltPortals = builtPortals == null ? null : Set.copyOf(builtPortals);
+        pohNexus = nexus;
+    }
+
+    /** The portal chamber rows' objects: id to the portal's name, one id per destination and material. */
+    public Map<Integer, String> getPohPortalNames() {
+        if (pohPortalNames == null) {
+            Map<Integer, String> names = new HashMap<>();
+            for (Transport transport : allTransports) {
+                Integer id = TransportType.TELEPORTATION_PORTAL_POH.equals(transport.getType()) ? objectIdOf(transport) : null;
+                if (id != null && transport.getDisplayInfo() != null)
+                    names.put(id, transport.getDisplayInfo());
+            }
+            pohPortalNames = Collections.unmodifiableMap(names);
+        }
+        return pohPortalNames;
+    }
+
     private boolean mountBuilt(Transport transport) {
         String objectInfo = transport.getObjectInfo();
         if (!TransportType.TELEPORTATION_BOX.equals(transport.getType()) || objectInfo == null)
