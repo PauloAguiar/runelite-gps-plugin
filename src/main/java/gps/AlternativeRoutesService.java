@@ -504,6 +504,12 @@ public class AlternativeRoutesService {
         for (int i = routes.size(); i < limit; i++) {
             if (gen != generation.get())
                 return false;
+            if (!routes.isEmpty() && routes.get(0).isReached() && !targetProvablyUnreachable
+                && timer.chainNodes > chainNodeBudget) {
+                // The chain is cut, not exhausted: the page can be continued.
+                log.debug("[alt-routes] chain stopped at the {} node budget after {} routes", chainNodeBudget, routes.size());
+                break;
+            }
             if (targetProvablyUnreachable && routes.size() >= UNREACHABLE_ESCAPE_ROUTES) {
                 // The escape menu is full; every further search would flood the same world to
                 // the same verdict.
@@ -541,6 +547,7 @@ public class AlternativeRoutesService {
             timer.searchNanos += searchNanos;
             timer.searches++;
             record(timer, "chain#" + i, searchNanos, pathfinder, chainCap);
+            timer.chainNodes += pathfinder.getStats().getTotalNodesChecked();
             PathfinderResult result = pathfinder.getResult();
             List<PathStep> path = (result != null) ? result.getPathSteps() : List.of();
             if (result == null || path.isEmpty()) {
@@ -966,6 +973,7 @@ public class AlternativeRoutesService {
      * worker threads synchronizes on this object.
      */
     private static final class GenTimer {
+        private long chainNodes;
         private long clientNanos;
         private long rebuildNanos;
         private long searchNanos;
@@ -1717,6 +1725,22 @@ public class AlternativeRoutesService {
      * instead of enumerating the whole teleport catalog. "+" resumes with a fresh budget.
      */
     private static final long UNREACHED_SEARCH_BUDGET_NANOS = 4_000_000_000L;
+    /**
+     * Node budget for the exclusion chain per request, about a second of search on a desktop
+     * (2.5 million nodes a second in the Ruins of Tapoyauik capture, 2026-10-14, where a page
+     * took 2.8 s, 2.6 s of it in four searches for routes three times as costly as the best).
+     * The best route is known after the first search and every later one only adds a costlier
+     * alternative, so past the budget the page settles with what it has and "Search for more
+     * routes" continues the chain with a budget of its own. Nodes, not wall time, so a page is
+     * the same on every machine and in every test run. Escape menus for sealed targets are
+     * exempt: their searches flood by design and the 4 s CPU budget bounds them.
+     */
+    static final long CHAIN_NODE_BUDGET = 2_500_000L;
+    private long chainNodeBudget = CHAIN_NODE_BUDGET;
+
+    void setChainNodeBudget(long nodes) {
+        chainNodeBudget = nodes;
+    }
     /** Cumulative search CPU spent this generation vs the unreached-target budget. */
     private static boolean searchBudgetExhausted(GenTimer timer) {
         synchronized (timer) {
