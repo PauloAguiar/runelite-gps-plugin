@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -23,15 +24,17 @@ import static org.junit.Assert.assertTrue;
 /**
  * A page of alternatives took 2.8 s to compute for the Ruins of Tapoyauik (capture 2026-10-14):
  * the best route came from the first search in under a millisecond, the rest was four chain
- * searches of 1.5 million nodes each for routes three times as costly. The exclusion chain now
- * stops at a node budget per request (about a second of search) once the best route is in
- * hand; the page settles with what it has and "Search for more routes" continues it with a
- * budget of its own.
+ * searches for routes three times as costly. The exclusion chain now stops at a one-second
+ * wall-clock budget per request once the best route is in hand (real time, so the wait is the
+ * same on every machine); the page settles with what it has and "Search for more routes"
+ * continues it with a second of its own. The suite runs with the budget off, so this test
+ * arms it with a clock it controls.
  */
 public class ChainBudgetTest
 {
 	private static final int LUMBRIDGE = WorldPointUtil.packWorldPoint(3222, 3218, 0);
 	private static final int VARROCK = WorldPointUtil.packWorldPoint(3213, 3424, 0);
+	private static final long ONE_SECOND = 1_000_000_000L;
 
 	private AlternativeRoutesService service;
 
@@ -80,12 +83,18 @@ public class ChainBudgetTest
 		long fullChains = chainSearches();
 		assertTrue("a chain of alternatives to cut (" + fullChains + ")", fullChains >= 3);
 
-		// One node of budget: spent by the first chain search, so the loop stops before the second.
-		service.setChainNodeBudget(1);
+		// A clock that jumps two seconds on every read: the budget is spent at the first check.
+		AtomicLong clock = new AtomicLong();
+		service.setChainBudget(ONE_SECOND, () -> clock.getAndAdd(2 * ONE_SECOND));
 		List<RouteOption> budgeted = generate();
 		assertEquals("the first search always runs: it finds the best route", 1, chainSearches());
 		assertEquals("the best route is never cut", full.get(0).getTotalCost(), budgeted.get(0).getTotalCost());
 		assertTrue("the page can be continued", service.wasMoreLikely());
+
+		// A clock that never moves: the budget never trips and the full chain runs again.
+		service.setChainBudget(ONE_SECOND, () -> 0L);
+		generate();
+		assertEquals(fullChains, chainSearches());
 	}
 
 	private long chainSearches()

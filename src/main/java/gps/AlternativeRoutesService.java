@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.util.function.LongSupplier;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -214,7 +215,7 @@ public class AlternativeRoutesService {
         final Set<Integer> ends = new HashSet<>(targets);
         final Map<String, Integer> chainTailCounts;
         final GenTimer timer = new GenTimer();
-        final long wallStart = System.nanoTime();
+        final long wallStart = clock.getAsLong();
 
         // A widened re-request for the SAME query ("+ more routes": limit/multiple grew, nothing else
         // changed) CONTINUES the previous generation instead of starting over: the exclusion chain's
@@ -504,10 +505,12 @@ public class AlternativeRoutesService {
         for (int i = routes.size(); i < limit; i++) {
             if (gen != generation.get())
                 return false;
-            if (!routes.isEmpty() && routes.get(0).isReached() && !targetProvablyUnreachable
-                && timer.chainNodes > chainNodeBudget) {
-                // The chain is cut, not exhausted: the page can be continued.
-                log.debug("[alt-routes] chain stopped at the {} node budget after {} routes", chainNodeBudget, routes.size());
+            if (chainBudgetNanos > 0 && !routes.isEmpty() && routes.get(0).isReached() && !targetProvablyUnreachable
+                && clock.getAsLong() - g.wallStart > chainBudgetNanos) {
+                // The chain is cut, not exhausted: the page can be continued. The walk search is
+                // bounded by the first route's ceiling: let it finish so the seeds keep its cap.
+                log.debug("[alt-routes] chain stopped at the {} ms budget after {} routes", chainBudgetNanos / 1_000_000, routes.size());
+                walkResult(walkFuture);
                 break;
             }
             if (targetProvablyUnreachable && routes.size() >= UNREACHABLE_ESCAPE_ROUTES) {
@@ -547,7 +550,6 @@ public class AlternativeRoutesService {
             timer.searchNanos += searchNanos;
             timer.searches++;
             record(timer, "chain#" + i, searchNanos, pathfinder, chainCap);
-            timer.chainNodes += pathfinder.getStats().getTotalNodesChecked();
             PathfinderResult result = pathfinder.getResult();
             List<PathStep> path = (result != null) ? result.getPathSteps() : List.of();
             if (result == null || path.isEmpty()) {
@@ -973,7 +975,6 @@ public class AlternativeRoutesService {
      * worker threads synchronizes on this object.
      */
     private static final class GenTimer {
-        private long chainNodes;
         private long clientNanos;
         private long rebuildNanos;
         private long searchNanos;
@@ -1726,20 +1727,24 @@ public class AlternativeRoutesService {
      */
     private static final long UNREACHED_SEARCH_BUDGET_NANOS = 4_000_000_000L;
     /**
-     * Node budget for the exclusion chain per request, about a second of search on a desktop
-     * (2.5 million nodes a second in the Ruins of Tapoyauik capture, 2026-10-14, where a page
-     * took 2.8 s, 2.6 s of it in four searches for routes three times as costly as the best).
-     * The best route is known after the first search and every later one only adds a costlier
-     * alternative, so past the budget the page settles with what it has and "Search for more
-     * routes" continues the chain with a budget of its own. Nodes, not wall time, so a page is
-     * the same on every machine and in every test run. Escape menus for sealed targets are
-     * exempt: their searches flood by design and the 4 s CPU budget bounds them.
+     * Wall-clock budget for the exclusion chain per request, one second: a page took 2.8 s for
+     * the Ruins of Tapoyauik (capture 2026-10-14), 2.6 s of it in four searches for routes three
+     * times as costly as the best. The best route is known after the first search and every later
+     * one only adds a costlier alternative, so past the budget the page settles with what it has
+     * and "Search for more routes" continues the chain with a second of its own. Real time rather
+     * than work, so the wait is the same on every machine (the player's call, 2026-10-17); the
+     * extra alternatives a slow machine misses are a "more routes" away. Escape menus for sealed
+     * targets are exempt: their searches flood by design and the 4 s CPU budget bounds them.
+     * Zero disables it (the test suite runs without it, for pages identical from run to run).
      */
-    static final long CHAIN_NODE_BUDGET = 2_500_000L;
-    private long chainNodeBudget = CHAIN_NODE_BUDGET;
+    static final long CHAIN_BUDGET_NANOS = Long.getLong("gps.altRoutesBudgetMs", 1000L) * 1_000_000L;
+    private long chainBudgetNanos = CHAIN_BUDGET_NANOS;
+    /** The clock the budget reads; a test swaps it to spend the budget on cue. */
+    private LongSupplier clock = System::nanoTime;
 
-    void setChainNodeBudget(long nodes) {
-        chainNodeBudget = nodes;
+    void setChainBudget(long nanos, LongSupplier clock) {
+        chainBudgetNanos = nanos;
+        this.clock = clock;
     }
     /** Cumulative search CPU spent this generation vs the unreached-target budget. */
     private static boolean searchBudgetExhausted(GenTimer timer) {

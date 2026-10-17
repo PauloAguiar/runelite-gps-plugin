@@ -89,6 +89,8 @@ tasks.withType(Checkstyle).configureEach {
 // --- Testing ---
 
 test {
+    // Alternative-route pages identical from run to run: the one-second chain budget stays off here.
+    systemProperty 'gps.altRoutesBudgetMs', '0'
     // One fork per two cores: the suite is ~28 full route generations plus world-scale floods,
     // all CPU-bound and independent; each fork re-pays the one-time data load, so don't over-shard.
     maxParallelForks = Math.max(1, (Runtime.runtime.availableProcessors() / 2) as int)
