@@ -1,0 +1,124 @@
+# Which section of the plugin each shipped source file belongs to, for `hub_tokens.py --sections`.
+# One row per file (path under src/main/java) or per package (a path ending in '/': every file
+# under it). A file matches its own row first, else the longest package row; files without a
+# row are reported as unclassified so a new class is placed on purpose.
+section	path
+Land pathfinding	gps/pathfinder/Pathfinder.java
+Land pathfinding	gps/pathfinder/NodeGraph.java
+Land pathfinding	gps/pathfinder/CollisionMap.java
+Land pathfinding	gps/pathfinder/SplitFlagMap.java
+Land pathfinding	gps/pathfinder/VisitedTiles.java
+Land pathfinding	gps/pathfinder/IntMinHeap.java
+Land pathfinding	gps/pathfinder/IntBucketQueue.java
+Land pathfinding	gps/pathfinder/IntDeque.java
+Land pathfinding	gps/pathfinder/TentativeCosts.java
+Land pathfinding	gps/pathfinder/AbstractNodeKind.java
+Land pathfinding	gps/pathfinder/OrdinalDirection.java
+Land pathfinding	gps/pathfinder/CostUnits.java
+Land pathfinding	gps/pathfinder/PathStep.java
+Land pathfinding	gps/pathfinder/PathfinderResult.java
+Land pathfinding	gps/pathfinder/PathTerminationReason.java
+Land pathfinding	gps/pathfinder/WildernessChecker.java
+Land pathfinding	gps/pathfinder/SearchHeuristic.java
+Land pathfinding	gps/pathfinder/DistanceField.java
+Land pathfinding	gps/PrimitiveIntHashMap.java
+Land pathfinding	gps/PrimitiveIntList.java
+Land pathfinding	gps/WorldPointUtil.java
+Land pathfinding	gps/Util.java
+Land pathfinding	gps/ClosedDoors.java
+Land pathfinding	gps/ArrivalZone.java
+Sailing pathfinding	gps/SailingSea.java
+Sailing pathfinding	gps/SailingPorts.java
+Sailing pathfinding	gps/BoatHull.java
+Sailing pathfinding	gps/SeaObstacleLearner.java
+Sailing pathfinding	gps/BoatBannerService.java
+Transport and world data	gps/transport/
+Transport and world data	gps/pathfinder/PathfinderConfig.java
+Transport and world data	gps/pathfinder/TransportAvailability.java
+Transport and world data	gps/ItemVariations.java
+Transport and world data	gps/EdgeTransports.java
+Transport and world data	gps/RoutingItemDependencies.java
+Transport and world data	gps/BalloonLogStorage.java
+Transport and world data	gps/CanoeAxeStorage.java
+Transport and world data	gps/BankSnapshotService.java
+Transport and world data	gps/SpiritTreeSync.java
+Transport and world data	gps/PlayerOwnedHouse.java
+Transport and world data	gps/PohDetectionService.java
+Transport and world data	gps/PohScanner.java
+Transport and world data	gps/SceneObjects.java
+Transport and world data	gps/TeleportationItem.java
+Transport and world data	gps/JewelleryBoxTier.java
+Transport and world data	gps/leagues/
+Destinations and search index	gps/Destinations.java
+Destinations and search index	gps/Destination.java
+Destinations and search index	gps/DestinationRequirements.java
+Destinations and search index	gps/DestinationController.java
+Destinations and search index	gps/SearchMatcher.java
+Destinations and search index	gps/SearchAliases.java
+Destinations and search index	gps/SearchHistory.java
+Destinations and search index	gps/SearchMemory.java
+Destinations and search index	gps/BankDetour.java
+Alternative routes engine	gps/AlternativeRoutesService.java
+Alternative routes engine	gps/AlternativeRoutesMode.java
+Alternative routes engine	gps/RouteAcceptance.java
+Alternative routes engine	gps/RouteOption.java
+Alternative routes engine	gps/RouteSession.java
+Alternative routes engine	gps/RouteController.java
+Alternative routes engine	gps/RoutePreferences.java
+Alternative routes engine	gps/MethodPriority.java
+Alternative routes engine	gps/MethodExclusions.java
+Alternative routes engine	gps/MethodAvailability.java
+Alternative routes engine	gps/TeleportMethod.java
+Alternative routes engine	gps/CatalogRefresher.java
+Alternative routes engine	gps/ChoiceStore.java
+Alternative routes engine	gps/RouteVerdicts.java
+Alternative routes engine	gps/PendingTask.java
+Directions and in-game overlays	gps/RouteDirectionsOverlay.java
+Directions and in-game overlays	gps/PathTileOverlay.java
+Directions and in-game overlays	gps/PathMapOverlay.java
+Directions and in-game overlays	gps/PathMapTooltipOverlay.java
+Directions and in-game overlays	gps/PathMinimapOverlay.java
+Directions and in-game overlays	gps/MinimapClip.java
+Directions and in-game overlays	gps/WorldMapProjection.java
+Directions and in-game overlays	gps/WorldMapMarker.java
+Directions and in-game overlays	gps/ArrowHead.java
+Directions and in-game overlays	gps/RouteDirections.java
+Directions and in-game overlays	gps/DirectionsCache.java
+Directions and in-game overlays	gps/RouteProgress.java
+Directions and in-game overlays	gps/OffRouteTracker.java
+Directions and in-game overlays	gps/JourneyTracker.java
+Directions and in-game overlays	gps/RouteItemCue.java
+Directions and in-game overlays	gps/RouteItemMark.java
+Directions and in-game overlays	gps/RouteItemOverlay.java
+Directions and in-game overlays	gps/SpellbookOverlay.java
+Directions and in-game overlays	gps/SpellWidgets.java
+Directions and in-game overlays	gps/FairyRingHighlighter.java
+Directions and in-game overlays	gps/OverlaySettings.java
+Directions and in-game overlays	gps/OverlayFontSize.java
+Directions and in-game overlays	gps/MapMenu.java
+Swing side panel	gps/ShortestPathPanel.java
+Swing side panel	gps/RouteListView.java
+Swing side panel	gps/MethodCatalogView.java
+Swing side panel	gps/PanelWidgets.java
+Swing side panel	gps/PanelHeaderView.java
+Swing side panel	gps/NoticesView.java
+Swing side panel	gps/ConfigSectionsView.java
+Swing side panel	gps/TravelOptionsView.java
+Swing side panel	gps/DestinationSearchView.java
+Swing side panel	gps/SidebarButton.java
+Swing side panel	gps/IconActionLabel.java
+Swing side panel	gps/ScrollableBox.java
+Swing side panel	gps/RouteIcons.java
+Swing side panel	gps/TransportTypePresentation.java
+Swing side panel	gps/PanelVarbits.java
+Swing side panel	gps/IssueReport.java
+Swing side panel	gps/PluginHotkeys.java
+Swing side panel	gps/NearestBankHotkeys.java
+Config	gps/ShortestPathConfig.java
+Config	gps/ConfigOverrides.java
+Plugin glue, integration and debug	gps/ShortestPathPlugin.java
+Plugin glue, integration and debug	gps/CompanionPlugins.java
+Plugin glue, integration and debug	gps/PluginMessageBridge.java
+Plugin glue, integration and debug	gps/PluginMessageCodec.java
+Plugin glue, integration and debug	gps/BuildInfo.java
+Plugin glue, integration and debug	gps/DebugSnapshot.java

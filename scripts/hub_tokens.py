@@ -13,6 +13,7 @@ bot's 200,591 on plugin-hub PR 18318, 2026-10-11): read the numbers as the bot's
     python scripts/hub_tokens.py --top 40 --by-package
     python scripts/hub_tokens.py --members src/main/java/gps/ShortestPathPlugin.java
     python scripts/hub_tokens.py --diff ../gps-old .  # per-file growth between two trees
+    python scripts/hub_tokens.py --sections           # by plugin section (scripts/token-sections.tsv)
 
 A tree is a directory holding src/main/java; `git archive v0.13.2 src/main/java | tar -x -C dir`
 exports one from a tag. --members splits one file by top-level member (field, method, inner
@@ -127,6 +128,64 @@ def report_tree(root, top, by_package):
     print()
 
 
+SECTIONS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'token-sections.tsv')
+
+
+def load_sections():
+    """The section table: (exact file rows, package-prefix rows), from token-sections.tsv."""
+    files, prefixes = {}, {}
+    with open(SECTIONS_FILE, encoding='utf-8') as fh:
+        for line in fh:
+            line = line.rstrip('\n')
+            if not line or line.startswith('#') or line.startswith('section\t'):
+                continue
+            section, path = line.split('\t')
+            (prefixes if path.endswith('/') else files)[path] = section
+    return files, prefixes
+
+
+def section_of(rel, files, prefixes):
+    if rel in files:
+        return files[rel]
+    best = None
+    for prefix, section in prefixes.items():
+        if rel.startswith(prefix) and (best is None or len(prefix) > len(best[0])):
+            best = (prefix, section)
+    return best[1] if best else None
+
+
+def report_sections(root, top):
+    """Tokens per plugin section, with each section's heaviest files; unclassified files are listed."""
+    rows = count_tree(root)
+    total = sum(r[3] for r in rows)
+    files, prefixes = load_sections()
+    by_section = {}
+    unclassified = []
+    for rel, raw, strp, t in rows:
+        section = section_of(rel, files, prefixes)
+        if section is None:
+            unclassified.append((rel, t))
+            section = '(unclassified)'
+        by_section.setdefault(section, []).append((rel, t))
+    print('=== %s: %d files, %d tokens by section (the bot counts the same way; its limit is 200k)'
+          % (root, len(rows), total))
+    print('%-36s %5s %8s %6s' % ('section', 'files', 'tokens', 'share'))
+    ordered = sorted(by_section.items(), key=lambda kv: -sum(t for _, t in kv[1]))
+    for section, members in ordered:
+        t = sum(x for _, x in members)
+        print('%-36s %5d %8d %5.1f%%' % (section, len(members), t, 100.0 * t / total))
+    for section, members in ordered:
+        members.sort(key=lambda m: -m[1])
+        t = sum(x for _, x in members)
+        print('-- %s: %d tokens' % (section, t))
+        for rel, x in members[:top]:
+            print('   %-52s %8d %5.1f%%' % (rel, x, 100.0 * x / t))
+    if unclassified:
+        print('-- unclassified (add a row to %s): %s' % (os.path.basename(SECTIONS_FILE),
+                                                        ', '.join(rel for rel, _ in unclassified)))
+    print()
+
+
 def report_diff(old_root, new_root):
     old = {r[0]: r[3] for r in count_tree(old_root)}
     new = {r[0]: r[3] for r in count_tree(new_root)}
@@ -221,12 +280,18 @@ def main():
         elif a == '--diff':
             mode = 'diff'
             i += 1
+        elif a == '--sections':
+            mode = 'sections'
+            i += 1
         else:
             operands.append(a)
             i += 1
     if mode == 'members':
         for p in operands:
             report_members(p, top)
+    elif mode == 'sections':
+        for root in operands or ['.']:
+            report_sections(root, top if top != 25 else 5)
     elif mode == 'diff':
         if len(operands) != 2:
             sys.exit('--diff takes two trees: old new')
