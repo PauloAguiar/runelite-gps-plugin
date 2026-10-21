@@ -703,6 +703,17 @@ public class ShortestPathPlugin extends Plugin {
      * seen (bank opened, travel menu read, house entered).
      */
     @Subscribe
+    public void onStatChanged(StatChanged event) {
+        // A boost or drain across a level a transport asks for changes what is usable: re-read the
+        // levels and reroute (a route planned at Agility 80 looped around the slayer dungeon's 81
+        // Agility strange floors after a boost, 2026-10-20).
+        if (pathfinderConfig != null && pathfinderConfig.levelGateCrossed(event.getSkill(), event.getBoostedLevel())) {
+            pathfinderConfig.refresh();
+            routes.recompute();
+        }
+    }
+
+    @Subscribe
     public void onVarbitChanged(VarbitChanged event) {
         if (boatBannerService != null && boatBannerService.tracks(event.getVarbitId()))
             boatBannerService.markDirty();

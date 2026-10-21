@@ -1774,6 +1774,24 @@ public class PathfinderConfig {
     /**
      * Checks if the player has all the required skill levels for the transport
      */
+    /**
+     * Whether a stat change takes the skill across a level some transport asks for, compared with
+     * the boosted level the last refresh read: only then does the usable set change. False before
+     * the first refresh (the login flood of stat events has nothing to compare against).
+     */
+    public boolean levelGateCrossed(Skill skill, int newLevel) {
+        int old = boostedSkillLevelsAndMore[skill.ordinal()];
+        if (old == 0 || old == newLevel)
+            return false;
+        int low = Math.min(old, newLevel), high = Math.max(old, newLevel);
+        for (Transport transport : allTransports) {
+            int[] levels = transport.getSkillLevels();
+            if (levels != null && levels.length > skill.ordinal() && levels[skill.ordinal()] > low && levels[skill.ordinal()] <= high)
+                return true;
+        }
+        return false;
+    }
+
     private boolean hasRequiredLevels(Transport transport) {
         // In leagues some skills are disabled so the max total level is lower than
         // the standard 2376. Holding the item (e.g. Max cape) already proves the
