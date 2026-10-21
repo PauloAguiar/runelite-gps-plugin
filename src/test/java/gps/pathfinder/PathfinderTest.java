@@ -102,6 +102,10 @@ public class PathfinderTest
 		setupInventory(new Item(ItemID.XBOWS_CROSSBOW_ADAMANTITE, 1));
 		setupEquipment();
 		setupConfigWithBank(new Item(ItemID.XBOWS_GRAPPLE_TIP_BOLT_MITHRIL_ROPE, 1));
+		// Agility 45: the 52 Agility Rough wall beside the grapple spot (synced from upstream, 2026-10-21)
+		// stays out, so only a leaked grapple could shorten the walk round.
+		when(client.getBoostedSkillLevel(any(Skill.class))).thenReturn(45);
+		pathfinderConfig.refresh();
 
 		assertScenarioPathLength(
 			"Banked mith grapple should not leak to non-bank grapple branch",
