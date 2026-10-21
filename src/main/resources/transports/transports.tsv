@@ -7789,3 +7789,14 @@
 2391 4619 2	3623 3324 0	Talk-to Vampyre Juvinate 3690		VYRE_NOBLE_TOP=1&&VYRE_NOBLE_LEGS=1&&VYRE_NOBLE_SHOES=1				10	Meiyerditch north-east		
 2392 4623 2	3623 3324 0	Talk-to Vampyre Juvinate 3690			The Blood Moon Rises			10	Meiyerditch north-east		
 2392 4623 2	3623 3324 0	Talk-to Vampyre Juvinate 3690		VYRE_NOBLE_TOP=1&&VYRE_NOBLE_LEGS=1&&VYRE_NOBLE_SHOES=1				10	Meiyerditch north-east		
+# Brimhaven Dungeon: the top floor (plane 2) by its two staircases, south by the moss giants (the Karamja											
+# medium diary climb) and north by the entrance; object positions from the game cache, stand and landing											
+# tiles from the collision map, provisional until captured (2026-10-20).											
+2636 9517 0	2636 9510 2	Walk-up Stairs 21725						4			
+2637 9517 0	2637 9510 2	Walk-up Stairs 21725						4			
+2636 9510 2	2636 9517 0	Walk-down Stairs 21726						4			
+2637 9510 2	2637 9517 0	Walk-down Stairs 21726						4			
+2649 9591 0	2643 9594 2	Walk-up Stairs 21722						4			
+2650 9591 0	2643 9594 2	Walk-up Stairs 21722						4			
+2643 9594 2	2650 9591 0	Walk-down Stairs 21724						4			
+2643 9593 2	2650 9591 0	Walk-down Stairs 21724						4			
