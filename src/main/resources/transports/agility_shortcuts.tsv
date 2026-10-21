@@ -677,3 +677,27 @@
 3339 2981 0	3348 2981 0	Climb-down Slope 62415	83 Agility
 2770 9340 0	2764 9339 0	Squeeze-through Crevice 53242	96 Agility					Legends' Quest
 2764 9339 0	2770 9340 0	Squeeze-through Crevice 53242	96 Agility					Legends' Quest
+
+# Shortcuts RuneLite's own table lists that neither we nor upstream carried (audit 2026-10-21): object
+# positions from the game cache, stand and landing tiles from the collision map, provisional until captured.
+# A Revenant pillar is two jumps (six ticks). The Wintertodt gap and the Kharazi Jungle vine wait for field data.
+1687 9801 0	1689 9801 0	Climb Rocks 31697	18 Agility				4
+1689 9801 0	1687 9801 0	Climb Rocks 31697	18 Agility				4
+3046 10326 0	3048 10336 0	Use Crevice 19043	46 Agility				4
+3048 10336 0	3046 10326 0	Use Crevice 19043	46 Agility				4
+3759 5670 0	3765 5671 0	Enter Dark tunnel 10047	54 Agility				4
+3765 5671 0	3759 5670 0	Enter Dark tunnel 10047	54 Agility				4
+3745 5640 0	3745 5646 0	Enter Dark tunnel 10047	54 Agility				4
+3745 5646 0	3745 5640 0	Enter Dark tunnel 10047	54 Agility				4
+3220 10084 0	3220 10088 0	Jump-to Pillar 31561	65 Agility				6
+3220 10088 0	3220 10084 0	Jump-to Pillar 31561	65 Agility				6
+3198 10136 0	3202 10136 0	Jump-to Pillar 31561	75 Agility				6
+3202 10136 0	3198 10136 0	Jump-to Pillar 31561	75 Agility				6
+3200 10196 0	3204 10196 0	Jump-to Pillar 31561	75 Agility				6
+3204 10196 0	3200 10196 0	Jump-to Pillar 31561	75 Agility				6
+3180 10207 0	3180 10211 0	Jump-to Pillar 31561	75 Agility				6
+3180 10211 0	3180 10207 0	Jump-to Pillar 31561	75 Agility				6
+3239 10145 0	3243 10145 0	Jump-to Pillar 31561	89 Agility				6
+3243 10145 0	3239 10145 0	Jump-to Pillar 31561	89 Agility				6
+2673 9583 0	2670 9583 2	Climb Vine 26880	87 Agility				4
+2670 9583 2	2673 9583 0	Climb Vine 26882	87 Agility				4
