@@ -2250,8 +2250,10 @@
 3746 3337 1	3745 3334 0	Climb-down Stairs 32648							
 3728 9752 1	3728 9753 1	Open Gate 39512							
 3728 9753 1	3728 9752 1	Open Gate 39512							
-3727 9756 1	3725 3356 0	Climb-up Ladder 32642							
-3725 3356 0	3727 9756 1	Climb-down Trapdoor 32641							
+# Kroy's laboratory ladder, the only way into the locked Crombwick Manor (wiki). During Sins of the Father the											
+# fight room is instanced and the ladder only examines (players leave by the southern gate; report 2026-10-21).											
+3727 9756 1	3725 3356 0	Climb-up Ladder 32642			Sins of the Father						
+3725 3356 0	3727 9756 1	Climb-down Trapdoor 32641			Sins of the Father						
 3725 3352 0	3725 3356 1	Climb-up Staircase 32645							
 3725 3356 1	3725 3352 0	Climb-down Staircase 32646							
 3726 3352 0	3726 3356 1	Climb-up Staircase 32645							
