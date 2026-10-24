@@ -60,6 +60,18 @@ public class MissingShortcutsTest
 		crosses("Jump-to Pillar 31561", 89, at(3238, 10145, 0), at(3244, 10145, 0), at(3239, 10145, 0));
 	}
 
+	/**
+	 * The Wintertodt pillar jumps (synced from upstream 2026-10-23): three gaps in a row at y 4023,
+	 * crossed from 1633 to 1627 and back as a chain of jumps whose pillars our collision map marks
+	 * blocked, so each jump must chain from the previous landing.
+	 */
+	@Test
+	public void wintertodtGaps()
+	{
+		crosses("Jump Gap 29326", 60, at(1634, 4023, 0), at(1626, 4023, 0), at(1633, 4023, 0));
+		crosses("Jump Gap 29326", 60, at(1626, 4023, 0), at(1634, 4023, 0), at(1627, 4023, 0));
+	}
+
 	@Test
 	public void brimhavenDungeonVine()
 	{

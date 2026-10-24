@@ -43,10 +43,6 @@ anvil	Anvil (1675, 12506)	1675	12506	0
 anvil	Anvil (1675, 12508)	1675	12508	0
 anvil	Anvil (1676, 12505)	1676	12505	0
 anvil	Anvil (1676, 12507)	1676	12507	0
-anvil	Anvil (1765, 10158)	1765	10158	0
-anvil	Anvil (1766, 10157)	1766	10157	0
-anvil	Anvil (1766, 10159)	1766	10159	0
-anvil	Anvil (1767, 10158)	1767	10158	0
 anvil	Anvil (1948, 2761)	1948	2761	1
 anvil	Anvil (1949, 2760)	1949	2760	1
 anvil	Anvil (1949, 2762)	1949	2762	1
@@ -96,13 +92,6 @@ anvil	Lumbridge Swamp Anvil	3106	3023	0
 anvil	Lumbridge Swamp Anvil	3107	3022	0
 anvil	Lumbridge Swamp Anvil	3107	3024	0
 anvil	Lumbridge Swamp Anvil	3108	3023	0
-bank	Bank (1398, 9313)	1398	9313	0
-bank	Bank (1399, 9312)	1399	9312	0
-bank	Bank (1399, 9314)	1399	9314	0
-bank	Bank (1550, 9872)	1550	9872	0
-bank	Bank (1551, 9871)	1551	9871	0
-bank	Bank (1551, 9873)	1551	9873	0
-bank	Bank (1552, 9872)	1552	9872	0
 bank	Bank (1880, 3316)	1880	3316	1
 bank	Bank (1881, 3315)	1881	3315	1
 bank	Bank (1881, 3316)	1881	3316	1
@@ -120,14 +109,6 @@ bank	Bank (1885, 3316)	1885	3316	1
 bank	Bank (1935, 2754)	1935	2754	1
 bank	Bank (1936, 2755)	1936	2755	1
 bank	Bank (1937, 2754)	1937	2754	1
-bank	Bank (2731, 3378)	2731	3378	2
-bank	Bank (2731, 3380)	2731	3380	2
-bank	Bank (2731, 3382)	2731	3382	2
-bank	Bank (2732, 3379)	2732	3379	2
-bank	Bank (2732, 3381)	2732	3381	2
-bank	Bank (2733, 3378)	2733	3378	2
-bank	Bank (2733, 3380)	2733	3380	2
-bank	Bank (2733, 3382)	2733	3382	2
 bank	Bank (2808, 2521)	2808	2521	1
 bank	Bank (2809, 2522)	2809	2522	1
 bank	Bank (3161, 3489)	3161	3489	1
@@ -267,7 +248,6 @@ furnace	Lumbridge Swamp Furnace	3107	3026	0
 furnace	Lumbridge Swamp Furnace	3107	3027	0
 furnace	Lumbridge Swamp Furnace	3108	3028	0
 landmark	A	3787	10156	0
-landmark	Alchemical Society	1394	9327	0
 landmark	Ancient Shrine	1514	9583	0
 landmark	Antechamber	1441	9633	1
 landmark	Araxxor	3632	9815	0
@@ -288,7 +268,6 @@ landmark	Dark beasts	3227	12397	0
 landmark	Dragon Nest	1247	9503	0
 landmark	Drumstick Isle	2145	3547	0
 landmark	Elves	3184	12405	0
-landmark	Ents	1565	9891	0
 landmark	Fire giants	2121	9330	0
 landmark	Fortis Colosseum	1825	3109	0
 landmark	Frozen Temple	3424	4121	0
@@ -297,7 +276,6 @@ landmark	Greater demons	2158	9336	0
 landmark	Gryphons	3232	8865	0
 landmark	Here be minotaurs	1951	9508	0
 landmark	Here be spiders	3667	9824	0
-landmark	Heroes' Guild mine	2917	9907	0
 landmark	Hespori	1248	10089	0
 landmark	Huntsman's Wood	3382	4053	0
 landmark	Iron dragons	2154	9296	0
@@ -305,17 +283,13 @@ landmark	Isle of Serpents	1850	2413	0
 landmark	Jogres	2848	9504	0
 landmark	Kovac	3370	11487	0
 landmark	Lake Hemenster	2610	3444	0
-landmark	Legends' Guild bank	2733	3379	2
 landmark	Lizardman Temple	1312	10079	1
-landmark	Mage Arena	3107	3933	0
 landmark	Merwick Lake	2779	3553	0
 landmark	Obstacle course	3537	9889	0
-landmark	Pit scorpions	2719	9744	0
 landmark	Poison Waste	2241	3098	0
 landmark	Rock Island Prison	2898	2837	0
 landmark	Ruins of Ullek	3413	2832	0
 landmark	Shades	3488	9696	0
-landmark	Shadow warriors	2700	9774	0
 landmark	Shellbane  Gryphon	3179	8876	0
 landmark	Shipyard	2078	2720	0
 landmark	Sisterhood Sanctuary mine	3889	9749	0
@@ -330,14 +304,11 @@ landmark	The Blood Moon	1393	9635	0
 landmark	The Blue Moon	1441	9683	0
 landmark	The Eclipse Moon	1489	9635	0
 landmark	The Node	3109	3025	0
-landmark	The Warrens	1770	10143	0
 landmark	The White Cliffs of Lova	1503	3960	0
 landmark	The Wintertodt	1630	4011	0
 landmark	Thermonuclear Smoke Devil	2362	9456	0
 landmark	Tower of Bounty	3473	4036	0
 landmark	Underwater	3772	10288	1
-landmark	Villa Lucens	1448	2933	0
-landmark	Voice of Yama	1440	10084	0
 landmark	Wallasalki	2506	10145	0
 landmark	Wolf Den	1481	9506	1
 landmark	Wyverns	3616	10208	0
@@ -409,12 +380,9 @@ range	Cooking range (1751, 3749)	1751	3749	1
 range	Cooking range (1752, 3748)	1752	3748	1
 range	Cooking range (1752, 3762)	1752	3762	1
 range	Cooking range (1763, 3735)	1763	3735	1
-range	Cooking range (1764, 10137)	1764	10137	0
 range	Cooking range (1764, 3734)	1764	3734	1
 range	Cooking range (1764, 3736)	1764	3736	1
-range	Cooking range (1765, 10136)	1765	10136	0
 range	Cooking range (1765, 3735)	1765	3735	1
-range	Cooking range (1766, 10137)	1766	10137	0
 range	Cooking range (1770, 3751)	1770	3751	1
 range	Cooking range (1775, 3735)	1775	3735	1
 range	Cooking range (1776, 3736)	1776	3736	1
@@ -449,14 +417,6 @@ spinning_wheel	Spinning wheel (2935, 3287)	2935	3287	1
 spinning_wheel	Spinning wheel (2935, 3288)	2935	3288	1
 spinning_wheel	Spinning wheel (2936, 3286)	2936	3286	1
 spinning_wheel	Spinning wheel (2936, 3288)	2936	3288	1
-water	Aldarin Water source	1449	2921	0
-water	Aldarin Water source	1449	2922	0
-water	Aldarin Water source	1450	2920	0
-water	Aldarin Water source	1450	2923	0
-water	Aldarin Water source	1451	2920	0
-water	Aldarin Water source	1451	2923	0
-water	Aldarin Water source	1452	2921	0
-water	Aldarin Water source	1452	2922	0
 water	Mort'ton Water source	3578	3354	0
 water	Mort'ton Water source	3578	3355	0
 water	Water source (1190, 10271)	1190	10271	0
@@ -466,12 +426,6 @@ water	Water source (1435, 9961)	1435	9961	0
 water	Water source (1435, 9964)	1435	9964	0
 water	Water source (1436, 9962)	1436	9962	0
 water	Water source (1436, 9963)	1436	9963	0
-water	Water source (1437, 2929)	1437	2929	2
-water	Water source (1438, 2929)	1438	2929	2
-water	Water source (1439, 2930)	1439	2930	2
-water	Water source (1447, 2929)	1447	2929	1
-water	Water source (1448, 2929)	1448	2929	1
-water	Water source (1449, 2928)	1449	2928	1
 water	Water source (1653, 3047)	1653	3047	2
 water	Water source (1748, 3748)	1748	3748	1
 water	Water source (1749, 3735)	1749	3735	1

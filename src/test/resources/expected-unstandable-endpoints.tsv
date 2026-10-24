@@ -8,13 +8,14 @@ destination 1331,10227,0 SEASONAL_TRANSPORTS Map of Alacrity: Kourend - Karuulm 
 destination 1341,2917,0 SEASONAL_TRANSPORTS Map of Alacrity: Varlamore - Aldarin: Rocks
 destination 1479,3851,0 SEASONAL_TRANSPORTS Banker's Briefcase: Kourend - Blast mine (south)
 destination 1523,3563,1 TRANSPORT [Climb Stairs 27201]
-destination 1533,9446,0 TRANSPORT [Enter Cave 51761]
 destination 1561,3592,1 TRANSPORT [Climb Stairs 27201]
 destination 1562,3592,1 TRANSPORT [Climb Stairs 27201]
 destination 1579,3586,1 TRANSPORT [Climb Stairs 27201]
 destination 1580,3586,1 TRANSPORT [Climb Stairs 27201]
 destination 1611,10066,0 SEASONAL_TRANSPORTS Map of Alacrity: Kourend - Catacombs: Dragons stepping stones
+destination 1629,4023,0 TRANSPORT [Jump Gap 29326]
 destination 1630,4023,0 SEASONAL_TRANSPORTS Map of Alacrity: Kourend - Wintertodt: Gap
+destination 1631,4023,0 TRANSPORT [Jump Gap 29326]
 destination 1693,3542,0 SEASONAL_TRANSPORTS Fairy Mushroom: Kourend - Hosidius (planted)
 destination 2213,3794,0 BOAT Pirates' Cove [Pirate's Cove Lokar Searunner 3855]
 destination 2213,3794,0 TRANSPORT [Climb Ladder 16962]
@@ -24,11 +25,6 @@ destination 2339,3111,0 SEASONAL_TRANSPORTS Fairy Mushroom: Kandarin - Poison Wa
 destination 2407,3435,1 TRANSPORT [Climb-up Ladder 16683]
 destination 2408,3434,1 TRANSPORT [Climb-up Ladder 16683]
 destination 2449,3463,1 TRANSPORT [Climb-up Ladder 16683]
-destination 2483,3188,0 CANOE Tree Gnome Village [Paddle Canoe Canoe Station 60845]
-destination 2483,3188,0 CANOE Tree Gnome Village [Paddle Canoe Canoe Station 60847]
-destination 2483,3188,0 CANOE Tree Gnome Village [Paddle Canoe Canoe Station 60848]
-destination 2483,3188,0 CANOE Tree Gnome Village [Paddle Canoe Canoe Station 60849]
-destination 2506,3584,1 TRANSPORT [Climb-down Staircase 4570]
 destination 2511,3463,0 TRANSPORT [Open Door 2000]
 destination 2570,9668,0 TRANSPORT [Climb-down Ladder 17384]
 destination 2571,9667,0 TRANSPORT [Climb-down Ladder 17384]
@@ -99,7 +95,6 @@ destination 3229,3212,1 TRANSPORT [Climb-up Ladder 16683]
 destination 3237,12420,0 SEASONAL_TRANSPORTS Map of Alacrity: Tirannwn - Iorwerth dungeon: Gap south
 destination 3241,10145,0 SEASONAL_TRANSPORTS Map of Alacrity: Wilderness - Revenant cave: Hard pillar
 destination 3291,3849,0 SEASONAL_TRANSPORTS Evil Eye: Wilderness - Callisto
-destination 3297,9824,0 TRANSPORT [Enter Rift 13968]
 destination 3339,3001,0 TELEPORTATION_ITEM Construction cape: Home (Pollnivneach)
 destination 3339,3001,0 TELEPORTATION_ITEM Construction cape: Pollnivneach
 destination 3339,3001,0 TELEPORTATION_ITEM Max cape: Home (Pollnivneach)
@@ -115,13 +110,12 @@ destination 3605,3163,1 TRANSPORT [Climb-down Rock 17960]
 destination 3605,3163,1 TRANSPORT [Jump-onto Rock 17958]
 destination 3646,3219,0 SEASONAL_TRANSPORTS Evil Eye: Morytania - Theatre of Blood
 origin 1523,3563,1 TRANSPORT [Climb Stairs 27202]
-origin 1533,9445,0 TRANSPORT [Exit Cave 51760]
-origin 1533,9446,0 TRANSPORT [Exit Cave 51760]
-origin 1533,9447,0 TRANSPORT [Exit Cave 51760]
 origin 1561,3592,1 TRANSPORT [Climb Stairs 27202]
 origin 1562,3592,1 TRANSPORT [Climb Stairs 27202]
 origin 1579,3586,1 TRANSPORT [Climb Stairs 27202]
 origin 1580,3586,1 TRANSPORT [Climb Stairs 27202]
+origin 1629,4023,0 TRANSPORT [Jump Gap 29326]
+origin 1631,4023,0 TRANSPORT [Jump Gap 29326]
 origin 2213,3794,0 BOAT Rellekka [Rellekka Lokar Searunner 9306]
 origin 2213,3794,0 TRANSPORT [Climb Ladder 16960]
 origin 2232,3219,0 AGILITY_SHORTCUT [Enter Dense forest 3937]
@@ -189,10 +183,6 @@ origin 3151,3363,0 AGILITY_SHORTCUT [Jump-onto Stepping stone 16533]
 origin 3152,3363,0 AGILITY_SHORTCUT [Jump-onto Stepping stone 16533]
 origin 3229,3212,1 TRANSPORT [Climb-down Ladder 16684]
 origin 3229,3212,1 TRANSPORT [Climb-up Ladder 16684]
-origin 3296,9823,0 TRANSPORT [Climb-up Rope 13999]
-origin 3297,9822,0 TRANSPORT [Climb-up Rope 13999]
-origin 3297,9824,0 TRANSPORT [Climb-up Rope 13999]
-origin 3298,9823,0 TRANSPORT [Climb-up Rope 13999]
 origin 3605,3161,1 TRANSPORT [Jump-onto Rock 17958]
 origin 3605,3163,1 BOAT 1: Burgh de Rott. [Board Boat 17961]
 origin 3605,3163,1 BOAT 2: Icyene Graveyard. [Board Boat 17961]

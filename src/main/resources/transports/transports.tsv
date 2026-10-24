@@ -1334,7 +1334,6 @@
 2508 3640 0	2505 3641 2	Top-floor Staircase 4568							
 2505 3641 1	2506 3642 0	Climb-down Staircase 4569							
 2505 3641 1	2505 3641 2	Climb-up Staircase 4569							
-2505 3641 2	2506 3584 1	Climb-down Staircase 4570							
 2505 3641 2	2506 3642 0	Bottom-floor Staircase 4570							
 2444 4600 0	2441 4601 1	Climb-up Staircase 4568									~geometry ~duration
 2444 4600 0	2441 4601 2	Top-floor Staircase 4568						1			~geometry ~duration
@@ -1973,11 +1972,6 @@
 2405 3418 0	2409 9812 0	Enter Cave entrance 17209							
 									
 # Tolna's Rift									
-3309 3452 0	3297 9824 0	Enter Rift 13968							
-3297 9824 0	3312 3450 0	Climb-up Rope 13999							
-3298 9823 0	3312 3450 0	Climb-up Rope 13999							
-3296 9823 0	3312 3450 0	Climb-up Rope 13999							
-3297 9822 0	3312 3450 0	Climb-up Rope 13999							
 2484 3463 1	2486 3465 2	Climb-up Tree 2447							
 2485 3465 2	2484 3463 1	Climb-down Tree 28800							
 									
@@ -3305,18 +3299,6 @@
 3074 3653 0	3197 10056 0	Enter Cavern 31555						2	
 3075 3653 0	3197 10056 0	Enter Cavern 31555						2	
 3076 3653 0	3197 10056 0	Enter Cavern 31555						2	
-3069 3740 0	3187 10128 0	Jump-down Crevice 40386						2	
-3069 3741 0	3187 10128 0	Jump-down Crevice 40386						2	
-3069 3742 0	3187 10128 0	Jump-down Crevice 40386						2	
-3069 3743 0	3187 10128 0	Jump-down Crevice 40386						2	
-3066 3740 0	3187 10128 0	Jump-down Crevice 40386						2	
-3066 3741 0	3187 10128 0	Jump-down Crevice 40386						2	
-3066 3742 0	3187 10128 0	Jump-down Crevice 40386						2	
-3066 3743 0	3187 10128 0	Jump-down Crevice 40386						2	
-3067 3739 0	3187 10128 0	Jump-down Crevice 40386						2	
-3068 3739 0	3187 10128 0	Jump-down Crevice 40386						2	
-3067 3744 0	3187 10128 0	Jump-down Crevice 40386						2	
-3068 3744 0	3187 10128 0	Jump-down Crevice 40386						2	
 3126 3831 0	3241 10233 0	Enter Cavern 31556						2	
 3126 3832 0	3241 10233 0	Enter Cavern 31556						2	
 3126 3833 0	3241 10233 0	Enter Cavern 31556						2	
@@ -4790,7 +4772,6 @@
 # Zanaris									
 2452 4473 0	3201 3169 0	Use Fairy ring 12094						6	
 3202 3169 0	2452 4473 0	Open Door 2406						6	
-2486 4471 0	3260 3171 0	Use Fairy ring 12003						6	
 									
 # Fortis Colosseum									
 1795 3106 0	1799 9506 0	Enter Colosseum entrance 50749							
@@ -5104,10 +5085,6 @@
 2522 3493 1	2522 3493 0	Climb-down Ladder 16679						2	
 									
 # Ancient Cavern (Baxtorian Falls Whirlpool)									
-2511 3511 0	1768 5366 0	Jump-into Whirlpool 25274				3759>1		2	
-2512 3511 0	1768 5366 0	Jump-into Whirlpool 25274				3759>1		2	
-1742 5352 0	2531 3446 0	Ride Aged log 25216						2	
-1761 5362 0	2531 3446 0	Ride Aged log 25216						2	
 									
 # Hunter Guild									
 1559 3046 0	1556 3046 2	Climb-up Rope 51647						2	
@@ -5120,11 +5097,6 @@
 1553 3033 1	1553 3033 0	Climb-down Ladder 52620						2	
 1556 3034 1	1556 3034 2	Climb-up Ladder 52614						2	
 1556 3034 2	1556 3034 1	Climb-down Ladder 52620						2	
-1533 3051 0	1533 9446 0	Enter Cave 51761						2	
-1533 3050 0	1533 9446 0	Enter Cave 51761						2	
-1533 9447 0	1533 3051 0	Exit Cave 51760						2	
-1533 9446 0	1533 3051 0	Exit Cave 51760						2	
-1533 9445 0	1533 3051 0	Exit Cave 51760						2	
 									
 # Farming Guild (Kebos Lowlands)									
 # Main entrance gate - 45 Farming required. Coords inferred from skills necklace teleport endpoints (outside: 1248,3719 / inside: 1248,3725).									
@@ -5332,18 +5304,6 @@
 									
 # The obsticals are randomly generated so it can be that you can pass through one of the passages but not the other, so we have to list them all out.									
 # Todo: The destionation of the passages is not 100% confirmed, but atleast they point into the the second ring of the abyss.									
-3039 4854 0	3039 4844 0	Go-through Passage 26250							
-3029 4850 0	3033 4843 0	Go-through Passage 26250							
-3021 4843 0	3039 4844 0	Go-through Passage 26250							
-3018 4834 0	3039 4844 0	Go-through Passage 26250							
-3018 4822 0	3039 4844 0	Go-through Passage 26250							
-3030 4812 0	3039 4844 0	Go-through Passage 26250							
-3042 4811 0	3039 4844 0	Go-through Passage 26250							
-3050 4813 0	3039 4844 0	Go-through Passage 26250							
-3058 4822 0	3039 4844 0	Go-through Passage 26250							
-3061 4831 0	3052 4831 0	Go-through Passage 26250							
-3059 4840 0	3039 4844 0	Go-through Passage 26250							
-3050 4850 0	3039 4844 0	Go-through Passage 26250							
 									
 3034 4793 0	3221 3219 0	Operate Appendage 27027						4	
 									
@@ -5369,8 +5329,6 @@
 									
 # Death Altar									
 # todo: destination is estimated									
-3050 4837 0	2209 4834 0	Exit-through Death rift 25382			Mourning's End Part II				
-2208 4830 0	1860 4639 0	Enter Portal 34758						1	
 
 # Temple of Light (Mourning's End Part II). The gate from the Mourner Tunnels: the object keeps
 # its collision when open, so it is a walk-through edge (audit 2026-09-29, live collision dump
@@ -5487,8 +5445,6 @@
 # todo: verify if the destination is correct									
 # todo: can also access Kourend's Blood Altar by using dark essence block/fragments on rift after crafting blood runes on it									
 3027 4834 0	3229 4834 0	Exit-through Blood rift 25382			Sins of the Father				
-3240 4832 0	3559 9779 0	Use Portal 43478						1	
-3224 4832 0	3559 9779 0	Use Portal 43478						1	
 									
 # Cosmic Altar									
 3028 4837 0	2142 4836 0	Exit-through Cosmic rift 25382			Lost City				
@@ -5670,7 +5626,6 @@
 
 # Ape Atoll Dungeon									
 2763 9103 0	2763 2703 0	Climb-up Bamboo Ladder 4781							
-2763 2703 0	2763 9103 0	Climb-down Bamboo Ladder 4780							
 									
 # Varrock Palace trellis									
 3228 3470 0	3228 3472 0	Climb Trellis 2149			Garden of Tranquillity			2	
@@ -6315,7 +6270,6 @@
 1811 3756 1	1811 3756 2	Climb Ladder 27634						4	
 1811 3756 1	1812 3755 0	Climb Ladder 27634						2			~geometry ~duration
 1811 4394 1	1809 4394 2	Climb-up Ladder 10202						4	
-1812 10145 0	1813 10144 1	Climb-up Ladder 31708						4	
 1812 3755 2	1811 3756 1	Climb Ladder 27635						2			~geometry ~duration
 1812 4394 2	1811 4394 1	Climb-down Ladder 10201						2			~geometry ~duration
 1813 3758 0	1813 3758 1	Climb Ladder 27634						4	
@@ -6771,10 +6725,8 @@
 2801 6124 1	2799 6124 0	Climb-down ladder 8746						2			~geometry ~duration
 2802 2505 1	2802 2505 2	Climb-up Ship's ladder 245						4	
 2802 2505 2	2802 2503 1	Climb-down Ship's ladder 246						2			~geometry ~duration
-2803 2733 2	2803 2733 1	Climb-down Bamboo Ladder 4744						2			~geometry ~duration
 2803 3075 0	2803 3075 1	Climb-up Ladder 16683						4	
 2803 3075 1	2803 3075 0	Climb-down Ladder 16679						2			~geometry ~duration
-2804 2734 0	2803 2733 1	Climb-up Bamboo Ladder 4743						4	
 2806 2785 0	2804 2785 1	Climb-up Bamboo Ladder 4772						4	
 2806 2785 1	2804 2785 0	Climb-down Bamboo Ladder 4778						2			~geometry ~duration
 2807 6303 1	2806 6302 0	Climb-down Ladder 48304						2			~geometry ~duration
@@ -7356,7 +7308,6 @@
 2950 9520 1	2950 9515 1	Exit Underwater Cavern Entrance 12462						1	
 2950 9521 1	2949 9515 1	Exit Underwater Cavern Entrance 12463						1	
 2950 9521 1	2950 9515 1	Exit Underwater Cavern Entrance 12462						1	
-2964 9479 1	1887 4827 1	Climb Anchor 12475						5	
 1861 5317 0	3207 3217 0	Pass-through Barrier 12351						1	
 2784 3086 0	2783 3087 1	Climb-up Ladder 16683						4	
 2783 3087 1	2783 3087 0	Climb-down Ladder 16679						1	
@@ -7802,3 +7753,397 @@
 2650 9591 0	2643 9594 2	Walk-up Stairs 21722						4			
 2643 9594 2	2650 9591 0	Walk-down Stairs 21724						4			
 2643 9593 2	2650 9591 0	Walk-down Stairs 21724						4			
+
+# Synced from upstream Shortest Path (Skretzo/shortest-path master e7ced026, 2026-10-23): obstacles and corrections upstream added since the fork, each
+# checked against the game cache (object placed beside an endpoint), our collision map and our audit captures.
+# Rows upstream has for doors, gates and walls our collision map already lets a walker through were not taken.
+
+# Tears of Guthix (upstream 3181556f Add Chasm of Tears and Ancient Guthixian Temple transports)
+3227 9526 2	3224 9504 2	Attract Light creature 5435		4702=1		451>0			Travel across the chasm.
+3227 9526 2	4075 4601 0	Attract Light creature 5435		4702=1		451>0;9653>709			Travel into the chasm.
+4075 4601 0	3228 9526 2	Attract Light creature 5435		4702=1		451>0;9653>709			Return to the Chasm of Tears
+
+# Ancient Guthixian Temple (upstream 3181556f Add Chasm of Tears and Ancient Guthixian Temple transports)
+4065 4555 0	4065 4554 1	Climb-up Wall 53623
+4065 4554 1	4065 4555 0	Jump-down Wall 53676
+4066 4553 1	4066 4552 2	Climb-up Wall 53624
+4066 4552 2	4066 4553 1	Jump-down Wall 53676
+4063 4550 2	4061 4466 0	Climb-through Opening 53622				9653>759;10820=0
+4061 4466 0	4063 4550 2	Crawl-through Hole 53637				9653>759
+
+# Underground Pass (upstream 664c2dec Fix Marim ladder tiles, add Underground Pass route, seal Crandor pockets (#598))
+2451 9688 0	2451 9694 0	Squeeze-through Pipe 3235						5
+2419 9644 0	2420 9650 0	Squeeze-through Pipe 35941						5
+2420 9650 0	2419 9644 0	Squeeze-through Pipe 35941						5
+2439 9607 0	2428 9607 0	Enter Cave 3224						5
+2370 9718 0	2173 4725 1	Open Door 3220						5
+2173 4725 1	2370 9718 0	Open Door 3220						5
+
+# Varrock (upstream c9797cba Add Grand Exchange recruiter transports to Castle Wars (#580))
+3142 3473 0	2440 3089 0	Join Castle Wars Saradominist recruiter 8644						4
+3144 3471 0	2440 3089 0	Join Castle Wars Zamorakian recruiter 10732						4
+
+# Al Kharid (upstream 8e25aaee Add Shantay Pass arrest transport to Port Sarim jail (#576))
+3304 3124 0	3013 3180 0	Talk-to Shantay 4642						4	Shantay Pass arrest
+
+# Wilderness (upstream 20dcdff2 Add Mage Arena entrance/exit levers to transports (#560))
+3105 3956 0	3105 3951 0	Pull Lever 9706					267>0	5
+3105 3951 0	3105 3956 0	Pull Lever 9707					267>0	5
+
+# Jalsavrah (Pyramid Plunder) (upstream 442e7b57 Add Jalsavrah tomb door exits to Sophanem (#584))
+1927 4424 0	3288 2801 0	Leave Tomb Tomb Door 20931						3
+1927 4453 0	3288 2801 0	Leave Tomb Tomb Door 20931						3
+1927 4477 0	3288 2801 0	Leave Tomb Tomb Door 20931						3
+1930 4438 0	3288 2801 0	Leave Tomb Tomb Door 20931						3
+1941 4453 0	3288 2801 0	Leave Tomb Tomb Door 20931						3
+1943 4421 0	3288 2801 0	Leave Tomb Tomb Door 20931						3
+1944 4426 0	3288 2801 0	Leave Tomb Tomb Door 20931						3
+1954 4477 0	3288 2801 0	Leave Tomb Tomb Door 20931						3
+1955 4464 0	3288 2801 0	Leave Tomb Tomb Door 20931						3
+1956 4454 0	3288 2801 0	Leave Tomb Tomb Door 20931						3
+1965 4444 0	3288 2801 0	Leave Tomb Tomb Door 20931						3
+1970 4458 0	3288 2801 0	Leave Tomb Tomb Door 20931						3
+1974 4420 0	3288 2801 0	Leave Tomb Tomb Door 20931						3
+1976 4434 0	3288 2801 0	Leave Tomb Tomb Door 20931						3
+1977 4471 0	3288 2801 0	Leave Tomb Tomb Door 20931						3
+1934 4420 3	3288 2801 0	Leave Tomb Tomb Door 20932						3
+
+# Uzer Mastaba (upstream 63d67f8b Map Uzer Mastaba entrance, doors and lower stairs)
+3850 4578 0	3485 3023 0	Climb Stairs 50202				11479>3		1
+3485 3023 0	3850 4578 0	Enter Entry 50201				11479>3		1
+3886 4598 0	3884 4598 0	Open Imposing doors 50211				11479>9		1
+3884 4598 0	3886 4598 0	Open Imposing doors 50211				11479>9		1
+3861 4595 0	3892 4714 0	Climb Stairs 55785				11479>11		1
+3892 4714 0	3861 4595 0	Climb Stairs 55786				11479>11		1
+
+# Stalker Den (upstream ab276ff2 Add Stalker Den transports (#666))
+1296 3375 0	1296 9767 0	Enter Cave 56439				16632>9		4
+1296 9767 0	1296 3375 0	Exit Cave 56440				16632>9
+1262 9758 0	1259 9758 0	Climb Rope 57276			Shadows of Custodia			3
+1259 9758 0	1262 9758 0	Climb Rope 57276			Shadows of Custodia
+1274 9770 0	1297 9780 0	Enter Cave 57273			Shadows of Custodia
+1297 9780 0	1274 9770 0	Enter Cave 57274			Shadows of Custodia
+
+# Watchtower (upstream b03f6f2b Map missing building stairs and correct Watchtower landings (#751))
+2933 4712 2	2549 3112 1	Climb-down Ladder 2797						2
+2932 4711 2	2549 3112 1	Climb-down Ladder 2797						2
+2548 3111 1	2933 4712 2	Climb-up Ladder 2796			Watchtower			2
+2550 3111 1	2933 4712 2	Climb-up Ladder 2796			Watchtower			2
+2549 3112 1	2933 4712 2	Climb-up Ladder 2796			Watchtower			2
+
+# Chasm of Fire (upstream e5eb66e4 Add Chasm of Fire transports (#625))
+1435 3671 0	1435 10077 2	Enter Chasm 30236						2
+1435 10077 2	1435 3671 0	Climb-up Rope 30234						2
+1438 10093 1	1438 10093 2	Enter Lift 30259
+1438 10093 2	1438 10093 1	Enter Lift 30258
+1457 10096 1	1457 10096 0	Enter Lift 30258
+1457 10096 0	1457 10096 1	Enter Lift 30259
+1457 10075 0	1457 10075 1	Enter Lift 30259
+1457 10075 1	1457 10075 0	Enter Lift 30258
+
+# Ancient Cavern (Baxtorian Falls Whirlpool) (upstream 1842b0dc Fix ancient cavern entry)
+1768 5366 1	1772 5366 0	Climb-down Stairs 25338
+
+# Ape Atoll - Marim bamboo gate (upstream cbc91c6a Fix Ape Atoll access transports (#595))
+2720 2765 0	2720 2767 0	Open Bamboo Gate 4787			Monkey Madness II			2
+2720 2767 0	2720 2765 0	Open Bamboo Gate 4787			Monkey Madness II			2
+
+# Ape Atoll - east bridge (upstream cbc91c6a Fix Ape Atoll access transports (#595))
+2803 2727 2	2806 2724 0	Jump off End of bridge 4745						4
+
+# Shaman Caves (upstream 8b9f989b Add Shaman Caves entrance transports (#583))
+2780 2934 0	2773 9341 0	Search Mossy rock 2901	50 Agility				139>0	5
+2781 2934 0	2773 9341 0	Search Mossy rock 2901	50 Agility				139>0	5
+2782 2934 0	2773 9341 0	Search Rocks 2902	50 Agility				139>0	5
+2783 2934 0	2773 9341 0	Search Rocks 2902	50 Agility				139>0	5
+2781 2935 0	2773 9341 0	Search Mossy rock 2900	50 Agility				139>0	5
+2780 2936 0	2773 9341 0	Search Mossy rock 2900	50 Agility				139>0	5
+2783 2936 0	2773 9341 0	Search Mossy rock 2900	50 Agility				139>0	5
+2780 2937 0	2773 9341 0	Search Mossy rock 2900	50 Agility				139>0	5
+2782 2938 0	2773 9341 0	Search Mossy rock 2900	50 Agility				139>0	5
+2783 2938 0	2773 9341 0	Search Mossy rock 2900	50 Agility				139>0	5
+2773 9341 0	2781 2934 0	Walk through Cave entrance 2903						1
+2772 9341 0	2781 2934 0	Walk through Cave entrance 2904						1
+
+# Wintertodt (upstream f86674d0 Refactor transport data files and add unit tests for agility shortcuts (#255))
+1633 4023 0	1631 4023 0	Jump Gap 29326	60 Agility					2
+1631 4023 0	1629 4023 0	Jump Gap 29326	60 Agility					2
+1629 4023 0	1627 4023 0	Jump Gap 29326	60 Agility					2
+1631 4023 0	1633 4023 0	Jump Gap 29326	60 Agility					2
+1629 4023 0	1631 4023 0	Jump Gap 29326	60 Agility					2
+1627 4023 0	1629 4023 0	Jump Gap 29326	60 Agility					2
+
+# Temple of the eye (upstream f86674d0 Refactor transport data files and add unit tests for agility shortcuts (#255))
+3633 9503 0	3637 9503 0	Climb Rubble 43724						5
+3637 9503 0	3633 9503 0	Climb Rubble 43726						5
+3613 9482 0	3613 9484 0	Quick-pass Barrier 43700						5
+3614 9482 0	3614 9484 0	Quick-pass Barrier 43700						5
+3615 9482 0	3615 9484 0	Quick-pass Barrier 43700						5
+3616 9482 0	3616 9484 0	Quick-pass Barrier 43700						5
+3617 9482 0	3617 9484 0	Quick-pass Barrier 43700						5
+3613 9484 0	3613 9482 0	Quick-pass Barrier 43700						5
+3614 9484 0	3614 9482 0	Quick-pass Barrier 43700						5
+3615 9484 0	3615 9482 0	Quick-pass Barrier 43700						5
+3616 9484 0	3616 9482 0	Quick-pass Barrier 43700						5
+3617 9484 0	3617 9482 0	Quick-pass Barrier 43700						5
+
+# Puro-Puro (Crop Circle) (upstream be3a8eeb Add puro puro entry via Zanaris)
+2427 4446 0	2591 4319 0	Enter Centre of crop circle 24991
+
+# Diving with Murphy requires <28 kg carried weight in game; the TSV grammar has no weight requirement type, so this row assumes the dive conditions are met. (upstream c5a269ff Add Mogre Camp diving transports (#594))
+2664 3160 0	2963 9478 1	Talk-to Murphy 5607		7534=1|32386=1&7535=1|32386=1	Recipe for Disaster - Pirate Pete			4	Mogre Camp dive
+
+# Mogre Camp underwater cavern (requires 5 rocks moved, varbit HUNDRED_PIRATE_ROCKS) (upstream c5a269ff Add Mogre Camp diving transports (#594))
+2949 9515 1	2949 9520 1	Enter Underwater Cavern Entrance 12460				1869=5		1
+
+# Legends Guild Ladder (upstream 89471f0e Add legends guild transports and shortcuts (#499))
+2893 3507 0	2893 9907 0	Climb-down Ladder 17374						1
+2893 9907 0	2893 3507 0	Climb-up Ladder 17387						1
+
+# The Warrens (upstream b8e50cee Grab bag (#513))
+1812 3745 0	1813 10145 0	Climb-down Manhole 31707						2
+1813 3746 0	1813 10145 0	Climb-down Manhole 31707						2
+1814 3745 0	1813 10145 0	Climb-down Manhole 31707						2
+1813 3744 0	1813 10145 0	Climb-down Manhole 31707						2
+
+# wilderness air obelisk (upstream b8e50cee Grab bag (#513))
+3088 3572 0	3088 9972 0	Climb-down Ladder 16680						2
+3089 3571 0	3089 9971 0	Climb-down Ladder 16680						2
+3088 3570 0	3088 9970 0	Climb-down Ladder 16680						2
+3087 3571 0	3087 9971 0	Climb-down Ladder 16680						2
+3088 9972 0	3088 3572 0	Climb-down Ladder 16680						2
+3089 9971 0	3089 3571 0	Climb-down Ladder 16680						2
+3088 9970 0	3088 3570 0	Climb-down Ladder 16680						2
+3087 9971 0	3087 3571 0	Climb-down Ladder 16680						2
+
+# Rogues' Castle (upstream b8e50cee Grab bag (#513))
+3282 3936 2	3282 3936 3	Climb-up Staircase 14736						2
+3282 3936 2	3281 3935 1	Climb-down Staircase 14736						2
+3282 3936 1	3282 3936 2	Climb-up Staircase 14736						2
+3282 3936 1	3281 3935 0	Climb-down Staircase 14736						2
+3281 3935 0	3282 3936 1	Climb-up Staircase 14736						2
+
+# Villa Lucens (upstream e6331972 Map missing shed, magic axe hut and Villa Lucens doors (#752))
+1425 2933 0	1427 2933 0	Pass-through Entryway 54707			Death on the Isle			2
+
+# Fisher Realm, Sir Percival's castle (upstream b03f6f2b Map missing building stairs and correct Watchtower landings (#751))
+2633 4682 0	2634 4682 1	Climb-up Staircase 16671						1
+2635 4681 0	2634 4682 1	Climb-up Staircase 16671						1
+2640 4681 1	2640 4685 2	Climb-up Staircase 15645						1
+2640 4685 2	2640 4681 1	Climb-down Staircase 15648						1
+2647 4684 0	2649 4685 1	Climb-up Staircase 16671						1
+
+# Cooks' Guild (32 Cooking and a chef's hat, cooking cape, max cape or Varrock armour 3/4) (upstream b03f6f2b Map missing building stairs and correct Watchtower landings (#751))
+3144 3449 0	3144 3449 1	Climb-up Staircase 2608						1
+3144 3449 1	3144 3446 2	Climb-up Staircase 2609						1
+3144 3446 2	3144 3449 1	Climb-down Staircase 2610						1
+3144 3449 1	3144 3449 0	Climb-down Staircase 2609						1
+
+# Villa Lucens stage (upstream e6331972 Map missing shed, magic axe hut and Villa Lucens doors (#752))
+1453 2934 0	1455 2934 0	Pass-through Entryway 54707			Death on the Isle			2
+1455 2934 0	1453 2934 0	Pass-through Entryway 54707			Death on the Isle			2
+
+# Tarn's Lair, wall trap passage (run past or search to disarm) and additional passageways (upstream 964668e1 Map Tarn's Lair searchable walls and missing passageways (#754))
+3148 4556 0	3147 4556 0	Search Wall 20594						1
+3147 4556 0	3148 4556 0	Search Wall 20594						1
+3149 4664 0	3149 4658 0	Enter Passageway 16130						2
+3149 4658 0	3149 4664 0	Enter Passageway 16129						2
+3151 4597 1	3155 4597 1	Enter Passageway 20534						2
+3155 4597 1	3151 4597 1	Enter Passageway 20533						2
+3149 4604 1	3150 4604 1	Search Wall 20590						1
+3150 4604 1	3149 4604 1	Search Wall 20590						1
+3154 4604 1	3155 4604 1	Search Wall 20590						1
+3155 4604 1	3154 4604 1	Search Wall 20590						1
+3146 4589 1	3147 4589 1	Search Wall 20596						1
+3147 4589 1	3146 4589 1	Search Wall 20596						1
+3151 4589 1	3152 4589 1	Search Wall 20596						1
+3152 4589 1	3151 4589 1	Search Wall 20596						1
+
+# God Wars Dungeon: swimming the river to Zamorak's Fortress (70 Hitpoints) (upstream 2418db15 Map the Zamorak river crossing and correct the God Wars crack landing (#755))
+2885 5333 2	2885 5344 2	Climb-off Ice bridge 26518	70 Hitpoints					5
+2885 5344 2	2885 5333 2	Climb-off Ice bridge 26518	70 Hitpoints					5
+
+# Legends' Guild, top floor ladder (upstream b03f6f2b Map missing building stairs and correct Watchtower landings (#751))
+2731 3375 2	2731 3375 1	Climb-down Ladder 16679						2
+2732 3374 2	2732 3374 1	Climb-down Ladder 16679						2
+2732 3376 2	2732 3376 1	Climb-down Ladder 16679						2
+2733 3375 2	2733 3375 1	Climb-down Ladder 16679						2
+
+# Legends' Guild, basement (upstream a2ec3ad4 Map Legends' Guild stairs, upper ladders and basement (#757))
+2723 3375 0	2727 9774 0	Climb-down Staircase 16664						2
+2727 9774 0	2723 3374 0	Climb-up Staircase 16665						2
+
+# Legends' Guild, ground to first floor (upstream a2ec3ad4 Map Legends' Guild stairs, upper ladders and basement (#757))
+2732 3376 0	2732 3380 1	Climb-up Staircase 15653						1
+2733 3376 0	2732 3380 1	Climb-up Staircase 15653						1
+2732 3380 1	2732 3376 0	Climb-down Staircase 15654						1
+2733 3380 1	2732 3376 0	Climb-down Staircase 15654						1
+
+# Civitas illa Fortis, Alchemical Society basement (upstream 311d8d66 Map Alchemical Society basement stairs (#758))
+1388 2918 0	1388 9313 0	Climb-down Staircase 54946						1
+1388 9313 0	1388 2918 0	Climb-up Staircase 54945						1
+1389 2918 0	1389 9313 0	Climb-down Staircase 54946						1
+1389 9313 0	1389 2918 0	Climb-up Staircase 54945						1
+
+# Woodcutting Guild Ent dungeon: the cave, the vine back up, and the roots inside (upstream e56a06d6 Map Woodcutting Guild Ent dungeon entrance and root crossings (#759))
+1606 3508 0	1596 9900 0	Enter Cave 28855						2
+1596 9900 0	1606 3508 0	Climb Vine 28856						2
+1551 9880 0	1551 9882 0	Step-over Root 26721						2
+1551 9882 0	1551 9880 0	Step-over Root 26721						2
+1552 9880 0	1552 9882 0	Step-over Root 26720						2
+1552 9882 0	1552 9880 0	Step-over Root 26720						2
+1554 9871 0	1556 9871 0	Step-over Root 26720						2
+1556 9871 0	1554 9871 0	Step-over Root 26720						2
+1555 9870 0	1555 9872 0	Step-over Root 26720						2
+1555 9872 0	1555 9870 0	Step-over Root 26720						2
+1588 9899 0	1590 9899 0	Step-over Root 26721						2
+1590 9899 0	1588 9899 0	Step-over Root 26721						2
+1588 9900 0	1590 9900 0	Step-over Root 26720						2
+1590 9900 0	1588 9900 0	Step-over Root 26720						2
+
+# Falador Park mole hills into the Mole Hole (spade) (upstream e7a8a3d1 Map mole-hill entrances and the Mole Hole rope exit (#760))
+2984 3387 0	1752 5237 0	Use Spade -> Mole hill 12202		952=1				3
+2987 3387 0	1752 5237 0	Use Spade -> Mole hill 12202		952=1				3
+2989 3378 0	1752 5237 0	Use Spade -> Mole hill 12202		952=1				3
+2996 3377 0	1752 5237 0	Use Spade -> Mole hill 12202		952=1				3
+2999 3375 0	1752 5237 0	Use Spade -> Mole hill 12202		952=1				3
+3005 3376 0	1752 5237 0	Use Spade -> Mole hill 12202		952=1				3
+1752 5137 0	2985 3316 0	Climb Rope 12230						2
+
+# Prifddinas: Gauntlet Portal into the Gauntlet lobby (upstream a1b8c664 Map Gauntlet portal entrances and the return platform (#761))
+3228 6117 0	3032 6125 1	Enter Gauntlet Portal 36081			Song of the Elves			2
+3228 6116 0	3032 6125 1	Enter Gauntlet Portal 36081			Song of the Elves			2
+3032 6125 1	3228 6116 0	Channel Teleport Platform 36082			Song of the Elves			2
+
+# Mor Ul Rek: hot vent doors (permanent access after showing a fire cape, or a carried cape for first entry) (upstream 33b74b92 Support permanent Mor Ul Rek access after showing a fire cape (#762))
+# upstream also accepts a permanent-unlock toggle we do not model; only the item alternatives are kept
+2436 5121 0	2436 5119 0	Pass Hot vent door 30266		6570=1|13329=1|24223=1|24134=1				1
+2436 5119 0	2436 5121 0	Pass Hot vent door 30266						1
+2457 5120 0	2457 5118 0	Pass Hot vent door 30266		6570=1|13329=1|24223=1|24134=1				1
+2457 5118 0	2457 5120 0	Pass Hot vent door 30266						1
+2474 5138 0	2474 5136 0	Pass Hot vent door 30266		6570=1|13329=1|24223=1|24134=1				1
+2474 5136 0	2474 5138 0	Pass Hot vent door 30266						1
+2493 5174 0	2495 5174 0	Pass Hot vent door 30266		6570=1|13329=1|24223=1|24134=1				1
+2495 5174 0	2493 5174 0	Pass Hot vent door 30266						1
+2494 5157 0	2496 5157 0	Pass Hot vent door 30266		6570=1|13329=1|24223=1|24134=1				1
+2496 5157 0	2494 5157 0	Pass Hot vent door 30266						1
+
+# Goblin Village sled racing, Scrubfoot's cave (upstream 6e67cf1b Map Scrubfoot sled cave entrances and exits (#763))
+2949 3507 0	1975 6220 3	Enter Cave entrance 40887						2
+1975 6220 3	2949 3508 0	Exit Cave exit 40888						2
+2949 3508 0	1975 6220 3	Enter Cave entrance 40887						2
+1927 6223 0	1963 6221 3	Squeeze-through Crevice 40889						2
+
+# Ruins of Camdozaal (Below Ice Mountain) (upstream 9a3fab6f Map Camdozaal entrance and exit tiles (#764))
+2998 3493 0	2952 5762 0	Enter Ruins Entrance 41439			Below Ice Mountain			2
+2998 3494 0	2952 5762 0	Enter Ruins Entrance 41439			Below Ice Mountain			2
+2998 3495 0	2952 5762 0	Enter Ruins Entrance 41439			Below Ice Mountain			2
+2953 5762 0	2998 3494 0	Exit Ruins Exit 41446			Below Ice Mountain			2
+2952 5762 0	2998 3494 0	Exit Ruins Exit 41446			Below Ice Mountain			2
+
+# The Darkfrost: the slope down into the Hueycoatl's public arena (upstream f9179931 Map the slope into the public Hueycoatl arena (#765))
+1524 3290 0	1519 3289 0	Slide Slope 55234						3
+
+# Corporeal Beast cave: entrance and exit to the Wilderness (upstream 1be3d070 Correct Corporeal Beast teleports and the Wilderness cave crossing (#766))
+2964 4382 2	3206 3681 0	Exit Cave exit 679						2
+3206 3681 0	2964 4382 2	Enter Cave 678						2
+
+# Corrected: landing was 2506 3584, a typo for the floor below the lighthouse stairs (upstream #798/#826)
+2505 3641 2	2506 3642 1	Climb-down Staircase 4570
+
+# Corrected: Tolna's rift interior is at 3105 5280 (our capture of the rope exit agrees; upstream #798)
+3309 3452 0	3105 5280 0	Enter Rift 13968
+
+# Corrected: rope exit origins are inside the rift at 3105 5280 (our capture agrees; upstream #798)
+3105 5280 0	3312 3450 0	Climb-up Rope 13999						2
+3106 5279 0	3312 3450 0	Climb-up Rope 13999						2
+3104 5279 0	3312 3450 0	Climb-up Rope 13999						2
+3105 5278 0	3312 3450 0	Climb-up Rope 13999						2
+
+# Corrected: crevice landing corrected to 3187 10127 (upstream #826)
+3069 3740 0	3187 10127 0	Jump-down Crevice 40386						2
+3069 3741 0	3187 10127 0	Jump-down Crevice 40386						2
+3069 3742 0	3187 10127 0	Jump-down Crevice 40386						2
+3069 3743 0	3187 10127 0	Jump-down Crevice 40386						2
+3066 3740 0	3187 10127 0	Jump-down Crevice 40386						2
+3066 3741 0	3187 10127 0	Jump-down Crevice 40386						2
+3066 3742 0	3187 10127 0	Jump-down Crevice 40386						2
+3066 3743 0	3187 10127 0	Jump-down Crevice 40386						2
+3067 3739 0	3187 10127 0	Jump-down Crevice 40386						2
+3068 3739 0	3187 10127 0	Jump-down Crevice 40386						2
+3067 3744 0	3187 10127 0	Jump-down Crevice 40386						2
+3068 3744 0	3187 10127 0	Jump-down Crevice 40386						2
+
+# Corrected: our origin was the fairy ring tile itself; stand around it (cache placement)
+2486 4472 0	3260 3171 0	Use Fairy ring 12003						6
+2487 4471 0	3260 3171 0	Use Fairy ring 12003						6
+2486 4470 0	3260 3171 0	Use Fairy ring 12003						6
+2485 4471 0	3260 3171 0	Use Fairy ring 12003						6
+
+# Corrected: whirlpool landing is on plane 1 (upstream)
+2511 3511 0	1768 5366 1	Jump-into Whirlpool 25274				3759>1		2
+2512 3511 0	1768 5366 1	Jump-into Whirlpool 25274				3759>1		2
+
+# Corrected: aged log origins beside the object (upstream)
+1741 5352 0	2531 3446 0	Ride Aged log 25216						2
+1741 5353 0	2531 3446 0	Ride Aged log 25216						2
+1741 5354 0	2531 3446 0	Ride Aged log 25216						2
+1761 5361 0	2531 3446 0	Ride Aged log 25216						2
+1762 5361 0	2531 3446 0	Ride Aged log 25216						2
+1763 5361 0	2531 3446 0	Ride Aged log 25216						2
+
+# Corrected: Hunter Guild cave lands at 1538 9446 (upstream)
+1533 3051 0	1538 9446 0	Enter Cave 51761						2
+1533 3050 0	1538 9446 0	Enter Cave 51761						2
+
+# Corrected: Hunter Guild cave exit origins at 1538 (upstream)
+1538 9447 0	1533 3051 0	Exit Cave 51760						2
+1538 9446 0	1533 3051 0	Exit Cave 51760						2
+1538 9445 0	1533 3051 0	Exit Cave 51760						2
+
+# Corrected: Ape Atoll east bridge ladder reaches plane 2 (upstream #595)
+2803 2735 0	2803 2733 2	Climb-up Bamboo Ladder 4743						1
+
+# Corrected: Ape Atoll east bridge ladder descends from plane 2 (upstream #595)
+2803 2733 2	2803 2735 0	Climb-down Bamboo Ladder 4744						1
+
+# Corrected: abyss passage origins shifted one tile (upstream)
+3039 4855 0	3039 4844 0	Go-through Passage 26250
+3029 4851 0	3033 4843 0	Go-through Passage 26250
+3020 4843 0	3039 4844 0	Go-through Passage 26250
+3017 4834 0	3039 4844 0	Go-through Passage 26250
+3017 4822 0	3039 4844 0	Go-through Passage 26250
+3027 4812 0	3039 4844 0	Go-through Passage 26250
+3042 4810 0	3039 4844 0	Go-through Passage 26250
+3050 4812 0	3039 4844 0	Go-through Passage 26250
+3059 4822 0	3039 4844 0	Go-through Passage 26250
+3062 4831 0	3052 4831 0	Go-through Passage 26250
+3060 4840 0	3039 4844 0	Go-through Passage 26250
+3050 4851 0	3039 4844 0	Go-through Passage 26250
+
+# Corrected: death rift landing (upstream)
+3050 4837 0	2205 4838 0	Exit-through Death rift 25382			Mourning's End Part II
+
+# Corrected: portal landing (upstream)
+2208 4830 0	1862 4639 0	Enter Portal 34758						1
+
+# Corrected: portal origins around the object (upstream)
+3240 4833 0	3559 9779 0	Use Portal 43478						1
+3240 4831 0	3559 9779 0	Use Portal 43478						1
+3239 4832 0	3559 9779 0	Use Portal 43478						1
+3224 4833 0	3559 9779 0	Use Portal 43478						1
+3225 4832 0	3559 9779 0	Use Portal 43478						1
+3224 4831 0	3559 9779 0	Use Portal 43478						1
+
+# Corrected: bamboo ladder origins around the object (upstream)
+2763 2704 0	2763 9103 0	Climb-down Bamboo Ladder 4780						2
+2764 2703 0	2763 9103 0	Climb-down Bamboo Ladder 4780						2
+2763 2702 0	2763 9103 0	Climb-down Bamboo Ladder 4780						2
+2762 2703 0	2763 9103 0	Climb-down Bamboo Ladder 4780						2
+
+# Corrected: the anchor climbs back up to Port Khazard beside Murphy (upstream); our capture had recorded a cutscene tile
+2963 9478 1	2664 3160 0	Climb Anchor 12475						4	Port Khazard
+
+# Corrected: Warrens manhole ladder lands in Port Piscarilius; our audit capture observed 1812 3745 0
+1813 10145 0	1812 3745 0	Climb-up Ladder 31708						2
+1812 10145 0	1812 3745 0	Climb-up Ladder 31708						2

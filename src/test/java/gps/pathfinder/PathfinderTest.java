@@ -543,7 +543,7 @@ public class PathfinderTest
 
 		assertScenarioPathLengthWithBank(
 			"Great Conch -> McGrubor's Wood with banked staff and bracelet",
-			50,
+			48,
 			WorldPointUtil.packWorldPoint(3180, 2419, 0),
 			WorldPointUtil.packWorldPoint(2652, 3485, 0),
 			TeleportationItem.INVENTORY_AND_BANK,
@@ -562,7 +562,7 @@ public class PathfinderTest
 
 		assertScenarioPathLengthWithBank(
 			"Great Conch tile reuse -> McGrubor's Wood with banked Dramen staff",
-			71,
+			67,
 			WorldPointUtil.packWorldPoint(3181, 2437, 0),
 			WorldPointUtil.packWorldPoint(2652, 3485, 0),
 			TeleportationItem.INVENTORY_AND_BANK,
@@ -581,7 +581,7 @@ public class PathfinderTest
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
 		assertScenarioPathLength(
 			"Great Conch -> McGrubor's Wood with inventory Dramen staff",
-			48,
+			46,
 			WorldPointUtil.packWorldPoint(3180, 2419, 0),
 			WorldPointUtil.packWorldPoint(2652, 3485, 0));
 	}
@@ -722,7 +722,7 @@ public class PathfinderTest
 		 * Info:
 		 * single_minecart_origin_locations * (number_of_minecart_destinations)
 		 * - self_pairs_with_distance_0
-		 *   1 * 12   // Arceuus (1 origin tile, no self-pair)
+		 *   1 * 12 - 1   // Arceuus (1 origin tile, 1 self-pair since the 2026-10-23 stand-tile correction)
 		 * + 2 * 12 - 1   // Farming Guild (2 origin tiles, 1 self-pair)
 		 * + 2 * 12 - 1   // Hosidius South
 		 * + 2 * 12 - 1   // Hosidius West
@@ -734,9 +734,9 @@ public class PathfinderTest
 		 * + 2 * 12 - 1   // Port Piscarilius
 		 * + 2 * 12 - 1   // Shayzien East
 		 * + 2 * 12 - 1   // Shayzien West
-		 * = 252 - 11 = 241
+		 * = 252 - 12 = 240
 		 */
-		assertEquals(241, countLovakenjMinecarts());
+		assertEquals(240, countLovakenjMinecarts());
 	}
 
 	@Test
@@ -749,7 +749,7 @@ public class PathfinderTest
 		varbits.put(7796, 11);
 		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE, varbits);
 
-		assertEquals(241, countLovakenjMinecarts());
+		assertEquals(240, countLovakenjMinecarts());
 	}
 
 	@Test
