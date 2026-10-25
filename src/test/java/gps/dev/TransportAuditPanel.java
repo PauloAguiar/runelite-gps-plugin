@@ -102,6 +102,17 @@ class TransportAuditPanel extends PluginPanel
 			+ " mark their origins in the world; select one to spotlight its origin and landing");
 		knownToggle.addActionListener(e -> plugin.showKnown = knownToggle.isSelected());
 		top.add(knownToggle);
+		javax.swing.JCheckBox capturesToggle = new javax.swing.JCheckBox("Show my rows nearby", false);
+		capturesToggle.setFocusable(false);
+		capturesToggle.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		capturesToggle.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		capturesToggle.setFont(FontManager.getRunescapeSmallFont());
+		capturesToggle.setAlignmentX(Component.LEFT_ALIGNMENT);
+		capturesToggle.setToolTipText("<html>Your captures and builder saves (transport-captures.tsv), nearest first,<br>"
+			+ "or anywhere by name with the search box; select one to spotlight it in the world,<br>"
+			+ "then Builder reloads every field so you can correct it and save a new copy</html>");
+		capturesToggle.addActionListener(e -> plugin.showCaptures = capturesToggle.isSelected());
+		top.add(capturesToggle);
 		javax.swing.JCheckBox collisionToggle = new javax.swing.JCheckBox("Show collision map", false);
 		collisionToggle.setFocusable(false);
 		collisionToggle.setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -396,8 +407,11 @@ class TransportAuditPanel extends PluginPanel
 		{
 			return "In this scene";
 		}
-		return row.state == TransportAuditPlugin.FindingState.KNOWN
-			? "Known data (curated)" : "Recorded elsewhere";
+		if (row.state == TransportAuditPlugin.FindingState.KNOWN)
+		{
+			return "Known data (curated)";
+		}
+		return row.source != null ? "Your rows (captures and builder saves)" : "Recorded elsewhere";
 	}
 
 	private void rebuildList()
@@ -429,7 +443,8 @@ class TransportAuditPanel extends PluginPanel
 				continue;
 			}
 			boolean backlog = !row.live
-				&& row.state != TransportAuditPlugin.FindingState.KNOWN;
+				&& row.state != TransportAuditPlugin.FindingState.KNOWN
+				&& row.source == null;
 			if ((!filtering && backlog && ++backlogShown > MAX_BACKLOG_ROWS)
 				|| (filtering && ++shown > MAX_FILTERED_ROWS))
 			{
@@ -537,9 +552,9 @@ class TransportAuditPanel extends PluginPanel
 		selectedKey = key;
 		scrollSelectionIntoView = true;
 		TransportAuditPlugin.Row row = selectedRow();
-		if (row != null && row.state == TransportAuditPlugin.FindingState.KNOWN)
+		if (row != null && (row.state == TransportAuditPlugin.FindingState.KNOWN || row.source != null))
 		{
-			plugin.spotlightKnownAt(row.packedTile);
+			plugin.spotlight(row);
 		}
 		// Immediate feedback: restyle now instead of waiting for the next tick snapshot.
 		lastSignature = computeSignature(currentRows);
@@ -615,10 +630,24 @@ class TransportAuditPanel extends PluginPanel
 			() -> plugin.routeTo(row.packedTile)));
 		actions.add(rowButton("Copy", "Copy the dossier to the clipboard",
 			() -> copyText(row.dossier)));
-		if (row.state != TransportAuditPlugin.FindingState.KNOWN)
+		actions.add(rowButton("Builder", row.source != null
+				? "Reload this row into the builder, every field included, to correct and save a copy"
+				: "Load into the transport builder",
+			() ->
+			{
+				builderStatus.setText(plugin.loadIntoBuilder(row));
+				if (row.source != null)
+				{
+					builderSkills.setText(row.source.skills);
+					builderItems.setText(row.source.items);
+					builderQuests.setText(row.source.quests);
+					builderDuration.setText(row.source.duration.isEmpty() ? "1" : row.source.duration);
+					builderDisplay.setText(row.source.displayInfo);
+					builderNote.setText("");
+				}
+			}));
+		if (row.state != TransportAuditPlugin.FindingState.KNOWN && row.source == null)
 		{
-			actions.add(rowButton("Builder", "Load into the transport builder",
-				() -> builderStatus.setText(plugin.loadIntoBuilder(row))));
 			actions.add(rowButton("Ignore", "Not a transport \u2014 never flag this object again",
 				() -> plugin.ignoreEntry(row.id, row.packedTile, row.name)));
 		}

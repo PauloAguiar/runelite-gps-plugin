@@ -125,6 +125,20 @@ class TransportAuditSceneOverlay extends Overlay
 			{
 				drawKnownTile(graphics, entry.origin, currentPlane, KNOWN_DIM, null);
 			}
+		}
+		// The operator's own rows (captures and builder saves): dim markers at their origins in the
+		// capture colour, so a session can see what it already recorded around it.
+		if (plugin.showCaptures)
+		{
+			Color mine = TransportAuditPanel.stateColor(TransportAuditPlugin.FindingState.CAPTURED_PRIOR);
+			Color mineDim = new Color(mine.getRed(), mine.getGreen(), mine.getBlue(), 90);
+			for (TransportAuditPlugin.CapturedEntry entry : plugin.capturedEntries())
+			{
+				drawKnownTile(graphics, entry.source.origin, currentPlane, mineDim, null);
+			}
+		}
+		if (plugin.showKnown || plugin.showCaptures)
+		{
 			drawKnownTile(graphics, plugin.knownHighlightOrigin(), currentPlane, KNOWN, "origin");
 			drawKnownTile(graphics, plugin.knownHighlightDest(), currentPlane, KNOWN, "landing");
 		}

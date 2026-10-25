@@ -273,13 +273,21 @@ public class TransportAuditPlugin extends Plugin
 		final int destination;
 		final String label;
 		final int duration;
+		/** The TSV row as written, so the panel can reload it into the builder; null in tests. */
+		final RowSource source;
 
 		KnownEntry(int origin, int destination, String label, int duration)
+		{
+			this(origin, destination, label, duration, null);
+		}
+
+		KnownEntry(int origin, int destination, String label, int duration, RowSource source)
 		{
 			this.origin = origin;
 			this.destination = destination;
 			this.label = label;
 			this.duration = duration;
+			this.source = source;
 		}
 	}
 
@@ -312,6 +320,165 @@ public class TransportAuditPlugin extends Plugin
 	 * One immutable panel row — plain fields only, so rows can come from live scene findings or
 	 * from collection-file entries recorded in other areas/sessions.
 	 */
+	/**
+	 * One data row as its TSV spells it: a curated row from the shipped files or one of the
+	 * operator's own rows from the captures file. Selecting such a row in the panel spotlights
+	 * its origin and landing and reloads every field into the builder, so a wrong landing or a
+	 * missing requirement is corrected by editing and saving rather than retyping.
+	 */
+	static final class RowSource
+	{
+		final int origin;
+		final int destination;
+		final String menu;
+		final String skills;
+		final String items;
+		final String quests;
+		final String varbits;
+		final String varPlayers;
+		final String duration;
+		final String displayInfo;
+		/** Columns past the layout, such as the capture tags {@code ~geometry ~duration}. */
+		final String tags;
+		final String file;
+
+		RowSource(int origin, int destination, String menu, String skills, String items, String quests,
+			String varbits, String varPlayers, String duration, String displayInfo, String tags, String file)
+		{
+			this.origin = origin;
+			this.destination = destination;
+			this.menu = menu;
+			this.skills = skills;
+			this.items = items;
+			this.quests = quests;
+			this.varbits = varbits;
+			this.varPlayers = varPlayers;
+			this.duration = duration;
+			this.displayInfo = displayInfo;
+			this.tags = tags;
+			this.file = file;
+		}
+
+		/**
+		 * Parses one TSV line against the file's header columns (the text after "# "), so every
+		 * layout the data uses maps onto the same fields. Null for comments and short lines.
+		 */
+		static RowSource parse(String[] columns, String line, String file)
+		{
+			if (line == null || line.startsWith("#"))
+			{
+				return null;
+			}
+			String[] fields = line.split("\t", -1);
+			if (fields.length < 3)
+			{
+				return null;
+			}
+			int origin = WorldPointUtil.UNDEFINED;
+			int destination = WorldPointUtil.UNDEFINED;
+			String menu = "", skills = "", items = "", quests = "", varbits = "", varPlayers = "", duration = "", display = "";
+			for (int i = 0; i < columns.length && i < fields.length; i++)
+			{
+				String value = fields[i].trim();
+				switch (columns[i].trim())
+				{
+					case "Origin":
+						origin = parseTile(value);
+						break;
+					case "Destination":
+						destination = parseTile(value);
+						break;
+					case "menuOption menuTarget objectID":
+						menu = value;
+						break;
+					case "Skills":
+						skills = value;
+						break;
+					case "Items":
+						items = value;
+						break;
+					case "Quests":
+						quests = value;
+						break;
+					case "Varbits":
+						varbits = value;
+						break;
+					case "VarPlayers":
+						varPlayers = value;
+						break;
+					case "Duration":
+						duration = value;
+						break;
+					case "Display info":
+						display = value;
+						break;
+					default:
+						break;
+				}
+			}
+			StringBuilder tags = new StringBuilder();
+			for (int i = columns.length; i < fields.length; i++)
+			{
+				if (!fields[i].trim().isEmpty())
+				{
+					tags.append(tags.length() == 0 ? "" : " ").append(fields[i].trim());
+				}
+			}
+			return new RowSource(origin, destination, menu, skills, items, quests, varbits, varPlayers,
+				duration, display, tags.toString(), file);
+		}
+
+		/** The tile the panel sorts and spotlights by: the origin, or the landing of a teleport. */
+		int anchor()
+		{
+			return origin != WorldPointUtil.UNDEFINED ? origin : destination;
+		}
+
+		int objectId()
+		{
+			return menuObjectId(menu);
+		}
+
+		/** What the row is called in the list: its display info, else its menu action. */
+		String label()
+		{
+			return !displayInfo.isEmpty() ? displayInfo : (!menu.isEmpty() ? menu : "(" + file + " row)");
+		}
+
+		/** The requirement columns a reviewer needs to see, one per line, empty ones left out. */
+		String requirementsText()
+		{
+			StringBuilder out = new StringBuilder();
+			String[][] parts = {{"Skills", skills}, {"Items", items}, {"Quests", quests}, {"Varbits", varbits},
+				{"VarPlayers", varPlayers}, {"Duration", duration}, {"Tags", tags}};
+			for (String[] part : parts)
+			{
+				if (!part[1].isEmpty())
+				{
+					out.append('\n').append(part[0]).append(": ").append(part[1]);
+				}
+			}
+			return out.toString();
+		}
+	}
+
+	/** One of the operator's own rows: a capture or a builder save, from this or an earlier session. */
+	static final class CapturedEntry
+	{
+		final RowSource source;
+		final boolean thisSession;
+
+		CapturedEntry(RowSource source, boolean thisSession)
+		{
+			this.source = source;
+			this.thisSession = thisSession;
+		}
+	}
+
+	/** The captures file's layout, which is the standard transports.tsv layout. */
+	static final String[] CAPTURE_COLUMNS = {"Origin", "Destination", "menuOption menuTarget objectID",
+		"Skills", "Items", "Quests", "Varbits", "VarPlayers", "Duration", "Display info"};
+
 	static final class Row
 	{
 		final String name;
@@ -322,9 +489,17 @@ public class TransportAuditPlugin extends Plugin
 		final int distance;
 		final boolean live;
 		final String dossier;
+		/** The TSV row behind a curated or captured entry, null for live findings and the backlog. */
+		final RowSource source;
 
 		Row(String name, String action, int id, int packedTile, FindingState state,
 			int distance, boolean live, String dossier)
+		{
+			this(name, action, id, packedTile, state, distance, live, dossier, null);
+		}
+
+		Row(String name, String action, int id, int packedTile, FindingState state,
+			int distance, boolean live, String dossier, RowSource source)
 		{
 			this.name = name;
 			this.action = action;
@@ -334,6 +509,7 @@ public class TransportAuditPlugin extends Plugin
 			this.distance = distance;
 			this.live = live;
 			this.dossier = dossier;
+			this.source = source;
 		}
 	}
 
@@ -393,6 +569,8 @@ public class TransportAuditPlugin extends Plugin
 	// world for debugging ("what does the data think is here?"). Toggled from the panel.
 	private final java.util.List<KnownEntry> knownEntries = new java.util.ArrayList<>();
 	volatile boolean showKnown = false;
+	// The operator's own rows (captures and builder saves): listable, spotlightable, reloadable.
+	volatile boolean showCaptures = false;
 	// In-world collision rendering (the old shortest-path debug view, upgraded): static map
 	// verdicts AND live-vs-static disagreements, rebuilt per tick around the player.
 	volatile boolean showCollision = false;
@@ -465,6 +643,8 @@ public class TransportAuditPlugin extends Plugin
 	// Parsed captured edges {origin, dest, id} for per-finding state: a finding counts as
 	// captured when an edge with its object id starts or ends near its tile.
 	final java.util.List<int[]> capturedEdges = new java.util.ArrayList<>();
+	// Every row of the captures file plus this session's saves, for the panel's "your rows" group.
+	final java.util.List<CapturedEntry> capturedEntries = new java.util.ArrayList<>();
 	// edgePaired[i]: capturedEdges[i] has a reverse edge SOMEWHERE (matched by coordinates, not
 	// object id — a cave entrance's reverse is the separate cave-EXIT object's edge). Recomputed
 	// whenever capturedEdges changes.
@@ -532,16 +712,11 @@ public class TransportAuditPlugin extends Plugin
 					{
 						transportDestTiles.add(transport.getDestination());
 					}
-					String label = transport.getDisplayInfo() != null && !transport.getDisplayInfo().isEmpty()
-						? transport.getDisplayInfo()
-						: (transport.getObjectInfo() != null ? transport.getObjectInfo() : "(transport)");
-					knownEntries.add(new KnownEntry(
-						transport.getOrigin(), transport.getDestination(), label,
-						transport.getDuration()));
 				}
 			}
 			log.info("[audit] transport coverage: {} origin tiles, {} dest tiles",
 				transportOriginTiles.size(), transportDestTiles.size());
+			loadKnownEntries();
 		}
 		if (doorTiles == null)
 		{
@@ -874,6 +1049,86 @@ public class TransportAuditPlugin extends Plugin
 	{
 		knownHighlightOrigin = origin;
 		knownHighlightDest = destination;
+	}
+
+	/**
+	 * The known-data browser's rows, read from the shipped TSV files as text so each row keeps
+	 * the exact requirement, duration and display columns the builder reloads. Each file's
+	 * header line ("# Origin ..." or "# Destination ...") names its columns.
+	 */
+	private void loadKnownEntries()
+	{
+		knownEntries.clear();
+		for (gps.transport.TransportType type : gps.transport.TransportType.values())
+		{
+			if (!type.hasResourcePath())
+			{
+				continue;
+			}
+			String path = type.getResourcePath();
+			String file = path.substring(path.lastIndexOf('/') + 1);
+			try (java.io.InputStream in = gps.ShortestPathPlugin.class.getResourceAsStream(path))
+			{
+				if (in == null)
+				{
+					continue;
+				}
+				String[] columns = null;
+				String text = new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+				for (String line : text.split("\n"))
+				{
+					if (line.endsWith("\r"))
+					{
+						line = line.substring(0, line.length() - 1);
+					}
+					if (line.startsWith("# Origin") || line.startsWith("# Destination"))
+					{
+						columns = line.substring(2).split("\t");
+						continue;
+					}
+					if (columns == null)
+					{
+						continue;
+					}
+					RowSource source = RowSource.parse(columns, line, file);
+					if (source == null || source.anchor() == WorldPointUtil.UNDEFINED)
+					{
+						continue;
+					}
+					int duration = 0;
+					try
+					{
+						duration = Integer.parseInt(source.duration);
+					}
+					catch (NumberFormatException ignored)
+					{
+						// a blank or symbolic duration: the browser shows the row anyway
+					}
+					knownEntries.add(new KnownEntry(source.origin, source.destination, source.label(), duration, source));
+				}
+			}
+			catch (Exception e)
+			{
+				log.warn("[audit] could not read {}", path, e);
+			}
+		}
+		log.info("[audit] known-data browser: {} rows", knownEntries.size());
+	}
+
+	java.util.List<CapturedEntry> capturedEntries()
+	{
+		return capturedEntries;
+	}
+
+	/** Panel selection: spotlight the selected row's origin and landing in the world. */
+	void spotlight(Row row)
+	{
+		if (row.source != null)
+		{
+			highlightKnown(row.source.origin, row.source.destination);
+			return;
+		}
+		spotlightKnownAt(row.packedTile);
 	}
 
 	/** Panel selection: spotlight the known entry anchored at this tile (first match wins). */
@@ -1696,6 +1951,11 @@ public class TransportAuditPlugin extends Plugin
 		{
 			log.warn("[audit] could not append to {}", capturesFile, e);
 		}
+		RowSource source = RowSource.parse(CAPTURE_COLUMNS, row, "transport-captures.tsv");
+		if (source != null)
+		{
+			capturedEntries.add(new CapturedEntry(source, true));
+		}
 		return true;
 	}
 
@@ -2332,6 +2592,15 @@ public class TransportAuditPlugin extends Plugin
 	 */
 	String loadIntoBuilder(Row row)
 	{
+		if (row.source != null)
+		{
+			// A curated or captured row: every column comes along, so the operator edits what is
+			// wrong (a landing tile, a missing quest) and saves a corrected copy for review.
+			builderMenu = row.source.menu;
+			builderOrigin = row.source.origin;
+			builderDest = row.source.destination;
+			return "Loaded " + row.source.label() + " from " + row.source.file + ": edit, then Save";
+		}
 		builderMenu = row.action + " " + row.name + " " + row.id;
 		builderOrigin = row.packedTile;
 		return "Loaded into builder — correct origin to your stand tile, set dest, then Save";
@@ -2453,6 +2722,11 @@ public class TransportAuditPlugin extends Plugin
 				{
 					String[] menu = fields[2].split(" ");
 					capturedKeys.add(fields[0] + "|" + fields[1] + "|" + menu[menu.length - 1]);
+					RowSource source = RowSource.parse(CAPTURE_COLUMNS, line, "transport-captures.tsv");
+					if (source != null)
+					{
+						capturedEntries.add(new CapturedEntry(source, false));
+					}
 					int origin = parseTile(fields[0]);
 					int dest = parseTile(fields[1]);
 					try
@@ -2545,13 +2819,57 @@ public class TransportAuditPlugin extends Plugin
 				{
 					continue; // searching: match anywhere in the world, by name
 				}
-				known.add(new Row(entry.label, "curated", 0, anchor, FindingState.KNOWN,
+				RowSource source = entry.source;
+				known.add(new Row(entry.label,
+					source != null && !source.menu.isEmpty() ? source.menu : "curated",
+					source != null ? Math.max(0, source.objectId()) : 0, anchor, FindingState.KNOWN,
 					distance, false,
-					"Curated row: " + entry.label + "\norigin " + tileText(entry.origin)
-						+ " -> dest " + tileText(entry.destination)));
+					"Curated row (" + (source != null ? source.file : "data") + "): " + entry.label
+						+ "\norigin " + tileText(entry.origin) + " -> dest " + tileText(entry.destination)
+						+ (source != null ? source.requirementsText() : "")
+						+ "\nBuilder reloads every field; Save writes a corrected copy to transport-captures.tsv.",
+					source));
 			}
 			known.sort(java.util.Comparator.comparingInt(row -> row.distance));
 			rows.addAll(known.subList(0, Math.min(filter.isEmpty() ? 25 : 100, known.size())));
+		}
+		if (showCaptures)
+		{
+			String filter = listFilter;
+			java.util.List<Row> mine = new java.util.ArrayList<>();
+			for (CapturedEntry entry : capturedEntries)
+			{
+				RowSource source = entry.source;
+				int anchor = source.anchor();
+				if (anchor == WorldPointUtil.UNDEFINED)
+				{
+					continue;
+				}
+				int distance = WorldPointUtil.distanceBetween2D(playerTile, anchor);
+				String label = source.label();
+				if (filter.isEmpty())
+				{
+					if (distance > 60)
+					{
+						continue; // browsing: only the local area is useful in-world
+					}
+				}
+				else if (!label.toLowerCase(java.util.Locale.ROOT).contains(filter))
+				{
+					continue; // searching: match anywhere in the world, by name
+				}
+				mine.add(new Row(label, source.menu.isEmpty() ? "your row" : source.menu,
+					Math.max(0, source.objectId()), anchor,
+					entry.thisSession ? FindingState.CAPTURED_SESSION : FindingState.CAPTURED_PRIOR,
+					distance, false,
+					"Your row (" + source.file + (entry.thisSession ? ", this session" : "") + "): " + label
+						+ "\norigin " + tileText(source.origin) + " -> dest " + tileText(source.destination)
+						+ source.requirementsText()
+						+ "\nBuilder reloads every field; Save writes a corrected copy. The review step promotes rows into the data.",
+					source));
+			}
+			mine.sort(java.util.Comparator.comparingInt(row -> row.distance));
+			rows.addAll(mine.subList(0, Math.min(filter.isEmpty() ? 25 : 100, mine.size())));
 		}
 		rows.sort(java.util.Comparator
 			.comparingInt((Row row) -> row.live ? 0 : 1)
