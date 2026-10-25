@@ -162,7 +162,6 @@ dungeon	Ardougne Sewers	2644	9702	0
 dungeon	Charred Dungeon	2687	8865	0
 dungeon	Crypt	1685	9516	0
 dungeon	Deepfin Mine	2016	9194	0
-dungeon	Earthbound Cavern	1377	9700	0
 dungeon	Essence Mine	2339	10337	2
 dungeon	Ferox Enclave Dungeon	3168	10016	0
 dungeon	Ghorrock Dungeon	2919	10328	0
@@ -173,7 +172,6 @@ dungeon	Lizardman Caves	1308	9963	0
 dungeon	Mogre Camp	2975	9507	0
 dungeon	Ruins of Mokhaiotl	1311	9520	0
 dungeon	Sourhog Cave	3168	9696	0
-dungeon	Streambound Cavern	1505	9700	0
 dungeon	Sunbleak Cave	2227	8738	0
 dungeon	Trahaearn Mine	3298	12453	0
 dungeon	Volcano Mine	3776	10176	3
@@ -248,8 +246,6 @@ furnace	Lumbridge Swamp Furnace	3107	3026	0
 furnace	Lumbridge Swamp Furnace	3107	3027	0
 furnace	Lumbridge Swamp Furnace	3108	3028	0
 landmark	A	3787	10156	0
-landmark	Ancient Shrine	1514	9583	0
-landmark	Antechamber	1441	9633	1
 landmark	Araxxor	3632	9815	0
 landmark	B	3815	10172	0
 landmark	Barracks	1641	9576	0
@@ -300,9 +296,6 @@ landmark	Sub-level 1	2496	10112	0
 landmark	Talon's Grasp	1173	3489	0
 landmark	Tar Swamp	3680	3781	0
 landmark	Tempestus	1284	3256	0
-landmark	The Blood Moon	1393	9635	0
-landmark	The Blue Moon	1441	9683	0
-landmark	The Eclipse Moon	1489	9635	0
 landmark	The Node	3109	3025	0
 landmark	The White Cliffs of Lova	1503	3960	0
 landmark	The Wintertodt	1630	4011	0
@@ -324,31 +317,12 @@ range	Cooking range (1307, 2923)	1307	2923	1
 range	Cooking range (1308, 2924)	1308	2924	1
 range	Cooking range (1308, 2925)	1308	2925	1
 range	Cooking range (1348, 9580)	1348	9580	0
-range	Cooking range (1348, 9581)	1348	9581	0
 range	Cooking range (1349, 9579)	1349	9579	0
-range	Cooking range (1349, 9582)	1349	9582	0
-range	Cooking range (1350, 9579)	1350	9579	0
-range	Cooking range (1350, 9582)	1350	9582	0
-range	Cooking range (1351, 9580)	1351	9580	0
-range	Cooking range (1351, 9581)	1351	9581	0
-range	Cooking range (1373, 9710)	1373	9710	0
-range	Cooking range (1373, 9711)	1373	9711	0
-range	Cooking range (1374, 9709)	1374	9709	0
-range	Cooking range (1374, 9712)	1374	9712	0
-range	Cooking range (1375, 9709)	1375	9709	0
-range	Cooking range (1375, 9712)	1375	9712	0
-range	Cooking range (1376, 9710)	1376	9710	0
-range	Cooking range (1376, 9711)	1376	9711	0
-range	Cooking range (1422, 9558)	1422	9558	0
 range	Cooking range (1422, 9559)	1422	9559	0
-range	Cooking range (1423, 9557)	1423	9557	0
-range	Cooking range (1424, 9557)	1424	9557	0
 range	Cooking range (1436, 9964)	1436	9964	0
 range	Cooking range (1437, 9963)	1437	9963	0
 range	Cooking range (1438, 9963)	1438	9963	0
 range	Cooking range (1439, 9964)	1439	9964	0
-range	Cooking range (1449, 9554)	1449	9554	0
-range	Cooking range (1449, 9557)	1449	9557	0
 range	Cooking range (1450, 9554)	1450	9554	0
 range	Cooking range (1450, 9557)	1450	9557	0
 range	Cooking range (1451, 9555)	1451	9555	0

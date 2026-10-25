@@ -5816,8 +5816,8 @@
 1411 2970 0	1410 2969 1	Climb-up Ladder 52614						4	
 1411 2970 1	1409 2970 0	Climb-down Ladder 52621						2			~geometry ~duration
 1412 9556 2	1411 9555 1	Climb-down Stairs 51554						2			~geometry ~duration
-1412 9572 1	1411 9571 0	Climb-down Stairs 51556						2			~geometry ~duration
-1412 9572 1	1412 9572 0	Climb-down Stairs 51556						2			~geometry ~duration
+1412 9572 1	1415 9569 0	Climb-down Stairs 51556						2
+1412 9571 1	1415 9569 0	Climb-down Stairs 51556						2
 1413 3342 0	1413 3342 1	Climb-up Ladder 52614						4	
 1413 3342 1	1413 3342 0	Climb-down Ladder 52620						2			~geometry ~duration
 1415 3353 1	1415 3353 2	Climb-up Ladder 52618						4	
@@ -5831,7 +5831,8 @@
 1421 3379 1	1421 3379 0	Climb-down Ladder 52620						2			~geometry ~duration
 1421 3381 0	1421 3379 1	Climb-up Ladder 52614						4	
 1421 9553 1	1424 9553 2	Climb-up Stairs 51551						2			~geometry ~duration
-1423 9558 1	1422 9559 0	Climb-down Stairs 51556						2			~geometry ~duration
+1423 9558 1	1420 9555 0	Climb-down Stairs 51556						2
+1423 9557 1	1420 9555 0	Climb-down Stairs 51556						2
 1424 9553 2	1423 9554 1	Climb-down Stairs 51554						2			~geometry ~duration
 1425 9584 1	1425 9587 2	Climb-up Stairs 51551						2			~geometry ~duration
 1426 9586 2	1426 9586 1	Climb-down Stairs 51554						2			~geometry ~duration
@@ -5861,8 +5862,8 @@
 1447 2975 2	1446 2974 1	Climb-down Ship's ladder 246						2			~geometry ~duration
 1447 2975 2	1448 2974 1	Climb-down Ship's ladder 246						2			~geometry ~duration
 1448 2976 1	1447 2975 2	Climb-up Ship's ladder 245						4	
-1448 9590 1	1446 9588 0	Climb-down Stairs 51556						2			~geometry ~duration
-1449 9590 1	1450 9588 0	Climb-down Stairs 51556						2			~geometry ~duration
+1448 9590 1	1445 9587 0	Climb-down Stairs 51556						2
+1449 9590 1	1452 9587 0	Climb-down Stairs 51556						2
 1452 3184 2	1451 3185 1	Climb-down Ladder 52620						2			~geometry ~duration
 1452 9554 0	1455 9554 1	Climb-up Stairs 51555						2			~geometry ~duration
 1452 9557 0	1455 9557 1	Climb-up Stairs 51555						2			~geometry ~duration
@@ -8223,3 +8224,126 @@
 # Corrected: Warrens manhole ladder lands in Port Piscarilius; our audit capture observed 1812 3745 0
 1813 10145 0	1812 3745 0	Climb-up Ladder 31708						2
 1812 10145 0	1812 3745 0	Climb-up Ladder 31708						2
+
+# Neypotzli, the Moons of Peril dungeon under Varlamore (dev audit captures 2026-10-23/24). Passages between its areas
+# are "Pass-through Entrance" objects, one id per side; landings are the tiles the captures observed, fixed per passage.
+# Interior rows carry no quest gate: the surface entrance above (Perilous Moons) is the only way in.
+# Upper-floor passage north of the hub (51375 south side, 51377 north side)
+1440 9599 1	1440 9615 1	Pass-through Entrance 51375						1
+1439 9599 1	1440 9615 1	Pass-through Entrance 51375						1
+1440 9598 1	1440 9615 1	Pass-through Entrance 51375						1
+1440 9615 1	1439 9599 1	Pass-through Entrance 51377						1
+1441 9615 1	1439 9599 1	Pass-through Entrance 51377						1
+1439 9615 1	1439 9599 1	Pass-through Entrance 51377						1
+# Upper floor (51376 at 1422 9614) down to the west area (51375 at 1389 9577)
+1424 9616 1	1388 9575 0	Pass-through Entrance 51376						1
+1423 9615 1	1388 9575 0	Pass-through Entrance 51376						1
+1425 9617 1	1388 9575 0	Pass-through Entrance 51376						1
+1424 9617 1	1388 9575 0	Pass-through Entrance 51376						1
+1388 9575 0	1423 9615 1	Pass-through Entrance 51375						1
+1388 9574 0	1423 9615 1	Pass-through Entrance 51375						1
+# North-west area (51375 at 1405 9717) up to the upper floor (51376 at 1422 9651)
+1403 9717 0	1423 9649 1	Pass-through Entrance 51375						1
+1402 9717 0	1423 9649 1	Pass-through Entrance 51375						1
+1402 9718 0	1423 9649 1	Pass-through Entrance 51375						1
+1423 9649 1	1403 9717 0	Pass-through Entrance 51376						1
+# Upper floor east (51376 at 1459 9651) down to the north-east area (51375 at 1481 9668)
+1457 9649 1	1481 9669 0	Pass-through Entrance 51376						1
+1481 9669 0	1457 9649 1	Pass-through Entrance 51375						1
+1482 9670 0	1457 9649 1	Pass-through Entrance 51375						1
+1481 9670 0	1457 9649 1	Pass-through Entrance 51375						1
+# West (51378 at 1390 9675) to east (51378 at 1522 9721) along the north
+1390 9676 0	1522 9719 0	Pass-through Entrance 51378						1
+1389 9677 0	1522 9719 0	Pass-through Entrance 51378						1
+1388 9677 0	1522 9719 0	Pass-through Entrance 51378						1
+1521 9718 0	1390 9676 0	Pass-through Entrance 51378						1
+1522 9719 0	1390 9676 0	Pass-through Entrance 51378						1
+# South-east (51377 at 1513 9598) to north-east (51377 at 1528 9671)
+1513 9596 0	1526 9671 0	Pass-through Entrance 51377						1
+1511 9595 0	1526 9671 0	Pass-through Entrance 51377						1
+1512 9595 0	1526 9671 0	Pass-through Entrance 51377						1
+1526 9672 0	1513 9596 0	Pass-through Entrance 51377						1
+1525 9672 0	1513 9596 0	Pass-through Entrance 51377						1
+# North-west (51377 at 1405 9704) to the north hub (51377 at 1440 9651)
+1402 9705 0	1440 9653 0	Pass-through Entrance 51377						1
+1403 9704 0	1440 9653 0	Pass-through Entrance 51377						1
+1440 9653 0	1403 9704 0	Pass-through Entrance 51377						1
+# West area (51375 at 1389 9590) to the central hub (51377 at 1420 9632)
+1386 9589 0	1418 9632 0	Pass-through Entrance 51375						1
+1387 9591 0	1418 9632 0	Pass-through Entrance 51375						1
+1387 9590 0	1418 9632 0	Pass-through Entrance 51375						1
+1386 9590 0	1418 9632 0	Pass-through Entrance 51375						1
+1386 9591 0	1418 9632 0	Pass-through Entrance 51375						1
+1418 9632 0	1387 9591 0	Pass-through Entrance 51377						1
+# South-west (51375 at 1355 9537) to south-east (51377 at 1513 9561)
+1357 9540 0	1513 9563 0	Pass-through Entrance 51375						1
+1356 9538 0	1513 9563 0	Pass-through Entrance 51375						1
+1355 9538 0	1513 9563 0	Pass-through Entrance 51375						1
+1355 9539 0	1513 9563 0	Pass-through Entrance 51375						1
+1513 9563 0	1355 9538 0	Pass-through Entrance 51377						1
+# North-east (51375 at 1510 9674) to the central hub (51377 at 1459 9632)
+1509 9676 0	1461 9632 0	Pass-through Entrance 51375						1
+1510 9675 0	1461 9632 0	Pass-through Entrance 51375						1
+1510 9677 0	1461 9632 0	Pass-through Entrance 51375						1
+1461 9632 0	1510 9675 0	Pass-through Entrance 51377						1
+# North-west (51377 at 1374 9665) to south-west (51375 at 1346 9591)
+1374 9668 0	1347 9590 0	Pass-through Entrance 51377						1
+1374 9667 0	1347 9590 0	Pass-through Entrance 51377						1
+1347 9590 0	1374 9667 0	Pass-through Entrance 51375						1
+1348 9591 0	1374 9667 0	Pass-through Entrance 51375						1
+# Statues teleport into the three boss approaches; the way back is the arena escape stairs (53003, 53004), not captured yet
+1440 9658 0	1438 9683 0	Use Statue 51373						4
+1413 9632 0	1393 9632 0	Use Statue 51372						4
+1466 9632 0	1484 9632 0	Use Statue 51374						4
+# Upper-floor doors, squeezed through in either direction, two tiles wide
+1432 9567 1	1430 9567 1	Squeeze-through Door 51005						3
+1430 9567 1	1432 9567 1	Squeeze-through Door 51005						3
+1432 9568 1	1430 9568 1	Squeeze-through Door 51005						3
+1430 9568 1	1432 9568 1	Squeeze-through Door 51005						3
+1447 9556 1	1449 9556 1	Squeeze-through Door 51005						3
+1449 9556 1	1447 9556 1	Squeeze-through Door 51005						3
+1447 9555 1	1449 9555 1	Squeeze-through Door 51005						3
+1449 9555 1	1447 9555 1	Squeeze-through Door 51005						3
+1432 9556 1	1430 9556 1	Squeeze-through Door 51005						3
+1430 9556 1	1432 9556 1	Squeeze-through Door 51005						3
+1432 9555 1	1430 9555 1	Squeeze-through Door 51005						3
+1430 9555 1	1432 9555 1	Squeeze-through Door 51005						3
+1416 9554 1	1414 9554 1	Squeeze-through Door 51005						3
+1414 9554 1	1416 9554 1	Squeeze-through Door 51005						3
+1416 9553 1	1414 9553 1	Squeeze-through Door 51005						3
+1414 9553 1	1416 9553 1	Squeeze-through Door 51005						3
+1404 9558 1	1404 9556 1	Squeeze-through Door 51005						3
+1404 9556 1	1404 9558 1	Squeeze-through Door 51005						3
+1403 9558 1	1403 9556 1	Squeeze-through Door 51005						3
+1403 9556 1	1403 9558 1	Squeeze-through Door 51005						3
+1404 9565 1	1404 9567 1	Squeeze-through Door 51005						3
+1404 9567 1	1404 9565 1	Squeeze-through Door 51005						3
+1403 9565 1	1403 9567 1	Squeeze-through Door 51005						3
+1403 9567 1	1403 9565 1	Squeeze-through Door 51005						3
+1416 9569 1	1414 9569 1	Squeeze-through Door 51005						3
+1414 9569 1	1416 9569 1	Squeeze-through Door 51005						3
+1416 9570 1	1414 9570 1	Squeeze-through Door 51005						3
+1414 9570 1	1416 9570 1	Squeeze-through Door 51005						3
+1449 9587 1	1449 9589 1	Squeeze-through Door 51005						3
+1449 9589 1	1449 9587 1	Squeeze-through Door 51005						3
+1448 9587 1	1448 9589 1	Squeeze-through Door 51005						3
+1448 9589 1	1448 9587 1	Squeeze-through Door 51005						3
+1463 9554 1	1465 9554 1	Squeeze-through Door 51005						3
+1465 9554 1	1463 9554 1	Squeeze-through Door 51005						3
+1463 9553 1	1465 9553 1	Squeeze-through Door 51005						3
+1465 9553 1	1463 9553 1	Squeeze-through Door 51005						3
+1480 9569 1	1478 9569 1	Squeeze-through Door 51005						3
+1478 9569 1	1480 9569 1	Squeeze-through Door 51005						3
+1480 9570 1	1478 9570 1	Squeeze-through Door 51005						3
+1478 9570 1	1480 9570 1	Squeeze-through Door 51005						3
+1481 9554 1	1478 9554 1	Squeeze-through Door 51005						3
+1481 9553 1	1478 9553 1	Squeeze-through Door 51005						3
+1478 9554 1	1480 9554 1	Squeeze-through Door 51005						3
+1478 9553 1	1480 9553 1	Squeeze-through Door 51005						3
+# Stairs between the ground and upper floors the captures confirmed (the derived rows above were replaced)
+1420 9555 0	1423 9558 1	Climb-up Stairs 51555						1
+1415 9569 0	1412 9572 1	Climb-up Stairs 51555						2
+1410 9569 0	1412 9572 1	Climb-up Stairs 51555						1
+1409 9569 0	1412 9572 1	Climb-up Stairs 51555						2
+1452 9587 0	1449 9590 1	Climb-up Stairs 51555						2
+1445 9587 0	1448 9590 1	Climb-up Stairs 51555						2
