@@ -3115,24 +3115,37 @@ public class TransportAuditPlugin extends Plugin
 		}
 		for (String action : actions)
 		{
-			if (action == null)
-			{
-				continue;
-			}
-			String lower = action.toLowerCase(Locale.ROOT);
-			if (wall && (lower.equals("open") || lower.equals("close")))
+			if (action != null && isTraversalAction(composition.getId(), action, wall))
 			{
 				return action;
 			}
-			for (String verb : TRAVERSAL_VERBS)
-			{
-				if (lower.startsWith(verb))
-				{
-					return action;
-				}
-			}
 		}
 		return null;
+	}
+
+	/**
+	 * Objects whose "Activate" grants a buff instead of moving the player: the Nightmare Zone
+	 * power-ups (zapper, power surge, recurrent damage, ultimate force). "Activate" stays in the
+	 * verb list for the Mount Karuulm elevator, so these are excused by id rather than by verb.
+	 */
+	static final Set<Integer> ACTIVATE_NOT_A_MOVE = Set.of(26256, 26264, 26265, 26266);
+
+	/** Whether this menu action on this object moves the player: a traversal verb, or open/close on a wall. */
+	static boolean isTraversalAction(int objectId, String action, boolean wall)
+	{
+		String lower = action.toLowerCase(Locale.ROOT);
+		if (wall && (lower.equals("open") || lower.equals("close")))
+		{
+			return true;
+		}
+		for (String verb : TRAVERSAL_VERBS)
+		{
+			if (lower.startsWith(verb))
+			{
+				return !("activate".equals(verb) && ACTIVATE_NOT_A_MOVE.contains(objectId));
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -3161,6 +3174,10 @@ public class TransportAuditPlugin extends Plugin
 						Integer.parseInt(fields[7]), Integer.parseInt(fields[8]));
 					int id = Integer.parseInt(fields[2]);
 					logged.add(((long) packed << 20) | id);
+					if (ACTIVATE_NOT_A_MOVE.contains(id))
+					{
+						continue; // recorded before the exclusion existed; not a transport, so not backlog
+					}
 					boolean door = "door".equals(fields[1]);
 					recorded.add(new RecordedEntry(door, id, fields[3], fields[4],
 						fields[5].isEmpty() ? new String[0] : fields[5].split("\\|"), packed,
