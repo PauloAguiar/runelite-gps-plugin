@@ -834,6 +834,10 @@
 3122 3487 0	3122 3488 0	Open Door 102							
 									
 # Varrock									
+# Champions' Guild: "requirement = 32 Quest points" (OSRS Wiki, Champions' Guild, read 2026-10-25). Door 1805 on
+# 3191 3363's south edge, closed in the collision map by the tooling's LockedDoorCollisionPatchTest; LockedDoorsTest pins both
+3191 3363 0	3191 3362 0	Open Door 1805	32 Quest					1	
+3191 3362 0	3191 3363 0	Open Door 1805						1	
 3212 3472 0	3212 3476 1	Climb-up Staircase 11807							
 3212 3476 1	3212 3472 0	Climb-down Staircase 11799							
 3213 3472 0	3213 3476 1	Climb-up Staircase 11807							
@@ -1318,6 +1322,11 @@
 2750 3491 2	2750 3491 1	Climb-down Ladder 25606							
 
 # Lighthouse									
+# "The Lighthouse can only be entered during and after the quest", once Larrissa's key has unlocked the door (OSRS
+# Wiki, Lighthouse, read 2026-10-25): the quest finished here, as which varp records the unlocked door is not known.
+# Doorway 4577 on 2509 3636's south edge, closed in the collision map by the tooling's LockedDoorCollisionPatchTest; LockedDoorsTest pins both
+2509 3635 0	2509 3636 0	Walk-through Doorway 4577			Horror from the Deep			1	
+2509 3636 0	2509 3635 0	Walk-through Doorway 4577						1	
 2596 3608 0	2598 3608 0	Cross Broken bridge 4615						2	
 2598 3608 0	2596 3608 0	Cross Broken bridge 4616						2	
 2522 3595 0	2522 3597 0	Jump-across Basalt rock 4551						2	
@@ -2495,6 +2504,12 @@
 2925 3253 0	2926 3253 0	Open Red door 2596		1543=1				1	
 									
 # Burthorpe									
+# Heroes' Guild: "requirement = Heroes' Quest" (OSRS Wiki, Heroes' Guild, read 2026-10-25). Doors 2624 and 2625 on
+# the west edge of 2902 3510-3511, closed in the collision map by the tooling's LockedDoorCollisionPatchTest; LockedDoorsTest pins both
+2902 3510 0	2901 3510 0	Open Door 2624			Heroes' Quest			1	
+2901 3510 0	2902 3510 0	Open Door 2624						1	
+2902 3511 0	2901 3511 0	Open Door 2625			Heroes' Quest			1	
+2901 3511 0	2902 3511 0	Open Door 2625						1	
 2892 3556 0	2892 3556 1	Climb-up Ladder 16683						2	
 2892 3556 1	2892 3556 0	Climb-down Ladder 16679						2	
 2891 3557 0	2891 3557 1	Climb-up Ladder 16683						2	
@@ -2571,6 +2586,10 @@
 2894 3567 0	2894 3566 0	Open Large door 3743							
 									
 # Wilderness									
+# Wilderness Agility Course: "level 52 Agility (boostable) ... only needed to enter the gates" (OSRS Wiki, Wilderness
+# Agility Course, read 2026-10-25). Door 23555 on 2998 3917's south edge, closed in the collision map by the tooling's LockedDoorCollisionPatchTest; LockedDoorsTest pins both
+2998 3916 0	2998 3917 0	Open Door 23555	52 Agility					1	
+2998 3917 0	2998 3916 0	Open Door 23555						1	
 3158 3950 0	3158 3952 0	Slash Web 733		SLASH=1				4
 3158 3952 0	3158 3950 0	Slash Web 733		SLASH=1				4
 3232 10351 0	3233 3950 0	Use Crevice 26763							
@@ -3755,6 +3774,14 @@
 3501 3426 0	3502 3432 0	Cross-bridge Tree 5003							
 									
 # Burgh de Rott									
+# The broken fences south-east and south-west of the Barrows: "If the player has not yet gained entry to Burgh de Rott
+# along the course of In Aid of the Myreque, they will refuse to climb over" (OSRS Wiki, Broken fence (Morytania),
+# read 2026-10-25), the same stage as Burgh de Rott's gates below (varbit 1990 > 39). Broken fence 18411 on the north
+# edges of 3582 3263 and 3538 3261, closed in the collision map by the tooling's LockedDoorCollisionPatchTest; LockedDoorsTest pins both
+3582 3263 0	3582 3264 0	Climb-over Broken fence 18411				1990>39		4			~duration
+3582 3264 0	3582 3263 0	Climb-over Broken fence 18411				1990>39		4			~duration
+3538 3261 0	3538 3262 0	Climb-over Broken fence 18411				1990>39		4			~duration
+3538 3262 0	3538 3261 0	Climb-over Broken fence 18411				1990>39		4			~duration
 3484 3244 0	3484 3243 0	Open Gate 12817				1990>39
 3484 3243 0	3484 3244 0	Open Gate 12817							
 3485 3244 0	3485 3243 0	Open Gate 12816				1990>39
@@ -4136,6 +4163,14 @@
 3126 9337 0	3127 9337 0	Open Door 11066						1	
 									
 # Rellekka									
+# Brine Rat Cavern (Olaf's Quest): the Picture wall opens by right-click once its puzzle is solved during the quest, and
+# the Gate "when travelling west-to-east ... must be unlocked with a key dropped by a Skeleton fremennik", each time
+# (OSRS Wiki, Brine Rat Cavern, read 2026-10-25); the quest finished here for the wall, the safe side. Picture wall
+# 23156 on 2707 10147's west edge, Gate 23216 on 2725 10168's east edge, keys 11039-11043; closed in the collision map by the tooling's LockedDoorCollisionPatchTest; LockedDoorsTest pins both
+2707 10147 0	2706 10147 0	Search Picture wall 23156			Olaf's Quest			2			~duration
+2706 10147 0	2707 10147 0	Search Picture wall 23156			Olaf's Quest			2			~duration
+2725 10168 0	2726 10168 0	Open Gate 23216		11039=1|11040=1|11041=1|11042=1|11043=1				1	
+2726 10168 0	2725 10168 0	Open Gate 23216						1	
 2666 3694 0	2666 3694 1	Climb-up Ladder 4187						2	
 2666 3694 1	2666 3694 0	Climb-down Ladder 4189						2	
 									
@@ -5104,6 +5139,22 @@
 1248 3723 0	1248 3722 0	Open Door 34463						1	
 1249 3722 0	1249 3723 0	Open Door 34464	45 Farming					1	
 1249 3723 0	1249 3722 0	Open Door 34464						1	
+# The guild's invisible barriers: "45 Farming (beginner), 65 Farming (intermediate), 85 Farming (advanced)", boosts
+# allowed (OSRS Wiki, Farming Guild, read 2026-10-25). No object: the barrier fills a two-tile way in between walls,
+# the north-east strip past the main door at 1259-1260 3749/3750, the west wing at 1241/1242 3729-3730, the north wing
+# at 1248-1249 3747/3748 (tiles from Reimagined World Map's gate list, the walls from the game cache); closed in the collision map by the tooling's LockedDoorCollisionPatchTest; LockedDoorsTest pins both
+1259 3750 0	1259 3749 0	Pass Barrier	45 Farming					1	
+1259 3749 0	1259 3750 0	Pass Barrier						1	
+1260 3750 0	1260 3749 0	Pass Barrier	45 Farming					1	
+1260 3749 0	1260 3750 0	Pass Barrier						1	
+1242 3729 0	1241 3729 0	Pass Barrier	65 Farming					1	
+1241 3729 0	1242 3729 0	Pass Barrier						1	
+1242 3730 0	1241 3730 0	Pass Barrier	65 Farming					1	
+1241 3730 0	1242 3730 0	Pass Barrier						1	
+1248 3747 0	1248 3748 0	Pass Barrier	85 Farming					1	
+1248 3748 0	1248 3747 0	Pass Barrier						1	
+1249 3747 0	1249 3748 0	Pass Barrier	85 Farming					1	
+1249 3748 0	1249 3747 0	Pass Barrier						1	
 # Intermediate (65 Farming) and advanced (85 Farming) tier passages are enforced server-side only									
 # (no collision wall in the map) so they cannot be modelled as transport gates.									
 									
@@ -7851,6 +7902,23 @@
 # Ape Atoll - east bridge (upstream cbc91c6a Fix Ape Atoll access transports (#595))
 2803 2727 2	2806 2724 0	Jump off End of bridge 4745						4
 
+# Shaman Caves' Ancient Gates: the first "must be opened using a lockpick ... requiring 50 Thieving", the second
+# needs "50 Strength" (OSRS Wiki, Ancient gate, read 2026-10-25), during the quest (varp 139 > 0). Gates 2913/2912
+# and 2923/2922 on the south edges of 2809-2810 9332 and 9314, closed in the collision map by the tooling's LockedDoorCollisionPatchTest; LockedDoorsTest pins both
+2809 9332 0	2809 9331 0	Open Ancient Gate 2913	50 Thieving	1523=1			139>0	1	
+2809 9331 0	2809 9332 0	Open Ancient Gate 2913						1	
+2810 9332 0	2810 9331 0	Open Ancient Gate 2912	50 Thieving	1523=1			139>0	1	
+2810 9331 0	2810 9332 0	Open Ancient Gate 2912						1	
+2809 9314 0	2809 9313 0	Open Ancient Gate 2923	50 Strength				139>0	1	
+2809 9313 0	2809 9314 0	Open Ancient Gate 2923						1	
+2810 9314 0	2810 9313 0	Open Ancient Gate 2922	50 Strength				139>0	1	
+2810 9313 0	2810 9314 0	Open Ancient Gate 2922						1	
+# The sixteen Fire Walls 2908 round Ungadulu pass freely only once he has given his spell during Legends' Quest (OSRS
+# Wiki, Fire wall, read 2026-10-25): the quest finished here, the safe side. One crossing at the west wall; all sixteen
+# edges closed in the collision map by the tooling's LockedDoorCollisionPatchTest; LockedDoorsTest pins both
+2788 9325 0	2789 9325 0	Touch Fire Wall 2908			Legends' Quest			2			~duration
+2789 9325 0	2788 9325 0	Touch Fire Wall 2908			Legends' Quest			2			~duration
+
 # Shaman Caves (upstream 8b9f989b Add Shaman Caves entrance transports (#583))
 2780 2934 0	2773 9341 0	Search Mossy rock 2901	50 Agility				139>0	5
 2781 2934 0	2773 9341 0	Search Mossy rock 2901	50 Agility				139>0	5
@@ -7895,6 +7963,14 @@
 
 # Mogre Camp underwater cavern (requires 5 rocks moved, varbit HUNDRED_PIRATE_ROCKS) (upstream c5a269ff Add Mogre Camp diving transports (#594))
 2949 9515 1	2949 9520 1	Enter Underwater Cavern Entrance 12460				1869=5		1
+
+# Legends' Guild gates: the guards let through "only players who have started or completed the Legends' Quest" (OSRS
+# Wiki, Legends' Guild, read 2026-10-25), varp 139 > 0 as for the Kharazi Jungle. Gates 2391 and 2392 on the north
+# edge of 2728-2729 3349, closed in the collision map by the tooling's LockedDoorCollisionPatchTest; LockedDoorsTest pins both
+2728 3349 0	2728 3350 0	Open Gate 2391					139>0	1	
+2728 3350 0	2728 3349 0	Open Gate 2391						1	
+2729 3349 0	2729 3350 0	Open Gate 2392					139>0	1	
+2729 3350 0	2729 3349 0	Open Gate 2392						1	
 
 # Legends Guild Ladder (upstream 89471f0e Add legends guild transports and shortcuts (#499))
 2893 3507 0	2893 9907 0	Climb-down Ladder 17374						1
