@@ -34,7 +34,8 @@
 2528 3127 0		Configure Fairy ring 29495				5	
 1302 3762 0		Configure Fairy ring 29495				5	
 1639 3868 0		Configure Fairy ring 29495				5	
-3178 2447 0		Configure Fairy ring 29495		Troubled Tortugans		5	
+# The Great Conch (CJQ) opens partway through Troubled Tortugans, once Floopa is bandaged (quest varbit 18321 at 6 or more; a player at 38 used the ring, capture 2026-10-28), so the gate is the varbit, not the finished quest
+3178 2447 0		Configure Fairy ring 29495			18321>5	5
 2705 3576 0		Configure Fairy ring 29495				5	
 2075 4848 0		Configure Fairy ring 29495				5	
 1359 2941 0		Configure Fairy ring 29495		Children of the Sun		5	
@@ -91,7 +92,7 @@
 	2528 3127 0					5	C I Q
 	1302 3762 0					5	C I R
 	1639 3868 0					5	C I S
-	3178 2447 0			Troubled Tortugans		5	C J Q
+	3178 2447 0				18321>5	5	C J Q
 	2705 3576 0					5	C J R
 	2075 4848 0					5	C K P
 	1359 2941 0			Children of the Sun		5	C K Q

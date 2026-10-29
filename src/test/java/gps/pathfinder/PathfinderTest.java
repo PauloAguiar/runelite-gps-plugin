@@ -540,6 +540,7 @@ public class PathfinderTest
 		when(config.includeBankPath()).thenReturn(true);
 		setupInventory();
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
+		when(client.getVarbitValue(18321)).thenReturn(38); // Troubled Tortugans past the bandage: the CJQ ring is open
 
 		assertScenarioPathLengthWithBank(
 			"Great Conch -> McGrubor's Wood with banked staff and bracelet",
@@ -559,6 +560,7 @@ public class PathfinderTest
 		when(config.includeBankPath()).thenReturn(true);
 		setupInventory();
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
+		when(client.getVarbitValue(18321)).thenReturn(38); // Troubled Tortugans past the bandage: the CJQ ring is open
 
 		assertScenarioPathLengthWithBank(
 			"Great Conch tile reuse -> McGrubor's Wood with banked Dramen staff",
