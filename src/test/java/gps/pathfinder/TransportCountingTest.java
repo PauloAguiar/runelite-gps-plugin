@@ -30,12 +30,14 @@ public class TransportCountingTest
 		 * Info:
 		 * There are currently 17 unique charter ship origin/destinations (The Pandemonium
 		 * joined 2026-09-07). If every combination was possible then it would be 17^2 = 289.
-		 * It is impossible to travel from and to the same place, so subtract 17.
+		 * It is impossible to travel from and to the same place, so subtract the port count.
 		 * It is also impossible to travel between certain places, presumably because the
 		 * distance between them is too small: 12 of these among the original 16, plus the
 		 * Pandemonium's two ferry neighbours (Musa Point and Port Sarim) in both directions.
+		 * Deepfin Point, Port Roberts, Red Rock and The Summer Shore joined on 2026-10-28,
+		 * each reachable from and to every other port: 21 ports.
 		 */
-		assertEquals(17 * 17 - 17 - 12 - 4, actualCount);
+		assertEquals(21 * 21 - 21 - 12 - 4, actualCount);
 	}
 
 	@Test

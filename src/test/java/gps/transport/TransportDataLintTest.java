@@ -233,8 +233,12 @@ public class TransportDataLintTest
 				// (two ships share the east dock; see charter_ships.tsv).
 				boolean pandemonium = WorldPointUtil.unpackWorldX(transport.getDestination()) == 3063
 					&& WorldPointUtil.unpackWorldY(transport.getDestination()) == 2999;
+				// The four Sailing-era ports taken from upstream on 2026-10-28 land dockside until a deck
+				// tile is captured at each.
+				boolean dockside = Set.of("Deepfin Point", "Port Roberts", "Red Rock", "The Summer Shore")
+					.contains(transport.getDisplayInfo());
 				Assert.assertTrue("charter to " + transport.getDisplayInfo()
-					+ " must arrive on the ship's deck (plane 1)", plane == 1 || landsEnd || pandemonium);
+					+ " must arrive on the ship's deck (plane 1)", plane == 1 || landsEnd || pandemonium || dockside);
 				if (plane == 1)
 				{
 					deckArrivals++;
