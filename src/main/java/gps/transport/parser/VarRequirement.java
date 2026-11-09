@@ -127,7 +127,7 @@ public class VarRequirement {
     public boolean isVarPlayer() {
         return varType == VarType.VARPLAYER;
     }
-
+
     @Override
     public String toString() {
         if (alternatives != null)

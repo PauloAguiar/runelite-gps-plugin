@@ -38,5 +38,5 @@ public class ItemRequirement {
         this.offhandIds = offhandIds;
         this.quantity = quantity;
     }
-
+
 }
