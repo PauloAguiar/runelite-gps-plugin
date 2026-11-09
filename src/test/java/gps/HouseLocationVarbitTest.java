@@ -17,7 +17,9 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Varbit 2187 (POH_HOUSE_LOCATION) numbers the house locations 1-6 in release order, then
- * Hosidius 8, Prifddinas 9 and Aldarin 13; 7 and 10-12 are never set. The data and the panel
+ * Hosidius 8, Prifddinas 9 and Aldarin 13; 7 and 10-12 are never set. The cache's enum 252 keys
+ * the location names by exactly these values (tooling HouseLocationEnumProbeTest dumps it, and
+ * upstream's commit 2c97f6ff fixed the same mistake from it). The data and the panel
  * used to read Prifddinas as 7 and Aldarin as 9, so a Prifddinas owner saw "Your house: Aldarin"
  * and was routed to the Aldarin portal (report 2026-11-08), and an Aldarin owner had no house
  * routes at all. Every house-portal row's value must name the location its outside tile sits in.

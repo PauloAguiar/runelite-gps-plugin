@@ -9,9 +9,9 @@ import net.runelite.api.Client;
  * location and the balloon route unlocks.
  */
 final class PanelVarbits {
-    // Varbit 2187 (POH_HOUSE_LOCATION): 0 = no house; the game numbers the locations 1-6 in
-    // release order, then Hosidius 8, Prifddinas 9 and Aldarin 13, and never sets 7 or 10-12
-    // (upstream data and chisel's value log agree; a Prifddinas owner once read as Aldarin).
+    // Varbit 2187 (POH_HOUSE_LOCATION): 0 = no house; the cache's house-location enum 252 keys
+    // the names by this value: 1-6 in release order, then Hosidius 8, Prifddinas 9 and Aldarin
+    // 13, with no 7 or 10-12 (a Prifddinas owner once read as Aldarin from a guessed order).
     private static final int HOUSE_LOCATION = 2187;
     private static final String[] HOUSE_LOCATIONS = {
         null, "Rimmington", "Taverley", "Pollnivneach", "Rellekka", "Brimhaven", "Yanille",
