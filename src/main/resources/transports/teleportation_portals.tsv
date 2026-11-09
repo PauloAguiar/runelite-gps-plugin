@@ -136,11 +136,11 @@
 # Yanille								
 2544 3096 0	1923 5709 0	Home Portal 15482			2187=6		4	Home Portal
 # Prifddinas								
-3239 6076 0	1923 5709 0	Home Portal 34947			2187=7		4	Home Portal
+3239 6076 0	1923 5709 0	Home Portal 34947			2187=9		4	Home Portal
 # Hosidius								
 1743 3517 0	1923 5709 0	Home Portal 28822			2187=8		4	Home Portal
 # Aldarin								
-1422 2963 0	1923 5709 0	Home Portal 55353			2187=9		4	Home Portal
+1422 2963 0	1923 5709 0	Home Portal 55353			2187=13		4	Home Portal
 # Exiting the house through its portal lands at the player's house location (varbit 2187),
 # mirroring the Home Portal entries above. Object 4525 is the house exit portal.
 1923 5709 0	2953 3224 0	Enter Portal 4525			2187=1		2	Exit house portal (Rimmington)
@@ -149,9 +149,9 @@
 1923 5709 0	2670 3631 0	Enter Portal 4525			2187=4		2	Exit house portal (Rellekka)
 1923 5709 0	2757 3178 0	Enter Portal 4525			2187=5		2	Exit house portal (Brimhaven)
 1923 5709 0	2544 3096 0	Enter Portal 4525			2187=6		2	Exit house portal (Yanille)
-1923 5709 0	3239 6076 0	Enter Portal 4525			2187=7		2	Exit house portal (Prifddinas)
+1923 5709 0	3239 6076 0	Enter Portal 4525			2187=9		2	Exit house portal (Prifddinas)
 1923 5709 0	1743 3517 0	Enter Portal 4525			2187=8		2	Exit house portal (Hosidius)
-1923 5709 0	1422 2963 0	Enter Portal 4525			2187=9		2	Exit house portal (Aldarin)
+1923 5709 0	1422 2963 0	Enter Portal 4525			2187=13		2	Exit house portal (Aldarin)
 								
 # Myths' Guild Portals								
 2456 2855 2	2904 3512 0	Enter Portal of Heroes 31621		Dragon Slayer II			1	Heroes' Guild

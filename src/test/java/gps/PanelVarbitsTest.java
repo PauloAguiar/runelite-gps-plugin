@@ -8,7 +8,7 @@ import static org.junit.Assert.assertNull;
 
 /**
  * Plan step L25: the panel's cached varbits, out of the plugin class. The house varbit maps to
- * a location name (none without a house or for an unknown id), and the balloon unlock varbits
+ * a location name (none without a house or for a value the game never sets), and the balloon unlock varbits
  * map to the log types that have a route: normal logs need the quest (2), the rest a first
  * flight (1), in the log-storage order normal, oak, willow, yew, magic.
  */
@@ -19,8 +19,11 @@ public class PanelVarbitsTest
 	{
 		assertNull(PanelVarbits.houseLocationName(0));
 		assertEquals("Rimmington", PanelVarbits.houseLocationName(1));
-		assertEquals("Aldarin", PanelVarbits.houseLocationName(9));
+		assertEquals("Prifddinas", PanelVarbits.houseLocationName(9));
+		assertEquals("Aldarin", PanelVarbits.houseLocationName(13));
+		assertNull("the game skips 7 and 10-12", PanelVarbits.houseLocationName(7));
 		assertNull(PanelVarbits.houseLocationName(10));
+		assertNull(PanelVarbits.houseLocationName(14));
 	}
 
 	@Test

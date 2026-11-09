@@ -32,11 +32,11 @@
 # 6 - Yanille								
 2544 3096 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=6;4744=1	
 # 7 - Prifddinas								
-3239 6076 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=7;4744=1	
+3239 6076 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=9;4744=1	
 # 8 - Hosidius								
 1743 3517 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=8;4744=1	
 # 9 - Aldarin								
-1422 2963 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=9;4744=1	
+1422 2963 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=1	40 Magic		4	Teleport to House (Outside)	20	4070=0;2187=13;4744=1	
 								
 # Camelot Teleport								
 2757 3479 0	AIR_RUNE=5&&LAW_RUNE=1	45 Magic		4	Camelot Teleport	20	4070=0	
@@ -247,9 +247,9 @@
 2670 3631 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=2&&ASTRAL_RUNE=3&&COSMIC_RUNE=2	96 Magic	Dream Mentor	9	Teleport to House (Outside)	20	4070=2;2187=4;4744=1		Spellbook Swap first: 3 astral, 2 cosmic, 1 law
 2757 3178 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=2&&ASTRAL_RUNE=3&&COSMIC_RUNE=2	96 Magic	Dream Mentor	9	Teleport to House (Outside)	20	4070=2;2187=5;4744=1		Spellbook Swap first: 3 astral, 2 cosmic, 1 law
 2544 3096 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=2&&ASTRAL_RUNE=3&&COSMIC_RUNE=2	96 Magic	Dream Mentor	9	Teleport to House (Outside)	20	4070=2;2187=6;4744=1		Spellbook Swap first: 3 astral, 2 cosmic, 1 law
-3239 6076 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=2&&ASTRAL_RUNE=3&&COSMIC_RUNE=2	96 Magic	Dream Mentor	9	Teleport to House (Outside)	20	4070=2;2187=7;4744=1		Spellbook Swap first: 3 astral, 2 cosmic, 1 law
+3239 6076 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=2&&ASTRAL_RUNE=3&&COSMIC_RUNE=2	96 Magic	Dream Mentor	9	Teleport to House (Outside)	20	4070=2;2187=9;4744=1		Spellbook Swap first: 3 astral, 2 cosmic, 1 law
 1743 3517 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=2&&ASTRAL_RUNE=3&&COSMIC_RUNE=2	96 Magic	Dream Mentor	9	Teleport to House (Outside)	20	4070=2;2187=8;4744=1		Spellbook Swap first: 3 astral, 2 cosmic, 1 law
-1422 2963 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=2&&ASTRAL_RUNE=3&&COSMIC_RUNE=2	96 Magic	Dream Mentor	9	Teleport to House (Outside)	20	4070=2;2187=9;4744=1		Spellbook Swap first: 3 astral, 2 cosmic, 1 law
+1422 2963 0	AIR_RUNE=1&&EARTH_RUNE=1&&LAW_RUNE=2&&ASTRAL_RUNE=3&&COSMIC_RUNE=2	96 Magic	Dream Mentor	9	Teleport to House (Outside)	20	4070=2;2187=13;4744=1		Spellbook Swap first: 3 astral, 2 cosmic, 1 law
 2757 3479 0	AIR_RUNE=5&&LAW_RUNE=2&&ASTRAL_RUNE=3&&COSMIC_RUNE=2	96 Magic	Dream Mentor	9	Camelot Teleport	20	4070=2		Spellbook Swap first: 3 astral, 2 cosmic, 1 law
 2726 3487 0	AIR_RUNE=5&&LAW_RUNE=2&&ASTRAL_RUNE=3&&COSMIC_RUNE=2	96 Magic	Dream Mentor	9	Camelot Teleport: Seers'	20	4070=2;4477=1		Spellbook Swap first: 3 astral, 2 cosmic, 1 law
 1641 3673 0	FIRE_RUNE=1&&WATER_RUNE=1&&LAW_RUNE=3&&ASTRAL_RUNE=3&&COSMIC_RUNE=2	96 Magic	Client of Kourend;Dream Mentor	9	Kourend Castle Teleport	20	4070=2		Spellbook Swap first: 3 astral, 2 cosmic, 1 law

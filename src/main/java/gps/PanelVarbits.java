@@ -9,11 +9,13 @@ import net.runelite.api.Client;
  * location and the balloon route unlocks.
  */
 final class PanelVarbits {
-    // Varbit 2187: 0 = no house, 1-9 = the owned location.
+    // Varbit 2187 (POH_HOUSE_LOCATION): 0 = no house; the game numbers the locations 1-6 in
+    // release order, then Hosidius 8, Prifddinas 9 and Aldarin 13, and never sets 7 or 10-12
+    // (upstream data and chisel's value log agree; a Prifddinas owner once read as Aldarin).
     private static final int HOUSE_LOCATION = 2187;
     private static final String[] HOUSE_LOCATIONS = {
-        null, "Rimmington", "Taverley", "Pollnivneach", "Rellekka", "Brimhaven",
-        "Yanille", "Prifddinas", "Hosidius", "Aldarin"};
+        null, "Rimmington", "Taverley", "Pollnivneach", "Rellekka", "Brimhaven", "Yanille",
+        null, "Hosidius", "Prifddinas", null, null, null, "Aldarin"};
     // ZEP_MULTI_* in {Entrana, Taverley, Castle Wars, Grand Tree, Crafting Guild, Varrock} order.
     private static final int[] BALLOON_UNLOCKS = {2867, 2868, 2869, 2870, 2871, 2872};
 
