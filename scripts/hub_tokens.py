@@ -14,6 +14,7 @@ bot's 200,591 on plugin-hub PR 18318, 2026-10-11): read the numbers as the bot's
     python scripts/hub_tokens.py --members src/main/java/gps/ShortestPathPlugin.java
     python scripts/hub_tokens.py --diff ../gps-old .  # per-file growth between two trees
     python scripts/hub_tokens.py --sections           # by plugin section (scripts/token-sections.tsv)
+    python scripts/hub_tokens.py --max 197000         # exit 1 above the budget (CI runs this)
 
 A tree is a directory holding src/main/java; `git archive v0.13.2 src/main/java | tar -x -C dir`
 exports one from a tag. --members splits one file by top-level member (field, method, inner
@@ -99,6 +100,15 @@ def count_tree(root):
         stripped = strip_comments(src)
         rows.append((rel, len(src), len(stripped), tokens(stripped)))
     return rows
+
+
+def check_budget(root, budget):
+    """One line, and exit status 1 when the tree is over the budget: the repository's own guard,
+    set below the hub's 200k so a release never meets the bot's refusal first."""
+    total = sum(r[3] for r in count_tree(root))
+    verdict = 'over' if total > budget else 'within'
+    print('%s: %d tokens, %s the budget of %d (%+d)' % (root, total, verdict, budget, total - budget))
+    return total <= budget
 
 
 def report_tree(root, top, by_package):
@@ -283,10 +293,17 @@ def main():
         elif a == '--sections':
             mode = 'sections'
             i += 1
+        elif a == '--max':
+            mode = 'max'
+            budget = int(args[i + 1])
+            i += 2
         else:
             operands.append(a)
             i += 1
-    if mode == 'members':
+    if mode == 'max':
+        if not all([check_budget(root, budget) for root in operands or ['.']]):
+            sys.exit(1)
+    elif mode == 'members':
         for p in operands:
             report_members(p, top)
     elif mode == 'sections':

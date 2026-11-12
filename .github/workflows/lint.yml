@@ -1,8 +1,10 @@
 name: Lint
 
-# Runs `./gradlew check` and uploads the Checkstyle reports.
+# Runs `./gradlew check` and uploads the Checkstyle reports; checks the hub token budget.
 # Non-blocking for now since the project is not conformant.
 on:
+  push:
+    branches: [ main ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -43,3 +45,24 @@ jobs:
           name: checkstyle-xml
           path: build/reports/checkstyle/*.xml
           if-no-files-found: warn
+
+  tokens:
+    # The plugin hub's review bot refuses more than 200,000 tokens of comment-stripped
+    # src/main/java. This budget sits below that and comes down as the source shrinks, so growth
+    # shows up on the commit that causes it instead of at release time.
+    name: Hub token budget
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Count tokens
+        run: |
+          pip install tiktoken
+          python scripts/hub_tokens.py --max 197000
+        shell: bash
