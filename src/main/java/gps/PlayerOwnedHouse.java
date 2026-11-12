@@ -33,9 +33,6 @@ public final class PlayerOwnedHouse {
     // here is why presence detection failed repeatedly.
     private static final Set<Integer> TEMPLATE_REGIONS = Set.of(7534, 7535, 7790, 7791, 8046, 8047, 8302, 8303);
 
-    private PlayerOwnedHouse() {
-    }
-
     /** Whether a world coordinate lies in the house model area. */
     public static boolean isInside(int x, int y) { return x >= MIN_X && x <= MAX_X && y >= MIN_Y && y <= MAX_Y; }
 

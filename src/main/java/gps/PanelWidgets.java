@@ -53,9 +53,6 @@ final class PanelWidgets {
         new Color(0xD15B5B), // red
     };
 
-    private PanelWidgets() {
-    }
-
     /**
      * Wraps a component so that, in a BorderLayout WEST/EAST cell (stretched to the row's full
      * height), it sits vertically centred against the possibly two-line label in CENTER, while

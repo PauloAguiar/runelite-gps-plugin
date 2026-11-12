@@ -10,9 +10,6 @@ import java.util.function.*;
  * click-walk yet. Pure over the route, the targets and the configured tolerance.
  */
 final class RouteVerdicts {
-    private RouteVerdicts() {
-    }
-
     /**
      * Whether a route that stopped short ends too far from every target to count as reached for
      * colouring: a route that stops at the closest reachable tile (the exact target being an NPC

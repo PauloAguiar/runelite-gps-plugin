@@ -17,9 +17,6 @@ public final class BuildInfo {
     // pre-filled ?title=&body=) as network I/O of player data. Context travels via the clipboard.
     static final String GITHUB_NEW_ISSUE = "https://github.com/PauloAguiar/runelite-gps-plugin/issues/new";
 
-    private BuildInfo() {
-    }
-
     /** The release version: the hub's manifest on a hub build, else the bundled plugin manifest. */
     public static String pluginVersion() {
         return pluginVersion(ExternalPluginManager.getDisplayData(ShortestPathPlugin.class));

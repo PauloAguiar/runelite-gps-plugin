@@ -12,9 +12,6 @@ import java.awt.geom.*;
  * as also used by the port-tasks plugin.
  */
 public final class ArrowHead {
-    private ArrowHead() {
-    }
-
     /**
      * Fills an arrowhead pointing from (x1, y1) towards (x2, y2), with its tip at (x2, y2).
      *

@@ -23,9 +23,6 @@ import lombok.extern.slf4j.Slf4j;
     private static final Map<String, Object> OVERRIDES = new HashMap<>(50);
     private static volatile Set<String> known = withTypeKeys(Collections.emptySet());
 
-    private ConfigOverrides() {
-    }
-
     /**
      * The plugin declares its @ConfigItem keys at start, read from the ConfigManager's descriptor
      * (the hub forbids reflection in shipped code, so the keys cannot be scanned here).

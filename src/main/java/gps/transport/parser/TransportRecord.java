@@ -127,7 +127,5 @@ import lombok.Getter;
         // For soft requirements ("bring a shovel", "fire arrow needed") and fail chances.
         public static final String NOTE = "Note";
 
-        private Fields() {
-        }
     }
 }

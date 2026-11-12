@@ -88,9 +88,6 @@ import static gps.WorldPointUtil.unpackWorldY;
     private static volatile Map<Integer, Integer> edgeMasks;
     private static volatile PrimitiveIntHashMap<Integer> edgeMaskIndex;
 
-    private ClosedDoors() {
-    }
-
     /**
      * Packed tile -> bitmask of walk directions (bit i = {@code OrdinalDirection} ordinal i) that
      * cross a door when leaving that tile. Both sides of every doorway carry a bit, so the search

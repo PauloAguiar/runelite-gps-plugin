@@ -11,9 +11,6 @@ final class SpellWidgets {
     private static final String[] QUALIFIERS = {": ", " — ", " ("};
     private static Map<String, Integer> components;
 
-    private SpellWidgets() {
-    }
-
     /** The packed component id of the spell, or -1 when the table has no row for it. */
     static synchronized int componentFor(String spell) {
         if (spell == null) return -1;

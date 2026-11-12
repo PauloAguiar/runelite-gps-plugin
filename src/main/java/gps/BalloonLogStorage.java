@@ -38,9 +38,6 @@ public final class BalloonLogStorage {
         "This crate currently contains (?<regular>\\d+) logs, (?<oak>\\d+) oak logs, (?<willow>\\d+) willow logs, "
             + "(?<yew>\\d+) yew logs and (?<magic>\\d+) magic logs\\.");
 
-    private BalloonLogStorage() {
-    }
-
     /**
      * The stored-count updates a chat message implies: config key -> new count. Empty when the
      * message is not a balloon-storage message.

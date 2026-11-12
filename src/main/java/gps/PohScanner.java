@@ -19,9 +19,6 @@ import net.runelite.api.gameval.*;
  * and stay manual ("Mounted items").
  */
 public final class PohScanner {
-    private PohScanner() {
-    }
-
     /** What a house scan found: the present 1:1 features, and the jewellery-box tier. */
     @RequiredArgsConstructor(access = AccessLevel.PACKAGE) public static final class Detected {
         final boolean fairyRing;

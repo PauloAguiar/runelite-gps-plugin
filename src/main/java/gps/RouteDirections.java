@@ -85,9 +85,6 @@ final class RouteDirections {
         boolean gatesWalk() { return door || obstacle; }
     }
 
-    private RouteDirections() {
-    }
-
     /**
      * The steps for the route, in travel order. Method steps come from the route's own recorded edge
      * indexes — the route was computed with the planning config's availability, so re-deriving its

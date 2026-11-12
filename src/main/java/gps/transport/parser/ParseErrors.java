@@ -13,9 +13,6 @@ import java.util.*;
 public final class ParseErrors {
     private static final List<String> RECORDED = Collections.synchronizedList(new ArrayList<>());
 
-    private ParseErrors() {
-    }
-
     static void record(String what, String value) { RECORDED.add(what + ": " + value); }
 
     /** Returns everything recorded since the last drain, and clears. */

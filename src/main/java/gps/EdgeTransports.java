@@ -17,9 +17,6 @@ import java.util.*;
  * reconstructed paths.
  */
 final class EdgeTransports {
-    private EdgeTransports() {
-    }
-
     /**
      * The transports that ride the edge from {@code current} to {@code next}: the local ones
      * from the current tile plus the anywhere-teleports landing on the next, filtered while

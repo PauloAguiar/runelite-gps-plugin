@@ -20,6 +20,4 @@ public final class CostUnits {
     /** Converts a duration in game ticks to cost units. */
     public static int fromTicks(int ticks) { return UNITS_PER_TICK * ticks; }
 
-    private CostUnits() {
-    }
 }

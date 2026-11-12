@@ -149,9 +149,6 @@ final class RouteIcons {
     static final ImageIcon PRIORITY_NEUTRAL_HOVER = icon("priority_neutral_hover");
     static final ImageIcon PRIORITY_NEUTRAL_DIM = icon("priority_neutral_dim");
 
-    private RouteIcons() {
-    }
-
     private static ImageIcon icon(String name) { return new ImageIcon(image(name)); }
 
     private static BufferedImage image(String name) {

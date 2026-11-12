@@ -62,9 +62,6 @@ public final class TransportTypePresentation {
         ROWS.put(type, new Row(category, vehicle, travelOption, gateQuest));
     }
 
-    private TransportTypePresentation() {
-    }
-
     /** Whether the table has a row for the type (the test requires one for every type). */
     public static boolean hasRow(TransportType type) { return ROWS.containsKey(type); }
 

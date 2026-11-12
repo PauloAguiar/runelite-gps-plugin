@@ -26,9 +26,6 @@ final class RouteProgress {
     /** BFS radius: the largest walking distance any eligibility rule can accept. */
     static final int REACH_RADIUS = NEAR_DISTANCE + REACH_SLACK;
 
-    private RouteProgress() {
-    }
-
     /** A selection: the reached path index and the walking distance to it (for the ETA). */
     @RequiredArgsConstructor static final class Result {
         final int index;

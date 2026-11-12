@@ -305,9 +305,6 @@ import static gps.transport.TransportType.*;
 
     private static volatile List<Entry> resourceEntries;
 
-    private Destinations() {
-    }
-
     /** The static place + amenity entries from the bundled resource (loaded once). */
     public static List<Entry> resourceEntries() {
         List<Entry> snapshot = resourceEntries;

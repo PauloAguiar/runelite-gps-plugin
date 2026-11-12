@@ -30,9 +30,6 @@ final class SearchAliases {
         Map.entry("kq", "kalphite queen"),
         Map.entry("zmi", "ourania"));
 
-    private SearchAliases() {
-    }
-
     /**
      * The query with every alias token replaced by what it stands for, lower-cased; the query
      * itself (lower-cased, trimmed) when no token is an alias.

@@ -31,9 +31,6 @@ final class RouteAcceptance {
     /** How close a same-kind teleport must land to a flight's destination to make the hop pointless. */
     private static final int SHARED_DESTINATION_RADIUS = 10;
 
-    private RouteAcceptance() {
-    }
-
     /** The display band: {@code max(best, MIN_BEST_FOR_BAND) * multiple}. The page must not be empty. */
     static long band(List<RouteOption> routes, int multiple) {
         return (long) Math.max(routes.get(0).getTotalCost(), MIN_BEST_FOR_BAND) * multiple;

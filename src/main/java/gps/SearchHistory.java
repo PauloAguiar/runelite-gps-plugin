@@ -10,9 +10,6 @@ import java.util.*;
 final class SearchHistory {
     static final int LIMIT = 10;
 
-    private SearchHistory() {
-    }
-
     /** A new list with {@code entry} at the front, duplicates removed, capped at {@link #LIMIT}. */
     static List<Destinations.Entry> push(List<Destinations.Entry> history, Destinations.Entry entry) {
         List<Destinations.Entry> out = new ArrayList<>();

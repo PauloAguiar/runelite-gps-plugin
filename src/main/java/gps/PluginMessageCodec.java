@@ -39,9 +39,6 @@ final class PluginMessageCodec {
 
     }
 
-    private PluginMessageCodec() {
-    }
-
     static boolean isOurs(String namespace) {
         return NAMESPACE.equals(namespace) || NAMESPACE_LEGACY.equals(namespace);
     }

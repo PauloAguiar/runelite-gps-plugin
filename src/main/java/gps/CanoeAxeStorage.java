@@ -16,9 +16,6 @@ final class CanoeAxeStorage {
     private static final Pattern STORED = Pattern.compile("^You (store|leave) your .*axe (at|with) the canoe station");
     private static final Pattern WITHDRAWN = Pattern.compile("^You (withdraw|take|retrieve) your .*axe .*(from|back from) the canoe station");
 
-    private CanoeAxeStorage() {
-    }
-
     /** TRUE when the line says an axe was stored, FALSE when withdrawn, null for any other line. */
     static Boolean parse(String message) {
         if (STORED.matcher(message).find()) return Boolean.TRUE;

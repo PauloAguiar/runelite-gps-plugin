@@ -32,9 +32,6 @@ import gps.*;
 
     private static volatile Map<Integer, LeagueRegion> regionsById;
 
-    private LeagueRegionChecker() {
-    }
-
     /**
      * Returns the league region containing the supplied packed world point.
      * Never returns {@code null}; unmapped tiles resolve to

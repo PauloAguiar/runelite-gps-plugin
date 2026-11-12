@@ -10,9 +10,6 @@ import net.runelite.api.coords.*;
  * opening it swaps the object out, so presence is the whole test.
  */
 public class SceneObjects {
-    private SceneObjects() {
-    }
-
     /**
      * Scene knowledge about an object id on a tile: standing there, verified absent (the tile is
      * loaded and the object isn't on it — for a door's closed variant that means it stands open),

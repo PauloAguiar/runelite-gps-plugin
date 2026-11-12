@@ -20,9 +20,6 @@ final class SearchMatcher {
     // Subsequence matching needs a few characters to say anything — 1-2 letters match everything.
     private static final int MIN_SUBSEQUENCE_QUERY = 3;
 
-    private SearchMatcher() {
-    }
-
     static int score(String name, String query) {
         String literal = query.toLowerCase(Locale.ROOT).trim();
         String expanded = SearchAliases.expand(query);
