@@ -11,6 +11,7 @@ import java.util.zip.*;
 import static gps.WorldPointUtil.packWorldPoint;
 import static gps.WorldPointUtil.unpackWorldX;
 import static gps.WorldPointUtil.unpackWorldY;
+import static gps.transport.TransportType.*;
 
 /**
  * The sailable ocean and the mooring endpoints, shipped as resources by the tooling repo's
@@ -268,7 +269,7 @@ import static gps.WorldPointUtil.unpackWorldY;
             // aboard hop — a berth-adjacent disembark priced at 16 seconds in the field.
             int duration = DISEMBARK_TICKS + (int) Math.ceil(distances[i] / 100.0 / TILES_PER_TICK);
             legs.add(new Transport.TransportBuilder().origin(startPacked).destination(packWorldPoint(mooring[0], mooring[1], 0))
-                .type(TransportType.SAILING).duration(duration).displayInfo("Disembark at " + portName(i)).build());
+                .type(SAILING).duration(duration).displayInfo("Disembark at " + portName(i)).build());
         }
         for (int target : targets) {
             int centitiles = seaDistanceBetween(startPacked, target);
@@ -285,7 +286,7 @@ import static gps.WorldPointUtil.unpackWorldY;
                 if (best < Long.MAX_VALUE) centitiles = (int) Math.min(Integer.MAX_VALUE, best);
             }
             if (centitiles >= 0) {
-                legs.add(new Transport.TransportBuilder().origin(startPacked).destination(target).type(TransportType.SAILING)
+                legs.add(new Transport.TransportBuilder().origin(startPacked).destination(target).type(SAILING)
                     .duration(Math.max(1, (int) Math.ceil(centitiles / 100.0 / TILES_PER_TICK))).displayInfo("Sail to the destination")
                     .build());
             }
@@ -393,7 +394,7 @@ import static gps.WorldPointUtil.unpackWorldY;
             int[] mooring = moorings.get(i);
             int duration = OVERHEAD_TICKS + (int) Math.ceil(distances[i] / 100.0 / TILES_PER_TICK);
             legs.add(new Transport.TransportBuilder().origin(packWorldPoint(mooring[0], mooring[1], 0)).destination(targetPacked)
-                .type(TransportType.SAILING).duration(duration).displayInfo("Embark at " + portName(i)).build());
+                .type(SAILING).duration(duration).displayInfo("Embark at " + portName(i)).build());
         }
         return legs;
     }

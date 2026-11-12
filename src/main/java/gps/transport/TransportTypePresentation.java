@@ -4,6 +4,7 @@ import java.util.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.runelite.api.*;
+import static gps.transport.TransportType.*;
 
 /**
  * What the player sees of a transport type, in one table (plan step L5): the catalog category
@@ -29,33 +30,33 @@ public final class TransportTypePresentation {
 
     static {
         //  type                                  category              vehicle           travel option              gate quest
-        row(TransportType.TRANSPORT,              "Other",              null,             NO_TRAVEL_OPTION,          null);
-        row(TransportType.AGILITY_SHORTCUT,       "Other",              null,             "Agility shortcuts",       null);
-        row(TransportType.GRAPPLE_SHORTCUT,       "Other",              null,             "Grapple shortcuts",       null);
-        row(TransportType.BOAT,                   "Boats & ships",      "Boat",           "Boats",                   null);
-        row(TransportType.CANOE,                  "Canoes",             "Canoe",          "Canoes",                  null);
-        row(TransportType.CHARTER_SHIP,           "Boats & ships",      "Charter ship",   "Charter ships",           null);
-        row(TransportType.SHIP,                   "Boats & ships",      "Ship",           "Ships",                   null);
-        row(TransportType.SAILING,                "Other",              null,             NO_TRAVEL_OPTION,          null);
-        row(TransportType.FAIRY_RING,             "Fairy rings",        null,             "Fairy rings",             null);
-        row(TransportType.GNOME_GLIDER,           "Gnome gliders",      "Glider",         "Gnome gliders",           Quest.THE_GRAND_TREE);
-        row(TransportType.HOT_AIR_BALLOON,        "Hot air balloons",   "Balloon",        "Hot air balloons",        null);
-        row(TransportType.MAGIC_CARPET,           "Magic carpets",      "Magic carpet",   "Magic carpets",           null);
-        row(TransportType.MAGIC_MUSHTREE,         "Mushtrees",          "Mushtree",       "Magic mushtrees",         Quest.BONE_VOYAGE);
-        row(TransportType.MINECART,               "Minecarts",          "Minecart",       "Minecarts",               null);
-        row(TransportType.MOUNTAIN_GUIDE,         "Mountain guides",    "Mountain guide", "Mountain guides",         null);
-        row(TransportType.QUETZAL,                "Quetzals",           "Quetzal",        "Quetzals",                null);
-        row(TransportType.QUETZAL_WHISTLE,        "Quetzals",           null,             "Quetzals",                null);
-        row(TransportType.SEASONAL_TRANSPORTS,    "Seasonal",           null,             "Seasonal transports",     null);
-        row(TransportType.SPIRIT_TREE,            "Spirit trees",       "Spirit tree",    "Spirit trees",            Quest.TREE_GNOME_VILLAGE);
-        row(TransportType.TELEPORTATION_BOX,      "Jewellery box",      "Jewellery box",  NO_TRAVEL_OPTION,          null);
-        row(TransportType.TELEPORTATION_ITEM,     "Items",              null,             NO_TRAVEL_OPTION,          null);
-        row(TransportType.TELEPORTATION_LEVER,    "Levers",             null,             "Teleportation levers",    null);
-        row(TransportType.TELEPORTATION_MINIGAME, "Minigame teleports", null,             "Teleportation minigames", null);
-        row(TransportType.TELEPORTATION_PORTAL,   "Portals",            null,             "Teleportation portals",   null);
-        row(TransportType.TELEPORTATION_PORTAL_POH, "Portals",          null,             NO_TRAVEL_OPTION,          null);
-        row(TransportType.TELEPORTATION_SPELL,    "Spells",             null,             "Teleportation spells",    null);
-        row(TransportType.WILDERNESS_OBELISK,     "Obelisks",           "Obelisk",        "Wilderness obelisks",     null);
+        row(TRANSPORT,              "Other",              null,             NO_TRAVEL_OPTION,          null);
+        row(AGILITY_SHORTCUT,       "Other",              null,             "Agility shortcuts",       null);
+        row(GRAPPLE_SHORTCUT,       "Other",              null,             "Grapple shortcuts",       null);
+        row(BOAT,                   "Boats & ships",      "Boat",           "Boats",                   null);
+        row(CANOE,                  "Canoes",             "Canoe",          "Canoes",                  null);
+        row(CHARTER_SHIP,           "Boats & ships",      "Charter ship",   "Charter ships",           null);
+        row(SHIP,                   "Boats & ships",      "Ship",           "Ships",                   null);
+        row(SAILING,                "Other",              null,             NO_TRAVEL_OPTION,          null);
+        row(FAIRY_RING,             "Fairy rings",        null,             "Fairy rings",             null);
+        row(GNOME_GLIDER,           "Gnome gliders",      "Glider",         "Gnome gliders",           Quest.THE_GRAND_TREE);
+        row(HOT_AIR_BALLOON,        "Hot air balloons",   "Balloon",        "Hot air balloons",        null);
+        row(MAGIC_CARPET,           "Magic carpets",      "Magic carpet",   "Magic carpets",           null);
+        row(MAGIC_MUSHTREE,         "Mushtrees",          "Mushtree",       "Magic mushtrees",         Quest.BONE_VOYAGE);
+        row(MINECART,               "Minecarts",          "Minecart",       "Minecarts",               null);
+        row(MOUNTAIN_GUIDE,         "Mountain guides",    "Mountain guide", "Mountain guides",         null);
+        row(QUETZAL,                "Quetzals",           "Quetzal",        "Quetzals",                null);
+        row(QUETZAL_WHISTLE,        "Quetzals",           null,             "Quetzals",                null);
+        row(SEASONAL_TRANSPORTS,    "Seasonal",           null,             "Seasonal transports",     null);
+        row(SPIRIT_TREE,            "Spirit trees",       "Spirit tree",    "Spirit trees",            Quest.TREE_GNOME_VILLAGE);
+        row(TELEPORTATION_BOX,      "Jewellery box",      "Jewellery box",  NO_TRAVEL_OPTION,          null);
+        row(TELEPORTATION_ITEM,     "Items",              null,             NO_TRAVEL_OPTION,          null);
+        row(TELEPORTATION_LEVER,    "Levers",             null,             "Teleportation levers",    null);
+        row(TELEPORTATION_MINIGAME, "Minigame teleports", null,             "Teleportation minigames", null);
+        row(TELEPORTATION_PORTAL,   "Portals",            null,             "Teleportation portals",   null);
+        row(TELEPORTATION_PORTAL_POH, "Portals",          null,             NO_TRAVEL_OPTION,          null);
+        row(TELEPORTATION_SPELL,    "Spells",             null,             "Teleportation spells",    null);
+        row(WILDERNESS_OBELISK,     "Obelisks",           "Obelisk",        "Wilderness obelisks",     null);
     }
 
     private static void row(TransportType type, String category, String vehicle, String travelOption, Quest gateQuest) {

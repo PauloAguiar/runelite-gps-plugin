@@ -10,6 +10,7 @@ import net.runelite.api.*;
 
 import static gps.WorldPointUtil.unpackWorldX;
 import static gps.WorldPointUtil.unpackWorldY;
+import static gps.transport.TransportType.*;
 
 /**
  * What GPS knows about the player-owned house (plan step L18, out of the plugin class): the
@@ -85,7 +86,7 @@ public final class PlayerOwnedHouse {
 
     private static String exitLabel(Transport transport, String exitInfo) {
         TransportType exitType = transport.getType();
-        if (TransportType.TELEPORTATION_BOX.equals(exitType)) {
+        if (TELEPORTATION_BOX.equals(exitType)) {
             String objInfo = transport.getObjectInfo();
             if (objInfo != null && objInfo.contains("Amulet of Glory")) return "Mounted Glory: " + exitInfo;
             if (objInfo != null && objInfo.contains("Mythical cape")) return "Mythical Cape: " + exitInfo;
@@ -93,10 +94,10 @@ public final class PlayerOwnedHouse {
             if (objInfo != null && objInfo.contains("Digsite")) return "Digsite Pendant: " + exitInfo;
             return "Jewelry Box: " + exitInfo;
         }
-        if (TransportType.TELEPORTATION_PORTAL_POH.equals(exitType)) return "Nexus: " + exitInfo;
-        if (TransportType.FAIRY_RING.equals(exitType)) return "Fairy Ring " + exitInfo;
-        if (TransportType.SPIRIT_TREE.equals(exitType)) return "Spirit Tree: " + exitInfo;
-        if (TransportType.WILDERNESS_OBELISK.equals(exitType)) return "Obelisk: " + exitInfo;
+        if (TELEPORTATION_PORTAL_POH.equals(exitType)) return "Nexus: " + exitInfo;
+        if (FAIRY_RING.equals(exitType)) return "Fairy Ring " + exitInfo;
+        if (SPIRIT_TREE.equals(exitType)) return "Spirit Tree: " + exitInfo;
+        if (WILDERNESS_OBELISK.equals(exitType)) return "Obelisk: " + exitInfo;
         return exitInfo;
     }
 

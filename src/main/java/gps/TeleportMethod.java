@@ -5,6 +5,7 @@ import java.util.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import gps.transport.*;
+import static gps.transport.TransportType.*;
 
 /**
  * A stable, human-meaningful identity for a single teleport/transport option, used by the
@@ -43,7 +44,7 @@ import gps.transport.*;
         this.displayInfo = (displayInfo == null || displayInfo.isEmpty()) ? null : displayInfo;
         this.destination = destination;
         this.consumable = consumable;
-        this.mount = TransportType.TELEPORTATION_BOX.equals(type) ? mountOf(objectInfo) : null;
+        this.mount = TELEPORTATION_BOX.equals(type) ? mountOf(objectInfo) : null;
     }
 
     public static TeleportMethod fromTransport(Transport transport) {
@@ -78,7 +79,7 @@ import gps.transport.*;
             if (mount != null) return mount + ": " + displayInfo;
             // Charters share the "Boats & ships" bucket with ships to the same towns — two bare
             // "Port Sarim" rows were indistinguishable, and searching "charter" found nothing.
-            if (TransportType.CHARTER_SHIP.equals(type)) return "Charter: " + displayInfo;
+            if (CHARTER_SHIP.equals(type)) return "Charter: " + displayInfo;
             return displayInfo;
         }
         int x = WorldPointUtil.unpackWorldX(destination);
@@ -105,11 +106,10 @@ import gps.transport.*;
      * connectors (doors/ladders/stairs and agility/grapple shortcuts) are walking, not a method.
      */
     public static boolean isMethodType(TransportType type) {
-        return type != null && type != TransportType.TRANSPORT && type != TransportType.AGILITY_SHORTCUT
-            && type != TransportType.GRAPPLE_SHORTCUT
+        return type != null && type != TRANSPORT && type != AGILITY_SHORTCUT && type != GRAPPLE_SHORTCUT
             // Sailing is deliberately NOT a catalog method: 2,756 generated port-pair rows
             // would drown the hand-curated methods, and it has its own Travel options section.
-            && type != TransportType.SAILING;
+            && type != SAILING;
     }
 
     public static String categoryOf(TransportType type) { return TransportTypePresentation.categoryOf(type); }

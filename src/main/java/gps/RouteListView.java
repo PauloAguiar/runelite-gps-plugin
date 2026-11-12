@@ -30,6 +30,7 @@ import static gps.PanelWidgets.statusMarker;
 import static gps.PanelWidgets.verticalGap;
 import static gps.PanelWidgets.verticallyCentered;
 import static gps.PanelWidgets.wrappedLabel;
+import static gps.transport.TransportType.*;
 
 /**
  * The routes section (panel series P4, out of the panel class): a bold "Routes (N)" header with
@@ -320,7 +321,7 @@ final class RouteListView extends JPanel {
         // every sailing leg (distances inverted from the legs' durations).
         int totalSail = 0;
         for (int m = 0; m < route.getMethods().size(); m++) {
-            if (route.getMethods().get(m).getType() == TransportType.SAILING && m < route.getMethodDurations().size())
+            if (route.getMethods().get(m).getType() == SAILING && m < route.getMethodDurations().size())
                 totalSail += SailingSea.tilesFromDuration(route.getMethodDurations().get(m));
         }
         if (totalSail > 0) methods.add(sailRow(totalSail));
@@ -411,7 +412,7 @@ final class RouteListView extends JPanel {
 
         JLabel dot = new JLabel(methodDot(method));
         dot.setAlignmentY(Component.CENTER_ALIGNMENT);
-        dot.setToolTipText(method.getType() == TransportType.TELEPORTATION_ITEM
+        dot.setToolTipText(method.getType() == TELEPORTATION_ITEM
             ? (method.isConsumable() ? "Item (charged: consumes a charge or the item)" : "Item (permanent: reusable)") : method.category());
         MethodAvailability status = unavailable.get(method);
         boolean bankGated = route.getBankMethods().contains(method);
@@ -423,8 +424,7 @@ final class RouteListView extends JPanel {
         west.add(dot);
         // Network methods carry their real glyph inline after the dot (like the bank marker and
         // the overlay's fairy-ring step), so "C K S" reads as a fairy-ring code at a glance.
-        String networkGlyph = method.getType() == TransportType.FAIRY_RING ? "fairy_ring"
-            : method.getType() == TransportType.SPIRIT_TREE ? "spirit_tree" : null;
+        String networkGlyph = method.getType() == FAIRY_RING ? "fairy_ring" : method.getType() == SPIRIT_TREE ? "spirit_tree" : null;
         if (networkGlyph != null) {
             JLabel glyph = new JLabel(RouteIcons.destinationIcon(networkGlyph));
             glyph.setAlignmentY(Component.CENTER_ALIGNMENT);

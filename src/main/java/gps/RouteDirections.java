@@ -11,6 +11,7 @@ import net.runelite.api.*;
 import net.runelite.api.*;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.*;
+import static gps.transport.TransportType.*;
 
 /**
  * Builds the "Google Maps"-style step list for a route: walking legs with their length and target,
@@ -130,7 +131,7 @@ final class RouteDirections {
                 walk = 0;
                 TeleportMethod method = route.getMethods().get(nextMethod);
                 int duration = route.getMethodDurations().get(nextMethod);
-                if (TransportType.SAILING.equals(method.getType())) addSailingSteps(steps, method, duration, i);
+                if (SAILING.equals(method.getType())) addSailingSteps(steps, method, duration, i);
                 else {
                     List<String> callouts = itemCallouts(plugin, route, from, to);
                     String text = methodText(method);
@@ -327,7 +328,7 @@ final class RouteDirections {
      * (ZANARIS) are shouted in the data and get title-cased. Everything else keeps "Use X".
      */
     static String methodText(TeleportMethod method) {
-        if (TransportType.FAIRY_RING.equals(method.getType()) && method.getDisplayInfo() != null)
+        if (FAIRY_RING.equals(method.getType()) && method.getDisplayInfo() != null)
             // The mushroom renders via the JVM's system-font fallback (verified in-game on
             // Windows, monochrome); if other platforms report missing-glyph boxes, drop it.
             return "🍄 Fairy ring to " + fairyRingLabel(method.getDisplayInfo());
@@ -375,7 +376,7 @@ final class RouteDirections {
         Set<Transport> rows = EdgeTransports.forRouteEdge(plugin.getPathfinderConfig(), route, from, to);
         // A canoe paddled with the axe stored at the stations: say what the route is counting on.
         for (Transport row : rows)
-            if (TransportType.CANOE.equals(row.getType()) && plugin.getPathfinderConfig().isCanoeAxeStored())
+            if (CANOE.equals(row.getType()) && plugin.getPathfinderConfig().isCanoeAxeStored())
                 return List.of("Axe stored at the canoe station");
         RouteItemCue cue = RouteItemCue.ofStep(rows, client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1, carried);
         if (cue == null) return List.of();
@@ -409,13 +410,13 @@ final class RouteDirections {
         // "Withdraw: Salve graveyard tablet" while the ring needed the banked Dramen staff).
         TeleportMethod bankedRing = null;
         for (TeleportMethod method : route.getBankMethods()) {
-            if (TransportType.FAIRY_RING.equals(method.getType())) {
+            if (FAIRY_RING.equals(method.getType())) {
                 bankedRing = method;
                 break;
             }
         }
         for (int i = 0; bankedRing == null && i < route.getBankTransports().size(); i++) {
-            if (TransportType.FAIRY_RING.equals(route.getBankTransports().get(i).getType()))
+            if (FAIRY_RING.equals(route.getBankTransports().get(i).getType()))
                 bankedRing = route.getBankTransports().get(i).method();
         }
         if (bankedRing != null && plugin.getClient().getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1) {

@@ -14,6 +14,7 @@ import net.runelite.client.callback.*;
 import gps.pathfinder.*;
 
 import static gps.WorldPointUtil.distanceBetween;
+import static gps.transport.TransportType.*;
 
 /**
  * Generates up to {@link #MAX_ROUTES} alternative shortest paths to a target, each using a different
@@ -1900,7 +1901,7 @@ import static gps.WorldPointUtil.distanceBetween;
             if (transport.getDestination() == destination && (!methodsOnly || TeleportMethod.isMethodType(transport.getType())
                     // Sailing is not a CATALOG method, but its legs must appear in the route
                     // methods: the cards, and the sea-track edge detection in the overlay.
-                    || transport.getType() == TransportType.SAILING) && searchEdgeCost(config, transport) < bestCost) {
+                    || transport.getType() == SAILING) && searchEdgeCost(config, transport) < bestCost) {
                 best = transport;
                 bestCost = searchEdgeCost(config, transport);
             }
@@ -1909,7 +1910,7 @@ import static gps.WorldPointUtil.distanceBetween;
             if (transport.getDestination() == destination && (!methodsOnly || TeleportMethod.isMethodType(transport.getType())
                     // Sailing is not a CATALOG method, but its legs must appear in the route
                     // methods: the cards, and the sea-track edge detection in the overlay.
-                    || transport.getType() == TransportType.SAILING) && searchEdgeCost(config, transport) < bestCost) {
+                    || transport.getType() == SAILING) && searchEdgeCost(config, transport) < bestCost) {
                 best = transport;
                 bestCost = searchEdgeCost(config, transport);
             }
@@ -1946,7 +1947,7 @@ import static gps.WorldPointUtil.distanceBetween;
     static boolean isPureSail(List<TeleportMethod> methods) {
         if (methods.isEmpty()) return false;
         for (TeleportMethod method : methods) {
-            if (method.getType() != TransportType.SAILING) return false;
+            if (method.getType() != SAILING) return false;
         }
         return true;
     }
@@ -1984,11 +1985,11 @@ import static gps.WorldPointUtil.distanceBetween;
         boolean laterEmbark = false;
         for (int i = 1; i < methods.size(); i++) {
             TeleportMethod method = methods.get(i);
-            laterEmbark |= TransportType.SAILING.equals(method.getType()) && method.getDisplayInfo() != null
+            laterEmbark |= SAILING.equals(method.getType()) && method.getDisplayInfo() != null
                 && method.getDisplayInfo().startsWith("Embark at ");
         }
         TeleportMethod first = methods.get(0);
-        boolean parkingFirst = TransportType.SAILING.equals(first.getType()) && first.getDisplayInfo() != null
+        boolean parkingFirst = SAILING.equals(first.getType()) && first.getDisplayInfo() != null
             && first.getDisplayInfo().startsWith("Disembark at ");
         for (int i = 0; i < methods.size(); i++)
             sb.append(i == 0 && parkingFirst && laterEmbark ? "Disembark at *" : methods.get(i).toString()).append('|');

@@ -5,6 +5,7 @@ import java.util.*;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import gps.*;
+import static gps.transport.TransportType.*;
 
 /**
  * Manages the enabled/disabled state and cost thresholds of each TransportType
@@ -97,7 +98,7 @@ import gps.*;
      */
     private boolean getEnabledState(TransportType type) {
         // Special handling for teleportation item types
-        if (type == TransportType.TELEPORTATION_ITEM || type == TransportType.TELEPORTATION_BOX)
+        if (type == TELEPORTATION_ITEM || type == TELEPORTATION_BOX)
             // These are enabled unless TeleportationItem is NONE
             // The detailed filtering (consumable, inventory, etc.) is done in
             // PathfinderConfig
@@ -138,10 +139,10 @@ import gps.*;
     public void setTeleportationItemSetting(TeleportationItem setting) {
         this.teleportationItemSetting = setting;
         boolean enabled = setting != TeleportationItem.NONE;
-        enabledStates.put(TransportType.TELEPORTATION_ITEM, enabled);
-        enabledStates.put(TransportType.TELEPORTATION_BOX, enabled);
-        configEnabledStates.put(TransportType.TELEPORTATION_ITEM, enabled);
-        configEnabledStates.put(TransportType.TELEPORTATION_BOX, enabled);
+        enabledStates.put(TELEPORTATION_ITEM, enabled);
+        enabledStates.put(TELEPORTATION_BOX, enabled);
+        configEnabledStates.put(TELEPORTATION_ITEM, enabled);
+        configEnabledStates.put(TELEPORTATION_BOX, enabled);
     }
 
     /**

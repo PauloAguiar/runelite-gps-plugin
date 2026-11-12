@@ -15,6 +15,7 @@ import static gps.WorldPointUtil.packWorldPoint;
 import static gps.WorldPointUtil.unpackWorldPlane;
 import static gps.WorldPointUtil.unpackWorldX;
 import static gps.WorldPointUtil.unpackWorldY;
+import static gps.transport.TransportType.*;
 
 /**
  * The GPS search index: named places and curated amenities (bank, altar, water source,
@@ -343,16 +344,16 @@ import static gps.WorldPointUtil.unpackWorldY;
             if (set == null) continue;
             for (Transport transport : set) {
                 TransportType type = transport.getType();
-                if (type == TransportType.FAIRY_RING || type == TransportType.SPIRIT_TREE) {
+                if (type == FAIRY_RING || type == SPIRIT_TREE) {
                     int origin = transport.getOrigin();
                     if (origin == Transport.UNDEFINED_ORIGIN || seen.contains(origin)) continue;
                     seen.add(origin);
-                    String label = type == TransportType.FAIRY_RING ? "Fairy ring" : "Spirit tree";
+                    String label = type == FAIRY_RING ? "Fairy ring" : "Spirit tree";
                     String info = transport.getDisplayInfo();
                     String name = info != null && !info.isEmpty() ? label + " " + info : label;
-                    entries.add(new Entry(type == TransportType.FAIRY_RING ? "fairy_ring" : "spirit_tree", name, origin));
+                    entries.add(new Entry(type == FAIRY_RING ? "fairy_ring" : "spirit_tree", name, origin));
                 }
-                else if (type == TransportType.TELEPORTATION_MINIGAME) {
+                else if (type == TELEPORTATION_MINIGAME) {
                     int destination = transport.getDestination();
                     String name = minigameName(transport.getDisplayInfo());
                     if (destination == WorldPointUtil.UNDEFINED || !seenMinigames.add(name.toLowerCase(Locale.ROOT)))

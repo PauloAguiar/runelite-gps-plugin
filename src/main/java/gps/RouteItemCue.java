@@ -6,6 +6,7 @@ import gps.transport.requirement.*;
 import java.util.*;
 import java.util.*;
 import java.util.function.*;
+import static gps.transport.TransportType.*;
 
 /**
  * What the displayed route's NEXT step uses, for the widget highlights: the first method edge the
@@ -71,7 +72,7 @@ final class RouteItemCue {
         Transport spell = null;
         for (Transport transport : transports) {
             TransportType type = transport.getType();
-            if (type == TransportType.FAIRY_RING) {
+            if (type == FAIRY_RING) {
                 if (fairyRingsNeedStaff)
                     for (int id : ItemVariations.DRAMEN_STAFF.getIds()) {
                         ids.add(id);
@@ -80,7 +81,7 @@ final class RouteItemCue {
                 continue;
             }
             if (staffOnly) continue;
-            if (type == TransportType.TELEPORTATION_SPELL) {
+            if (type == TELEPORTATION_SPELL) {
                 if (spell == null) spell = transport;
                 if (transport.getItemRequirements() != null)
                     for (ItemRequirement req : transport.getItemRequirements().getRequirements())
@@ -90,8 +91,8 @@ final class RouteItemCue {
                         }
                 continue;
             }
-            if ((type != TransportType.TELEPORTATION_ITEM && type != TransportType.QUETZAL_WHISTLE
-                && type != TransportType.TELEPORTATION_BOX) || transport.getItemRequirements() == null)
+            if ((type != TELEPORTATION_ITEM && type != QUETZAL_WHISTLE
+                && type != TELEPORTATION_BOX) || transport.getItemRequirements() == null)
                 continue;
             for (int[] variants : transport.getItemRequirements().getItems())
                 for (int id : variants) ids.add(id);
