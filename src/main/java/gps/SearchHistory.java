@@ -1,7 +1,6 @@
 package gps;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * The destination search's recent-selections list: the last {@link #LIMIT} picks, most recent

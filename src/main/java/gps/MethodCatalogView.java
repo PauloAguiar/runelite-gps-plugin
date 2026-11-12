@@ -1,24 +1,19 @@
 package gps;
 
-import gps.transport.TransportType;
+import gps.transport.*;
 import java.awt.*;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.*;
+import java.awt.event.*;
 import java.util.*;
 import java.util.List;
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
+import javax.swing.border.*;
+import javax.swing.event.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import net.runelite.client.ui.ColorScheme;
-import net.runelite.client.ui.FontManager;
-import net.runelite.client.ui.components.IconTextField;
+import net.runelite.client.ui.*;
+import net.runelite.client.ui.components.*;
 
 import static gps.PanelWidgets.CATALOG_MAX_HEIGHT;
 import static gps.PanelWidgets.addClickRecursively;

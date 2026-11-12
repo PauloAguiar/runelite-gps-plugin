@@ -1,9 +1,8 @@
 package gps.transport.parser;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
-import net.runelite.api.Quest;
+import net.runelite.api.*;
 
 /**
  * Parses quest requirements from TSV field values.

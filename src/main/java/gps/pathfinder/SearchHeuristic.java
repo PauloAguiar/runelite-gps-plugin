@@ -1,7 +1,7 @@
 package gps.pathfinder;
 
-import gps.WorldPointUtil;
-import gps.transport.Transport;
+import gps.*;
+import gps.transport.*;
 
 /**
  * A consistent (and therefore admissible) A* heuristic for one search: a lower bound on the

@@ -1,14 +1,13 @@
 package gps;
 
-import gps.pathfinder.PathStep;
-import gps.pathfinder.PathfinderConfig;
+import gps.pathfinder.*;
 import java.util.*;
-import java.util.List;
-import java.util.function.Supplier;
+import java.util.*;
+import java.util.function.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import net.runelite.client.eventbus.EventBus;
-import net.runelite.client.events.PluginMessage;
+import net.runelite.client.eventbus.*;
+import net.runelite.client.events.*;
 
 /**
  * The plugin-message integration (plan step L31, out of the plugin class). Other plugins set or

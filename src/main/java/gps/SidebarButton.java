@@ -2,9 +2,8 @@ package gps;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import net.runelite.api.GameState;
-import net.runelite.client.ui.ClientToolbar;
-import net.runelite.client.ui.NavigationButton;
+import net.runelite.api.*;
+import net.runelite.client.ui.*;
 
 /**
  * The GPS sidebar button (plan step L20, out of the plugin class): mounted only in-game, since

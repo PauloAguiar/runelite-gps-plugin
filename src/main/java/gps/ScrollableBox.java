@@ -1,10 +1,8 @@
 package gps;
 
 import java.awt.*;
-import java.awt.Dimension;
-import java.awt.Rectangle;
-import javax.swing.JPanel;
-import javax.swing.Scrollable;
+import java.awt.*;
+import javax.swing.*;
 
 /**
  * A panel that always lays out at the scroll viewport's width. A plain JPanel inside a JScrollPane

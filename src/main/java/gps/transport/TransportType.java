@@ -1,10 +1,10 @@
 package gps.transport;
 
-import java.util.function.Function;
+import java.util.function.*;
 
 import lombok.Getter;
-import net.runelite.api.Skill;
-import gps.ShortestPathConfig;
+import net.runelite.api.*;
+import gps.*;
 
 @Getter public enum TransportType {
     TRANSPORT("/transports/transports.tsv", null, null, "costTransports", ShortestPathConfig::costTransports),

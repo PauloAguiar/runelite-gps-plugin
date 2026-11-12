@@ -1,6 +1,6 @@
 package gps;
 
-import java.util.List;
+import java.util.*;
 
 /**
  * The step-by-step directions of the displayed route, built once per route instance (plan step

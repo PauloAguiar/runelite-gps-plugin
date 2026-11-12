@@ -1,10 +1,10 @@
 package gps;
 
 import java.util.*;
-import java.util.TreeSet;
+import java.util.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import net.runelite.api.gameval.ObjectID;
+import net.runelite.api.gameval.*;
 
 /**
  * Maps the furniture object ids seen in a scanned player-owned house to the config declarations

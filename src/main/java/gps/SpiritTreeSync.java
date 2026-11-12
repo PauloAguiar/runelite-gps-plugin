@@ -1,18 +1,17 @@
 package gps;
 
-import gps.pathfinder.PathfinderConfig;
+import gps.pathfinder.*;
 import java.util.*;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.*;
+import java.util.regex.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import net.runelite.api.Client;
+import net.runelite.api.*;
 import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.widgets.Widget;
-import net.runelite.client.callback.ClientThread;
-import net.runelite.client.config.ConfigManager;
+import net.runelite.api.widgets.*;
+import net.runelite.client.callback.*;
+import net.runelite.client.config.*;
 
 /**
  * The planted spirit trees (plan step L17, out of the plugin class): read once per session from

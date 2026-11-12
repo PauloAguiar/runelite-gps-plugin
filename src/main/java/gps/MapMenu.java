@@ -1,20 +1,19 @@
 package gps;
 
-import gps.pathfinder.PathStep;
-import java.awt.Shape;
+import gps.pathfinder.*;
+import java.awt.*;
 import java.util.*;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.runelite.api.*;
-import net.runelite.api.Client;
+import net.runelite.api.*;
 import net.runelite.api.Point;
-import net.runelite.api.events.MenuEntryAdded;
+import net.runelite.api.events.*;
 import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.widgets.Widget;
-import net.runelite.client.ui.JagexColors;
-import net.runelite.client.util.ColorUtil;
-import net.runelite.client.util.Text;
+import net.runelite.api.widgets.*;
+import net.runelite.client.ui.*;
+import net.runelite.client.util.*;
 
 /**
  * The right-click menu entries (plan step L22, out of the plugin class): "Set GPS Target" on a

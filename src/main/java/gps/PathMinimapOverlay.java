@@ -1,21 +1,18 @@
 package gps;
 
-import com.google.inject.Inject;
+import com.google.inject.*;
 
 import java.awt.*;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Shape;
+import java.awt.*;
 
 import java.util.List;
 import net.runelite.api.*;
-import net.runelite.api.Client;
-import net.runelite.api.Perspective;
+import net.runelite.api.*;
 import net.runelite.api.Point;
-import net.runelite.api.coords.LocalPoint;
+import net.runelite.api.coords.*;
 import net.runelite.client.ui.overlay.*;
-import net.runelite.client.ui.overlay.Overlay;
-import gps.pathfinder.PathStep;
+import net.runelite.client.ui.overlay.*;
+import gps.pathfinder.*;
 
 public class PathMinimapOverlay extends Overlay {
     private final Client client;

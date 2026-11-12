@@ -1,20 +1,18 @@
 package gps;
 
 import java.awt.*;
-import java.awt.Color;
+import java.awt.*;
 import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.Shape;
-import java.awt.geom.Ellipse2D;
-import java.awt.image.BufferedImage;
-import java.util.ArrayList;
+import java.awt.geom.*;
+import java.awt.image.*;
+import java.util.*;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.*;
 import net.runelite.api.widgets.Widget;
-import net.runelite.client.game.SpriteManager;
+import net.runelite.client.game.*;
 
 /**
  * The minimap's clip shape (plan step L13, out of the plugin class): the outline of the fixed or

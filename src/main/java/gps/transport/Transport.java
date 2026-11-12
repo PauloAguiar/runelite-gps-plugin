@@ -4,13 +4,11 @@ import java.util.*;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Quest;
-import net.runelite.api.Skill;
-import gps.TeleportMethod;
-import gps.WorldPointUtil;
-import gps.leagues.LeagueRegion;
+import net.runelite.api.*;
+import gps.*;
+import gps.leagues.*;
 import gps.transport.parser.*;
-import gps.transport.requirement.TransportItems;
+import gps.transport.requirement.*;
 
 /**
  * This class represents a travel point between two WorldPoints.

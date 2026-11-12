@@ -1,12 +1,11 @@
 package gps;
 
 import java.util.*;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import net.runelite.api.ChatMessageType;
+import java.util.*;
+import java.util.regex.*;
+import net.runelite.api.*;
 import net.runelite.api.gameval.ItemID;
-import net.runelite.client.config.ConfigManager;
+import net.runelite.client.config.*;
 
 /**
  * Parses the balloon log-storage chat messages into per-type stored counts. The storage crates'

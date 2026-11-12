@@ -1,8 +1,8 @@
 package gps;
 
-import java.awt.event.KeyEvent;
-import java.util.function.Supplier;
-import net.runelite.client.config.Keybind;
+import java.awt.event.*;
+import java.util.function.*;
+import net.runelite.client.config.*;
 import net.runelite.client.input.KeyListener;
 
 /**

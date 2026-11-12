@@ -1,7 +1,6 @@
 package gps;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 

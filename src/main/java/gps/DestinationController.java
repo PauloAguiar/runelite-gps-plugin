@@ -1,10 +1,10 @@
 package gps;
 
-import gps.pathfinder.PathfinderConfig;
+import gps.pathfinder.*;
 import java.util.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import net.runelite.api.ChatMessageType;
+import net.runelite.api.*;
 
 /**
  * The GPS destination (plan step L36, out of the plugin class): the single source of truth for

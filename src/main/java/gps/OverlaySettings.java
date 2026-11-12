@@ -1,7 +1,7 @@
 package gps;
 
-import java.awt.Color;
-import net.runelite.client.config.FontType;
+import java.awt.*;
+import net.runelite.client.config.*;
 
 /**
  * The display settings the overlays read every frame (plan step L24, out of the plugin

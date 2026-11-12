@@ -1,18 +1,14 @@
 package gps;
 
-import gps.transport.TransportType;
+import gps.transport.*;
 import java.awt.*;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dimension;
+import java.awt.*;
 import java.awt.event.*;
-import java.util.Set;
-import java.awt.image.BufferedImage;
+import java.util.*;
+import java.awt.image.*;
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import net.runelite.client.ui.ColorScheme;
-import net.runelite.client.ui.FontManager;
+import javax.swing.border.*;
+import net.runelite.client.ui.*;
 
 /**
  * The side panel's shared chrome (panel series P1): the sizes and accent colours every section

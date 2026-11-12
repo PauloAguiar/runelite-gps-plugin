@@ -1,6 +1,6 @@
 package gps;
 
-import java.util.Locale;
+import java.util.*;
 
 /**
  * Fuzzy name matching for the destination search. {@link #score} returns 0 for no match and a

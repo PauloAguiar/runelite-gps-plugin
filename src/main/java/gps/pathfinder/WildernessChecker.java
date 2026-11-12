@@ -1,8 +1,8 @@
 package gps.pathfinder;
 
-import java.util.Set;
+import java.util.*;
 
-import net.runelite.api.coords.WorldArea;
+import net.runelite.api.coords.*;
 
 import static gps.WorldPointUtil.distanceToArea2D;
 

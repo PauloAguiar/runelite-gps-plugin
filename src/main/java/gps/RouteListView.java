@@ -1,24 +1,16 @@
 package gps;
 
-import gps.pathfinder.CostUnits;
-import gps.transport.Transport;
-import gps.transport.TransportType;
+import gps.pathfinder.*;
+import gps.transport.*;
 import java.awt.*;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dimension;
-import java.awt.Point;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.*;
+import java.awt.event.*;
 import java.util.List;
-import java.util.Map;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
+import java.util.*;
+import java.util.function.*;
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import net.runelite.client.ui.ColorScheme;
-import net.runelite.client.ui.FontManager;
+import javax.swing.border.*;
+import net.runelite.client.ui.*;
 
 import static gps.PanelWidgets.CONTROL_SIZE;
 import static gps.PanelWidgets.SAIL_DOT_COLOUR;

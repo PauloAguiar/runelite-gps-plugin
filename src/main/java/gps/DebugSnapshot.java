@@ -1,18 +1,17 @@
 package gps;
 
-import com.google.gson.Gson;
+import com.google.gson.*;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
+import java.nio.charset.*;
+import java.text.*;
 import java.util.*;
-import java.util.List;
+import java.util.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
-import net.runelite.api.Client;
-import net.runelite.api.Player;
-import net.runelite.client.RuneLite;
+import net.runelite.api.*;
+import net.runelite.client.*;
 
 /**
  * A JSON snapshot of the current routing state, written to {@code ~/.runelite/gps-debug/}:

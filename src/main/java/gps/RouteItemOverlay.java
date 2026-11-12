@@ -1,15 +1,12 @@
 package gps;
 
 import java.awt.*;
-import java.awt.Color;
-import java.awt.Rectangle;
-import java.util.HashMap;
-import java.util.Map;
+import java.awt.*;
+import java.util.*;
 import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.widgets.WidgetItem;
-import net.runelite.api.widgets.WidgetUtil;
-import net.runelite.client.ui.FontManager;
-import net.runelite.client.ui.overlay.WidgetItemOverlay;
+import net.runelite.api.widgets.*;
+import net.runelite.client.ui.*;
+import net.runelite.client.ui.overlay.*;
 
 /**
  * Marks the items the displayed route needs with a {@link RouteItemMark} in the "Next item" colour

@@ -1,14 +1,11 @@
 package gps.transport.parser;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
+import java.util.*;
+import java.util.regex.*;
 
 import lombok.extern.slf4j.Slf4j;
-import gps.ItemVariations;
-import gps.Util;
-import gps.transport.requirement.ItemRequirement;
-import gps.transport.requirement.TransportItems;
+import gps.*;
+import gps.transport.requirement.*;
 
 /**
  * Parses item requirements from TSV field values.

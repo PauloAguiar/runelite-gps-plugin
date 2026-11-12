@@ -2,16 +2,15 @@ package gps;
 
 import gps.pathfinder.*;
 import gps.transport.*;
-import gps.transport.requirement.ItemRequirement;
+import gps.transport.requirement.*;
 import java.util.*;
-import java.util.List;
+import java.util.*;
 import lombok.*;
-import gps.transport.Transport;
+import gps.transport.*;
 import net.runelite.api.*;
-import net.runelite.api.Client;
-import net.runelite.api.Item;
+import net.runelite.api.*;
 import net.runelite.api.gameval.InventoryID;
-import net.runelite.api.gameval.VarbitID;
+import net.runelite.api.gameval.*;
 
 /**
  * Builds the "Google Maps"-style step list for a route: walking legs with their length and target,

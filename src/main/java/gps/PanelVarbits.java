@@ -1,7 +1,7 @@
 package gps;
 
-import java.util.List;
-import net.runelite.api.Client;
+import java.util.*;
+import net.runelite.api.*;
 
 /**
  * The varbits the side panel shows (plan step L25, out of the plugin class), cached on the

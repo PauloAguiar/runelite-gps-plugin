@@ -1,10 +1,9 @@
 package gps;
 
-import java.awt.image.BufferedImage;
-import java.util.HashMap;
-import java.util.Map;
-import javax.swing.ImageIcon;
-import net.runelite.client.util.ImageUtil;
+import java.awt.image.*;
+import java.util.*;
+import javax.swing.*;
+import net.runelite.client.util.*;
 
 /**
  * Small 16px UI icons for the alternative-routes panel, PNG resources under /icons. They were drawn

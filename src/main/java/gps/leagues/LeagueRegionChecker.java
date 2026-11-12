@@ -1,9 +1,8 @@
 package gps.leagues;
 
-import gps.pathfinder.WildernessChecker;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import gps.pathfinder.*;
+import java.io.*;
+import java.nio.charset.*;
 import java.util.*;
 
 import lombok.extern.slf4j.Slf4j;

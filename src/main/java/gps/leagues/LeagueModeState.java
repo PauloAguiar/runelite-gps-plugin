@@ -2,8 +2,7 @@ package gps.leagues;
 
 import java.util.*;
 import lombok.Getter;
-import net.runelite.api.Client;
-import net.runelite.api.WorldType;
+import net.runelite.api.*;
 
 /**
  * Snapshot of the player's Demonic Pacts League state, refreshed once per

@@ -1,13 +1,12 @@
 package gps;
 
-import java.awt.image.BufferedImage;
-import java.util.Set;
-import java.util.function.Supplier;
+import java.awt.image.*;
+import java.util.*;
+import java.util.function.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
-import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
-import net.runelite.client.util.ImageUtil;
+import net.runelite.client.ui.overlay.worldmap.*;
+import net.runelite.client.util.*;
 
 /**
  * The destination pin on the world map (plan step L33, out of the plugin class). A single target

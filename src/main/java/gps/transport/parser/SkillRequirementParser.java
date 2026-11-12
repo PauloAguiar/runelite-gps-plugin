@@ -1,7 +1,7 @@
 package gps.transport.parser;
 
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Skill;
+import net.runelite.api.*;
 
 /**
  * Parses skill level requirements from TSV field values.

@@ -1,10 +1,9 @@
 package gps.transport;
 
-import java.util.EnumMap;
-import java.util.Map;
+import java.util.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import net.runelite.api.Quest;
+import net.runelite.api.*;
 
 /**
  * What the player sees of a transport type, in one table (plan step L5): the catalog category

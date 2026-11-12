@@ -1,7 +1,6 @@
 package gps;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Which spellbook component a teleport spell's Display info names, from spell-widgets.tsv: the

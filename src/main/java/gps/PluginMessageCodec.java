@@ -1,13 +1,13 @@
 package gps;
 
-import gps.pathfinder.PathStep;
-import gps.transport.Transport;
+import gps.pathfinder.*;
+import gps.transport.*;
 import java.util.*;
-import java.util.List;
-import java.util.function.BiFunction;
+import java.util.*;
+import java.util.function.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.coords.*;
 
 /**
  * The plugin-message wire format (plan step L8, out of the plugin class): what other plugins

@@ -1,6 +1,6 @@
 package gps;
 
-import gps.pathfinder.CostUnits;
+import gps.pathfinder.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 

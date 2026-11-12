@@ -1,7 +1,7 @@
 package gps;
 
 import java.util.*;
-import java.util.List;
+import java.util.*;
 
 /**
  * A minimal, growable list implementation for primitive {@code int} values.

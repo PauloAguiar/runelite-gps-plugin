@@ -2,9 +2,9 @@ package gps.pathfinder;
 
 import gps.*;
 import java.util.*;
-import java.util.List;
+import java.util.*;
 
-import gps.transport.Transport;
+import gps.transport.*;
 
 public final class TransportAvailability {
     public static final Transport[] EMPTY_TRANSPORTS = new Transport[0];

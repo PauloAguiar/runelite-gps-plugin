@@ -1,8 +1,8 @@
 package gps;
 
-import java.util.regex.Pattern;
-import net.runelite.api.ChatMessageType;
-import net.runelite.client.config.ConfigManager;
+import java.util.regex.*;
+import net.runelite.api.*;
+import net.runelite.client.config.*;
 
 /**
  * Any canoe station stores one axe for the player, shared by every station, and a stored axe

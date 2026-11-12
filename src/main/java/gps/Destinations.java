@@ -1,17 +1,15 @@
 package gps;
 
-import gps.pathfinder.CollisionMap;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import gps.pathfinder.*;
+import java.io.*;
+import java.nio.charset.*;
 import java.util.*;
-import java.util.List;
-import java.util.function.IntPredicate;
+import java.util.*;
+import java.util.function.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import gps.transport.Transport;
-import gps.transport.TransportType;
+import gps.transport.*;
 
 import static gps.WorldPointUtil.packWorldPoint;
 import static gps.WorldPointUtil.unpackWorldPlane;

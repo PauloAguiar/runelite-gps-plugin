@@ -1,18 +1,15 @@
 package gps.pathfinder;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.io.*;
 import java.util.*;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.util.zip.*;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import static net.runelite.api.Constants.REGION_SIZE;
 
-import gps.ShortestPathPlugin;
-import gps.Util;
+import gps.*;
 
 public class SplitFlagMap {
     private static final int FLAG_COUNT = 2;

@@ -1,10 +1,8 @@
 package gps;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-import net.runelite.client.externalplugins.ExternalPluginManager;
-import net.runelite.client.externalplugins.PluginHubManifest;
+import java.io.*;
+import java.util.*;
+import net.runelite.client.externalplugins.*;
 
 /**
  * The running build's identity, so reports always name exactly what ran (no constant to keep in

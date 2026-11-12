@@ -1,10 +1,10 @@
 package gps;
 
 import gps.transport.*;
-import java.util.Locale;
+import java.util.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import gps.transport.Transport;
+import gps.transport.*;
 
 /**
  * A stable, human-meaningful identity for a single teleport/transport option, used by the

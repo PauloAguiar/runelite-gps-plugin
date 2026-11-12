@@ -1,6 +1,5 @@
 package gps.transport.requirement;
 
-
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
@@ -36,5 +35,5 @@ import lombok.Getter;
         this.offhandIds = offhandIds;
         this.quantity = quantity;
     }
-
+
 }

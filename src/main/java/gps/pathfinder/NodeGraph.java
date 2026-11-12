@@ -1,9 +1,9 @@
 package gps.pathfinder;
 
 import java.util.*;
-import java.util.List;
+import java.util.*;
 
-import gps.WorldPointUtil;
+import gps.*;
 
 /**
  * Structure-of-Arrays store for pathfinding nodes.

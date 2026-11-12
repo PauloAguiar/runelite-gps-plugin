@@ -1,10 +1,7 @@
 package gps.transport.parser;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Pattern;
+import java.util.*;
+import java.util.regex.*;
 
 import lombok.extern.slf4j.Slf4j;
 

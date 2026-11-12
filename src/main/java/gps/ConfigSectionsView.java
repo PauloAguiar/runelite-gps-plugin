@@ -1,20 +1,17 @@
 package gps;
 
 import java.awt.*;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.image.BufferedImage;
+import java.awt.*;
+import java.awt.image.*;
 import java.util.List;
-import java.util.function.IntConsumer;
+import java.util.function.*;
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
+import javax.swing.border.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import net.runelite.client.config.ConfigItem;
-import net.runelite.client.ui.ColorScheme;
-import net.runelite.client.ui.FontManager;
-import net.runelite.client.util.ImageUtil;
+import net.runelite.client.config.*;
+import net.runelite.client.ui.*;
+import net.runelite.client.util.*;
 
 import static gps.PanelWidgets.BANNER_WARN_ACCENT;
 import static gps.PanelWidgets.banner;

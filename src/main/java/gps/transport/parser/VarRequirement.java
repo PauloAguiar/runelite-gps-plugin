@@ -1,10 +1,8 @@
 package gps.transport.parser;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import java.util.function.IntUnaryOperator;
+import java.util.function.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
@@ -115,7 +113,7 @@ import lombok.Getter;
     public boolean isVarbit() { return varType == VarType.VARBIT; }
 
     public boolean isVarPlayer() { return varType == VarType.VARPLAYER; }
-
+
     @Override public String toString() {
         if (alternatives != null) return varType + "[any of " + alternatives + "]";
         return varType + "[" + id + " " + checkType.getCode() + " " + value + "]";

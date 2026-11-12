@@ -1,15 +1,13 @@
 package gps;
 
 import java.util.*;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.*;
+import java.util.stream.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import net.runelite.api.Client;
-import net.runelite.api.GameState;
-import net.runelite.api.gameval.DBTableID;
-import net.runelite.api.gameval.VarbitID;
-import net.runelite.client.config.ConfigManager;
+import net.runelite.api.*;
+import net.runelite.api.gameval.*;
+import net.runelite.client.config.*;
 
 /**
  * The panel's boat banner (plan step L7, out of the plugin class): the owned boats as

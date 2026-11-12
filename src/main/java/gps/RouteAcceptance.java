@@ -1,9 +1,8 @@
 package gps;
 
-import gps.transport.Transport;
-import gps.transport.TransportType;
-import java.util.List;
-import java.util.function.Predicate;
+import gps.transport.*;
+import java.util.*;
+import java.util.function.*;
 
 /**
  * The one copy of the page acceptance rule (plan step L1). The exclusion chain, the seed pass and

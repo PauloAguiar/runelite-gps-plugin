@@ -1,9 +1,9 @@
 package gps.transport;
 
 import java.util.*;
-import net.runelite.api.Quest;
-import gps.transport.parser.VarRequirement;
-import gps.transport.requirement.TransportItems;
+import net.runelite.api.*;
+import gps.transport.parser.*;
+import gps.transport.requirement.*;
 
 /**
  * Load-scoped deduplication pools for transport requirement objects and display strings (issue

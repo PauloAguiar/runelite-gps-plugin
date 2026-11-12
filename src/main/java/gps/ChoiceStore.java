@@ -1,14 +1,14 @@
 package gps;
 
-import com.google.gson.Gson;
-import gps.transport.TransportType;
+import com.google.gson.*;
+import gps.transport.*;
 import java.util.*;
-import java.util.List;
-import java.util.function.Supplier;
+import java.util.*;
+import java.util.function.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.client.config.ConfigManager;
+import net.runelite.client.config.*;
 
 /**
  * The persisted user choices (plan step L15, out of the plugin class): the excluded methods, the

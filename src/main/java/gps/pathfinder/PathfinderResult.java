@@ -1,6 +1,6 @@
 package gps.pathfinder;
 
-import java.util.List;
+import java.util.*;
 import lombok.Getter;
 
 @Getter public class PathfinderResult {

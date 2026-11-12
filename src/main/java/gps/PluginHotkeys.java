@@ -1,11 +1,10 @@
 package gps;
 
-import java.awt.Point;
+import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
-import net.runelite.client.config.Keybind;
+import java.util.function.*;
+import net.runelite.client.config.*;
 import net.runelite.client.input.*;
 
 /**

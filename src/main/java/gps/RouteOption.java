@@ -1,11 +1,10 @@
 package gps;
 
-import gps.transport.TransportType;
+import gps.transport.*;
 import java.util.*;
-import java.util.List;
+import java.util.*;
 import lombok.Getter;
-import gps.pathfinder.PathStep;
-import gps.transport.Transport;
+import gps.pathfinder.*;
 
 /**
  * One alternative route to the target, produced by {@link AlternativeRoutesService}. Each route is a

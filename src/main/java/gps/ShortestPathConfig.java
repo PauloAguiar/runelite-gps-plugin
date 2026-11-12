@@ -1,6 +1,6 @@
 package gps;
 
-import java.awt.Color;
+import java.awt.*;
 import net.runelite.client.config.*;
 
 @SuppressWarnings("SameReturnValue") @ConfigGroup(ShortestPathPlugin.CONFIG_GROUP)

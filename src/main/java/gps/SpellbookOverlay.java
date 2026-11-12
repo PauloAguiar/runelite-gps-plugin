@@ -1,13 +1,12 @@
 package gps;
 
 import java.awt.*;
-import java.awt.Dimension;
-import java.awt.Rectangle;
-import java.awt.geom.RoundRectangle2D;
-import net.runelite.api.Client;
-import net.runelite.api.widgets.Widget;
+import java.awt.*;
+import java.awt.geom.*;
+import net.runelite.api.*;
+import net.runelite.api.widgets.*;
 import net.runelite.client.ui.overlay.*;
-import net.runelite.client.ui.overlay.Overlay;
+import net.runelite.client.ui.overlay.*;
 
 /**
  * Frames the spell the displayed route casts next in the open spellbook (see {@link SpellWidgets}),

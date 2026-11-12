@@ -1,16 +1,12 @@
 package gps;
 
 import java.util.*;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.BooleanSupplier;
-import java.util.function.Supplier;
+import java.util.*;
+import java.util.function.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.client.config.ConfigManager;
+import net.runelite.client.config.*;
 
 /**
  * Smart house-furniture detection (plan step L11, out of the plugin class). While the player is

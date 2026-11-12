@@ -1,12 +1,10 @@
 package gps;
 
-import gps.pathfinder.PathfinderConfig;
-import gps.transport.Transport;
-import gps.transport.requirement.ItemRequirement;
-import gps.transport.requirement.TransportItems;
+import gps.pathfinder.*;
+import gps.transport.*;
+import gps.transport.requirement.*;
 import java.util.*;
-import net.runelite.api.Item;
-import net.runelite.api.ItemContainer;
+import net.runelite.api.*;
 
 /**
  * Precomputed item-dependency index: which item IDs, at which quantity thresholds, can change

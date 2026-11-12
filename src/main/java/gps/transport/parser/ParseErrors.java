@@ -1,7 +1,7 @@
 package gps.transport.parser;
 
 import java.util.*;
-import java.util.List;
+import java.util.*;
 
 /**
  * Every requirement the field parsers could not read, kept so a test can FAIL on them. A

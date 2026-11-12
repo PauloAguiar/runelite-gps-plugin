@@ -1,13 +1,13 @@
 package gps;
 
-import java.awt.Rectangle;
+import java.awt.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import net.runelite.api.Client;
+import net.runelite.api.*;
 import net.runelite.api.Point;
 import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.widgets.Widget;
-import net.runelite.api.worldmap.WorldMap;
+import net.runelite.api.widgets.*;
+import net.runelite.api.worldmap.*;
 
 /**
  * World map projection (plan step L13, out of the plugin class): world points to the map

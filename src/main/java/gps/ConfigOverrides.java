@@ -1,9 +1,9 @@
 package gps;
 
-import gps.transport.TransportType;
-import java.awt.Color;
+import gps.transport.*;
+import java.awt.*;
 import java.util.*;
-import java.util.regex.Pattern;
+import java.util.regex.*;
 import lombok.extern.slf4j.Slf4j;
 
 /**

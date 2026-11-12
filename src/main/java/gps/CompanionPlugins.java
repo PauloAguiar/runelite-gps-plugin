@@ -2,7 +2,7 @@ package gps;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import net.runelite.client.config.ConfigManager;
+import net.runelite.client.config.*;
 import net.runelite.client.plugins.*;
 
 /**

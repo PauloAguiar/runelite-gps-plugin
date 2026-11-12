@@ -1,7 +1,7 @@
 package gps.transport.parser;
 
 import java.util.*;
-import java.util.List;
+import java.util.*;
 
 /**
  * Parses TSV file contents into TransportRecord objects.

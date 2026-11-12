@@ -1,13 +1,11 @@
 package gps;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
+import java.awt.*;
 import java.util.*;
 import java.util.List;
-import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
-import net.runelite.client.ui.ColorScheme;
-import net.runelite.client.ui.PluginPanel;
+import javax.swing.*;
+import javax.swing.border.*;
+import net.runelite.client.ui.*;
 
 /**
  * The GPS side panel: the composition of its views and the render that keeps them current.

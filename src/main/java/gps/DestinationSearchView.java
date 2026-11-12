@@ -1,21 +1,16 @@
 package gps;
 
 import java.awt.*;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
+import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.regex.*;
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import net.runelite.client.ui.ColorScheme;
-import net.runelite.client.ui.FontManager;
-import net.runelite.client.ui.components.IconTextField;
+import javax.swing.border.*;
+import javax.swing.event.*;
+import net.runelite.client.ui.*;
+import net.runelite.client.ui.components.*;
 
 import static gps.PanelWidgets.BANNER_INFO_ACCENT;
 import static gps.PanelWidgets.control;

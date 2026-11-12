@@ -1,12 +1,11 @@
 package gps;
 
-import java.awt.Component;
+import java.awt.*;
 import java.util.*;
 import java.util.List;
-import javax.swing.BoxLayout;
-import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
-import net.runelite.client.ui.ColorScheme;
+import javax.swing.*;
+import javax.swing.border.*;
+import net.runelite.client.ui.*;
 
 import static gps.PanelWidgets.sectionShell;
 

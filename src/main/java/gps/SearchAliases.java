@@ -1,7 +1,6 @@
 package gps;
 
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Player vocabulary for the destination search (plan step N11): query tokens that are neither a

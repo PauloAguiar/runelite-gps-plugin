@@ -1,6 +1,6 @@
 package gps.pathfinder;
 
-import java.util.ArrayList;
+import java.util.*;
 
 /**
  * A monotone priority queue of {@code int} node ids keyed by small non-negative integer costs —

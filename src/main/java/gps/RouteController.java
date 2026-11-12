@@ -1,14 +1,13 @@
 package gps;
 
-import gps.pathfinder.PathfinderConfig;
+import gps.pathfinder.*;
 import java.util.*;
-import java.util.List;
-import javax.swing.SwingUtilities;
+import java.util.*;
+import javax.swing.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.GameState;
-import net.runelite.api.ItemContainer;
+import net.runelite.api.*;
 
 /**
  * The alternative-routes generation (plan step L35, out of the plugin class): when a generation

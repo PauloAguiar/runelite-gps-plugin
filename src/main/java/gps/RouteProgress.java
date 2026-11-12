@@ -1,9 +1,8 @@
 package gps;
 
-import gps.pathfinder.CollisionMap;
-import gps.pathfinder.PathStep;
+import gps.pathfinder.*;
 import java.util.*;
-import java.util.List;
+import java.util.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 

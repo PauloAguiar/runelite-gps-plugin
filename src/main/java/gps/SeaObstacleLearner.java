@@ -1,12 +1,11 @@
 package gps;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.IntSupplier;
+import java.util.*;
+import java.util.function.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.runelite.api.*;
-import net.runelite.api.Client;
+import net.runelite.api.*;
 
 /**
  * Passive sea-obstacle learning (plan step L19, out of the plugin class): every ten ticks,

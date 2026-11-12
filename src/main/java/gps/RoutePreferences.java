@@ -1,15 +1,14 @@
 package gps;
 
-import com.google.gson.Gson;
+import com.google.gson.*;
 import java.util.*;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BooleanSupplier;
-import java.util.function.Supplier;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.function.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.client.config.ConfigManager;
+import net.runelite.client.config.*;
 
 /**
  * The ranking preferences (plan step L14, out of the plugin class): per-method tiers (see

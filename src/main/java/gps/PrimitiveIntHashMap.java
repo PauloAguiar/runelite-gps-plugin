@@ -1,7 +1,6 @@
 package gps;
 
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.*;
 
 /**
  * A lightweight hash map keyed by primitive {@code int} values using an open-addressed table with

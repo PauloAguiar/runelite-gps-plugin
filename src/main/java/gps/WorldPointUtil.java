@@ -2,10 +2,9 @@ package gps;
 
 import java.util.*;
 import net.runelite.api.*;
-import net.runelite.api.Client;
+import net.runelite.api.*;
 import static net.runelite.api.Constants.CHUNK_SIZE;
 import static net.runelite.api.Perspective.LOCAL_COORD_BITS;
-import net.runelite.api.Player;
 import net.runelite.api.coords.*;
 
 /**

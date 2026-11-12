@@ -1,16 +1,12 @@
 package gps;
 
-import gps.pathfinder.PathStep;
-import gps.transport.Transport;
-import gps.transport.TransportType;
-import java.util.List;
-import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.function.Supplier;
-import net.runelite.api.Client;
-import net.runelite.api.ScriptID;
+import gps.pathfinder.*;
+import gps.transport.*;
+import java.util.*;
+import java.util.function.*;
+import net.runelite.api.*;
 import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.widgets.Widget;
+import net.runelite.api.widgets.*;
 
 /**
  * The fairy-ring log helper (plan step L17, out of the plugin class): while the log is open and

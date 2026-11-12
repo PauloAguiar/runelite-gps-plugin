@@ -1,7 +1,7 @@
 package gps.transport.requirement;
 
 import java.util.*;
-import java.util.List;
+import java.util.*;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

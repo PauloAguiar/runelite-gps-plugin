@@ -1,11 +1,10 @@
 package gps;
 
-import gps.pathfinder.PathStep;
-import gps.transport.Transport;
-import gps.transport.TransportType;
-import gps.transport.requirement.ItemRequirement;
+import gps.pathfinder.*;
+import gps.transport.*;
+import gps.transport.requirement.*;
 import java.util.*;
-import java.util.List;
+import java.util.*;
 import java.util.function.*;
 
 /**

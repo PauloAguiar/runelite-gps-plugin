@@ -1,20 +1,18 @@
 package gps;
 
-import com.google.inject.Inject;
+import com.google.inject.*;
 import java.awt.*;
-import java.awt.Dimension;
-import java.awt.Rectangle;
+import java.awt.*;
 import java.util.*;
 import java.util.List;
-import net.runelite.api.Client;
+import net.runelite.api.*;
 import net.runelite.api.Point;
-import net.runelite.api.gameval.InterfaceID;
-import net.runelite.client.ui.FontManager;
-import net.runelite.client.ui.JagexColors;
+import net.runelite.api.gameval.*;
+import net.runelite.client.ui.*;
 import net.runelite.client.ui.overlay.*;
-import net.runelite.client.ui.overlay.Overlay;
-import gps.pathfinder.PathStep;
-import gps.transport.Transport;
+import net.runelite.client.ui.overlay.*;
+import gps.pathfinder.*;
+import gps.transport.*;
 
 public class PathMapTooltipOverlay extends Overlay {
     private static final int TOOLTIP_OFFSET_HEIGHT = 25;

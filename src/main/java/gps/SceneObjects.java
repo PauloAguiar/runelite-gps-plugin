@@ -1,9 +1,8 @@
 package gps;
 
 import net.runelite.api.*;
-import net.runelite.api.Client;
-import net.runelite.api.Tile;
-import net.runelite.api.coords.LocalPoint;
+import net.runelite.api.*;
+import net.runelite.api.coords.*;
 
 /**
  * Live-scene object queries shared by the overlays, mainly the "is this door still closed"

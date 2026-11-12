@@ -1,9 +1,8 @@
 package gps;
 
-import gps.pathfinder.PathStep;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Predicate;
+import gps.pathfinder.*;
+import java.util.*;
+import java.util.function.*;
 
 /**
  * Judgements about a route (plan step L28, out of the plugin class): whether its endpoint is

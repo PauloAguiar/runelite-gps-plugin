@@ -1,13 +1,11 @@
 package gps;
 
-import java.awt.Color;
-import java.awt.Image;
-import java.awt.image.BufferedImage;
+import java.awt.*;
+import java.awt.image.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import net.runelite.client.game.ItemManager;
-import net.runelite.client.util.ColorUtil;
-import net.runelite.client.util.ImageUtil;
+import net.runelite.client.game.*;
+import net.runelite.client.util.*;
 
 /**
  * The widget mark for the route's next item, built once per item and kept by the overlay: the

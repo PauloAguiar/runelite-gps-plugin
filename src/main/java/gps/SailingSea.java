@@ -1,13 +1,12 @@
 package gps;
 
-import gps.pathfinder.CollisionMap;
-import gps.transport.Transport;
-import gps.transport.TransportType;
+import gps.pathfinder.*;
+import gps.transport.*;
 import java.io.*;
 import java.util.*;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.*;
-import java.util.zip.InflaterInputStream;
+import java.util.zip.*;
 
 import static gps.WorldPointUtil.packWorldPoint;
 import static gps.WorldPointUtil.unpackWorldX;

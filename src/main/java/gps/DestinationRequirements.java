@@ -2,9 +2,8 @@ package gps;
 
 import java.util.*;
 import lombok.Getter;
-import net.runelite.api.Quest;
-import net.runelite.api.Skill;
-import gps.transport.parser.VarRequirement;
+import net.runelite.api.*;
+import gps.transport.parser.*;
 
 /**
  * Optional access requirements for a destination tile (e.g. bank booths). Empty requirements mean

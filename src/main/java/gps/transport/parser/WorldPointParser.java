@@ -1,7 +1,7 @@
 package gps.transport.parser;
 
-import gps.WorldPointUtil;
-import gps.transport.Transport;
+import gps.*;
+import gps.transport.*;
 
 /**
  * Parses world point coordinates from TSV field values.
