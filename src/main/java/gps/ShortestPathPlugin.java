@@ -43,10 +43,8 @@ import static gps.WorldPointUtil.fromLocalInstance;
 // name, and the original Shortest Path plugin's main class has the same one — the two plugins
 // were reading and writing each other's enabled state (a disabled Shortest Path read as enabled
 // while GPS was on, and toggling one toggled the other's stored state).
-@PluginDescriptor(name = "GPS", configName = "GpsPlugin", description = "Turn-by-turn navigation for Gielinor:<br>"
-    +
-    "live directions with ETA, alternative teleport routes and closed-door hints.<br>"
-    +
+@PluginDescriptor(name = "GPS", configName = "GpsPlugin", description = "Turn-by-turn navigation for Gielinor:<br>" +
+    "live directions with ETA, alternative teleport routes and closed-door hints.<br>" +
     "Right click on the world map or shift right click a tile to set a destination", tags = {"gps", "navigation",
     "directions", "route", "pathfinder", "map", "waypoint", "shortest", "path", "teleport", "eta"})
 public class ShortestPathPlugin extends Plugin {
@@ -136,12 +134,10 @@ public class ShortestPathPlugin extends Plugin {
     private final JourneyTracker journey = new JourneyTracker();
     // The destination and every way of setting it (see DestinationController): the single source
     // of truth for where the player is going, written on the client thread, read from ticks and overlays.
-    private final DestinationController destination =
-        new DestinationController(this, session, routes, mapMarker, offRoute, journey);
+    private final DestinationController destination = new DestinationController(this, session, routes, mapMarker, offRoute, journey);
     // The hotkeys and the arrival-panel click (see PluginHotkeys); registered at startup. The
     // bindings are read on each press (config is injected after field initialisation).
-    private final PluginHotkeys hotkeys = new PluginHotkeys(
-        () -> config.clearPathHotkey(), destination::clear,
+    private final PluginHotkeys hotkeys = new PluginHotkeys(() -> config.clearPathHotkey(), destination::clear,
         () -> config.focusSearchHotkey(), this::focusSearch,
         point -> routeDirectionsOverlay != null && routeDirectionsOverlay.dismissArrivalAt(point));
     // The panel's nearest-bank quick buttons as hotkeys (see NearestBankHotkeys); registered at
@@ -210,12 +206,8 @@ public class ShortestPathPlugin extends Plugin {
         searchMemory.load();
         routes.start(new AlternativeRoutesService(clientThread, pathfinderConfig.copyForPlanning()));
         altPanel = new ShortestPathPanel(this);
-        sidebar = new SidebarButton(clientToolbar, NavigationButton.builder()
-            .tooltip("GPS")
-            .icon(RouteIcons.gpsPin())
-            .priority(70)
-            .panel(altPanel)
-            .build());
+        sidebar = new SidebarButton(clientToolbar, NavigationButton.builder().tooltip("GPS").icon(RouteIcons.gpsPin()).priority(70)
+            .panel(altPanel).build());
         sidebar.show(GameState.LOGGED_IN.equals(client.getGameState()));
 
         // Populate the teleport-methods catalog so it's visible before any target is set, and check
@@ -314,8 +306,7 @@ public class ShortestPathPlugin extends Plugin {
      */
     public int displayedRouteProgress() {
         RouteOption displayed = getDisplayedRoute();
-        return displayed == null || routeDirectionsOverlay == null
-            ? 0 : routeDirectionsOverlay.reachedIndexFor(displayed);
+        return displayed == null || routeDirectionsOverlay == null ? 0 : routeDirectionsOverlay.reachedIndexFor(displayed);
     }
 
     /**
@@ -408,10 +399,8 @@ public class ShortestPathPlugin extends Plugin {
 
         // Keys mirrored by the panel's configuration sections (POH, wilderness, balloons): rebuild
         // those sections so their labels track changes made from chat parsing or the config UI.
-        if (altPanel != null
-            && (event.getKey().startsWith("balloon") || "pohSmartDetect".equals(event.getKey())
-            || "rememberBank".equals(event.getKey())
-            || ConfigOverrides.affectsRouting(event.getKey()))) {
+        if (altPanel != null && (event.getKey().startsWith("balloon") || "pohSmartDetect".equals(event.getKey())
+            || "rememberBank".equals(event.getKey()) || ConfigOverrides.affectsRouting(event.getKey()))) {
             SwingUtilities.invokeLater(altPanel::refreshConfigSections);
         }
     }
@@ -451,8 +440,7 @@ public class ShortestPathPlugin extends Plugin {
             boatBannerService.reset();
         }
 
-        if (pathfinderConfig == null
-            || !GameState.LOGGING_IN.equals(lastLastGameState)
+        if (pathfinderConfig == null || !GameState.LOGGING_IN.equals(lastLastGameState)
             || !GameState.LOADING.equals(lastLastGameState = lastGameState)
             || !GameState.LOGGED_IN.equals(lastGameState = event.getGameState())) {
             lastLastGameState = lastGameState;
@@ -574,8 +562,7 @@ public class ShortestPathPlugin extends Plugin {
         if (event.getContainerId() == InventoryID.INV || event.getContainerId() == InventoryID.WORN) {
             itemsVersion++;
             // Only the routing-relevant slice of the items dirties the catalog (see RouteController.itemsChanged).
-            routes.itemsChanged(pathfinderConfig, client.getItemContainer(InventoryID.INV),
-                client.getItemContainer(InventoryID.WORN));
+            routes.itemsChanged(pathfinderConfig, client.getItemContainer(InventoryID.INV), client.getItemContainer(InventoryID.WORN));
             return;
         }
         if (event.getContainerId() != InventoryID.BANK) return;
@@ -833,8 +820,7 @@ public class ShortestPathPlugin extends Plugin {
 
     public int getPlayerLocation() {
         Player local = client.getLocalPlayer();
-        return local == null ? WorldPointUtil.UNDEFINED
-            : fromLocalInstance(client, local);
+        return local == null ? WorldPointUtil.UNDEFINED : fromLocalInstance(client, local);
     }
 
     // --- Alternative-routes feature (driven by ShortestPathPanel) ---

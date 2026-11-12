@@ -477,8 +477,7 @@ final class DestinationSearchView extends JPanel {
         String prefill = "";
         if (player != WorldPointUtil.UNDEFINED) {
             int plane = WorldPointUtil.unpackWorldPlane(player);
-            prefill = WorldPointUtil.unpackWorldX(player) + " " + WorldPointUtil.unpackWorldY(player)
-                + (plane > 0 ? " " + plane : "");
+            prefill = WorldPointUtil.unpackWorldX(player) + " " + WorldPointUtil.unpackWorldY(player) + (plane > 0 ? " " + plane : "");
         }
         favoriteLabelInput.setText("");
         favoritePositionInput.setText(prefill);
@@ -498,11 +497,9 @@ final class DestinationSearchView extends JPanel {
             return;
         }
         String positionText = favoritePositionInput.getText().trim();
-        int position = positionText.isEmpty()
-            ? plugin.getLastKnownPlayerLocation() : parseCoordinateQuery(positionText);
+        int position = positionText.isEmpty() ? plugin.getLastKnownPlayerLocation() : parseCoordinateQuery(positionText);
         if (position == WorldPointUtil.UNDEFINED) {
-            favoriteInputError(positionText.isEmpty()
-                ? "No position: log in, or type coordinates (\"3221 3218\", optional plane)."
+            favoriteInputError(positionText.isEmpty() ? "No position: log in, or type coordinates (\"3221 3218\", optional plane)."
                 : "Not a coordinate: \"3221 3218\", \"3221,3218,1\" and \"3221, 3218 0\" all work.");
             favoritePositionInput.requestFocusInWindow();
             return;
@@ -531,11 +528,8 @@ final class DestinationSearchView extends JPanel {
             JPanel row = resultRows.get(i);
             row.setBackground(selected ? RESULT_SELECTED_BG : ColorScheme.DARKER_GRAY_COLOR);
             // The accent bar replaces 3px of the left padding, so the row text does not shift.
-            row.setBorder(selected
-                ? BorderFactory.createCompoundBorder(
-                    BorderFactory.createMatteBorder(0, 3, 0, 0, BANNER_INFO_ACCENT),
-                    new EmptyBorder(3, 1, 3, 4))
-                : new EmptyBorder(3, 4, 3, 4));
+            row.setBorder(selected ? BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 3, 0, 0, BANNER_INFO_ACCENT),
+                    new EmptyBorder(3, 1, 3, 4)) : new EmptyBorder(3, 4, 3, 4));
         }
     }
 
@@ -620,8 +614,7 @@ final class DestinationSearchView extends JPanel {
             }
         }
         if ("favorite".equals(entry.category)) {
-            east.add(new IconActionLabel(RouteIcons.CROSS, RouteIcons.CROSS_HOVER,
-                "Remove this favourite", () -> {
+            east.add(new IconActionLabel(RouteIcons.CROSS, RouteIcons.CROSS_HOVER, "Remove this favourite", () -> {
                 plugin.removeFavoriteDestination(entry);
                 renderResults();
             }));

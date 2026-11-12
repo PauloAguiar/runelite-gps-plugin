@@ -109,9 +109,7 @@ public class SplitFlagMap {
 
         // SplitFlagMap routes (x, y) to the region that contains it, so the in-region coordinates
         // are simply the low REGION_SIZE bits; this matches the old FlagMap.index arithmetic.
-        final int localBit = (z * REGION_SIZE * REGION_SIZE
-            + (y & REGION_MASK) * REGION_SIZE
-            + (x & REGION_MASK)) * FLAG_COUNT + flag;
+        final int localBit = (z * REGION_SIZE * REGION_SIZE + (y & REGION_MASK) * REGION_SIZE + (x & REGION_MASK)) * FLAG_COUNT + flag;
         return (flags[wordOffset + (localBit >> 6)] >>> (localBit & 63) & 1L) != 0L;
     }
 

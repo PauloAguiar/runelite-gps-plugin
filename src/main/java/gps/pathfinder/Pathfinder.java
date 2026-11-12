@@ -96,8 +96,7 @@ public class Pathfinder implements Runnable {
      */
     private int wildernessLevel;
 
-    public Pathfinder(PathfinderConfig config, int start, Set<Integer> targets,
-        int costCap, SearchHeuristic heuristic) {
+    public Pathfinder(PathfinderConfig config, int start, Set<Integer> targets, int costCap, SearchHeuristic heuristic) {
         stats = new PathfinderStats();
         this.config = config;
         this.map = config.getMap();
@@ -131,10 +130,8 @@ public class Pathfinder implements Runnable {
 
     /** Whether any transport or teleport is usable — the trigger for full heap ordering. */
     private static boolean anyTransportsUsable(PathfinderConfig config) {
-        return config.getTransportsPacked(false).size() > 0
-            || config.getTransportsPacked(true).size() > 0
-            || config.getUsableTeleports(false).length > 0
-            || config.getUsableTeleports(true).length > 0;
+        return config.getTransportsPacked(false).size() > 0 || config.getTransportsPacked(true).size() > 0
+            || config.getUsableTeleports(false).length > 0 || config.getUsableTeleports(true).length > 0;
     }
 
     private static boolean anyInBlockedRegion(LeagueModeState league, Set<Integer> packed) {
@@ -176,14 +173,7 @@ public class Pathfinder implements Runnable {
         boolean reached = reachedTarget != WorldPointUtil.UNDEFINED;
         int target = reached ? reachedTarget : (targets.isEmpty() ? WorldPointUtil.UNDEFINED : targets.iterator().next());
         // getStats() only returns non-null once the search has ended, so the snapshot is set.
-        return new PathfinderResult(
-            start,
-            target,
-            reached,
-            currentPath,
-            closestReachedPoint,
-            finalCost,
-            currentStats.getNodesChecked(),
+        return new PathfinderResult(start, target, reached, currentPath, closestReachedPoint, finalCost, currentStats.getNodesChecked(),
             currentStats.getTransportsChecked(),
             currentStats.getElapsedTimeNanos(),
             terminationReason
@@ -283,8 +273,7 @@ public class Pathfinder implements Runnable {
         long cutoffDurationMillis = config.getCalculationCutoffMillis();
         long cutoffTimeMillis = System.currentTimeMillis() + cutoffDurationMillis;
 
-        while (!boundary.isEmpty() || !pending.isEmpty()
-            || (buckets != null && !buckets.isEmpty())) {
+        while (!boundary.isEmpty() || !pending.isEmpty() || (buckets != null && !buckets.isEmpty())) {
             int boundaryHead = boundary.peekFirst();
 
             int node;
@@ -312,8 +301,7 @@ public class Pathfinder implements Runnable {
                     final int settledKey = graph.orderCost(node);
                     if (settledKey < lastSettledOrderCost) {
                         throw new IllegalStateException("Settle order violated: orderCost " + settledKey
-                            + " settled after " + lastSettledOrderCost
-                            + " — inadmissible heuristic or polluted ordering key");
+                            + " settled after " + lastSettledOrderCost + " — inadmissible heuristic or polluted ordering key");
                     }
                     lastSettledOrderCost = settledKey;
                 }

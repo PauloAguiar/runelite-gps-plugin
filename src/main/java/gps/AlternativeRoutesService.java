@@ -113,8 +113,7 @@ import static gps.WorldPointUtil.distanceBetween;
         final Set<TeleportMethod> userExclusionsCopy = new HashSet<>(userExclusions);
         executor.submit(() -> {
             try {
-                computeRoutes(gen, start, targetsCopy, userExclusionsCopy, mode, maxRoutes, costMultiple,
-                    roundTrip, listener);
+                computeRoutes(gen, start, targetsCopy, userExclusionsCopy, mode, maxRoutes, costMultiple, roundTrip, listener);
             }
             catch (Exception e) {
                 log.warn("Alternative route generation failed", e);
@@ -213,11 +212,9 @@ import static gps.WorldPointUtil.distanceBetween;
         // state is resumable, and widening only ever appends costlier routes. The already-found routes
         // go out in the very first update, so the panel never blanks while the extra ones compute.
         final ResumeState prior = resumeState;
-        final boolean resumed = !roundTrip && prior != null
-            && prior.start == start && prior.rawTargets.equals(rawTargets)
+        final boolean resumed = !roundTrip && prior != null && prior.start == start && prior.rawTargets.equals(rawTargets)
             && prior.mode == mode && prior.userExclusions.equals(userExclusions)
-            && limit >= prior.limit && costMultiple >= prior.costMultiple
-            && (limit > prior.limit || costMultiple > prior.costMultiple);
+            && limit >= prior.limit && costMultiple >= prior.costMultiple && (limit > prior.limit || costMultiple > prior.costMultiple);
 
         final Set<TeleportMethod> excluded;
         final List<TeleportMethod> catalog;
@@ -250,12 +247,9 @@ import static gps.WorldPointUtil.distanceBetween;
         // branch synthesizes at its own right moment.
         Runnable synthesizeSeaLegs = () -> {
             // A place's water tiles always; a category's only for a player already aboard.
-            Set<Integer> wetTargets = SailingSea.waterPins(planningConfig.getMap(), ends,
-                planningConfig.isOnSailingBoat());
-            for (int target : wetTargets) {
-                seaLegs.addAll(SailingSea.seaLegTransports(target, 6,
-                    planningConfig.gatedBoatMoorings()));
-            }
+            Set<Integer> wetTargets = SailingSea.waterPins(planningConfig.getMap(), ends, planningConfig.isOnSailingBoat());
+            for (int target : wetTargets)
+                seaLegs.addAll(SailingSea.seaLegTransports(target, 6, planningConfig.gatedBoatMoorings()));
             // Player aboard: the start tile is sealed ocean with no walk edges — without legs
             // FROM it (disembark at nearby ports, or sail straight to a water pin), every search
             // dies on the start node and the whole generation reports unreachable. Gated on the
@@ -338,10 +332,8 @@ import static gps.WorldPointUtil.distanceBetween;
             if (planningConfig.isOnSailingBoat()) {
                 List<Transport> ports = new ArrayList<>();
                 for (Transport leg : seaLegs) {
-                    if (leg.getOrigin() == start && leg.getDisplayInfo() != null
-                        && leg.getDisplayInfo().startsWith("Disembark")) {
+                    if (leg.getOrigin() == start && leg.getDisplayInfo() != null && leg.getDisplayInfo().startsWith("Disembark"))
                         ports.add(leg);
-                    }
                 }
                 ports.sort(Comparator.comparingInt(Transport::getDuration));
                 for (int i = 0; i < ports.size(); i++)
@@ -391,8 +383,7 @@ import static gps.WorldPointUtil.distanceBetween;
         // generation: the previous field is reused instead of flooded again (plan step N4).
         final FieldKey fieldKey = new FieldKey(planningConfig.getUsableFingerprint(), userExclusions,
             extrasFingerprint(seaLegs), ends, costMultiple);
-        final boolean fieldReused = cachedField != null
-            && fieldKey.sameInputs(cachedFieldKey, cachedField.horizon() == Integer.MAX_VALUE);
+        final boolean fieldReused = cachedField != null && fieldKey.sameInputs(cachedFieldKey, cachedField.horizon() == Integer.MAX_VALUE);
         final DistanceField field;
         if (fieldReused) field = cachedField;
         else {
@@ -414,10 +405,8 @@ import static gps.WorldPointUtil.distanceBetween;
         // runs over BOTH bank states (reverse transport index, teleport landings, blocked-landing
         // patch), so a route that needs a banked item is part of the proof (plan step N7; the
         // former "+ Bank" exclusion predated that and left bank mode with a one-route page).
-        final boolean targetProvablyUnreachable = field != null
-            && field.horizon() == Integer.MAX_VALUE
-            && field.distance(start) == DistanceField.UNREACHED
-            && SearchHeuristic.buildWithField(planningConfig, field) != null
+        final boolean targetProvablyUnreachable = field != null && field.horizon() == Integer.MAX_VALUE
+            && field.distance(start) == DistanceField.UNREACHED && SearchHeuristic.buildWithField(planningConfig, field) != null
             && SearchHeuristic.buildWithField(planningConfig, field, start) == null;
         g.availabilityCurrent = availabilityCurrent;
         g.targetProvablyUnreachable = targetProvablyUnreachable;
@@ -441,16 +430,13 @@ import static gps.WorldPointUtil.distanceBetween;
         // dropped to that route's cost band so the walk stops flooding the map when walking is
         // uncompetitive — which is most queries, since a teleport route usually wins.
         final AtomicInteger walkCeiling = new AtomicInteger(Integer.MAX_VALUE);
-        if (resumed && !routes.isEmpty() && costMultiple > 0) {
+        if (resumed && !routes.isEmpty() && costMultiple > 0)
             // The best route is already known, so the walk search starts pre-capped at the (widened)
             // sanity ceiling instead of waiting for the chain's in-loop drop (which only fires on the
             // FIRST route — already found on a resume).
-            walkCeiling.set((int) Math.min(Integer.MAX_VALUE,
-                (long) routes.get(0).getTotalCost() * 2 * costMultiple));
-        }
+            walkCeiling.set((int) Math.min(Integer.MAX_VALUE, (long) routes.get(0).getTotalCost() * 2 * costMultiple));
         final Future<WalkResult> walkFuture = limit > 1 && !targetProvablyUnreachable
-            ? seedExecutor.submit(() -> runWalkSearch(g, walkCeiling))
-            : null;
+            ? seedExecutor.submit(() -> runWalkSearch(g, walkCeiling)) : null;
         g.walkCeiling = walkCeiling;
         g.walkFuture = walkFuture;
     }
@@ -539,8 +525,7 @@ import static gps.WorldPointUtil.distanceBetween;
             PathfinderResult result = pathfinder.getResult();
             List<PathStep> path = (result != null) ? result.getPathSteps() : List.of();
             if (result == null || path.isEmpty()) {
-                log.debug("[alt-routes] search #{} produced no path: result={}, reason={}",
-                    i, result == null ? "null" : "empty",
+                log.debug("[alt-routes] search #{} produced no path: result={}, reason={}", i, result == null ? "null" : "empty",
                     result == null ? "n/a" : result.getTerminationReason());
                 cappedByCost |= costLimited;
                 chainExhausted = true;
@@ -601,8 +586,7 @@ import static gps.WorldPointUtil.distanceBetween;
             // Prefix twin of a saturated tail: same treatment as a hop variant. Counted over
             // CHAIN acceptances only (resumable), so a widened resume replays the exact
             // saturation sequence of a from-scratch run.
-            if (methods.size() >= 2
-                && chainTailCounts.getOrDefault(tailSignature(methods), 0) >= TAIL_DOMINANCE) {
+            if (methods.size() >= 2 && chainTailCounts.getOrDefault(tailSignature(methods), 0) >= TAIL_DOMINANCE) {
                 excluded.add(methods.get(0));
                 i--;
                 continue;
@@ -682,8 +666,7 @@ import static gps.WorldPointUtil.distanceBetween;
         // latter only while it sat below the walk ceiling, since once it reaches walking there's nothing
         // cheaper-than-walk left to reveal.
         int moreWalkCap = capOf(walkFuture);
-        boolean costHeldBack = cappedByCost
-            && RouteAcceptance.cappedByBestCost(moreWalkCap, routes, costMultiple) < moreWalkCap;
+        boolean costHeldBack = cappedByCost && RouteAcceptance.cappedByBestCost(moreWalkCap, routes, costMultiple) < moreWalkCap;
         lastGenerationMoreLikely = !chainExhausted || costHeldBack;
     }
 
@@ -910,8 +893,7 @@ import static gps.WorldPointUtil.distanceBetween;
         private final Set<Integer> ends;
         private final int costMultiple;
 
-        FieldKey(long usableFingerprint, Set<TeleportMethod> userExclusions, long extrasFingerprint,
-            Set<Integer> ends, int costMultiple) {
+        FieldKey(long usableFingerprint, Set<TeleportMethod> userExclusions, long extrasFingerprint, Set<Integer> ends, int costMultiple) {
             this.usableFingerprint = usableFingerprint;
             this.userExclusions = new HashSet<>(userExclusions);
             this.extrasFingerprint = extrasFingerprint;
@@ -921,11 +903,8 @@ import static gps.WorldPointUtil.distanceBetween;
 
         /** Same inputs; a complete field (horizon at MAX) serves any cost multiple. */
         boolean sameInputs(FieldKey cached, boolean cachedComplete) {
-            return cached != null
-                && usableFingerprint == cached.usableFingerprint
-                && extrasFingerprint == cached.extrasFingerprint
-                && (costMultiple == cached.costMultiple || cachedComplete)
-                && userExclusions.equals(cached.userExclusions)
+            return cached != null && usableFingerprint == cached.usableFingerprint && extrasFingerprint == cached.extrasFingerprint
+                && (costMultiple == cached.costMultiple || cachedComplete) && userExclusions.equals(cached.userExclusions)
                 && ends.equals(cached.ends);
         }
     }
@@ -1007,8 +986,7 @@ import static gps.WorldPointUtil.distanceBetween;
         /** Remaining distance of the first route's endpoint; -1 until the chain knows it. */
         int bestRemaining = -1;
         /** The cheapest pure-sail continuation seen at the helm (the keep-sailing baseline). */
-        final AtomicReference<RouteOption> bestSail =
-            new AtomicReference<>();
+        final AtomicReference<RouteOption> bestSail = new AtomicReference<>();
 
         Generation(int gen, int start, Set<Integer> ends, Set<TeleportMethod> userExclusions,
             AlternativeRoutesMode mode, int limit, int costMultiple, boolean roundTrip, ResultListener listener,
@@ -1065,9 +1043,7 @@ import static gps.WorldPointUtil.distanceBetween;
         PathfinderResult result = pathfinder.getResult();
         Pathfinder.PathfinderStats stats = pathfinder.getStats();
         List<PathStep> path = result != null ? result.getPathSteps() : null;
-        SearchRecord searchRecord = new SearchRecord(
-            label,
-            searchNanos / 1_000_000,
+        SearchRecord searchRecord = new SearchRecord(label, searchNanos / 1_000_000,
             (path != null && !path.isEmpty()) ? result.getTotalCost() : -1,
             result != null && result.isReached(),
             (result != null && result.getTerminationReason() != null) ? result.getTerminationReason().name() : "NONE",
@@ -1113,8 +1089,7 @@ import static gps.WorldPointUtil.distanceBetween;
      * mode (the all mode already includes everything), so the probe costs nothing on a normal
      * generation.
      */
-    private UnreachableCause unreachableCause(List<RouteOption> routes, int start, Set<Integer> ends,
-        AlternativeRoutesMode mode) {
+    private UnreachableCause unreachableCause(List<RouteOption> routes, int start, Set<Integer> ends, AlternativeRoutesMode mode) {
         if (routes.isEmpty() || ends.isEmpty()) return UnreachableCause.NONE;
         for (RouteOption route : routes) {
             if (route.isReached()) return UnreachableCause.NONE;
@@ -1125,8 +1100,7 @@ import static gps.WorldPointUtil.distanceBetween;
             return UnreachableCause.NO_KNOWN_ROUTE;
         probe.rebuildAvailabilityWithExclusions(Collections.emptySet());
         DistanceField everything = DistanceField.buildIfCompact(probe, ends, 0);
-        boolean reachableWithEverything = everything != null
-            && SearchHeuristic.buildWithField(probe, everything, start) != null;
+        boolean reachableWithEverything = everything != null && SearchHeuristic.buildWithField(probe, everything, start) != null;
         return reachableWithEverything ? UnreachableCause.MISSING_UNLOCKS : UnreachableCause.NO_KNOWN_ROUTE;
     }
 
@@ -1171,8 +1145,7 @@ import static gps.WorldPointUtil.distanceBetween;
         if (planningConfig.isOnSailingBoat()) {
             Transport nearestPort = null;
             for (Transport candidate : seedCandidates) {
-                if (candidate.getDisplayInfo() != null
-                    && candidate.getDisplayInfo().startsWith("Disembark")
+                if (candidate.getDisplayInfo() != null && candidate.getDisplayInfo().startsWith("Disembark")
                     && (nearestPort == null || candidate.getDuration() < nearestPort.getDuration())) {
                     nearestPort = candidate;
                 }
@@ -1196,8 +1169,7 @@ import static gps.WorldPointUtil.distanceBetween;
         final CompletionService<SeedResult> completion = new ExecutorCompletionService<>(seedExecutor);
         final List<Future<SeedResult>> futures = new ArrayList<>(attempts.size());
         for (Transport seed : attempts) {
-            futures.add(completion.submit(() ->
-                runSeedSearch(g, stop, allSeedMethods, seed,
+            futures.add(completion.submit(() -> runSeedSearch(g, stop, allSeedMethods, seed,
                     nearestPortRetained != null && nearestPortRetained.equals(seed.getDisplayInfo()),
                     costCap, configPool)));
         }
@@ -1218,8 +1190,7 @@ import static gps.WorldPointUtil.distanceBetween;
                     log.warn("Seed search failed", e);
                 }
             }
-            results.sort(Comparator.comparingInt((SeedResult r) -> r.totalCost)
-                .thenComparing(r -> signature(r.scan.methods)));
+            results.sort(Comparator.comparingInt((SeedResult r) -> r.totalCost).thenComparing(r -> signature(r.scan.methods)));
             for (SeedResult seedResult : results) {
                 if (gen != generation.get()) break;
                 // Same hybrid acceptance as the chain: a seed beyond the page-fill ceiling isn't shown
@@ -1231,16 +1202,14 @@ import static gps.WorldPointUtil.distanceBetween;
                 // exempt from the cost band and, below, evicts the costliest teleport route
                 // even when every shown route is cheaper (finding 4: the seed always ran but
                 // its route died here, and the service test caught the gap the field saw).
-                boolean portPromise = nearestPortRetained != null
-                    && !seedResult.scan.methods.isEmpty()
+                boolean portPromise = nearestPortRetained != null && !seedResult.scan.methods.isEmpty()
                     && nearestPortRetained.equals(seedResult.scan.methods.get(0).getDisplayInfo())
                     && !RouteAcceptance.hasPortFirstRoute(routes);
                 // At the helm the cheapest PURE-SAIL continuation is a protected baseline (the
                 // walk route's sibling): the cost band otherwise culls every keep-sailing option
                 // while cheap disembark-teleport chains fill the page (capture 20260829-204334),
                 // leaving a sailor mid-task with no sea route at all.
-                if (planningConfig.isOnSailingBoat() && seedResult.reached
-                    && isPureSail(seedResult.scan.methods)) {
+                if (planningConfig.isOnSailingBoat() && seedResult.reached && isPureSail(seedResult.scan.methods)) {
                     RouteOption prior = bestSail.get();
                     if (prior == null || seedResult.totalCost < prior.getTotalCost()) {
                         bestSail.set(new RouteOption(withoutIdleBankFlip(seedResult.path, seedResult.scan),
@@ -1317,8 +1286,7 @@ import static gps.WorldPointUtil.distanceBetween;
         final int[] targetArray = new int[targets.size()];
         int t = 0;
         for (int target : targets) targetArray[t++] = target;
-        ranked.sort(Comparator.comparingLong(
-            candidate -> (long) CostUnits.fromTicks(candidate.getDuration())
+        ranked.sort(Comparator.comparingLong(candidate -> (long) CostUnits.fromTicks(candidate.getDuration())
                 + distanceToNearest(candidate.getDestination(), targetArray)));
         final Map<Integer, Transport> byDestination = new LinkedHashMap<>();
         for (Transport transport : ranked) {
@@ -1426,8 +1394,7 @@ import static gps.WorldPointUtil.distanceBetween;
             final int totalCost = result.getTotalCost();
             if (RouteAcceptance.beyondBand(totalCost, routes, costMultiple)) continue;
             MethodScan scan = scanMethods(config, path);
-            if (scan.methods.isEmpty()
-                || RouteAcceptance.nestsAKeptRoute(scan.methods, !scan.bankGated.isEmpty(), routes)
+            if (scan.methods.isEmpty() || RouteAcceptance.nestsAKeptRoute(scan.methods, !scan.bankGated.isEmpty(), routes)
                 || RouteAcceptance.hasRedundantTeleportHop(hopBaselineTeleports, scan.methods)
                 || !seenSignatures.add(signature(scan.methods))) {
                 continue;
@@ -1495,8 +1462,7 @@ import static gps.WorldPointUtil.distanceBetween;
                 timer.searchNanos += searchEnd - searchStart;
                 timer.searches++;
             }
-            String seedLabel = seed.getDisplayInfo() != null && !seed.getDisplayInfo().isEmpty()
-                ? seed.getDisplayInfo()
+            String seedLabel = seed.getDisplayInfo() != null && !seed.getDisplayInfo().isEmpty() ? seed.getDisplayInfo()
                 : WorldPointUtil.unpackWorldX(seed.getDestination()) + "," + WorldPointUtil.unpackWorldY(seed.getDestination());
             record(timer, "seed:" + seedLabel, searchEnd - searchStart, pathfinder, costCap);
 
@@ -1636,10 +1602,8 @@ import static gps.WorldPointUtil.distanceBetween;
                     : new PathStep(step.getPackedPosition(), step.isBankVisited(), step.getCost() + oneWay.getTotalCost()));
             }
             MethodScan scan = scanMethods(planningConfig, fullPath);
-            if (!signatures.add(signature(scan.methods))
-                || RouteAcceptance.hasRedundantTeleportHop(hopBaselineTeleports, scan.methods)) {
+            if (!signatures.add(signature(scan.methods)) || RouteAcceptance.hasRedundantTeleportHop(hopBaselineTeleports, scan.methods))
                 continue;
-            }
             // The turnaround is the outbound path's last tile (the destination); the return leg's
             // duplicated first step was dropped, so outbound indexes are unshifted in fullPath.
             merged.add(new RouteOption(withoutIdleBankFlip(fullPath, scan), scan.methods, scan.methodEdges, scan.methodDurations,
@@ -1840,16 +1804,13 @@ import static gps.WorldPointUtil.distanceBetween;
             // a transport edge counts its travel time normalized to units, a walking edge its tile
             // distance (mirrors the search's own cost accumulation minus the additional/weight terms).
             // With no weights the route's rawCost IS its ETA in units, so cost order == ETA order.
-            Transport edgeTransport = chosen != null
-                ? chosen
+            Transport edgeTransport = chosen != null ? chosen
                 : matchAnyTransport(config, from.getPackedPosition(), to.getPackedPosition(), bankVisited);
-            if (chosen == null && edgeTransport != null && bankVisited
-                && edgeTransport.getItemRequirements() != null
+            if (chosen == null && edgeTransport != null && bankVisited && edgeTransport.getItemRequirements() != null
                 && !availableWithoutBank(config, from.getPackedPosition(), edgeTransport)) {
                 bankGatedTransports.add(edgeTransport);
             }
-            int edgeCost = edgeTransport != null
-                ? CostUnits.fromTicks(edgeTransport.getDuration())
+            int edgeCost = edgeTransport != null ? CostUnits.fromTicks(edgeTransport.getDuration())
                 : distanceBetween(from.getPackedPosition(), to.getPackedPosition());
             rawCost += edgeCost;
             if (chosen == null) legSteps += edgeCost;
@@ -1882,8 +1843,7 @@ import static gps.WorldPointUtil.distanceBetween;
     }
 
     private static boolean availableWithoutBank(PathfinderConfig config, int origin, Transport transport) {
-        for (Transport candidate : config.getTransportsPacked(false)
-            .getOrDefault(origin, TransportAvailability.EMPTY_TRANSPORTS)) {
+        for (Transport candidate : config.getTransportsPacked(false).getOrDefault(origin, TransportAvailability.EMPTY_TRANSPORTS)) {
             if (candidate == transport) return true;
         }
         for (Transport candidate : config.getUsableTeleports(false)) {
@@ -1933,30 +1893,24 @@ import static gps.WorldPointUtil.distanceBetween;
      * even name the wrong method on the route card. {@code methodsOnly} restricts the match to
      * method-type transports (excluding plain connectors like doors and stairs).
      */
-    private static Transport cheapestMatch(PathfinderConfig config, int origin, int destination,
-        boolean bankVisited, boolean methodsOnly) {
+    private static Transport cheapestMatch(PathfinderConfig config, int origin, int destination, boolean bankVisited, boolean methodsOnly) {
         Transport best = null;
         long bestCost = Long.MAX_VALUE;
-        Transport[] atOrigin = config.getTransportsPacked(bankVisited)
-            .getOrDefault(origin, TransportAvailability.EMPTY_TRANSPORTS);
+        Transport[] atOrigin = config.getTransportsPacked(bankVisited).getOrDefault(origin, TransportAvailability.EMPTY_TRANSPORTS);
         for (Transport transport : atOrigin) {
-            if (transport.getDestination() == destination
-                && (!methodsOnly || TeleportMethod.isMethodType(transport.getType())
+            if (transport.getDestination() == destination && (!methodsOnly || TeleportMethod.isMethodType(transport.getType())
                     // Sailing is not a CATALOG method, but its legs must appear in the route
                     // methods: the cards, and the sea-track edge detection in the overlay.
-                    || transport.getType() == TransportType.SAILING)
-                && searchEdgeCost(config, transport) < bestCost) {
+                    || transport.getType() == TransportType.SAILING) && searchEdgeCost(config, transport) < bestCost) {
                 best = transport;
                 bestCost = searchEdgeCost(config, transport);
             }
         }
         for (Transport transport : config.getUsableTeleports(bankVisited)) {
-            if (transport.getDestination() == destination
-                && (!methodsOnly || TeleportMethod.isMethodType(transport.getType())
+            if (transport.getDestination() == destination && (!methodsOnly || TeleportMethod.isMethodType(transport.getType())
                     // Sailing is not a CATALOG method, but its legs must appear in the route
                     // methods: the cards, and the sea-track edge detection in the overlay.
-                    || transport.getType() == TransportType.SAILING)
-                && searchEdgeCost(config, transport) < bestCost) {
+                    || transport.getType() == TransportType.SAILING) && searchEdgeCost(config, transport) < bestCost) {
                 best = transport;
                 bestCost = searchEdgeCost(config, transport);
             }
@@ -1966,8 +1920,7 @@ import static gps.WorldPointUtil.distanceBetween;
 
     /** A transport edge's cost as the search charges it (see NodeGraph.createTransport's clamp). */
     private static int searchEdgeCost(PathfinderConfig config, Transport transport) {
-        return Math.max(0, CostUnits.fromTicks(transport.getDuration())
-            + config.getAdditionalTransportCost(transport));
+        return Math.max(0, CostUnits.fromTicks(transport.getDuration()) + config.getAdditionalTransportCost(transport));
     }
 
     /**
@@ -2032,18 +1985,14 @@ import static gps.WorldPointUtil.distanceBetween;
         boolean laterEmbark = false;
         for (int i = 1; i < methods.size(); i++) {
             TeleportMethod method = methods.get(i);
-            laterEmbark |= TransportType.SAILING.equals(method.getType())
-                && method.getDisplayInfo() != null
+            laterEmbark |= TransportType.SAILING.equals(method.getType()) && method.getDisplayInfo() != null
                 && method.getDisplayInfo().startsWith("Embark at ");
         }
         TeleportMethod first = methods.get(0);
-        boolean parkingFirst = TransportType.SAILING.equals(first.getType())
-            && first.getDisplayInfo() != null
+        boolean parkingFirst = TransportType.SAILING.equals(first.getType()) && first.getDisplayInfo() != null
             && first.getDisplayInfo().startsWith("Disembark at ");
-        for (int i = 0; i < methods.size(); i++) {
-            sb.append(i == 0 && parkingFirst && laterEmbark
-                ? "Disembark at *" : methods.get(i).toString()).append('|');
-        }
+        for (int i = 0; i < methods.size(); i++)
+            sb.append(i == 0 && parkingFirst && laterEmbark ? "Disembark at *" : methods.get(i).toString()).append('|');
         return sb.toString();
     }
 }

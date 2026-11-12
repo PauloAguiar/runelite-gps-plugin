@@ -21,9 +21,7 @@ public final class TransportAvailability {
     private final PrimitiveIntHashMap<Transport[]> displayTransports;
     private final Transport[] usableTeleports;
 
-    TransportAvailability(
-        PrimitiveIntHashMap<Transport[]> transportsPacked,
-        PrimitiveIntHashMap<Transport[]> displayTransports,
+    TransportAvailability(PrimitiveIntHashMap<Transport[]> transportsPacked, PrimitiveIntHashMap<Transport[]> displayTransports,
         Transport[] usableTeleports) {
         this.transportsPacked = transportsPacked;
         this.displayTransports = displayTransports;
@@ -71,8 +69,7 @@ public final class TransportAvailability {
             copy.display().put(origin, append(copy.display().getOrDefault(origin, EMPTY_TRANSPORTS), extra));
         }
         if (copy.packed == null && copy.display == null && teleports == usableTeleports) return this;
-        return new TransportAvailability(
-            copy.packed == null ? transportsPacked : copy.packed,
+        return new TransportAvailability(copy.packed == null ? transportsPacked : copy.packed,
             copy.display == null ? displayTransports : copy.display,
             teleports);
     }

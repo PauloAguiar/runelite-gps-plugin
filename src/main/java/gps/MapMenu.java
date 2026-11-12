@@ -65,10 +65,8 @@ import net.runelite.client.util.Text;
                     if (target != WorldPointUtil.UNDEFINED) addMenuEntry(event, CLEAR, PATH, 0);
                 }
             }
-            if (event.getOption().equals(FLASH_ICONS)
-                && plugin.getPathfinderConfig().hasDestination(simplify(event.getTarget()))) {
+            if (event.getOption().equals(FLASH_ICONS) && plugin.getPathfinderConfig().hasDestination(simplify(event.getTarget())))
                 addMenuEntry(event, FIND_CLOSEST, event.getTarget(), 1);
-            }
         }
 
         final Shape minimap = minimapClip.area();
@@ -76,8 +74,7 @@ import net.runelite.client.util.Text;
             && minimap.contains(client.getMouseCanvasPosition().getX(), client.getMouseCanvasPosition().getY())) {
             addMenuEntry(event, CLEAR, PATH, 0);
         }
-        if (minimap != null && plugin.hasPathTargets()
-            && ("Floating World Map".equals(Text.removeTags(event.getOption()))
+        if (minimap != null && plugin.hasPathTargets() && ("Floating World Map".equals(Text.removeTags(event.getOption()))
             || "Close Floating panel".equals(Text.removeTags(event.getOption())))) {
             addMenuEntry(event, CLEAR, PATH, 1);
         }
@@ -114,29 +111,20 @@ import net.runelite.client.util.Text;
                 return WorldPointUtil.fromLocalInstance(client, client.getTopLevelWorldView().getSelectedSceneTile().getLocalLocation());
             return WorldPointUtil.UNDEFINED;
         }
-        return client.isMenuOpen()
-            ? worldMap.worldPointAt(lastMenuOpenedPoint.getX(), lastMenuOpenedPoint.getY())
+        return client.isMenuOpen() ? worldMap.worldPointAt(lastMenuOpenedPoint.getX(), lastMenuOpenedPoint.getY())
             : worldMap.worldPointAt(client.getMouseCanvasPosition().getX(), client.getMouseCanvasPosition().getY());
     }
 
     private void addMenuEntry(MenuEntryAdded event, String option, String target, int position) {
         List<MenuEntry> entries = new LinkedList<>(Arrays.asList(client.getMenu().getMenuEntries()));
         if (entries.stream().anyMatch(e -> e.getOption().equals(option) && e.getTarget().equals(target))) return;
-        client.getMenu().createMenuEntry(position)
-            .setOption(option)
-            .setTarget(target)
-            .setParam0(event.getActionParam0())
-            .setParam1(event.getActionParam1())
-            .setIdentifier(event.getIdentifier())
-            .setType(MenuAction.RUNELITE)
+        client.getMenu().createMenuEntry(position).setOption(option).setTarget(target).setParam0(event.getActionParam0())
+            .setParam1(event.getActionParam1()).setIdentifier(event.getIdentifier()).setType(MenuAction.RUNELITE)
             .onClick(this::onMenuOptionClicked);
     }
 
     /** A world-map icon's menu target as a destination key: tags off, lower case, words joined by underscores. */
     static String simplify(String text) {
-        return Text.removeTags(text).toLowerCase()
-            .replaceAll("[^a-zA-Z ]", "")
-            .replace(" ", "_")
-            .replace("__", "_");
+        return Text.removeTags(text).toLowerCase().replaceAll("[^a-zA-Z ]", "").replace(" ", "_").replace("__", "_");
     }
 }

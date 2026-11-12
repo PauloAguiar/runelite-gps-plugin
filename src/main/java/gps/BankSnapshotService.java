@@ -150,8 +150,7 @@ import net.runelite.client.config.ConfigManager;
             for (int i = 0; i < pairs.length; i++) {
                 int sep = pairs[i].indexOf(':');
                 if (sep <= 0) return null;
-                items[i] = new Item(Integer.parseInt(pairs[i].substring(0, sep)),
-                    Integer.parseInt(pairs[i].substring(sep + 1)));
+                items[i] = new Item(Integer.parseInt(pairs[i].substring(0, sep)), Integer.parseInt(pairs[i].substring(sep + 1)));
             }
         }
         catch (NumberFormatException e) {

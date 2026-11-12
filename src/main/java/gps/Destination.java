@@ -77,8 +77,7 @@ import gps.transport.parser.*;
                                 String[] destinationArray = value.split(DELIM);
                                 if (destinationArray.length == 3) {
                                     Set<Integer> entryDestinations = destinations.getOrDefault(entry, new HashSet<>());
-                                    entryDestinations.add(WorldPointUtil.packWorldPoint(
-                                        Integer.parseInt(destinationArray[0]),
+                                    entryDestinations.add(WorldPointUtil.packWorldPoint(Integer.parseInt(destinationArray[0]),
                                         Integer.parseInt(destinationArray[1]),
                                         Integer.parseInt(destinationArray[2])));
                                     destinations.put(entry, entryDestinations);
@@ -100,9 +99,7 @@ import gps.transport.parser.*;
 
     private static String[] parse_header_line(Scanner scanner) {
         String headerLine = scanner.nextLine();
-        headerLine = headerLine.startsWith(PREFIX_COMMENT + " ")
-            ? headerLine.replace(PREFIX_COMMENT + " ", PREFIX_COMMENT)
-            : headerLine;
+        headerLine = headerLine.startsWith(PREFIX_COMMENT + " ") ? headerLine.replace(PREFIX_COMMENT + " ", PREFIX_COMMENT) : headerLine;
         headerLine = headerLine.startsWith(PREFIX_COMMENT) ? headerLine.replace(PREFIX_COMMENT, "") : headerLine;
         return headerLine.split(DELIM_COLUMN);
     }
@@ -156,9 +153,7 @@ import gps.transport.parser.*;
                     if (destinationArray.length != 3) continue;
                     int packed;
                     try {
-                        packed = WorldPointUtil.packWorldPoint(
-                            Integer.parseInt(destinationArray[0]),
-                            Integer.parseInt(destinationArray[1]),
+                        packed = WorldPointUtil.packWorldPoint(Integer.parseInt(destinationArray[0]), Integer.parseInt(destinationArray[1]),
                             Integer.parseInt(destinationArray[2]));
                     }
                     catch (NumberFormatException e) {

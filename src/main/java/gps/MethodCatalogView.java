@@ -136,8 +136,7 @@ final class MethodCatalogView {
     void restoreScroll(int position) {
         if (position > 0 && rowsScroll != null) {
             final JScrollPane scroll = rowsScroll;
-            SwingUtilities.invokeLater(() -> SwingUtilities.invokeLater(
-                () -> scroll.getVerticalScrollBar().setValue(position)));
+            SwingUtilities.invokeLater(() -> SwingUtilities.invokeLater(() -> scroll.getVerticalScrollBar().setValue(position)));
         }
     }
 
@@ -173,8 +172,7 @@ final class MethodCatalogView {
         if (filter.disabled && !exclusions.contains(method)) return false;
         if (filter.availability != null && unavailable.get(method) != filter.availability) return false;
         String needle = text.trim().toLowerCase(Locale.ROOT);
-        return needle.isEmpty()
-            || method.category().toLowerCase(Locale.ROOT).contains(needle)
+        return needle.isEmpty() || method.category().toLowerCase(Locale.ROOT).contains(needle)
             || method.label().toLowerCase(Locale.ROOT).contains(needle);
     }
 
@@ -204,8 +202,7 @@ final class MethodCatalogView {
         }
         // Same collapsible shell as the other Travel options sub-sections; the enabled count is
         // the state text.
-        JPanel section = sectionShell("Travel methods",
-            enabled + " enabled (usable and included) · " + usable + " usable now · "
+        JPanel section = sectionShell("Travel methods", enabled + " enabled (usable and included) · " + usable + " usable now · "
                 + included + " included in searches · " + catalog.size() + " total",
             expanded, () -> expanded = !expanded,
             enabled + "/" + catalog.size(), ColorScheme.LIGHT_GRAY_COLOR, false, rebuild);
@@ -253,8 +250,7 @@ final class MethodCatalogView {
         ScrollableBox rows = new ScrollableBox(null);
         rows.setLayout(new BoxLayout(rows, BoxLayout.Y_AXIS));
         rows.setBackground(ColorScheme.DARK_GRAY_COLOR);
-        JScrollPane scroll = new JScrollPane(rows,
-            ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+        JScrollPane scroll = new JScrollPane(rows, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
             ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         scroll.setBorder(BorderFactory.createEmptyBorder());
         scroll.getVerticalScrollBar().setUnitIncrement(16);
@@ -292,8 +288,7 @@ final class MethodCatalogView {
         }
         menu.addSeparator();
         JMenuItem exclude = new JMenuItem(MethodPriority.EXCLUDED.label, RouteIcons.CROSS);
-        exclude.setFont(current == MethodPriority.EXCLUDED
-            ? FontManager.getRunescapeBoldFont() : FontManager.getRunescapeSmallFont());
+        exclude.setFont(current == MethodPriority.EXCLUDED ? FontManager.getRunescapeBoldFont() : FontManager.getRunescapeSmallFont());
         exclude.addActionListener(e -> {
             plugin.setMethodPriority(method, MethodPriority.EXCLUDED);
             rebuild.run();
@@ -405,8 +400,7 @@ final class MethodCatalogView {
 
         JPanel row = new JPanel(new BorderLayout(3, 0));
         row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-        row.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, ColorScheme.DARK_GRAY_COLOR),
+        row.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, ColorScheme.DARK_GRAY_COLOR),
             new EmptyBorder(3, 4, 3, 4)));
         row.setAlignmentX(Component.LEFT_ALIGNMENT);
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
@@ -438,9 +432,7 @@ final class MethodCatalogView {
         // expand, so category toggles kept getting flipped by accident.
         row.add(control(new JLabel(open ? RouteIcons.CHEVRON_DOWN : RouteIcons.CHEVRON_RIGHT)), BorderLayout.WEST);
 
-        String count = allIncluded
-            ? " (" + items.size() + ")"
-            : " (" + (items.size() - excludedCount) + "/" + items.size() + ")";
+        String count = allIncluded ? " (" + items.size() + ")" : " (" + (items.size() - excludedCount) + "/" + items.size() + ")";
         JLabel name = new JLabel(category + count);
         name.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
         row.add(name, BorderLayout.CENTER);
@@ -471,8 +463,7 @@ final class MethodCatalogView {
         // opens the tier menu (exclude is its bottom entry).
         MethodPriority tier = plugin.getMethodPriority(item);
         final IconActionLabel[] toggleHolder = new IconActionLabel[1];
-        toggleHolder[0] = new IconActionLabel(priorityRestIcon(tier), priorityHoverIcon(tier),
-            priorityTooltip(item.label(), tier),
+        toggleHolder[0] = new IconActionLabel(priorityRestIcon(tier), priorityHoverIcon(tier), priorityTooltip(item.label(), tier),
             () -> showPriorityMenu(toggleHolder[0], item));
         IconActionLabel toggle = toggleHolder[0];
         // The status marker (lock/bank) stays by the name; the toggle sits at the row's right edge,

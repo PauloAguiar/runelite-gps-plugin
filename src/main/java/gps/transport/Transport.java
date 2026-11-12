@@ -129,22 +129,13 @@ import gps.transport.requirement.TransportItems;
      * and a destination-only transport, and merges requirements
      */
     Transport(Transport origin, Transport destination) {
-        TransportBuilder builder = new TransportBuilder()
-            .origin(origin.origin)
-            .destination(destination.destination)
-            .type(origin.type)
-            .startSkillLevels(origin.skillLevels)
-            .startSkillLevels(destination.skillLevels)
-            .quests(origin.quests)
-            .quests(destination.quests)
-            .itemRequirements(TransportItems.merge(origin.itemRequirements, destination.itemRequirements))
-            .duration(Math.max(origin.duration, destination.duration))
-            .displayInfo(destination.displayInfo)
+        TransportBuilder builder = new TransportBuilder().origin(origin.origin).destination(destination.destination).type(origin.type)
+            .startSkillLevels(origin.skillLevels).startSkillLevels(destination.skillLevels).quests(origin.quests)
+            .quests(destination.quests).itemRequirements(TransportItems.merge(origin.itemRequirements, destination.itemRequirements))
+            .duration(Math.max(origin.duration, destination.duration)).displayInfo(destination.displayInfo)
             .isConsumable(origin.isConsumable || destination.isConsumable)
-            .maxWildernessLevel(Math.max(origin.maxWildernessLevel, destination.maxWildernessLevel))
-            .objectInfo(origin.objectInfo)
-            .note(destination.note != null ? destination.note : origin.note)
-            .varRequirements(origin.varRequirements)
+            .maxWildernessLevel(Math.max(origin.maxWildernessLevel, destination.maxWildernessLevel)).objectInfo(origin.objectInfo)
+            .note(destination.note != null ? destination.note : origin.note).varRequirements(origin.varRequirements)
             .varRequirements(destination.varRequirements)
             .regionOverride(destination.regionOverride != null ? destination.regionOverride : origin.regionOverride);
 
@@ -263,9 +254,7 @@ import gps.transport.requirement.TransportItems;
     }
 
     @Override public String toString() {
-        return ("(" +
-            WorldPointUtil.unpackWorldX(origin) + ", " +
-            WorldPointUtil.unpackWorldY(origin) + ", " +
+        return ("(" + WorldPointUtil.unpackWorldX(origin) + ", " + WorldPointUtil.unpackWorldY(origin) + ", " +
             WorldPointUtil.unpackWorldPlane(origin) + ") to (" +
             WorldPointUtil.unpackWorldX(destination) + ", " +
             WorldPointUtil.unpackWorldY(destination) + ", " +

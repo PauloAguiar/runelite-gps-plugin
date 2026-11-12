@@ -48,10 +48,7 @@ public final class BankPickupRequirements {
      * @param path             The current path
      * @param pathIndex        The current step index in the path
      */
-    public static Pickup compute(
-        Client client,
-        Item[] bankItems,
-        PathfinderConfig pathfinderConfig,
+    public static Pickup compute(Client client, Item[] bankItems, PathfinderConfig pathfinderConfig,
         BiFunction<PathStep, PathStep, Set<Transport>> edgeTransports,
         Set<Integer> bankLocations,
         List<PathStep> path,
@@ -211,8 +208,7 @@ public final class BankPickupRequirements {
         if (transport.getItemRequirements() == null) return true;
         for (ItemRequirement req : transport.getItemRequirements().getRequirements()) {
             int qty = requiredQuantity(req, coinPercent);
-            if (hasAnyItem(playerHas, req.getItemIds(), qty)
-                || hasAnyItem(playerHas, req.getStaffIds(), 1)
+            if (hasAnyItem(playerHas, req.getItemIds(), qty) || hasAnyItem(playerHas, req.getStaffIds(), 1)
                 || hasAnyItem(playerHas, req.getOffhandIds(), 1)) {
                 continue;
             }
@@ -244,8 +240,7 @@ public final class BankPickupRequirements {
      * One alternative's pickups (canonical id to quantity, for the phrase), or null when the bank
      * cannot supply it; the slots it would come from join {@code slots} once it is known to be supplied.
      */
-    private static Map<Integer, Long> computeBankPickups(Transport transport,
-        Map<Integer, Integer> playerHas,
+    private static Map<Integer, Long> computeBankPickups(Transport transport, Map<Integer, Integer> playerHas,
         Map<Integer, Integer> bankHas,
         Map<Integer, Integer> bankPouchRunes,
         int coinPercent,
@@ -257,8 +252,7 @@ public final class BankPickupRequirements {
         for (ItemRequirement req : transport.getItemRequirements().getRequirements()) {
             int qty = requiredQuantity(req, coinPercent);
             // Already satisfied by player?
-            if (hasAnyItem(playerHas, req.getItemIds(), qty)
-                || hasAnyItem(playerHas, req.getStaffIds(), 1)
+            if (hasAnyItem(playerHas, req.getItemIds(), qty) || hasAnyItem(playerHas, req.getStaffIds(), 1)
                 || hasAnyItem(playerHas, req.getOffhandIds(), 1)) {
                 continue;
             }

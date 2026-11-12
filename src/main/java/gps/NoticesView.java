@@ -89,8 +89,7 @@ final class NoticesView extends JPanel {
             if (!allStopShort) return null;
             // Plan step N12: the generator tells "reachable with everything, not with what you
             // have" from "no known route" (a sealed tile, or a gap in the map data).
-            return new Status(missingUnlocks
-                ? "<b>Not reachable with what you have.</b><br>A route exists with items or unlocks you lack: "
+            return new Status(missingUnlocks ? "<b>Not reachable with what you have.</b><br>A route exists with items or unlocks you lack: "
                     + "switch to All to see it. Showing the closest reachable point."
                 : "<b>No known route to this destination.</b><br>The spot may be sealed off, or the map may be "
                     + "missing a connection. Showing the closest reachable point.", Kind.WARNING);
@@ -113,8 +112,7 @@ final class NoticesView extends JPanel {
         // A live destination (or its routes) supersedes any lingering arrival banner.
         if (hasTarget) showingArrival = false;
         removeAll();
-        Status status = status(calculating, !routes.isEmpty(),
-            routes.stream().noneMatch(plugin::routeReachesTarget),
+        Status status = status(calculating, !routes.isEmpty(), routes.stream().noneMatch(plugin::routeReachesTarget),
             plugin.getUnreachableCause() == AlternativeRoutesService.UnreachableCause.MISSING_UNLOCKS,
             hasTarget, showingArrival, arrivalImmediate,
             plugin.getRoutesMode() == AlternativeRoutesMode.ALL_EVERYTHING);
@@ -127,45 +125,37 @@ final class NoticesView extends JPanel {
         // Path plugin" option is on; with it off, quest steps silently never arrive. Dismissable
         // (the x persists via config) for users who prefer it that way.
         if (plugin.isQuestHelperPathingOff() && !plugin.getGpsConfig().questHelperBannerDismissed()) {
-            warnings.add(withDismiss(banner(RouteIcons.BANNER_WARNING,
-                "Quest Helper isn't routing through GPS",
-                "Turn on <b>Use Shortest Path plugin</b> in Quest Helper's settings so quest"
-                    + " steps hand their destinations to GPS.",
+            warnings.add(withDismiss(banner(RouteIcons.BANNER_WARNING, "Quest Helper isn't routing through GPS",
+                "Turn on <b>Use Shortest Path plugin</b> in Quest Helper's settings so quest" + " steps hand their destinations to GPS.",
                 BANNER_WARN_ACCENT), "questHelperBannerDismissed"));
         }
         // Running the original Shortest Path plugin alongside GPS doubles the path rendering and
         // the plugin-message integrations (both answer Quest Helper's destinations).
         if (plugin.isShortestPathConflict()) {
-            warnings.add(banner(RouteIcons.BANNER_WARNING,
-                "Shortest Path is also enabled",
+            warnings.add(banner(RouteIcons.BANNER_WARNING, "Shortest Path is also enabled",
                 "Both plugins draw paths and respond to the same integrations. GPS includes its "
                     + "functionality: disable Shortest Path to avoid doubled rendering.",
                 BANNER_WARN_ACCENT));
         }
         // Method toggles no longer recalculate; flag a route list generated with different exclusions.
-        if (!calculating && hasTarget && plugin.isRouteListStale()) {
-            warnings.add(banner(RouteIcons.BANNER_WARNING,
-                "Exclusions changed: press \"Refresh routes\" to apply.", BANNER_WARN_ACCENT));
-        }
+        if (!calculating && hasTarget && plugin.isRouteListStale())
+            warnings.add(banner(RouteIcons.BANNER_WARNING, "Exclusions changed: press \"Refresh routes\" to apply.", BANNER_WARN_ACCENT));
         // Log storage running low at the balloon stations (smart mode, synced, unlocked routes only).
         List<String> lowLogs = plugin.getBalloonLowLogTypes();
         if (!lowLogs.isEmpty()) warnings.add(balloonLowBanner.apply(lowLogs));
         ShortestPathConfig cfg = plugin.getGpsConfig();
         if (cfg.usePoh() && cfg.pohSmartDetect() && !plugin.isPohScanned()) {
-            warnings.add(banner(RouteIcons.BANNER_WARNING,
-                "House furniture not detected",
+            warnings.add(banner(RouteIcons.BANNER_WARNING, "House furniture not detected",
                 "Enter your house once to auto-detect its teleport furniture.",
                 BANNER_WARN_ACCENT));
         }
         if (cfg.useSpiritTrees() && cfg.spiritTreeSmartMode() && !plugin.isSpiritTreeSynced()) {
-            warnings.add(banner(RouteIcons.BANNER_WARNING,
-                "Planted spirit trees not synced",
+            warnings.add(banner(RouteIcons.BANNER_WARNING, "Planted spirit trees not synced",
                 "Open a spirit tree's travel menu once to detect which trees you have planted.",
                 BANNER_WARN_ACCENT));
         }
         if (cfg.useHotAirBalloons() && cfg.balloonSmartMode() && !cfg.balloonStorageSynced()) {
-            warnings.add(banner(RouteIcons.BANNER_WARNING,
-                "Balloon log storage not synced",
+            warnings.add(banner(RouteIcons.BANNER_WARNING, "Balloon log storage not synced",
                 "Check the Log storage at a balloon station once so flights can be paid from it.",
                 BANNER_WARN_ACCENT));
         }
@@ -256,12 +246,9 @@ final class NoticesView extends JPanel {
         // The x eats ~18px of the CENTER label's fixed HTML width: renarrow the text or its last
         // word clips under the button (screenshot report: 'plugin' became 'plu').
         for (Component comp : banner.getComponents()) {
-            if (comp instanceof JLabel && ((JLabel) comp).getText() != null
-                && ((JLabel) comp).getText().startsWith("<html>")) {
+            if (comp instanceof JLabel && ((JLabel) comp).getText() != null && ((JLabel) comp).getText().startsWith("<html>")) {
                 JLabel text = (JLabel) comp;
-                text.setText(text.getText().replace(
-                    "width:" + BANNER_TEXT_WIDTH + "px",
-                    "width:" + (BANNER_TEXT_WIDTH - 18) + "px"));
+                text.setText(text.getText().replace("width:" + BANNER_TEXT_WIDTH + "px", "width:" + (BANNER_TEXT_WIDTH - 18) + "px"));
             }
         }
         banner.add(verticallyCentered(close), BorderLayout.EAST);

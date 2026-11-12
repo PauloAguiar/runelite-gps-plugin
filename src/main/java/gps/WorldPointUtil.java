@@ -141,8 +141,7 @@ public class WorldPointUtil {
         final int currentX = WorldPointUtil.unpackWorldX(currentPacked);
         final int currentY = WorldPointUtil.unpackWorldY(currentPacked);
         final int currentZ = WorldPointUtil.unpackWorldPlane(currentPacked);
-        return distanceBetween(previousX, previousY, previousZ,
-            currentX, currentY, currentZ, diagonal);
+        return distanceBetween(previousX, previousY, previousZ, currentX, currentY, currentZ, diagonal);
     }
 
     /**
@@ -173,14 +172,7 @@ public class WorldPointUtil {
      *                  otherwise Euclidean squared distance).
      * @return distance or {@code Integer.MAX_VALUE} if planes differ.
      */
-    public static int distanceBetween(
-        int previousX,
-        int previousY,
-        int previousZ,
-        int currentX,
-        int currentY,
-        int currentZ,
-        int diagonal) {
+    public static int distanceBetween(int previousX, int previousY, int previousZ, int currentX, int currentY, int currentZ, int diagonal) {
         final int dz = previousZ - currentZ;
 
         if (dz != 0) return Integer.MAX_VALUE;
@@ -200,8 +192,7 @@ public class WorldPointUtil {
      *                  otherwise Euclidean squared distance).
      * @return distance.
      */
-    public static int distanceBetween2D(int previousX, int previousY,
-        int currentX, int currentY, int diagonal) {
+    public static int distanceBetween2D(int previousX, int previousY, int currentX, int currentY, int diagonal) {
         final int dx = previousX - currentX;
         final int dy = previousY - currentY;
 
@@ -327,11 +318,8 @@ public class WorldPointUtil {
             if (worldEntity == null) return UNDEFINED;
             LocalPoint boatLocal = worldEntity.getLocalLocation();
             if (boatLocal == null) return UNDEFINED;
-            WorldPoint world =
-                WorldPoint.fromLocalInstance(client, boatLocal);
-            return world != null
-                ? packWorldPoint(world.getX(), world.getY(), world.getPlane())
-                : UNDEFINED;
+            WorldPoint world = WorldPoint.fromLocalInstance(client, boatLocal);
+            return world != null ? packWorldPoint(world.getX(), world.getY(), world.getPlane()) : UNDEFINED;
         }
         return fromLocalInstance(client, localPlayer.getLocalLocation());
     }
@@ -350,8 +338,7 @@ public class WorldPointUtil {
         int plane = worldView.getPlane();
 
         if (!worldView.isInstance()) {
-            return packWorldPoint(
-                (localPoint.getX() >> LOCAL_COORD_BITS) + worldView.getBaseX(),
+            return packWorldPoint((localPoint.getX() >> LOCAL_COORD_BITS) + worldView.getBaseX(),
                 (localPoint.getY() >> LOCAL_COORD_BITS) + worldView.getBaseY(),
                 plane);
         }
@@ -420,10 +407,8 @@ public class WorldPointUtil {
                     int templateChunkX = unpackChunkTemplateX(chunkData);
                     int plane = unpackChunkTemplatePlane(chunkData);
                     if (worldPointX >= templateChunkX && worldPointX < templateChunkX + CHUNK_SIZE
-                        && worldPointY >= templateChunkY && worldPointY < templateChunkY + CHUNK_SIZE
-                        && plane == worldPointPlane) {
-                        worldPoints.add(rotate(
-                            baseX + x * CHUNK_SIZE + (worldPointX & (CHUNK_SIZE - 1)),
+                        && worldPointY >= templateChunkY && worldPointY < templateChunkY + CHUNK_SIZE && plane == worldPointPlane) {
+                        worldPoints.add(rotate(baseX + x * CHUNK_SIZE + (worldPointX & (CHUNK_SIZE - 1)),
                             baseY + y * CHUNK_SIZE + (worldPointY & (CHUNK_SIZE - 1)),
                             z,
                             rotation));
@@ -464,8 +449,7 @@ public class WorldPointUtil {
 
         if (!isInScene(worldView, packedPoint)) return null;
 
-        return new LocalPoint(
-            (unpackWorldX(packedPoint) - worldView.getBaseX() << LOCAL_COORD_BITS) + (1 << LOCAL_COORD_BITS - 1),
+        return new LocalPoint((unpackWorldX(packedPoint) - worldView.getBaseX() << LOCAL_COORD_BITS) + (1 << LOCAL_COORD_BITS - 1),
             (unpackWorldY(packedPoint) - worldView.getBaseY() << LOCAL_COORD_BITS) + (1 << LOCAL_COORD_BITS - 1),
             worldView.getId());
     }

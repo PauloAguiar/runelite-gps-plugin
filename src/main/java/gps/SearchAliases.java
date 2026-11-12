@@ -9,9 +9,7 @@ import java.util.Map;
  * match through the tiers, so only the genuinely different spellings live here.
  */
 final class SearchAliases {
-    private static final Map<String, String> ALIASES = Map.ofEntries(
-        Map.entry("ge", "grand exchange"),
-        Map.entry("wildy", "wilderness"),
+    private static final Map<String, String> ALIASES = Map.ofEntries(Map.entry("ge", "grand exchange"), Map.entry("wildy", "wilderness"),
         Map.entry("lumby", "lumbridge"),
         Map.entry("fally", "falador"),
         Map.entry("cammy", "camelot"),

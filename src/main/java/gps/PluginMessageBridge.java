@@ -58,8 +58,7 @@ import net.runelite.client.events.PluginMessage;
                 // An NPC's or object's own tile expands like a map pin; a transport origin among
                 // the expansion is the interactable side (see Destinations.externalTargets).
                 PathfinderConfig pathfinderConfig = plugin.getPathfinderConfig();
-                ends = Destinations.externalTargets(request.targets,
-                    pathfinderConfig != null ? pathfinderConfig.getMap() : null,
+                ends = Destinations.externalTargets(request.targets, pathfinderConfig != null ? pathfinderConfig.getMap() : null,
                     pathfinderConfig != null ? pathfinderConfig::isTransportOrigin : null);
             }
             plugin.setDestination(start, ends, useOld);
@@ -76,10 +75,8 @@ import net.runelite.client.events.PluginMessage;
      * route is what the player actually follows.
      */
     void postTransports() {
-        if (!plugin.hasPathTargets()
-            || !ConfigOverrides.override("postTransports", plugin.getGpsConfig().postTransports())) {
+        if (!plugin.hasPathTargets() || !ConfigOverrides.override("postTransports", plugin.getGpsConfig().postTransports()))
             return;
-        }
         List<PathStep> currentPath = plugin.getDisplayPath();
         if (currentPath.isEmpty()) return;
         Map<String, Object> data = PluginMessageCodec.encodeTransports(currentPath, plugin::transportsForEdge);

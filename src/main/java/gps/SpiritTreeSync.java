@@ -77,10 +77,8 @@ import net.runelite.client.config.ConfigManager;
     void restore() {
         if (pathfinderConfig.availableSpiritTrees != null) return;
         String raw = configManager.getRSProfileConfiguration(configGroup, CONFIG_KEY_SPIRIT_TREES);
-        if (raw != null) {
-            pathfinderConfig.availableSpiritTrees = raw.isEmpty()
-                ? new HashSet<>() : new HashSet<>(Arrays.asList(raw.split(",")));
-        }
+        if (raw != null)
+            pathfinderConfig.availableSpiritTrees = raw.isEmpty() ? new HashSet<>() : new HashSet<>(Arrays.asList(raw.split(",")));
     }
 
     /** Logged out: the next character starts from its own snapshot. */

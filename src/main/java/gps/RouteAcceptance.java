@@ -83,8 +83,7 @@ final class RouteAcceptance {
      */
     static boolean beyondBand(int cost, List<RouteOption> routes, int multiple, int limit) {
         if (multiple <= 0 || routes.size() < MIN_PAGE_ROUTES || cost <= band(routes, multiple)) return false;
-        return routes.size() >= limit
-            || cost > pageFillCeiling(routes.get(0).getTotalCost(), maxAcceptedCost(routes), multiple);
+        return routes.size() >= limit || cost > pageFillCeiling(routes.get(0).getTotalCost(), maxAcceptedCost(routes), multiple);
     }
 
     static boolean beyondBand(int cost, List<RouteOption> routes, int multiple) {
@@ -127,9 +126,7 @@ final class RouteAcceptance {
     /** Whether the route starts by disembarking at a port. */
     static boolean portFirst(RouteOption route) {
         List<TeleportMethod> methods = route.getMethods();
-        return !methods.isEmpty()
-            && TransportType.SAILING.equals(methods.get(0).getType())
-            && methods.get(0).getDisplayInfo() != null
+        return !methods.isEmpty() && TransportType.SAILING.equals(methods.get(0).getType()) && methods.get(0).getDisplayInfo() != null
             && methods.get(0).getDisplayInfo().startsWith("Disembark");
     }
 
@@ -158,14 +155,10 @@ final class RouteAcceptance {
      * kept route's methods (a bank trip before the same teleport chain counts only against a kept
      * route that also banks). Such a candidate adds nothing the page does not already say.
      */
-    static boolean nestsAKeptRoute(List<TeleportMethod> candidate, boolean candidateViaBank,
-        List<RouteOption> kept) {
+    static boolean nestsAKeptRoute(List<TeleportMethod> candidate, boolean candidateViaBank, List<RouteOption> kept) {
         for (RouteOption route : kept) {
             List<TeleportMethod> base = route.getMethods();
-            if (base.isEmpty() || candidate.size() <= base.size()
-                || (candidateViaBank && !route.isViaBank())) {
-                continue;
-            }
+            if (base.isEmpty() || candidate.size() <= base.size() || (candidateViaBank && !route.isViaBank())) continue;
             if (candidate.subList(candidate.size() - base.size(), candidate.size()).equals(base)) return true;
         }
         return false;

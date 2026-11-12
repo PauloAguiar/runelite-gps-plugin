@@ -77,20 +77,12 @@ import gps.ShortestPathConfig;
     private final Function<ShortestPathConfig, Integer> costGetter;
     private final Integer radiusThreshold;
 
-    TransportType(
-        String resourcePath,
-        String enabledKey,
-        Function<ShortestPathConfig, Boolean> enabledGetter,
-        String costKey,
+    TransportType(String resourcePath, String enabledKey, Function<ShortestPathConfig, Boolean> enabledGetter, String costKey,
         Function<ShortestPathConfig, Integer> costGetter) {
         this(resourcePath, enabledKey, enabledGetter, costKey, costGetter, null);
     }
 
-    TransportType(
-        String resourcePath,
-        String enabledKey,
-        Function<ShortestPathConfig, Boolean> enabledGetter,
-        String costKey,
+    TransportType(String resourcePath, String enabledKey, Function<ShortestPathConfig, Boolean> enabledGetter, String costKey,
         Function<ShortestPathConfig, Integer> costGetter,
         Integer radiusThreshold) {
         this.resourcePath = resourcePath;

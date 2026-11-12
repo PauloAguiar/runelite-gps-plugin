@@ -198,10 +198,8 @@ final class RouteSession {
         List<TeleportMethod> remaining = methods.subList(consumed, methods.size());
         boolean checkBank = consumed == 0;
         for (RouteOption route : routes) {
-            if ((!checkBank || route.isViaBank() == previous.isViaBank())
-                && route.getMethods().equals(remaining)) {
+            if ((!checkBank || route.isViaBank() == previous.isViaBank()) && route.getMethods().equals(remaining))
                 return route;
-            }
         }
         return null;
     }

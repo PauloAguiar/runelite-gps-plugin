@@ -28,16 +28,11 @@ public class WildernessChecker {
     private static final WorldArea WILDERNESS_UNDERGROUND_LEVEL_30 = new WorldArea(2944, 10155, 518, 221, 0);
 
     public static boolean isInWilderness(int packedPoint) {
-        return distanceToArea2D(packedPoint, WILDERNESS_ABOVE_GROUND) == 0
-            && distanceToArea2D(packedPoint, FEROX_ENCLAVE_1) != 0
-            && distanceToArea2D(packedPoint, FEROX_ENCLAVE_2) != 0
-            && distanceToArea2D(packedPoint, FEROX_ENCLAVE_3) != 0
-            && distanceToArea2D(packedPoint, FEROX_ENCLAVE_4) != 0
-            && distanceToArea2D(packedPoint, FEROX_ENCLAVE_5) != 0
-            && distanceToArea2D(packedPoint, NOT_WILDERNESS_1) != 0
-            && distanceToArea2D(packedPoint, NOT_WILDERNESS_2) != 0
-            && distanceToArea2D(packedPoint, NOT_WILDERNESS_3) != 0
-            && distanceToArea2D(packedPoint, NOT_WILDERNESS_4) != 0
+        return distanceToArea2D(packedPoint, WILDERNESS_ABOVE_GROUND) == 0 && distanceToArea2D(packedPoint, FEROX_ENCLAVE_1) != 0
+            && distanceToArea2D(packedPoint, FEROX_ENCLAVE_2) != 0 && distanceToArea2D(packedPoint, FEROX_ENCLAVE_3) != 0
+            && distanceToArea2D(packedPoint, FEROX_ENCLAVE_4) != 0 && distanceToArea2D(packedPoint, FEROX_ENCLAVE_5) != 0
+            && distanceToArea2D(packedPoint, NOT_WILDERNESS_1) != 0 && distanceToArea2D(packedPoint, NOT_WILDERNESS_2) != 0
+            && distanceToArea2D(packedPoint, NOT_WILDERNESS_3) != 0 && distanceToArea2D(packedPoint, NOT_WILDERNESS_4) != 0
             || distanceToArea2D(packedPoint, WILDERNESS_UNDERGROUND) == 0;
     }
 

@@ -19,13 +19,7 @@ import lombok.Getter;
     private final long elapsedNanos;
     private final PathTerminationReason terminationReason;
 
-    public PathfinderResult(
-        int start,
-        int target,
-        boolean reached,
-        List<PathStep> pathSteps,
-        int closestReachedPoint,
-        int totalCost,
+    public PathfinderResult(int start, int target, boolean reached, List<PathStep> pathSteps, int closestReachedPoint, int totalCost,
         int nodesChecked,
         int transportsChecked,
         long elapsedNanos,

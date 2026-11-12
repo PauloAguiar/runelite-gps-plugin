@@ -52,8 +52,7 @@ import static gps.WorldPointUtil.unpackWorldY;
             this.category = category;
             this.name = name;
             this.packedPosition = packedPosition;
-            this.tiles = tiles != null ? tiles
-                : (packedPosition == WorldPointUtil.UNDEFINED ? Set.of() : Set.of(packedPosition));
+            this.tiles = tiles != null ? tiles : (packedPosition == WorldPointUtil.UNDEFINED ? Set.of() : Set.of(packedPosition));
             this.nearest = nearest;
         }
     }
@@ -77,8 +76,7 @@ import static gps.WorldPointUtil.unpackWorldY;
      * to ALL tiles of that category at once — the alternative-routes engine then ranks the shortest
      * paths (using available teleports), which may lead to different sites.
      */
-    public static final List<NearestOption> NEAREST_OPTIONS = List.of(
-        new NearestOption("bank", "Bank"),
+    public static final List<NearestOption> NEAREST_OPTIONS = List.of(new NearestOption("bank", "Bank"),
         new NearestOption("bank_round_trip", "Bank (and back)"),
         new NearestOption("altar", "Altar"),
         new NearestOption("water", "Water source"),
@@ -120,8 +118,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         }
         for (Map.Entry<String, Entry> grouped : amenityFirst.entrySet()) {
             Entry first = grouped.getValue();
-            out.add(new Entry(first.category, first.name, first.packedPosition,
-                Set.copyOf(amenityTiles.get(grouped.getKey())), null));
+            out.add(new Entry(first.category, first.name, first.packedPosition, Set.copyOf(amenityTiles.get(grouped.getKey())), null));
         }
         return out;
     }
@@ -137,10 +134,8 @@ import static gps.WorldPointUtil.unpackWorldY;
         if (rest.isEmpty()) return null;
         for (NearestOption option : NEAREST_OPTIONS) {
             String label = option.label.toLowerCase(Locale.ROOT);
-            if (rest.equals(option.id.replace('_', ' ')) || rest.equals(label)
-                || rest.equals(label.replace("(", "").replace(")", ""))) {
+            if (rest.equals(option.id.replace('_', ' ')) || rest.equals(label) || rest.equals(label.replace("(", "").replace(")", "")))
                 return option;
-            }
         }
         return null;
     }
@@ -196,8 +191,7 @@ import static gps.WorldPointUtil.unpackWorldY;
      * Troll Stronghold entrance: routed behind the mouth, then the game walked the long way
      * around). The mapped transport's origin tile is, by definition, the interactable side.
      */
-    public static Set<Integer> walkableTargets(CollisionMap map, int packed,
-        IntPredicate transportOrigin) {
+    public static Set<Integer> walkableTargets(CollisionMap map, int packed, IntPredicate transportOrigin) {
         packed = remapTemplateOnlyZones(packed);
         Set<Integer> land = walkableLandTargets(map, packed, transportOrigin);
         // A pin on SAILABLE water is a sea destination (a wreck, a fishing spot, an ocean
@@ -213,8 +207,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         return land;
     }
 
-    private static Set<Integer> walkableLandTargets(CollisionMap map, int packed,
-        IntPredicate transportOrigin) {
+    private static Set<Integer> walkableLandTargets(CollisionMap map, int packed, IntPredicate transportOrigin) {
         final int x = unpackWorldX(packed);
         final int y = unpackWorldY(packed);
         final int plane = unpackWorldPlane(packed);
@@ -278,10 +271,8 @@ import static gps.WorldPointUtil.unpackWorldY;
         final int y = unpackWorldY(packed);
         final int plane = unpackWorldPlane(packed);
         for (Remap remap : loadRemaps()) {
-            if (plane == remap.plane && x >= remap.minX && x <= remap.maxX
-                && y >= remap.minY && y <= remap.maxY) {
+            if (plane == remap.plane && x >= remap.minX && x <= remap.maxX && y >= remap.minY && y <= remap.maxY)
                 return remap.anchor;
-            }
         }
         return packed;
     }
@@ -300,8 +291,7 @@ import static gps.WorldPointUtil.unpackWorldY;
                         loaded.add(new Remap(Integer.parseInt(f[0].trim()), Integer.parseInt(f[1].trim()),
                             Integer.parseInt(f[2].trim()), Integer.parseInt(f[3].trim()),
                             Integer.parseInt(f[4].trim()),
-                            packWorldPoint(Integer.parseInt(f[5].trim()),
-                                Integer.parseInt(f[6].trim()), Integer.parseInt(f[7].trim())),
+                            packWorldPoint(Integer.parseInt(f[5].trim()), Integer.parseInt(f[6].trim()), Integer.parseInt(f[7].trim())),
                             f[8].trim()));
                     }
                 }
@@ -362,16 +352,13 @@ import static gps.WorldPointUtil.unpackWorldY;
                     String label = type == TransportType.FAIRY_RING ? "Fairy ring" : "Spirit tree";
                     String info = transport.getDisplayInfo();
                     String name = info != null && !info.isEmpty() ? label + " " + info : label;
-                    entries.add(new Entry(type == TransportType.FAIRY_RING ? "fairy_ring" : "spirit_tree",
-                        name, origin));
+                    entries.add(new Entry(type == TransportType.FAIRY_RING ? "fairy_ring" : "spirit_tree", name, origin));
                 }
                 else if (type == TransportType.TELEPORTATION_MINIGAME) {
                     int destination = transport.getDestination();
                     String name = minigameName(transport.getDisplayInfo());
-                    if (destination == WorldPointUtil.UNDEFINED
-                        || !seenMinigames.add(name.toLowerCase(Locale.ROOT))) {
+                    if (destination == WorldPointUtil.UNDEFINED || !seenMinigames.add(name.toLowerCase(Locale.ROOT)))
                         continue;
-                    }
                     entries.add(new Entry("minigame", name, destination));
                 }
             }
@@ -419,10 +406,8 @@ import static gps.WorldPointUtil.unpackWorldY;
         final int y = unpackWorldY(packed);
         final int plane = unpackWorldPlane(packed);
         for (ExclusionZone zone : loadExclusionZones()) {
-            if (plane == zone.plane && x >= zone.minX && x <= zone.maxX
-                && y >= zone.minY && y <= zone.maxY) {
+            if (plane == zone.plane && x >= zone.minX && x <= zone.maxX && y >= zone.minY && y <= zone.maxY)
                 return true;
-            }
         }
         return false;
     }
@@ -495,8 +480,7 @@ import static gps.WorldPointUtil.unpackWorldY;
             String[] fields = line.split("\t");
             if (fields.length < 5) continue;
             try {
-                int packed = packWorldPoint(
-                    Integer.parseInt(fields[2]), Integer.parseInt(fields[3]), Integer.parseInt(fields[4]));
+                int packed = packWorldPoint(Integer.parseInt(fields[2]), Integer.parseInt(fields[3]), Integer.parseInt(fields[4]));
                 entries.add(new Entry(fields[0], fields[1], packed));
             }
             catch (NumberFormatException e) {
@@ -515,8 +499,7 @@ import static gps.WorldPointUtil.unpackWorldY;
      * or the search ends wherever the approach is cheapest, including BEHIND the object
      * (captured at the Troll Stronghold south cave).
      */
-    public static Set<Integer> externalTargets(Set<Integer> targets, CollisionMap map,
-        IntPredicate transportOrigin) {
+    public static Set<Integer> externalTargets(Set<Integer> targets, CollisionMap map, IntPredicate transportOrigin) {
         Set<Integer> ends = new HashSet<>();
         for (int target : targets) ends.addAll(walkableTargets(map, target, transportOrigin));
         if (transportOrigin == null) return ends;

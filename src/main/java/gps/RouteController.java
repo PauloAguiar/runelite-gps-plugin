@@ -83,8 +83,7 @@ import net.runelite.api.ItemContainer;
             Set<Integer> targets = plugin.getPathTargets();
             if (!targets.isEmpty()) {
                 int start = plugin.altStart();
-                log.debug("[alt-routes] Find routes: target set, searchStart={}, target={}",
-                    WorldPointUtil.unpackWorldPoint(start),
+                log.debug("[alt-routes] Find routes: target set, searchStart={}, target={}", WorldPointUtil.unpackWorldPoint(start),
                     WorldPointUtil.unpackWorldPoint(targets.iterator().next()));
                 session.setLimit(defaultLimit());
                 trigger(start, new HashSet<>(targets));
@@ -182,8 +181,7 @@ import net.runelite.api.ItemContainer;
         if (done) {
             // The session re-matches or drops the pick and commits the overlay's route in one step
             // (see RouteSession.settle); the tracker's progress is the pick's progress.
-            session.settle(ordered, service.wasMoreLikely(), AlternativeRoutesService.MAX_ROUTES_CAP,
-                plugin::displayedRouteProgress);
+            session.settle(ordered, service.wasMoreLikely(), AlternativeRoutesService.MAX_ROUTES_CAP, plugin::displayedRouteProgress);
             // The displayed route just settled: publish it to other plugins (postTransports).
             messages.postTransports();
         }

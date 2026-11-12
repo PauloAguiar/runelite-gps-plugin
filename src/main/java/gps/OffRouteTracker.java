@@ -101,8 +101,7 @@ final class OffRouteTracker {
         if (displayed != null && !displayed.sailingJumpDepartures().isEmpty() && SailingSea.isSailable(location)) {
             for (int departure : displayed.sailingJumpDepartures()) {
                 if (departure < 0 || departure + 1 >= path.size()) continue;
-                int[] track = SailingSea.seaPath(path.get(departure).getPackedPosition(),
-                    path.get(departure + 1).getPackedPosition());
+                int[] track = SailingSea.seaPath(path.get(departure).getPackedPosition(), path.get(departure + 1).getPackedPosition());
                 if (track == null) return 0;
                 for (int waypoint : track) best = Math.min(best, distanceBetween(location, waypoint));
             }

@@ -55,8 +55,7 @@ import net.runelite.api.Client;
                 if (tileFlags == 0xFFFFFF || (tileFlags & CollisionDataFlag.BLOCK_MOVEMENT_OBJECT) == 0) continue;
                 int x = baseX + sx;
                 int y = baseY + sy;
-                if (playerAt != WorldPointUtil.UNDEFINED
-                    && Math.max(Math.abs(WorldPointUtil.unpackWorldX(playerAt) - x),
+                if (playerAt != WorldPointUtil.UNDEFINED && Math.max(Math.abs(WorldPointUtil.unpackWorldX(playerAt) - x),
                         Math.abs(WorldPointUtil.unpackWorldY(playerAt) - y)) <= OWN_BOAT_RADIUS) {
                     continue;
                 }

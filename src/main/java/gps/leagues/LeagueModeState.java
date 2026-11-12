@@ -66,9 +66,7 @@ public class LeagueModeState {
     private static final Map<Integer, LeagueRegion> AREA_VARBIT_TO_REGION;
 
     static {
-        AREA_VARBIT_TO_REGION = Map.ofEntries(
-            Map.entry(1, LeagueRegion.MISTHALIN),
-            Map.entry(2, LeagueRegion.KARAMJA),
+        AREA_VARBIT_TO_REGION = Map.ofEntries(Map.entry(1, LeagueRegion.MISTHALIN), Map.entry(2, LeagueRegion.KARAMJA),
             Map.entry(3, LeagueRegion.ASGARNIA),
             Map.entry(4, LeagueRegion.KANDARIN),
             Map.entry(5, LeagueRegion.MORYTANIA),
@@ -139,9 +137,7 @@ public class LeagueModeState {
      */
     public void setForTest(boolean seasonal, Set<LeagueRegion> unlocked) {
         this.seasonal = seasonal;
-        this.unlockedRegions = unlocked == null
-            ? EnumSet.noneOf(LeagueRegion.class)
-            : EnumSet.copyOf(unlocked);
+        this.unlockedRegions = unlocked == null ? EnumSet.noneOf(LeagueRegion.class) : EnumSet.copyOf(unlocked);
     }
 
     private static void addRegionFromSlot(Client client, int varbitId, Set<LeagueRegion> out) {

@@ -86,8 +86,7 @@ import net.runelite.api.ChatMessageType;
         // After setTargets: it resets the round-trip flag for ordinary destinations.
         roundTrip = resume.roundTrip;
         if (resume.roundTrip) routes.recompute();
-        plugin.getClient().addChatMessage(ChatMessageType.GAMEMESSAGE, "",
-            "GPS: bank reached, resuming your previous route.", null);
+        plugin.getClient().addChatMessage(ChatMessageType.GAMEMESSAGE, "", "GPS: bank reached, resuming your previous route.", null);
     }
 
     /** Another plugin's new destination replaces a bank trip like any other change. */
@@ -157,8 +156,7 @@ import net.runelite.api.ChatMessageType;
                 // Logged out: setTargets would change nothing, so no trip may start either.
                 return;
             // Read before the destination changes: setting it forgets any trip under way.
-            BankDetour.Route replaced = bankTrip.replacing(
-                BankDetour.Route.of(targets, source, roundTrip, marker.pinnedTile()));
+            BankDetour.Route replaced = bankTrip.replacing(BankDetour.Route.of(targets, source, roundTrip, marker.pinnedTile()));
             source = label;
             setTargets(new HashSet<>(tiles), false);
             // After setTargets: it resets the round-trip flag and forgets the trip.

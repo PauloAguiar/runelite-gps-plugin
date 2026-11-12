@@ -56,13 +56,11 @@ final class RouteVerdicts {
      * a door not seen open, per {@code doorOpen}). The path from there is drawn blocked.
      * {@link Integer#MAX_VALUE} when nothing ahead blocks.
      */
-    static int blockedFromIndex(List<PathStep> path, List<RouteDirections.Step> steps, int progress,
-        Predicate<ClosedDoors.Door> doorOpen) {
+    static int blockedFromIndex(List<PathStep> path, List<RouteDirections.Step> steps, int progress, Predicate<ClosedDoors.Door> doorOpen) {
         for (RouteDirections.Step step : steps) {
             if (!step.gatesWalk() || step.getEndIndex() <= progress) continue;
             if (step.isDoor()) {
-                ClosedDoors.Door door = ClosedDoors.doorBetween(
-                    path.get(step.getStartIndex()).getPackedPosition(),
+                ClosedDoors.Door door = ClosedDoors.doorBetween(path.get(step.getStartIndex()).getPackedPosition(),
                     path.get(step.getEndIndex()).getPackedPosition());
                 if (door == null || doorOpen.test(door)) continue;
             }

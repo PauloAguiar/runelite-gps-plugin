@@ -143,10 +143,7 @@ import static gps.WorldPointUtil.unpackWorldY;
             int tile = entry.getKey();
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
-                    int candidate = packWorldPoint(
-                        unpackWorldX(tile) + dx,
-                        unpackWorldY(tile) + dy,
-                        unpackWorldPlane(tile));
+                    int candidate = packWorldPoint(unpackWorldX(tile) + dx, unpackWorldY(tile) + dy, unpackWorldPlane(tile));
                     int diagonals = diagonalBits(cardinal, candidate);
                     if (diagonals != 0) masks.merge(candidate, diagonals, (a, b) -> a | b);
                 }
@@ -240,10 +237,7 @@ import static gps.WorldPointUtil.unpackWorldY;
             return door;
         }
 
-        int facing = dx > 0 ? ORIENTATION_EAST
-            : dx < 0 ? ORIENTATION_WEST
-            : dy > 0 ? ORIENTATION_NORTH
-            : ORIENTATION_SOUTH;
+        int facing = dx > 0 ? ORIENTATION_EAST : dx < 0 ? ORIENTATION_WEST : dy > 0 ? ORIENTATION_NORTH : ORIENTATION_SOUTH;
         Door door = doorAt(from, facing);
         if (door == null) door = doorAt(to, opposite(facing));
         return door;
@@ -317,15 +311,11 @@ import static gps.WorldPointUtil.unpackWorldY;
             try {
                 int id = Integer.parseInt(fields[0]);
                 String name = fields[1];
-                int packed = packWorldPoint(
-                    Integer.parseInt(fields[2]),
-                    Integer.parseInt(fields[3]),
-                    Integer.parseInt(fields[4]));
+                int packed = packWorldPoint(Integer.parseInt(fields[2]), Integer.parseInt(fields[3]), Integer.parseInt(fields[4]));
                 int type = Integer.parseInt(fields[5]);
                 int orientation = Integer.parseInt(fields[6]);
                 boolean placedOpen = fields.length > 9 && "open".equals(fields[9]);
-                result.computeIfAbsent(packed, k -> new ArrayList<>(1))
-                    .add(new Door(id, name, packed, type, orientation, placedOpen));
+                result.computeIfAbsent(packed, k -> new ArrayList<>(1)).add(new Door(id, name, packed, type, orientation, placedOpen));
             }
             catch (NumberFormatException e) {
                 log.warn("Skipping door row with non-numeric field: '{}'", line);

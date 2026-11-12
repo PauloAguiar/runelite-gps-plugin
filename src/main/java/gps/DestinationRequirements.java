@@ -28,11 +28,7 @@ public final class DestinationRequirements {
         this.varPlayers = Collections.emptySet();
     }
 
-    public DestinationRequirements(
-        int[] skillLevels,
-        Set<Quest> quests,
-        Set<VarRequirement> varbits,
-        Set<VarRequirement> varPlayers) {
+    public DestinationRequirements(int[] skillLevels, Set<Quest> quests, Set<VarRequirement> varbits, Set<VarRequirement> varPlayers) {
         this.skillLevels = skillLevels != null ? skillLevels : new int[Skill.values().length + 3];
         this.quests = quests != null ? quests : Collections.emptySet();
         this.varbits = varbits != null ? varbits : Collections.emptySet();

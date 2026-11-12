@@ -28,9 +28,6 @@ public class WorldPointParser implements FieldParser<Integer> {
             ParseErrors.record("coordinate", value);
             return Transport.LOCATION_PERMUTATION;
         }
-        return WorldPointUtil.packWorldPoint(
-            Integer.parseInt(parts[0]),
-            Integer.parseInt(parts[1]),
-            Integer.parseInt(parts[2]));
+        return WorldPointUtil.packWorldPoint(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
     }
 }

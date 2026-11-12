@@ -73,8 +73,7 @@ final class RouteDirections {
             this(text, startIndex, endIndex, ticks, transport, false, false, false);
         }
 
-        private Step(String text, int startIndex, int endIndex, int ticks, boolean transport,
-            boolean door, boolean obstacle) {
+        private Step(String text, int startIndex, int endIndex, int ticks, boolean transport, boolean door, boolean obstacle) {
             this(text, startIndex, endIndex, ticks, transport, door, obstacle, false);
         }
 
@@ -150,9 +149,7 @@ final class RouteDirections {
             }
 
             Transport object = findObjectTransport(plugin, from, to);
-            ClosedDoors.Door door = object == null
-                ? ClosedDoors.doorBetween(from.getPackedPosition(), to.getPackedPosition())
-                : null;
+            ClosedDoors.Door door = object == null ? ClosedDoors.doorBetween(from.getPackedPosition(), to.getPackedPosition()) : null;
             if (object != null) {
                 // Any transport with menu-style object info becomes its own step: climbs
                 // ("Climb-up Staircase"), agility shortcuts ("Walk-across Log balance"),
@@ -167,8 +164,7 @@ final class RouteDirections {
                 // Doors carry the door flag (closed-state gated); every other object transport
                 // (climbs, agility shortcuts, tunnels) is an obstacle the player must click to
                 // cross, so the path beyond it is blocked until used.
-                steps.add(new Step(text, i - 1, i, Math.max(1, object.getDuration()),
-                    false, isDoor, !isDoor));
+                steps.add(new Step(text, i - 1, i, Math.max(1, object.getDuration()), false, isDoor, !isDoor));
                 legStart = i;
             }
             else if (door != null) {
@@ -245,8 +241,7 @@ final class RouteDirections {
         int fare = Integer.MAX_VALUE;
         // UNFILTERED edge rows: the route already committed to this edge, and the
         // availability-filtered sets drop a row whose fare is banked (capture 205518).
-        for (Transport transport : plugin.getPathfinderConfig()
-            .transportsOnEdge(from.getPackedPosition(), to.getPackedPosition())) {
+        for (Transport transport : plugin.getPathfinderConfig().transportsOnEdge(from.getPackedPosition(), to.getPackedPosition())) {
             int coins = coinsOf(plugin, transport);
             if (coins > 0) fare = Math.min(fare, coins);
         }
@@ -268,8 +263,7 @@ final class RouteDirections {
 
     private static int coinsOf(Transport transport) {
         if (transport.getItemRequirements() == null) return 0;
-        for (ItemRequirement requirement
-            : transport.getItemRequirements().getRequirements()) {
+        for (ItemRequirement requirement : transport.getItemRequirements().getRequirements()) {
             for (int itemId : requirement.getItemIds()) {
                 if (itemId == COINS_ITEM_ID) return requirement.getQuantity();
             }
@@ -317,13 +311,11 @@ final class RouteDirections {
             destination = "the destination";
         }
         else {
-            steps.add(new Step("\u26F5 " + (trimmed.isEmpty() ? "Sail" : trimmed), i - 1, i,
-                duration, true));
+            steps.add(new Step("\u26F5 " + (trimmed.isEmpty() ? "Sail" : trimmed), i - 1, i, duration, true));
             return;
         }
         int sailTicks = Math.max(1, duration - SailingSea.OVERHEAD_TICKS);
-        steps.add(new Step("\u26F5 Embark at " + origin, i - 1, i - 1,
-            Math.max(0, duration - sailTicks), true, false, false, true));
+        steps.add(new Step("\u26F5 Embark at " + origin, i - 1, i - 1, Math.max(0, duration - sailTicks), true, false, false, true));
         steps.add(new Step("Sail to " + destination, i - 1, i, sailTicks, true));
     }
 
@@ -365,8 +357,7 @@ final class RouteDirections {
      * requirement is banked, which is every row this step exists for). Falls back to the
      * single-line text when nothing resolves.
      */
-    private static Step withdrawStep(ShortestPathPlugin plugin, RouteOption route,
-        List<PathStep> path, int pathIndex) {
+    private static Step withdrawStep(ShortestPathPlugin plugin, RouteOption route, List<PathStep> path, int pathIndex) {
         List<String> details = pickupLines(plugin, route);
         int ticks = bankWithdrawTicks(plugin.getPathfinderConfig().getBankPickupCost());
         if (details.isEmpty())
@@ -387,8 +378,7 @@ final class RouteDirections {
         for (Transport row : rows)
             if (TransportType.CANOE.equals(row.getType()) && plugin.getPathfinderConfig().isCanoeAxeStored())
                 return List.of("Axe stored at the canoe station");
-        RouteItemCue cue = RouteItemCue.ofStep(rows,
-            client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1, carried);
+        RouteItemCue cue = RouteItemCue.ofStep(rows, client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1, carried);
         if (cue == null) return List.of();
         Set<Integer> worn = new HashSet<>();
         ItemContainer equipment = client.getItemContainer(InventoryID.WORN);
@@ -429,8 +419,7 @@ final class RouteDirections {
             if (TransportType.FAIRY_RING.equals(route.getBankTransports().get(i).getType()))
                 bankedRing = route.getBankTransports().get(i).method();
         }
-        if (bankedRing != null && plugin.getClient()
-            .getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1) {
+        if (bankedRing != null && plugin.getClient().getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1) {
             String line = bankedStaffName(plugin) + " — " + joinLabels(Set.of(bankedRing));
             if (!details.contains(line)) details.add(line);
         }
@@ -464,10 +453,8 @@ final class RouteDirections {
             if (path == null || edge <= 0 || edge >= path.size()) continue;
             List<Transport> rows = plugin.getPathfinderConfig().transportsOnEdge(
                 path.get(edge - 1).getPackedPosition(), path.get(edge).getPackedPosition());
-            if (rows.isEmpty()) {
-                rows = plugin.getPathfinderConfig().teleportsOnEdge(
-                    path.get(edge).getPackedPosition(), method.getDisplayInfo());
-            }
+            if (rows.isEmpty())
+                rows = plugin.getPathfinderConfig().teleportsOnEdge(path.get(edge).getPackedPosition(), method.getDisplayInfo());
             String line = pickupLine(plugin, rows, joinLabels(Set.of(method)));
             if (line != null) return line;
         }
@@ -481,15 +468,13 @@ final class RouteDirections {
             if (coins > 0) return coins + " gp — " + label + " fare";
             if (row.getItemRequirements() == null) continue;
             List<String> names = new ArrayList<>();
-            for (ItemRequirement requirement
-                : row.getItemRequirements().getRequirements()) {
+            for (ItemRequirement requirement : row.getItemRequirements().getRequirements()) {
                 int[] ids = requirement.getItemIds();
                 if (ids.length == 0) continue;
                 // The first alternative is the data's canonical choice for this slot.
                 String name = plugin.getClient().getItemDefinition(ids[0]).getName();
                 if (name == null || name.isEmpty() || "null".equals(name)) continue;
-                names.add(requirement.getQuantity() > 1
-                    ? name + " (" + requirement.getQuantity() + ")" : name);
+                names.add(requirement.getQuantity() > 1 ? name + " (" + requirement.getQuantity() + ")" : name);
             }
             if (!names.isEmpty()) return String.join(", ", names) + " — " + label;
         }
@@ -502,18 +487,14 @@ final class RouteDirections {
      * stands in for the bank-destination guard: this call site already KNOWS index
      * {@code pathIndex} is the tile where the path flips banked.
      */
-    private static String withdrawText(ShortestPathPlugin plugin, RouteOption route,
-        List<PathStep> path, int pathIndex) {
+    private static String withdrawText(ShortestPathPlugin plugin, RouteOption route, List<PathStep> path, int pathIndex) {
         Item[] bank = plugin.getPathfinderConfig().getBankSnapshot();
         if (bank != null) {
-            List<String> items = BankPickupRequirements.compute(
-                plugin.getClient(), bank, plugin.getPathfinderConfig(),
+            List<String> items = BankPickupRequirements.compute(plugin.getClient(), bank, plugin.getPathfinderConfig(),
                 (a, b) -> EdgeTransports.forRouteEdge(plugin.getPathfinderConfig(), route, a, b),
                 Set.of(path.get(pathIndex).getPackedPosition()), path, pathIndex).phrases;
-            if (!items.isEmpty()) {
-                return "Withdraw " + String.join(", ", items)
-                    + " for: " + joinLabels(route.getBankMethods());
-            }
+            if (!items.isEmpty())
+                return "Withdraw " + String.join(", ", items) + " for: " + joinLabels(route.getBankMethods());
         }
         return "Withdraw item for: " + joinLabels(route.getBankMethods());
     }

@@ -86,8 +86,7 @@ import net.runelite.client.config.ConfigManager;
             // descriptor also proves ownership, and covers Port Sarim's port id 0.
             if (client.getVarbitValue(varbits[0]) <= 0 && client.getVarbitValue(varbits[3]) <= 0) continue;
             BoatHull hull = BoatHull.fromVarbit(client.getVarbitValue(varbits[5]));
-            rows.add(new String[]{decodeBoatName(slot, varbits),
-                SailingPorts.portName(client.getVarbitValue(varbits[1])),
+            rows.add(new String[]{decodeBoatName(slot, varbits), SailingPorts.portName(client.getVarbitValue(varbits[1])),
                 hull == null ? "" : hull.displayName()});
         }
         banner = rows;
@@ -140,12 +139,9 @@ import net.runelite.client.config.ConfigManager;
             for (int part = 0; part < 3; part++) {
                 int index = client.getVarbitValue(varbits[2 + part]) - 1;
                 if (index > 0) {
-                    Object[] options = client.getDBTableField(rowIds[part],
-                        DBTableID.SailingBoatNameOptions.COL_OPTION, 0);
-                    if (index < options.length && options[index] instanceof String
-                        && !((String) options[index]).isEmpty()) {
+                    Object[] options = client.getDBTableField(rowIds[part], DBTableID.SailingBoatNameOptions.COL_OPTION, 0);
+                    if (index < options.length && options[index] instanceof String && !((String) options[index]).isEmpty())
                         parts.add((String) options[index]);
-                    }
                 }
             }
             if (!parts.isEmpty()) return String.join(" ", parts);

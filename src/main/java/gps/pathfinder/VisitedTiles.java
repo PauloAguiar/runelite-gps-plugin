@@ -60,9 +60,7 @@ public class VisitedTiles {
     }
 
     public boolean getAbstract(AbstractNodeKind abstractKind, boolean bankVisited) {
-        return bankVisited
-            ? abstractVisitedWithBank[abstractKind.ordinal()]
-            : abstractVisitedWithoutBank[abstractKind.ordinal()];
+        return bankVisited ? abstractVisitedWithBank[abstractKind.ordinal()] : abstractVisitedWithoutBank[abstractKind.ordinal()];
     }
 
     public boolean set(int id, NodeGraph graph) {

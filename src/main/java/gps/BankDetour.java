@@ -21,8 +21,7 @@ final class BankDetour {
 
         /** The route for a destination, or null when none is set. */
         static Route of(Set<Integer> targets, String source, boolean roundTrip, int marker) {
-            return targets == null || targets.isEmpty()
-                ? null : new Route(Set.copyOf(targets), source, roundTrip, marker);
+            return targets == null || targets.isEmpty() ? null : new Route(Set.copyOf(targets), source, roundTrip, marker);
         }
     }
 
@@ -49,8 +48,7 @@ final class BankDetour {
      * does. Bank (and back) keeps its plain tooltip: it returns to where you are anyway.
      */
     static String bankButtonTooltip(boolean addsStop) {
-        return addsStop
-            ? "<html><b>Add a stop</b> at the nearest bank<br>Your current route resumes after the bank</html>"
+        return addsStop ? "<html><b>Add a stop</b> at the nearest bank<br>Your current route resumes after the bank</html>"
             : "Nearest bank";
     }
 

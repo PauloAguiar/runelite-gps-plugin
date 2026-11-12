@@ -89,8 +89,7 @@ import static gps.PanelWidgets.wrappedLabel;
      * is visible even while the balloon section is collapsed. Shows the low types as item icons.
      */
     JPanel balloonLowBanner(List<String> lowTypes) {
-        JPanel warning = banner(RouteIcons.BANNER_WARNING,
-            "Log storage low", "Restock logs at a balloon station:", BANNER_WARN_ACCENT);
+        JPanel warning = banner(RouteIcons.BANNER_WARNING, "Log storage low", "Restock logs at a balloon station:", BANNER_WARN_ACCENT);
         int[] counts = plugin.getBalloonStoredCounts();
         JPanel icons = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
         icons.setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -113,8 +112,7 @@ import static gps.PanelWidgets.wrappedLabel;
      */
     private JPanel poh() {
         final boolean pohOn = plugin.getGpsConfig().usePoh();
-        JPanel section = shell("Player-owned house",
-            "Declare which teleport features are built in your house so routes can use them",
+        JPanel section = shell("Player-owned house", "Declare which teleport features are built in your house so routes can use them",
             pohExpanded, () -> pohExpanded = !pohExpanded,
             pohOn ? "on" : "off",
             pohOn ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.LIGHT_GRAY_COLOR);
@@ -125,9 +123,7 @@ import static gps.PanelWidgets.wrappedLabel;
         // What GPS detected on its own: the house location (varbit), a confidence hint that the
         // location-gated entries/exits will resolve correctly.
         String house = plugin.getHouseLocationName();
-        body.add(statusLabel(house != null
-                ? "Your house: " + house
-                : "No house detected (log in, or you don't own one)",
+        body.add(statusLabel(house != null ? "Your house: " + house : "No house detected (log in, or you don't own one)",
             house != null ? ColorScheme.LIGHT_GRAY_COLOR : ColorScheme.MEDIUM_GRAY_COLOR));
 
         body.add(iconRow("house_portal", 0, toggle("usePoh", 0, true)));
@@ -176,8 +172,7 @@ import static gps.PanelWidgets.wrappedLabel;
     /** The wilderness travel policy: whether routes may cross the wilderness at all. */
     private JPanel wilderness() {
         final boolean avoid = plugin.getGpsConfig().avoidWilderness();
-        JPanel section = shell("Wilderness",
-            "Choose whether routes may cross the wilderness",
+        JPanel section = shell("Wilderness", "Choose whether routes may cross the wilderness",
             wildernessExpanded, () -> wildernessExpanded = !wildernessExpanded,
             avoid ? "avoided" : "allowed",
             avoid ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.PROGRESS_INPROGRESS_COLOR);
@@ -185,8 +180,7 @@ import static gps.PanelWidgets.wrappedLabel;
 
         JPanel body = body();
         body.add(toggle("avoidWilderness", 0, true));
-        body.add(note("Routes still enter the wilderness when the destination itself is inside it.",
-            ColorScheme.MEDIUM_GRAY_COLOR));
+        body.add(note("Routes still enter the wilderness when the destination itself is inside it.", ColorScheme.MEDIUM_GRAY_COLOR));
         section.add(body);
         return section;
     }
@@ -198,15 +192,12 @@ import static gps.PanelWidgets.wrappedLabel;
      */
     private JPanel walking() {
         int bias = plugin.getWalkPreferenceSeconds();
-        JPanel section = shell("Walking",
-            "How plain walking ranks against travel methods",
+        JPanel section = shell("Walking", "How plain walking ranks against travel methods",
             walkingExpanded, () -> walkingExpanded = !walkingExpanded,
             biasChip(bias), biasColor(bias));
         if (!walkingExpanded) return section;
         JPanel body = body();
-        body.add(statusLabel(bias == 0
-                ? "No preference: routes rank purely by time."
-                : (bias > 0
+        body.add(statusLabel(bias == 0 ? "No preference: routes rank purely by time." : (bias > 0
                     ? "Walking wins unless a method is more than " + bias + "s faster."
                     : "Walking is ranked as if " + (-bias) + "s slower."),
             ColorScheme.LIGHT_GRAY_COLOR));
@@ -227,8 +218,7 @@ import static gps.PanelWidgets.wrappedLabel;
         // The header chip is the ranking bias (same convention as Walking and the card chips);
         // the remember-between-sessions state is a detail inside the body.
         int bankBias = plugin.getBankPreferenceSeconds();
-        JPanel section = shell("Bank",
-            "How bank-detour routes rank, and remembering your bank between sessions",
+        JPanel section = shell("Bank", "How bank-detour routes rank, and remembering your bank between sessions",
             bankExpanded, () -> bankExpanded = !bankExpanded,
             biasChip(bankBias), biasColor(bankBias));
         if (!bankExpanded) return section;
@@ -254,8 +244,7 @@ import static gps.PanelWidgets.wrappedLabel;
         body.add(statusLabel(state, stateColor));
 
         body.add(toggle("rememberBank", 0, true));
-        body.add(note("Opening the bank always refreshes the snapshot; turning this off deletes it.",
-            ColorScheme.MEDIUM_GRAY_COLOR));
+        body.add(note("Opening the bank always refreshes the snapshot; turning this off deletes it.", ColorScheme.MEDIUM_GRAY_COLOR));
 
         // Ranking bias for via-bank routes: finer control than the method tiers, and separate
         // from the withdrawal time already counted inside those routes' ETAs.
@@ -280,8 +269,7 @@ import static gps.PanelWidgets.wrappedLabel;
 
         Color stateColor = !balloonsOn ? ColorScheme.LIGHT_GRAY_COLOR
             : (lowTypes.isEmpty() ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.PROGRESS_INPROGRESS_COLOR);
-        JPanel section = shell("Hot air balloons",
-            "Balloon travel and smart tracking of the stations' Log storage",
+        JPanel section = shell("Hot air balloons", "Balloon travel and smart tracking of the stations' Log storage",
             balloonExpanded, () -> balloonExpanded = !balloonExpanded,
             balloonState(balloonsOn, !lowTypes.isEmpty()), stateColor);
         if (!balloonExpanded) return section;
@@ -316,8 +304,7 @@ import static gps.PanelWidgets.wrappedLabel;
     /** Sailing your own boat: the master switch, the boarding assumptions and the known berths. */
     private JPanel sailing() {
         final boolean sailingOn = plugin.getGpsConfig().useSailing();
-        JPanel section = shell("Sailing (beta)",
-            "Sail your own boat between mooring points and port berths",
+        JPanel section = shell("Sailing (beta)", "Sail your own boat between mooring points and port berths",
             sailingExpanded, () -> sailingExpanded = !sailingExpanded,
             sailingOn ? "on" : "off",
             sailingOn ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.LIGHT_GRAY_COLOR);
@@ -335,9 +322,7 @@ import static gps.PanelWidgets.wrappedLabel;
         // tooltip, the port keeps its own column and its colour.
         List<String[]> berths = plugin.getBoatBanner();
         if (berths == null || berths.isEmpty()) {
-            JLabel none = wrappedLabel(berths == null
-                ? "No boat seen yet. Berths appear after login."
-                : "No owned boat detected.");
+            JLabel none = wrappedLabel(berths == null ? "No boat seen yet. Berths appear after login." : "No owned boat detected.");
             none.setBorder(new EmptyBorder(4, 18, 2, 0));
             body.add(none);
         }
@@ -386,8 +371,7 @@ import static gps.PanelWidgets.wrappedLabel;
         final boolean synced = plugin.isSpiritTreeSynced();
         List<String> planted = smart && synced ? plugin.getAvailablePlantedSpiritTrees() : List.of();
 
-        Color stateColor = smart && !planted.isEmpty()
-            ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.LIGHT_GRAY_COLOR;
+        Color stateColor = smart && !planted.isEmpty() ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.LIGHT_GRAY_COLOR;
         JPanel section = shell("Planted spirit trees",
             "Smart detection of the farmable spirit trees you have grown (permanent trees are in Travel methods)",
             spiritTreeExpanded, () -> spiritTreeExpanded = !spiritTreeExpanded,
@@ -398,10 +382,8 @@ import static gps.PanelWidgets.wrappedLabel;
         body.add(iconRow("spirit_tree", 0, toggle("spiritTreeSmartMode", 0, true)));
 
         if (!smart) body.add(note("All farmable spirit trees assumed available.", ColorScheme.MEDIUM_GRAY_COLOR));
-        else if (!synced) {
-            body.add(warningBanner("Not synced yet: open a spirit tree travel menu once to detect"
-                + " your planted trees."));
-        }
+        else if (!synced)
+            body.add(warningBanner("Not synced yet: open a spirit tree travel menu once to detect" + " your planted trees."));
         else if (planted.isEmpty()) body.add(note("No planted spirit trees detected.", ColorScheme.MEDIUM_GRAY_COLOR));
         else {
             body.add(note("Detected:", ColorScheme.LIGHT_GRAY_COLOR));
@@ -474,10 +456,8 @@ import static gps.PanelWidgets.wrappedLabel;
         label.setHorizontalAlignment(SwingConstants.CENTER);
         BufferedImage img = ImageUtil.loadImageResource(ConfigSectionsView.class, "/poh/" + name + ".png");
         double scale = Math.min(1.0, Math.min(26.0 / img.getWidth(), 20.0 / img.getHeight()));
-        if (scale < 1.0) {
-            img = ImageUtil.resizeImage(img,
-                (int) Math.round(img.getWidth() * scale), (int) Math.round(img.getHeight() * scale));
-        }
+        if (scale < 1.0)
+            img = ImageUtil.resizeImage(img, (int) Math.round(img.getWidth() * scale), (int) Math.round(img.getHeight() * scale));
         label.setIcon(new ImageIcon(img));
         return label;
     }
@@ -523,8 +503,7 @@ import static gps.PanelWidgets.wrappedLabel;
      */
     private JCheckBox toggle(String key, int indent, boolean enabled) {
         ConfigItem item = item(key);
-        JCheckBox box = new JCheckBox(
-            "<html><body style='width:" + (LABEL_WIDTH - indent) + "px'>" + item.name() + "</body></html>",
+        JCheckBox box = new JCheckBox("<html><body style='width:" + (LABEL_WIDTH - indent) + "px'>" + item.name() + "</body></html>",
             Boolean.TRUE.equals(plugin.configValue(key, Boolean.class)));
         if (indent > 0) box.setBorder(new EmptyBorder(2, indent, 2, 0));
         box.setBackground(ColorScheme.DARKER_GRAY_COLOR);

@@ -10,6 +10,7 @@ costs about one token whatever the depth, so the style joins lines wherever that
 - that single statement then sits on its header line (up to 120 columns);
 - a method or constructor whose body is one statement is written on one line (up to 120 columns);
 - marker and one-line annotations sit on the line of what they annotate (up to 120 columns);
+- statements wrapped over several lines are joined back (up to 140 columns);
 - leading tabs become four spaces.
 
 Apart from the dropped braces, only whitespace changes: no line is joined into or out of a comment,
@@ -35,7 +36,7 @@ KEYWORD_STATEMENT = re.compile(r'^[ \t]*(return|throw|break|continue|yield)\b')
 SIGNATURE = re.compile(r'^[ \t]*(?:(?:public|private|protected|static|final|default|synchronized|abstract) )*'
                        r'(?:<[^>]+> )?(?:[\w.<>\[\], ?]+ )?\w+\([^()]*\)(?: throws [\w., ]+)? \{$')
 ANNOTATIONS = re.compile(r'^[ \t]*@\w[\w.]*(?:\([^()]*\))?(?: @\w[\w.]*(?:\([^()]*\))?)*$')
-CONTINUES = re.compile(r'^[ \t]*(\.|\+|-(?!-)|&&|\|\||\?|: |\* |/ )')
+CONTINUES = re.compile(r'^[ \t]*(\.|\+(?!\+)|-(?!-)|&&|\|\||\?|: |\* |/ )')
 OPEN_END = re.compile(r'(,|\(|\+|&&|\|\||(?<![=!<>])=|\?|->)$')
 CASE = re.compile(r'^[ \t]*(case .*|default):$')
 ENUM_CONSTANT = re.compile(r'^[ \t]*[A-Z_0-9]+(\(.*\))?,$')
@@ -100,8 +101,26 @@ def kr(lines):
     return out, joined
 
 
+def semicolons(line):
+    """Semicolons outside string and char literals."""
+    count = 0
+    i, n = 0, len(line)
+    while i < n:
+        c = line[i]
+        if c in QUOTES:
+            j = i + 1
+            while j < n and line[j] != c:
+                j += 2 if line[j] == BACKSLASH else 1
+            i = j
+        elif c == ';':
+            count += 1
+        i += 1
+    return count
+
+
 def statement_ok(line):
-    if not line.rstrip().endswith(';') or '{' in line or '}' in line:
+    """One whole statement: a single semicolon, at the end, and no block."""
+    if not line.rstrip().endswith(';') or '{' in line or '}' in line or semicolons(line) != 1:
         return False
     if CONTROL.match(line):
         return False
@@ -193,7 +212,32 @@ def annotations(lines):
     return out, joined
 
 
-RULES = [('braces unbraced', unbrace), ('bodies on their header', control_bodies),
+def wraps(lines):
+    """A statement wrapped over several lines is joined back, up to WRAP_LIMIT columns."""
+    code = code_lines(lines)
+    out = []
+    joined = 0
+    prev_code = False
+    for k, line in enumerate(lines):
+        if out and prev_code and code[k] and line.strip():
+            prev = out[-1].rstrip()
+            cont = False
+            if CONTINUES.match(line) and not CASE.match(prev) and not prev.endswith((';', '{', '}')):
+                cont = True
+            elif OPEN_END.search(prev) and indent_of(line) > indent_of(prev):
+                cont = not ENUM_CONSTANT.match(prev)
+            body = line.strip()
+            if cont and len(prev) + 1 + len(body) <= WRAP_LIMIT:
+                sep = '' if prev.endswith('(') or body.startswith('.') or body.startswith(')') else ' '
+                out[-1] = prev + sep + body
+                joined += 1
+                continue
+        out.append(line)
+        prev_code = code[k]
+    return out, joined
+
+
+RULES = [('braces unbraced', unbrace), ('wraps joined', wraps), ('bodies on their header', control_bodies),
          ('one-line methods', one_line_methods), ('annotations joined', annotations)]
 
 

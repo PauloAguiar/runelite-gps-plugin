@@ -37,10 +37,8 @@ import net.runelite.api.gameval.InventoryID;
         // Only settings that genuinely affect routing here: avoidWilderness applies in every mode,
         // bankPickup weights the bank detour. The mode (above) already implies bank routing and the
         // item scope, so those are not repeated (they would show the overridden config value).
-        body.append("- Config: avoidWilderness=")
-            .append(ConfigOverrides.override("avoidWilderness", config.avoidWilderness()))
-            .append(", bankPickup=").append(ConfigOverrides.override("costBankPickup", config.costBankPickup()))
-            .append('\n');
+        body.append("- Config: avoidWilderness=").append(ConfigOverrides.override("avoidWilderness", config.avoidWilderness()))
+            .append(", bankPickup=").append(ConfigOverrides.override("costBankPickup", config.costBankPickup())).append('\n');
 
         // Method availability at a glance: the full catalog is far too big, so counts per status
         // plus the user's own exclusions (the part that varies by choice, usually short).
@@ -49,8 +47,7 @@ import net.runelite.api.gameval.InventoryID;
         if (!catalog.isEmpty()) {
             Map<MethodAvailability, Integer> counts = new EnumMap<>(MethodAvailability.class);
             for (MethodAvailability status : unavailable.values()) counts.merge(status, 1, Integer::sum);
-            body.append("- Methods: ").append(catalog.size() - unavailable.size()).append(" usable of ")
-                .append(catalog.size());
+            body.append("- Methods: ").append(catalog.size() - unavailable.size()).append(" usable of ").append(catalog.size());
             for (Map.Entry<MethodAvailability, Integer> entry : counts.entrySet()) {
                 body.append(" · ").append(entry.getValue()).append(' ')
                     .append(entry.getKey().name().toLowerCase(Locale.ROOT).replace('_', ' '));

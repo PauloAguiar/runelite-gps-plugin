@@ -38,8 +38,7 @@ import gps.transport.Transport;
         this(type, displayInfo, destination, consumable, null);
     }
 
-    public TeleportMethod(TransportType type, String displayInfo, int destination, boolean consumable,
-        String objectInfo) {
+    public TeleportMethod(TransportType type, String displayInfo, int destination, boolean consumable, String objectInfo) {
         this.type = type;
         this.displayInfo = (displayInfo == null || displayInfo.isEmpty()) ? null : displayInfo;
         this.destination = destination;
@@ -106,9 +105,7 @@ import gps.transport.Transport;
      * connectors (doors/ladders/stairs and agility/grapple shortcuts) are walking, not a method.
      */
     public static boolean isMethodType(TransportType type) {
-        return type != null
-            && type != TransportType.TRANSPORT
-            && type != TransportType.AGILITY_SHORTCUT
+        return type != null && type != TransportType.TRANSPORT && type != TransportType.AGILITY_SHORTCUT
             && type != TransportType.GRAPPLE_SHORTCUT
             // Sailing is deliberately NOT a catalog method: 2,756 generated port-pair rows
             // would drown the hand-curated methods, and it has its own Travel options section.

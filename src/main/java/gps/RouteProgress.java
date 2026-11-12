@@ -62,8 +62,7 @@ final class RouteProgress {
                 for (int dy = -1; dy <= 1; dy++) {
                     if (dx == 0 && dy == 0) continue;
                     int next = WorldPointUtil.packWorldPoint(tx + dx, ty + dy, plane);
-                    if (!distances.containsKey(next)
-                        && Math.max(Math.abs(tx + dx - x), Math.abs(ty + dy - y)) <= radius
+                    if (!distances.containsKey(next) && Math.max(Math.abs(tx + dx - x), Math.abs(ty + dy - y)) <= radius
                         && map.canStep(tile, next)) {
                         distances.put(next, steps + 1);
                         queue.add(next);
@@ -107,17 +106,14 @@ final class RouteProgress {
                 if (beyondDoor) eligible = straight == 0;
                 else if (walked != null && walked <= 1) eligible = true;
                 else {
-                    eligible = walked != null
-                        && Math.abs(i - reachedIndex) <= STEP_WINDOW
-                        && straight <= NEAR_DISTANCE
+                    eligible = walked != null && Math.abs(i - reachedIndex) <= STEP_WINDOW && straight <= NEAR_DISTANCE
                         && walked <= straight + REACH_SLACK;
                 }
                 metric = walked != null ? walked : straight;
             }
             else {
                 // Legacy straight-line rules (no collision map yet).
-                boolean incremental = !beyondDoor && Math.abs(i - reachedIndex) <= STEP_WINDOW
-                    && straight <= NEAR_DISTANCE;
+                boolean incremental = !beyondDoor && Math.abs(i - reachedIndex) <= STEP_WINDOW && straight <= NEAR_DISTANCE;
                 boolean onPath = straight <= (beyondDoor ? 0 : 1);
                 eligible = incremental || onPath;
                 metric = straight;

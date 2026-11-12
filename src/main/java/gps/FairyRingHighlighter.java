@@ -78,8 +78,7 @@ final class FairyRingHighlighter {
         int panelScrollY = Math.min(codeWidget.getRelativeY(), contentsList.getScrollHeight() - contentsList.getHeight());
         contentsList.setScrollY(panelScrollY);
         contentsList.revalidateScroll();
-        client.runScript(ScriptID.UPDATE_SCROLLBAR, InterfaceID.FairyringsLog.SCROLLBAR,
-            InterfaceID.FairyringsLog.CONTENTS, panelScrollY);
+        client.runScript(ScriptID.UPDATE_SCROLLBAR, InterfaceID.FairyringsLog.SCROLLBAR, InterfaceID.FairyringsLog.CONTENTS, panelScrollY);
     }
 
     private static Widget rowWithCode(Widget[] rows, String code) {

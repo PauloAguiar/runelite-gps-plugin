@@ -152,11 +152,9 @@ public class NodeGraph {
      */
     public int createTile(int packedPosition, int previous, boolean bankVisited, int extraCost) {
         final int travelTime = (previous != NO_NODE && isTile(previous))
-            ? WorldPointUtil.distanceBetween(packedPosition(previous), packedPosition)
-            : 0;
+            ? WorldPointUtil.distanceBetween(packedPosition(previous), packedPosition) : 0;
         final byte flagBits = bankVisited ? FLAG_BANK_VISITED : 0;
-        return append(packedPosition, previous, costOf(previous) + Math.max(0, travelTime + extraCost),
-            flagBits, (byte) 0);
+        return append(packedPosition, previous, costOf(previous) + Math.max(0, travelTime + extraCost), flagBits, (byte) 0);
     }
 
     /**
@@ -165,12 +163,10 @@ public class NodeGraph {
      * (mirrors the old {@code TransportNode}). The edge is clamped at free: a negative configured
      * weight can make a transport free but never cheaper than free (Dijkstra needs non-negative edges).
      */
-    public int createTransport(int packedPosition, int previous, int travelTime, int additionalCost,
-        boolean bankVisited) {
+    public int createTransport(int packedPosition, int previous, int travelTime, int additionalCost, boolean bankVisited) {
         byte flagBits = FLAG_TRANSPORT;
         if (bankVisited) flagBits |= FLAG_BANK_VISITED;
-        return append(packedPosition, previous, costOf(previous) + Math.max(0, travelTime + additionalCost),
-            flagBits, (byte) 0);
+        return append(packedPosition, previous, costOf(previous) + Math.max(0, travelTime + additionalCost), flagBits, (byte) 0);
     }
 
     /**
@@ -248,10 +244,8 @@ public class NodeGraph {
         while (readable(node, prev, packed, flg) && i > 0) {
             final int page = node >>> PAGE_SHIFT;
             final int slot = node & PAGE_MASK;
-            if ((flg[page][slot] & FLAG_ABSTRACT) == 0) {
-                pathSteps.set(--i, new PathStep(packed[page][slot], (flg[page][slot] & FLAG_BANK_VISITED) != 0,
-                    cst[page][slot]));
-            }
+            if ((flg[page][slot] & FLAG_ABSTRACT) == 0)
+                pathSteps.set(--i, new PathStep(packed[page][slot], (flg[page][slot] & FLAG_BANK_VISITED) != 0, cst[page][slot]));
             node = prev[page][slot];
         }
 

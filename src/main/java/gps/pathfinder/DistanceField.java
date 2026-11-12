@@ -176,8 +176,7 @@ public final class DistanceField {
         final PriorityQueue<Long> heap = new PriorityQueue<>();
         // Bounded mode: cheapest cast cost per origin-free teleport landing, for in-flood floor
         // discovery. Null = unbounded (full flood).
-        final PrimitiveIntHashMap<Integer> landingCasts =
-            costMultiple > 0 ? buildTeleportLandingIndex(config) : null;
+        final PrimitiveIntHashMap<Integer> landingCasts = costMultiple > 0 ? buildTeleportLandingIndex(config) : null;
         int cheapestFloor = Integer.MAX_VALUE;
         long horizonTarget = Long.MAX_VALUE;
 
@@ -190,10 +189,8 @@ public final class DistanceField {
 
         while (!fifo.isEmpty() || !heap.isEmpty()) {
             int packed;
-            if (!heap.isEmpty()
-                && (fifo.isEmpty() || (heap.peek() >>> 32) < field.distance(fifo.peekFirst()))) {
+            if (!heap.isEmpty() && (fifo.isEmpty() || (heap.peek() >>> 32) < field.distance(fifo.peekFirst())))
                 packed = (int) (long) heap.poll();
-            }
             else packed = fifo.pollFirst();
             final int x = unpackWorldX(packed);
             final int y = unpackWorldY(packed);
@@ -384,8 +381,7 @@ public final class DistanceField {
             for (Transport teleport : config.getUsableTeleports(bankVisited)) {
                 final int destination = teleport.getDestination();
                 if (destination == WorldPointUtil.UNDEFINED) continue;
-                final int cost = Math.max(0, CostUnits.fromTicks(teleport.getDuration())
-                    + config.getAdditionalTransportCost(teleport));
+                final int cost = Math.max(0, CostUnits.fromTicks(teleport.getDuration()) + config.getAdditionalTransportCost(teleport));
                 final Integer current = index.get(destination);
                 if (current == null || cost < current) index.put(destination, cost);
             }

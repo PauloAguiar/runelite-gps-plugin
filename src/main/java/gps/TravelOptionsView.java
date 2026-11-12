@@ -47,8 +47,7 @@ final class TravelOptionsView extends JPanel {
     }
 
     /** Rebuilds the slot for the given inputs, carrying the catalog rows' scroll position over. */
-    void rebuild(List<TeleportMethod> newCatalog, Set<TeleportMethod> exclusions,
-        Map<TeleportMethod, MethodAvailability> unavailable) {
+    void rebuild(List<TeleportMethod> newCatalog, Set<TeleportMethod> exclusions, Map<TeleportMethod, MethodAvailability> unavailable) {
         catalog.update(newCatalog, exclusions, unavailable);
         rebuild();
     }

@@ -77,9 +77,7 @@ public final class SearchHeuristic {
      */
     public static SearchHeuristic buildWithField(PathfinderConfig config, DistanceField field, int searchStart) {
         SearchHeuristic heuristic = buildWithField(config, field);
-        if (heuristic != null
-            && heuristic.horizon == Integer.MAX_VALUE
-            && heuristic.floor >= UNBOUNDED_FLOOR
+        if (heuristic != null && heuristic.horizon == Integer.MAX_VALUE && heuristic.floor >= UNBOUNDED_FLOOR
             && field.distance(searchStart) == DistanceField.UNREACHED) {
             return null;
         }

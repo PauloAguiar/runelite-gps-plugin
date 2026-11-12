@@ -32,9 +32,7 @@ import gps.transport.requirement.TransportItems;
         if (value == null || value.isEmpty()) return null;
 
         // Normalize the input
-        String normalized = value.replace(" ", "")
-            .replace(DELIM_AND + DELIM_AND, DELIM_AND)
-            .replace(DELIM_OR + DELIM_OR, DELIM_OR)
+        String normalized = value.replace(" ", "").replace(DELIM_AND + DELIM_AND, DELIM_AND).replace(DELIM_OR + DELIM_OR, DELIM_OR)
             .toUpperCase();
 
         List<ItemRequirement> requirements = new ArrayList<>();
@@ -91,9 +89,7 @@ import gps.transport.requirement.TransportItems;
             }
         }
 
-        return new ItemRequirement(
-            Util.concatenate(itemIdsList.toArray(new int[0][])),
-            Util.concatenate(stavesList.toArray(new int[0][])),
+        return new ItemRequirement(Util.concatenate(itemIdsList.toArray(new int[0][])), Util.concatenate(stavesList.toArray(new int[0][])),
             Util.concatenate(offhandsList.toArray(new int[0][])),
             maxQuantity);
     }

@@ -88,8 +88,7 @@ import net.runelite.client.config.ConfigManager;
 
     /** Effective sort key: reached routes first, then raw cost plus the priority adjustment. */
     Comparator<RouteOption> effectiveOrder() {
-        return Comparator
-            .comparingInt((RouteOption r) -> r.isReached() ? 0 : 1)
+        return Comparator.comparingInt((RouteOption r) -> r.isReached() ? 0 : 1)
             // At the helm, routes that STAY ON THE WATER outrank disembark-and-teleport chains
             // (capture 20260829-204334: every offer abandoned the boat at the nearest mooring
             // because the tick math favors teleports; a sailor mid-task wants the sea route

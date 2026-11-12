@@ -81,8 +81,7 @@ final class PluginMessageCodec {
         }
 
         Object objSource = data.get(KEY_SOURCE);
-        String source = objSource instanceof String && !((String) objSource).isEmpty()
-            ? (String) objSource : DEFAULT_SOURCE;
+        String source = objSource instanceof String && !((String) objSource).isEmpty() ? (String) objSource : DEFAULT_SOURCE;
         return new PathRequest(start, targets, source);
     }
 

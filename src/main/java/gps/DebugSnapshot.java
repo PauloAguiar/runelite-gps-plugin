@@ -30,10 +30,8 @@ import net.runelite.client.RuneLite;
             File out = write(build());
             log.info("GPS debug snapshot saved to {}", out.getAbsolutePath());
             Client client = plugin.getClient();
-            if (GameState.LOGGED_IN.equals(client.getGameState())) {
-                client.addChatMessage(ChatMessageType.GAMEMESSAGE, "",
-                    "GPS debug snapshot saved to " + out.getAbsolutePath(), null);
-            }
+            if (GameState.LOGGED_IN.equals(client.getGameState()))
+                client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "GPS debug snapshot saved to " + out.getAbsolutePath(), null);
         }
         catch (Exception e) {
             log.warn("Failed to capture GPS debug snapshot", e);
@@ -50,8 +48,7 @@ import net.runelite.client.RuneLite;
         snapshot.put("buildCommit", BuildInfo.buildCommit());
         snapshot.put("varbitSnapshot", varbitSnapshot(client));
         Player local = client.getLocalPlayer();
-        int playerPacked = local != null
-            ? WorldPointUtil.fromLocalInstance(client, local) : WorldPointUtil.UNDEFINED;
+        int playerPacked = local != null ? WorldPointUtil.fromLocalInstance(client, local) : WorldPointUtil.UNDEFINED;
         snapshot.put("player", packedPointJson(playerPacked));
         snapshot.put("routesMode", String.valueOf(plugin.getRoutesMode()));
         snapshot.put("routeLimit", session.limit());
@@ -138,10 +135,8 @@ import net.runelite.client.RuneLite;
         List<Integer> bankFlips = new ArrayList<>();
         for (int i = 0; i < route.getPath().size(); i++) {
             packedPath.add(route.getPath().get(i).getPackedPosition());
-            if (route.getPath().get(i).isBankVisited()
-                && (i == 0 || !route.getPath().get(i - 1).isBankVisited())) {
+            if (route.getPath().get(i).isBankVisited() && (i == 0 || !route.getPath().get(i - 1).isBankVisited()))
                 bankFlips.add(i);
-            }
         }
         routeJson.put("packedPath", packedPath);
         routeJson.put("bankVisitedFrom", bankFlips);

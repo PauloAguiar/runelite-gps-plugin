@@ -37,13 +37,8 @@ public final class PohScanner {
         }
 
         boolean sameAs(Detected other) {
-            return other != null
-                && fairyRing == other.fairyRing
-                && spiritTree == other.spiritTree
-                && obelisk == other.obelisk
-                && jewelleryBox == other.jewelleryBox
-                && portals.equals(other.portals)
-                && nexus == other.nexus;
+            return other != null && fairyRing == other.fairyRing && spiritTree == other.spiritTree && obelisk == other.obelisk
+                && jewelleryBox == other.jewelleryBox && portals.equals(other.portals) && nexus == other.nexus;
         }
     }
 
@@ -111,8 +106,7 @@ public final class PohScanner {
         portals.retainAll(portalIds);
         boolean nexus = false;
         for (int id : NEXUS_IDS) nexus |= objectIds.contains(id);
-        boolean fairyRing = objectIds.contains(ObjectID.POH_FAIRY_RING)
-            || objectIds.contains(ObjectID.POH_FAIRY_HOUSE)
+        boolean fairyRing = objectIds.contains(ObjectID.POH_FAIRY_RING) || objectIds.contains(ObjectID.POH_FAIRY_HOUSE)
             || objectIds.contains(ObjectID.POH_FAIRY_HOUSE_OPEN);
         boolean spiritTree = objectIds.contains(ObjectID.POH_SPIRIT_TREE);
         boolean obelisk = objectIds.contains(ObjectID.POH_WILDERNESS_OBELISK);

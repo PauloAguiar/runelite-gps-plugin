@@ -56,18 +56,15 @@ public class PathMapTooltipOverlay extends Overlay {
         return null;
     }
 
-    private boolean drawTooltip(Graphics2D graphics, Point cursorPos, int point, int nextPoint, int n,
-        List<PathStep> path, int pathIndex) {
+    private boolean drawTooltip(Graphics2D graphics, Point cursorPos, int point, int nextPoint, int n, List<PathStep> path, int pathIndex) {
         int offsetPoint = WorldPointUtil.dxdy(point, 1, -1);
         int startX = plugin.worldMap().toGraphicsX(point);
         int startY = plugin.worldMap().toGraphicsY(point);
         int endX = plugin.worldMap().toGraphicsX(offsetPoint);
         int endY = plugin.worldMap().toGraphicsY(offsetPoint);
 
-        if (startX == Integer.MIN_VALUE || startY == Integer.MIN_VALUE ||
-            endX == Integer.MIN_VALUE || endY == Integer.MIN_VALUE) {
+        if (startX == Integer.MIN_VALUE || startY == Integer.MIN_VALUE || endX == Integer.MIN_VALUE || endY == Integer.MIN_VALUE)
             return false;
-        }
 
         int width = endX - startX;
 
@@ -76,8 +73,7 @@ public class PathMapTooltipOverlay extends Overlay {
             return false;
         }
 
-        List<String> rows = new ArrayList<>(Arrays.asList("GPS route:",
-            n < 0 ? "Unused target" : ("Step " + n + " of " + path.size())));
+        List<String> rows = new ArrayList<>(Arrays.asList("GPS route:", n < 0 ? "Unused target" : ("Step " + n + " of " + path.size())));
         if (nextPoint != WorldPointUtil.UNDEFINED) {
             PathStep currentStep = path.get(pathIndex);
             PathStep nextStep = EdgeTransports.nextStep(path, pathIndex);

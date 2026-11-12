@@ -30,8 +30,7 @@ import net.runelite.client.config.ConfigManager;
 
     void saveExclusions(Set<TeleportMethod> exclusions) {
         try {
-            configManager.get().setConfiguration(configGroup, CONFIG_KEY_EXCLUSIONS,
-                gson.get().toJson(new ArrayList<>(exclusions)));
+            configManager.get().setConfiguration(configGroup, CONFIG_KEY_EXCLUSIONS, gson.get().toJson(new ArrayList<>(exclusions)));
         }
         catch (Exception e) {
             log.warn("Failed to save alternative-route exclusions", e);
@@ -53,8 +52,7 @@ import net.runelite.client.config.ConfigManager;
             if (saved == null) return exclusions;
             boolean dropped = false;
             for (TeleportMethod method : saved) {
-                if (method == null || method.getType() == null
-                    || method.getType() == TransportType.SEASONAL_TRANSPORTS) {
+                if (method == null || method.getType() == null || method.getType() == TransportType.SEASONAL_TRANSPORTS) {
                     dropped = true;
                     continue;
                 }

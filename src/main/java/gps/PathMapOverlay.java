@@ -65,8 +65,7 @@ public class PathMapOverlay extends Overlay {
      * teleport/transport jumps are dashed. (Arrowhead technique adapted from Quest Helper's
      * DirectionArrow, see {@link ArrowHead}.)
      */
-    private void drawArrowPath(Graphics2D graphics, List<PathStep> path,
-        Set<Integer> sailingEdges) {
+    private void drawArrowPath(Graphics2D graphics, List<PathStep> path, Set<Integer> sailingEdges) {
         final Stroke walkStroke = new BasicStroke(2, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
         final Stroke jumpStroke = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{9}, 0);
 
@@ -104,11 +103,8 @@ public class PathMapOverlay extends Overlay {
             while (j < path.size() - 1) {
                 int a = path.get(j).getPackedPosition();
                 int b = path.get(j + 1).getPackedPosition();
-                if (distanceBetween(a, b) > 1
-                    || unpackWorldX(b) - unpackWorldX(a) != dx
-                    || unpackWorldY(b) - unpackWorldY(a) != dy) {
+                if (distanceBetween(a, b) > 1 || unpackWorldX(b) - unpackWorldX(a) != dx || unpackWorldY(b) - unpackWorldY(a) != dy)
                     break;
-                }
                 j++;
             }
             drawMapSegment(graphics, from, path.get(j).getPackedPosition(), walkStroke);
@@ -121,10 +117,8 @@ public class PathMapOverlay extends Overlay {
         int y1 = plugin.worldMap().toGraphicsY(from);
         int x2 = plugin.worldMap().toGraphicsX(to);
         int y2 = plugin.worldMap().toGraphicsY(to);
-        if (x1 == Integer.MIN_VALUE || y1 == Integer.MIN_VALUE
-            || x2 == Integer.MIN_VALUE || y2 == Integer.MIN_VALUE) {
+        if (x1 == Integer.MIN_VALUE || y1 == Integer.MIN_VALUE || x2 == Integer.MIN_VALUE || y2 == Integer.MIN_VALUE)
             return;
-        }
         graphics.setStroke(stroke);
         graphics.drawLine(x1, y1, x2, y2);
         // Skip the head on segments too short to fit it (e.g. zoomed far out).
@@ -141,10 +135,8 @@ public class PathMapOverlay extends Overlay {
         int endX = plugin.worldMap().toGraphicsX(offsetPoint);
         int endY = plugin.worldMap().toGraphicsY(offsetPoint);
 
-        if (startX == Integer.MIN_VALUE || startY == Integer.MIN_VALUE ||
-            endX == Integer.MIN_VALUE || endY == Integer.MIN_VALUE) {
+        if (startX == Integer.MIN_VALUE || startY == Integer.MIN_VALUE || endX == Integer.MIN_VALUE || endY == Integer.MIN_VALUE)
             return;
-        }
 
         int x = startX;
         int y = startY;
@@ -158,8 +150,7 @@ public class PathMapOverlay extends Overlay {
             graphics.drawLine(startX, startY, endX, endY);
         }
         else {
-            if (checkHover && cursorPos != null &&
-                cursorPos.getX() >= x && cursorPos.getX() <= (endX - width / 2) &&
+            if (checkHover && cursorPos != null && cursorPos.getX() >= x && cursorPos.getX() <= (endX - width / 2) &&
                 cursorPos.getY() >= y && cursorPos.getY() <= (endY - width / 2)) {
                 graphics.setColor(graphics.getColor().darker());
             }

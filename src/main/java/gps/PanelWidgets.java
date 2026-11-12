@@ -88,8 +88,7 @@ final class PanelWidgets {
         button.setBackground(ColorScheme.DARKER_GRAY_HOVER_COLOR);
         button.setFocusPainted(false);
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        button.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(ColorScheme.MEDIUM_GRAY_COLOR),
+        button.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(ColorScheme.MEDIUM_GRAY_COLOR),
             new EmptyBorder(3, 8, 3, 8)));
         button.addMouseListener(new MouseAdapter() {
             @Override public void mouseEntered(MouseEvent e) {
@@ -227,8 +226,7 @@ final class PanelWidgets {
     static JPanel banner(Icon icon, String innerHtml, Color accent) {
         JPanel banner = new JPanel(new BorderLayout(7, 0));
         banner.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-        banner.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 3, 0, 0, accent),
+        banner.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 3, 0, 0, accent),
             new EmptyBorder(5, 7, 5, 6)));
         banner.setAlignmentX(Component.LEFT_ALIGNMENT);
 
@@ -273,8 +271,7 @@ final class PanelWidgets {
         titleRow.setBorder(new EmptyBorder(0, 0, 4, 0));
         titleRow.setAlignmentX(Component.LEFT_ALIGNMENT);
         titleRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
-        titleRow.add(control(new JLabel(expanded ? RouteIcons.CHEVRON_DOWN : RouteIcons.CHEVRON_RIGHT)),
-            BorderLayout.WEST);
+        titleRow.add(control(new JLabel(expanded ? RouteIcons.CHEVRON_DOWN : RouteIcons.CHEVRON_RIGHT)), BorderLayout.WEST);
         JLabel titleLabel = new JLabel(title);
         if (headline) {
             titleLabel.setFont(FontManager.getRunescapeBoldFont());
@@ -341,8 +338,7 @@ final class PanelWidgets {
     }
 
     static String priorityTooltip(String label, MethodPriority tier) {
-        String state = tier == MethodPriority.NORMAL
-            ? "Normal priority"
+        String state = tier == MethodPriority.NORMAL ? "Normal priority"
             : tier.label + (tier.chipText().isEmpty() ? "" : " (" + tier.chipText() + " on ranking)");
         return "<html><b>" + escapeHtml(label) + "</b>: " + state
             + "<br>Click for priority options: prefer/avoid shift the ranking, exclude removes it.</html>";
@@ -357,8 +353,7 @@ final class PanelWidgets {
         int x = WorldPointUtil.unpackWorldX(destination);
         int y = WorldPointUtil.unpackWorldY(destination);
         int plane = WorldPointUtil.unpackWorldPlane(destination);
-        return "<b>" + escapeHtml(method.category()) + "</b><br>"
-            + escapeHtml(method.label()) + "<br>"
+        return "<b>" + escapeHtml(method.category()) + "</b><br>" + escapeHtml(method.label()) + "<br>"
             + "Arrives at " + x + ", " + y + (plane > 0 ? " (plane " + plane + ")" : "");
     }
 
@@ -397,11 +392,8 @@ final class PanelWidgets {
         JLabel label = new JLabel(status == MethodAvailability.IN_BANK ? RouteIcons.IN_BANK : RouteIcons.LOCKED);
         String detail = plugin.methodUnavailabilityDetail(method);
         if (detail == null) label.setToolTipText(statusReason(status));
-        else {
-            label.setToolTipText(status == MethodAvailability.IN_BANK
-                ? detail + ": switch to + Bank or withdraw it"
-                : detail);
-        }
+        else
+            label.setToolTipText(status == MethodAvailability.IN_BANK ? detail + ": switch to + Bank or withdraw it" : detail);
         return label;
     }
 

@@ -137,8 +137,7 @@ import net.runelite.client.config.ConfigManager;
     /** Restores the persisted scan when none has run this session. */
     void restore() {
         if (scanned) return;
-        PohScanner.Detected stored = PohScanner.decode(
-            configManager.getRSProfileConfiguration(configGroup, CONFIG_KEY_POH_FURNITURE));
+        PohScanner.Detected stored = PohScanner.decode(configManager.getRSProfileConfiguration(configGroup, CONFIG_KEY_POH_FURNITURE));
         if (stored != null) {
             detected = stored;
             scanned = true;

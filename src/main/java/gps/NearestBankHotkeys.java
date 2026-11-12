@@ -15,8 +15,7 @@ final class NearestBankHotkeys {
     private final KeyListener bank;
     private final KeyListener bankAndBack;
 
-    NearestBankHotkeys(Supplier<Keybind> bankKey, Runnable onBank,
-        Supplier<Keybind> bankAndBackKey, Runnable onBankAndBack) {
+    NearestBankHotkeys(Supplier<Keybind> bankKey, Runnable onBank, Supplier<Keybind> bankAndBackKey, Runnable onBankAndBack) {
         bank = hotkey(bankKey, onBank);
         bankAndBack = hotkey(bankAndBackKey, onBankAndBack);
     }

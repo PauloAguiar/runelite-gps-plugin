@@ -13,12 +13,10 @@ import gps.transport.parser.TsvParser;
 @Slf4j public class TransportLoader {
     private static final TsvParser tsvParser = new TsvParser();
 
-    private static void addTransports(
-        Map<Integer, Set<Transport>> transports, String path, TransportType transportType,
+    private static void addTransports(Map<Integer, Set<Transport>> transports, String path, TransportType transportType,
         int radiusThreshold) {
         try {
-            String s = new String(
-                Util.readAllBytes(Objects.requireNonNull(ShortestPathPlugin.class.getResourceAsStream(path))),
+            String s = new String(Util.readAllBytes(Objects.requireNonNull(ShortestPathPlugin.class.getResourceAsStream(path))),
                 StandardCharsets.UTF_8);
             addTransportsFromContents(transports, s, transportType, radiusThreshold);
         }
@@ -27,10 +25,7 @@ import gps.transport.parser.TsvParser;
         }
     }
 
-    public static void addTransportsFromContents(
-        Map<Integer, Set<Transport>> transports,
-        String contents,
-        TransportType transportType,
+    public static void addTransportsFromContents(Map<Integer, Set<Transport>> transports, String contents, TransportType transportType,
         int radiusThreshold) {
         List<TransportRecord> records = tsvParser.parse(contents);
 
@@ -87,9 +82,7 @@ import gps.transport.parser.TsvParser;
                 // same origin and destination
                 if (WorldPointUtil.distanceBetween2D(origin.getOrigin(), destination.getDestination()) > radiusThreshold) {
                     Transport combined = new Transport(origin, destination);
-                    transports
-                        .computeIfAbsent(origin.getOrigin(), k -> new HashSet<>())
-                        .add(combined);
+                    transports.computeIfAbsent(origin.getOrigin(), k -> new HashSet<>()).add(combined);
                 }
             }
         }
@@ -99,10 +92,8 @@ import gps.transport.parser.TsvParser;
         HashMap<Integer, Set<Transport>> transports = new HashMap<>();
 
         for (TransportType type : TransportType.values()) {
-            if (type.hasResourcePath()) {
-                addTransports(transports, type.getResourcePath(), type,
-                    type.hasRadiusThreshold() ? type.getRadiusThreshold() : 0);
-            }
+            if (type.hasResourcePath())
+                addTransports(transports, type.getResourcePath(), type, type.hasRadiusThreshold() ? type.getRadiusThreshold() : 0);
         }
 
         internRequirements(transports);

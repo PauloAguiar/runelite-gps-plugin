@@ -76,9 +76,7 @@ final class PanelHeaderView extends JPanel {
         // it Bank mode cannot see banked items (the same constraint as Shortest Path itself).
         modeBankWarning.removeAll();
         if (mode == AlternativeRoutesMode.OWNED_WITH_BANK && !plugin.isBankContentsKnown()) {
-            modeBankWarning.add(banner(RouteIcons.BANNER_WARNING,
-                "Bank contents unknown",
-                plugin.getGpsConfig().rememberBank()
+            modeBankWarning.add(banner(RouteIcons.BANNER_WARNING, "Bank contents unknown", plugin.getGpsConfig().rememberBank()
                     ? "Open your bank once so banked items can be found. GPS will remember it for future sessions."
                     : "Open your bank once so banked items can be found.",
                 ColorScheme.PROGRESS_ERROR_COLOR));
@@ -201,8 +199,7 @@ final class PanelHeaderView extends JPanel {
         inventoryModeButton.setFocusPainted(false);
         inventoryModeButton.addActionListener(e -> plugin.setRoutesMode(AlternativeRoutesMode.OWNED_INVENTORY));
         bankModeButton.setToolTipText("<html><b>Available via your bank</b>: also counts banked items;<br>"
-            + "routes detour to a bank to withdraw them.<br>"
-            + "Open your bank once per session so its contents are known.</html>");
+            + "routes detour to a bank to withdraw them.<br>" + "Open your bank once per session so its contents are known.</html>");
         bankModeButton.setFont(FontManager.getRunescapeSmallFont());
         bankModeButton.setFocusPainted(false);
         bankModeButton.addActionListener(e -> plugin.setRoutesMode(AlternativeRoutesMode.OWNED_WITH_BANK));

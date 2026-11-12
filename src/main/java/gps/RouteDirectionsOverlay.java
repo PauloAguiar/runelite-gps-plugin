@@ -134,8 +134,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         // standard colour's tone with 100% = fully invisible, 0% = solid. Every text row draws
         // with a shadow, so the panel stays readable on bare game background.
         panelComponent.setBackgroundColor(plugin.display().overrideOverlayTransparency
-            ? overriddenBackground(plugin.display().overlayTransparency)
-            : ComponentConstants.STANDARD_BACKGROUND_COLOR);
+            ? overriddenBackground(plugin.display().overlayTransparency) : ComponentConstants.STANDARD_BACKGROUND_COLOR);
         accent = plugin.display().colourOverlayAccent;
         accentEnding = lighten(accent, 0.35f);
         refreshFonts();
@@ -196,26 +195,22 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         // distance bands — see ShortestPathPlugin's off-route handling).
         if (plugin.isOffRouteWarning()) {
             // With auto-recalculate off the route is deliberately kept, so don't promise a recompute.
-            lines.add(new Line(plugin.isAutoRecalculateEnabled()
-                ? "Off route — recomputing if you drift further"
+            lines.add(new Line(plugin.isAutoRecalculateEnabled() ? "Off route — recomputing if you drift further"
                 : "Off route", fontNext, OFF_ROUTE, null, null));
         }
 
         // Window: collapse all but the most recent completed step into one summary line, then show
         // the current step and what follows, capped.
         int windowStart = Math.max(0, current - 1);
-        if (windowStart > 0) {
-            lines.add(new Line("✓ " + windowStart + (windowStart == 1 ? " step done" : " steps done"),
-                fontOther, DONE, null, null));
-        }
+        if (windowStart > 0)
+            lines.add(new Line("✓ " + windowStart + (windowStart == 1 ? " step done" : " steps done"), fontOther, DONE, null, null));
         // The line budget is the player's ("Steps shown"): a long route folds into "… N more".
         int maxLines = plugin.display().directionsSteps;
         int shown = 0;
         int i = windowStart;
         for (; i < steps.size() && shown < maxLines; i++, shown++) {
             RouteDirections.Step step = steps.get(i);
-            String stepText = i >= current && step.isDoor()
-                ? doorStepText(route, step) : step.getText();
+            String stepText = i >= current && step.isDoor() ? doorStepText(route, step) : step.getText();
             String text = (i + 1) + ". " + stepText;
             Color colour;
             Font font;
@@ -283,30 +278,19 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         // is custom-drawn over it after the panel renders — TitleComponent supports no font/styling.
         // The compact overlay has no header row at all.
         final boolean compact = plugin.display().compactOverlay;
-        if (!compact) {
-            panelComponent.getChildren().add(
-                LineComponent.builder()
-                    .left(" ")
-                    .leftFont(fontCurrent)
-                    .build());
-        }
+        if (!compact) panelComponent.getChildren().add(LineComponent.builder().left(" ").leftFont(fontCurrent).build());
         for (Line line : lines) {
             if (line.centred) {
                 // Reserve the row with a spacer in the same font; the text itself is drawn
                 // centred over the panel afterwards.
-                panelComponent.getChildren().add(
-                    LineComponent.builder().left(" ").leftFont(line.font).build());
+                panelComponent.getChildren().add(LineComponent.builder().left(" ").leftFont(line.font).build());
                 continue;
             }
             LineComponent.LineComponentBuilder builder = LineComponent.builder()
                 .left(ellipsize(graphics, line.font, line.left, panelWidth - rightWidth(graphics, line) - PANEL_PADDING))
-                .leftColor(line.colour)
-                .leftFont(line.font);
-            if (line.right != null) {
-                builder.right(line.right)
-                    .rightColor(line.rightColour)
-                    .rightFont(line.font == fontCurrent ? fontNext : fontOther);
-            }
+                .leftColor(line.colour).leftFont(line.font);
+            if (line.right != null)
+                builder.right(line.right).rightColor(line.rightColour).rightFont(line.font == fontCurrent ? fontNext : fontOther);
             panelComponent.getChildren().add(builder.build());
         }
 
@@ -392,8 +376,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
 
     /** Blends a colour toward white — the derived "about to end" shade of the accent. */
     private static Color lighten(Color colour, float factor) {
-        return new Color(
-            colour.getRed() + Math.round((255 - colour.getRed()) * factor),
+        return new Color(colour.getRed() + Math.round((255 - colour.getRed()) * factor),
             colour.getGreen() + Math.round((255 - colour.getGreen()) * factor),
             colour.getBlue() + Math.round((255 - colour.getBlue()) * factor));
     }
@@ -427,8 +410,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
     static void drawPinGlyph(Graphics2D graphics, int px, int py, float s, Color accent) {
         graphics.setColor(accent);
         graphics.fillOval(px, py, Math.round(9 * s), Math.round(9 * s));
-        Polygon tail = new Polygon(
-            new int[]{px + Math.round(1 * s), px + Math.round(8 * s), px + Math.round(4 * s)},
+        Polygon tail = new Polygon(new int[]{px + Math.round(1 * s), px + Math.round(8 * s), px + Math.round(4 * s)},
             new int[]{py + Math.round(7 * s), py + Math.round(7 * s), py + Math.round(13 * s)},
             3);
         graphics.fillPolygon(tail);
@@ -443,8 +425,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
     static void drawBankGlyph(Graphics2D graphics, int px, int py, float s, Color accent) {
         graphics.setColor(accent);
         int width = Math.round(10 * s);
-        graphics.fillPolygon(new Polygon(
-            new int[]{px, px + width, px + Math.round(5 * s)},
+        graphics.fillPolygon(new Polygon(new int[]{px, px + width, px + Math.round(5 * s)},
             new int[]{py + Math.round(4 * s), py + Math.round(4 * s), py},
             3));
         graphics.fillRect(px, py + Math.round(4 * s), width, Math.max(1, Math.round(1 * s)));
@@ -537,8 +518,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
     private String doorStepText(RouteOption route, RouteDirections.Step step) {
         List<PathStep> path = route.getPath();
         if (step.getStartIndex() < 0 || step.getEndIndex() >= path.size()) return step.getText();
-        ClosedDoors.Door door = ClosedDoors.doorBetween(
-            path.get(step.getStartIndex()).getPackedPosition(),
+        ClosedDoors.Door door = ClosedDoors.doorBetween(path.get(step.getStartIndex()).getPackedPosition(),
             path.get(step.getEndIndex()).getPackedPosition());
         if (door != null && ClosedDoors.state(client, door) == ClosedDoors.State.OPEN) return "Go through " + door.name;
         return step.getText();
@@ -614,8 +594,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         arrivalElapsedMillis = Math.max(0, elapsedMillis);
         arrivalShowing = true;
         long now = System.currentTimeMillis();
-        arrivalUntilMillis = plugin.display().arrivalAutoDismiss
-            ? now + plugin.display().arrivalDismissSeconds * 1000L : Long.MAX_VALUE;
+        arrivalUntilMillis = plugin.display().arrivalAutoDismiss ? now + plugin.display().arrivalDismissSeconds * 1000L : Long.MAX_VALUE;
     }
 
     /**
@@ -648,8 +627,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         if (speedSamplePosition == WorldPointUtil.UNDEFINED || now - speedSampleAt >= SPEED_SAMPLE_MILLIS) {
             if (speedSamplePosition != WorldPointUtil.UNDEFINED && now > speedSampleAt) {
                 // A plane change between samples reads as a big move (stairs/teleports).
-                int moved = unpackWorldPlane(speedSamplePosition) == playerPlane
-                    ? distanceBetween(speedSamplePosition, playerPacked)
+                int moved = unpackWorldPlane(speedSamplePosition) == playerPlane ? distanceBetween(speedSamplePosition, playerPacked)
                     : NEAR_DISTANCE * 2;
                 speedTilesPerSecond = moved * 1000.0 / (now - speedSampleAt);
             }
@@ -675,8 +653,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
             // sail step whose cached track passes nearest the boat is the active one; being
             // aboard also means everything before its departure node is done.
             if (aboard()) {
-                RouteDirections.Step sail = activeSailRide(
-                    route, plugin.getRouteDirections(route), playerPacked);
+                RouteDirections.Step sail = activeSailRide(route, plugin.getRouteDirections(route), playerPacked);
                 if (sail != null) {
                     ride = sail;
                     reachedIndex = Math.max(reachedIndex, sail.getStartIndex());
@@ -717,25 +694,21 @@ public class RouteDirectionsOverlay extends OverlayPanel {
                     }
                     // Last FEW waypoints, not the literal last: waypoints are decimated
                     // (every 3rd tile) and the hull parks short of the pin.
-                    if (nearest >= track.length - 3
-                        || distanceBetween(playerPacked, destination) <= SEA_NEAR_DISTANCE) {
+                    if (nearest >= track.length - 3 || distanceBetween(playerPacked, destination) <= SEA_NEAR_DISTANCE) {
                         reachedIndex = Math.max(reachedIndex, ride.getEndIndex());
                         liveRemainingTicks = remainingTicksAt[ride.getEndIndex()];
                         lastSelectionDistance = 0;
                     }
                     else {
                         double completed = nearest / (double) (track.length - 1);
-                        liveRemainingTicks = remainingTicksAt[ride.getEndIndex()]
-                            + rideTicks(ride) * (1 - completed);
+                        liveRemainingTicks = remainingTicksAt[ride.getEndIndex()] + rideTicks(ride) * (1 - completed);
                     }
                 }
                 else if (unpackWorldPlane(destination) == playerPlane) {
                     double total = distanceBetween(origin, destination);
                     if (total > 4) {
-                        double completed = Math.min(1,
-                            1 - distanceBetween(playerPacked, destination) / total);
-                        liveRemainingTicks = remainingTicksAt[ride.getEndIndex()]
-                            + rideTicks(ride) * (1 - Math.max(0, completed));
+                        double completed = Math.min(1, 1 - distanceBetween(playerPacked, destination) / total);
+                        liveRemainingTicks = remainingTicksAt[ride.getEndIndex()] + rideTicks(ride) * (1 - Math.max(0, completed));
                     }
                 }
             }
@@ -760,8 +733,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         // has been reached, return-leg indexes are ineligible — otherwise walking out reads as
         // coming back and the route completes instantly.
         int turnaround = route.getTurnaroundIndex();
-        int returnGate = (turnaround >= 0 && reachedIndex < turnaround - 2)
-            ? turnaround : Integer.MAX_VALUE;
+        int returnGate = (turnaround >= 0 && reachedIndex < turnaround - 2) ? turnaround : Integer.MAX_VALUE;
 
         // Progress = the eligible path tile NEAREST the player by WALKING distance (ties broken
         // toward the current position) — see RouteProgress for the wall-aware maze rules; the
@@ -770,12 +742,10 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         // The BFS is memoized by player tile: render runs per FRAME, but the flood only changes
         // when the player's tile does (game movement is tick-paced) — ~2 floods/s instead of ~100.
         if (playerPacked != walkCacheTile) {
-            walkCache = RouteProgress.walkDistances(
-                plugin.getCollisionMap(), playerPacked, RouteProgress.REACH_RADIUS);
+            walkCache = RouteProgress.walkDistances(plugin.getCollisionMap(), playerPacked, RouteProgress.REACH_RADIUS);
             walkCacheTile = playerPacked;
         }
-        RouteProgress.Result selection = RouteProgress.select(
-            path, reachedIndex, doorGate, returnGate, playerPacked, walkCache);
+        RouteProgress.Result selection = RouteProgress.select(path, reachedIndex, doorGate, returnGate, playerPacked, walkCache);
         if (selection == null)
             // Nowhere near the route (long off-path detour): hold the last honest estimate.
             return;
@@ -793,8 +763,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         List<PathStep> path = route.getPath();
         for (RouteDirections.Step step : steps) {
             if (!step.isDoor() || step.getEndIndex() <= reachedIndex || step.getEndIndex() >= path.size()) continue;
-            ClosedDoors.Door door = ClosedDoors.doorBetween(
-                path.get(step.getStartIndex()).getPackedPosition(),
+            ClosedDoors.Door door = ClosedDoors.doorBetween(path.get(step.getStartIndex()).getPackedPosition(),
                 path.get(step.getEndIndex()).getPackedPosition());
             if (door != null && ClosedDoors.state(client, door) != ClosedDoors.State.OPEN) return false;
         }
@@ -835,24 +804,20 @@ public class RouteDirectionsOverlay extends OverlayPanel {
      * The sailing ride step whose cached sea track passes nearest the aboard player (within
      * 30 tiles), or null: multiple sail legs in one route disambiguate by geometry.
      */
-    private RouteDirections.Step activeSailRide(RouteOption route,
-        List<RouteDirections.Step> steps, int playerPacked) {
+    private RouteDirections.Step activeSailRide(RouteOption route, List<RouteDirections.Step> steps, int playerPacked) {
         List<PathStep> path = route.getPath();
         RouteDirections.Step best = null;
         int bestDistance = 30;
         for (RouteDirections.Step step : steps) {
-            if (!step.isTransport() || step.getEndIndex() >= path.size()
-                || !route.sailingJumpDepartures().contains(step.getStartIndex())) {
+            if (!step.isTransport() || step.getEndIndex() >= path.size() || !route.sailingJumpDepartures().contains(step.getStartIndex()))
                 continue;
-            }
             int origin = path.get(Math.max(0, step.getStartIndex())).getPackedPosition();
             int destination = path.get(step.getEndIndex()).getPackedPosition();
             int[] track = SailingSea.seaPath(origin, destination);
             if (track == null) {
                 // Track cache just invalidated (the live learner clears it precisely at
                 // obstacle-rich ports — i.e. at ARRIVAL): endpoints still identify the leg.
-                int d = Math.min(distanceBetween(playerPacked, origin),
-                    distanceBetween(playerPacked, destination));
+                int d = Math.min(distanceBetween(playerPacked, origin), distanceBetween(playerPacked, destination));
                 if (d < bestDistance) {
                     bestDistance = d;
                     best = step;

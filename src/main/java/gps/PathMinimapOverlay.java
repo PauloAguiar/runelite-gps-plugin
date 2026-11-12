@@ -61,8 +61,7 @@ public class PathMinimapOverlay extends Overlay {
             int pathPoint = pathPoints.get(i).getPackedPosition();
             if (WorldPointUtil.unpackWorldPlane(pathPoint) != client.getTopLevelWorldView().getPlane()) continue;
 
-            Color color = i <= progress ? doneColor
-                : (i >= blockedFrom ? plugin.display().colourPathBlocked : pathColor);
+            Color color = i <= progress ? doneColor : (i >= blockedFrom ? plugin.display().colourPathBlocked : pathColor);
             drawOnMinimap(graphics, pathPoint, color);
         }
         for (int target : plugin.getPathTargets()) {

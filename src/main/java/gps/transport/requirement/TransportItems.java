@@ -21,9 +21,7 @@ import lombok.Getter;
     public TransportItems(int[][] items, int[][] staves, int[][] offhands, int[] quantities) {
         List<ItemRequirement> reqs = new ArrayList<>();
         for (int i = 0; i < items.length; i++) {
-            reqs.add(new ItemRequirement(
-                items[i],
-                staves != null && i < staves.length ? staves[i] : new int[0],
+            reqs.add(new ItemRequirement(items[i], staves != null && i < staves.length ? staves[i] : new int[0],
                 offhands != null && i < offhands.length ? offhands[i] : new int[0],
                 quantities[i]));
         }
@@ -78,12 +76,9 @@ import lombok.Getter;
         for (int[] inner : array) text.append((text.length() == 0) ? "" : ", ").append(Arrays.toString(inner));
         return "[" + text + "]";
     }
-
+
     @Override public String toString() {
-        return "[" +
-            toString(getItems()) + ", " +
-            toString(getStaves()) + ", " +
-            toString(getOffhands()) + ", " +
+        return "[" + toString(getItems()) + ", " + toString(getStaves()) + ", " + toString(getOffhands()) + ", " +
             Arrays.toString(getQuantities()) + "]";
     }
 }

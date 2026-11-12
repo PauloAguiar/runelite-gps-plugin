@@ -32,8 +32,7 @@ public final class PlayerOwnedHouse {
     // hotspot, one per house STYLE), and the same region set hardcoded by other POH-aware
     // plugins. Every style and house location resolves to these regions. Checking the wrong band
     // here is why presence detection failed repeatedly.
-    private static final Set<Integer> TEMPLATE_REGIONS =
-        Set.of(7534, 7535, 7790, 7791, 8046, 8047, 8302, 8303);
+    private static final Set<Integer> TEMPLATE_REGIONS = Set.of(7534, 7535, 7790, 7791, 8046, 8047, 8302, 8303);
 
     private PlayerOwnedHouse() {
     }

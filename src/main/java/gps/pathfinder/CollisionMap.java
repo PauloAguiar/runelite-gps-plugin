@@ -120,10 +120,8 @@ import static gps.WorldPointUtil.unpackWorldY;
         // withdraw anything — e.g. every route starting at the GE — cancelling the surcharge out
         // of the route ranking, and made plain walking detour around bank plazas to dodge it.)
         final boolean bankVisited = graph.bankVisited(node);
-        if (!bankVisited && config.isBankPathEnabled() && config.bankAccessible(packedPosition)
-            && !visited.get(packedPosition, true)
-            && (tentative == null || !tentative.shouldPrune(packedPosition, true,
-                graph.cost(node) + config.getBankPickupCost()))) {
+        if (!bankVisited && config.isBankPathEnabled() && config.bankAccessible(packedPosition) && !visited.get(packedPosition, true)
+            && (tentative == null || !tentative.shouldPrune(packedPosition, true, graph.cost(node) + config.getBankPickupCost()))) {
             neighbors.add(graph.createTile(packedPosition, node, true, config.getBankPickupCost()));
         }
 
@@ -143,11 +141,7 @@ import static gps.WorldPointUtil.unpackWorldY;
                 graph.cost(node) + Math.max(0, transportTravelTime + transportAdditionalCost))) {
                 continue;
             }
-            neighbors.add(graph.createTransport(
-                transport.getDestination(),
-                node,
-                transportTravelTime,
-                transportAdditionalCost,
+            neighbors.add(graph.createTransport(transport.getDestination(), node, transportTravelTime, transportAdditionalCost,
                 bankVisited));
         }
 
@@ -155,10 +149,8 @@ import static gps.WorldPointUtil.unpackWorldY;
         // wilderness/bank state expands them once. Water nodes may be barred from expanding
         // it entirely (abandonment forbidden: no casting from the helm; land nodes fine).
         AbstractNodeKind abstractKind = AbstractNodeKind.fromWildernessLevel(wildernessLevel);
-        if (!visited.getAbstract(abstractKind, bankVisited)
-            && !config.teleportsBlockedAt(WorldPointUtil.packWorldPoint(x, y, z))) {
+        if (!visited.getAbstract(abstractKind, bankVisited) && !config.teleportsBlockedAt(WorldPointUtil.packWorldPoint(x, y, z)))
             neighbors.add(graph.createAbstract(abstractKind, node, bankVisited, 0));
-        }
 
         // Then add tiles which we can walk to, which go into the FIFO boundary queue.
         if (isBlocked(x, y, z)) {
@@ -217,8 +209,7 @@ import static gps.WorldPointUtil.unpackWorldY;
                     // their original origin field; stepping onto it would jump the path into the
                     // house template. Only true blocked-tile transports (origin == the map key,
                     // e.g. fairy rings) may be entered this way.
-                    if (transport.getOrigin() != neighborPacked
-                        || !(transport.isUsableAtWildernessLevel(wildernessLevel))
+                    if (transport.getOrigin() != neighborPacked || !(transport.isUsableAtWildernessLevel(wildernessLevel))
                         || visited.get(transport.getOrigin(), bankVisited)) {
                         continue;
                     }
@@ -245,10 +236,7 @@ import static gps.WorldPointUtil.unpackWorldY;
             if (visited.get(transport.getDestination(), bankVisited)) continue;
             if (!transport.isUsableAtWildernessLevel(maxWildernessLevel)) continue;
             if (config.avoidWilderness(sourceTile, transport.getDestination(), targetInWilderness)) continue;
-            neighbors.add(graph.createTransport(
-                transport.getDestination(),
-                node,
-                CostUnits.fromTicks(transport.getDuration()),
+            neighbors.add(graph.createTransport(transport.getDestination(), node, CostUnits.fromTicks(transport.getDuration()),
                 config.getAdditionalTransportCost(transport),
                 bankVisited));
         }

@@ -5,8 +5,7 @@ import net.runelite.client.config.*;
 
 @SuppressWarnings("SameReturnValue") @ConfigGroup(ShortestPathPlugin.CONFIG_GROUP)
 public interface ShortestPathConfig extends Config {
-    @ConfigSection(name = "Settings", position = 0,
-        description = "Pathfinding options")
+    @ConfigSection(name = "Settings", position = 0, description = "Pathfinding options")
     String sectionSettings = "sectionSettings";
 
     @ConfigItem(hidden = true, keyName = "avoidWilderness", name = "Avoid the wilderness", position = 1, section = sectionSettings,
@@ -354,8 +353,7 @@ public interface ShortestPathConfig extends Config {
         return 15;
     }
 
-    @ConfigSection(name = "Display", position = 67,
-        description = "The path on the world map, minimap and game tiles")
+    @ConfigSection(name = "Display", position = 67, description = "The path on the world map, minimap and game tiles")
     String sectionDisplay = "sectionDisplay";
 
     @ConfigItem(keyName = "drawMap", name = "Draw path on world map", position = 68, section = sectionDisplay,
@@ -425,8 +423,7 @@ public interface ShortestPathConfig extends Config {
         description = "Seconds the Arrived panel lingers before it hides itself")
     default int arrivalDismissSeconds() { return 10; }
 
-    @ConfigSection(name = "Colours", position = 72,
-        description = "Path, text and overlay colours")
+    @ConfigSection(name = "Colours", position = 72, description = "Path, text and overlay colours")
     String sectionColours = "sectionColours";
 
     @Alpha @ConfigItem(keyName = "colourPath", name = "Path", position = 73, section = sectionColours,
@@ -465,8 +462,7 @@ public interface ShortestPathConfig extends Config {
         description = "Outline of the item the route uses next, in the inventory, equipment and bank")
     default Color colourRouteItem() { return new Color(0xF2, 0xC1, 0x4E); }
 
-    @ConfigSection(name = "Hotkeys", position = 80,
-        description = "Keyboard shortcuts")
+    @ConfigSection(name = "Hotkeys", position = 80, description = "Keyboard shortcuts")
     String sectionHotkeys = "sectionHotkeys";
 
     @ConfigItem(keyName = "clearPathHotkey", name = "Clear current path", position = 81, section = sectionHotkeys,
@@ -485,8 +481,7 @@ public interface ShortestPathConfig extends Config {
         description = "The panel's Bank (and back) button: the nearest bank and back, then resume the replaced route")
     default Keybind nearestBankAndBackHotkey() { return Keybind.NOT_SET; }
 
-    @ConfigSection(name = "Debug Options", position = 85, closedByDefault = true,
-        description = "Diagnostics")
+    @ConfigSection(name = "Debug Options", position = 85, closedByDefault = true, description = "Diagnostics")
     String sectionDebug = "sectionDebug";
 
     @ConfigItem(keyName = "drawRecalculationRanges", name = "Draw off-route ranges", position = 87, section = sectionDebug,
