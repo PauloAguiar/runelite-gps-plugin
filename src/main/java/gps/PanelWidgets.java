@@ -23,34 +23,34 @@ final class PanelWidgets {
     // padding and scrollbar) minus the banner's accent bar, paddings, icon and gap (~40px), with
     // slack for font-metric variance; wrapping a line early is invisible, clipping is not.
     static final int BANNER_TEXT_WIDTH = 138;
-    static final Color BANNER_INFO_ACCENT = new Color(0x4C, 0x8B, 0xF5);   // GPS blue
-    static final Color BANNER_WARN_ACCENT = new Color(0xFF, 0x98, 0x1F);   // amber
-    static final Color BANNER_OK_ACCENT = new Color(0x4C, 0xAF, 0x50);     // green
+    static final Color BANNER_INFO_ACCENT = new Color(0x4C8BF5);   // GPS blue
+    static final Color BANNER_WARN_ACCENT = new Color(0xFF981F);   // amber
+    static final Color BANNER_OK_ACCENT = new Color(0x4CAF50);     // green
     // Tallest the expanded teleport-methods box may grow before it scrolls internally.
     static final int CATALOG_MAX_HEIGHT = 240;
 
     // Neutral dot colour for walking legs; deliberately outside the category palette so walking
     // does not masquerade as a teleport category.
-    static final Color WALK_DOT_COLOUR = new Color(0x9E, 0x9E, 0x9E);
-    static final Color SAIL_DOT_COLOUR = new Color(0x2E, 0x86, 0xC1);
+    static final Color WALK_DOT_COLOUR = new Color(0x9E9E9E);
+    static final Color SAIL_DOT_COLOUR = new Color(0x2E86C1);
     // Teleport-item dots are coloured by charge model, permanent (reusable) against charged
     // (consumes a charge or the item), so the two read apart in a route card.
-    static final Color PERMANENT_ITEM_DOT = new Color(0x4D, 0xB6, 0xAC); // teal
-    static final Color CHARGED_ITEM_DOT = new Color(0xF2, 0xC1, 0x4E);   // amber
+    static final Color PERMANENT_ITEM_DOT = new Color(0x4DB6AC); // teal
+    static final Color CHARGED_ITEM_DOT = new Color(0xF2C14E);   // amber
 
     // Stable, distinct-ish palette; categories without a fixed colour hash into it so the same
     // category always gets the same dot colour.
     private static final Color[] CATEGORY_PALETTE = {
-        new Color(0x5B, 0x9B, 0xD5), // blue
-        new Color(0x4C, 0xAF, 0x50), // green
-        new Color(0xE9, 0x7D, 0x3B), // orange
-        new Color(0xB4, 0x6F, 0xD4), // purple
-        new Color(0x4D, 0xB6, 0xAC), // teal
-        new Color(0xE5, 0x73, 0x99), // pink
-        new Color(0xC0, 0xA8, 0x3B), // gold
-        new Color(0x7E, 0x8C, 0x9A), // slate
-        new Color(0x8B, 0xC3, 0x4A), // lime
-        new Color(0xD1, 0x5B, 0x5B), // red
+        new Color(0x5B9BD5), // blue
+        new Color(0x4CAF50), // green
+        new Color(0xE97D3B), // orange
+        new Color(0xB46FD4), // purple
+        new Color(0x4DB6AC), // teal
+        new Color(0xE57399), // pink
+        new Color(0xC0A83B), // gold
+        new Color(0x7E8C9A), // slate
+        new Color(0x8BC34A), // lime
+        new Color(0xD15B5B), // red
     };
 
     private PanelWidgets() {
@@ -192,25 +192,25 @@ final class PanelWidgets {
      */
     static Color categoryColour(String category) {
         switch (category) {
-            case "Spells": return new Color(0x5B, 0x9B, 0xD5);          // blue
+            case "Spells": return new Color(0x5B9BD5);          // blue
             case "Items": return PERMANENT_ITEM_DOT;                     // teal (charged = amber)
-            case "Jewellery box": return new Color(0xB4, 0x6F, 0xD4);   // purple
-            case "Levers": return new Color(0xD1, 0x5B, 0x5B);          // red
-            case "Minigame teleports": return new Color(0xE5, 0x73, 0x99); // pink
-            case "Portals": return new Color(0x9C, 0x7B, 0xE8);         // violet
-            case "Fairy rings": return new Color(0x4C, 0xAF, 0x50);     // green
-            case "Spirit trees": return new Color(0x8B, 0xC3, 0x4A);    // lime
-            case "Gnome gliders": return new Color(0xC9, 0x69, 0xC9);   // magenta
-            case "Hot air balloons": return new Color(0xE9, 0x7D, 0x3B); // orange
-            case "Magic carpets": return new Color(0xB0, 0x3A, 0x5B);   // wine
-            case "Mushtrees": return new Color(0xE0, 0x60, 0x60);       // light red
-            case "Minecarts": return new Color(0x60, 0x7D, 0x8B);       // slate
-            case "Mountain guides": return new Color(0x8D, 0x6E, 0x63); // mountain brown
-            case "Quetzals": return new Color(0x4A, 0xC6, 0xE0);        // cyan
-            case "Obelisks": return new Color(0x9A, 0xA5, 0xB1);        // steel
-            case "Boats & ships": return new Color(0x5C, 0x6B, 0xC0);   // indigo, NOT the item teal
-            case "Canoes": return new Color(0xB5, 0x79, 0x3B);          // wood brown
-            case "Seasonal": return new Color(0x94, 0xB4, 0x4A);        // olive
+            case "Jewellery box": return new Color(0xB46FD4);   // purple
+            case "Levers": return new Color(0xD15B5B);          // red
+            case "Minigame teleports": return new Color(0xE57399); // pink
+            case "Portals": return new Color(0x9C7BE8);         // violet
+            case "Fairy rings": return new Color(0x4CAF50);     // green
+            case "Spirit trees": return new Color(0x8BC34A);    // lime
+            case "Gnome gliders": return new Color(0xC969C9);   // magenta
+            case "Hot air balloons": return new Color(0xE97D3B); // orange
+            case "Magic carpets": return new Color(0xB03A5B);   // wine
+            case "Mushtrees": return new Color(0xE06060);       // light red
+            case "Minecarts": return new Color(0x607D8B);       // slate
+            case "Mountain guides": return new Color(0x8D6E63); // mountain brown
+            case "Quetzals": return new Color(0x4AC6E0);        // cyan
+            case "Obelisks": return new Color(0x9AA5B1);        // steel
+            case "Boats & ships": return new Color(0x5C6BC0);   // indigo, NOT the item teal
+            case "Canoes": return new Color(0xB5793B);          // wood brown
+            case "Seasonal": return new Color(0x94B44A);        // olive
             default: return CATEGORY_PALETTE[Math.floorMod(category.hashCode(), CATEGORY_PALETTE.length)];
         }
     }

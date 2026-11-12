@@ -428,23 +428,23 @@ public interface ShortestPathConfig extends Config {
 
     @Alpha @ConfigItem(keyName = "colourPath", name = "Path", position = 73, section = sectionColours,
         description = "Path tiles on the world map, minimap and game scene")
-    default Color colourPath() { return new Color(0, 255, 255); }
+    default Color colourPath() { return new Color(0x00FFFF); }
 
     @Alpha @ConfigItem(keyName = "colourPathSailing", name = "Sailing legs", position = 73, section = sectionColours,
         description = "Sailed legs on the world map; amber, the buoy colour, reads over both the ocean and the walking path")
-    default Color colourPathSailing() { return new Color(255, 160, 0); }
+    default Color colourPathSailing() { return new Color(0xFFA000); }
 
     @Alpha @ConfigItem(keyName = "colourPathBlocked", name = "Blocked by door", position = 73, section = sectionColours,
         description = "The path beyond a door not yet seen open")
-    default Color colourPathBlocked() { return new Color(224, 62, 62); }
+    default Color colourPathBlocked() { return new Color(0xE03E3E); }
 
     @Alpha @ConfigItem(keyName = "colourPathCalculating", name = "Calculating", position = 74, section = sectionColours,
         description = "Path tiles while a calculation runs, and unused targets when there are several")
-    default Color colourPathCalculating() { return new Color(0, 0, 255); }
+    default Color colourPathCalculating() { return new Color(0x0000FF); }
 
     @Alpha @ConfigItem(keyName = "colourPathUnreachable", name = "Unreachable", position = 75, section = sectionColours,
         description = "Path tiles when the target is still out of reach after the calculation")
-    default Color colourPathUnreachable() { return new Color(200, 40, 240); }
+    default Color colourPathUnreachable() { return new Color(0xC828F0); }
 
     @Alpha @ConfigItem(keyName = "colourText", name = "Text", position = 78, section = sectionColours,
         description = "Tile counter and fairy ring code text")
@@ -452,15 +452,15 @@ public interface ShortestPathConfig extends Config {
 
     @ConfigItem(keyName = "colourTeleportPulse", name = "Teleport pulse", position = 79, section = sectionColours,
         description = "The teleport pulse; defaults to the path colour")
-    default Color colourTeleportPulse() { return new Color(0, 255, 255); }
+    default Color colourTeleportPulse() { return new Color(0x00FFFF); }
 
     @ConfigItem(keyName = "colourOverlayAccent", name = "Overlay accent", position = 80, section = sectionColours,
         description = "Directions overlay accent: the active step, header pin, divider and ETA badge")
-    default Color colourOverlayAccent() { return new Color(0x4C, 0x8B, 0xF5); }
+    default Color colourOverlayAccent() { return new Color(0x4C8BF5); }
 
     @ConfigItem(keyName = "colourRouteItem", name = "Next item", position = 81, section = sectionColours,
         description = "Outline of the item the route uses next, in the inventory, equipment and bank")
-    default Color colourRouteItem() { return new Color(0xF2, 0xC1, 0x4E); }
+    default Color colourRouteItem() { return new Color(0xF2C14E); }
 
     @ConfigSection(name = "Hotkeys", position = 80, description = "Keyboard shortcuts")
     String sectionHotkeys = "sectionHotkeys";

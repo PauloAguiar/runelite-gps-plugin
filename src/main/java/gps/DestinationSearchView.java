@@ -38,7 +38,7 @@ final class DestinationSearchView extends JPanel {
     private static final Pattern COORDINATE_QUERY = Pattern.compile("(\\d{4})[,;\\s]+(\\d{4,5})(?:[,;\\s]+([0-3]))?");
     // Selected search-result row: a blue-tinted background plus a GPS-blue accent bar; the two
     // near-identical dark greys the highlight used before were invisible when arrowing through.
-    private static final Color RESULT_SELECTED_BG = new Color(0x2E, 0x3E, 0x5E);
+    private static final Color RESULT_SELECTED_BG = new Color(0x2E3E5E);
 
     private final ShortestPathPlugin plugin;
     private final IconTextField searchField = new IconTextField();

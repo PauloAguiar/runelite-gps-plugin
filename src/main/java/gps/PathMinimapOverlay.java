@@ -49,7 +49,7 @@ public class PathMinimapOverlay extends Overlay {
 
         List<PathStep> pathPoints = plugin.getDisplayPath();
         Color pathColor = plugin.getPathColor();
-        Color doneColor = new Color(0x80, 0x80, 0x80);
+        Color doneColor = new Color(0x808080);
         // Same tri-state colouring as the scene: grey for the covered stretch, blocked colour past
         // the first un-crossed obstacle, normal in between.
         int progress = plugin.displayedRouteProgress();

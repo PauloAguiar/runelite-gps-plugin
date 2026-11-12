@@ -221,7 +221,7 @@ final class RouteListView extends JPanel {
         // instead of the old full orange outline. Children are non-opaque so one background rules.
         Color cardBg = selected ? ColorScheme.DARK_GRAY_HOVER_COLOR : ColorScheme.DARKER_GRAY_COLOR;
         card.setBackground(cardBg);
-        card.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x3A, 0x3A, 0x3A)),
+        card.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x3A3A3A)),
             BorderFactory.createMatteBorder(0, 3, 0, 0, selected ? ColorScheme.BRAND_ORANGE : cardBg)));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
@@ -265,7 +265,7 @@ final class RouteListView extends JPanel {
             JLabel priorityChip = new JLabel((adjustment > 0 ? "+" : "−") + Math.abs(adjustment) + "s");
             priorityChip.setFont(FontManager.getRunescapeSmallFont());
             priorityChip.setBorder(new EmptyBorder(0, 4, 0, 0));
-            priorityChip.setForeground(adjustment < 0 ? new Color(70, 200, 90) : ColorScheme.PROGRESS_ERROR_COLOR);
+            priorityChip.setForeground(adjustment < 0 ? new Color(0x46C85A) : ColorScheme.PROGRESS_ERROR_COLOR);
             priorityChip.setToolTipText("Your priority bias: changes this route's position, not its ETA");
             left.add(priorityChip);
         }

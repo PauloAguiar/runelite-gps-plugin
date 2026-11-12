@@ -301,7 +301,7 @@ public class PathTileOverlay extends Overlay {
         Point anchor = Perspective.localToCanvas(client, player.getLocalLocation(), plane);
         if (anchor != null) {
             String label = "off-route: " + (d < 0 ? "?" : d) + " (warn " + warn + " / recalc " + recalc + ")";
-            graphics.setColor(plugin.isOffRouteWarning() ? new Color(0xFF, 0x4C, 0x4C) : Color.WHITE);
+            graphics.setColor(plugin.isOffRouteWarning() ? new Color(0xFF4C4C) : Color.WHITE);
             graphics.drawString(label, anchor.getX() + 6, anchor.getY());
         }
     }
@@ -334,8 +334,8 @@ public class PathTileOverlay extends Overlay {
     // The two pulse colours: green marks the journey's end; gold marks a round trip's turnaround
     // (the bank) while the outbound leg is being walked — an "arrive here first" beacon that
     // disappears once the player reaches it and the trip continues home.
-    private static final Color PULSE_DESTINATION = new Color(0, 220, 90);
-    private static final Color PULSE_TURNAROUND = new Color(255, 196, 64);
+    private static final Color PULSE_DESTINATION = new Color(0x00DC5A);
+    private static final Color PULSE_TURNAROUND = new Color(0xFFC440);
 
     private void drawDestinationPulse(Graphics2D graphics, int location) {
         drawDestinationPulse(graphics, location, PULSE_DESTINATION);

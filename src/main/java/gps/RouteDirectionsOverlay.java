@@ -37,15 +37,15 @@ public class RouteDirectionsOverlay extends OverlayPanel {
     // Component insets plus the gap between the left text and the right-aligned time.
     private static final int PANEL_PADDING = 18;
 
-    private static final Color DONE = new Color(0x80, 0x80, 0x80);
+    private static final Color DONE = new Color(0x808080);
     // The overlay's accent tone (map-app navigation blue by default, user-configurable): the
     // active step, header pin, divider rule and ETA badge. The lighter "about to end" shade and
     // the badge's border are derived from it each frame.
-    private Color accent = new Color(0x4C, 0x8B, 0xF5);
+    private Color accent = new Color(0x4C8BF5);
     private Color accentEnding = lighten(accent, 0.35f);
     private static final Color NEXT = Color.WHITE;
-    private static final Color UPCOMING = new Color(0xB4, 0xB4, 0xB4);
-    private static final Color OFF_ROUTE = new Color(0xFF, 0x4C, 0x4C);
+    private static final Color UPCOMING = new Color(0xB4B4B4);
+    private static final Color OFF_ROUTE = new Color(0xFF4C4C);
 
     // Magnifying-glass hierarchy: bold > regular > small, the native RuneScape faces at the size 16
     // their pixel art is drawn for, unless the custom font replaces them.
@@ -109,7 +109,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
     private String arrivalSource;
     private long arrivalElapsedMillis;
 
-    private static final Color ARRIVED = new Color(0x3C, 0xC8, 0x6A);
+    private static final Color ARRIVED = new Color(0x3CC86A);
 
     @Inject public RouteDirectionsOverlay(Client client, ShortestPathPlugin plugin) {
         super(plugin);
@@ -407,7 +407,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
             new int[]{py + Math.round(7 * s), py + Math.round(7 * s), py + Math.round(13 * s)},
             3);
         graphics.fillPolygon(tail);
-        graphics.setColor(new Color(0x10, 0x10, 0x10));
+        graphics.setColor(new Color(0x101010));
         graphics.fillOval(px + Math.round(3 * s), py + Math.round(3 * s), Math.round(3 * s), Math.round(3 * s));
     }
 
