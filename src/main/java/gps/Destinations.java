@@ -46,9 +46,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         /** The "Nearest X" option a query row was synthesized from; null for ordinary entries. */
         public final NearestOption nearest;
 
-        Entry(String category, String name, int packedPosition) {
-            this(category, name, packedPosition, null, null);
-        }
+        Entry(String category, String name, int packedPosition) { this(category, name, packedPosition, null, null); }
 
         Entry(String category, String name, int packedPosition, Set<Integer> tiles, NearestOption nearest) {
             this.category = category;

@@ -108,14 +108,10 @@ public class ShortestPathPanel extends PluginPanel {
      * Called by the plugin the moment it reaches (or clears an already-at) destination, so the
      * status shows an arrival banner instead of "No destination set" (see NoticesView).
      */
-    public void markArrived(long elapsedMillis) {
-        notices.markArrived(elapsedMillis);
-    }
+    public void markArrived(long elapsedMillis) { notices.markArrived(elapsedMillis); }
 
     /** Shows the issue report's routing context in the header's copy box (see PanelHeaderView). EDT only. */
-    void showReportContext(String context) {
-        header.showReportContext(context);
-    }
+    void showReportContext(String context) { header.showReportContext(context); }
 
     /**
      * Rebuilds the configuration sections after one of their mirrored config keys changed outside
@@ -128,9 +124,7 @@ public class ShortestPathPanel extends PluginPanel {
     }
 
     /** Focuses the destination search box (the focus-search hotkey); see DestinationSearchView. */
-    public void focusSearch() {
-        destinationSearch.focusSearch();
-    }
+    public void focusSearch() { destinationSearch.focusSearch(); }
 
     private void render() {
         header.refresh();
@@ -146,7 +140,5 @@ public class ShortestPathPanel extends PluginPanel {
     }
 
     /** Rebuilds the Travel options slot for the current inputs (see TravelOptionsView). */
-    private void refreshCatalog() {
-        travelOptions.rebuild(cachedCatalog, cachedExclusions, cachedUnavailable);
-    }
+    private void refreshCatalog() { travelOptions.rebuild(cachedCatalog, cachedExclusions, cachedUnavailable); }
 }

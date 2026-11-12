@@ -74,9 +74,7 @@ public class NodeGraph {
     // Optional A* heuristic; null = uninformed (Dijkstra) ordering.
     private final SearchHeuristic heuristic;
 
-    public NodeGraph(int initialCapacity) {
-        this(initialCapacity, null);
-    }
+    public NodeGraph(int initialCapacity) { this(initialCapacity, null); }
 
     public NodeGraph(int initialCapacity, SearchHeuristic heuristic) {
         final int pages = Math.max(1, (Math.max(1, initialCapacity) + PAGE_MASK) >>> PAGE_SHIFT);
@@ -100,9 +98,7 @@ public class NodeGraph {
         abstractKind[page] = new byte[PAGE_SIZE];
     }
 
-    public int size() {
-        return size;
-    }
+    public int size() { return size; }
 
     private void ensureCapacity() {
         if (size < capacity) return;
@@ -139,16 +135,12 @@ public class NodeGraph {
         return id;
     }
 
-    private int costOf(int id) {
-        return id == NO_NODE ? 0 : cost[id >>> PAGE_SHIFT][id & PAGE_MASK];
-    }
+    private int costOf(int id) { return id == NO_NODE ? 0 : cost[id >>> PAGE_SHIFT][id & PAGE_MASK]; }
 
     /**
      * The search root. Carries no previous node and zero cost.
      */
-    public int createStart(int packedPosition) {
-        return append(packedPosition, NO_NODE, 0, (byte) 0, (byte) 0);
-    }
+    public int createStart(int packedPosition) { return append(packedPosition, NO_NODE, 0, (byte) 0, (byte) 0); }
 
     /**
      * A concrete walkable tile. Travel cost is the walking distance from the previous node, but
@@ -194,41 +186,25 @@ public class NodeGraph {
             (byte) abstractKind.ordinal());
     }
 
-    public int packedPosition(int id) {
-        return packedPosition[id >>> PAGE_SHIFT][id & PAGE_MASK];
-    }
+    public int packedPosition(int id) { return packedPosition[id >>> PAGE_SHIFT][id & PAGE_MASK]; }
 
-    public int previous(int id) {
-        return previous[id >>> PAGE_SHIFT][id & PAGE_MASK];
-    }
+    public int previous(int id) { return previous[id >>> PAGE_SHIFT][id & PAGE_MASK]; }
 
-    public int cost(int id) {
-        return cost[id >>> PAGE_SHIFT][id & PAGE_MASK];
-    }
+    public int cost(int id) { return cost[id >>> PAGE_SHIFT][id & PAGE_MASK]; }
 
     /**
      * The precomputed priority-queue key: the accumulated cost plus the A* heuristic value when
      * one is attached (equal to {@link #cost} otherwise).
      */
-    public int orderCost(int id) {
-        return orderCost[id >>> PAGE_SHIFT][id & PAGE_MASK];
-    }
+    public int orderCost(int id) { return orderCost[id >>> PAGE_SHIFT][id & PAGE_MASK]; }
 
-    public boolean bankVisited(int id) {
-        return (flags[id >>> PAGE_SHIFT][id & PAGE_MASK] & FLAG_BANK_VISITED) != 0;
-    }
+    public boolean bankVisited(int id) { return (flags[id >>> PAGE_SHIFT][id & PAGE_MASK] & FLAG_BANK_VISITED) != 0; }
 
-    public boolean isTile(int id) {
-        return (flags[id >>> PAGE_SHIFT][id & PAGE_MASK] & FLAG_ABSTRACT) == 0;
-    }
+    public boolean isTile(int id) { return (flags[id >>> PAGE_SHIFT][id & PAGE_MASK] & FLAG_ABSTRACT) == 0; }
 
-    public boolean isAbstract(int id) {
-        return (flags[id >>> PAGE_SHIFT][id & PAGE_MASK] & FLAG_ABSTRACT) != 0;
-    }
+    public boolean isAbstract(int id) { return (flags[id >>> PAGE_SHIFT][id & PAGE_MASK] & FLAG_ABSTRACT) != 0; }
 
-    public boolean isTransport(int id) {
-        return (flags[id >>> PAGE_SHIFT][id & PAGE_MASK] & FLAG_TRANSPORT) != 0;
-    }
+    public boolean isTransport(int id) { return (flags[id >>> PAGE_SHIFT][id & PAGE_MASK] & FLAG_TRANSPORT) != 0; }
 
     public AbstractNodeKind abstractKind(int id) {
         return ABSTRACT_KINDS[abstractKind[id >>> PAGE_SHIFT][id & PAGE_MASK]];

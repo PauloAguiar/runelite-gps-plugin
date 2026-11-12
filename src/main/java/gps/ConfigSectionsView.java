@@ -54,9 +54,7 @@ import static gps.PanelWidgets.wrappedLabel;
     }
 
     /** The config item a section binds; a misspelt key fails here, when the section is built. */
-    private ConfigItem item(String key) {
-        return plugin.configItem(key);
-    }
+    private ConfigItem item(String key) { return plugin.configItem(key); }
 
     /**
      * The seconds chip for a section header, in the SAME sign convention as the route cards'

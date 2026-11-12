@@ -67,9 +67,7 @@ public final class TransportTypePresentation {
     }
 
     /** Whether the table has a row for the type (the test requires one for every type). */
-    public static boolean hasRow(TransportType type) {
-        return ROWS.containsKey(type);
-    }
+    public static boolean hasRow(TransportType type) { return ROWS.containsKey(type); }
 
     /** The catalog category ("Spells", "Boats & ships"); "Other" for a null type or no row. */
     public static String categoryOf(TransportType type) {

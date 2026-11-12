@@ -40,9 +40,7 @@ import net.runelite.client.ui.NavigationButton;
     }
 
     /** Opens the panel (the focus-search hotkey). */
-    void open() {
-        toolbar.openPanel(button);
-    }
+    void open() { toolbar.openPanel(button); }
 
     /** Plugin shutdown: off the toolbar whatever the state. */
     void remove() {

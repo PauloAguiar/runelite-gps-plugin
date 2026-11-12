@@ -70,9 +70,7 @@ public final class DistanceField {
     private int floodHorizon = Integer.MAX_VALUE;
 
     /** The bounded flood's horizon: a strict lower bound on any unflooded tile's distance. */
-    public int horizon() {
-        return floodHorizon;
-    }
+    public int horizon() { return floodHorizon; }
 
     private DistanceField(CollisionMap map) {
         this.map = map;

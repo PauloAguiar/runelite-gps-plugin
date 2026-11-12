@@ -57,9 +57,7 @@ import net.runelite.client.config.ConfigManager;
     }
 
     /** The walk-preference bias in seconds (negative effective ETA for the pure-walk route). */
-    int walkPreferenceSeconds() {
-        return walkPreferenceSeconds;
-    }
+    int walkPreferenceSeconds() { return walkPreferenceSeconds; }
 
     void setWalkPreferenceSeconds(int seconds) {
         configManager.get().setConfiguration(configGroup, CONFIG_KEY_WALK_PREFERENCE, seconds);
@@ -67,9 +65,7 @@ import net.runelite.client.config.ConfigManager;
     }
 
     /** The bank-detour bias in seconds: positive prefers via-bank routes, negative avoids them. */
-    int bankPreferenceSeconds() {
-        return bankPreferenceSeconds;
-    }
+    int bankPreferenceSeconds() { return bankPreferenceSeconds; }
 
     void setBankPreferenceSeconds(int seconds) {
         configManager.get().setConfiguration(configGroup, CONFIG_KEY_BANK_PREFERENCE, seconds);

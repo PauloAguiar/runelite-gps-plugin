@@ -22,16 +22,12 @@ class IntMinHeap {
         this.heap = new int[Math.max(1, initialCapacity)];
     }
 
-    boolean isEmpty() {
-        return size == 0;
-    }
+    boolean isEmpty() { return size == 0; }
 
     /**
      * @return the minimum-cost element, or {@link NodeGraph#NO_NODE} if empty.
      */
-    int peek() {
-        return size == 0 ? NodeGraph.NO_NODE : heap[0];
-    }
+    int peek() { return size == 0 ? NodeGraph.NO_NODE : heap[0]; }
 
     void add(int id) {
         if (size == heap.length) heap = Arrays.copyOf(heap, heap.length << 1);
@@ -54,9 +50,7 @@ class IntMinHeap {
         return top;
     }
 
-    void clear() {
-        size = 0;
-    }
+    void clear() { size = 0; }
 
     /**
      * Ordering: orderCost (f = g + h) first, then HIGHER g, then node id (creation order).

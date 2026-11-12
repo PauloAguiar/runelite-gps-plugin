@@ -225,9 +225,7 @@ import static gps.WorldPointUtil.unpackWorldY;
     @Getter private boolean isOnSailingBoat;
 
     /** Whether the player is aboard their boat (SAILING_BOARDED_BOAT, read at refresh). */
-    public boolean isOnSailingBoat() {
-        return isOnSailingBoat;
-    }
+    public boolean isOnSailingBoat() { return isOnSailingBoat; }
 
     /** Packed mooring land tiles where an owned boat is moored (SAILING_BOAT_N_PORT, read
      * at refresh). Capsized/bottled boats contribute nothing. */
@@ -253,9 +251,7 @@ import static gps.WorldPointUtil.unpackWorldY;
 
     /** The moorings that may host an embark under the boat-location gate, or empty when the
      * gate stands down (summon assumed, or no boat seen) — leg synthesis must offer these. */
-    public Set<Integer> gatedBoatMoorings() {
-        return boatSeen && !assumeSummonBoat ? boatMoorings : Set.of();
-    }
+    public Set<Integer> gatedBoatMoorings() { return boatSeen && !assumeSummonBoat ? boatMoorings : Set.of(); }
 
     private void refreshBoatLocations() {
         Set<Integer> moorings = new HashSet<>();
@@ -411,9 +407,7 @@ import static gps.WorldPointUtil.unpackWorldY;
      * The copy allocation used by {@link #copyForPlanning()}; overridable so test subclasses can keep
      * their quest/varbit bypasses on the planning copy.
      */
-    protected PathfinderConfig newPlanningCopy() {
-        return new PathfinderConfig(this);
-    }
+    protected PathfinderConfig newPlanningCopy() { return new PathfinderConfig(this); }
 
     /**
      * A sibling of this (already refreshed) planning copy for a parallel seed-search worker: shares
@@ -513,17 +507,13 @@ import static gps.WorldPointUtil.unpackWorldY;
      * For the planning copy: whether to also consider teleport items in the bank (routing through a
      * bank to pick them up). Ignored in full planning mode, which offers everything anyway.
      */
-    public void setConsiderBank(boolean considerBank) {
-        this.considerBank = considerBank;
-    }
+    public void setConsiderBank(boolean considerBank) { this.considerBank = considerBank; }
 
     /**
      * Toggles whether this (planning) config bypasses character unlocks as well ({@code true} = the
      * "Everything" variant) or respects them. Takes effect on the next {@link #refresh()}.
      */
-    public void setPlanningMode(boolean planningMode) {
-        this.planningMode = planningMode;
-    }
+    public void setPlanningMode(boolean planningMode) { this.planningMode = planningMode; }
 
     /**
      * Toggles whether item possession (and config-preference gates) are bypassed — the "All" family.
@@ -567,13 +557,9 @@ import static gps.WorldPointUtil.unpackWorldY;
     /** Whether any transport row (available or not) departs from this tile. */
     /** Every loaded transport row, for the data lint tests. */
 
-    public boolean isTransportOrigin(int packed) {
-        return transportOriginTiles.contains(packed);
-    }
+    public boolean isTransportOrigin(int packed) { return transportOriginTiles.contains(packed); }
 
-    public CollisionMap getMap() {
-        return map.get();
-    }
+    public CollisionMap getMap() { return map.get(); }
 
     /**
      * WARNING: This method collapses the banked/unbanked transport distinction into a single view.
@@ -637,32 +623,22 @@ import static gps.WorldPointUtil.unpackWorldY;
      * entry's usability is reported separately by {@link #getMethodAvailability()}. Built during the last
      * client-thread {@link #refresh()} on a planning copy.
      */
-    public Set<TeleportMethod> getMethodCatalog() {
-        return new LinkedHashSet<>(methodAvailability.keySet());
-    }
+    public Set<TeleportMethod> getMethodCatalog() { return new LinkedHashSet<>(methodAvailability.keySet()); }
 
     public TransportAvailability getTransportAvailability(boolean bankVisited) {
         return bankVisited ? transportAvailabilityWithBank : transportAvailabilityWithoutBank;
     }
 
-    public boolean isBankPathEnabled() {
-        return includeBankPath;
-    }
+    public boolean isBankPathEnabled() { return includeBankPath; }
 
-    public boolean hasDestination(String destinationType) {
-        return destinations.containsKey(destinationType);
-    }
+    public boolean hasDestination(String destinationType) { return destinations.containsKey(destinationType); }
 
-    public Set<Integer> getDestinations(String destinationType) {
-        return destinations.get(destinationType);
-    }
+    public Set<Integer> getDestinations(String destinationType) { return destinations.get(destinationType); }
 
     /**
      * Whether standing on this tile may flip the path into {@code bankVisited} (inventory-from-bank) state.
      */
-    public boolean bankAccessible(int packedPosition) {
-        return accessibleBankIndex.get(packedPosition) != null;
-    }
+    public boolean bankAccessible(int packedPosition) { return accessibleBankIndex.get(packedPosition) != null; }
 
     public void refresh() {
         calculationCutoffMillis = (long) config.calculationCutoff() * Constants.GAME_TICK_LENGTH;
@@ -753,9 +729,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         itemSnapshots.clear();
     }
 
-    private void refreshDestinations() {
-        destinations = avoidWilderness ? filteredDestinations : allDestinations;
-    }
+    private void refreshDestinations() { destinations = avoidWilderness ? filteredDestinations : allDestinations; }
 
     private void rebuildAccessibleBankTiles() {
         Set<Integer> bankLocs = destinations.get("bank");
@@ -1028,9 +1002,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         return missing.isEmpty() ? null : "Requires quest: " + String.join(", ", missing);
     }
 
-    private static Quest typeGateQuest(TransportType type) {
-        return TransportTypePresentation.gateQuestOf(type);
-    }
+    private static Quest typeGateQuest(TransportType type) { return TransportTypePresentation.gateQuestOf(type); }
 
     /**
      * The item requirements as player-facing names ("Willow logs", "Law rune x2, Air rune"), read
@@ -1174,9 +1146,7 @@ import static gps.WorldPointUtil.unpackWorldY;
      */
     private List<Transport> extraTransports = List.of();
 
-    public void setExtraTransports(List<Transport> extras) {
-        extraTransports = extras == null ? List.of() : extras;
-    }
+    public void setExtraTransports(List<Transport> extras) { extraTransports = extras == null ? List.of() : extras; }
 
     /**
      * Rebuilds the transport availability as a view of the base availability captured by the last

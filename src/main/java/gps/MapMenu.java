@@ -40,9 +40,7 @@ import net.runelite.client.util.Text;
     // Where the menu opened: a world-map pick resolves against it, not the current mouse position.
     private Point lastMenuOpenedPoint;
 
-    void onMenuOpened() {
-        lastMenuOpenedPoint = client.getMouseCanvasPosition();
-    }
+    void onMenuOpened() { lastMenuOpenedPoint = client.getMouseCanvasPosition(); }
 
     void onMenuEntryAdded(MenuEntryAdded event) {
         addDirectionsEntry(event);

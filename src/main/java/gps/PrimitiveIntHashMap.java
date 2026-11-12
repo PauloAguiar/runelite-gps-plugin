@@ -45,9 +45,7 @@ public class PrimitiveIntHashMap<V> {
      * @param initialSize initial expected number of elements; rounded to the next power of two
      *                    internally.
      */
-    public PrimitiveIntHashMap(int initialSize) {
-        this(initialSize, DEFAULT_LOAD_FACTOR);
-    }
+    public PrimitiveIntHashMap(int initialSize) { this(initialSize, DEFAULT_LOAD_FACTOR); }
 
     /**
      * Creates a new map with the given initial size and load factor.
@@ -115,9 +113,7 @@ public class PrimitiveIntHashMap<V> {
      *
      * @return current entry count (always {@code >= 0}).
      */
-    public int size() {
-        return size;
-    }
+    public int size() { return size; }
 
     /**
      * Returns all keys present in the map as a freshly allocated {@code int[]}.
@@ -139,9 +135,7 @@ public class PrimitiveIntHashMap<V> {
      * @param key primitive key to look up.
      * @return the mapped value, or {@code null} if the key does not exist.
      */
-    public V get(int key) {
-        return getOrDefault(key, null);
-    }
+    public V get(int key) { return getOrDefault(key, null); }
 
     /**
      * Retrieves the value mapped to the provided key.
@@ -232,9 +226,7 @@ public class PrimitiveIntHashMap<V> {
         capacity = (int) (maxSize * loadFactor);
     }
 
-    private void growCapacity() {
-        setNewSize(maxSize);
-    }
+    private void growCapacity() { setNewSize(maxSize); }
 
     // Grow the table then rehash all the values into it and discard the old arrays
     private void rehash() {

@@ -9,11 +9,7 @@ public class PendingTask {
         this.task = task;
     }
 
-    public boolean check(int tick) {
-        return tick >= this.tick;
-    }
+    public boolean check(int tick) { return tick >= this.tick; }
 
-    public void run() {
-        task.run();
-    }
+    public void run() { task.run(); }
 }

@@ -43,9 +43,7 @@ import net.runelite.client.config.ConfigManager;
     @Getter(AccessLevel.PACKAGE) private boolean parsedLive;
 
     /** Whether the travel menu has been seen this session or restored, so the planted set is known. */
-    boolean isSynced() {
-        return pathfinderConfig.availableSpiritTrees != null;
-    }
+    boolean isSynced() { return pathfinderConfig.availableSpiritTrees != null; }
 
     /** Whether the set came from the live menu this session rather than the snapshot. */
 

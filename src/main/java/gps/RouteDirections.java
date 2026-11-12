@@ -83,9 +83,7 @@ final class RouteDirections {
         }
 
         /** Whether the player must interact with something to cross this edge (door or shortcut). */
-        boolean gatesWalk() {
-            return door || obstacle;
-        }
+        boolean gatesWalk() { return door || obstacle; }
     }
 
     private RouteDirections() {
@@ -233,9 +231,7 @@ final class RouteDirections {
     /**
      * Game ticks to cover a walking leg, assuming the player runs (2 tiles per tick).
      */
-    private static int walkTicks(int tiles) {
-        return (tiles + 1) / 2;
-    }
+    private static int walkTicks(int tiles) { return (tiles + 1) / 2; }
 
     private static final int COINS_ITEM_ID = 995;
 
@@ -331,9 +327,7 @@ final class RouteDirections {
         steps.add(new Step("Sail to " + destination, i - 1, i, sailTicks, true));
     }
 
-    private static String walkText(String target) {
-        return "Walk to " + target;
-    }
+    private static String walkText(String target) { return "Walk to " + target; }
 
     /**
      * The instruction for a method step. Fairy rings get their own glyph and phrasing: the raw

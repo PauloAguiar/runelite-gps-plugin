@@ -76,9 +76,7 @@ public class WorldPointUtil {
      * @param packedPoint packed coordinate.
      * @return x value.
      */
-    public static int unpackWorldX(int packedPoint) {
-        return packedPoint & 0x7FFF;
-    }
+    public static int unpackWorldX(int packedPoint) { return packedPoint & 0x7FFF; }
 
     /**
      * Extracts the y component from a packed world point.
@@ -86,9 +84,7 @@ public class WorldPointUtil {
      * @param packedPoint packed coordinate.
      * @return y value.
      */
-    public static int unpackWorldY(int packedPoint) {
-        return (packedPoint >> 15) & 0x7FFF;
-    }
+    public static int unpackWorldY(int packedPoint) { return (packedPoint >> 15) & 0x7FFF; }
 
     /**
      * Extracts the plane component from a packed world point.
@@ -96,9 +92,7 @@ public class WorldPointUtil {
      * @param packedPoint packed coordinate.
      * @return plane value (0..3).
      */
-    public static int unpackWorldPlane(int packedPoint) {
-        return (packedPoint >> 30) & 0x3;
-    }
+    public static int unpackWorldPlane(int packedPoint) { return (packedPoint >> 30) & 0x3; }
 
     /**
      * Offsets a packed world point by {@code (dx, dy)} on the same plane.
@@ -278,21 +272,13 @@ public class WorldPointUtil {
         return packWorldPoint(originalX, originalY, z);
     }
 
-    private static int unpackChunkRotation(int chunkData) {
-        return chunkData >> 1 & 0x3;
-    }
+    private static int unpackChunkRotation(int chunkData) { return chunkData >> 1 & 0x3; }
 
-    private static int unpackChunkTemplateY(int chunkData) {
-        return (chunkData >> 3 & 0x7FF) * CHUNK_SIZE;
-    }
+    private static int unpackChunkTemplateY(int chunkData) { return (chunkData >> 3 & 0x7FF) * CHUNK_SIZE; }
 
-    private static int unpackChunkTemplateX(int chunkData) {
-        return (chunkData >> 14 & 0x3FF) * CHUNK_SIZE;
-    }
+    private static int unpackChunkTemplateX(int chunkData) { return (chunkData >> 14 & 0x3FF) * CHUNK_SIZE; }
 
-    private static int unpackChunkTemplatePlane(int chunkData) {
-        return chunkData >> 24 & 0x3;
-    }
+    private static int unpackChunkTemplatePlane(int chunkData) { return chunkData >> 24 & 0x3; }
 
     /**
      * A one-line summary of an instance's template chunk origins, for debug logging: how many

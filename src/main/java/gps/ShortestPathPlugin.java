@@ -265,29 +265,19 @@ public class ShortestPathPlugin extends Plugin {
         destination.set(start, ends, canReviveFiltered);
     }
 
-    public void setDestination(int start, Set<Integer> ends) {
-        setDestination(start, ends, true);
-    }
+    public void setDestination(int start, Set<Integer> ends) { setDestination(start, ends, true); }
 
     /** Whether a destination is currently set (what {@code pathfinder != null} used to mean). */
-    public boolean hasPathTargets() {
-        return !destination.targets().isEmpty();
-    }
+    public boolean hasPathTargets() { return !destination.targets().isEmpty(); }
 
     /** The current destination tiles (empty when no destination is set). */
-    public Set<Integer> getPathTargets() {
-        return destination.targets();
-    }
+    public Set<Integer> getPathTargets() { return destination.targets(); }
 
     /** The recalculate distance (outer off-route band), or -1 when recalculation is disabled. */
-    public int getRecalculateDistance() {
-        return config.recalculateDistance();
-    }
+    public int getRecalculateDistance() { return config.recalculateDistance(); }
 
     /** Whether drifting past the recalculate distance recomputes (or cancels) the route. */
-    public boolean isAutoRecalculateEnabled() {
-        return config.autoRecalculate() && config.recalculateDistance() >= 0;
-    }
+    public boolean isAutoRecalculateEnabled() { return config.autoRecalculate() && config.recalculateDistance() >= 0; }
 
     /** The off-route warning distance (inner band), clamped below the recalculate distance. */
     public int getOffRouteWarnDistance() {
@@ -295,14 +285,10 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     /** How far the player is from the path (-1 = no path / unknown), updated each tick. */
-    public int getPathDistance() {
-        return offRoute.distance();
-    }
+    public int getPathDistance() { return offRoute.distance(); }
 
     /** Whether the player is in the warning band (>= warn, < recalculate), shown in red. */
-    public boolean isOffRouteWarning() {
-        return offRoute.isWarning();
-    }
+    public boolean isOffRouteWarning() { return offRoute.isWarning(); }
 
     // The arrival zone around the displayed path's end (see ArrivalZone); the map arrives with the
     // pathfinder config at startup.
@@ -313,9 +299,7 @@ public class ShortestPathPlugin extends Plugin {
      * (see ArrivalZone). Standing on any of these tiles completes the journey; the debug overlay
      * renders exactly this set.
      */
-    public Set<Integer> getArrivalTiles() {
-        return arrivalZone.tiles(getDisplayPath(), config.reachedDistance());
-    }
+    public Set<Integer> getArrivalTiles() { return arrivalZone.tiles(getDisplayPath(), config.reachedDistance()); }
 
     /** Whether the player has arrived (see ArrivalZone.arrived): the zone, or moored near a sea target. */
     private boolean hasArrived(int currentLocation) {
@@ -347,9 +331,7 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     /** Colour for the sailed portions of the displayed route (world-map sea tracks). */
-    public Color getSailingPathColor() {
-        return display.colourPathSailing;
-    }
+    public Color getSailingPathColor() { return display.colourPathSailing; }
 
     public Color getPathColor() {
         // The displayed route is a static snapshot: colour it from its own endpoint.
@@ -363,9 +345,7 @@ public class ShortestPathPlugin extends Plugin {
      * yet — the HUD's "Finding the best route" state. False as soon as a route is displayed (a
      * same-destination regeneration keeps the previous route on screen instead).
      */
-    public boolean isFindingRoute() {
-        return session.isFinding(destination.targets());
-    }
+    public boolean isFindingRoute() { return session.isFinding(destination.targets()); }
 
     /** Whether a displayed route's endpoint is too far from the targets for the reached colour (see RouteVerdicts). */
     private boolean isRouteEndTooFar(RouteOption route) {
@@ -437,17 +417,13 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     /** Whether the original Shortest Path plugin is also enabled: the panel shows a warning. */
-    public boolean isShortestPathConflict() {
-        return companions != null && companions.isShortestPathConflict();
-    }
+    public boolean isShortestPathConflict() { return companions != null && companions.isShortestPathConflict(); }
 
     /**
      * Whether Quest Helper runs WITHOUT its "Use Shortest Path plugin" option: the panel shows a
      * dismissable banner explaining quest steps will not reach GPS until it is on.
      */
-    public boolean isQuestHelperPathingOff() {
-        return companions != null && companions.isQuestHelperPathingOff();
-    }
+    public boolean isQuestHelperPathingOff() { return companions != null && companions.isQuestHelperPathingOff(); }
 
     @Subscribe public void onPluginChanged(PluginChanged event) {
         companions.refresh();
@@ -540,9 +516,7 @@ public class ShortestPathPlugin extends Plugin {
      * resolution walks player.getWorldView(), a client-thread-only call since the boat-position
      * fix; the EDT reads this cache instead and can never trip it.
      */
-    private void cachePlayerLocation() {
-        lastKnownPlayerLocation = getPlayerLocation();
-    }
+    private void cachePlayerLocation() { lastKnownPlayerLocation = getPlayerLocation(); }
 
     private void runPendingTasks() {
         for (int i = 0; i < pendingTasks.size(); i++) {
@@ -661,14 +635,10 @@ public class ShortestPathPlugin extends Plugin {
 
     /** Owned boats as {name, port label} rows for the panel's sailing section; null = never
      * collected for this character. */
-    public List<String[]> getBoatBanner() {
-        return boatBannerService == null ? null : boatBannerService.banner();
-    }
+    public List<String[]> getBoatBanner() { return boatBannerService == null ? null : boatBannerService.banner(); }
 
     /** Whether the banner reflects this session's live varbits rather than a restored snapshot. */
-    public boolean isBoatBannerLive() {
-        return boatBannerService != null && boatBannerService.isLive();
-    }
+    public boolean isBoatBannerLive() { return boatBannerService != null && boatBannerService.isLive(); }
 
     private void restoreDetectionsFromConfig() {
         bankSnapshots.restore();
@@ -694,9 +664,7 @@ public class ShortestPathPlugin extends Plugin {
      * step of a path. Use PathfinderConfig.getTransportAvailability(boolean) and the
      * path's PathStep state instead.
      */
-    public PrimitiveIntHashMap<Transport[]> getTransports() {
-        return pathfinderConfig.getTransports();
-    }
+    public PrimitiveIntHashMap<Transport[]> getTransports() { return pathfinderConfig.getTransports(); }
 
     /**
      * Whether the DISPLAYED route uses a teleport method to reach the tile after {@code fromIndex}
@@ -770,9 +738,7 @@ public class ShortestPathPlugin extends Plugin {
     private volatile OverlaySettings display;
 
     /** The display settings the overlays read; a fresh snapshot after every config change. */
-    OverlaySettings display() {
-        return display;
-    }
+    OverlaySettings display() { return display; }
 
     /** Config overrides from another plugin's request (see ConfigOverrides), re-cached at once. */
     void applyConfigOverrides(Map<String, Object> overrides) {
@@ -787,9 +753,7 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     /** Attributes the destination for the GPS header: the sender's source, "map pin", or null. */
-    void setTargetSource(String source) {
-        destination.setSource(source);
-    }
+    void setTargetSource(String source) { destination.setSource(source); }
 
     private void cacheConfigValues() {
         cachedKeepSailing = ConfigOverrides.override("sailingKeepSailing", config.sailingKeepSailing());
@@ -797,9 +761,7 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     /** "Set GPS Target" from the map menu: the pick is attributed to the map pin. */
-    void pinTarget(int packed) {
-        destination.pin(packed);
-    }
+    void pinTarget(int packed) { destination.pin(packed); }
 
     /** The focus-search hotkey: opens the GPS side panel (if it is not already) and focuses its search box. */
     private void focusSearch() {
@@ -811,19 +773,13 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     /** Clears the destination and its attribution: the map menu's "Clear Path", or another plugin's clear. */
-    void clearPinnedTarget() {
-        destination.clear();
-    }
+    void clearPinnedTarget() { destination.clear(); }
 
     /** "Find closest" from a world-map icon: every destination of that kind, the nearest wins. */
-    void findClosest(String destinationType) {
-        destination.findClosest(destinationType);
-    }
+    void findClosest(String destinationType) { destination.findClosest(destinationType); }
 
     /** A searched place or amenity from the panel search box, attributed to {@code source}. */
-    public void setDestination(int packedPosition, String source) {
-        destination.setSearched(packedPosition, source);
-    }
+    public void setDestination(int packedPosition, String source) { destination.setSearched(packedPosition, source); }
 
     /** Routes to the nearest of an amenity category (see DestinationController.setNearestCategory). */
     public void setNearestCategory(Set<Integer> tiles, String source) {
@@ -836,9 +792,7 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     /** Runs one nearest-X option (see DestinationController.goToNearest). */
-    public void goToNearest(Destinations.NearestOption option) {
-        destination.goToNearest(option);
-    }
+    public void goToNearest(Destinations.NearestOption option) { destination.goToNearest(option); }
 
     /** The panel's "Bank" and "Bank (and back)" quick buttons, and their hotkeys. */
     public void goToNearestBank(boolean roundTrip) {
@@ -852,9 +806,7 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     /** Another plugin's new destination replaces a bank trip (see PluginMessageBridge). */
-    void forgetBankTrip() {
-        destination.forgetBankTrip();
-    }
+    void forgetBankTrip() { destination.forgetBankTrip(); }
 
     /** The directions header's destination line (see BankDetour.headerLine); null with nothing to say. */
     public String getDestinationLine() {
@@ -862,14 +814,10 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     /** Whether the destination is a bank trip that will resume a replaced route (the header draws a bank). */
-    public boolean isBankDetour() {
-        return destination.pendingResume() != null;
-    }
+    public boolean isBankDetour() { return destination.pendingResume() != null; }
 
     /** Whether a bank quick button click now would add a stop (the panel badges the buttons). */
-    public boolean bankClickAddsStop() {
-        return destination.bankClickAddsStop();
-    }
+    public boolean bankClickAddsStop() { return destination.bankClickAddsStop(); }
 
     /**
      * The player's packed world position, or {@link WorldPointUtil#UNDEFINED} when not logged
@@ -881,9 +829,7 @@ public class ShortestPathPlugin extends Plugin {
     private volatile int lastKnownPlayerLocation = WorldPointUtil.UNDEFINED;
 
     /** Where the player was as of the last game tick — safe from ANY thread (see onGameTick). */
-    public int getLastKnownPlayerLocation() {
-        return lastKnownPlayerLocation;
-    }
+    public int getLastKnownPlayerLocation() { return lastKnownPlayerLocation; }
 
     public int getPlayerLocation() {
         Player local = client.getLocalPlayer();
@@ -894,9 +840,7 @@ public class ShortestPathPlugin extends Plugin {
     // --- Alternative-routes feature (driven by ShortestPathPanel) ---
 
     /** The journey wall-clock start, or 0 while it hasn't begun (armed, waiting for movement). */
-    public long getJourneyStartMillis() {
-        return journey.startMillis();
-    }
+    public long getJourneyStartMillis() { return journey.startMillis(); }
 
     /**
      * Hidden type-toggle keys with NO control in the panel: a value stored by an old build (or by
@@ -909,9 +853,7 @@ public class ShortestPathPlugin extends Plugin {
      */
 
     /** Re-arms the journey timer so it recounts from the player's next movement. */
-    void armJourney() {
-        journey.arm();
-    }
+    void armJourney() { journey.arm(); }
 
     /**
      * The live collision map, for the progress tracker's wall-aware checks and the dev audit's
@@ -928,9 +870,7 @@ public class ShortestPathPlugin extends Plugin {
         return service != null ? service.lastUnreachableCause() : AlternativeRoutesService.UnreachableCause.NONE;
     }
 
-    public RouteOption getDisplayedRoute() {
-        return session.displayed(destination.targets());
-    }
+    public RouteOption getDisplayedRoute() { return session.displayed(destination.targets()); }
 
     /**
      * The path the overlays should draw: the displayed route's (the selected one, or by default the
@@ -952,9 +892,7 @@ public class ShortestPathPlugin extends Plugin {
         return route.sailingJumpDepartures();
     }
 
-    public Set<TeleportMethod> getUserExclusions() {
-        return exclusions.copy();
-    }
+    public Set<TeleportMethod> getUserExclusions() { return exclusions.copy(); }
 
     // --- Method priorities and preference biases (see RoutePreferences) ------------------------
 
@@ -964,9 +902,7 @@ public class ShortestPathPlugin extends Plugin {
         () -> configManager, () -> gson, CONFIG_GROUP);
 
     /** The method's tier: EXCLUDED when in the exclusion set, else its stored tier or NORMAL. */
-    public MethodPriority getMethodPriority(TeleportMethod method) {
-        return preferences.priorityOf(method);
-    }
+    public MethodPriority getMethodPriority(TeleportMethod method) { return preferences.priorityOf(method); }
 
     /**
      * Sets a method's tier. EXCLUDED delegates to the exclusion set (search-affecting, flags the
@@ -992,9 +928,7 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     /** The walk-preference bias in seconds (negative effective ETA for the pure-walk route). */
-    public int getWalkPreferenceSeconds() {
-        return preferences.walkPreferenceSeconds();
-    }
+    public int getWalkPreferenceSeconds() { return preferences.walkPreferenceSeconds(); }
 
     public void setWalkPreferenceSeconds(int seconds) {
         preferences.setWalkPreferenceSeconds(seconds);
@@ -1002,9 +936,7 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     /** The bank-detour bias in seconds: positive prefers via-bank routes, negative avoids them. */
-    public int getBankPreferenceSeconds() {
-        return preferences.bankPreferenceSeconds();
-    }
+    public int getBankPreferenceSeconds() { return preferences.bankPreferenceSeconds(); }
 
     public void setBankPreferenceSeconds(int seconds) {
         preferences.setBankPreferenceSeconds(seconds);
@@ -1012,9 +944,7 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     /** The route's ranking adjustment in seconds (see RoutePreferences.adjustmentSeconds). */
-    public int routeAdjustmentSeconds(RouteOption route) {
-        return preferences.adjustmentSeconds(route);
-    }
+    public int routeAdjustmentSeconds(RouteOption route) { return preferences.adjustmentSeconds(route); }
 
     boolean keepSailingFirst() {
         PathfinderConfig pathConfig = pathfinderConfig;
@@ -1028,17 +958,13 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     /** Applies the effective order to a freshly generated list (called from the update stream). */
-    List<RouteOption> sortByEffectiveOrder(List<RouteOption> routes) {
-        return preferences.sorted(routes);
-    }
+    List<RouteOption> sortByEffectiveOrder(List<RouteOption> routes) { return preferences.sorted(routes); }
 
     // The house location and balloon unlock varbits the panel shows (see PanelVarbits), cached each tick.
     private final PanelVarbits panelVarbits = new PanelVarbits();
 
     /** The player's house location name (varbit 2187), or null when no house is detected. */
-    public String getHouseLocationName() {
-        return panelVarbits.houseLocationName();
-    }
+    public String getHouseLocationName() { return panelVarbits.houseLocationName(); }
 
     /**
      * A recognised piece of POH furniture spawning is unambiguous "we're inside a house" evidence
@@ -1063,9 +989,7 @@ public class ShortestPathPlugin extends Plugin {
         }
     }
 
-    public boolean isPohScanned() {
-        return pohDetection != null && pohDetection.isScanned();
-    }
+    public boolean isPohScanned() { return pohDetection != null && pohDetection.isScanned(); }
 
     /** The furniture the last house scan recognised, as display names (empty until scanned). */
     public List<String> getDetectedPohFurniture() {
@@ -1077,14 +1001,10 @@ public class ShortestPathPlugin extends Plugin {
      * (per the cached varbits) whose stored count sits below the configured threshold. Empty when
      * smart mode is off, the threshold is 0, the storage was never synced, or nothing is low.
      */
-    public List<String> getBalloonLowLogTypes() {
-        return panelVarbits.balloonLowLogTypes(config);
-    }
+    public List<String> getBalloonLowLogTypes() { return panelVarbits.balloonLowLogTypes(config); }
 
     /** The chat-parsed stored log counts, in {@link BalloonLogStorage#TYPE_NAMES} order. */
-    public int[] getBalloonStoredCounts() {
-        return PanelVarbits.balloonStoredCounts(config);
-    }
+    public int[] getBalloonStoredCounts() { return PanelVarbits.balloonStoredCounts(config); }
 
     /** Item images for the panel's Log storage icons. */
 
@@ -1098,17 +1018,13 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     /** The live config, for panel controls that mirror config items (the configuration sections). */
-    public ShortestPathConfig getGpsConfig() {
-        return config;
-    }
+    public ShortestPathConfig getGpsConfig() { return config; }
 
     /**
      * Whether the spirit-tree travel menu has been seen this session, so the planted-tree set is
      * known. Until then the panel shows a sync hint and farmable trees are treated conservatively.
      */
-    public boolean isSpiritTreeSynced() {
-        return spiritTrees != null && spiritTrees.isSynced();
-    }
+    public boolean isSpiritTreeSynced() { return spiritTrees != null && spiritTrees.isSynced(); }
 
     /**
      * The farmable spirit trees currently detected as planted-and-grown (menu order), or empty when
@@ -1124,9 +1040,7 @@ public class ShortestPathPlugin extends Plugin {
      * keys), and the resulting ConfigChanged event re-caches values and regenerates the routes
      * (route-affecting keys per ConfigOverrides.affectsRouting).
      */
-    public void setPanelConfig(String key, Object value) {
-        configManager.setConfiguration(CONFIG_GROUP, key, value);
-    }
+    public void setPanelConfig(String key, Object value) { configManager.setConfiguration(CONFIG_GROUP, key, value); }
 
     /** A config item the side panel binds by key: its name is the control's label, its description the tooltip. */
     ConfigItem configItem(String key) {
@@ -1136,9 +1050,7 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     /** A config item's stored value by key; RuneLite writes every default at plugin start, so one exists. */
-    <T> T configValue(String key, Class<T> type) {
-        return configManager.getConfiguration(CONFIG_GROUP, key, type);
-    }
+    <T> T configValue(String key, Class<T> type) { return configManager.getConfiguration(CONFIG_GROUP, key, type); }
 
     /**
      * The engine's own accessible-bank standing tiles (upstream-curated; the same set that flips
@@ -1152,67 +1064,45 @@ public class ShortestPathPlugin extends Plugin {
         return tiles == null ? Set.of() : tiles;
     }
 
-    public void selectRoute(int index) {
-        routes.select(index);
-    }
+    public void selectRoute(int index) { routes.select(index); }
 
     // The exclusion API (see MethodExclusions). No recalculation on a change: exclusions apply on
     // the next "Refresh routes to target" (or any other recompute); the panel refreshes so the
     // catalog icons and counts update. Single changes hop to the client thread; the panel's bulk
     // toggles mutate the concurrent set directly.
 
-    public void excludeMethod(TeleportMethod method) {
-        clientThread.invoke(() -> exclusions.exclude(method));
-    }
+    public void excludeMethod(TeleportMethod method) { clientThread.invoke(() -> exclusions.exclude(method)); }
 
-    public void includeMethod(TeleportMethod method) {
-        clientThread.invoke(() -> exclusions.include(method));
-    }
+    public void includeMethod(TeleportMethod method) { clientThread.invoke(() -> exclusions.include(method)); }
 
-    public void excludeMethods(Collection<TeleportMethod> methods) {
-        exclusions.excludeAll(methods);
-    }
+    public void excludeMethods(Collection<TeleportMethod> methods) { exclusions.excludeAll(methods); }
 
-    public void includeMethods(Collection<TeleportMethod> methods) {
-        exclusions.includeAll(methods);
-    }
+    public void includeMethods(Collection<TeleportMethod> methods) { exclusions.includeAll(methods); }
 
     /** The search box's recent selections, most recent first. */
-    public List<Destinations.Entry> getSearchHistory() {
-        return searchMemory.history();
-    }
+    public List<Destinations.Entry> getSearchHistory() { return searchMemory.history(); }
 
     /** Records a search selection at the front of the persisted history (deduplicated, capped). */
-    public void recordSearchSelection(Destinations.Entry entry) {
-        searchMemory.recordSelection(entry);
-    }
+    public void recordSearchSelection(Destinations.Entry entry) { searchMemory.recordSelection(entry); }
 
     /** The player's saved favourite positions, in saved order. */
-    public List<Destinations.Entry> getFavoriteDestinations() {
-        return searchMemory.favorites();
-    }
+    public List<Destinations.Entry> getFavoriteDestinations() { return searchMemory.favorites(); }
 
     /** Saves a favourite position; a favourite with the same label is replaced. */
     public void addFavoriteDestination(String label, int packedPosition) {
         searchMemory.addFavorite(label, packedPosition);
     }
 
-    public void removeFavoriteDestination(Destinations.Entry favorite) {
-        searchMemory.removeFavorite(favorite);
-    }
+    public void removeFavoriteDestination(Destinations.Entry favorite) { searchMemory.removeFavorite(favorite); }
 
     /**
      * Manually (re)compute the alternative routes for whatever destination GPS currently has
      * set — read live from the active pathfinder. With no target set, just refreshes the methods catalog.
      */
     /** Clears the current destination and its route (panel Clear button / clear-path hotkey). */
-    public void clearTarget() {
-        destination.clearLater();
-    }
+    public void clearTarget() { destination.clearLater(); }
 
-    public void recomputeAlternatives() {
-        routes.recompute();
-    }
+    public void recomputeAlternatives() { routes.recompute(); }
 
     /**
      * The start tile to search alternatives from: the player's current (instance-correct) location,
@@ -1225,34 +1115,24 @@ public class ShortestPathPlugin extends Plugin {
         return destination.start();
     }
 
-    public boolean canLoadMoreRoutes() {
-        return routes.canLoadMore();
-    }
+    public boolean canLoadMoreRoutes() { return routes.canLoadMore(); }
 
-    public void loadMoreRoutes() {
-        routes.loadMore();
-    }
+    public void loadMoreRoutes() { routes.loadMore(); }
 
     // The displayed route's directions, built once per route instance (see DirectionsCache).
     private final DirectionsCache directions = new DirectionsCache();
     // Bumped on every inventory or equipment change: the directions' item callouts follow it.
     private int itemsVersion;
 
-    int itemsVersion() {
-        return itemsVersion;
-    }
+    int itemsVersion() { return itemsVersion; }
 
     /** The step-by-step directions for {@code route}, cached per route instance. */
-    public List<RouteDirections.Step> getRouteDirections(RouteOption route) {
-        return directions.of(this, route);
-    }
+    public List<RouteDirections.Step> getRouteDirections(RouteOption route) { return directions.of(this, route); }
 
     /**
      * Where the current destination came from ("map pin", "Quest Helper", ...) or null when unknown.
      */
-    public String getTargetSource() {
-        return destination.source();
-    }
+    public String getTargetSource() { return destination.source(); }
 
     /**
      * Reports an issue WITHOUT sending or touching anything outside the panel: the routing
@@ -1274,104 +1154,64 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     /** Writes the routing-state snapshot (see DebugSnapshot); the panel's "Save debug snapshot". */
-    public void captureDebugSnapshot() {
-        clientThread.invokeLater(() -> new DebugSnapshot(this).capture());
-    }
+    public void captureDebugSnapshot() { clientThread.invokeLater(() -> new DebugSnapshot(this).capture()); }
 
     /** World-map pixel projection, for the map overlays. */
-    WorldMapProjection worldMap() {
-        return worldMap;
-    }
+    WorldMapProjection worldMap() { return worldMap; }
 
     /** The minimap clip shape, for the minimap overlay. */
-    MinimapClip minimapClip() {
-        return minimapClip;
-    }
+    MinimapClip minimapClip() { return minimapClip; }
 
     // ---- State the diagnostics classes (IssueReport, DebugSnapshot) read; package-private ----
 
-    RouteSession session() {
-        return session;
-    }
+    RouteSession session() { return session; }
 
-    List<TeleportMethod> teleportCatalog() {
-        return routes.catalog();
-    }
+    List<TeleportMethod> teleportCatalog() { return routes.catalog(); }
 
-    Map<TeleportMethod, MethodAvailability> unavailableMethods() {
-        return routes.unavailable();
-    }
+    Map<TeleportMethod, MethodAvailability> unavailableMethods() { return routes.unavailable(); }
 
-    ShortestPathPanel panel() {
-        return altPanel;
-    }
+    ShortestPathPanel panel() { return altPanel; }
 
     /** Whether the current destination is a round trip (out and back), carried into every generation for it. */
-    boolean isRoundTripWanted() {
-        return destination.isRoundTrip();
-    }
+    boolean isRoundTripWanted() { return destination.isRoundTrip(); }
 
-    PohDetectionService pohDetection() {
-        return pohDetection;
-    }
+    PohDetectionService pohDetection() { return pohDetection; }
 
-    boolean spiritTreesParsedLive() {
-        return spiritTrees != null && spiritTrees.isParsedLive();
-    }
+    boolean spiritTreesParsedLive() { return spiritTrees != null && spiritTrees.isParsedLive(); }
 
-    AlternativeRoutesService altRoutesService() {
-        return routes.service();
-    }
+    AlternativeRoutesService altRoutesService() { return routes.service(); }
 
-    RouteDirectionsOverlay routeDirectionsOverlay() {
-        return routeDirectionsOverlay;
-    }
+    RouteDirectionsOverlay routeDirectionsOverlay() { return routeDirectionsOverlay; }
 
-    Gson gson() {
-        return gson;
-    }
+    Gson gson() { return gson; }
 
     /** Reset excluded methods (the burger menu). Seasonal methods are gated by their own toggle, not here. */
-    public void clearExclusions() {
-        clientThread.invoke(exclusions::clear);
-    }
+    public void clearExclusions() { clientThread.invoke(exclusions::clear); }
 
     /**
      * Whether the displayed route list was generated with different method exclusions than are
      * currently selected — i.e. the user toggled methods since and hasn't pressed Refresh yet.
      */
-    public boolean isRouteListStale() {
-        return exclusions.isStale();
-    }
+    public boolean isRouteListStale() { return exclusions.isStale(); }
 
-    public AlternativeRoutesMode getRoutesMode() {
-        return routes.mode();
-    }
+    public AlternativeRoutesMode getRoutesMode() { return routes.mode(); }
 
     /**
      * Whether the bank's contents are known this session (false until the bank has been opened once).
      * Bank mode cannot see banked teleports until this is true — same constraint as the classic Shortest Path engine's
      * own INVENTORY_AND_BANK setting.
      */
-    public boolean isBankContentsKnown() {
-        return bankSnapshots != null && bankSnapshots.isKnown();
-    }
+    public boolean isBankContentsKnown() { return bankSnapshots != null && bankSnapshots.isKnown(); }
 
     /**
      * Whether the known bank contents were restored from a previous session's saved snapshot rather
      * than seen live — the panel labels the source, since a restored snapshot can be stale.
      */
-    public boolean isBankRestored() {
-        return bankSnapshots != null && bankSnapshots.isRestored();
-    }
+    public boolean isBankRestored() { return bankSnapshots != null && bankSnapshots.isRestored(); }
 
-    public void setRoutesMode(AlternativeRoutesMode mode) {
-        routes.setMode(mode);
-    }
+    public void setRoutesMode(AlternativeRoutesMode mode) { routes.setMode(mode); }
 
     /** Called by the panel when the GPS sidebar tab is shown or hidden (see RouteController). */
-    void setAltPanelVisible(boolean visible) {
-        routes.setPanelVisible(visible);
-    }
+    void setAltPanelVisible(boolean visible) { routes.setPanelVisible(visible); }
 
 }

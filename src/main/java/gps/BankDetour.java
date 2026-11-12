@@ -30,25 +30,19 @@ final class BankDetour {
     private boolean active;
 
     /** Whether a bank trip is under way. */
-    synchronized boolean isActive() {
-        return active;
-    }
+    synchronized boolean isActive() { return active; }
 
     /**
      * The destination this trip will resume, or null: no trip, or a trip that replaced nothing
      * (which is an ordinary destination, labelled and drawn as one).
      */
-    synchronized Route pending() {
-        return active ? saved : null;
-    }
+    synchronized Route pending() { return active ? saved : null; }
 
     /**
      * Whether a bank click now would add a stop, that is resume a route after the bank: during a
      * trip, when it saved one; otherwise, when a destination is set (the one it would replace).
      */
-    synchronized boolean wouldResume(boolean destinationSet) {
-        return active ? saved != null : destinationSet;
-    }
+    synchronized boolean wouldResume(boolean destinationSet) { return active ? saved != null : destinationSet; }
 
     /**
      * The Bank quick button's tooltip: "Nearest bank", or while a click would add a stop, what that
@@ -77,9 +71,7 @@ final class BankDetour {
      * What a new bank trip replaces: the original destination while a trip is already under way,
      * otherwise {@code current}. Read before the destination changes, since the change forgets it.
      */
-    synchronized Route replacing(Route current) {
-        return active ? saved : current;
-    }
+    synchronized Route replacing(Route current) { return active ? saved : current; }
 
     /** A bank trip started; {@code replaced} is resumed when it completes (null: nothing). */
     synchronized void begin(Route replaced) {

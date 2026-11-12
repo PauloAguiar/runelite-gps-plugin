@@ -588,9 +588,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
     }
 
     /** Hides the lingering "Arrived!" panel (the right-click menu's "Dismiss Arrival"). */
-    public void dismissArrival() {
-        arrivalShowing = false;
-    }
+    public void dismissArrival() { arrivalShowing = false; }
 
     /** Whether the lingering "Arrived!" panel is what the overlay currently shows. */
 
@@ -811,9 +809,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
      * The tracked progress along {@code route}, or 0 when that route isn't the one being
      * tracked (different selection, or nothing tracked yet).
      */
-    int reachedIndexFor(RouteOption route) {
-        return route == progressRoute ? reachedIndex : 0;
-    }
+    int reachedIndexFor(RouteOption route) { return route == progressRoute ? reachedIndex : 0; }
 
     /**
      * The step the player is currently executing: the first whose span isn't finished.
@@ -875,9 +871,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
     }
 
     /** Whether the player is at the helm (SAILING_BOARDED_BOAT). */
-    private boolean aboard() {
-        return client.getVarbitValue(VarbitID.SAILING_BOARDED_BOAT) != 0;
-    }
+    private boolean aboard() { return client.getVarbitValue(VarbitID.SAILING_BOARDED_BOAT) != 0; }
 
     /**
      * Remaining route time (ticks) from each path index. When the path carries the search's

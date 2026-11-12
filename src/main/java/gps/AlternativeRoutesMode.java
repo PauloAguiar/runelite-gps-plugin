@@ -30,7 +30,5 @@ public enum AlternativeRoutesMode {
      */
     ALL_EVERYTHING;
 
-    public boolean isOwned() {
-        return this == OWNED_INVENTORY || this == OWNED_WITH_BANK;
-    }
+    public boolean isOwned() { return this == OWNED_INVENTORY || this == OWNED_WITH_BANK; }
 }

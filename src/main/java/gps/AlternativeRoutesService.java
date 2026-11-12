@@ -81,9 +81,7 @@ import static gps.WorldPointUtil.distanceBetween;
      * The specific missing-unlock reason per unavailable catalog method ("Requires 60 Mining"),
      * from the same client-thread refresh that produced the availability statuses.
      */
-    public Map<TeleportMethod, String> getAvailabilityDetails() {
-        return planningConfig.getMethodAvailabilityDetail();
-    }
+    public Map<TeleportMethod, String> getAvailabilityDetails() { return planningConfig.getMethodAvailabilityDetail(); }
 
     /**
      * Asynchronously computes the alternative routes, streaming progressive updates to {@code listener}
@@ -127,9 +125,7 @@ import static gps.WorldPointUtil.distanceBetween;
         });
     }
 
-    public void cancel() {
-        generation.incrementAndGet();
-    }
+    public void cancel() { generation.incrementAndGet(); }
 
     /** What the panel shows beside the catalog: the catalog and who can't use what. */
     public interface CatalogListener {
@@ -905,9 +901,7 @@ import static gps.WorldPointUtil.distanceBetween;
     private volatile boolean lastFieldReused;
 
     /** Whether the last generation reused the previous generation's distance field. */
-    boolean lastFieldReused() {
-        return lastFieldReused;
-    }
+    boolean lastFieldReused() { return lastFieldReused; }
 
     private static final class FieldKey {
         private final long usableFingerprint;
@@ -947,9 +941,7 @@ import static gps.WorldPointUtil.distanceBetween;
     }
 
     /** Whether raising the cost multiple and regenerating could surface more routes. */
-    public boolean wasMoreLikely() {
-        return lastGenerationMoreLikely;
-    }
+    public boolean wasMoreLikely() { return lastGenerationMoreLikely; }
 
     /**
      * Per-generation timing breakdown: time blocked on the client thread, time rebuilding
@@ -1040,17 +1032,13 @@ import static gps.WorldPointUtil.distanceBetween;
         }
 
         /** Whether a newer generation has superseded this one. */
-        boolean stale() {
-            return gen != generation.get();
-        }
+        boolean stale() { return gen != generation.get(); }
 
         /**
          * The listener a one-way pass streams to: none in round-trip mode, which streams only
          * merged results (one-way costs would reorder once returns are added).
          */
-        ResultListener oneWayListener() {
-            return roundTrip ? null : listener;
-        }
+        ResultListener oneWayListener() { return roundTrip ? null : listener; }
     }
 
     /**
@@ -1115,9 +1103,7 @@ import static gps.WorldPointUtil.distanceBetween;
 
     private volatile UnreachableCause lastUnreachableCause = UnreachableCause.NONE;
 
-    public UnreachableCause lastUnreachableCause() {
-        return lastUnreachableCause;
-    }
+    public UnreachableCause lastUnreachableCause() { return lastUnreachableCause; }
 
     /**
      * Tells "not with what you have" from "no known route" for a page whose routes all stop

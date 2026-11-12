@@ -28,14 +28,10 @@ import net.runelite.client.plugins.*;
     private volatile boolean questHelperPathingOff;
 
     /** Whether the original Shortest Path plugin is also enabled. */
-    boolean isShortestPathConflict() {
-        return shortestPathConflict;
-    }
+    boolean isShortestPathConflict() { return shortestPathConflict; }
 
     /** Whether Quest Helper runs WITHOUT its "Use Shortest Path plugin" option. */
-    boolean isQuestHelperPathingOff() {
-        return questHelperPathingOff;
-    }
+    boolean isQuestHelperPathingOff() { return questHelperPathingOff; }
 
     /** Re-reads both verdicts (plugin start, a plugin toggled, the Quest Helper option changed). */
     void refresh() {

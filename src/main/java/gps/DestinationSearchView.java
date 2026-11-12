@@ -122,9 +122,7 @@ final class DestinationSearchView extends JPanel {
     }
 
     /** Closes the results popup (the panel is being hidden). */
-    void hidePopup() {
-        popup.setVisible(false);
-    }
+    void hidePopup() { popup.setVisible(false); }
 
     /**
      * Parses a typed coordinate query into a packed world point, or {@link WorldPointUtil#UNDEFINED}

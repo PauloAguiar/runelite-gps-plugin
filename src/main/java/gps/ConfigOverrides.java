@@ -30,14 +30,10 @@ import lombok.extern.slf4j.Slf4j;
      * The plugin declares its @ConfigItem keys at start, read from the ConfigManager's descriptor
      * (the hub forbids reflection in shipped code, so the keys cannot be scanned here).
      */
-    static void declareKeys(Collection<String> itemKeys) {
-        known = withTypeKeys(itemKeys);
-    }
+    static void declareKeys(Collection<String> itemKeys) { known = withTypeKeys(itemKeys); }
 
     /** Every key a message may override: the declared config items plus the toggle-less types' keys. */
-    static Set<String> knownKeys() {
-        return known;
-    }
+    static Set<String> knownKeys() { return known; }
 
     /** The transport types without a toggle keep an override key, so a message or a test can still switch one off. */
     private static Set<String> withTypeKeys(Collection<String> itemKeys) {
@@ -49,9 +45,7 @@ import lombok.extern.slf4j.Slf4j;
     }
 
     /** Whether a change to this config key changes what the routing engine computes. */
-    public static boolean affectsRouting(String key) {
-        return key != null && ROUTE_AFFECTING.matcher(key).find();
-    }
+    public static boolean affectsRouting(String key) { return key != null && ROUTE_AFFECTING.matcher(key).find(); }
 
     /**
      * Replaces the override set with a message's. An unknown key would sit in the map forever
@@ -68,9 +62,7 @@ import lombok.extern.slf4j.Slf4j;
         }
     }
 
-    static void clear() {
-        OVERRIDES.clear();
-    }
+    static void clear() { OVERRIDES.clear(); }
 
     public static boolean override(String key, boolean defaultValue) {
         Object value = OVERRIDES.isEmpty() ? null : OVERRIDES.get(key);

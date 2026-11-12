@@ -266,9 +266,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         return null;
     }
 
-    private static int opposite(int orientation) {
-        return (orientation + 2) % 4;
-    }
+    private static int opposite(int orientation) { return (orientation + 2) % 4; }
 
     private static Map<Integer, List<Door>> get() {
         Map<Integer, List<Door>> snapshot = doorsByTile;

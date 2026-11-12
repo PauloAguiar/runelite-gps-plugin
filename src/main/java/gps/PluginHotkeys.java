@@ -58,15 +58,9 @@ final class PluginHotkeys {
         mouse.unregisterMouseListener(dismissArrival);
     }
 
-    KeyListener clearPath() {
-        return clearPath;
-    }
+    KeyListener clearPath() { return clearPath; }
 
-    KeyListener focusSearch() {
-        return focusSearch;
-    }
+    KeyListener focusSearch() { return focusSearch; }
 
-    MouseAdapter dismissArrival() {
-        return dismissArrival;
-    }
+    MouseAdapter dismissArrival() { return dismissArrival; }
 }

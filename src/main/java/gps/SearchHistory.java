@@ -34,9 +34,7 @@ final class SearchHistory {
         return sb.toString();
     }
 
-    static List<Destinations.Entry> deserialize(String raw) {
-        return deserialize(raw, LIMIT);
-    }
+    static List<Destinations.Entry> deserialize(String raw) { return deserialize(raw, LIMIT); }
 
     /** Deserializes an entry list with a caller-chosen cap (the favourites list allows more rows). */
     static List<Destinations.Entry> deserialize(String raw, int limit) {

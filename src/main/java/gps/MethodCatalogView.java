@@ -58,9 +58,7 @@ final class MethodCatalogView {
         // True for the "disabled" filter, which keeps user-excluded methods regardless of availability.
         final boolean disabled;
 
-        boolean isActive() {
-            return this != ALL;
-        }
+        boolean isActive() { return this != ALL; }
     }
 
     private final ShortestPathPlugin plugin;
@@ -113,17 +111,11 @@ final class MethodCatalogView {
         this.unavailable = unavailable;
     }
 
-    List<TeleportMethod> catalog() {
-        return catalog;
-    }
+    List<TeleportMethod> catalog() { return catalog; }
 
-    Set<TeleportMethod> exclusions() {
-        return exclusions;
-    }
+    Set<TeleportMethod> exclusions() { return exclusions; }
 
-    Map<TeleportMethod, MethodAvailability> unavailable() {
-        return unavailable;
-    }
+    Map<TeleportMethod, MethodAvailability> unavailable() { return unavailable; }
 
     /** The methods a search can actually use: usable in the current mode and not excluded. */
     int enabledCount() {
@@ -135,9 +127,7 @@ final class MethodCatalogView {
     }
 
     /** The rows box's scroll position, to carry over a rebuild (0 when there is none). */
-    int scrollPosition() {
-        return rowsScroll != null ? rowsScroll.getVerticalScrollBar().getValue() : 0;
-    }
+    int scrollPosition() { return rowsScroll != null ? rowsScroll.getVerticalScrollBar().getValue() : 0; }
 
     /**
      * Restores a carried-over scroll position after the rebuilt pane has been laid out (nested
@@ -188,9 +178,7 @@ final class MethodCatalogView {
             || method.label().toLowerCase(Locale.ROOT).contains(needle);
     }
 
-    private boolean isUsable(TeleportMethod method) {
-        return usable(unavailable.get(method), plugin.getRoutesMode());
-    }
+    private boolean isUsable(TeleportMethod method) { return usable(unavailable.get(method), plugin.getRoutesMode()); }
 
     /** The collapsible "Travel methods" section for the current inputs. */
     JPanel section() {

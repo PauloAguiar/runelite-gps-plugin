@@ -21,26 +21,16 @@ import lombok.RequiredArgsConstructor;
     private final Runnable onChanged;
 
     /** The live set itself (concurrent), for the readers that must see every change. */
-    Set<TeleportMethod> live() {
-        return live;
-    }
+    Set<TeleportMethod> live() { return live; }
 
     /** A snapshot copy, for callers that iterate off the client thread. */
-    Set<TeleportMethod> copy() {
-        return new HashSet<>(live);
-    }
+    Set<TeleportMethod> copy() { return new HashSet<>(live); }
 
-    boolean contains(TeleportMethod method) {
-        return live.contains(method);
-    }
+    boolean contains(TeleportMethod method) { return live.contains(method); }
 
-    boolean isEmpty() {
-        return live.isEmpty();
-    }
+    boolean isEmpty() { return live.isEmpty(); }
 
-    void load() {
-        live.addAll(store.loadExclusions());
-    }
+    void load() { live.addAll(store.loadExclusions()); }
 
     void exclude(TeleportMethod method) {
         if (method != null && live.add(method)) changed();
@@ -74,14 +64,10 @@ import lombok.RequiredArgsConstructor;
     }
 
     /** A generation started with the current set: the list is fresh until the set changes. */
-    void markGenerated() {
-        generatedWith = copy();
-    }
+    void markGenerated() { generatedWith = copy(); }
 
     /** Whether the set changed since the current route list was generated. */
-    boolean isStale() {
-        return !live.equals(generatedWith);
-    }
+    boolean isStale() { return !live.equals(generatedWith); }
 
     private void changed() {
         store.saveExclusions(live);

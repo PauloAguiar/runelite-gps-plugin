@@ -62,17 +62,11 @@ public class SplitFlagMap {
         }
     }
 
-    public static int unpackX(int position) {
-        return position & 0xFFFF;
-    }
+    public static int unpackX(int position) { return position & 0xFFFF; }
 
-    public static int unpackY(int position) {
-        return (position >> 16) & 0xFFFF;
-    }
+    public static int unpackY(int position) { return (position >> 16) & 0xFFFF; }
 
-    public static int packPosition(int x, int y) {
-        return (x & 0xFFFF) | ((y & 0xFFFF) << 16);
-    }
+    public static int packPosition(int x, int y) { return (x & 0xFFFF) | ((y & 0xFFFF) << 16); }
 
     public static SplitFlagMap fromResources() {
         Map<Integer, byte[]> compressedRegions = new HashMap<>();
@@ -104,9 +98,7 @@ public class SplitFlagMap {
         return new SplitFlagMap(compressedRegions);
     }
 
-    public byte getRegionPlaneCounts(int index) {
-        return regionMapPlaneCounts[index];
-    }
+    public byte getRegionPlaneCounts(int index) { return regionMapPlaneCounts[index]; }
 
     public boolean get(int x, int y, int z, int flag) {
         final int index = getIndex(x / REGION_SIZE, y / REGION_SIZE);
@@ -130,12 +122,8 @@ public class SplitFlagMap {
     @RequiredArgsConstructor @Getter public static class RegionExtent {
         public final int minX, minY, maxX, maxY;
 
-        public int getWidth() {
-            return maxX - minX;
-        }
+        public int getWidth() { return maxX - minX; }
 
-        public int getHeight() {
-            return maxY - minY;
-        }
+        public int getHeight() { return maxY - minY; }
     }
 }

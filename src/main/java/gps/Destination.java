@@ -199,7 +199,5 @@ import gps.transport.parser.*;
         return fields[col];
     }
 
-    private static String blankToNull(String s) {
-        return s == null || s.isBlank() ? null : s;
-    }
+    private static String blankToNull(String s) { return s == null || s.isBlank() ? null : s; }
 }

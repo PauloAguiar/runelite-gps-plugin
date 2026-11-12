@@ -101,21 +101,13 @@ import gps.ShortestPathConfig;
         this.radiusThreshold = radiusThreshold;
     }
 
-    public boolean hasResourcePath() {
-        return resourcePath != null;
-    }
+    public boolean hasResourcePath() { return resourcePath != null; }
 
-    public boolean hasRadiusThreshold() {
-        return radiusThreshold != null;
-    }
+    public boolean hasRadiusThreshold() { return radiusThreshold != null; }
 
-    public boolean hasEnabledGetter() {
-        return enabledGetter != null;
-    }
+    public boolean hasEnabledGetter() { return enabledGetter != null; }
 
-    public boolean hasCostGetter() {
-        return costGetter != null;
-    }
+    public boolean hasCostGetter() { return costGetter != null; }
 
     /*
      * Indicates whether a TransportType is a teleport.
@@ -123,17 +115,13 @@ import gps.ShortestPathConfig;
      * and not teleports because they have a pre-defined origin and no
      * wilderness level limit.
      */
-    public boolean isTeleport() {
-        return false;
-    }
+    public boolean isTeleport() { return false; }
 
     /**
      * Stores which transport type this transport shares destinations with, if any.
      * Used for delayed visit pathfinding so both types can compete in the priority queue.
      */
-    public TransportType sharesDestinationsWith() {
-        return null;
-    }
+    public TransportType sharesDestinationsWith() { return null; }
 
     /**
      * Additional cost applied on top of the base cost when this transport type
@@ -141,14 +129,10 @@ import gps.ShortestPathConfig;
      * (e.g. how many extra tiles the whistle must save over a landing site
      * to justify using a charge).
      */
-    public Function<ShortestPathConfig, Integer> differentialCostFunction() {
-        return null;
-    }
+    public Function<ShortestPathConfig, Integer> differentialCostFunction() { return null; }
 
     /**
      * Refines the TransportType based on the required skill levels.
      */
-    public TransportType refine(int[] skillLevels) {
-        return this;
-    }
+    public TransportType refine(int[] skillLevels) { return this; }
 }

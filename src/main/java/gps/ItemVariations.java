@@ -23,9 +23,7 @@ import lombok.*;
     private ItemVariations offhands;
 
     /** The family of that name, or null when no family carries it (the parser then tries a raw item id). */
-    public static ItemVariations fromName(String name) {
-        return FAMILIES.get(name);
-    }
+    public static ItemVariations fromName(String name) { return FAMILIES.get(name); }
 
     /** The item ids of the staff family that is an unlimited source of this rune family, or null. */
     public static int[] staves(ItemVariations family) {

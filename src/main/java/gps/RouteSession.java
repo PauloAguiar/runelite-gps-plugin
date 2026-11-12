@@ -37,50 +37,28 @@ final class RouteSession {
     private int limit = AlternativeRoutesService.MAX_ROUTES;
     private int costMultiple = DEFAULT_COST_MULTIPLE;
 
-    List<RouteOption> routes() {
-        return routes;
-    }
+    List<RouteOption> routes() { return routes; }
 
-    RouteOption selected() {
-        return selected;
-    }
+    RouteOption selected() { return selected; }
 
-    boolean inFlight() {
-        return inFlight;
-    }
+    boolean inFlight() { return inFlight; }
 
-    int lastStart() {
-        return lastStart;
-    }
+    int lastStart() { return lastStart; }
 
-    Set<Integer> lastTargets() {
-        return lastTargets;
-    }
+    Set<Integer> lastTargets() { return lastTargets; }
 
-    int lastLimit() {
-        return lastLimit;
-    }
+    int lastLimit() { return lastLimit; }
 
-    int limit() {
-        return limit;
-    }
+    int limit() { return limit; }
 
-    int costMultiple() {
-        return costMultiple;
-    }
+    int costMultiple() { return costMultiple; }
 
-    boolean canLoadMore() {
-        return moreLikely;
-    }
+    boolean canLoadMore() { return moreLikely; }
 
-    void setLimit(int limit) {
-        this.limit = limit;
-    }
+    void setLimit(int limit) { this.limit = limit; }
 
     /** A fresh destination starts at the default cost band; "show more" widens it from there. */
-    void resetCostMultiple() {
-        costMultiple = DEFAULT_COST_MULTIPLE;
-    }
+    void resetCostMultiple() { costMultiple = DEFAULT_COST_MULTIPLE; }
 
     void resetBudget(int defaultLimit) {
         costMultiple = DEFAULT_COST_MULTIPLE;
@@ -88,9 +66,7 @@ final class RouteSession {
     }
 
     /** Drops the pick so a fresh generation's best takes over rather than the overlay clinging to the old line. */
-    void clearSelection() {
-        selected = null;
-    }
+    void clearSelection() { selected = null; }
 
     /**
      * A generation begins for {@code targets} (empty: the catalog alone). A NEW destination clears
@@ -110,9 +86,7 @@ final class RouteSession {
     }
 
     /** A streaming update: the page so far, in effective order. The selection and the committed route stay. */
-    void stream(List<RouteOption> ordered) {
-        routes = ordered;
-    }
+    void stream(List<RouteOption> ordered) { routes = ordered; }
 
     /**
      * The generation's final update. A recalculation must not yank the player off the route they
@@ -233,7 +207,5 @@ final class RouteSession {
     }
 
     /** A defensive copy of the targets, for callers that mutate. */
-    Set<Integer> lastTargetsCopy() {
-        return new HashSet<>(lastTargets);
-    }
+    Set<Integer> lastTargetsCopy() { return new HashSet<>(lastTargets); }
 }

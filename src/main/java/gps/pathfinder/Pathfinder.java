@@ -125,9 +125,7 @@ public class Pathfinder implements Runnable {
         Arrays.sort(targetArray);
     }
 
-    private boolean isTarget(int packed) {
-        return Arrays.binarySearch(targetArray, packed) >= 0;
-    }
+    private boolean isTarget(int packed) { return Arrays.binarySearch(targetArray, packed) >= 0; }
 
     /** Whether this search runs with an A* heuristic (identical costs, smaller exploration). */
 
@@ -155,9 +153,7 @@ public class Pathfinder implements Runnable {
      * Installs a live cost ceiling polled on every pop (in addition to the fixed {@code costCap}).
      * Set before {@link #run()}; the supplier may be lowered from another thread during the search.
      */
-    public void setDynamicCostCap(IntSupplier dynamicCostCap) {
-        this.dynamicCostCap = dynamicCostCap;
-    }
+    public void setDynamicCostCap(IntSupplier dynamicCostCap) { this.dynamicCostCap = dynamicCostCap; }
 
     public PathfinderStats getStats() {
         if (stats.started && stats.ended) return stats;
@@ -416,13 +412,9 @@ public class Pathfinder implements Runnable {
         private long startNanos, endNanos;
         private volatile boolean started = false, ended = false;
 
-        public int getTotalNodesChecked() {
-            return nodesChecked + transportsChecked;
-        }
+        public int getTotalNodesChecked() { return nodesChecked + transportsChecked; }
 
-        public long getElapsedTimeNanos() {
-            return endNanos - startNanos;
-        }
+        public long getElapsedTimeNanos() { return endNanos - startNanos; }
 
         private void start() {
             started = true;

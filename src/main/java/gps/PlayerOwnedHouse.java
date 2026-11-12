@@ -39,9 +39,7 @@ public final class PlayerOwnedHouse {
     }
 
     /** Whether a world coordinate lies in the house model area. */
-    public static boolean isInside(int x, int y) {
-        return x >= MIN_X && x <= MAX_X && y >= MIN_Y && y <= MAX_Y;
-    }
+    public static boolean isInside(int x, int y) { return x >= MIN_X && x <= MAX_X && y >= MIN_Y && y <= MAX_Y; }
 
     /**
      * Whether the world view is a player-owned house: an instance whose loaded map regions

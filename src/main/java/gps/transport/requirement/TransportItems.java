@@ -13,9 +13,7 @@ import lombok.Getter;
 @Getter @EqualsAndHashCode public class TransportItems {
     private final List<ItemRequirement> requirements;
 
-    public TransportItems(List<ItemRequirement> requirements) {
-        this.requirements = List.copyOf(requirements);
-    }
+    public TransportItems(List<ItemRequirement> requirements) { this.requirements = List.copyOf(requirements); }
 
     /**
      * Creates TransportItems from legacy array format for backwards compatibility.
@@ -48,9 +46,7 @@ import lombok.Getter;
     /**
      * Gets the number of item requirements.
      */
-    public int size() {
-        return requirements.size();
-    }
+    public int size() { return requirements.size(); }
 
     // Array views of the requirements, as the transport gating and the item index read them.
     public int[][] getItems() {

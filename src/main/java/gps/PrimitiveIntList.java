@@ -48,16 +48,12 @@ public class PrimitiveIntList {
      * @param initialCapacity initial length of the internal array (must be
      *                        {@code >= 0}).
      */
-    public PrimitiveIntList(int initialCapacity) {
-        this(initialCapacity, false);
-    }
+    public PrimitiveIntList(int initialCapacity) { this(initialCapacity, false); }
 
     /**
      * Creates an empty list with a default initial capacity of 10.
      */
-    public PrimitiveIntList() {
-        this(10);
-    }
+    public PrimitiveIntList() { this(10); }
 
     private static int hugeCapacity(int minCapacity) {
         if (minCapacity < 0) { // overflow
@@ -95,18 +91,14 @@ public class PrimitiveIntList {
      *
      * @return current element count (always {@code >= 0}).
      */
-    public int size() {
-        return size;
-    }
+    public int size() { return size; }
 
     /**
      * Indicates whether the list currently holds zero elements.
      *
      * @return {@code true} if {@link #size()} is zero; {@code false} otherwise.
      */
-    public boolean isEmpty() {
-        return size == 0;
-    }
+    public boolean isEmpty() { return size == 0; }
 
     /**
      * Tests whether the specified primitive value exists in the list.
@@ -115,9 +107,7 @@ public class PrimitiveIntList {
      * @return {@code true} if the value occurs at least once; {@code false}
      * otherwise.
      */
-    public boolean contains(int e) {
-        return indexOf(e) >= 0;
-    }
+    public boolean contains(int e) { return indexOf(e) >= 0; }
 
     /**
      * Returns the index of the first occurrence of the given value, or {@code -1}

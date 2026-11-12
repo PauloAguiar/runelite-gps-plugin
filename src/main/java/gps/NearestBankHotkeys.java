@@ -22,14 +22,10 @@ final class NearestBankHotkeys {
     }
 
     /** Routes to the nearest bank. */
-    KeyListener bank() {
-        return bank;
-    }
+    KeyListener bank() { return bank; }
 
     /** Routes to the nearest bank and back. */
-    KeyListener bankAndBack() {
-        return bankAndBack;
-    }
+    KeyListener bankAndBack() { return bankAndBack; }
 
     private static KeyListener hotkey(Supplier<Keybind> key, Runnable action) {
         return new KeyListener() {

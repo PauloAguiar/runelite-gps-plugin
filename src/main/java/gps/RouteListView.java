@@ -120,9 +120,7 @@ final class RouteListView extends JPanel {
      * priorities stay outside (they are the chip): list order = this ETA + priority chips,
      * nothing hidden. Static for tests.
      */
-    static int routeEtaUnits(RouteOption route) {
-        return route.getTotalCost();
-    }
+    static int routeEtaUnits(RouteOption route) { return route.getTotalCost(); }
 
     static int routeEtaSeconds(RouteOption route) {
         return (int) Math.ceil(routeEtaUnits(route) * CostUnits.SECONDS_PER_UNIT);

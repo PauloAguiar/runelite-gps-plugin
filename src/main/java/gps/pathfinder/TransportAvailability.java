@@ -30,24 +30,16 @@ public final class TransportAvailability {
         this.usableTeleports = usableTeleports;
     }
 
-    public PrimitiveIntHashMap<Transport[]> getTransportsPacked() {
-        return transportsPacked;
-    }
+    public PrimitiveIntHashMap<Transport[]> getTransportsPacked() { return transportsPacked; }
 
-    public PrimitiveIntHashMap<Transport[]> getDisplayTransports() {
-        return displayTransports;
-    }
+    public PrimitiveIntHashMap<Transport[]> getDisplayTransports() { return displayTransports; }
 
-    public Transport[] getUsableTeleports() {
-        return usableTeleports;
-    }
+    public Transport[] getUsableTeleports() { return usableTeleports; }
 
     /**
      * The transports that start at the given origin tile in the display view, or an empty array.
      */
-    public Transport[] getTransportsAt(int origin) {
-        return displayTransports.getOrDefault(origin, EMPTY_TRANSPORTS);
-    }
+    public Transport[] getTransportsAt(int origin) { return displayTransports.getOrDefault(origin, EMPTY_TRANSPORTS); }
 
     /**
      * A view of this availability with every transport whose {@link Transport#method() method}

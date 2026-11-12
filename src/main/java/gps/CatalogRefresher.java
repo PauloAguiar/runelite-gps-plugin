@@ -22,14 +22,10 @@ final class CatalogRefresher {
     private boolean fingerprintValid;
 
     /** Whether a re-classification is pending (claimed on the next tick the panel is open). */
-    boolean isDirty() {
-        return dirty;
-    }
+    boolean isDirty() { return dirty; }
 
     /** The catalog must be re-classified (no fingerprint available to compare). */
-    void markDirty() {
-        dirty = true;
-    }
+    void markDirty() { dirty = true; }
 
     /**
      * An inventory or equipment change: dirties the catalog only when the routing-relevant item

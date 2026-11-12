@@ -12,9 +12,7 @@ import javax.swing.Scrollable;
  * than the viewport pushes the whole content under the vertical scrollbar and gets clipped.
  */
 final class ScrollableBox extends JPanel implements Scrollable {
-    ScrollableBox(LayoutManager layout) {
-        super(layout);
-    }
+    ScrollableBox(LayoutManager layout) { super(layout); }
 
     @Override public Dimension getPreferredScrollableViewportSize() {
         return getPreferredSize();

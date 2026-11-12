@@ -21,9 +21,7 @@ import lombok.RequiredArgsConstructor;
     }
 
     /** The search box's recent selections, most recent first. */
-    List<Destinations.Entry> history() {
-        return history;
-    }
+    List<Destinations.Entry> history() { return history; }
 
     /** Records a search selection at the front of the history (deduplicated, capped). */
     void recordSelection(Destinations.Entry entry) {
@@ -33,9 +31,7 @@ import lombok.RequiredArgsConstructor;
     }
 
     /** The saved favourite positions, in saved order. */
-    List<Destinations.Entry> favorites() {
-        return favorites;
-    }
+    List<Destinations.Entry> favorites() { return favorites; }
 
     /** Saves a favourite position; a favourite with the same label is replaced; the list is capped. */
     void addFavorite(String label, int packedPosition) {

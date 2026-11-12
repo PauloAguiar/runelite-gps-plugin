@@ -36,13 +36,9 @@ import net.runelite.client.config.ConfigManager;
     // profile if it happens after logout (when the current profile is no longer available).
     private String saveProfileKey;
 
-    boolean isKnown() {
-        return known;
-    }
+    boolean isKnown() { return known; }
 
-    boolean isRestored() {
-        return restored;
-    }
+    boolean isRestored() { return restored; }
 
     /** Plugin start with the bank already populated this session: adopt it, nothing to stage. */
     void adoptLive(ItemContainer liveBank) {

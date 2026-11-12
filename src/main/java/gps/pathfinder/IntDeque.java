@@ -13,13 +13,9 @@ class IntDeque {
     private int tail;
     private int size;
 
-    IntDeque(int initialCapacity) {
-        elements = new int[Math.max(1, initialCapacity)];
-    }
+    IntDeque(int initialCapacity) { elements = new int[Math.max(1, initialCapacity)]; }
 
-    boolean isEmpty() {
-        return size == 0;
-    }
+    boolean isEmpty() { return size == 0; }
 
     void addLast(int value) {
         if (size == elements.length) grow();
@@ -38,9 +34,7 @@ class IntDeque {
     /**
      * @return the first element, or {@link NodeGraph#NO_NODE} if empty.
      */
-    int peekFirst() {
-        return size == 0 ? NodeGraph.NO_NODE : elements[head];
-    }
+    int peekFirst() { return size == 0 ? NodeGraph.NO_NODE : elements[head]; }
 
     /**
      * @return the removed first element, or {@link NodeGraph#NO_NODE} if empty.
@@ -59,13 +53,9 @@ class IntDeque {
         size = 0;
     }
 
-    private int increment(int index) {
-        return index + 1 == elements.length ? 0 : index + 1;
-    }
+    private int increment(int index) { return index + 1 == elements.length ? 0 : index + 1; }
 
-    private int decrement(int index) {
-        return index == 0 ? elements.length - 1 : index - 1;
-    }
+    private int decrement(int index) { return index == 0 ? elements.length - 1 : index - 1; }
 
     private void grow() {
         final int oldCapacity = elements.length;

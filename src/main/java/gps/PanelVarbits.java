@@ -31,9 +31,7 @@ final class PanelVarbits {
     }
 
     /** The owned house's location name, or null without a house. */
-    String houseLocationName() {
-        return houseLocationName(houseLocationId);
-    }
+    String houseLocationName() { return houseLocationName(houseLocationId); }
 
     static String houseLocationName(int id) {
         return (id > 0 && id < HOUSE_LOCATIONS.length) ? HOUSE_LOCATIONS[id] : null;

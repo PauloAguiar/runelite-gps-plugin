@@ -32,9 +32,7 @@ final class JourneyTracker {
     }
 
     /** The wall-clock start, or 0 while the journey has not begun. */
-    long startMillis() {
-        return startMillis;
-    }
+    long startMillis() { return startMillis; }
 
     /** Elapsed time at {@code nowMillis}; 0 for a journey that never started (arrived without moving). */
     long elapsedMillis(long nowMillis) {

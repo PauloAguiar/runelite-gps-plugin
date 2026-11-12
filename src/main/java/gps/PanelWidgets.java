@@ -180,9 +180,7 @@ final class PanelWidgets {
         return new ImageIcon(image);
     }
 
-    static Icon categoryDot(String category) {
-        return dot(categoryColour(category));
-    }
+    static Icon categoryDot(String category) { return dot(categoryColour(category)); }
 
     /** The category dot for a route-card method, splitting teleport items by charge model. */
     static Icon methodDot(TeleportMethod method) {
@@ -351,9 +349,7 @@ final class PanelWidgets {
     }
 
     /** The hover text of a method: its category, label and arrival tile. */
-    static String methodTooltip(TeleportMethod method) {
-        return "<html>" + methodTooltipBody(method) + "</html>";
-    }
+    static String methodTooltip(TeleportMethod method) { return "<html>" + methodTooltipBody(method) + "</html>"; }
 
     /** The tooltip's inner HTML, for callers that prepend their own line (the route cards). */
     static String methodTooltipBody(TeleportMethod method) {

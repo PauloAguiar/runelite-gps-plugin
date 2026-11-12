@@ -15,8 +15,6 @@ import lombok.RequiredArgsConstructor;
 
     public static final int UNKNOWN_COST = -1;
 
-    public PathStep(int packedPosition, boolean bankVisited) {
-        this(packedPosition, bankVisited, UNKNOWN_COST);
-    }
+    public PathStep(int packedPosition, boolean bankVisited) { this(packedPosition, bankVisited, UNKNOWN_COST); }
 
 }

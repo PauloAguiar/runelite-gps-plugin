@@ -78,13 +78,9 @@ import net.runelite.client.config.ConfigManager;
     private boolean building;
 
     /** Whether the house has been scanned (this session or restored from the last). */
-    boolean isScanned() {
-        return scanned;
-    }
+    boolean isScanned() { return scanned; }
 
-    PohScanner.Detected detected() {
-        return detected;
-    }
+    PohScanner.Detected detected() { return detected; }
 
     /** The furniture the last scan recognised, as display names (empty until scanned). */
     List<String> detectedNames() {

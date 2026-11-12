@@ -79,9 +79,7 @@ import static gps.WorldPointUtil.unpackWorldY;
 
     /** Whether the tile is a mooring's boarding (land) tile — the origin class of every
      * static sailing row and synthetic embark leg. */
-    public static boolean isMooringLand(int packed) {
-        return get().mooringLandTiles.contains(packed);
-    }
+    public static boolean isMooringLand(int packed) { return get().mooringLandTiles.contains(packed); }
 
     /** The shipped port-to-port matrix, re-keyed from land tiles to mooring indices; null
      * (composition disabled, floods stand alone) when the resource is missing. */
@@ -456,9 +454,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         private long[] heap = new long[1 << 12];
         private int size;
 
-        boolean isEmpty() {
-            return size == 0;
-        }
+        boolean isEmpty() { return size == 0; }
 
         void push(long value) {
             if (size == heap.length) heap = Arrays.copyOf(heap, size * 2);
@@ -488,9 +484,7 @@ import static gps.WorldPointUtil.unpackWorldY;
             return top;
         }
 
-        void clear() {
-            size = 0;
-        }
+        void clear() { size = 0; }
     }
 
     /** Scratch distance grid reused across wet floods (24MB: never reallocate per pin). */
@@ -1245,9 +1239,7 @@ import static gps.WorldPointUtil.unpackWorldY;
     }
 
     /** The shipped walk-reachable flag: a mainland port the walking network serves. */
-    private static boolean reachable(int[] mooring) {
-        return mooring[4] == 1;
-    }
+    private static boolean reachable(int[] mooring) { return mooring[4] == 1; }
 
     /**
      * Half-wind (knight) steps must not cut across obstacle corners: both interposed tiles —

@@ -90,9 +90,7 @@ final class RouteIcons {
      * glyph, scaled up to fill the 16px tile for the sidebar tab (the panel's row pins stay smaller
      * so they read as buttons next to text). Also exportable for the hub listing icon.
      */
-    static BufferedImage gpsPin() {
-        return image("gps_pin");
-    }
+    static BufferedImage gpsPin() { return image("gps_pin"); }
 
     // ── Destination-search category icons ──────────────────────────────
     // A coherent, meaningful set (one glyph per category) replacing the old hash-coloured dots.
@@ -121,9 +119,7 @@ final class RouteIcons {
     }
 
     /** The Bank quick button's icon: the coin stack, with a "+" badge while a click would add a stop. */
-    static ImageIcon bankButtonIcon(boolean addsStop) {
-        return addsStop ? DEST_BANK_STOP : DEST_BANK;
-    }
+    static ImageIcon bankButtonIcon(boolean addsStop) { return addsStop ? DEST_BANK_STOP : DEST_BANK; }
 
     /** The hull glyph for a tier. */
     static ImageIcon hullIcon(BoatHull hull) {
@@ -157,9 +153,7 @@ final class RouteIcons {
     private RouteIcons() {
     }
 
-    private static ImageIcon icon(String name) {
-        return new ImageIcon(image(name));
-    }
+    private static ImageIcon icon(String name) { return new ImageIcon(image(name)); }
 
     private static BufferedImage image(String name) {
         return ImageUtil.loadImageResource(RouteIcons.class, "/icons/" + name + ".png");

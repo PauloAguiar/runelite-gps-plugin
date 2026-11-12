@@ -50,14 +50,10 @@ import net.runelite.client.config.ConfigManager;
     private volatile boolean dirty;
 
     /** Whether a varbit change concerns a boat's ownership, berth, name or hull. */
-    boolean tracks(int varbitId) {
-        return BOAT_VARBIT_IDS.contains(varbitId);
-    }
+    boolean tracks(int varbitId) { return BOAT_VARBIT_IDS.contains(varbitId); }
 
     /** A tracked varbit changed: rebuild on the next tick (one rebuild per burst). */
-    void markDirty() {
-        dirty = true;
-    }
+    void markDirty() { dirty = true; }
 
     /** Client thread, once per game tick. */
     void onTick() {
@@ -75,14 +71,10 @@ import net.runelite.client.config.ConfigManager;
     }
 
     /** Owned boats as {name, port label, hull} rows; null when never collected for this character. */
-    List<String[]> banner() {
-        return banner;
-    }
+    List<String[]> banner() { return banner; }
 
     /** Whether the banner reflects this session's live varbits rather than a restored snapshot. */
-    boolean isLive() {
-        return live;
-    }
+    boolean isLive() { return live; }
 
     /** Client thread: re-read every boat's ownership, berth, name and hull, persist, and notify. */
     void refresh() {

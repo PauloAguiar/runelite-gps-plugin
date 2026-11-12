@@ -138,9 +138,7 @@ import gps.transport.Transport;
     }
 
     /** Whether this route is a round trip — see {@link #turnaroundIndex}. */
-    public boolean isRoundTrip() {
-        return turnaroundIndex >= 0;
-    }
+    public boolean isRoundTrip() { return turnaroundIndex >= 0; }
 
     /**
      * Tiles walked before the method at {@code index}, or 0 when unknown.
@@ -152,9 +150,7 @@ import gps.transport.Transport;
     /**
      * Whether one of this route's methods requires a bank withdrawal first (see {@link #bankMethods}).
      */
-    public boolean isViaBank() {
-        return !bankMethods.isEmpty() || !bankTransports.isEmpty();
-    }
+    public boolean isViaBank() { return !bankMethods.isEmpty() || !bankTransports.isEmpty(); }
 
     /** Whether every method is a sailing leg: the route never leaves the water system. */
     public boolean isPureSail() {
@@ -165,9 +161,7 @@ import gps.transport.Transport;
         return true;
     }
 
-    public boolean isWalkOnly() {
-        return methods.isEmpty();
-    }
+    public boolean isWalkOnly() { return methods.isEmpty(); }
 
     /** The method whose edge arrives at path index {@code arriveIndex}, or null when that edge is walking. */
     public TeleportMethod methodArrivingAt(int arriveIndex) {

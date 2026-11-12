@@ -25,9 +25,7 @@ import net.runelite.client.util.ImageUtil;
     private int pinNext = WorldPointUtil.UNDEFINED;
 
     /** The next placement pins {@code tile} whatever the target set (consumed by that placement). */
-    void pinNextAt(int tile) {
-        pinNext = tile;
-    }
+    void pinNextAt(int tile) { pinNext = tile; }
 
     /** Replaces the pin for a new target set: the override, else the single target, else none. */
     void place(Set<Integer> targets) {

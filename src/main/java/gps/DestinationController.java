@@ -37,30 +37,18 @@ import net.runelite.api.ChatMessageType;
     // The destination a nearest-bank trip replaced, resumed when the trip completes (see BankDetour).
     private final BankDetour bankTrip = new BankDetour();
 
-    int start() {
-        return start;
-    }
+    int start() { return start; }
 
-    Set<Integer> targets() {
-        return targets;
-    }
+    Set<Integer> targets() { return targets; }
 
-    boolean hasTargets() {
-        return !targets.isEmpty();
-    }
+    boolean hasTargets() { return !targets.isEmpty(); }
 
-    String source() {
-        return source;
-    }
+    String source() { return source; }
 
     /** Attributes the destination for the GPS header: the sender's source, "map pin", or null. */
-    void setSource(String source) {
-        this.source = source;
-    }
+    void setSource(String source) { this.source = source; }
 
-    boolean isRoundTrip() {
-        return roundTrip;
-    }
+    boolean isRoundTrip() { return roundTrip; }
 
     /** "Set GPS Target" from the map menu: the pick is attributed to the map pin. Client thread. */
     void pin(int packed) {
@@ -81,9 +69,7 @@ import net.runelite.api.ChatMessageType;
     }
 
     /** Clears the destination from another thread (the panel's Clear button). */
-    void clearLater() {
-        plugin.getClientThread().invokeLater(this::clear);
-    }
+    void clearLater() { plugin.getClientThread().invokeLater(this::clear); }
 
     /**
      * The player arrived: the destination clears, and a completed bank trip picks the destination
@@ -105,19 +91,13 @@ import net.runelite.api.ChatMessageType;
     }
 
     /** Another plugin's new destination replaces a bank trip like any other change. */
-    void forgetBankTrip() {
-        bankTrip.cancel();
-    }
+    void forgetBankTrip() { bankTrip.cancel(); }
 
     /** The destination the current bank trip will resume, or null (see BankDetour.pending). */
-    BankDetour.Route pendingResume() {
-        return bankTrip.pending();
-    }
+    BankDetour.Route pendingResume() { return bankTrip.pending(); }
 
     /** Whether a bank click now would add a stop: a route would resume after it (see BankDetour.wouldResume). */
-    boolean bankClickAddsStop() {
-        return bankTrip.wouldResume(hasTargets());
-    }
+    boolean bankClickAddsStop() { return bankTrip.wouldResume(hasTargets()); }
 
     /**
      * A searched place or amenity (the panel search box), attributed to {@code source}. A label

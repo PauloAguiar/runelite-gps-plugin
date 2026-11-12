@@ -54,14 +54,10 @@ final class TravelOptionsView extends JPanel {
     }
 
     /** The Log-storage-low banner for the notes strip (see ConfigSectionsView). */
-    JPanel balloonLowBanner(List<String> lowTypes) {
-        return sections.balloonLowBanner(lowTypes);
-    }
+    JPanel balloonLowBanner(List<String> lowTypes) { return sections.balloonLowBanner(lowTypes); }
 
     /** The tier menu for a method, shared by the route cards and the catalog rows. */
-    void showPriorityMenu(Component anchor, TeleportMethod method) {
-        catalog.showPriorityMenu(anchor, method);
-    }
+    void showPriorityMenu(Component anchor, TeleportMethod method) { catalog.showPriorityMenu(anchor, method); }
 
     /** Rebuilds with the current inputs (a header toggle, a tier or funnel change). */
     private void rebuild() {

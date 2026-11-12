@@ -16,9 +16,7 @@ public final class ParseErrors {
     private ParseErrors() {
     }
 
-    static void record(String what, String value) {
-        RECORDED.add(what + ": " + value);
-    }
+    static void record(String what, String value) { RECORDED.add(what + ": " + value); }
 
     /** Returns everything recorded since the last drain, and clears. */
     public static List<String> drain() {

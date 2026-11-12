@@ -16,9 +16,7 @@ import lombok.RequiredArgsConstructor;
     private final int varbitValue;
     private final String displayName;
 
-    public String displayName() {
-        return displayName;
-    }
+    public String displayName() { return displayName; }
 
     /** The hull for a hull-type varbit value, or null for a value this build does not know. */
     public static BoatHull fromVarbit(int value) {

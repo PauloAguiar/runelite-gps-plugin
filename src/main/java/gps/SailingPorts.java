@@ -50,9 +50,7 @@ public final class SailingPorts {
     }
 
     /** Packed mooring land tiles of the port, empty for capsized/bottled/unknown ids. */
-    public static List<Integer> portMoorings(int portId) {
-        return get().moorings.getOrDefault(portId, List.of());
-    }
+    public static List<Integer> portMoorings(int portId) { return get().moorings.getOrDefault(portId, List.of()); }
 
     /** Display name for a port id; capsized/bottled and unknown ids get honest fallbacks. */
     public static String portName(int portId) {

@@ -32,16 +32,12 @@ import lombok.extern.slf4j.Slf4j;
     /**
      * Creates a parser for the specified variable type.
      */
-    public VarRequirementParser(VarRequirement.VarType varType) {
-        this.varType = varType;
-    }
+    public VarRequirementParser(VarRequirement.VarType varType) { this.varType = varType; }
 
     /**
      * Creates a parser for varbit requirements.
      */
-    public static VarRequirementParser forVarbits() {
-        return new VarRequirementParser(VarRequirement.VarType.VARBIT);
-    }
+    public static VarRequirementParser forVarbits() { return new VarRequirementParser(VarRequirement.VarType.VARBIT); }
 
     /**
      * Creates a parser for varplayer requirements.

@@ -31,9 +31,7 @@ final class ArrivalZone {
     private final Supplier<CollisionMap> map;
     private volatile Cache cache = new Cache(WorldPointUtil.UNDEFINED, Integer.MIN_VALUE, Set.of());
 
-    ArrivalZone(Supplier<CollisionMap> map) {
-        this.map = map;
-    }
+    ArrivalZone(Supplier<CollisionMap> map) { this.map = map; }
 
     /**
      * The zone around the path's end, {@code radius} walking steps wide. Empty when there is no

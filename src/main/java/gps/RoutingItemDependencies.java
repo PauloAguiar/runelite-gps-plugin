@@ -19,9 +19,7 @@ public final class RoutingItemDependencies {
     /** Item id -> sorted distinct quantities at which some requirement flips. */
     private final Map<Integer, int[]> thresholds;
 
-    private RoutingItemDependencies(Map<Integer, int[]> thresholds) {
-        this.thresholds = thresholds;
-    }
+    private RoutingItemDependencies(Map<Integer, int[]> thresholds) { this.thresholds = thresholds; }
 
     public static RoutingItemDependencies build(Transport[] transports) {
         Map<Integer, TreeSet<Integer>> collected = new HashMap<>();
@@ -67,13 +65,9 @@ public final class RoutingItemDependencies {
     }
 
     /** Whether this item id can influence any transport's availability at all. */
-    public boolean isRelevant(int itemId) {
-        return thresholds.containsKey(itemId);
-    }
+    public boolean isRelevant(int itemId) { return thresholds.containsKey(itemId); }
 
-    public int size() {
-        return thresholds.size();
-    }
+    public int size() { return thresholds.size(); }
 
     /**
      * Order-independent fingerprint of the routing-relevant item state across the inventory and

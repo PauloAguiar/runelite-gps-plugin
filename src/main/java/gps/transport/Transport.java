@@ -218,9 +218,7 @@ import gps.transport.requirement.TransportItems;
      * requirement sets do not allocate a {@code HashSet}/{@code HashMap} per transport. A non-empty
      * builder set is handed over directly (the single-use builder is discarded afterwards).
      */
-    private static <T> Set<T> compact(Set<T> set) {
-        return set.isEmpty() ? Collections.emptySet() : set;
-    }
+    private static <T> Set<T> compact(Set<T> set) { return set.isEmpty() ? Collections.emptySet() : set; }
 
     /**
      * Quest requirements are keyed on the {@link Quest} enum, so a non-empty set is stored as a
@@ -277,24 +275,18 @@ import gps.transport.requirement.TransportItems;
     /**
      * Whether the transport has one or more quest requirements
      */
-    public boolean isQuestLocked() {
-        return !quests.isEmpty();
-    }
+    public boolean isQuestLocked() { return !quests.isEmpty(); }
 
     /**
      * Whether this transport is of the given type.
      */
-    public boolean isType(TransportType type) {
-        return type.equals(this.type);
-    }
+    public boolean isType(TransportType type) { return type.equals(this.type); }
 
     /**
      * Whether this transport's display info contains the given substring.
      * Returns false if displayInfo is null.
      */
-    public boolean hasDisplayInfo(String substring) {
-        return displayInfo != null && displayInfo.contains(substring);
-    }
+    public boolean hasDisplayInfo(String substring) { return displayInfo != null && displayInfo.contains(substring); }
 
     /**
      * Whether this transport can be used at the given wilderness level.

@@ -58,9 +58,7 @@ public final class SearchHeuristic {
         return distance >= floor ? floor : distance;
     }
 
-    int floor() {
-        return floor;
-    }
+    int floor() { return floor; }
 
     /**
      * Builds the heuristic for one search over the given config's CURRENT (post-exclusion)

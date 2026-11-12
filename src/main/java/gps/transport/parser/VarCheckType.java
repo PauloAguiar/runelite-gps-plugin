@@ -14,7 +14,5 @@ import lombok.Getter;
 
     private final String code;
 
-    VarCheckType(String code) {
-        this.code = code;
-    }
+    VarCheckType(String code) { this.code = code; }
 }

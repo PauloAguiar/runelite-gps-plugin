@@ -54,21 +54,13 @@ import net.runelite.api.ItemContainer;
     }
 
     /** The generator, or null outside the plugin's lifetime. */
-    AlternativeRoutesService service() {
-        return service;
-    }
+    AlternativeRoutesService service() { return service; }
 
-    AlternativeRoutesMode mode() {
-        return mode;
-    }
+    AlternativeRoutesMode mode() { return mode; }
 
-    List<TeleportMethod> catalog() {
-        return catalog;
-    }
+    List<TeleportMethod> catalog() { return catalog; }
 
-    Map<TeleportMethod, MethodAvailability> unavailable() {
-        return unavailable;
-    }
+    Map<TeleportMethod, MethodAvailability> unavailable() { return unavailable; }
 
     /** Panel (EDT) entry point: routing state is client-thread owned, so hop over (invoke runs inline when already there). */
     void setMode(AlternativeRoutesMode newMode) {
@@ -115,13 +107,9 @@ import net.runelite.api.ItemContainer;
      * one provisionally and settles once, consistently, with or without the panel. The panel
      * flag is taken only to state the rule where it is decided. Pure, unit-tested.
      */
-    static int routeLimitFor(boolean panelVisible, int configured) {
-        return Math.max(1, Math.min(configured, 25));
-    }
+    static int routeLimitFor(boolean panelVisible, int configured) { return Math.max(1, Math.min(configured, 25)); }
 
-    boolean canLoadMore() {
-        return session.canLoadMore();
-    }
+    boolean canLoadMore() { return session.canLoadMore(); }
 
     /** "Search for more routes": widens the cost band and the route budget, then regenerates. */
     void loadMore() {
@@ -240,14 +228,10 @@ import net.runelite.api.ItemContainer;
     }
 
     /** A spellbook switch: which spell rows apply, and whether a swap is asked for, follow the book showing. */
-    void spellbookChanged() {
-        catalogRefresh.markDirty();
-    }
+    void spellbookChanged() { catalogRefresh.markDirty(); }
 
     /** Whether a catalog re-classification is pending. */
-    boolean isCatalogDirty() {
-        return catalogRefresh.isDirty();
-    }
+    boolean isCatalogDirty() { return catalogRefresh.isDirty(); }
 
     /** Catalog-only re-classification after an item change, when due (see CatalogRefresher); each tick. */
     void refreshCatalogIfDue() {

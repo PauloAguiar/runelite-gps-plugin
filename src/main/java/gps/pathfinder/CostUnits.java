@@ -18,9 +18,7 @@ public final class CostUnits {
     public static final double SECONDS_PER_UNIT = 0.3;
 
     /** Converts a duration in game ticks to cost units. */
-    public static int fromTicks(int ticks) {
-        return UNITS_PER_TICK * ticks;
-    }
+    public static int fromTicks(int ticks) { return UNITS_PER_TICK * ticks; }
 
     private CostUnits() {
     }

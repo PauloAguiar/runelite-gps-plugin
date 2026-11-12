@@ -20,13 +20,9 @@ class IntBucketQueue {
     private int cursor;
     private int size;
 
-    int size() {
-        return size;
-    }
+    int size() { return size; }
 
-    boolean isEmpty() {
-        return size == 0;
-    }
+    boolean isEmpty() { return size == 0; }
 
     void add(int id, int key) {
         if (key < cursor)

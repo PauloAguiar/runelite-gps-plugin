@@ -66,9 +66,7 @@ import gps.transport.Transport;
     /**
      * The grouping bucket shown as a section header in the panel.
      */
-    public String category() {
-        return categoryOf(type);
-    }
+    public String category() { return categoryOf(type); }
 
     /**
      * The per-option label shown in the panel row. Falls back to the category plus the destination
@@ -101,9 +99,7 @@ import gps.transport.Transport;
     }
 
     /** The vehicle name for network methods whose data label is a bare destination; null otherwise. */
-    private static String vehiclePhrase(TransportType type) {
-        return TransportTypePresentation.vehicleOf(type);
-    }
+    private static String vehiclePhrase(TransportType type) { return TransportTypePresentation.vehicleOf(type); }
 
     /**
      * Whether a transport type counts as a travel "method" worth listing and excluding. Plain local
@@ -119,9 +115,7 @@ import gps.transport.Transport;
             && type != TransportType.SAILING;
     }
 
-    public static String categoryOf(TransportType type) {
-        return TransportTypePresentation.categoryOf(type);
-    }
+    public static String categoryOf(TransportType type) { return TransportTypePresentation.categoryOf(type); }
 
     @Override public String toString() {
         return category() + ": " + label();

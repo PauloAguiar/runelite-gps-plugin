@@ -125,16 +125,12 @@ import gps.*;
     /**
      * Checks if a transport type is enabled in config.
      */
-    public boolean isEnabled(TransportType type) {
-        return enabledStates.getOrDefault(type, true);
-    }
+    public boolean isEnabled(TransportType type) { return enabledStates.getOrDefault(type, true); }
 
     /**
      * Gets the cost threshold for a transport type.
      */
-    public int getCost(TransportType type) {
-        return costThresholds.getOrDefault(type, 0);
-    }
+    public int getCost(TransportType type) { return costThresholds.getOrDefault(type, 0); }
 
     /**
      * Overrides the teleportation-item setting (used by the alternative-routes planning copy to force a
@@ -154,9 +150,7 @@ import gps.*;
      * Used for runtime modifications (e.g., disabling fairy rings without dramen
      * staff).
      */
-    public void setEnabled(TransportType type, boolean enabled) {
-        enabledStates.put(type, enabled);
-    }
+    public void setEnabled(TransportType type, boolean enabled) { enabledStates.put(type, enabled); }
 
     /**
      * Disables a transport type unless a condition is met.
@@ -171,9 +165,7 @@ import gps.*;
      * must not fire for a type that is merely quest-locked (that classifies MISSING_QUEST).
      */
     /** The toggle as configured at the last {@link #refresh()}, ignoring later runtime adjustments. */
-    public boolean isEnabledInConfig(TransportType type) {
-        return configEnabledStates.getOrDefault(type, true);
-    }
+    public boolean isEnabledInConfig(TransportType type) { return configEnabledStates.getOrDefault(type, true); }
 
     public void disableUnless(TransportType type, boolean condition) {
         if (!condition) enabledStates.put(type, false);

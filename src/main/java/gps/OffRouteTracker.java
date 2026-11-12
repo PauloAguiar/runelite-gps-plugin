@@ -39,19 +39,13 @@ final class OffRouteTracker {
     private volatile boolean warning;
 
     /** The distance from the path at the last tick, or -1 when unknown (no same-plane tile). */
-    int distance() {
-        return distance;
-    }
+    int distance() { return distance; }
 
     /** Whether the overlays should show the drifting-off-route warning. */
-    boolean isWarning() {
-        return warning;
-    }
+    boolean isWarning() { return warning; }
 
     /** Records where the player stands so the next tick is not read as a move from elsewhere. */
-    void reset(int location) {
-        lastLocation = location;
-    }
+    void reset(int location) { lastLocation = location; }
 
     /**
      * One game tick. {@code distanceFromPath} is consulted only when recalculation is enabled

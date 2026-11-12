@@ -26,9 +26,7 @@ import lombok.RequiredArgsConstructor;
     public final String label;
 
     /** The adjustment in search cost units (1 tick = 0.6s), rounded to the nearest unit. */
-    public int adjustUnits() {
-        return unitsFromSeconds(adjustSeconds);
-    }
+    public int adjustUnits() { return unitsFromSeconds(adjustSeconds); }
 
     /** Seconds -> cost units: seconds / 0.6s-per-tick * units-per-tick, away-from-zero rounding. */
     public static int unitsFromSeconds(int seconds) {

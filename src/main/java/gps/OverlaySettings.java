@@ -81,7 +81,5 @@ final class OverlaySettings {
     }
 
     /** A snapshot of the config as it stands, overrides applied. */
-    static OverlaySettings from(ShortestPathConfig config) {
-        return new OverlaySettings(config);
-    }
+    static OverlaySettings from(ShortestPathConfig config) { return new OverlaySettings(config); }
 }

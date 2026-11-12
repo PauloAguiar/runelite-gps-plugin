@@ -112,13 +112,9 @@ import lombok.Getter;
         }
     }
 
-    public boolean isVarbit() {
-        return varType == VarType.VARBIT;
-    }
+    public boolean isVarbit() { return varType == VarType.VARBIT; }
 
-    public boolean isVarPlayer() {
-        return varType == VarType.VARPLAYER;
-    }
+    public boolean isVarPlayer() { return varType == VarType.VARPLAYER; }
 
     @Override public String toString() {
         if (alternatives != null) return varType + "[any of " + alternatives + "]";

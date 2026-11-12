@@ -8,6 +8,7 @@ costs about one token whatever the depth, so the style joins lines wherever that
   is one statement, comment lines before it allowed, not a declaration, not itself a control
   statement, so no dangling else, and the header sits on one line);
 - that single statement then sits on its header line (up to 120 columns);
+- a method or constructor whose body is one statement is written on one line (up to 120 columns);
 - marker and one-line annotations sit on the line of what they annotate (up to 120 columns);
 - leading tabs become four spaces.
 
@@ -153,6 +154,28 @@ def control_bodies(lines):
     return out, joined
 
 
+def one_line_methods(lines):
+    """A method or constructor whose body is one statement sits on one line."""
+    code = code_lines(lines)
+    out = []
+    joined = 0
+    i = 0
+    n = len(lines)
+    while i < n:
+        line = lines[i]
+        if (i + 2 < n and all(code[i:i + 3]) and SIGNATURE.match(line) and CLOSE_ONLY.match(lines[i + 2])
+                and indent_of(lines[i + 2]) == indent_of(line) and statement_ok(lines[i + 1])):
+            merged = '%s %s }' % (line.rstrip(), lines[i + 1].strip())
+            if len(merged) <= CONTROL_LIMIT:
+                out.append(merged)
+                joined += 1
+                i += 3
+                continue
+        out.append(line)
+        i += 1
+    return out, joined
+
+
 def annotations(lines):
     """`@Override` / `public String toString()` becomes one line, like any one-line annotation."""
     code = code_lines(lines)
@@ -171,7 +194,7 @@ def annotations(lines):
 
 
 RULES = [('braces unbraced', unbrace), ('bodies on their header', control_bodies),
-         ('annotations joined', annotations)]
+         ('one-line methods', one_line_methods), ('annotations joined', annotations)]
 
 
 def main():

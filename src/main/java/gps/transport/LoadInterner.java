@@ -18,23 +18,13 @@ final class LoadInterner {
     private final Map<Set<Quest>, Set<Quest>> questSets = new HashMap<>();
     private final Map<String, String> strings = new HashMap<>();
 
-    TransportItems intern(TransportItems value) {
-        return value == null ? null : items.computeIfAbsent(value, v -> v);
-    }
+    TransportItems intern(TransportItems value) { return value == null ? null : items.computeIfAbsent(value, v -> v); }
 
-    VarRequirement intern(VarRequirement value) {
-        return vars.computeIfAbsent(value, v -> v);
-    }
+    VarRequirement intern(VarRequirement value) { return vars.computeIfAbsent(value, v -> v); }
 
-    Set<VarRequirement> internVarSet(Set<VarRequirement> value) {
-        return varSets.computeIfAbsent(value, v -> v);
-    }
+    Set<VarRequirement> internVarSet(Set<VarRequirement> value) { return varSets.computeIfAbsent(value, v -> v); }
 
-    Set<Quest> internQuestSet(Set<Quest> value) {
-        return questSets.computeIfAbsent(value, v -> v);
-    }
+    Set<Quest> internQuestSet(Set<Quest> value) { return questSets.computeIfAbsent(value, v -> v); }
 
-    String internString(String value) {
-        return value == null ? null : strings.computeIfAbsent(value, v -> v);
-    }
+    String internString(String value) { return value == null ? null : strings.computeIfAbsent(value, v -> v); }
 }
