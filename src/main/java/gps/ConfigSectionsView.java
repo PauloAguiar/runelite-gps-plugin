@@ -31,8 +31,7 @@ import static gps.PanelWidgets.wrappedLabel;
  * ConfigManager's descriptor, since shipped code may not use reflection), reads the stored value
  * by key and writes the key back through the ConfigManager; any change regenerates the routes.
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-final class ConfigSectionsView {
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE) final class ConfigSectionsView {
     private static final int LABEL_WIDTH = 168;
 
     private final ShortestPathPlugin plugin;

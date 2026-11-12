@@ -10,9 +10,7 @@ import lombok.Getter;
  * Represents all item requirements for a transport.
  * All requirements must be satisfied.
  */
-@Getter
-@EqualsAndHashCode
-public class TransportItems {
+@Getter @EqualsAndHashCode public class TransportItems {
     private final List<ItemRequirement> requirements;
 
     public TransportItems(List<ItemRequirement> requirements) {
@@ -92,8 +90,7 @@ public class TransportItems {
         return "[" + text + "]";
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
         return "[" +
             toString(getItems()) + ", " +
             toString(getStaves()) + ", " +

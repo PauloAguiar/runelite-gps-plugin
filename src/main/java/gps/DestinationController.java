@@ -17,8 +17,7 @@ import net.runelite.api.ChatMessageType;
  * pin; the routes themselves come from the auto-compute on the next tick, keyed on the target
  * set, or from an explicit recompute. Written on the client thread, read from ticks and overlays.
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-final class DestinationController {
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE) final class DestinationController {
     private final ShortestPathPlugin plugin;
     private final RouteSession session;
     private final RouteController routes;

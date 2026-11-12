@@ -20,8 +20,7 @@ import static gps.WorldPointUtil.unpackWorldY;
  * mooring's land tile, sail straight out to the target. Durations use the same PROVISIONAL
  * speed model as the generated port-to-port rows until the calibration pass.
  */
-@lombok.extern.slf4j.Slf4j
-public final class SailingSea {
+@lombok.extern.slf4j.Slf4j public final class SailingSea {
     /** Deliberate fixed approximation, not a placeholder: hulls cruise 1.5 (wooden) to 3.0
      * (rosewood) tiles/tick per the wiki hull table, so the mid-table 2.0 keeps every ETA
      * within ~33% without per-boat calibration machinery. */
@@ -681,8 +680,7 @@ public final class SailingSea {
 
     private static final LinkedHashMap<Long, int[]> trackCache =
         new LinkedHashMap<Long, int[]>(16, 0.75f, true) {
-            @Override
-            protected boolean removeEldestEntry(Map.Entry<Long, int[]> eldest) {
+            @Override protected boolean removeEldestEntry(Map.Entry<Long, int[]> eldest) {
                 return size() > 8;
             }
         };

@@ -21,8 +21,7 @@ import lombok.RequiredArgsConstructor;
 final class ArrivalZone {
     // One immutable holder for the zone and its key: the render thread and the client thread
     // both read it, and two fields could publish one route's key beside another's zone.
-    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-    private static final class Cache {
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE) private static final class Cache {
         final int end;
         final int radius;
         final Set<Integer> zone;

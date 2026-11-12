@@ -3,9 +3,7 @@ package gps.pathfinder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-@Getter
-@RequiredArgsConstructor
-public final class PathStep {
+@Getter @RequiredArgsConstructor public final class PathStep {
     private final int packedPosition;
     private final boolean bankVisited;
     /**

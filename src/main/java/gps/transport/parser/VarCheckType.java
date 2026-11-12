@@ -5,8 +5,7 @@ import lombok.Getter;
 /**
  * The type of comparison to perform when checking a variable requirement.
  */
-@Getter
-public enum VarCheckType {
+@Getter public enum VarCheckType {
     BIT_SET("&"),
     COOLDOWN_MINUTES("@"),
     EQUAL("="),

@@ -222,13 +222,11 @@ final class RouteListView extends JPanel {
             new EmptyBorder(3, 12, 3, 12)));
         button.addActionListener(e -> action.run());
         button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
+            @Override public void mouseEntered(MouseEvent e) {
                 button.setBackground(ColorScheme.MEDIUM_GRAY_COLOR);
             }
 
-            @Override
-            public void mouseExited(MouseEvent e) {
+            @Override public void mouseExited(MouseEvent e) {
                 button.setBackground(ColorScheme.DARKER_GRAY_HOVER_COLOR);
             }
         });
@@ -368,8 +366,7 @@ final class RouteListView extends JPanel {
         card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         // A click anywhere on the card (its icon controls aside) shows that route on the map.
         addClickRecursively(card, new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
+            @Override public void mouseClicked(MouseEvent e) {
                 plugin.selectRoute(index);
             }
         });
@@ -383,13 +380,11 @@ final class RouteListView extends JPanel {
      */
     private static void addHoverRecursively(Component root, Consumer<Boolean> handler) {
         MouseAdapter hover = new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
+            @Override public void mouseEntered(MouseEvent e) {
                 handler.accept(true);
             }
 
-            @Override
-            public void mouseExited(MouseEvent e) {
+            @Override public void mouseExited(MouseEvent e) {
                 Point p = SwingUtilities.convertPoint((Component) e.getSource(), e.getPoint(), root);
                 if (!root.contains(p))
                     handler.accept(false);

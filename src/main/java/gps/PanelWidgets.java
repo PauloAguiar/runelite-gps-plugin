@@ -92,13 +92,11 @@ final class PanelWidgets {
             BorderFactory.createLineBorder(ColorScheme.MEDIUM_GRAY_COLOR),
             new EmptyBorder(3, 8, 3, 8)));
         button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
+            @Override public void mouseEntered(MouseEvent e) {
                 button.setBackground(ColorScheme.MEDIUM_GRAY_COLOR);
             }
 
-            @Override
-            public void mouseExited(MouseEvent e) {
+            @Override public void mouseExited(MouseEvent e) {
                 button.setBackground(ColorScheme.DARKER_GRAY_HOVER_COLOR);
             }
         });
@@ -298,8 +296,7 @@ final class PanelWidgets {
         titleRow.setToolTipText(tooltip);
         titleRow.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         titleRow.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
+            @Override public void mousePressed(MouseEvent e) {
                 toggle.run();
                 afterToggle.run();
             }

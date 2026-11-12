@@ -3,9 +3,7 @@ package gps;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-@Getter
-@RequiredArgsConstructor
-public enum JewelleryBoxTier {
+@Getter @RequiredArgsConstructor public enum JewelleryBoxTier {
     NONE("None"),
     BASIC("Basic"),
     FANCY("Fancy"),
@@ -22,8 +20,7 @@ public enum JewelleryBoxTier {
         return null;
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
         return type;
     }
 }

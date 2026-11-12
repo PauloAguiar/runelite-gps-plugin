@@ -16,28 +16,23 @@ final class ScrollableBox extends JPanel implements Scrollable {
         super(layout);
     }
 
-    @Override
-    public Dimension getPreferredScrollableViewportSize() {
+    @Override public Dimension getPreferredScrollableViewportSize() {
         return getPreferredSize();
     }
 
-    @Override
-    public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+    @Override public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
         return 16;
     }
 
-    @Override
-    public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+    @Override public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
         return Math.max(visibleRect.height - 16, 16);
     }
 
-    @Override
-    public boolean getScrollableTracksViewportWidth() {
+    @Override public boolean getScrollableTracksViewportWidth() {
         return true;
     }
 
-    @Override
-    public boolean getScrollableTracksViewportHeight() {
+    @Override public boolean getScrollableTracksViewportHeight() {
         return false;
     }
 }

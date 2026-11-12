@@ -21,20 +21,17 @@ class IconActionLabel extends JLabel {
         setToolTipText(tooltip);
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
+            @Override public void mousePressed(MouseEvent e) {
                 if (SwingUtilities.isLeftMouseButton(e))
                     onClick.run();
             }
 
-            @Override
-            public void mouseEntered(MouseEvent e) {
+            @Override public void mouseEntered(MouseEvent e) {
                 hovered = true;
                 setIcon(hoverIcon);
             }
 
-            @Override
-            public void mouseExited(MouseEvent e) {
+            @Override public void mouseExited(MouseEvent e) {
                 hovered = false;
                 setIcon(restIcon);
             }

@@ -30,8 +30,7 @@ final class RouteItemOverlay extends WidgetItemOverlay {
         showOnBank();
     }
 
-    @Override
-    public void renderItemOverlay(Graphics2D graphics, int itemId, WidgetItem item) {
+    @Override public void renderItemOverlay(Graphics2D graphics, int itemId, WidgetItem item) {
         if (!plugin.display().highlightRouteItem)
             return;
         int group = WidgetUtil.componentToInterface(item.getWidget().getId());

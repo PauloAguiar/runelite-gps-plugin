@@ -33,19 +33,16 @@ final class NearestBankHotkeys {
 
     private static KeyListener hotkey(Supplier<Keybind> key, Runnable action) {
         return new KeyListener() {
-            @Override
-            public void keyTyped(KeyEvent e) {
+            @Override public void keyTyped(KeyEvent e) {
             }
 
-            @Override
-            public void keyPressed(KeyEvent e) {
+            @Override public void keyPressed(KeyEvent e) {
                 Keybind bound = key.get();
                 if (bound != null && bound.matches(e))
                     action.run();
             }
 
-            @Override
-            public void keyReleased(KeyEvent e) {
+            @Override public void keyReleased(KeyEvent e) {
             }
         };
     }

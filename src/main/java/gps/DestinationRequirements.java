@@ -16,14 +16,10 @@ public final class DestinationRequirements {
      */
     public static final DestinationRequirements EMPTY = new DestinationRequirements();
 
-    @Getter
-    private final int[] skillLevels;
-    @Getter
-    private final Set<Quest> quests;
-    @Getter
-    private final Set<VarRequirement> varbits;
-    @Getter
-    private final Set<VarRequirement> varPlayers;
+    @Getter private final int[] skillLevels;
+    @Getter private final Set<Quest> quests;
+    @Getter private final Set<VarRequirement> varbits;
+    @Getter private final Set<VarRequirement> varPlayers;
 
     private DestinationRequirements() {
         this.skillLevels = new int[Skill.values().length + 3];

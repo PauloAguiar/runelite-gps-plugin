@@ -30,9 +30,7 @@ final class RouteDirections {
      * One direction step, the route-path index range [start, end] it spans, and its estimated
      * duration in game ticks (for wall-time ETAs).
      */
-    @Getter
-    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-    static final class Step {
+    @Getter @RequiredArgsConstructor(access = AccessLevel.PRIVATE) static final class Step {
         private final String text;
         private final int startIndex;
         private final int endIndex;

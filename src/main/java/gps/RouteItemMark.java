@@ -17,8 +17,7 @@ import net.runelite.client.util.ImageUtil;
  * want, its ring covers the inner pixel of ours and the outer ring stays visible in this plugin's
  * colour. The outline is drawn one pixel up and left of the slot, the fill at the slot.
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-final class RouteItemMark {
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE) final class RouteItemMark {
     final BufferedImage outline;
     final Image fill;
 

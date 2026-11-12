@@ -3,9 +3,7 @@ package gps;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-@Getter
-@RequiredArgsConstructor
-public enum TeleportationItem {
+@Getter @RequiredArgsConstructor public enum TeleportationItem {
     NONE("None"),
     INVENTORY("Inventory"),
     INVENTORY_NON_CONSUMABLE("Inventory (perm)"),
@@ -27,8 +25,7 @@ public enum TeleportationItem {
         return null;
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
         return type;
     }
 }

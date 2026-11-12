@@ -30,8 +30,7 @@ import static gps.WorldPointUtil.distanceBetween;
  * on the client thread (it reads live game state), so the worker bounces each refresh onto the client
  * thread and waits for it before running the search off-thread.
  */
-@Slf4j
-public class AlternativeRoutesService {
+@Slf4j public class AlternativeRoutesService {
     public static final int MAX_ROUTES = 10;
     // Absolute safety backstop on how many routes one generation may enumerate. "Poll more" grows the
     // live limit toward this; it exists only so a runaway query can't enumerate without bound, not as a
@@ -1075,8 +1074,7 @@ public class AlternativeRoutesService {
      * explored — for the benchmark report and for pinpointing slow searches (the aggregate GenTimer
      * numbers can't tell a few expensive searches from many cheap ones).
      */
-    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-    static final class SearchRecord {
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE) static final class SearchRecord {
         final String label;
         final long cpuMs;
         /** Total cost of the found path, -1 when the search produced none. */
@@ -1804,8 +1802,7 @@ public class AlternativeRoutesService {
      * A candidate route produced by one parallel seed search, before signature dedup on the
      * generation thread.
      */
-    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-    private static final class SeedResult {
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE) private static final class SeedResult {
         private final List<PathStep> path;
         private final MethodScan scan;
         private final int totalCost;
@@ -1971,8 +1968,7 @@ public class AlternativeRoutesService {
         return false;
     }
 
-    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-    private static final class MethodScan {
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE) private static final class MethodScan {
         private final List<TeleportMethod> methods;
         // Path index of the edge each method sits on (parallel to methods): the index of the step the
         // method arrives at. Authoritative for the directions overlay, which cannot re-derive methods

@@ -20,8 +20,7 @@ public class SplitFlagMap {
     private static final int WORDS_PER_PLANE = BITS_PER_PLANE / Long.SIZE;
     private static final int REGION_MASK = REGION_SIZE - 1;
 
-    @Getter
-    private static RegionExtent regionExtents;
+    @Getter private static RegionExtent regionExtents;
 
     private final byte[] regionMapPlaneCounts;
     // Every region's collision bits are packed into one shared word array instead of a separate
@@ -130,9 +129,7 @@ public class SplitFlagMap {
         return (regionX - regionExtents.getMinX()) + (regionY - regionExtents.getMinY()) * widthInclusive;
     }
 
-    @RequiredArgsConstructor
-    @Getter
-    public static class RegionExtent {
+    @RequiredArgsConstructor @Getter public static class RegionExtent {
         public final int minX, minY, maxX, maxY;
 
         public int getWidth() {

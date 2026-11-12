@@ -19,8 +19,7 @@ import net.runelite.client.config.ConfigManager;
  * bursts (login sync, docking), so a change only marks the banner dirty and the next game tick
  * rebuilds it at most once. Written on the client thread, read from the Swing thread.
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-final class BoatBannerService {
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE) final class BoatBannerService {
     /** RSProfile-scoped: owned boats' last seen berths, "name|port|hull" rows joined by ';'. */
     static final String CONFIG_KEY_BOAT_PORTS = "boatPorts";
 

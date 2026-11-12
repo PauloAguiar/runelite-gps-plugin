@@ -24,8 +24,7 @@ import static gps.WorldPointUtil.unpackWorldY;
  * resource dumped from the cache (destinations.tsv); fairy rings and spirit trees are added
  * from the live transport data because their world objects carry no name in the cache.
  */
-@Slf4j
-public final class Destinations {
+@Slf4j public final class Destinations {
     private static final String RESOURCE_PATH = "/destinations.tsv";
     // Hand-curated additions (agility courses, skilling spots) kept OUT of the machine-dumped
     // resource above, so regenerating the dump never erases them.
@@ -69,8 +68,7 @@ public final class Destinations {
         "bank", "altar", "spellbook_altar", "water", "furnace", "anvil", "range", "spinning_wheel", "pottery");
 
     /** A "nearest X" amenity category offered as a quick option: its id and its display label. */
-    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-    public static final class NearestOption {
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE) public static final class NearestOption {
         public final String id;
         public final String label;
 
@@ -268,8 +266,7 @@ public final class Destinations {
     private static final int MAX_WALKABLE_RING = 5;
 
     /** A template-only zone: destinations inside the box snap to the anchor tile. */
-    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-    static final class Remap {
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE) static final class Remap {
         final int minX;
         final int minY;
         final int maxX;

@@ -30,8 +30,7 @@ final class PluginMessageCodec {
     static final String DEFAULT_SOURCE = "another plugin";
 
     /** A parsed "path" request. */
-    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-    static final class PathRequest {
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE) static final class PathRequest {
         /** The packed start, or {@link WorldPointUtil#UNDEFINED} for "where the player stands". */
         final int start;
         /** The packed targets; empty means "keep the current destination". */
@@ -49,8 +48,7 @@ final class PluginMessageCodec {
     }
 
     /** The config override carried by the message, or an empty map when there is none. */
-    @SuppressWarnings("unchecked")
-    static Map<String, Object> configOverrideOf(Map<String, Object> data) {
+    @SuppressWarnings("unchecked") static Map<String, Object> configOverrideOf(Map<String, Object> data) {
         Object override = data.get(KEY_CONFIG_OVERRIDE);
         return override instanceof Map<?, ?> ? (Map<String, Object>) override : Map.of();
     }

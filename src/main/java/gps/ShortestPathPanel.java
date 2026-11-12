@@ -70,13 +70,11 @@ public class ShortestPathPanel extends PluginPanel {
      * the full route budget, so the overlay's route is the same with the panel open or hidden.
      * Opening it re-checks the auto-compute decision (a budget that grew meanwhile is widened).
      */
-    @Override
-    public void onActivate() {
+    @Override public void onActivate() {
         plugin.setAltPanelVisible(true);
     }
 
-    @Override
-    public void onDeactivate() {
+    @Override public void onDeactivate() {
         destinationSearch.hidePopup();
         plugin.setAltPanelVisible(false);
     }
@@ -89,8 +87,7 @@ public class ShortestPathPanel extends PluginPanel {
      * because RuneLite mounts their scroll pane, whose minimum is tiny. Report the same: a small
      * fixed height, and let the internal scroll areas absorb any shortage.
      */
-    @Override
-    public Dimension getMinimumSize() {
+    @Override public Dimension getMinimumSize() {
         return new Dimension(super.getMinimumSize().width, 100);
     }
 

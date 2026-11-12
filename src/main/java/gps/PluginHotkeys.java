@@ -25,8 +25,7 @@ final class PluginHotkeys {
         this.clearPath = hotkey(clearPathKey, onClearPath);
         this.focusSearch = hotkey(focusSearchKey, onFocusSearch);
         this.dismissArrival = new MouseAdapter() {
-            @Override
-            public MouseEvent mousePressed(MouseEvent event) {
+            @Override public MouseEvent mousePressed(MouseEvent event) {
                 if (dismissArrivalAt.test(event.getPoint()))
                     event.consume();
                 return event;
@@ -36,18 +35,15 @@ final class PluginHotkeys {
 
     private static KeyListener hotkey(Supplier<Keybind> key, Runnable action) {
         return new KeyListener() {
-            @Override
-            public void keyTyped(KeyEvent e) {
+            @Override public void keyTyped(KeyEvent e) {
             }
 
-            @Override
-            public void keyPressed(KeyEvent e) {
+            @Override public void keyPressed(KeyEvent e) {
                 if (key.get().matches(e))
                     action.run();
             }
 
-            @Override
-            public void keyReleased(KeyEvent e) {
+            @Override public void keyReleased(KeyEvent e) {
             }
         };
     }

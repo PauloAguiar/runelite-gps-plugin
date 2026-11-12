@@ -27,8 +27,7 @@ final class SpellbookOverlay extends Overlay {
         setPriority(PRIORITY_LOW);
     }
 
-    @Override
-    public Dimension render(Graphics2D graphics) {
+    @Override public Dimension render(Graphics2D graphics) {
         RouteItemCue cue = plugin.nextStepItems();
         if (cue == null || cue.spell == null || !plugin.display().highlightRouteItem)
             return null;

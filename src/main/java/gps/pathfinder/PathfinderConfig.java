@@ -23,8 +23,7 @@ import gps.transport.requirement.TransportItems;
 import static gps.WorldPointUtil.unpackWorldX;
 import static gps.WorldPointUtil.unpackWorldY;
 
-@SuppressWarnings("SameParameterValue")
-public class PathfinderConfig {
+@SuppressWarnings("SameParameterValue") public class PathfinderConfig {
     public static final List<Integer> RUNE_POUCHES = Arrays.asList(
         ItemID.BH_RUNE_POUCH, ItemID.BH_RUNE_POUCH_TROUVER,
         ItemID.DIVINE_RUNE_POUCH, ItemID.DIVINE_RUNE_POUCH_TROUVER
@@ -53,8 +52,7 @@ public class PathfinderConfig {
     // Flat list of every loaded transport. refreshTransports only ever iterates these (the origin
     // is re-derived from each transport), so the per-origin Set/HashMap/Integer-key map the loader
     // produces is flattened here and not retained (issue #491).
-    @Getter
-    private final Transport[] allTransports;
+    @Getter private final Transport[] allTransports;
     // Every data-level transport origin tile, availability-ignored: used to snap blocked
     // object-footprint targets (a Quest Helper cave tile) to the object's real entrance side.
     private final Set<Integer> transportOriginTiles = new HashSet<>();
@@ -80,16 +78,14 @@ public class PathfinderConfig {
     private final Map<Integer, String> itemNames = new HashMap<>();
     private final Map<Integer, Integer> varPlayerValues = new HashMap<>();
     // Not final: parallel-seed copies share the primary planning copy's (already refreshed) instance.
-    @Getter
-    private LeagueModeState leagueModeState = new LeagueModeState();
+    @Getter private LeagueModeState leagueModeState = new LeagueModeState();
     public ItemContainer bank = null;
     /**
      * Copy of the bank's items captured while the bank interface was open (ItemContainerChanged).
      * The live {@link #bank} container can be emptied by the client once the interface closes, which
      * also empties every reference to it — so bank-aware item checks fall back to this snapshot.
      */
-    @Getter
-    private Item[] bankSnapshot = null;
+    @Getter private Item[] bankSnapshot = null;
     public Set<String> availableSpiritTrees = null;
     /**
      * Bank tiles the player may use for path banking state (requirements satisfied). Rebuilt in {@link #refresh()}.
@@ -121,8 +117,7 @@ public class PathfinderConfig {
      * can tell "nothing changed" from a fresh object (plan step N4: the distance field is reused
      * across generations with the same inputs).
      */
-    @Getter
-    private long usableFingerprint;
+    @Getter private long usableFingerprint;
     /**
      * Planning copies: every method-type transport that structurally exists in the world (independent of
      * item possession, character unlocks, config toggles and the user's own exclusions), mapped to
@@ -130,24 +125,20 @@ public class PathfinderConfig {
      * {@link #refresh()}; drives the panel's full teleport-method catalog and its per-method availability
      * markers in every mode. Insertion-ordered so the catalog keeps a stable order.
      */
-    @Getter
-    private Map<TeleportMethod, MethodAvailability> methodAvailability = Collections.emptyMap();
+    @Getter private Map<TeleportMethod, MethodAvailability> methodAvailability = Collections.emptyMap();
     /**
      * The specific missing unlock behind each unavailable catalog method ("Requires 60 Mining",
      * "Requires quest: Enlightened Journey", "Missing item: Willow logs"), for the panel's status
      * tooltips. Computed on the client thread alongside {@link #methodAvailability}; a method with
      * no entry has nothing more specific to say than its status.
      */
-    @Getter
-    private Map<TeleportMethod, String> methodAvailabilityDetail = Collections.emptyMap();
+    @Getter private Map<TeleportMethod, String> methodAvailabilityDetail = Collections.emptyMap();
     /**
      * Reference that points to either allDestinations or filteredDestinations
      */
     private Map<String, Set<Integer>> destinations;
-    @Getter
-    private long calculationCutoffMillis;
-    @Getter
-    private boolean avoidWilderness;
+    @Getter private long calculationCutoffMillis;
+    @Getter private boolean avoidWilderness;
     // When off, farmable spirit trees are never routed (only the permanent ones); when on, the
     // travel-menu-detected planted set gates them (see isPlantedSpiritTreeBlocked).
     private boolean spiritTreeSmartMode;
@@ -176,8 +167,7 @@ public class PathfinderConfig {
     // again (they stack to a quarter). Rows carry the BASE fare; possession checks, bank
     // pickups and the "N gp fare" label all scale by this (capture 20260907-114507: the crew
     // charged half the row). 100 = no discount.
-    @Getter
-    private int charterFarePercent = 100;
+    @Getter private int charterFarePercent = 100;
 
 
     /** The percentage of a transport's listed coin fare the player actually pays (100 unless charter). */
@@ -220,15 +210,13 @@ public class PathfinderConfig {
     private final Map<Integer, Integer> balloonStoredLogs = new HashMap<>();
     // An axe stored at a canoe station (any station, shared by all; chat-tracked or set by hand) paddles
     // without one on the player (see CanoeAxeStorage).
-    @Getter
-    private boolean canoeAxeStored;
+    @Getter private boolean canoeAxeStored;
     /**
      * Extra search cost (in tiles) charged once when a path first detours through a bank to withdraw a
      * teleport item, so the pathfinder only banks when it saves more than this many tiles overall.
      * Applies wherever bank routing is enabled ({@link #isBankPathEnabled()}).
      */
-    @Getter
-    private int bankPickupCost;
+    @Getter private int bankPickupCost;
     /**
      * Floor for a non-negative bank pickup cost: one game tick. Entering the banked state is a
      * same-tile edge on every bank tile a path crosses; at a cost of 0 it TIES with staying
@@ -238,8 +226,7 @@ public class PathfinderConfig {
      * and is left alone.
      */
     public static final int MIN_BANK_PICKUP_COST = CostUnits.fromTicks(1);
-    @Getter
-    private boolean isOnSailingBoat;
+    @Getter private boolean isOnSailingBoat;
 
     /** Whether the player is aboard their boat (SAILING_BOARDED_BOAT, read at refresh). */
     public boolean isOnSailingBoat() {

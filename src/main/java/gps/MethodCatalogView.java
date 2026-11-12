@@ -43,8 +43,7 @@ import static gps.PanelWidgets.wrappedLabel;
  */
 final class MethodCatalogView {
     /** The funnel-filter options. */
-    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-    enum Filter {
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE) enum Filter {
         ALL("Show all methods", null, false),
         DISABLED("Disabled (excluded)", null, true),
         MISSING_ITEM("Missing an item", MethodAvailability.MISSING_ITEM, false),
@@ -78,8 +77,7 @@ final class MethodCatalogView {
     private JScrollPane rowsScroll;
     private final Set<String> expandedCategories = new HashSet<>();
     // Collapsed by default so the routes stay the focus; the user opens it to browse and toggle.
-    @Getter(AccessLevel.PACKAGE)
-    private boolean expanded;
+    @Getter(AccessLevel.PACKAGE) private boolean expanded;
     private Filter filter = Filter.ALL;
     // The inputs of the next build (see update).
     private List<TeleportMethod> catalog = List.of();
@@ -94,18 +92,15 @@ final class MethodCatalogView {
         search.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         search.setHoverBackgroundColor(ColorScheme.DARK_GRAY_HOVER_COLOR);
         search.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
+            @Override public void insertUpdate(DocumentEvent e) {
                 populateRows();
             }
 
-            @Override
-            public void removeUpdate(DocumentEvent e) {
+            @Override public void removeUpdate(DocumentEvent e) {
                 populateRows();
             }
 
-            @Override
-            public void changedUpdate(DocumentEvent e) {
+            @Override public void changedUpdate(DocumentEvent e) {
                 populateRows();
             }
         });
@@ -333,18 +328,15 @@ final class MethodCatalogView {
         funnel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         funnel.setToolTipText("Filter: " + filter.label + " (click to change)");
         funnel.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
+            @Override public void mousePressed(MouseEvent e) {
                 showFilterMenu(funnel);
             }
 
-            @Override
-            public void mouseEntered(MouseEvent e) {
+            @Override public void mouseEntered(MouseEvent e) {
                 funnel.setIcon(active ? RouteIcons.FILTER_ACTIVE_HOVER : RouteIcons.FILTER_HOVER);
             }
 
-            @Override
-            public void mouseExited(MouseEvent e) {
+            @Override public void mouseExited(MouseEvent e) {
                 funnel.setIcon(active ? RouteIcons.FILTER_ACTIVE : RouteIcons.FILTER);
             }
         });
@@ -480,8 +472,7 @@ final class MethodCatalogView {
         row.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         row.setToolTipText(open ? "Collapse" : "Expand to toggle individual methods");
         addClickRecursively(row, new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
+            @Override public void mouseClicked(MouseEvent e) {
                 toggleCategory(category);
             }
         });

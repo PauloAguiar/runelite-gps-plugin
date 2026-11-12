@@ -16,8 +16,7 @@ import gps.transport.Transport;
 public class WorldPointParser implements FieldParser<Integer> {
     private static final String DELIM_SPACE = " ";
 
-    @Override
-    public Integer parse(String value) {
+    @Override public Integer parse(String value) {
         if (value == null || value.isEmpty())
             return Transport.LOCATION_PERMUTATION;
         String trimmed = value.trim();

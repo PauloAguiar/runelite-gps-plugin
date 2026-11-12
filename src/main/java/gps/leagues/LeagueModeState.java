@@ -80,8 +80,7 @@ public class LeagueModeState {
             Map.entry(21, LeagueRegion.VARLAMORE));
     }
 
-    @Getter
-    private boolean seasonal;
+    @Getter private boolean seasonal;
 
     private Set<LeagueRegion> unlockedRegions = EnumSet.noneOf(LeagueRegion.class);
 

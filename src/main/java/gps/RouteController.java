@@ -19,9 +19,7 @@ import net.runelite.api.ItemContainer;
  * panel's route pick. The plugin supplies the client-bound facts (the player's tile, the tick,
  * the game state, the round-trip wish) and the collaborators.
  */
-@Slf4j
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-final class RouteController {
+@Slf4j @RequiredArgsConstructor(access = AccessLevel.PACKAGE) final class RouteController {
     private final ShortestPathPlugin plugin;
     private final RouteSession session;
     private final MethodExclusions exclusions;

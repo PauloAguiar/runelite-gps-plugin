@@ -3,8 +3,7 @@ package gps.pathfinder;
 import java.util.List;
 import lombok.Getter;
 
-@Getter
-public class PathfinderResult {
+@Getter public class PathfinderResult {
     private final int start;
     private final int target;
     private final boolean reached;

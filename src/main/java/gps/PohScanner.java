@@ -23,8 +23,7 @@ public final class PohScanner {
     }
 
     /** What a house scan found: the present 1:1 features, and the jewellery-box tier. */
-    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-    public static final class Detected {
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE) public static final class Detected {
         final boolean fairyRing;
         final boolean spiritTree;
         final boolean obelisk;

@@ -23,8 +23,7 @@ import gps.transport.parser.*;
  * single {@code int} values via
  * {@link WorldPointUtil#packWorldPoint(int, int, int)}.
  */
-@Slf4j
-public class Destination {
+@Slf4j public class Destination {
     private static final FieldParser<int[]> SKILL_PARSER = new SkillRequirementParser();
     private static final FieldParser<Set<Quest>> QUEST_PARSER = new QuestParser();
     private static final FieldParser<Set<VarRequirement>> VARBIT_PARSER = VarRequirementParser.forVarbits();

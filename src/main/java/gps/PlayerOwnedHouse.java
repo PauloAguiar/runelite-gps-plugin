@@ -120,23 +120,19 @@ public final class PlayerOwnedHouse {
     /** What the furniture detection reads from a loaded scene. */
     static PohDetectionService.Scene scene(WorldView worldView) {
         return new PohDetectionService.Scene() {
-            @Override
-            public boolean isHouse() {
+            @Override public boolean isHouse() {
                 return isHouseScene(worldView);
             }
 
-            @Override
-            public boolean isInstance() {
+            @Override public boolean isInstance() {
                 return worldView != null && worldView.isInstance();
             }
 
-            @Override
-            public String describeChunks() {
+            @Override public String describeChunks() {
                 return WorldPointUtil.describeInstanceChunks(worldView);
             }
 
-            @Override
-            public Set<Integer> objectIds() {
+            @Override public Set<Integer> objectIds() {
                 return sceneObjectIds(worldView);
             }
         };
@@ -168,28 +164,23 @@ public final class PlayerOwnedHouse {
     /** The house declarations a scan may raise: read from the config, written through {@code raise}. */
     static PohDetectionService.Declarations declarations(ShortestPathConfig config, BiConsumer<String, Object> raise) {
         return new PohDetectionService.Declarations() {
-            @Override
-            public boolean fairyRing() {
+            @Override public boolean fairyRing() {
                 return config.usePohFairyRing();
             }
 
-            @Override
-            public boolean spiritTree() {
+            @Override public boolean spiritTree() {
                 return config.usePohSpiritTree();
             }
 
-            @Override
-            public boolean obelisk() {
+            @Override public boolean obelisk() {
                 return config.usePohObelisk();
             }
 
-            @Override
-            public JewelleryBoxTier jewelleryBoxTier() {
+            @Override public JewelleryBoxTier jewelleryBoxTier() {
                 return config.pohJewelleryBoxTier();
             }
 
-            @Override
-            public void raise(String key, Object value) {
+            @Override public void raise(String key, Object value) {
                 raise.accept(key, value);
             }
         };

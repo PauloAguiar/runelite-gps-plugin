@@ -28,8 +28,7 @@ import gps.*;
  * accessible during the league regardless of unlocked areas.
  * </p>
  */
-@Slf4j
-public class LeagueRegionChecker {
+@Slf4j public class LeagueRegionChecker {
     private static final String RESOURCE_PATH = "/leagues/regions.tsv";
 
     private static volatile Map<Integer, LeagueRegion> regionsById;

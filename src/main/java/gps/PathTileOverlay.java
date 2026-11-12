@@ -52,8 +52,7 @@ public class PathTileOverlay extends Overlay {
     // stand tiles, each a "bank step", and the label would otherwise stack once per tile.
     private final Set<String> hintedPickups = new HashSet<>();
 
-    @Inject
-    public PathTileOverlay(Client client, ShortestPathPlugin plugin) {
+    @Inject public PathTileOverlay(Client client, ShortestPathPlugin plugin) {
         this.client = client;
         this.plugin = plugin;
         setPosition(OverlayPosition.DYNAMIC);
@@ -61,8 +60,7 @@ public class PathTileOverlay extends Overlay {
         setLayer(OverlayLayer.ABOVE_SCENE);
     }
 
-    @Override
-    public Dimension render(Graphics2D graphics) {
+    @Override public Dimension render(Graphics2D graphics) {
         tileLabelOffsets.clear();
         hintedDoorTiles.clear();
         hintedPickups.clear();

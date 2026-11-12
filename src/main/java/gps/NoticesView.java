@@ -39,8 +39,7 @@ final class NoticesView extends JPanel {
     }
 
     /** What the status banner says. */
-    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-    static final class Status {
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE) static final class Status {
         final String text;
         final Kind kind;
 
@@ -236,8 +235,7 @@ final class NoticesView extends JPanel {
         row.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         row.setToolTipText(hidden ? "Show the warnings" : "Hide the warnings (the count stays visible)");
         row.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
+            @Override public void mousePressed(MouseEvent e) {
                 plugin.setPanelConfig("hideWarningBanners", !hidden);
                 rerender.run();
             }
@@ -257,8 +255,7 @@ final class NoticesView extends JPanel {
         close.setBorder(new EmptyBorder(0, 4, 0, 2));
         close.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         close.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
+            @Override public void mousePressed(MouseEvent e) {
                 plugin.setPanelConfig(dismissedConfigKey, true);
             }
         });

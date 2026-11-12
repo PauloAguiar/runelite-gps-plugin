@@ -38,8 +38,7 @@ import gps.*;
  * type and is always enabled.</li>
  * </ul>
  */
-@Slf4j
-public class TransportTypeConfig {
+@Slf4j public class TransportTypeConfig {
     private final Map<TransportType, Boolean> enabledStates = new EnumMap<>(TransportType.class);
     /**
      * The toggles as configured, before {@link #disableUnless}/{@link #setEnabled} adjust the
@@ -50,8 +49,7 @@ public class TransportTypeConfig {
     private final Map<TransportType, Boolean> configEnabledStates = new EnumMap<>(TransportType.class);
     private final Map<TransportType, Integer> costThresholds = new EnumMap<>(TransportType.class);
     private final ShortestPathConfig config;
-    @Getter
-    private TeleportationItem teleportationItemSetting;
+    @Getter private TeleportationItem teleportationItemSetting;
 
     public TransportTypeConfig(ShortestPathConfig config) {
         this.config = config;

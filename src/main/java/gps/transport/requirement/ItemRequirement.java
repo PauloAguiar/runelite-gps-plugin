@@ -9,9 +9,7 @@ import lombok.Getter;
  * For example: AIR_RUNE=3 where AIR_RUNE can be substituted by DUST_RUNE,
  * SMOKE_RUNE, etc.
  */
-@Getter
-@EqualsAndHashCode
-public class ItemRequirement {
+@Getter @EqualsAndHashCode public class ItemRequirement {
     /**
      * The item IDs that satisfy this requirement (variations)
      */

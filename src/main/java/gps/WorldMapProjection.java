@@ -15,8 +15,7 @@ import net.runelite.api.worldmap.WorldMap;
  * world point it shows (the shift-click "Set GPS Target" on the world map). Client thread and
  * render thread both read the live widget; no widget means no projection.
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-final class WorldMapProjection {
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE) final class WorldMapProjection {
     /** The pixel result when the world map is not open. */
     static final int NONE = Integer.MIN_VALUE;
 

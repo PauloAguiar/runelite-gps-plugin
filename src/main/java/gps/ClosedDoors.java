@@ -29,8 +29,7 @@ import static gps.WorldPointUtil.unpackWorldY;
  * gated by a door on the crossed edge of either tile. Diagonal-wall doors (type 9) block the
  * whole tile, so any edge touching their tile matches.
  */
-@Slf4j
-public class ClosedDoors {
+@Slf4j public class ClosedDoors {
     private static final String RESOURCE_PATH = "/doors.tsv";
 
     private static final int ORIENTATION_WEST = 0;
@@ -56,8 +55,7 @@ public class ClosedDoors {
     private static final int BIT_SOUTH = 1 << 2;
     private static final int BIT_NORTH = 1 << 3;
 
-    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-    public static final class Door {
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE) public static final class Door {
         public final int id;
         public final String name;
         public final int packedPosition;

@@ -15,8 +15,7 @@ import gps.transport.requirement.TransportItems;
 /**
  * This class represents a travel point between two WorldPoints.
  */
-@Slf4j
-public class Transport {
+@Slf4j public class Transport {
     public static final int UNDEFINED_ORIGIN = WorldPointUtil.UNDEFINED;
     public static final int UNDEFINED_DESTINATION = WorldPointUtil.UNDEFINED;
     /**
@@ -34,8 +33,7 @@ public class Transport {
      * The skill levels, total level, combat level and quest points required to use
      * this transport. Defaults to {@link #NO_SKILLS} until real requirements are set.
      */
-    @Getter
-    private int[] skillLevels = NO_SKILLS;
+    @Getter private int[] skillLevels = NO_SKILLS;
     /**
      * Variable requirements (varbits and varplayers) for the transport to be valid.
      * All must pass.
@@ -43,18 +41,15 @@ public class Transport {
     // Defaults to a shared immutable empty set; only transports that actually declare var
     // requirements pay for a real Set. Most transports declare none, so this avoids ~one
     // HashSet (+ its HashMap) per transport (issue #491).
-    @Getter
-    private Set<VarRequirement> varRequirements = Collections.emptySet();
+    @Getter private Set<VarRequirement> varRequirements = Collections.emptySet();
     /**
      * The starting point of this transport
      */
-    @Getter
-    private int origin = UNDEFINED_ORIGIN;
+    @Getter private int origin = UNDEFINED_ORIGIN;
     /**
      * The ending point of this transport
      */
-    @Getter
-    private int destination = UNDEFINED_DESTINATION;
+    @Getter private int destination = UNDEFINED_DESTINATION;
 
     /**
      * Catalog identity of this row, computed once (plan step N3). Per-search availability rebuilds
@@ -82,51 +77,42 @@ public class Transport {
      * The quests required to use this transport
      */
     // Shared immutable empty set by default; see varRequirements above.
-    @Getter
-    private Set<Quest> quests = Collections.emptySet();
+    @Getter private Set<Quest> quests = Collections.emptySet();
     /**
      * The item requirements to use this transport
      */
-    @Getter
-    private TransportItems itemRequirements;
+    @Getter private TransportItems itemRequirements;
     /**
      * The type of transport
      */
-    @Getter
-    private TransportType type;
+    @Getter private TransportType type;
     /**
      * The travel waiting time in number of ticks
      */
-    @Getter
-    private int duration;
+    @Getter private int duration;
     /**
      * Info to display for this transport. For spirit trees, fairy rings,
      * and others, this is the destination option to pick.
      */
-    @Getter
-    private String displayInfo = null;
+    @Getter private String displayInfo = null;
     /**
      * If this is an item transport, this tracks if it is consumable (as opposed to
      * having infinite uses)
      */
-    @Getter
-    private boolean isConsumable = false;
+    @Getter private boolean isConsumable = false;
     /**
      * The maximum wilderness level that the transport can be used in
      */
-    @Getter
-    private int maxWildernessLevel = -1;
+    @Getter private int maxWildernessLevel = -1;
     /**
      * Object information for this transport
      */
-    @Getter
-    private String objectInfo = null;
+    @Getter private String objectInfo = null;
     /**
      * Advisory note shown to the player on the route step ("fire arrow needed", "can fail").
      * Purely informational — never gates the transport out of routing.
      */
-    @Getter
-    private String note = null;
+    @Getter private String note = null;
     /**
      * Per-transport seasonal-league region override. When set, the league-mode
      * region gate ({@code PathfinderConfig#isTransportRegionAllowed}) uses
@@ -136,8 +122,7 @@ public class Transport {
      * a different region (e.g. Trollheim Wilderness climb — destination chunk
      * is Wilderness, but the wiki lists the shortcut under Asgarnia).
      */
-    @Getter
-    private LeagueRegion regionOverride = null;
+    @Getter private LeagueRegion regionOverride = null;
 
     /**
      * Creates a new transport from an origin-only transport
@@ -295,8 +280,7 @@ public class Transport {
             quests = interner.internQuestSet(quests);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
         return ("(" +
             WorldPointUtil.unpackWorldX(origin) + ", " +
             WorldPointUtil.unpackWorldY(origin) + ", " +

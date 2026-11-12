@@ -91,8 +91,7 @@ public class PrimitiveIntHashMap<V> {
      * Visits every entry without allocating (unlike {@link #keys()}). The map must not be
      * modified during the visit.
      */
-    @SuppressWarnings("unchecked")
-    public void forEach(IntObjConsumer<? super V> consumer) {
+    @SuppressWarnings("unchecked") public void forEach(IntObjConsumer<? super V> consumer) {
         for (int i = 0; i < values.length; ++i) {
             if (values[i] != null)
                 consumer.accept(keys[i], (V) values[i]);
@@ -126,8 +125,7 @@ public class PrimitiveIntHashMap<V> {
      *
      * @return array of all keys in unspecified order; length equals {@link #size()}.
      */
-    @SuppressWarnings("unused")
-    public int[] keys() {
+    @SuppressWarnings("unused") public int[] keys() {
         int[] result = new int[size];
         int index = 0;
         for (int i = 0; i < values.length; ++i) {
@@ -154,8 +152,7 @@ public class PrimitiveIntHashMap<V> {
      * @param defaultValue value to return if the key is not present.
      * @return the mapped value, or {@code defaultValue} when absent.
      */
-    @SuppressWarnings("unchecked")
-    public V getOrDefault(int key, V defaultValue) {
+    @SuppressWarnings("unchecked") public V getOrDefault(int key, V defaultValue) {
         final int slot = findSlot(key);
         if (slot < 0)
             return defaultValue;
@@ -177,8 +174,7 @@ public class PrimitiveIntHashMap<V> {
      * entry.
      * @throws IllegalArgumentException if {@code value} is {@code null}.
      */
-    @SuppressWarnings({"unchecked"})
-    public <E> V put(int key, V value) {
+    @SuppressWarnings({"unchecked"}) public <E> V put(int key, V value) {
         if (value == null)
             throw new IllegalArgumentException("Cannot insert a null value");
 

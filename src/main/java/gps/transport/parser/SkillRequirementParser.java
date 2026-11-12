@@ -17,13 +17,11 @@ import net.runelite.api.Skill;
  * Special skills: "Total level", "Combat level", "Quest points"
  * </p>
  */
-@Slf4j
-public class SkillRequirementParser implements FieldParser<int[]> {
+@Slf4j public class SkillRequirementParser implements FieldParser<int[]> {
     private static final String DELIM_SPACE = " ";
     private static final String DELIM_MULTI = ";";
 
-    @Override
-    public int[] parse(String value) {
+    @Override public int[] parse(String value) {
         int[] skillLevels = new int[Skill.values().length + 3];
 
         if (value == null)

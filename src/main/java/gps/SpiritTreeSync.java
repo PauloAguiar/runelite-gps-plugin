@@ -20,8 +20,7 @@ import net.runelite.client.config.ConfigManager;
  * synced, and restored from that snapshot until the live menu is seen. The pathfinder config
  * holds the set (null = never synced: farmable trees are then treated conservatively).
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-final class SpiritTreeSync {
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE) final class SpiritTreeSync {
     /** RSProfile-scoped: the planted spirit trees detected from the travel menu, comma-separated. */
     static final String CONFIG_KEY_SPIRIT_TREES = "plantedSpiritTrees";
 
@@ -41,8 +40,7 @@ final class SpiritTreeSync {
     // Whether the travel menu has been parsed THIS session. Distinct from the set being non-null:
     // a restored snapshot fills the set but must not block the fresher live read when the menu
     // opens (a newly planted tree only shows up in the menu).
-    @Getter(AccessLevel.PACKAGE)
-    private boolean parsedLive;
+    @Getter(AccessLevel.PACKAGE) private boolean parsedLive;
 
     /** Whether the travel menu has been seen this session or restored, so the planted set is known. */
     boolean isSynced() {

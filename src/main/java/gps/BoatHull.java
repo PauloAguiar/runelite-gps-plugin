@@ -8,8 +8,7 @@ import lombok.RequiredArgsConstructor;
  * 2 (verified against a capture with all three owned). An unknown future tier maps to nothing
  * and the panel simply shows no type.
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public enum BoatHull {
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE) public enum BoatHull {
     RAFT(0, "Raft"),
     SKIFF(1, "Skiff"),
     SLOOP(2, "Sloop");

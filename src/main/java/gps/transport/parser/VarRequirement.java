@@ -17,9 +17,7 @@ import lombok.Getter;
  * classes which had identical logic.
  * </p>
  */
-@Getter
-@EqualsAndHashCode
-public class VarRequirement {
+@Getter @EqualsAndHashCode public class VarRequirement {
 
     private final VarType varType;
     private final int id;
@@ -128,8 +126,7 @@ public class VarRequirement {
         return varType == VarType.VARPLAYER;
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
         if (alternatives != null)
             return varType + "[any of " + alternatives + "]";
         return varType + "[" + id + " " + checkType.getCode() + " " + value + "]";

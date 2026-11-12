@@ -13,8 +13,7 @@ import lombok.extern.slf4j.Slf4j;
  * config value otherwise. Also the one place that knows which keys change what the routing
  * engine computes. Static, like the reads that consult it from the engine.
  */
-@Slf4j
-public final class ConfigOverrides {
+@Slf4j public final class ConfigOverrides {
     // Every config key the routing engine reads (PathfinderConfig.refresh / TransportTypeConfig):
     // a change to one of these regenerates the routes. RouteAffectingKeysTest scans the engine's
     // sources and fails when a key it reads is missing here; the pohMount*/sailing* toggles were

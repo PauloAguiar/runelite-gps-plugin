@@ -70,13 +70,11 @@ public class RouteDirectionsOverlay extends OverlayPanel {
     // It counts down as the player travels, grows again when backtracking or straying off the
     // path, and mid-ride transports are interpolated separately (see the riding branch).
     private RouteOption progressRoute;
-    @Getter(AccessLevel.PACKAGE)
-    private int reachedIndex;
+    @Getter(AccessLevel.PACKAGE) private int reachedIndex;
     // Remaining route time (ticks) from each path index, precomputed per route.
     private double[] remainingTicksAt;
     // The live remaining estimate chosen by the scoring pass.
-    @Getter(AccessLevel.PACKAGE)
-    private double liveRemainingTicks;
+    @Getter(AccessLevel.PACKAGE) private double liveRemainingTicks;
     // Distance from the player to the tile the scoring pass selected: 0 = standing on the
     // path. Arrival is only trusted at 0 — anything else may be proximity through a wall.
     private int lastSelectionDistance = Integer.MAX_VALUE;
@@ -102,8 +100,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
     private static final long SPEED_SAMPLE_MILLIS = 400;
     private long speedSampleAt;
     private int speedSamplePosition = WorldPointUtil.UNDEFINED;
-    @Getter(AccessLevel.PACKAGE)
-    private double speedTilesPerSecond;
+    @Getter(AccessLevel.PACKAGE) private double speedTilesPerSecond;
 
     // Arrival lingering: the plugin clears the target the moment the destination is reached, which
     // would vanish the panel mid-glance. When the route disappears right after progress was at the
@@ -111,8 +108,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
     // auto-dismiss timer runs out (when enabled).
     private static final long NEAR_END_GRACE_MILLIS = 4_000;
     private long nearEndAtMillis = Long.MIN_VALUE / 2;
-    @Getter
-    private boolean arrivalShowing;
+    @Getter private boolean arrivalShowing;
     private long arrivalUntilMillis;
     // Snapshots for the arrival panel — the plugin clears the target (and its source) the moment the
     // destination is reached, so they must be captured while the route is still alive. The journey
@@ -122,16 +118,14 @@ public class RouteDirectionsOverlay extends OverlayPanel {
 
     private static final Color ARRIVED = new Color(0x3C, 0xC8, 0x6A);
 
-    @Inject
-    public RouteDirectionsOverlay(Client client, ShortestPathPlugin plugin) {
+    @Inject public RouteDirectionsOverlay(Client client, ShortestPathPlugin plugin) {
         super(plugin);
         this.client = client;
         this.plugin = plugin;
         setPosition(OverlayPosition.TOP_LEFT);
     }
 
-    @Override
-    public Dimension render(Graphics2D graphics) {
+    @Override public Dimension render(Graphics2D graphics) {
         if (!plugin.display().showDirections)
             return null;
         // Override RuneLite's overlay transparency on request: the base OverlayPanel only
@@ -506,8 +500,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
      * One pending panel line: collected first so the panel can be sized to the widest line before
      * any component is built.
      */
-    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-    private static final class Line {
+    @RequiredArgsConstructor(access = AccessLevel.PRIVATE) private static final class Line {
         private final String left;
         private final Font font;
         private final Color colour;

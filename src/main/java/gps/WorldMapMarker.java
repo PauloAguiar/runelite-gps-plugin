@@ -15,8 +15,7 @@ import net.runelite.client.util.ImageUtil;
  * unless a one-shot override names the tile the set was expanded from (a searched bank booth
  * and its walkable surround still pins the booth). Clicking the pin jumps the map to it.
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-final class WorldMapMarker {
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE) final class WorldMapMarker {
     private static final BufferedImage IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
 
     // A supplier: the manager is injected into the plugin after field initialisation.

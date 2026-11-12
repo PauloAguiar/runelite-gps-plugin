@@ -3,8 +3,7 @@ package gps;
 import java.awt.Color;
 import net.runelite.client.config.*;
 
-@SuppressWarnings("SameReturnValue")
-@ConfigGroup(ShortestPathPlugin.CONFIG_GROUP)
+@SuppressWarnings("SameReturnValue") @ConfigGroup(ShortestPathPlugin.CONFIG_GROUP)
 public interface ShortestPathConfig extends Config {
     @ConfigSection(name = "Settings", position = 0,
         description = "Pathfinding options")
@@ -18,8 +17,7 @@ public interface ShortestPathConfig extends Config {
 
     @ConfigItem(keyName = "defaultRouteCount", name = "Routes per page", position = 1, section = sectionSettings,
         description = "Routes listed per search; each press of the panel's + adds this many more")
-    @Range(min = 1, max = 25)
-    default int defaultRouteCount() {
+    @Range(min = 1, max = 25) default int defaultRouteCount() {
         return 10;
     }
 
@@ -215,8 +213,7 @@ public interface ShortestPathConfig extends Config {
         return 2;
     }
 
-    @Units(value = Units.TICKS)
-    @Range(min = 1, max = 30)
+    @Units(value = Units.TICKS) @Range(min = 1, max = 30)
     @ConfigItem(keyName = "calculationCutoff", name = "Calculation cutoff", position = 33, section = sectionSettings,
         description = "Ticks without progress toward the target before a calculation stops")
     default int calculationCutoff() {
@@ -568,8 +565,7 @@ public interface ShortestPathConfig extends Config {
         return false;
     }
 
-    @Range(min = 0, max = 100)
-    @Units(Units.PERCENT)
+    @Range(min = 0, max = 100) @Units(Units.PERCENT)
     @ConfigItem(keyName = "overlayTransparency", name = "Overlay transparency", position = 77, section = sectionDisplay,
         description = "Overlay background transparency with the override on; 100% invisible, 0% solid, RuneLite's look is about 40%")
     default int overlayTransparency() {
@@ -600,8 +596,7 @@ public interface ShortestPathConfig extends Config {
         return false;
     }
 
-    @Range(min = 1, max = 300)
-    @Units(Units.SECONDS)
+    @Range(min = 1, max = 300) @Units(Units.SECONDS)
     @ConfigItem(keyName = "arrivalDismissSeconds", name = "Arrival dismiss delay", position = 80, section = sectionDisplay,
         description = "Seconds the Arrived panel lingers before it hides itself")
     default int arrivalDismissSeconds() {
@@ -612,43 +607,37 @@ public interface ShortestPathConfig extends Config {
         description = "Path, text and overlay colours")
     String sectionColours = "sectionColours";
 
-    @Alpha
-    @ConfigItem(keyName = "colourPath", name = "Path", position = 73, section = sectionColours,
+    @Alpha @ConfigItem(keyName = "colourPath", name = "Path", position = 73, section = sectionColours,
         description = "Path tiles on the world map, minimap and game scene")
     default Color colourPath() {
         return new Color(0, 255, 255);
     }
 
-    @Alpha
-    @ConfigItem(keyName = "colourPathSailing", name = "Sailing legs", position = 73, section = sectionColours,
+    @Alpha @ConfigItem(keyName = "colourPathSailing", name = "Sailing legs", position = 73, section = sectionColours,
         description = "Sailed legs on the world map; amber, the buoy colour, reads over both the ocean and the walking path")
     default Color colourPathSailing() {
         return new Color(255, 160, 0);
     }
 
-    @Alpha
-    @ConfigItem(keyName = "colourPathBlocked", name = "Blocked by door", position = 73, section = sectionColours,
+    @Alpha @ConfigItem(keyName = "colourPathBlocked", name = "Blocked by door", position = 73, section = sectionColours,
         description = "The path beyond a door not yet seen open")
     default Color colourPathBlocked() {
         return new Color(224, 62, 62);
     }
 
-    @Alpha
-    @ConfigItem(keyName = "colourPathCalculating", name = "Calculating", position = 74, section = sectionColours,
+    @Alpha @ConfigItem(keyName = "colourPathCalculating", name = "Calculating", position = 74, section = sectionColours,
         description = "Path tiles while a calculation runs, and unused targets when there are several")
     default Color colourPathCalculating() {
         return new Color(0, 0, 255);
     }
 
-    @Alpha
-    @ConfigItem(keyName = "colourPathUnreachable", name = "Unreachable", position = 75, section = sectionColours,
+    @Alpha @ConfigItem(keyName = "colourPathUnreachable", name = "Unreachable", position = 75, section = sectionColours,
         description = "Path tiles when the target is still out of reach after the calculation")
     default Color colourPathUnreachable() {
         return new Color(200, 40, 240);
     }
 
-    @Alpha
-    @ConfigItem(keyName = "colourText", name = "Text", position = 78, section = sectionColours,
+    @Alpha @ConfigItem(keyName = "colourText", name = "Text", position = 78, section = sectionColours,
         description = "Tile counter and fairy ring code text")
     default Color colourText() {
         return Color.WHITE;

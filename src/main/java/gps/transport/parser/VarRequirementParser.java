@@ -22,8 +22,7 @@ import lombok.extern.slf4j.Slf4j;
  * Example: {@code 1234=1;5678>10}
  * </p>
  */
-@Slf4j
-public class VarRequirementParser implements FieldParser<Set<VarRequirement>> {
+@Slf4j public class VarRequirementParser implements FieldParser<Set<VarRequirement>> {
     private static final String DELIM_MULTI = ";";
     /** Alternatives within a clause: any one holding satisfies it. */
     private static final String DELIM_OR = "||";
@@ -51,8 +50,7 @@ public class VarRequirementParser implements FieldParser<Set<VarRequirement>> {
         return new VarRequirementParser(VarRequirement.VarType.VARPLAYER);
     }
 
-    @Override
-    public Set<VarRequirement> parse(String value) {
+    @Override public Set<VarRequirement> parse(String value) {
         Set<VarRequirement> result = new HashSet<>();
         if (value == null || value.isEmpty())
             return result;

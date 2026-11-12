@@ -10,8 +10,7 @@ import gps.*;
 import gps.transport.parser.TransportRecord;
 import gps.transport.parser.TsvParser;
 
-@Slf4j
-public class TransportLoader {
+@Slf4j public class TransportLoader {
     private static final TsvParser tsvParser = new TsvParser();
 
     private static void addTransports(

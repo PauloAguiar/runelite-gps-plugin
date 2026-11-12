@@ -14,8 +14,7 @@ import net.runelite.api.Client;
  * vessels, harbour clutter). The offline map plans; the client corrects itself as scenes
  * reveal the truth.
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-final class SeaObstacleLearner {
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE) final class SeaObstacleLearner {
     static final int SCAN_PERIOD_TICKS = 10;
     // Scene border padding reads 0xFFFFFF (everything blocked); the first field harvest showed
     // the border bands dwarfing the actual galleon, so a 3-tile edge margin is skipped too.

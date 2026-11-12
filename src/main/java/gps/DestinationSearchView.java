@@ -172,8 +172,7 @@ final class DestinationSearchView extends JPanel {
         // "3221 3218", "3221,3218,1" and "3221, 3218 0" all parse; empty = current tile). Tab
         // moves between them, Enter saves from either, Esc closes.
         KeyAdapter escapeCloses = new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
+            @Override public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
                     favoriteEditor.setVisible(false);
             }
@@ -236,18 +235,15 @@ final class DestinationSearchView extends JPanel {
         searchField.setMaximumSize(new Dimension(Integer.MAX_VALUE, searchHeight));
         searchField.setAlignmentX(LEFT_ALIGNMENT);
         searchField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
+            @Override public void insertUpdate(DocumentEvent e) {
                 renderResults();
             }
 
-            @Override
-            public void removeUpdate(DocumentEvent e) {
+            @Override public void removeUpdate(DocumentEvent e) {
                 renderResults();
             }
 
-            @Override
-            public void changedUpdate(DocumentEvent e) {
+            @Override public void changedUpdate(DocumentEvent e) {
                 renderResults();
             }
         });
@@ -257,16 +253,14 @@ final class DestinationSearchView extends JPanel {
         if (inner == null)
             return;
         inner.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
+            @Override public void focusGained(FocusEvent e) {
                 renderResults();
             }
         });
         // Up/Down move the highlighted result, Enter picks it, Escape closes the popup, so a
         // destination can be chosen without leaving the keyboard.
         inner.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
+            @Override public void keyPressed(KeyEvent e) {
                 if (!popup.isVisible())
                     return;
                 switch (e.getKeyCode()) {
@@ -660,13 +654,11 @@ final class DestinationSearchView extends JPanel {
             row.add(verticallyCentered(east), BorderLayout.EAST);
 
         row.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
+            @Override public void mouseClicked(MouseEvent e) {
                 selectEntry(entry);
             }
 
-            @Override
-            public void mouseEntered(MouseEvent e) {
+            @Override public void mouseEntered(MouseEvent e) {
                 // Move the shared selection to the hovered row so keyboard and mouse agree.
                 selectedResult = resultRows.indexOf(row);
                 applySelectionHighlight();

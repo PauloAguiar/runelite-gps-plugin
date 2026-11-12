@@ -38,8 +38,7 @@ import net.runelite.client.util.LinkBrowser;
 
 import static gps.WorldPointUtil.fromLocalInstance;
 
-@Slf4j
-@SuppressWarnings("SameParameterValue")
+@Slf4j @SuppressWarnings("SameParameterValue")
 // configName is REQUIRED here: without it RuneLite keys the on/off state by the class's simple
 // name, and the original Shortest Path plugin's main class has the same one — the two plugins
 // were reading and writing each other's enabled state (a disabled Shortest Path read as enabled
@@ -54,35 +53,21 @@ public class ShortestPathPlugin extends Plugin {
     protected static final String CONFIG_GROUP = "gps";
 
     private final List<PendingTask> pendingTasks = new ArrayList<>(3);
-    @Getter
-    @Inject
-    private Client client;
-    @Getter
-    @Inject
-    private ClientThread clientThread;
-    @Inject
-    private ShortestPathConfig config;
-    @Inject
-    private ConfigManager configManager;
+    @Getter @Inject private Client client;
+    @Getter @Inject private ClientThread clientThread;
+    @Inject private ShortestPathConfig config;
+    @Inject private ConfigManager configManager;
     // The config items by key, from the ConfigManager's descriptor at start: the side panel builds its
     // controls from their names and descriptions (shipped code may not use reflection).
     private final Map<String, ConfigItem> configItems = new HashMap<>();
-    @Inject
-    private Gson gson;
-    @Inject
-    private EventBus eventBus;
-    @Inject
-    private OverlayManager overlayManager;
-    @Inject
-    private PathTileOverlay pathOverlay;
-    @Inject
-    private PathMinimapOverlay pathMinimapOverlay;
-    @Inject
-    private PathMapOverlay pathMapOverlay;
-    @Inject
-    private PathMapTooltipOverlay pathMapTooltipOverlay;
-    @Inject
-    private RouteDirectionsOverlay routeDirectionsOverlay;
+    @Inject private Gson gson;
+    @Inject private EventBus eventBus;
+    @Inject private OverlayManager overlayManager;
+    @Inject private PathTileOverlay pathOverlay;
+    @Inject private PathMinimapOverlay pathMinimapOverlay;
+    @Inject private PathMapOverlay pathMapOverlay;
+    @Inject private PathMapTooltipOverlay pathMapTooltipOverlay;
+    @Inject private RouteDirectionsOverlay routeDirectionsOverlay;
     // The next item step's highlight on the inventory, equipment and bank widgets.
     private RouteItemOverlay routeItemOverlay;
     private SpellbookOverlay spellbookOverlay;
@@ -90,27 +75,19 @@ public class ShortestPathPlugin extends Plugin {
     private int itemCueTick = -1;
     private Set<Integer> pickupIds = Set.of();
     private int pickupTick = -1;
-    @Inject
-    private SpriteManager spriteManager;
-    @Inject
-    private WorldMapPointManager worldMapPointManager;
-    @Inject
-    private KeyManager keyManager;
-    @Inject
-    private MouseManager mouseManager;
-    @Inject
-    private PluginManager pluginManager;
+    @Inject private SpriteManager spriteManager;
+    @Inject private WorldMapPointManager worldMapPointManager;
+    @Inject private KeyManager keyManager;
+    @Inject private MouseManager mouseManager;
+    @Inject private PluginManager pluginManager;
     // The Shortest Path conflict and the Quest Helper option (see CompanionPlugins); startup.
     private CompanionPlugins companions;
     // The plugin-message integration (see PluginMessageBridge). Supplier: the event bus is injected
     // after field initialisation.
     private final PluginMessageBridge messages = new PluginMessageBridge(this, () -> eventBus);
-    @Inject
-    private ClientToolbar clientToolbar;
+    @Inject private ClientToolbar clientToolbar;
     // Item images for the panel's Log storage icons.
-    @Inject
-    @Getter
-    private ItemManager itemManager;
+    @Inject @Getter private ItemManager itemManager;
     // Alternative-routes feature: panel, async route generator, the methods the user has excluded, the
     // generated routes, and which one is currently shown on the map.
     private ShortestPathPanel altPanel;
@@ -153,8 +130,7 @@ public class ShortestPathPlugin extends Plugin {
     private MinimapClip minimapClip;
     private GameState lastGameState = null;
     private GameState lastLastGameState = null;
-    @Getter
-    private PathfinderConfig pathfinderConfig;
+    @Getter private PathfinderConfig pathfinderConfig;
     // The journey wall-clock reported on arrival (see JourneyTracker): armed by a new destination
     // or a newly chosen path, started by the player's first action after that.
     private final JourneyTracker journey = new JourneyTracker();
@@ -178,13 +154,11 @@ public class ShortestPathPlugin extends Plugin {
     private SpiritTreeSync spiritTrees;
     private FairyRingHighlighter fairyRingLog;
 
-    @Provides
-    public ShortestPathConfig provideConfig(ConfigManager configManager) {
+    @Provides public ShortestPathConfig provideConfig(ConfigManager configManager) {
         return configManager.getConfig(ShortestPathConfig.class);
     }
 
-    @Override
-    protected void startUp() {
+    @Override protected void startUp() {
         for (ConfigItemDescriptor item : configManager.getConfigDescriptor(config).getItems())
             configItems.put(item.key(), item.getItem());
         ConfigOverrides.declareKeys(configItems.keySet());
@@ -268,8 +242,7 @@ public class ShortestPathPlugin extends Plugin {
         companions.refresh();
     }
 
-    @Override
-    protected void shutDown() {
+    @Override protected void shutDown() {
         if (bankSnapshots != null)
             bankSnapshots.persist();
         overlayManager.remove(pathOverlay);
@@ -419,8 +392,7 @@ public class ShortestPathPlugin extends Plugin {
         return RouteVerdicts.reachesTarget(route, destination.targets(), display.unreachableTargetDistance);
     }
 
-    @Subscribe
-    public void onConfigChanged(ConfigChanged event) {
+    @Subscribe public void onConfigChanged(ConfigChanged event) {
         // Quest Helper's own "Use Shortest Path plugin" toggle governs whether quest steps
         // reach GPS at all — flipping it shows/clears the panel's integration banner live.
         // Turning it ON re-arms a dismissed banner: the dismissal covered THIS off-period,
@@ -487,18 +459,15 @@ public class ShortestPathPlugin extends Plugin {
         return companions != null && companions.isQuestHelperPathingOff();
     }
 
-    @Subscribe
-    public void onPluginChanged(PluginChanged event) {
+    @Subscribe public void onPluginChanged(PluginChanged event) {
         companions.refresh();
     }
 
-    @Subscribe
-    public void onExternalPluginsChanged(ExternalPluginsChanged event) {
+    @Subscribe public void onExternalPluginsChanged(ExternalPluginsChanged event) {
         companions.refresh();
     }
 
-    @Subscribe
-    public void onGameStateChanged(GameStateChanged event) {
+    @Subscribe public void onGameStateChanged(GameStateChanged event) {
         sidebar.onGameState(event.getGameState());
 
         // Scene rebuild: the spawn-evidence set belongs to the old scene (LOADING fires before the
@@ -540,32 +509,27 @@ public class ShortestPathPlugin extends Plugin {
      * {@link LeagueModeState}, so we need a fresh
      * {@code PathfinderConfig.refresh()} pass after every hop.
      */
-    @Subscribe
-    public void onWorldChanged(WorldChanged event) {
+    @Subscribe public void onWorldChanged(WorldChanged event) {
         if (pathfinderConfig == null)
             return;
         pendingTasks.add(new PendingTask(client.getTickCount() + 1, pathfinderConfig::refresh));
     }
 
-    @Subscribe
-    public void onPluginMessage(PluginMessage event) {
+    @Subscribe public void onPluginMessage(PluginMessage event) {
         messages.receive(event);
     }
 
-    @Subscribe
-    public void onMenuOpened(MenuOpened event) {
+    @Subscribe public void onMenuOpened(MenuOpened event) {
         mapMenu.onMenuOpened();
     }
 
     /** The balloon log-storage counts, tracked from chat (see BalloonLogStorage.track). */
-    @Subscribe
-    public void onChatMessage(ChatMessage event) {
+    @Subscribe public void onChatMessage(ChatMessage event) {
         BalloonLogStorage.track(event.getType(), event.getMessage(), config, configManager, CONFIG_GROUP);
         CanoeAxeStorage.track(event.getType(), event.getMessage(), configManager, CONFIG_GROUP);
     }
 
-    @Subscribe
-    public void onGameTick(GameTick tick) {
+    @Subscribe public void onGameTick(GameTick tick) {
         // The tick as named steps (plan step L10), in the order they always ran.
         routes.refreshCatalogIfDue();
         cachePlayerLocation();
@@ -648,13 +612,11 @@ public class ShortestPathPlugin extends Plugin {
         }
     }
 
-    @Subscribe
-    public void onMenuEntryAdded(MenuEntryAdded event) {
+    @Subscribe public void onMenuEntryAdded(MenuEntryAdded event) {
         mapMenu.onMenuEntryAdded(event);
     }
 
-    @Subscribe
-    public void onItemContainerChanged(ItemContainerChanged event) {
+    @Subscribe public void onItemContainerChanged(ItemContainerChanged event) {
         if (event.getContainerId() == InventoryID.INV || event.getContainerId() == InventoryID.WORN) {
             itemsVersion++;
             // Only the routing-relevant slice of the items dirties the catalog (see RouteController.itemsChanged).
@@ -677,14 +639,12 @@ public class ShortestPathPlugin extends Plugin {
         }
     }
 
-    @Subscribe
-    public void onWidgetLoaded(WidgetLoaded event) {
+    @Subscribe public void onWidgetLoaded(WidgetLoaded event) {
         fairyRingLog.widgetLoaded(event.getGroupId(), hasPathTargets());
         spiritTrees.widgetLoaded(event.getGroupId());
     }
 
-    @Subscribe
-    public void onWidgetClosed(WidgetClosed event) {
+    @Subscribe public void onWidgetClosed(WidgetClosed event) {
         fairyRingLog.widgetClosed(event.getGroupId());
         // Bank closed: one regeneration per bank session, so items withdrawn or deposited are
         // reflected in the method availability (and the catalog counts) — recomputing on every
@@ -702,8 +662,7 @@ public class ShortestPathPlugin extends Plugin {
      * a fresh sync of each. Every piece is superseded by its live source the moment that source is
      * seen (bank opened, travel menu read, house entered).
      */
-    @Subscribe
-    public void onStatChanged(StatChanged event) {
+    @Subscribe public void onStatChanged(StatChanged event) {
         // A boost or drain across a level a transport asks for changes what is usable: re-read the
         // levels and reroute (a route planned at Agility 80 looped around the slayer dungeon's 81
         // Agility strange floors after a boost, 2026-10-20).
@@ -713,8 +672,7 @@ public class ShortestPathPlugin extends Plugin {
         }
     }
 
-    @Subscribe
-    public void onVarbitChanged(VarbitChanged event) {
+    @Subscribe public void onVarbitChanged(VarbitChanged event) {
         if (boatBannerService != null && boatBannerService.tracks(event.getVarbitId()))
             boatBannerService.markDirty();
         if (event.getVarbitId() == VarbitID.SPELLBOOK && pathfinderConfig != null) {
@@ -748,8 +706,7 @@ public class ShortestPathPlugin extends Plugin {
             SwingUtilities.invokeLater(altPanel::refreshConfigSections);
     }
 
-    @Subscribe
-    public void onPostClientTick(PostClientTick event) {
+    @Subscribe public void onPostClientTick(PostClientTick event) {
         fairyRingLog.onPostClientTick(hasPathTargets());
     }
 
@@ -1116,8 +1073,7 @@ public class ShortestPathPlugin extends Plugin {
      * A recognised piece of POH furniture spawning is unambiguous "we're inside a house" evidence
      * (see {@link PohScanner#isRecognised}), independent of any coordinate math.
      */
-    @Subscribe
-    public void onGameObjectSpawned(GameObjectSpawned event) {
+    @Subscribe public void onGameObjectSpawned(GameObjectSpawned event) {
         pohDetection.furnitureSpawned(event.getGameObject().getId());
     }
 

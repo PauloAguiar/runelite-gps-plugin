@@ -12,15 +12,13 @@ import lombok.*;
  * rune-sources.tsv names the staff and offhand (tome) families that stand in for it. Data rather
  * than code, so a new ornament kit is a row, not a release of logic.
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public final class ItemVariations {
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE) public final class ItemVariations {
     private static final Map<String, ItemVariations> FAMILIES = load();
     /** The one family code names directly: the fairy rings' staff, with its bank and withdraw hints. */
     public static final ItemVariations DRAMEN_STAFF = fromName("DRAMEN_STAFF");
 
     private final String name;
-    @Getter
-    private int[] ids = new int[0];
+    @Getter private int[] ids = new int[0];
     private ItemVariations staves;
     private ItemVariations offhands;
 
@@ -39,8 +37,7 @@ public final class ItemVariations {
         return family == null || family.offhands == null ? null : family.offhands.ids;
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
         return name;
     }
 

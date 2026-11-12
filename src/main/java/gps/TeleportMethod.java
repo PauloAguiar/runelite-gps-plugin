@@ -16,9 +16,7 @@ import gps.transport.Transport;
  * data files carry (e.g. "Varrock Teleport", "Ardougne cloak: Monastery", or a fairy-ring code), and
  * the packed {@code destination} disambiguates options that carry no display info.
  */
-@Getter
-@EqualsAndHashCode(of = {"type", "displayInfo", "destination"})
-public final class TeleportMethod {
+@Getter @EqualsAndHashCode(of = {"type", "displayInfo", "destination"}) public final class TeleportMethod {
     private final TransportType type;
     private final String displayInfo;
     private final int destination;
@@ -132,8 +130,7 @@ public final class TeleportMethod {
         return TransportTypePresentation.categoryOf(type);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
         return category() + ": " + label();
     }
 }

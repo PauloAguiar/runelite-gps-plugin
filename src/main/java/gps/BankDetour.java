@@ -13,8 +13,7 @@ import lombok.RequiredArgsConstructor;
  */
 final class BankDetour {
     /** A replaced destination: its targets, label, round-trip flag and world-map pin. */
-    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-    static final class Route {
+    @RequiredArgsConstructor(access = AccessLevel.PRIVATE) static final class Route {
         final Set<Integer> targets;
         final String source;
         final boolean roundTrip;

@@ -12,8 +12,7 @@ import gps.transport.Transport;
  * shortest path under the constraint that it uses a different set of teleport/transport methods than
  * the other routes in the same result list.
  */
-@Getter
-public final class RouteOption {
+@Getter public final class RouteOption {
     /**
      * The full tile path, as returned by the pathfinder.
      */

@@ -23,8 +23,7 @@ import net.runelite.client.util.Text;
  * "Arrived!" panel, and "Find closest" on a world-map icon whose kind GPS knows. A click hands
  * the pick to the plugin.
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-final class MapMenu {
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE) final class MapMenu {
     static final String CLEAR = "Clear";
     static final String DISMISS = "Dismiss";
     static final String ARRIVAL = ColorUtil.wrapWithColorTag("Arrival", JagexColors.MENU_TARGET);

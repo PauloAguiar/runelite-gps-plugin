@@ -23,14 +23,12 @@ import gps.transport.requirement.TransportItems;
  * Example: {@code DRAMEN_STAFF=1|LUNAR_STAFF=1} (need either)
  * </p>
  */
-@Slf4j
-public class ItemRequirementParser implements FieldParser<TransportItems> {
+@Slf4j public class ItemRequirementParser implements FieldParser<TransportItems> {
     private static final String DELIM_STATE = "=";
     private static final String DELIM_AND = "&";
     private static final String DELIM_OR = "|";
 
-    @Override
-    public TransportItems parse(String value) {
+    @Override public TransportItems parse(String value) {
         if (value == null || value.isEmpty())
             return null;
 

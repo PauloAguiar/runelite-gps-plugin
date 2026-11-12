@@ -8,8 +8,7 @@ import lombok.Getter;
  * Represents a single row from a TSV transport file.
  * Provides a clean interface to access field values by name.
  */
-@Getter
-public class TransportRecord {
+@Getter public class TransportRecord {
 
     /**
      * -- GETTER --

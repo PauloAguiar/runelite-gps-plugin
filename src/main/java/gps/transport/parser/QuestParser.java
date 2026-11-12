@@ -18,8 +18,7 @@ import net.runelite.api.Quest;
 public class QuestParser implements FieldParser<Set<Quest>> {
     private static final String DELIM_MULTI = ";";
 
-    @Override
-    public Set<Quest> parse(String value) {
+    @Override public Set<Quest> parse(String value) {
         Set<Quest> quests = new HashSet<>();
         if (value == null || value.isEmpty())
             return quests;

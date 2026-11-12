@@ -21,9 +21,7 @@ import net.runelite.client.RuneLite;
  * config, every non-zero varbit, and the last generation's timing). Triggered by the panel's
  * "Save debug snapshot" item; confirms via a game message. Built on the client thread.
  */
-@Slf4j
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-final class DebugSnapshot {
+@Slf4j @RequiredArgsConstructor(access = AccessLevel.PACKAGE) final class DebugSnapshot {
     private final ShortestPathPlugin plugin;
 
     /** Builds and writes the snapshot, CLIENT THREAD. Failures are logged, never thrown. */

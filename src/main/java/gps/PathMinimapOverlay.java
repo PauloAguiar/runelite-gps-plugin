@@ -21,8 +21,7 @@ public class PathMinimapOverlay extends Overlay {
     private final Client client;
     private final ShortestPathPlugin plugin;
 
-    @Inject
-    private PathMinimapOverlay(Client client, ShortestPathPlugin plugin) {
+    @Inject private PathMinimapOverlay(Client client, ShortestPathPlugin plugin) {
         this.client = client;
         this.plugin = plugin;
         setPosition(OverlayPosition.DYNAMIC);
@@ -43,8 +42,7 @@ public class PathMinimapOverlay extends Overlay {
         graphics.rotate(-angle, center.getX(), center.getY());
     }
 
-    @Override
-    public Dimension render(Graphics2D graphics) {
+    @Override public Dimension render(Graphics2D graphics) {
         if (!plugin.display().drawMinimap || !plugin.hasPathTargets())
             return null;
 

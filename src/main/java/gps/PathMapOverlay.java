@@ -24,8 +24,7 @@ public class PathMapOverlay extends Overlay {
     private final Client client;
     private final ShortestPathPlugin plugin;
 
-    @Inject
-    private PathMapOverlay(Client client, ShortestPathPlugin plugin) {
+    @Inject private PathMapOverlay(Client client, ShortestPathPlugin plugin) {
         this.client = client;
         this.plugin = plugin;
         setPosition(OverlayPosition.DYNAMIC);
@@ -34,8 +33,7 @@ public class PathMapOverlay extends Overlay {
         drawAfterLayer(InterfaceID.Worldmap.MAP_CONTAINER);
     }
 
-    @Override
-    public Dimension render(Graphics2D graphics) {
+    @Override public Dimension render(Graphics2D graphics) {
         if (!plugin.display().drawMap)
             return null;
 

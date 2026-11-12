@@ -15,8 +15,7 @@ import net.runelite.client.plugins.*;
  * off): enabled with the option off, it draws its own lines and GPS never hears about the step,
  * so the panel shows a dismissable banner.
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-final class CompanionPlugins {
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE) final class CompanionPlugins {
     static final String SHORTEST_PATH = "Shortest Path";
     static final String QUEST_HELPER = "Quest Helper";
 

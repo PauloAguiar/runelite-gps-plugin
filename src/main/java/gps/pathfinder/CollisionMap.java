@@ -8,8 +8,7 @@ import static gps.WorldPointUtil.unpackWorldPlane;
 import static gps.WorldPointUtil.unpackWorldX;
 import static gps.WorldPointUtil.unpackWorldY;
 
-@RequiredArgsConstructor
-public class CollisionMap {
+@RequiredArgsConstructor public class CollisionMap {
     // Enum.values() makes copies every time which hurts performance in the hotpath
     private static final OrdinalDirection[] ORDINAL_VALUES = OrdinalDirection.values();
 

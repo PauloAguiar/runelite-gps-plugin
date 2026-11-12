@@ -6,12 +6,10 @@ import lombok.Getter;
 import net.runelite.api.Skill;
 import gps.ShortestPathConfig;
 
-@Getter
-public enum TransportType {
+@Getter public enum TransportType {
     TRANSPORT("/transports/transports.tsv", null, null, "costTransports", ShortestPathConfig::costTransports),
     AGILITY_SHORTCUT("/transports/agility_shortcuts.tsv", "useAgilityShortcuts", null, "costAgilityShortcuts", ShortestPathConfig::costAgilityShortcuts) {
-            @Override
-            public TransportType refine(int[] skillLevels) {
+            @Override public TransportType refine(int[] skillLevels) {
                 if (skillLevels[Skill.RANGED.ordinal()] > 1 || skillLevels[Skill.STRENGTH.ordinal()] > 1)
                     return GRAPPLE_SHORTCUT;
                 return this;
@@ -31,24 +29,20 @@ public enum TransportType {
     MINECART("/transports/minecarts.tsv", "useMinecarts", null, "costMinecarts", ShortestPathConfig::costMinecarts),
     MOUNTAIN_GUIDE("/transports/mountain_guides.tsv", "useMountainGuides", null, "costMountainGuides", ShortestPathConfig::costMountainGuides),
     QUETZAL("/transports/quetzals.tsv", "useQuetzals", null, "costQuetzals", ShortestPathConfig::costQuetzals, 5) {
-            @Override
-            public TransportType sharesDestinationsWith() {
+            @Override public TransportType sharesDestinationsWith() {
                 return QUETZAL_WHISTLE;
             }
         },
     QUETZAL_WHISTLE("/transports/quetzal_whistle.tsv", "useQuetzals", null, "costQuetzalWhistle", ShortestPathConfig::costQuetzals) {
-            @Override
-            public boolean isTeleport() {
+            @Override public boolean isTeleport() {
                 return true;
             }
 
-            @Override
-            public TransportType sharesDestinationsWith() {
+            @Override public TransportType sharesDestinationsWith() {
                 return QUETZAL;
             }
 
-            @Override
-            public Function<ShortestPathConfig, Integer> differentialCostFunction() {
+            @Override public Function<ShortestPathConfig, Integer> differentialCostFunction() {
                 return ShortestPathConfig::costQuetzalWhistle;
             }
         },
@@ -56,23 +50,20 @@ public enum TransportType {
     SPIRIT_TREE("/transports/spirit_trees.tsv", "useSpiritTrees", ShortestPathConfig::useSpiritTrees, "costSpiritTrees", ShortestPathConfig::costSpiritTrees, 5),
     TELEPORTATION_BOX("/transports/teleportation_boxes.tsv", null, null, "costTeleportationBoxes", ShortestPathConfig::costTeleportationBoxes),
     TELEPORTATION_ITEM("/transports/teleportation_items.tsv", null, null, "costNonConsumableTeleportationItems", ShortestPathConfig::costNonConsumableTeleportationItems) {
-            @Override
-            public boolean isTeleport() {
+            @Override public boolean isTeleport() {
                 return true;
             }
         },
     TELEPORTATION_LEVER("/transports/teleportation_levers.tsv", "useTeleportationLevers", null, "costTeleportationLevers", ShortestPathConfig::costTeleportationLevers),
     TELEPORTATION_MINIGAME("/transports/teleportation_minigames.tsv", "useTeleportationMinigames", null, "costTeleportationMinigames", ShortestPathConfig::costTeleportationMinigames) {
-            @Override
-            public boolean isTeleport() {
+            @Override public boolean isTeleport() {
                 return true;
             }
         },
     TELEPORTATION_PORTAL("/transports/teleportation_portals.tsv", "useTeleportationPortals", null, "costTeleportationPortals", ShortestPathConfig::costTeleportationPortals),
     TELEPORTATION_PORTAL_POH("/transports/teleportation_portals_poh.tsv", "useTeleportationPortalsPoh", ShortestPathConfig::useTeleportationPortalsPoh, null, null),
     TELEPORTATION_SPELL("/transports/teleportation_spells.tsv", "useTeleportationSpells", null, "costTeleportationSpells", ShortestPathConfig::costTeleportationSpells) {
-            @Override
-            public boolean isTeleport() {
+            @Override public boolean isTeleport() {
                 return true;
             }
         },

@@ -25,8 +25,7 @@ public class Pathfinder implements Runnable {
     private final IntDeque boundary = new IntDeque(4096);
     private final IntMinHeap pending;
     // A* mode (heuristic attached): the ordering key is g + a consistent heuristic instead of g.
-    @Getter
-    private final boolean astar;
+    @Getter private final boolean astar;
     // Heap mode: every node goes through a cost-ordered queue and visited-marking moves from
     // enqueue to dequeue (the first DEQUEUE of a state is via its cheapest parent; the first
     // ENQUEUE isn't necessarily). Engaged whenever the ordering can be non-uniform: a heuristic is
@@ -293,8 +292,7 @@ public class Pathfinder implements Runnable {
         }
     }
 
-    @Override
-    public void run() {
+    @Override public void run() {
         stats.start();
         boundary.addFirst(graph.createStart(start));
 
@@ -436,8 +434,7 @@ public class Pathfinder implements Runnable {
     }
 
     public static class PathfinderStats {
-        @Getter
-        private int nodesChecked = 0, transportsChecked = 0;
+        @Getter private int nodesChecked = 0, transportsChecked = 0;
         private long startNanos, endNanos;
         private volatile boolean started = false, ended = false;
 
