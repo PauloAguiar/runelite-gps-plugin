@@ -114,7 +114,7 @@ import net.runelite.client.config.*;
     /** The inverse of {@link #encode}; old snapshots lack the hull, and rows without a name are dropped. */
     static List<String[]> decode(String raw) {
         List<String[]> rows = new ArrayList<>();
-        for (String row : raw.split(";")) {
+        for (var row : raw.split(";")) {
             String[] parts = row.split("\\|", 3);
             if (parts.length >= 2 && !parts[0].isEmpty()) {
                 rows.add(new String[]{parts[0], parts[1], parts.length > 2 ? parts[2] : ""});

@@ -70,7 +70,7 @@ final class RouteItemCue {
     private static Transport collect(Set<Transport> transports, boolean staffOnly, boolean fairyRingsNeedStaff,
         Map<Integer, Integer> carried, Set<Integer> ids, Set<Integer> wornDone) {
         Transport spell = null;
-        for (Transport transport : transports) {
+        for (var transport : transports) {
             TransportType type = transport.getType();
             if (type == FAIRY_RING) {
                 if (fairyRingsNeedStaff)
@@ -84,7 +84,7 @@ final class RouteItemCue {
             if (type == TELEPORTATION_SPELL) {
                 if (spell == null) spell = transport;
                 if (transport.getItemRequirements() != null)
-                    for (ItemRequirement req : transport.getItemRequirements().getRequirements())
+                    for (var req : transport.getItemRequirements().getRequirements())
                         if (req.getQuantity() > 0 && !held(carried, req.getItemIds(), req.getQuantity())) {
                             carriedOf(carried, req.getStaffIds(), ids, wornDone);
                             carriedOf(carried, req.getOffhandIds(), ids, wornDone);
@@ -94,7 +94,7 @@ final class RouteItemCue {
             if ((type != TELEPORTATION_ITEM && type != QUETZAL_WHISTLE
                 && type != TELEPORTATION_BOX) || transport.getItemRequirements() == null)
                 continue;
-            for (int[] variants : transport.getItemRequirements().getItems())
+            for (var variants : transport.getItemRequirements().getItems())
                 for (int id : variants) ids.add(id);
         }
         return spell;
@@ -148,9 +148,9 @@ final class RouteItemCue {
     /** Whether the item teleports only from the worn slot: none of its inventory options uses it. */
     static boolean wornOnly(String[] inventoryActions) {
         if (inventoryActions == null) return true;
-        for (String action : inventoryActions) {
+        for (var action : inventoryActions) {
             if (action == null) continue;
-            for (String verb : USE_VERBS)
+            for (var verb : USE_VERBS)
                 if (action.contains(verb)) return false;
         }
         return true;

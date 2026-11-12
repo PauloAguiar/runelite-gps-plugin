@@ -159,7 +159,7 @@ import static gps.transport.TransportType.*;
     private Map<TeleportMethod, MethodAvailability> notUsable(List<TeleportMethod> catalog) {
         Map<TeleportMethod, MethodAvailability> statuses = planningConfig.getMethodAvailability();
         Map<TeleportMethod, MethodAvailability> notUsable = new HashMap<>();
-        for (TeleportMethod method : catalog) {
+        for (var method : catalog) {
             MethodAvailability status = statuses.getOrDefault(method, MethodAvailability.AVAILABLE);
             if (status != MethodAvailability.AVAILABLE) notUsable.put(method, status);
         }
@@ -203,7 +203,7 @@ import static gps.transport.TransportType.*;
         Set<Integer> rawTargets = new HashSet<>(targets);
         Set<Integer> ends = new HashSet<>(targets);
         Map<String, Integer> chainTailCounts;
-        GenTimer timer = new GenTimer();
+        var timer = new GenTimer();
         long wallStart = clock.getAsLong();
 
         // A widened re-request for the SAME query ("+ more routes": limit/multiple grew, nothing else
@@ -330,7 +330,7 @@ import static gps.transport.TransportType.*;
             // properly" options ride alongside the teleport routes.
             if (planningConfig.isOnSailingBoat()) {
                 List<Transport> ports = new ArrayList<>();
-                for (Transport leg : seaLegs) {
+                for (var leg : seaLegs) {
                     if (leg.getOrigin() == start && leg.getDisplayInfo() != null && leg.getDisplayInfo().startsWith("Disembark"))
                         ports.add(leg);
                 }
@@ -340,7 +340,7 @@ import static gps.transport.TransportType.*;
             }
         }
 
-        Generation g = new Generation(gen, start, ends, userExclusions, mode, limit, costMultiple, roundTrip,
+        var g = new Generation(gen, start, ends, userExclusions, mode, limit, costMultiple, roundTrip,
             listener, timer, catalog, unavailable, seedCandidates, routes, seenSignatures);
         g.excluded = excluded;
         g.chainTailCounts = chainTailCounts;
@@ -380,8 +380,7 @@ import static gps.transport.TransportType.*;
         // The horizon matches the searches' sanity ceiling (2x the display band), so the fill region
         // past the band edge still gets exact heuristic guidance. Same inputs as the last
         // generation: the previous field is reused instead of flooded again (plan step N4).
-        FieldKey fieldKey = new FieldKey(planningConfig.getUsableFingerprint(), userExclusions,
-            extrasFingerprint(seaLegs), ends, costMultiple);
+        var fieldKey = new FieldKey(planningConfig.getUsableFingerprint(), userExclusions, extrasFingerprint(seaLegs), ends, costMultiple);
         boolean fieldReused = cachedField != null && fieldKey.sameInputs(cachedFieldKey, cachedField.horizon() == Integer.MAX_VALUE);
         DistanceField field;
         if (fieldReused) field = cachedField;
@@ -428,7 +427,7 @@ import static gps.transport.TransportType.*;
         // Live ceiling for the walk search: unbounded until the chain finds its (cheapest) route, then
         // dropped to that route's cost band so the walk stops flooding the map when walking is
         // uncompetitive — which is most queries, since a teleport route usually wins.
-        AtomicInteger walkCeiling = new AtomicInteger(Integer.MAX_VALUE);
+        var walkCeiling = new AtomicInteger(Integer.MAX_VALUE);
         if (resumed && !routes.isEmpty() && costMultiple > 0)
             // The best route is already known, so the walk search starts pre-capped at the (widened)
             // sanity ceiling instead of waiting for the chain's in-loop drop (which only fires on the
@@ -515,7 +514,7 @@ import static gps.transport.TransportType.*;
             // gets stronger exactly when the searches get expensive. Null field (map-wide target
             // sets) means uninformed, which those cheap searches don't need anyway.
             SearchHeuristic heuristic = SearchHeuristic.buildWithField(planningConfig, field, start);
-            Pathfinder pathfinder = new Pathfinder(planningConfig, start, ends, chainCap, heuristic);
+            var pathfinder = new Pathfinder(planningConfig, start, ends, chainCap, heuristic);
             pathfinder.run();
             long searchNanos = System.nanoTime() - searchStart;
             timer.searchNanos += searchNanos;
@@ -792,7 +791,7 @@ import static gps.transport.TransportType.*;
             // show them: a panel-hidden limit-1 generation would poison the full limit-10 resume,
             // silently dropping cheap routes (user capture: Quest-Helper target lost the 164 route).
             Set<String> shownSignatures = new HashSet<>();
-            for (RouteOption route : routes) shownSignatures.add(signature(route.getMethods()));
+            for (var route : routes) shownSignatures.add(signature(route.getMethods()));
             resumeState = new ResumeState(start, rawTargets, Set.copyOf(ends), Set.copyOf(userExclusions),
                 mode, limit, costMultiple, Set.copyOf(excluded), shownSignatures,
                 List.copyOf(routes), bestRemaining, catalog, unavailable, seedCandidates,
@@ -911,7 +910,7 @@ import static gps.transport.TransportType.*;
     /** Commutative content fingerprint of the synthesized sea legs (fresh objects every generation). */
     private static long extrasFingerprint(List<Transport> extras) {
         long fingerprint = 0;
-        for (Transport extra : extras) {
+        for (var extra : extras) {
             long key = ((long) extra.getOrigin() << 32) ^ (extra.getDestination() & 0xffffffffL);
             fingerprint += RoutingItemDependencies.mix64(key * 31 + extra.getDuration());
         }
@@ -1042,8 +1041,7 @@ import static gps.transport.TransportType.*;
         PathfinderResult result = pathfinder.getResult();
         Pathfinder.PathfinderStats stats = pathfinder.getStats();
         List<PathStep> path = result != null ? result.getPathSteps() : null;
-        SearchRecord searchRecord = new SearchRecord(label, searchNanos / 1_000_000,
-            (path != null && !path.isEmpty()) ? result.getTotalCost() : -1,
+        var searchRecord = new SearchRecord(label, searchNanos / 1_000_000, (path != null && !path.isEmpty()) ? result.getTotalCost() : -1,
             result != null && result.isReached(),
             (result != null && result.getTerminationReason() != null) ? result.getTerminationReason().name() : "NONE",
             stats != null ? stats.getNodesChecked() : -1,
@@ -1090,7 +1088,7 @@ import static gps.transport.TransportType.*;
      */
     private UnreachableCause unreachableCause(List<RouteOption> routes, int start, Set<Integer> ends, AlternativeRoutesMode mode) {
         if (routes.isEmpty() || ends.isEmpty()) return UnreachableCause.NONE;
-        for (RouteOption route : routes) {
+        for (var route : routes) {
             if (route.isReached()) return UnreachableCause.NONE;
         }
         if (mode == AlternativeRoutesMode.ALL_EVERYTHING) return UnreachableCause.NO_KNOWN_ROUTE;
@@ -1130,7 +1128,7 @@ import static gps.transport.TransportType.*;
         // Every global teleport is excluded from each seed search except the seed itself, so the
         // exclusion universe must span ALL candidates — including ones that don't get an attempt.
         Set<TeleportMethod> allSeedMethods = new HashSet<>();
-        for (Transport transport : seedCandidates) allSeedMethods.add(transport.method());
+        for (var transport : seedCandidates) allSeedMethods.add(transport.method());
 
         // A floor of attempts even when the chain filled every slot: the best-ranked seeds are the
         // safety net against a missed-cheap-route bug, and cost nearly nothing when they lose.
@@ -1143,7 +1141,7 @@ import static gps.transport.TransportType.*;
         // the promise that docking properly is always on the card.
         if (planningConfig.isOnSailingBoat()) {
             Transport nearestPort = null;
-            for (Transport candidate : seedCandidates) {
+            for (var candidate : seedCandidates) {
                 if (candidate.getDisplayInfo() != null && candidate.getDisplayInfo().startsWith("Disembark")
                     && (nearestPort == null || candidate.getDuration() < nearestPort.getDuration())) {
                     nearestPort = candidate;
@@ -1163,11 +1161,11 @@ import static gps.transport.TransportType.*;
         int workers = Math.min(SEED_POOL_SIZE, attempts.size());
         Queue<PathfinderConfig> configPool = new ConcurrentLinkedQueue<>();
         for (int i = 0; i < workers; i++) configPool.add(planningConfig.copyForParallelSearch());
-        AtomicBoolean stop = new AtomicBoolean(false);
+        var stop = new AtomicBoolean(false);
         String nearestPortRetained = nearestPortInfo;
         CompletionService<SeedResult> completion = new ExecutorCompletionService<>(seedExecutor);
         List<Future<SeedResult>> futures = new ArrayList<>(attempts.size());
-        for (Transport seed : attempts) {
+        for (var seed : attempts) {
             futures.add(completion.submit(() -> runSeedSearch(g, stop, allSeedMethods, seed,
                     nearestPortRetained != null && nearestPortRetained.equals(seed.getDisplayInfo()),
                     costCap, configPool)));
@@ -1190,7 +1188,7 @@ import static gps.transport.TransportType.*;
                 }
             }
             results.sort(Comparator.comparingInt((SeedResult r) -> r.totalCost).thenComparing(r -> signature(r.scan.methods)));
-            for (SeedResult seedResult : results) {
+            for (var seedResult : results) {
                 if (gen != generation.get()) break;
                 // Same hybrid acceptance as the chain: a seed beyond the page-fill ceiling isn't shown
                 // (skip, not stop — seeds complete in parallel, a later one can be cheaper). Checked
@@ -1255,7 +1253,7 @@ import static gps.transport.TransportType.*;
         }
         finally {
             stop.set(true);
-            for (Future<SeedResult> future : futures) future.cancel(false);
+            for (var future : futures) future.cancel(false);
         }
     }
 
@@ -1282,18 +1280,18 @@ import static gps.transport.TransportType.*;
         List<Transport> ranked = new ArrayList<>(seedCandidates);
         // Long arithmetic: a cross-plane landing has straight-line distance Integer.MAX_VALUE, which
         // must rank last rather than overflow into ranking first.
-        int[] targetArray = new int[targets.size()];
+        var targetArray = new int[targets.size()];
         int t = 0;
         for (int target : targets) targetArray[t++] = target;
         ranked.sort(Comparator.comparingLong(candidate -> (long) CostUnits.fromTicks(candidate.getDuration())
                 + distanceToNearest(candidate.getDestination(), targetArray)));
         Map<Integer, Transport> byDestination = new LinkedHashMap<>();
-        for (Transport transport : ranked) {
+        for (var transport : ranked) {
             if (userExclusions.contains(transport.method())) continue;
             byDestination.putIfAbsent(transport.getDestination(), transport);
         }
         List<Transport> attempts = new ArrayList<>(Math.max(0, Math.min(maxAttempts, byDestination.size())));
-        for (Transport seed : byDestination.values()) {
+        for (var seed : byDestination.values()) {
             if (attempts.size() >= maxAttempts) break;
             attempts.add(seed);
         }
@@ -1346,13 +1344,13 @@ import static gps.transport.TransportType.*;
         GenTimer timer = g.timer;
         // The dominant tail among the kept routes.
         Map<String, List<RouteOption>> byTail = new LinkedHashMap<>();
-        for (RouteOption route : routes) {
+        for (var route : routes) {
             String tail = tailSignature(route.getMethods());
             if (tail != null) byTail.computeIfAbsent(tail, k -> new ArrayList<>()).add(route);
         }
         String dominantTail = null;
         List<RouteOption> family = null;
-        for (Map.Entry<String, List<RouteOption>> entry : byTail.entrySet()) {
+        for (var entry : byTail.entrySet()) {
             if (family == null || entry.getValue().size() > family.size()) {
                 dominantTail = entry.getKey();
                 family = entry.getValue();
@@ -1363,7 +1361,7 @@ import static gps.transport.TransportType.*;
         List<TeleportMethod> sharedTail = family.get(0).getMethods();
         sharedTail = sharedTail.subList(1, sharedTail.size());
         int searches = 0;
-        for (TeleportMethod shared : sharedTail) {
+        for (var shared : sharedTail) {
             if (searches >= TAIL_DIVERSITY_SEARCHES || gen != generation.get()) break;
             if (userExclusions.contains(shared)) continue;
             searches++;
@@ -1374,7 +1372,7 @@ import static gps.transport.TransportType.*;
             config.rebuildAvailabilityWithExclusions(exclusions);
             long searchStart = System.nanoTime();
             SearchHeuristic heuristic = SearchHeuristic.buildWithField(config, field, start);
-            Pathfinder pathfinder = new Pathfinder(config, start, ends, costCap, heuristic);
+            var pathfinder = new Pathfinder(config, start, ends, costCap, heuristic);
             pathfinder.run();
             long searchEnd = System.nanoTime();
             synchronized (timer) {
@@ -1442,7 +1440,7 @@ import static gps.transport.TransportType.*;
             Set<TeleportMethod> effectiveExclusions = seedExclusions;
             if (portPromiseSeed) {
                 effectiveExclusions = new HashSet<>();
-                for (TeleportMethod method : seedExclusions) {
+                for (var method : seedExclusions) {
                     if (!method.getType().isTeleport()) effectiveExclusions.add(method);
                 }
             }
@@ -1453,7 +1451,7 @@ import static gps.transport.TransportType.*;
             // itself and the search's own optimal route uses it — strongly directed by
             // construction, and the walk-cost cap bounds any residue.
             SearchHeuristic heuristic = SearchHeuristic.buildWithField(config, field, start);
-            Pathfinder pathfinder = new Pathfinder(config, start, ends, costCap, heuristic);
+            var pathfinder = new Pathfinder(config, start, ends, costCap, heuristic);
             pathfinder.run();
             long searchEnd = System.nanoTime();
             synchronized (timer) {
@@ -1507,7 +1505,7 @@ import static gps.transport.TransportType.*;
         // With every method excluded the floor is effectively unbounded, so h is the raw field —
         // the walk search (the biggest disc of the generation) collapses to a corridor.
         SearchHeuristic heuristic = SearchHeuristic.buildWithField(config, field, start);
-        Pathfinder pathfinder = new Pathfinder(config, start, ends, Integer.MAX_VALUE, heuristic);
+        var pathfinder = new Pathfinder(config, start, ends, Integer.MAX_VALUE, heuristic);
         pathfinder.setDynamicCostCap(walkCeiling::get);
         pathfinder.run();
         long searchEnd = System.nanoTime();
@@ -1533,7 +1531,7 @@ import static gps.transport.TransportType.*;
             if (!(planningConfig.isOnSailingBoat() && isPureSail(scan.methods))) return null;
         }
         boolean reached = result.isReached();
-        RouteOption route = new RouteOption(withoutIdleBankFlip(path, scan), scan.methods, scan.methodEdges, scan.methodDurations,
+        var route = new RouteOption(withoutIdleBankFlip(path, scan), scan.methods, scan.methodEdges, scan.methodDurations,
             result.getTotalCost(), scan.rawCost, reached, scan.bankGated, scan.bankGatedTransports, scan.walkBefore, scan.trailingWalk);
         // Only a walk that actually reaches the target is a valid cost ceiling; a closest-tile
         // partial walk (island target) must not constrain teleport routes that can truly get there.
@@ -1573,12 +1571,12 @@ import static gps.transport.TransportType.*;
 
         List<RouteOption> merged = new ArrayList<>();
         Set<String> signatures = new HashSet<>();
-        for (RouteOption oneWay : oneWays) {
+        for (var oneWay : oneWays) {
             if (gen != generation.get()) return merged;
             List<PathStep> outPath = oneWay.getPath();
             int endpoint = outPath.get(outPath.size() - 1).getPackedPosition();
             long searchStart = System.nanoTime();
-            Pathfinder back = new Pathfinder(planningConfig, endpoint, home, Integer.MAX_VALUE, heuristic);
+            var back = new Pathfinder(planningConfig, endpoint, home, Integer.MAX_VALUE, heuristic);
             back.run();
             long searchNanos = System.nanoTime() - searchStart;
             synchronized (timer) {
@@ -1596,7 +1594,7 @@ import static gps.transport.TransportType.*;
             List<PathStep> fullPath = new ArrayList<>(outPath);
             // The return leg's cumulative costs continue from the outbound total, so the loop's
             // steps carry one monotone cost line (the overlay's ETA table reads it).
-            for (PathStep step : returnPath.subList(Math.min(1, returnPath.size()), returnPath.size())) {
+            for (var step : returnPath.subList(Math.min(1, returnPath.size()), returnPath.size())) {
                 fullPath.add(step.getCost() == PathStep.UNKNOWN_COST ? step
                     : new PathStep(step.getPackedPosition(), step.isBankVisited(), step.getCost() + oneWay.getTotalCost()));
             }
@@ -1732,7 +1730,7 @@ import static gps.transport.TransportType.*;
     private boolean refreshOnClientThread(PathfinderConfig target, Set<TeleportMethod> excluded,
         Set<Integer> endsToFilter, AlternativeRoutesMode mode) {
         Set<TeleportMethod> excludedSnapshot = new HashSet<>(excluded);
-        CountDownLatch latch = new CountDownLatch(1);
+        var latch = new CountDownLatch(1);
         clientThread.invokeLater(() -> {
             try {
                 target.setPlanningMode(mode == AlternativeRoutesMode.ALL_EVERYTHING);
@@ -1828,7 +1826,7 @@ import static gps.transport.TransportType.*;
     static List<PathStep> withoutIdleBankFlip(List<PathStep> path, MethodScan scan) {
         if (path == null || !scan.bankGated.isEmpty() || !scan.bankGatedTransports.isEmpty()) return path;
         boolean flipped = false;
-        for (PathStep step : path) {
+        for (var step : path) {
             if (step.isBankVisited()) {
                 flipped = true;
                 break;
@@ -1836,16 +1834,16 @@ import static gps.transport.TransportType.*;
         }
         if (!flipped) return path;
         List<PathStep> plain = new ArrayList<>(path.size());
-        for (PathStep step : path)
+        for (var step : path)
             plain.add(step.isBankVisited() ? new PathStep(step.getPackedPosition(), false, step.getCost()) : step);
         return plain;
     }
 
     private static boolean availableWithoutBank(PathfinderConfig config, int origin, Transport transport) {
-        for (Transport candidate : config.getTransportsPacked(false).getOrDefault(origin, TransportAvailability.EMPTY_TRANSPORTS)) {
+        for (var candidate : config.getTransportsPacked(false).getOrDefault(origin, TransportAvailability.EMPTY_TRANSPORTS)) {
             if (candidate == transport) return true;
         }
-        for (Transport candidate : config.getUsableTeleports(false)) {
+        for (var candidate : config.getUsableTeleports(false)) {
             if (candidate == transport) return true;
         }
         return false;
@@ -1896,7 +1894,7 @@ import static gps.transport.TransportType.*;
         Transport best = null;
         long bestCost = Long.MAX_VALUE;
         Transport[] atOrigin = config.getTransportsPacked(bankVisited).getOrDefault(origin, TransportAvailability.EMPTY_TRANSPORTS);
-        for (Transport transport : atOrigin) {
+        for (var transport : atOrigin) {
             if (transport.getDestination() == destination && (!methodsOnly || TeleportMethod.isMethodType(transport.getType())
                     // Sailing is not a CATALOG method, but its legs must appear in the route
                     // methods: the cards, and the sea-track edge detection in the overlay.
@@ -1905,7 +1903,7 @@ import static gps.transport.TransportType.*;
                 bestCost = searchEdgeCost(config, transport);
             }
         }
-        for (Transport transport : config.getUsableTeleports(bankVisited)) {
+        for (var transport : config.getUsableTeleports(bankVisited)) {
             if (transport.getDestination() == destination && (!methodsOnly || TeleportMethod.isMethodType(transport.getType())
                     // Sailing is not a CATALOG method, but its legs must appear in the route
                     // methods: the cards, and the sea-track edge detection in the overlay.
@@ -1945,7 +1943,7 @@ import static gps.transport.TransportType.*;
     /** Whether every method is a sailing leg (see RouteOption#isPureSail). */
     static boolean isPureSail(List<TeleportMethod> methods) {
         if (methods.isEmpty()) return false;
-        for (TeleportMethod method : methods) {
+        for (var method : methods) {
             if (method.getType() != SAILING) return false;
         }
         return true;
@@ -1960,7 +1958,7 @@ import static gps.transport.TransportType.*;
      */
     static List<Transport> teleportHopBaseline(PathfinderConfig config, Set<TeleportMethod> userExclusions) {
         List<Transport> baseline = new ArrayList<>();
-        for (Transport teleport : config.getUsableTeleports(false)) {
+        for (var teleport : config.getUsableTeleports(false)) {
             if (teleport.getType() != null && teleport.getType().sharesDestinationsWith() != null
                 && !userExclusions.contains(teleport.method())) {
                 baseline.add(teleport);
@@ -1974,7 +1972,7 @@ import static gps.transport.TransportType.*;
 
     private static String signature(List<TeleportMethod> methods) {
         if (methods.isEmpty()) return "<walk-only>";
-        StringBuilder sb = new StringBuilder();
+        var sb = new StringBuilder();
         // Parking-variant collapse (capture 233931): when a LATER method re-embarks under
         // the summon assumption, the boat gets summoned away from wherever the route just
         // disembarked — the parking port has zero lasting effect, and five routes differing

@@ -159,7 +159,7 @@ final class NoticesView extends JPanel {
             if (getComponentCount() > 0) add(verticalGap(4));
             add(warningToggleRow(warnings.size(), hidden));
             if (!hidden) {
-                for (JPanel warning : warnings) {
+                for (var warning : warnings) {
                     add(verticalGap(4));
                     add(warning);
                 }
@@ -200,11 +200,11 @@ final class NoticesView extends JPanel {
      * exist) or shows them again; the choice persists in config.
      */
     private JPanel warningToggleRow(int count, boolean hidden) {
-        JPanel row = new JPanel(new BorderLayout(6, 0));
+        var row = new JPanel(new BorderLayout(6, 0));
         row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         row.setBorder(new EmptyBorder(3, 8, 3, 8));
         row.setAlignmentX(Component.LEFT_ALIGNMENT);
-        JLabel label = new JLabel(count + (count == 1 ? " warning" : " warnings") + (hidden ? " hidden" : ""),
+        var label = new JLabel(count + (count == 1 ? " warning" : " warnings") + (hidden ? " hidden" : ""),
             RouteIcons.BANNER_WARNING, JLabel.LEFT);
         label.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
         label.setFont(FontManager.getRunescapeSmallFont());
@@ -227,7 +227,7 @@ final class NoticesView extends JPanel {
      * boolean config key and the next render drops the banner for good.
      */
     private JPanel withDismiss(JPanel banner, String dismissedConfigKey) {
-        JLabel close = new JLabel("✕");
+        var close = new JLabel("✕");
         close.setFont(FontManager.getRunescapeSmallFont());
         close.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
         close.setToolTipText("Dismiss permanently");
@@ -240,7 +240,7 @@ final class NoticesView extends JPanel {
         });
         // The x eats ~18px of the CENTER label's fixed HTML width: renarrow the text or its last
         // word clips under the button (screenshot report: 'plugin' became 'plu').
-        for (Component comp : banner.getComponents()) {
+        for (var comp : banner.getComponents()) {
             if (comp instanceof JLabel && ((JLabel) comp).getText() != null && ((JLabel) comp).getText().startsWith("<html>")) {
                 JLabel text = (JLabel) comp;
                 text.setText(text.getText().replace("width:" + BANNER_TEXT_WIDTH + "px", "width:" + (BANNER_TEXT_WIDTH - 18) + "px"));

@@ -47,7 +47,7 @@ final class SearchMatcher {
         String[] tokens = query.split("\\s+");
         String[] words = name.split("[^a-z0-9]+");
         int w = 0;
-        for (String token : tokens) {
+        for (var token : tokens) {
             boolean matched = false;
             while (w < words.length) {
                 if (words[w++].startsWith(token)) {

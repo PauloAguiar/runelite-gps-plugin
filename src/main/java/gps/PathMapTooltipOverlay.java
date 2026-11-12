@@ -75,7 +75,7 @@ public class PathMapTooltipOverlay extends Overlay {
         if (nextPoint != WorldPointUtil.UNDEFINED) {
             PathStep currentStep = path.get(pathIndex);
             PathStep nextStep = EdgeTransports.nextStep(path, pathIndex);
-            for (Transport transport : plugin.transportsForEdge(currentStep, nextStep)) {
+            for (var transport : plugin.transportsForEdge(currentStep, nextStep)) {
                 if (transport.getDisplayInfo() != null && !transport.getDisplayInfo().isEmpty()) {
                     String displayInfo = transport.getDisplayInfo();
                     // Check if this transport goes to POH - if so, look ahead to find the exit

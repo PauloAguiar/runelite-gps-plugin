@@ -38,7 +38,7 @@ import gps.transport.requirement.*;
             // Split by AND to get individual requirements
             String[] andParts = normalized.split(DELIM_AND);
 
-            for (String andPart : andParts) {
+            for (var andPart : andParts) {
                 ItemRequirement requirement = parseRequirement(andPart);
                 requirements.add(requirement);
             }
@@ -64,7 +64,7 @@ import gps.transport.requirement.*;
         List<int[]> offhandsList = new ArrayList<>();
         int maxQuantity = -1;
 
-        for (String orPart : orParts) {
+        for (var orPart : orParts) {
             String[] itemAndQuantity = orPart.split(DELIM_STATE);
             if (itemAndQuantity.length != 2) throw new NumberFormatException("Invalid format: " + part);
 

@@ -59,9 +59,9 @@ final class PanelWidgets {
      * staying left-aligned horizontally.
      */
     static JPanel verticallyCentered(Component content) {
-        JPanel wrap = new JPanel(new GridBagLayout());
+        var wrap = new JPanel(new GridBagLayout());
         wrap.setOpaque(false);
-        GridBagConstraints gbc = new GridBagConstraints();
+        var gbc = new GridBagConstraints();
         gbc.anchor = GridBagConstraints.WEST;
         wrap.add(content, gbc);
         return wrap;
@@ -97,7 +97,7 @@ final class PanelWidgets {
 
     /** The first JTextField inside a composite component (IconTextField hides its own). */
     static JTextField innerTextField(Container root) {
-        for (Component component : root.getComponents()) {
+        for (var component : root.getComponents()) {
             if (component instanceof JTextField) return (JTextField) component;
             if (component instanceof Container) {
                 JTextField inner = innerTextField((Container) component);
@@ -109,7 +109,7 @@ final class PanelWidgets {
 
     /** A small white section title with the sections' vertical rhythm. */
     static JLabel sectionLabel(String text) {
-        JLabel label = new JLabel(text);
+        var label = new JLabel(text);
         label.setFont(FontManager.getRunescapeSmallFont());
         label.setForeground(Color.WHITE);
         label.setBorder(new EmptyBorder(6, 0, 4, 0));
@@ -125,7 +125,7 @@ final class PanelWidgets {
 
     /** A small grey label wrapped at the method text width, top-aligned for two-line rows. */
     static JLabel wrappedLabel(String innerHtml) {
-        JLabel label = new JLabel("<html><body style='width:" + METHOD_TEXT_WIDTH + "px'>" + innerHtml + "</body></html>");
+        var label = new JLabel("<html><body style='width:" + METHOD_TEXT_WIDTH + "px'>" + innerHtml + "</body></html>");
         label.setFont(FontManager.getRunescapeSmallFont());
         label.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
         label.setVerticalAlignment(SwingConstants.TOP);
@@ -138,7 +138,7 @@ final class PanelWidgets {
      * them into odd positions and clips them at the card edge.
      */
     static JPanel noteRow(String innerHtml, String tooltip) {
-        JPanel row = new JPanel(new BorderLayout());
+        var row = new JPanel(new BorderLayout());
         row.setOpaque(false);
         JLabel text = wrappedLabel(innerHtml);
         if (tooltip != null) text.setToolTipText(tooltip);
@@ -153,7 +153,7 @@ final class PanelWidgets {
 
     /** A fixed-height spacer in the panel's background colour. */
     static Component verticalGap(int height) {
-        JPanel gap = new JPanel();
+        var gap = new JPanel();
         gap.setBackground(ColorScheme.DARK_GRAY_COLOR);
         gap.setMaximumSize(new Dimension(Integer.MAX_VALUE, height));
         gap.setPreferredSize(new Dimension(1, height));
@@ -163,7 +163,7 @@ final class PanelWidgets {
     /** A 9px rounded dot icon in {@code colour}. */
     static Icon dot(Color colour) {
         int s = 9;
-        BufferedImage image = new BufferedImage(s, s, BufferedImage.TYPE_INT_ARGB);
+        var image = new BufferedImage(s, s, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = image.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.setColor(colour);
@@ -217,7 +217,7 @@ final class PanelWidgets {
      * and warnings instead of loose labels.
      */
     static JPanel banner(Icon icon, String innerHtml, Color accent) {
-        JPanel banner = new JPanel(new BorderLayout(7, 0));
+        var banner = new JPanel(new BorderLayout(7, 0));
         banner.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         banner.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 3, 0, 0, accent),
             new EmptyBorder(5, 7, 5, 6)));
@@ -226,7 +226,7 @@ final class PanelWidgets {
         // The icon sits vertically centred against the (possibly multi-line) text.
         banner.add(verticallyCentered(new JLabel(icon)), BorderLayout.WEST);
 
-        JLabel text = new JLabel("<html><body style='width:" + BANNER_TEXT_WIDTH + "px'>" + innerHtml + "</body></html>");
+        var text = new JLabel("<html><body style='width:" + BANNER_TEXT_WIDTH + "px'>" + innerHtml + "</body></html>");
         text.setFont(FontManager.getRunescapeSmallFont());
         text.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
         banner.add(text, BorderLayout.CENTER);
@@ -254,25 +254,25 @@ final class PanelWidgets {
      */
     static JPanel sectionShell(String title, String tooltip, boolean expanded, Runnable toggle,
         String stateText, Color stateColor, boolean headline, Runnable afterToggle) {
-        JPanel section = new JPanel();
+        var section = new JPanel();
         section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
         section.setBackground(ColorScheme.DARK_GRAY_COLOR);
         section.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JPanel titleRow = new JPanel(new BorderLayout(5, 0));
+        var titleRow = new JPanel(new BorderLayout(5, 0));
         titleRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
         titleRow.setBorder(new EmptyBorder(0, 0, 4, 0));
         titleRow.setAlignmentX(Component.LEFT_ALIGNMENT);
         titleRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
         titleRow.add(control(new JLabel(expanded ? RouteIcons.CHEVRON_DOWN : RouteIcons.CHEVRON_RIGHT)), BorderLayout.WEST);
-        JLabel titleLabel = new JLabel(title);
+        var titleLabel = new JLabel(title);
         if (headline) {
             titleLabel.setFont(FontManager.getRunescapeBoldFont());
             titleLabel.setForeground(ColorScheme.BRAND_ORANGE);
         }
         else titleLabel.setForeground(Color.WHITE);
         titleRow.add(titleLabel, BorderLayout.CENTER);
-        JLabel state = new JLabel(stateText);
+        var state = new JLabel(stateText);
         state.setForeground(stateColor);
         titleRow.add(state, BorderLayout.EAST);
         titleRow.setToolTipText(tooltip);
@@ -352,9 +352,9 @@ final class PanelWidgets {
 
     /** Human list of method labels: "Fairy ring", or "Fairy ring and Cowbell amulet". */
     static String joinLabels(Set<TeleportMethod> methods) {
-        StringBuilder joined = new StringBuilder();
+        var joined = new StringBuilder();
         int i = 0;
-        for (TeleportMethod method : methods) {
+        for (var method : methods) {
             if (i > 0) joined.append(i == methods.size() - 1 ? " and " : ", ");
             joined.append(method.label());
             i++;
@@ -371,7 +371,7 @@ final class PanelWidgets {
         if (component instanceof IconActionLabel) return;
         component.addMouseListener(listener);
         if (component instanceof Container) {
-            for (Component child : ((Container) component).getComponents()) addClickRecursively(child, listener);
+            for (var child : ((Container) component).getComponents()) addClickRecursively(child, listener);
         }
     }
 
@@ -382,7 +382,7 @@ final class PanelWidgets {
      * exactly what is missing when it recorded one; the per-status wording is the fallback.
      */
     static JLabel statusMarker(ShortestPathPlugin plugin, MethodAvailability status, TeleportMethod method) {
-        JLabel label = new JLabel(status == MethodAvailability.IN_BANK ? RouteIcons.IN_BANK : RouteIcons.LOCKED);
+        var label = new JLabel(status == MethodAvailability.IN_BANK ? RouteIcons.IN_BANK : RouteIcons.LOCKED);
         String detail = plugin.methodUnavailabilityDetail(method);
         if (detail == null) label.setToolTipText(statusReason(status));
         else

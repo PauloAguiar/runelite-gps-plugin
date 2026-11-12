@@ -68,10 +68,10 @@ final class RouteListView extends JPanel {
         // tracks the viewport width: without that, HORIZONTAL_SCROLLBAR_NEVER still lays the view out
         // at its preferred width and CLIPS the overflow at the right edge (the "scrollbar eats the
         // cards" effect) instead of shrinking the rows to fit.
-        ScrollableBox listWrapper = new ScrollableBox(new BorderLayout());
+        var listWrapper = new ScrollableBox(new BorderLayout());
         listWrapper.setBackground(ColorScheme.DARK_GRAY_COLOR);
         listWrapper.add(listPanel, BorderLayout.NORTH);
-        JScrollPane scroll = new JScrollPane(listWrapper, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+        var scroll = new JScrollPane(listWrapper, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
             ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         scroll.setBorder(BorderFactory.createEmptyBorder());
         scroll.getVerticalScrollBar().setUnitIncrement(16);
@@ -133,7 +133,7 @@ final class RouteListView extends JPanel {
         if (routes.isEmpty()) return false;
         int min = Integer.MAX_VALUE;
         int max = 0;
-        for (RouteOption route : routes) {
+        for (var route : routes) {
             int cost = route.getTotalCost();
             min = Math.min(min, cost);
             max = Math.max(max, cost);
@@ -147,7 +147,7 @@ final class RouteListView extends JPanel {
      * more routes (green plus), refresh (blue) and clear (red). Tooltips explain each.
      */
     private JPanel header(int count, boolean calculating) {
-        JPanel section = new JPanel();
+        var section = new JPanel();
         section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
         section.setBackground(ColorScheme.DARK_GRAY_COLOR);
         // Extra top inset separates the routes header from the search controls and notes above it.
@@ -155,17 +155,17 @@ final class RouteListView extends JPanel {
         section.setAlignmentX(Component.LEFT_ALIGNMENT);
         section.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
-        JPanel titleRow = new JPanel(new BorderLayout(5, 0));
+        var titleRow = new JPanel(new BorderLayout(5, 0));
         titleRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
         titleRow.setAlignmentX(Component.LEFT_ALIGNMENT);
         titleRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
-        JLabel title = new JLabel(calculating && count == 0 ? "Routes" : "Routes (" + count + ")");
+        var title = new JLabel(calculating && count == 0 ? "Routes" : "Routes (" + count + ")");
         title.setFont(FontManager.getRunescapeBoldFont());
         title.setForeground(ColorScheme.BRAND_ORANGE);
         titleRow.add(title, BorderLayout.WEST);
         if (calculating) {
             boolean longer = searchingLongerRoutes(routes);
-            JLabel busy = new JLabel(longer ? "longer routes…" : "calculating…", RouteIcons.BANNER_BUSY, SwingConstants.LEADING);
+            var busy = new JLabel(longer ? "longer routes…" : "calculating…", RouteIcons.BANNER_BUSY, SwingConstants.LEADING);
             busy.setIconTextGap(4);
             busy.setFont(FontManager.getRunescapeSmallFont());
             busy.setForeground(Color.GRAY);
@@ -175,7 +175,7 @@ final class RouteListView extends JPanel {
         }
         section.add(titleRow);
 
-        JPanel controls = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 0));
+        var controls = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 0));
         controls.setBackground(ColorScheme.DARK_GRAY_COLOR);
         controls.setAlignmentX(Component.LEFT_ALIGNMENT);
         controls.setBorder(new EmptyBorder(6, 0, 0, 0));
@@ -194,7 +194,7 @@ final class RouteListView extends JPanel {
 
     /** A bordered, colour-icon control button (rollover swaps the icon; the panel lifts on hover). */
     private static JButton controlButton(ImageIcon icon, ImageIcon hover, String tooltip, Runnable action) {
-        JButton button = new JButton(icon);
+        var button = new JButton(icon);
         button.setRolloverIcon(hover);
         button.setFocusPainted(false);
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -216,7 +216,7 @@ final class RouteListView extends JPanel {
     }
 
     private JPanel card(int index, RouteOption route, boolean selected) {
-        JPanel card = new JPanel(new BorderLayout());
+        var card = new JPanel(new BorderLayout());
         // Selection reads as a filled state: slightly lighter card plus a 3px orange edge stripe,
         // instead of the old full orange outline. Children are non-opaque so one background rules.
         Color cardBg = selected ? ColorScheme.DARK_GRAY_HOVER_COLOR : ColorScheme.DARKER_GRAY_COLOR;
@@ -226,7 +226,7 @@ final class RouteListView extends JPanel {
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
-        JPanel topRow = new JPanel(new BorderLayout());
+        var topRow = new JPanel(new BorderLayout());
         topRow.setOpaque(false);
         // Left inset 4 (not the methods' 8): the pin glyph is centred in its 16px canvas while the
         // method dots start at their canvas edge, so the smaller inset lines the pin up with the
@@ -236,17 +236,17 @@ final class RouteListView extends JPanel {
         boolean reaches = plugin.routeReachesTarget(route);
         // Shown-on-map pin leads the card (orange when this route is the one drawn), then the
         // quiet rank chip, then the ETA, the decision-making number.
-        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEADING, 0, 0));
+        var left = new JPanel(new FlowLayout(FlowLayout.LEADING, 0, 0));
         left.setOpaque(false);
         // Pin and rank read as one unit (no gap); the clock and ETA sit a space apart.
-        JLabel rank = new JLabel(Integer.toString(index + 1), selected ? RouteIcons.SHOW_ACTIVE : RouteIcons.SHOW, SwingConstants.LEADING);
+        var rank = new JLabel(Integer.toString(index + 1), selected ? RouteIcons.SHOW_ACTIVE : RouteIcons.SHOW, SwingConstants.LEADING);
         rank.setIconTextGap(1);
         rank.setFont(FontManager.getRunescapeSmallFont());
         rank.setForeground(Color.GRAY);
         left.add(rank);
         // The ETA counts travel plus the bank detour; ordering additionally counts preference
         // modifiers (transport type, currency), so a route can be faster yet ranked lower.
-        JLabel eta = new JLabel(formatDuration(routeEtaSeconds(route)), RouteIcons.CLOCK, SwingConstants.LEADING);
+        var eta = new JLabel(formatDuration(routeEtaSeconds(route)), RouteIcons.CLOCK, SwingConstants.LEADING);
         eta.setIconTextGap(3);
         eta.setBorder(new EmptyBorder(0, 12, 0, 0));
         eta.setFont(FontManager.getRunescapeBoldFont());
@@ -262,7 +262,7 @@ final class RouteListView extends JPanel {
         // order is always ETA plus chip, nothing hidden. Green = ranks as if faster, red = slower.
         int adjustment = plugin.routeAdjustmentSeconds(route);
         if (adjustment != 0) {
-            JLabel priorityChip = new JLabel((adjustment > 0 ? "+" : "−") + Math.abs(adjustment) + "s");
+            var priorityChip = new JLabel((adjustment > 0 ? "+" : "−") + Math.abs(adjustment) + "s");
             priorityChip.setFont(FontManager.getRunescapeSmallFont());
             priorityChip.setBorder(new EmptyBorder(0, 4, 0, 0));
             priorityChip.setForeground(adjustment < 0 ? new Color(0x46C85A) : ColorScheme.PROGRESS_ERROR_COLOR);
@@ -271,18 +271,18 @@ final class RouteListView extends JPanel {
         }
         topRow.add(left, BorderLayout.WEST);
 
-        JPanel right = new JPanel(new FlowLayout(FlowLayout.TRAILING, 5, 0));
+        var right = new JPanel(new FlowLayout(FlowLayout.TRAILING, 5, 0));
         right.setOpaque(false);
         if (route.isViaBank()) {
             // The bank detour as a compact header chip; the coin glyph on the method row below
             // marks WHICH method the detour is for. The tooltip states WHAT gets withdrawn,
             // resolved on the CLIENT thread (item names come from getItemDefinition, which
             // asserts it; the EDT crash of 2026-08-15) and swapped in when ready.
-            JLabel bankChip = new JLabel(RouteIcons.IN_BANK);
+            var bankChip = new JLabel(RouteIcons.IN_BANK);
             // Connectors (a jungle bush, a dig) are bank-gated too but have no method row; the
             // placeholder names them by object so the chip never reads "for: <nothing>".
-            StringBuilder needs = new StringBuilder(joinLabels(route.getBankMethods()));
-            for (Transport connector : route.getBankTransports()) {
+            var needs = new StringBuilder(joinLabels(route.getBankMethods()));
+            for (var connector : route.getBankTransports()) {
                 String text = RouteDirections.objectText(connector);
                 if (text != null && needs.indexOf(text) < 0) needs.append(needs.length() == 0 ? "" : ", ").append(text);
             }
@@ -291,8 +291,8 @@ final class RouteListView extends JPanel {
             plugin.getClientThread().invokeLater(() -> {
                 List<String> pickups = RouteDirections.pickupLines(plugin, route);
                 if (!pickups.isEmpty()) {
-                    StringBuilder tip = new StringBuilder("<html>Withdraws at a bank:");
-                    for (String pickup : pickups) tip.append("<br>• <b>").append(escapeHtml(pickup)).append("</b>");
+                    var tip = new StringBuilder("<html>Withdraws at a bank:");
+                    for (var pickup : pickups) tip.append("<br>• <b>").append(escapeHtml(pickup)).append("</b>");
                     SwingUtilities.invokeLater(() -> bankChip.setToolTipText(tip.append("</html>").toString()));
                 }
             });
@@ -301,7 +301,7 @@ final class RouteListView extends JPanel {
         topRow.add(right, BorderLayout.EAST);
         card.add(topRow, BorderLayout.NORTH);
 
-        JPanel methods = new JPanel();
+        var methods = new JPanel();
         methods.setLayout(new BoxLayout(methods, BoxLayout.Y_AXIS));
         methods.setOpaque(false);
         methods.setBorder(new EmptyBorder(1, 8, 5, 5));
@@ -363,15 +363,15 @@ final class RouteListView extends JPanel {
     private static void addHoverListener(Component component, MouseAdapter hover) {
         component.addMouseListener(hover);
         if (component instanceof Container) {
-            for (Component child : ((Container) component).getComponents()) addHoverListener(child, hover);
+            for (var child : ((Container) component).getComponents()) addHoverListener(child, hover);
         }
     }
 
     /** The sailing twin of the walk row: sea-blue dot, total tiles sailed across the route. */
     private static JPanel sailRow(int tiles) {
-        JPanel row = new JPanel(new BorderLayout(5, 0));
+        var row = new JPanel(new BorderLayout(5, 0));
         row.setOpaque(false);
-        JLabel dot = new JLabel(dot(SAIL_DOT_COLOUR));
+        var dot = new JLabel(dot(SAIL_DOT_COLOUR));
         dot.setToolTipText("Sailing");
         row.add(verticallyCentered(dot), BorderLayout.WEST);
         JLabel text = wrappedLabel("Sail <font color='#9E9E9E'>" + tiles + " tiles</font>");
@@ -386,10 +386,10 @@ final class RouteListView extends JPanel {
      * category-dot column, then the step count.
      */
     private static JPanel walkRow(int steps) {
-        JPanel row = new JPanel(new BorderLayout(5, 0));
+        var row = new JPanel(new BorderLayout(5, 0));
         row.setOpaque(false);
 
-        JLabel dot = new JLabel(dot(WALK_DOT_COLOUR));
+        var dot = new JLabel(dot(WALK_DOT_COLOUR));
         dot.setToolTipText("Walking");
         row.add(verticallyCentered(dot), BorderLayout.WEST);
 
@@ -407,10 +407,10 @@ final class RouteListView extends JPanel {
      * reach the method go into the tooltip.
      */
     private JPanel methodRow(TeleportMethod method, RouteOption route, int walkBefore) {
-        JPanel row = new JPanel(new BorderLayout(5, 0));
+        var row = new JPanel(new BorderLayout(5, 0));
         row.setOpaque(false);
 
-        JLabel dot = new JLabel(methodDot(method));
+        var dot = new JLabel(methodDot(method));
         dot.setAlignmentY(Component.CENTER_ALIGNMENT);
         dot.setToolTipText(method.getType() == TELEPORTATION_ITEM
             ? (method.isConsumable() ? "Item (charged: consumes a charge or the item)" : "Item (permanent: reusable)") : method.category());
@@ -418,7 +418,7 @@ final class RouteListView extends JPanel {
         boolean bankGated = route.getBankMethods().contains(method);
         // The dot and any inline glyphs form a left-to-right box, centred against each other; the
         // whole box is then centred vertically against the (possibly two-line) label.
-        JPanel west = new JPanel();
+        var west = new JPanel();
         west.setLayout(new BoxLayout(west, BoxLayout.X_AXIS));
         west.setOpaque(false);
         west.add(dot);
@@ -426,14 +426,14 @@ final class RouteListView extends JPanel {
         // the overlay's fairy-ring step), so "C K S" reads as a fairy-ring code at a glance.
         String networkGlyph = method.getType() == FAIRY_RING ? "fairy_ring" : method.getType() == SPIRIT_TREE ? "spirit_tree" : null;
         if (networkGlyph != null) {
-            JLabel glyph = new JLabel(RouteIcons.destinationIcon(networkGlyph));
+            var glyph = new JLabel(RouteIcons.destinationIcon(networkGlyph));
             glyph.setAlignmentY(Component.CENTER_ALIGNMENT);
             glyph.setBorder(new EmptyBorder(0, 3, 0, 0));
             glyph.setToolTipText(method.category());
             west.add(glyph);
         }
         if (bankGated) {
-            JLabel bankMarker = new JLabel(RouteIcons.IN_BANK);
+            var bankMarker = new JLabel(RouteIcons.IN_BANK);
             bankMarker.setAlignmentY(Component.CENTER_ALIGNMENT);
             bankMarker.setBorder(new EmptyBorder(0, 3, 0, 0));
             // Client-thread resolution, same as the header chip: item names assert it.
@@ -471,13 +471,13 @@ final class RouteListView extends JPanel {
         // stays quiet), the stacked arrows when a preference is set. Hovering the row brightens
         // it; clicking opens the priority menu (prefer/avoid tiers; exclude at the bottom).
         MethodPriority cardTier = plugin.getMethodPriority(method);
-        IconActionLabel[] holder = new IconActionLabel[1];
+        var holder = new IconActionLabel[1];
         holder[0] = new IconActionLabel(cardTier == MethodPriority.NORMAL ? RouteIcons.PRIORITY_NEUTRAL_DIM : priorityRestIcon(cardTier),
             priorityHoverIcon(cardTier),
             "Priority: " + cardTier.label + ", click to change",
             () -> priorityMenu.accept(holder[0], method));
         IconActionLabel priority = holder[0];
-        JPanel actionWrap = new JPanel(new GridBagLayout());
+        var actionWrap = new JPanel(new GridBagLayout());
         actionWrap.setOpaque(false);
         actionWrap.setPreferredSize(new Dimension(CONTROL_SIZE, CONTROL_SIZE));
         actionWrap.add(control(priority));

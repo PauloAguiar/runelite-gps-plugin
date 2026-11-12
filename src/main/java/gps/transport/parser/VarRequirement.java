@@ -47,14 +47,14 @@ import lombok.Getter;
     public List<Integer> ids() {
         if (alternatives == null) return List.of(id);
         List<Integer> out = new ArrayList<>(alternatives.size());
-        for (VarRequirement clause : alternatives) out.add(clause.id);
+        for (var clause : alternatives) out.add(clause.id);
         return out;
     }
 
     /** Whether the requirement holds with the variables read through {@code lookup}. */
     public boolean checkWith(IntUnaryOperator lookup) {
         if (alternatives == null) return checkValue(lookup.applyAsInt(id));
-        for (VarRequirement clause : alternatives)
+        for (var clause : alternatives)
             if (clause.checkValue(lookup.applyAsInt(clause.id))) return true;
         return false;
     }
@@ -81,7 +81,7 @@ import lombok.Getter;
      */
     public boolean check(Map<Integer, Integer> values) {
         if (alternatives != null) {
-            for (VarRequirement clause : alternatives)
+            for (var clause : alternatives)
                 if (clause.check(values)) return true;
             return false;
         }

@@ -68,11 +68,11 @@ final class DestinationSearchView extends JPanel {
         setBorder(new EmptyBorder(10, 0, 0, 0));
 
         // Header: the section label plus the favourite-saving heart on the right.
-        JPanel header = new JPanel(new BorderLayout());
+        var header = new JPanel(new BorderLayout());
         header.setBackground(ColorScheme.DARK_GRAY_COLOR);
         header.setAlignmentX(LEFT_ALIGNMENT);
         header.add(sectionLabel("Go to a place"), BorderLayout.CENTER);
-        IconActionLabel saveFavorite = new IconActionLabel(RouteIcons.FAVORITE, RouteIcons.FAVORITE_HOVER,
+        var saveFavorite = new IconActionLabel(RouteIcons.FAVORITE, RouteIcons.FAVORITE_HOVER,
             "Save a favourite position with a label (your current tile, or any coordinates)",
             this::toggleFavoriteEditor);
         header.add(verticallyCentered(control(saveFavorite)), BorderLayout.EAST);
@@ -142,7 +142,7 @@ final class DestinationSearchView extends JPanel {
     static List<Destinations.Entry> rank(List<Destinations.Entry> pool, String query, int player) {
         List<Destinations.Entry> matches = new ArrayList<>();
         Map<Destinations.Entry, Integer> scores = new HashMap<>();
-        for (Destinations.Entry entry : pool) {
+        for (var entry : pool) {
             int score = SearchMatcher.score(entry.name, query);
             if (score > 0) {
                 matches.add(entry);
@@ -165,7 +165,7 @@ final class DestinationSearchView extends JPanel {
                 if (e.getKeyCode() == KeyEvent.VK_ESCAPE) favoriteEditor.setVisible(false);
             }
         };
-        for (JTextField field : new JTextField[]{favoriteLabelInput, favoritePositionInput}) {
+        for (var field : new JTextField[]{favoriteLabelInput, favoritePositionInput}) {
             field.setBackground(ColorScheme.DARKER_GRAY_COLOR);
             field.setForeground(Color.WHITE);
             field.setCaretColor(Color.WHITE);
@@ -176,11 +176,11 @@ final class DestinationSearchView extends JPanel {
         favoriteLabelInput.setToolTipText("The favourite's name, shown in search results");
         favoritePositionInput.setToolTipText("<html>Where it is: \"3221 3218\", \"3221,3218,1\" or"
             + " \"3221, 3218 0\".<br>Empty = your current tile.</html>");
-        JButton favoriteSave = new JButton("Save");
+        var favoriteSave = new JButton("Save");
         favoriteSave.setMargin(new Insets(2, 8, 2, 8));
         favoriteSave.setFont(FontManager.getRunescapeSmallFont());
         favoriteSave.addActionListener(e -> attemptSaveFavorite());
-        JPanel positionRow = new JPanel(new BorderLayout(4, 0));
+        var positionRow = new JPanel(new BorderLayout(4, 0));
         positionRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
         positionRow.add(favoritePositionInput, BorderLayout.CENTER);
         positionRow.add(favoriteSave, BorderLayout.EAST);
@@ -193,11 +193,11 @@ final class DestinationSearchView extends JPanel {
         favoriteEditor.setAlignmentX(LEFT_ALIGNMENT);
         favoriteError.setAlignmentX(LEFT_ALIGNMENT);
         // Title row: the section label plus a red cross to close (the heart also toggles, Esc too).
-        JPanel titleRow = new JPanel(new BorderLayout());
+        var titleRow = new JPanel(new BorderLayout());
         titleRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
         titleRow.setAlignmentX(LEFT_ALIGNMENT);
         titleRow.add(sectionLabel("Save a favourite"), BorderLayout.CENTER);
-        IconActionLabel close = new IconActionLabel(RouteIcons.CROSS_RED, RouteIcons.CROSS_RED_HOVER,
+        var close = new IconActionLabel(RouteIcons.CROSS_RED, RouteIcons.CROSS_RED_HOVER,
             "Close without saving", () -> favoriteEditor.setVisible(false));
         titleRow.add(verticallyCentered(control(close)), BorderLayout.EAST);
         titleRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, titleRow.getPreferredSize().height));
@@ -281,7 +281,7 @@ final class DestinationSearchView extends JPanel {
      * search box above, the section's primary control.
      */
     private JPanel buildNearestRow() {
-        JPanel row = new JPanel(new BorderLayout(4, 0));
+        var row = new JPanel(new BorderLayout(4, 0));
         row.setBackground(ColorScheme.DARK_GRAY_COLOR);
         row.setBorder(new EmptyBorder(4, 0, 0, 0));
         row.setAlignmentX(LEFT_ALIGNMENT);
@@ -292,7 +292,7 @@ final class DestinationSearchView extends JPanel {
         menuButton.addActionListener(e -> showNearestMenu(menuButton));
         row.add(menuButton, BorderLayout.CENTER);
 
-        JPanel quick = new JPanel(new FlowLayout(FlowLayout.LEADING, 4, 0));
+        var quick = new JPanel(new FlowLayout(FlowLayout.LEADING, 4, 0));
         quick.setBackground(ColorScheme.DARK_GRAY_COLOR);
         JButton bank = nearestQuickButton("bank");
         bankButton = bank;
@@ -320,7 +320,7 @@ final class DestinationSearchView extends JPanel {
 
     /** An icon-only quick button running one nearest-X option directly (tooltip names it). */
     private JButton nearestQuickButton(String optionId) {
-        for (Destinations.NearestOption option : Destinations.NEAREST_OPTIONS) {
+        for (var option : Destinations.NEAREST_OPTIONS) {
             if (option.id.equals(optionId)) {
                 JButton button = subtleButton(new JButton(RouteIcons.destinationIcon(option.id)));
                 button.setToolTipText("Nearest " + option.label.toLowerCase(Locale.ROOT));
@@ -338,11 +338,11 @@ final class DestinationSearchView extends JPanel {
     }
 
     private void showNearestMenu(JComponent anchor) {
-        JPopupMenu menu = new JPopupMenu();
+        var menu = new JPopupMenu();
         menu.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         menu.setBorder(BorderFactory.createLineBorder(ColorScheme.MEDIUM_GRAY_COLOR));
-        for (Destinations.NearestOption option : Destinations.NEAREST_OPTIONS) {
-            JMenuItem item = new JMenuItem(option.label, RouteIcons.destinationIcon(option.id));
+        for (var option : Destinations.NEAREST_OPTIONS) {
+            var item = new JMenuItem(option.label, RouteIcons.destinationIcon(option.id));
             item.setBackground(ColorScheme.DARKER_GRAY_COLOR);
             item.setForeground(Color.WHITE);
             item.setFont(FontManager.getRunescapeSmallFont());
@@ -380,11 +380,11 @@ final class DestinationSearchView extends JPanel {
             }
             if (!favorites.isEmpty()) {
                 results.add(resultsHeader("Favourites"));
-                for (Destinations.Entry entry : favorites) addResultRow(entry, player);
+                for (var entry : favorites) addResultRow(entry, player);
             }
             if (!history.isEmpty()) {
                 results.add(resultsHeader("Recent searches"));
-                for (Destinations.Entry entry : history) addResultRow(entry, player);
+                for (var entry : history) addResultRow(entry, player);
             }
             preselectFirstResult();
             showPopup();
@@ -418,9 +418,9 @@ final class DestinationSearchView extends JPanel {
         // their label.
         List<Destinations.Entry> pool = new ArrayList<>(plugin.getFavoriteDestinations());
         pool.addAll(index());
-        for (Destinations.Entry entry : rank(pool, query, player)) addResultRow(entry, player);
+        for (var entry : rank(pool, query, player)) addResultRow(entry, player);
         if (resultEntries.isEmpty()) {
-            JLabel none = new JLabel("No matching destination");
+            var none = new JLabel("No matching destination");
             none.setForeground(Color.GRAY);
             none.setFont(FontManager.getRunescapeSmallFont());
             none.setBorder(new EmptyBorder(2, 4, 2, 4));
@@ -440,7 +440,7 @@ final class DestinationSearchView extends JPanel {
 
     /** A small grey group header inside the results popup ("Favourites", "Recent searches"). */
     private static JLabel resultsHeader(String text) {
-        JLabel header = new JLabel(text);
+        var header = new JLabel(text);
         header.setForeground(Color.GRAY);
         header.setFont(FontManager.getRunescapeSmallFont());
         header.setBorder(new EmptyBorder(2, 4, 2, 4));
@@ -449,10 +449,10 @@ final class DestinationSearchView extends JPanel {
 
     /** A small captioned row for the favourite editor (caption west, component center). */
     private static JPanel favoriteFieldRow(String caption, Component component) {
-        JPanel row = new JPanel(new BorderLayout(6, 0));
+        var row = new JPanel(new BorderLayout(6, 0));
         row.setBackground(ColorScheme.DARK_GRAY_COLOR);
         row.setAlignmentX(LEFT_ALIGNMENT);
-        JLabel label = new JLabel(caption);
+        var label = new JLabel(caption);
         label.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
         label.setFont(FontManager.getRunescapeSmallFont());
         label.setPreferredSize(new Dimension(34, label.getPreferredSize().height));
@@ -556,7 +556,7 @@ final class DestinationSearchView extends JPanel {
      */
     private Destinations.Entry withTiles(Destinations.Entry entry) {
         if (entry.tiles.size() > 1 || entry.nearest != null) return entry;
-        for (Destinations.Entry indexed : index()) {
+        for (var indexed : index()) {
             if (indexed.tiles.size() > 1 && indexed.category.equals(entry.category) && indexed.name.equals(entry.name))
                 return indexed;
         }
@@ -579,22 +579,22 @@ final class DestinationSearchView extends JPanel {
     }
 
     private JPanel destinationRow(Destinations.Entry entry, int player) {
-        JPanel row = new JPanel(new BorderLayout(6, 0));
+        var row = new JPanel(new BorderLayout(6, 0));
         row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         row.setBorder(new EmptyBorder(3, 4, 3, 4));
         row.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        JLabel name = new JLabel(entry.name, RouteIcons.destinationIcon(entry.category), SwingConstants.LEADING);
+        var name = new JLabel(entry.name, RouteIcons.destinationIcon(entry.category), SwingConstants.LEADING);
         name.setIconTextGap(3);
         name.setForeground(Color.WHITE);
         name.setFont(FontManager.getRunescapeSmallFont());
         row.add(name, BorderLayout.CENTER);
 
-        JPanel east = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+        var east = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
         east.setOpaque(false);
         if (entry.nearest == null && entry.tiles.size() > 1) {
             // A named amenity: say which kind, since "Falador Bank" and "Falador" sit side by side.
-            JLabel chip = new JLabel(Destinations.categoryLabel(entry.category));
+            var chip = new JLabel(Destinations.categoryLabel(entry.category));
             chip.setForeground(Color.GRAY);
             chip.setFont(FontManager.getRunescapeSmallFont());
             east.add(chip);
@@ -602,7 +602,7 @@ final class DestinationSearchView extends JPanel {
         if (player != WorldPointUtil.UNDEFINED && entry.packedPosition != WorldPointUtil.UNDEFINED) {
             int distance = WorldPointUtil.distanceBetween(player, entry.packedPosition);
             if (distance != Integer.MAX_VALUE) {
-                JLabel dist = new JLabel(distance + " tiles");
+                var dist = new JLabel(distance + " tiles");
                 dist.setForeground(Color.GRAY);
                 dist.setFont(FontManager.getRunescapeSmallFont());
                 east.add(dist);

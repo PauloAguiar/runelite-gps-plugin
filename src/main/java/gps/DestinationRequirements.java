@@ -40,7 +40,7 @@ public final class DestinationRequirements {
     public static DestinationRequirements merge(DestinationRequirements a, DestinationRequirements b) {
         if (a == null || a.isEmpty()) return b != null ? b : EMPTY;
         if (b == null || b.isEmpty()) return a;
-        int[] skills = new int[Skill.values().length + 3];
+        var skills = new int[Skill.values().length + 3];
         for (int i = 0; i < skills.length; i++) skills[i] = Math.max(a.skillLevels[i], b.skillLevels[i]);
         Set<Quest> q = new HashSet<>(a.quests);
         q.addAll(b.quests);

@@ -68,12 +68,12 @@ public class PathTileOverlay extends Overlay {
 
         if (plugin.display().drawTiles && !plugin.getDisplayPath().isEmpty()) {
             Color pathColor = plugin.getPathColor();
-            Color color = new Color(pathColor.getRed(), pathColor.getGreen(), pathColor.getBlue(), pathColor.getAlpha() / 2);
-            Color blockedColor = new Color(plugin.display().colourPathBlocked.getRed(), plugin.display().colourPathBlocked.getGreen(),
+            var color = new Color(pathColor.getRed(), pathColor.getGreen(), pathColor.getBlue(), pathColor.getAlpha() / 2);
+            var blockedColor = new Color(plugin.display().colourPathBlocked.getRed(), plugin.display().colourPathBlocked.getGreen(),
                 plugin.display().colourPathBlocked.getBlue(),
                 plugin.display().colourPathBlocked.getAlpha() / 2);
             // The stretch the player has already covered is greyed out — the live part is what's ahead.
-            Color doneColor = new Color(0x80, 0x80, 0x80, pathColor.getAlpha() / 2);
+            var doneColor = new Color(0x80, 0x80, 0x80, pathColor.getAlpha() / 2);
 
             List<PathStep> path = plugin.getDisplayPath();
             // The path beyond the first door not yet seen open renders in the blocked colour: the
@@ -133,7 +133,7 @@ public class PathTileOverlay extends Overlay {
                             }
                         }
                         Color sail = plugin.getSailingPathColor();
-                        Color sailColor = new Color(sail.getRed(), sail.getGreen(), sail.getBlue(), sail.getAlpha() / 2);
+                        var sailColor = new Color(sail.getRed(), sail.getGreen(), sail.getBlue(), sail.getAlpha() / 2);
                         for (int s = 1; s < track.length; s++) {
                             Color segment = done || s <= sailedUpTo ? doneColor : (i >= blockedFrom ? blockedColor : sailColor);
                             drawLine(graphics, track[s - 1], track[s], segment, s == track.length - 1, 0, false);
@@ -200,7 +200,7 @@ public class PathTileOverlay extends Overlay {
         if (steps.isEmpty() || path.isEmpty()) return;
         int destinationIndex = path.size() - 1;
         Set<Integer> marked = new HashSet<>();
-        for (RouteDirections.Step step : steps) {
+        for (var step : steps) {
             int end = step.getEndIndex();
             if (end <= 0 || end >= destinationIndex) {
                 continue; // the destination gets the pulse, not a dot
@@ -268,17 +268,17 @@ public class PathTileOverlay extends Overlay {
         int window = Math.min(recalc + 1, BAND_WINDOW);
 
         // Path tiles near enough to be some window tile's nearest (within window of a tile within window).
-        int[] near = new int[path.size()];
+        var near = new int[path.size()];
         int nearCount = 0;
-        for (PathStep step : path) {
+        for (var step : path) {
             int p = step.getPackedPosition();
             if (unpackWorldPlane(p) == plane && distanceBetween(centre, p) <= 2 * window) near[nearCount++] = p;
         }
         if (nearCount > 0) {
-            Color warnFill = new Color(0xFF, 0xE0, 0x00, 70);
-            Color warnLine = new Color(0xFF, 0xE0, 0x00, 200);
-            Color recalcFill = new Color(0xFF, 0x3C, 0x3C, 70);
-            Color recalcLine = new Color(0xFF, 0x3C, 0x3C, 200);
+            var warnFill = new Color(0xFF, 0xE0, 0x00, 70);
+            var warnLine = new Color(0xFF, 0xE0, 0x00, 200);
+            var recalcFill = new Color(0xFF, 0x3C, 0x3C, 70);
+            var recalcLine = new Color(0xFF, 0x3C, 0x3C, 200);
             for (int dx = -window; dx <= window; dx++) {
                 for (int dy = -window; dy <= window; dy++) {
                     int tile = WorldPointUtil.packWorldPoint(cx + dx, cy + dy, plane);
@@ -326,8 +326,8 @@ public class PathTileOverlay extends Overlay {
      * the arrival check tests membership of — standing on any tinted tile completes the journey.
      */
     private void drawArrivalTiles(Graphics2D graphics) {
-        Color fill = new Color(0x3C, 0xC8, 0x6A, 60);
-        Color outline = new Color(0x3C, 0xC8, 0x6A, 170);
+        var fill = new Color(0x3C, 0xC8, 0x6A, 60);
+        var outline = new Color(0x3C, 0xC8, 0x6A, 170);
         for (int tile : plugin.getArrivalTiles()) highlightWorldTile(graphics, tile, fill, outline);
     }
 
@@ -410,7 +410,7 @@ public class PathTileOverlay extends Overlay {
 
         if (p1 == null || p2 == null) return;
 
-        Line2D.Double line = new Line2D.Double(p1.getX(), p1.getY(), p2.getX(), p2.getY());
+        var line = new Line2D.Double(p1.getX(), p1.getY(), p2.getX(), p2.getY());
 
         graphics.setColor(color);
         if (jump)
@@ -567,7 +567,7 @@ public class PathTileOverlay extends Overlay {
             // Find the display name of the teleport that brought us to POH using bank-aware
             // lookup
             String text = null;
-            for (Transport transport : candidateTransports) {
+            for (var transport : candidateTransports) {
                 text = transport.getDisplayInfo();
                 if (text != null && !text.isEmpty()) break;
             }
@@ -615,7 +615,7 @@ public class PathTileOverlay extends Overlay {
 
         // Only show transports the player can currently use; fall back to all if none are usable.
         List<Transport> usableTransports = new ArrayList<>();
-        for (Transport t : candidateTransports) {
+        for (var t : candidateTransports) {
             if (BankPickupRequirements.transportSatisfiedBy(t, playerHas, plugin.getPathfinderConfig().farePercent(t)))
                 usableTransports.add(t);
         }
@@ -624,7 +624,7 @@ public class PathTileOverlay extends Overlay {
         // Teleports ("use this item/spell") get a pulsing highlight on the tile you cast from, drawn
         // once for the edge even if several teleport options share it.
         boolean teleportEdge = false;
-        for (Transport transport : transportsToShow) {
+        for (var transport : transportsToShow) {
             if (transport.getType() != null && transport.getType().isTeleport()) {
                 teleportEdge = true;
                 break;
@@ -636,7 +636,7 @@ public class PathTileOverlay extends Overlay {
         if (teleportEdge && plugin.display().showTeleportPulse) drawTeleportPulse(graphics, location);
 
         Set<String> shownTexts = new HashSet<>();
-        for (Transport transport : transportsToShow) {
+        for (var transport : transportsToShow) {
             String text = transport.getDisplayInfo();
             if (text == null || text.isEmpty()) {
                 // Stairs, ladders, agility shortcuts and other object transports have no display

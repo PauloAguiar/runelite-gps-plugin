@@ -22,14 +22,14 @@ import net.runelite.api.*;
     private static final String DELIM_MULTI = ";";
 
     @Override public int[] parse(String value) {
-        int[] skillLevels = new int[Skill.values().length + 3];
+        var skillLevels = new int[Skill.values().length + 3];
 
         if (value == null) return skillLevels;
 
         String[] skillRequirements = value.split(DELIM_MULTI);
 
         try {
-            for (String requirement : skillRequirements) {
+            for (var requirement : skillRequirements) {
                 if (requirement.isEmpty()) continue;
                 String[] levelAndSkill = requirement.split(DELIM_SPACE);
                 if (levelAndSkill.length != 2) {

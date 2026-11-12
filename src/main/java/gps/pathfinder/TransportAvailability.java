@@ -48,7 +48,7 @@ public final class TransportAvailability {
      * re-grouping every usable transport (which allocated ~4 MB per search).
      */
     public TransportAvailability filtered(Set<TeleportMethod> excluded, List<Transport> extras) {
-        Copy copy = new Copy();
+        var copy = new Copy();
         if (!excluded.isEmpty()) {
             transportsPacked.forEach((origin, transports) -> {
                 Transport[] kept = without(transports, excluded);
@@ -59,7 +59,7 @@ public final class TransportAvailability {
             });
         }
         Transport[] teleports = without(usableTeleports, excluded);
-        for (Transport extra : extras) {
+        for (var extra : extras) {
             int origin = extra.getOrigin();
             if (origin == Transport.UNDEFINED_ORIGIN) {
                 teleports = append(teleports, extra);
@@ -94,20 +94,20 @@ public final class TransportAvailability {
     private static Transport[] without(Transport[] transports, Set<TeleportMethod> excluded) {
         if (excluded.isEmpty()) return transports;
         int kept = 0;
-        for (Transport transport : transports) {
+        for (var transport : transports) {
             if (!excluded.contains(transport.method())) kept++;
         }
         if (kept == transports.length) return transports;
-        Transport[] result = new Transport[kept];
+        var result = new Transport[kept];
         int index = 0;
-        for (Transport transport : transports) {
+        for (var transport : transports) {
             if (!excluded.contains(transport.method())) result[index++] = transport;
         }
         return result;
     }
 
     private static Transport[] append(Transport[] transports, Transport extra) {
-        Transport[] result = new Transport[transports.length + 1];
+        var result = new Transport[transports.length + 1];
         System.arraycopy(transports, 0, result, 0, transports.length);
         result[transports.length] = extra;
         return result;
@@ -170,8 +170,8 @@ public final class TransportAvailability {
 
         TransportAvailability build() {
             int expected = Math.max(1, transportsByOrigin.size());
-            PrimitiveIntHashMap<Transport[]> packed = new PrimitiveIntHashMap<>(expected);
-            PrimitiveIntHashMap<Transport[]> display = new PrimitiveIntHashMap<>(expected);
+            var packed = new PrimitiveIntHashMap<Transport[]>(expected);
+            var display = new PrimitiveIntHashMap<Transport[]>(expected);
             for (int origin : transportsByOrigin.keys()) {
                 Transport[] transports = transportsByOrigin.get(origin).toArray(EMPTY_TRANSPORTS);
                 packed.put(origin, transports);

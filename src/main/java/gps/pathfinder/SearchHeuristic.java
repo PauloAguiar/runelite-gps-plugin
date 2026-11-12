@@ -91,7 +91,7 @@ public final class SearchHeuristic {
         // Both bank states: a path may flip into the banked state mid-search, so the floor must
         // cover every teleport either state can use (a superset only lowers the floor = safe).
         for (boolean bankVisited : new boolean[]{false, true}) {
-            for (Transport teleport : config.getUsableTeleports(bankVisited)) {
+            for (var teleport : config.getUsableTeleports(bankVisited)) {
                 int destination = teleport.getDestination();
                 if (destination == WorldPointUtil.UNDEFINED) continue;
                 int landingDistance = field.distance(destination);

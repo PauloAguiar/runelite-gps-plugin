@@ -54,7 +54,7 @@ public final class BankPickupRequirements {
 
         List<String> requiredItems = new ArrayList<>();
         Set<Integer> itemIds = new LinkedHashSet<>();
-        Pickup result = new Pickup(requiredItems, itemIds);
+        var result = new Pickup(requiredItems, itemIds);
 
         if (bankItems == null || path == null || pathIndex < 0 || pathIndex >= path.size()) return result;
 
@@ -64,7 +64,7 @@ public final class BankPickupRequirements {
 
         // Snapshot bank contents.
         Map<Integer, Integer> bankHas = new HashMap<>();
-        for (Item bankItem : bankItems) {
+        for (var bankItem : bankItems) {
             if (bankItem.getId() >= 0 && bankItem.getQuantity() > 0)
                 bankHas.merge(bankItem.getId(), bankItem.getQuantity(), Integer::sum);
         }
@@ -78,7 +78,7 @@ public final class BankPickupRequirements {
 
         // Each entry is one edge's pickup phrase, e.g. "Air rune (3), Law rune or Varrock teleport".
         // A LinkedHashSet preserves order while deduplicating identical phrases across edges.
-        LinkedHashSet<String> phrases = new LinkedHashSet<>();
+        var phrases = new LinkedHashSet<String>();
         boolean usesFairyRing = false;
 
         // Walk each edge in the remaining path and collect alternative transports per edge.
@@ -88,7 +88,7 @@ public final class BankPickupRequirements {
 
             // Fairy rings handled once globally via the staff requirement below.
             List<Transport> nonFairy = new ArrayList<>();
-            for (Transport t : edgeAlternatives) {
+            for (var t : edgeAlternatives) {
                 if (TransportType.FAIRY_RING.equals(t.getType())) usesFairyRing = true;
                 else nonFairy.add(t);
             }
@@ -96,7 +96,7 @@ public final class BankPickupRequirements {
 
             // If at least one alternative requires no items, nothing to pick up for this edge.
             boolean anyAlternativeIsFree = false;
-            for (Transport t : nonFairy) {
+            for (var t : nonFairy) {
                 if (t.getItemRequirements() == null || t.getItemRequirements().size() == 0) {
                     anyAlternativeIsFree = true;
                     break;
@@ -106,7 +106,7 @@ public final class BankPickupRequirements {
 
             // If any alternative is fully satisfied by the player already, no pickup needed.
             boolean satisfied = false;
-            for (Transport t : nonFairy) {
+            for (var t : nonFairy) {
                 if (transportSatisfiedBy(t, playerHas, pathfinderConfig.farePercent(t))
                     || (TransportType.CANOE.equals(t.getType()) && pathfinderConfig.isCanoeAxeStored())) {
                     satisfied = true;
@@ -117,8 +117,8 @@ public final class BankPickupRequirements {
 
             // Otherwise, surface every alternative the bank can fully supply, joined, bankPouchRunes by " or ".
             // Deduplicate alternatives that resolve to the exact same set of bank items.
-            LinkedHashSet<String> altStrings = new LinkedHashSet<>();
-            for (Transport t : nonFairy) {
+            var altStrings = new LinkedHashSet<String>();
+            for (var t : nonFairy) {
                 Map<Integer, Long> pickups = computeBankPickups(t, playerHas, bankHas, bankPouchRunes,
                     pathfinderConfig.farePercent(t), itemIds);
                 if (pickups == null || pickups.isEmpty()) {
@@ -154,7 +154,7 @@ public final class BankPickupRequirements {
      */
     private static String formatPickups(Client client, Map<Integer, Long> pickups) {
         List<String> parts = new ArrayList<>(pickups.size());
-        for (Map.Entry<Integer, Long> entry : pickups.entrySet()) {
+        for (var entry : pickups.entrySet()) {
             int itemId = entry.getKey();
             long qty = entry.getValue();
             String itemName = client.getItemDefinition(itemId).getName();
@@ -204,7 +204,7 @@ public final class BankPickupRequirements {
     /** As above with the charter fare discount ({@code coinPercent}) applied to coin requirements. */
     public static boolean transportSatisfiedBy(Transport transport, Map<Integer, Integer> playerHas, int coinPercent) {
         if (transport.getItemRequirements() == null) return true;
-        for (ItemRequirement req : transport.getItemRequirements().getRequirements()) {
+        for (var req : transport.getItemRequirements().getRequirements()) {
             int qty = requiredQuantity(req, coinPercent);
             if (hasAnyItem(playerHas, req.getItemIds(), qty) || hasAnyItem(playerHas, req.getStaffIds(), 1)
                 || hasAnyItem(playerHas, req.getOffhandIds(), 1)) {
@@ -247,7 +247,7 @@ public final class BankPickupRequirements {
         Set<Integer> found = new LinkedHashSet<>();
         Set<Integer> addedPouches = new HashSet<>(); // tracks pouch IDs already added to pickups
         if (transport.getItemRequirements() == null) return pickups;
-        for (ItemRequirement req : transport.getItemRequirements().getRequirements()) {
+        for (var req : transport.getItemRequirements().getRequirements()) {
             int qty = requiredQuantity(req, coinPercent);
             // Already satisfied by player?
             if (hasAnyItem(playerHas, req.getItemIds(), qty) || hasAnyItem(playerHas, req.getStaffIds(), 1)
@@ -298,7 +298,7 @@ public final class BankPickupRequirements {
      */
     private static Map<Integer, Integer> buildBankPouchRunes(Client client, Map<Integer, Integer> bankHas) {
         Map<Integer, Integer> bankPouchRunes = new HashMap<>();
-        for (Integer pouchId : PathfinderConfig.RUNE_POUCHES) {
+        for (var pouchId : PathfinderConfig.RUNE_POUCHES) {
             if (!bankHas.containsKey(pouchId)) continue;
             EnumComposition runePouchEnum = client.getEnum(EnumID.RUNEPOUCH_RUNE);
             if (runePouchEnum == null) break;
@@ -322,7 +322,7 @@ public final class BankPickupRequirements {
 
         ItemContainer inventory = client.getItemContainer(InventoryID.INV);
         if (inventory != null) {
-            for (Item item : inventory.getItems()) {
+            for (var item : inventory.getItems()) {
                 if (item.getId() >= 0 && item.getQuantity() > 0)
                     totals.merge(item.getId(), item.getQuantity(), Integer::sum);
             }
@@ -330,7 +330,7 @@ public final class BankPickupRequirements {
 
         ItemContainer equipment = client.getItemContainer(InventoryID.WORN);
         if (equipment != null) {
-            for (Item item : equipment.getItems()) {
+            for (var item : equipment.getItems()) {
                 if (item.getId() >= 0 && item.getQuantity() > 0)
                     totals.merge(item.getId(), item.getQuantity(), Integer::sum);
             }
@@ -338,7 +338,7 @@ public final class BankPickupRequirements {
 
         // Rune pouch contents — only when the pouch is actually on the player.
         boolean hasPouch = false;
-        for (Integer pouchId : PathfinderConfig.RUNE_POUCHES) {
+        for (var pouchId : PathfinderConfig.RUNE_POUCHES) {
             if (totals.containsKey(pouchId)) {
                 hasPouch = true;
                 break;

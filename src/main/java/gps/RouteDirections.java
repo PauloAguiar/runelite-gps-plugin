@@ -64,7 +64,7 @@ final class RouteDirections {
 
         /** The same step with another duration (see {@link RouteDirections#alignedToPathCosts}). */
         Step withTicks(int newTicks) {
-            Step copy = new Step(text, startIndex, endIndex, newTicks, transport, door, obstacle, embark);
+            var copy = new Step(text, startIndex, endIndex, newTicks, transport, door, obstacle, embark);
             copy.details = details;
             return copy;
         }
@@ -136,7 +136,7 @@ final class RouteDirections {
                     // Draynor Village" over "Use Amulet of glory(4)", not "Use" twice.
                     if (text.startsWith("Use ") && callouts.stream().anyMatch(line -> line.startsWith("Use ")))
                         text = text.substring(4);
-                    Step step = new Step(text + fareText(plugin, from, to), i - 1, i, duration, true);
+                    var step = new Step(text + fareText(plugin, from, to), i - 1, i, duration, true);
                     step.details = callouts;
                     steps.add(step);
                 }
@@ -198,11 +198,11 @@ final class RouteDirections {
      */
     private static List<Step> alignedToPathCosts(List<Step> steps, List<PathStep> path) {
         if (path.isEmpty()) return steps;
-        for (PathStep step : path) {
+        for (var step : path) {
             if (step.getCost() == PathStep.UNKNOWN_COST) return steps;
         }
         List<Step> aligned = new ArrayList<>(steps.size());
-        for (Step step : steps) {
+        for (var step : steps) {
             int start = Math.max(0, Math.min(step.getStartIndex(), path.size() - 1));
             int end = Math.max(start, Math.min(step.getEndIndex(), path.size() - 1));
             int units = Math.max(0, path.get(end).getCost() - path.get(start).getCost());
@@ -238,7 +238,7 @@ final class RouteDirections {
         int fare = Integer.MAX_VALUE;
         // UNFILTERED edge rows: the route already committed to this edge, and the
         // availability-filtered sets drop a row whose fare is banked (capture 205518).
-        for (Transport transport : plugin.getPathfinderConfig().transportsOnEdge(from.getPackedPosition(), to.getPackedPosition())) {
+        for (var transport : plugin.getPathfinderConfig().transportsOnEdge(from.getPackedPosition(), to.getPackedPosition())) {
             int coins = coinsOf(plugin, transport);
             if (coins > 0) fare = Math.min(fare, coins);
         }
@@ -260,7 +260,7 @@ final class RouteDirections {
 
     private static int coinsOf(Transport transport) {
         if (transport.getItemRequirements() == null) return 0;
-        for (ItemRequirement requirement : transport.getItemRequirements().getRequirements()) {
+        for (var requirement : transport.getItemRequirements().getRequirements()) {
             for (int itemId : requirement.getItemIds()) {
                 if (itemId == COINS_ITEM_ID) return requirement.getQuantity();
             }
@@ -270,7 +270,7 @@ final class RouteDirections {
 
     private static Transport findObjectTransport(ShortestPathPlugin plugin, PathStep from, PathStep to) {
         Set<Transport> candidates = plugin.transportsForEdge(from, to);
-        for (Transport transport : candidates) {
+        for (var transport : candidates) {
             if (objectText(transport) != null) return transport;
         }
         return null;
@@ -337,8 +337,8 @@ final class RouteDirections {
     }
 
     private static String fairyRingLabel(String displayInfo) {
-        StringBuilder sb = new StringBuilder();
-        for (String hop : displayInfo.split(" - ")) {
+        var sb = new StringBuilder();
+        for (var hop : displayInfo.split(" - ")) {
             if (sb.length() > 0) sb.append(" → ");
             String code = hop.replace(" ", "");
             if (code.length() > 3) code = code.charAt(0) + code.substring(1).toLowerCase(Locale.ROOT);
@@ -372,7 +372,7 @@ final class RouteDirections {
         Map<Integer, Integer> carried = BankPickupRequirements.collectPlayerItems(client);
         Set<Transport> rows = EdgeTransports.forRouteEdge(plugin.getPathfinderConfig(), route, from, to);
         // A canoe paddled with the axe stored at the stations: say what the route is counting on.
-        for (Transport row : rows)
+        for (var row : rows)
             if (CANOE.equals(row.getType()) && plugin.getPathfinderConfig().isCanoeAxeStored())
                 return List.of("Axe stored at the canoe station");
         RouteItemCue cue = RouteItemCue.ofStep(rows, client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1, carried);
@@ -380,7 +380,7 @@ final class RouteDirections {
         Set<Integer> worn = new HashSet<>();
         ItemContainer equipment = client.getItemContainer(InventoryID.WORN);
         if (equipment != null)
-            for (Item item : equipment.getItems()) worn.add(item.getId());
+            for (var item : equipment.getItems()) worn.add(item.getId());
         return cue.callouts(carried, worn, plugin::wornOnly, id -> client.getItemDefinition(id).getName());
     }
 
@@ -391,12 +391,12 @@ final class RouteDirections {
     static List<String> pickupLines(ShortestPathPlugin plugin, RouteOption route) {
         List<String> details = new ArrayList<>();
         // Connectors first: they are the ones nobody would otherwise know about.
-        for (Transport connector : route.getBankTransports()) {
+        for (var connector : route.getBankTransports()) {
             String label = objectText(connector);
             String line = pickupLine(plugin, List.of(connector), label == null ? "the way" : label);
             if (line != null && !details.contains(line)) details.add(line);
         }
-        for (TeleportMethod method : route.getMethods()) {
+        for (var method : route.getMethods()) {
             if (!route.getBankMethods().contains(method)) continue;
             String line = pickupLineFor(plugin, route, method);
             if (line != null && !details.contains(line)) details.add(line);
@@ -406,7 +406,7 @@ final class RouteDirections {
         // the withdraw step listed everything BUT the staff (field capture 20260824-183101:
         // "Withdraw: Salve graveyard tablet" while the ring needed the banked Dramen staff).
         TeleportMethod bankedRing = null;
-        for (TeleportMethod method : route.getBankMethods()) {
+        for (var method : route.getBankMethods()) {
             if (FAIRY_RING.equals(method.getType())) {
                 bankedRing = method;
                 break;
@@ -428,7 +428,7 @@ final class RouteDirections {
         Item[] bank = plugin.getPathfinderConfig().getBankSnapshot();
         if (bank != null) {
             for (int staffId : ItemVariations.DRAMEN_STAFF.getIds()) {
-                for (Item item : bank) {
+                for (var item : bank) {
                     if (item.getId() == staffId && item.getQuantity() > 0) {
                         String name = plugin.getClient().getItemDefinition(staffId).getName();
                         if (name != null && !name.isEmpty() && !"null".equals(name)) return name;
@@ -460,12 +460,12 @@ final class RouteDirections {
 
     /** One pickup line for a bank method: its fare attributed, else its items by name. */
     private static String pickupLine(ShortestPathPlugin plugin, List<Transport> rows, String label) {
-        for (Transport row : rows) {
+        for (var row : rows) {
             int coins = coinsOf(plugin, row);
             if (coins > 0) return coins + " gp — " + label + " fare";
             if (row.getItemRequirements() == null) continue;
             List<String> names = new ArrayList<>();
-            for (ItemRequirement requirement : row.getItemRequirements().getRequirements()) {
+            for (var requirement : row.getItemRequirements().getRequirements()) {
                 int[] ids = requirement.getItemIds();
                 if (ids.length == 0) continue;
                 // The first alternative is the data's canonical choice for this slot.
@@ -497,8 +497,8 @@ final class RouteDirections {
     }
 
     private static String joinLabels(Set<TeleportMethod> methods) {
-        StringBuilder sb = new StringBuilder();
-        for (TeleportMethod method : methods) {
+        var sb = new StringBuilder();
+        for (var method : methods) {
             if (sb.length() > 0) sb.append(", ");
             sb.append(method.label());
         }

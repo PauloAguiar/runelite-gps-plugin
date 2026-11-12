@@ -115,7 +115,7 @@ final class MethodCatalogView {
     /** The methods a search can actually use: usable in the current mode and not excluded. */
     int enabledCount() {
         int enabled = 0;
-        for (TeleportMethod method : catalog) {
+        for (var method : catalog) {
             if (isUsable(method) && !exclusions.contains(method)) enabled++;
         }
         return enabled;
@@ -184,7 +184,7 @@ final class MethodCatalogView {
         int included = 0;
         int permanent = 0;
         int charged = 0;
-        for (TeleportMethod method : catalog) {
+        for (var method : catalog) {
             boolean canUse = isUsable(method);
             boolean isIncluded = !exclusions.contains(method);
             if (canUse) usable++;
@@ -212,7 +212,7 @@ final class MethodCatalogView {
         // item). Only shown while expanded, where the split matters; the header count already
         // carries the total collapsed.
         if (enabled > 0) {
-            JLabel breakdown = new JLabel(permanent + " permanent · " + charged + " charged");
+            var breakdown = new JLabel(permanent + " permanent · " + charged + " charged");
             breakdown.setFont(FontManager.getRunescapeSmallFont());
             breakdown.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
             breakdown.setToolTipText("Of the enabled methods: " + permanent + " permanent (unlimited use) · "
@@ -226,11 +226,11 @@ final class MethodCatalogView {
         // funnel that opens a menu to narrow by disabled or unavailability kind.
         search.setAlignmentX(Component.LEFT_ALIGNMENT);
         search.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
-        JPanel filterWrap = new JPanel(new BorderLayout());
+        var filterWrap = new JPanel(new BorderLayout());
         filterWrap.setBackground(ColorScheme.DARK_GRAY_COLOR);
         filterWrap.setBorder(new EmptyBorder(0, 4, 0, 2));
         filterWrap.add(control(funnel()), BorderLayout.CENTER);
-        JPanel searchWrap = new JPanel(new BorderLayout());
+        var searchWrap = new JPanel(new BorderLayout());
         searchWrap.setBackground(ColorScheme.DARK_GRAY_COLOR);
         searchWrap.setBorder(new EmptyBorder(0, 0, 4, 0));
         searchWrap.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -242,10 +242,10 @@ final class MethodCatalogView {
         // The method rows scroll inside their own bounded box with their own scrollbar, so a long
         // (or fully expanded) catalog never pushes the route list off screen. The rows panel tracks
         // the viewport width so the scrollbar sits beside the rows instead of clipping them.
-        ScrollableBox rows = new ScrollableBox(null);
+        var rows = new ScrollableBox(null);
         rows.setLayout(new BoxLayout(rows, BoxLayout.Y_AXIS));
         rows.setBackground(ColorScheme.DARK_GRAY_COLOR);
-        JScrollPane scroll = new JScrollPane(rows, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+        var scroll = new JScrollPane(rows, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
             ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         scroll.setBorder(BorderFactory.createEmptyBorder());
         scroll.getVerticalScrollBar().setUnitIncrement(16);
@@ -263,14 +263,14 @@ final class MethodCatalogView {
      * (no recalculation); Exclude keeps its existing semantics (applies on the next refresh).
      */
     void showPriorityMenu(Component anchor, TeleportMethod method) {
-        JPopupMenu menu = new JPopupMenu();
+        var menu = new JPopupMenu();
         MethodPriority current = plugin.getMethodPriority(method);
-        for (MethodPriority tier : new MethodPriority[]{
+        for (var tier : new MethodPriority[]{
             MethodPriority.PREFER_3, MethodPriority.PREFER_2, MethodPriority.PREFER_1,
             MethodPriority.NORMAL,
             MethodPriority.AVOID_1, MethodPriority.AVOID_2, MethodPriority.AVOID_3}) {
             String text = tier.label + (tier.chipText().isEmpty() ? "" : "  " + tier.chipText());
-            JMenuItem entry = new JMenuItem(text, priorityRestIcon(tier));
+            var entry = new JMenuItem(text, priorityRestIcon(tier));
             entry.setFont(tier == current ? FontManager.getRunescapeBoldFont() : FontManager.getRunescapeSmallFont());
             // The slot only rebuilds when catalog, exclusions or availability change; a tier
             // change alters none of them, so rebuild here or the row keeps the old tier until
@@ -282,7 +282,7 @@ final class MethodCatalogView {
             menu.add(entry);
         }
         menu.addSeparator();
-        JMenuItem exclude = new JMenuItem(MethodPriority.EXCLUDED.label, RouteIcons.CROSS);
+        var exclude = new JMenuItem(MethodPriority.EXCLUDED.label, RouteIcons.CROSS);
         exclude.setFont(current == MethodPriority.EXCLUDED ? FontManager.getRunescapeBoldFont() : FontManager.getRunescapeSmallFont());
         exclude.addActionListener(e -> {
             plugin.setMethodPriority(method, MethodPriority.EXCLUDED);
@@ -295,7 +295,7 @@ final class MethodCatalogView {
     /** The funnel icon that opens the filter menu; orange while a filter is active. */
     private JLabel funnel() {
         boolean active = filter.isActive();
-        JLabel funnel = new JLabel(active ? RouteIcons.FILTER_ACTIVE : RouteIcons.FILTER);
+        var funnel = new JLabel(active ? RouteIcons.FILTER_ACTIVE : RouteIcons.FILTER);
         funnel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         funnel.setToolTipText("Filter: " + filter.label + " (click to change)");
         funnel.addMouseListener(new MouseAdapter() {
@@ -315,12 +315,12 @@ final class MethodCatalogView {
     }
 
     private void showFilterMenu(JComponent anchor) {
-        JPopupMenu menu = new JPopupMenu();
+        var menu = new JPopupMenu();
         menu.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         menu.setBorder(BorderFactory.createLineBorder(ColorScheme.MEDIUM_GRAY_COLOR));
-        ButtonGroup group = new ButtonGroup();
-        for (Filter option : Filter.values()) {
-            JRadioButtonMenuItem item = new JRadioButtonMenuItem(option.label, option == filter);
+        var group = new ButtonGroup();
+        for (var option : Filter.values()) {
+            var item = new JRadioButtonMenuItem(option.label, option == filter);
             item.setBackground(ColorScheme.DARKER_GRAY_COLOR);
             item.setForeground(Color.WHITE);
             item.setFont(FontManager.getRunescapeSmallFont());
@@ -350,12 +350,11 @@ final class MethodCatalogView {
         boolean filtering = !text.isEmpty();
 
         Map<String, List<TeleportMethod>> grouped = new TreeMap<>();
-        for (TeleportMethod method : catalog) {
+        for (var method : catalog) {
             if (matches(method, filter, text, exclusions, unavailable))
                 grouped.computeIfAbsent(groupKey(method), k -> new ArrayList<>()).add(method);
         }
-        for (List<TeleportMethod> items : grouped.values())
-            items.sort(Comparator.comparing(m -> m.label().toLowerCase(Locale.ROOT)));
+        for (var items : grouped.values()) items.sort(Comparator.comparing(m -> m.label().toLowerCase(Locale.ROOT)));
 
         if (grouped.isEmpty()) {
             String message = filter.isActive() ? "No methods: " + filter.label.toLowerCase(Locale.ROOT)
@@ -365,14 +364,14 @@ final class MethodCatalogView {
             none.setAlignmentX(Component.LEFT_ALIGNMENT);
             rows.add(none);
         }
-        for (Map.Entry<String, List<TeleportMethod>> entry : grouped.entrySet()) {
+        for (var entry : grouped.entrySet()) {
             String category = entry.getKey();
             List<TeleportMethod> items = entry.getValue();
             // A text filter or an active funnel filter force categories open so the matches show.
             boolean open = filtering || filter.isActive() || expandedCategories.contains(category);
             rows.add(categoryHeader(category, items, open));
             if (open) {
-                for (TeleportMethod item : items) rows.add(itemRow(item));
+                for (var item : items) rows.add(itemRow(item));
             }
         }
 
@@ -387,13 +386,13 @@ final class MethodCatalogView {
 
     private JPanel categoryHeader(String category, List<TeleportMethod> items, boolean open) {
         int excludedCount = 0;
-        for (TeleportMethod method : items) {
+        for (var method : items) {
             if (exclusions.contains(method)) excludedCount++;
         }
         boolean allIncluded = excludedCount == 0;
         boolean allExcluded = excludedCount == items.size();
 
-        JPanel row = new JPanel(new BorderLayout(3, 0));
+        var row = new JPanel(new BorderLayout(3, 0));
         row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         row.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, ColorScheme.DARK_GRAY_COLOR),
             new EmptyBorder(3, 4, 3, 4)));
@@ -428,7 +427,7 @@ final class MethodCatalogView {
         row.add(control(new JLabel(open ? RouteIcons.CHEVRON_DOWN : RouteIcons.CHEVRON_RIGHT)), BorderLayout.WEST);
 
         String count = allIncluded ? " (" + items.size() + ")" : " (" + (items.size() - excludedCount) + "/" + items.size() + ")";
-        JLabel name = new JLabel(category + count);
+        var name = new JLabel(category + count);
         name.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
         row.add(name, BorderLayout.CENTER);
 
@@ -447,7 +446,7 @@ final class MethodCatalogView {
     private JPanel itemRow(TeleportMethod item) {
         boolean excluded = exclusions.contains(item);
 
-        JPanel row = new JPanel(new BorderLayout(3, 0));
+        var row = new JPanel(new BorderLayout(3, 0));
         row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         row.setBorder(new EmptyBorder(2, 18, 2, 4));
         row.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -457,7 +456,7 @@ final class MethodCatalogView {
         // tier (check = normal, stacked arrows = prefer/avoid, cross = excluded) and clicking
         // opens the tier menu (exclude is its bottom entry).
         MethodPriority tier = plugin.getMethodPriority(item);
-        IconActionLabel[] toggleHolder = new IconActionLabel[1];
+        var toggleHolder = new IconActionLabel[1];
         toggleHolder[0] = new IconActionLabel(priorityRestIcon(tier), priorityHoverIcon(tier), priorityTooltip(item.label(), tier),
             () -> showPriorityMenu(toggleHolder[0], item));
         IconActionLabel toggle = toggleHolder[0];

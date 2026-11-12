@@ -127,7 +127,7 @@ import gps.transport.requirement.*;
      * and a destination-only transport, and merges requirements
      */
     Transport(Transport origin, Transport destination) {
-        TransportBuilder builder = new TransportBuilder().origin(origin.origin).destination(destination.destination).type(origin.type)
+        var builder = new TransportBuilder().origin(origin.origin).destination(destination.destination).type(origin.type)
             .startSkillLevels(origin.skillLevels).startSkillLevels(destination.skillLevels).quests(origin.quests)
             .quests(destination.quests).itemRequirements(TransportItems.merge(origin.itemRequirements, destination.itemRequirements))
             .duration(Math.max(origin.duration, destination.duration)).displayInfo(destination.displayInfo)
@@ -155,7 +155,7 @@ import gps.transport.requirement.*;
     }
 
     Transport(TransportRecord record, TransportType transportType) {
-        TransportBuilder builder = new TransportBuilder();
+        var builder = new TransportBuilder();
         builder.type(transportType);
 
         // Origin/Destination use hasKey because empty string means LOCATION_PERMUTATION
@@ -243,7 +243,7 @@ import gps.transport.requirement.*;
         objectInfo = interner.internString(objectInfo);
         if (!varRequirements.isEmpty()) {
             Set<VarRequirement> interned = new HashSet<>(varRequirements.size() * 2);
-            for (VarRequirement requirement : varRequirements) interned.add(interner.intern(requirement));
+            for (var requirement : varRequirements) interned.add(interner.intern(requirement));
             // Transports with identical var requirements (very common across permutations) share one
             // read-only Set instead of each keeping a copy.
             varRequirements = interner.internVarSet(interned);
@@ -288,7 +288,7 @@ import gps.transport.requirement.*;
      */
     public Set<VarRequirement> getVarbits() {
         Set<VarRequirement> varbits = new HashSet<>();
-        for (VarRequirement req : varRequirements) {
+        for (var req : varRequirements) {
             if (req.isVarbit()) varbits.add(req);
         }
         return varbits;
@@ -298,7 +298,7 @@ import gps.transport.requirement.*;
      * Whether this transport has a varbit requirement with the given ID.
      */
     public boolean hasVarbit(int varbitId) {
-        for (VarRequirement req : varRequirements) {
+        for (var req : varRequirements) {
             if (req.isVarbit() && req.getId() == varbitId) return true;
         }
         return false;
@@ -310,7 +310,7 @@ import gps.transport.requirement.*;
      */
     public Set<VarRequirement> getVarPlayers() {
         Set<VarRequirement> varPlayers = new HashSet<>();
-        for (VarRequirement req : varRequirements) {
+        for (var req : varRequirements) {
             if (req.isVarPlayer()) varPlayers.add(req);
         }
         return varPlayers;
@@ -489,7 +489,7 @@ import gps.transport.requirement.*;
         }
 
         public Transport build() {
-            Transport transport = new Transport();
+            var transport = new Transport();
             transport.origin = this.origin;
             transport.destination = this.destination;
             transport.skillLevels = compactSkills(this.skillLevels);

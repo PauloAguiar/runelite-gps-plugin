@@ -42,7 +42,7 @@ import lombok.RequiredArgsConstructor;
     void excludeAll(Collection<TeleportMethod> methods) {
         boolean changed = false;
         if (methods != null) {
-            for (TeleportMethod method : methods) changed |= live.add(method);
+            for (var method : methods) changed |= live.add(method);
         }
         if (changed) changed();
     }
@@ -50,7 +50,7 @@ import lombok.RequiredArgsConstructor;
     void includeAll(Collection<TeleportMethod> methods) {
         boolean changed = false;
         if (methods != null) {
-            for (TeleportMethod method : methods) changed |= live.remove(method);
+            for (var method : methods) changed |= live.remove(method);
         }
         if (changed) changed();
     }

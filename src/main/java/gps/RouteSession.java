@@ -197,7 +197,7 @@ final class RouteSession {
         while (consumed < methods.size() && consumed < edges.size() && edges.get(consumed) <= progress) consumed++;
         List<TeleportMethod> remaining = methods.subList(consumed, methods.size());
         boolean checkBank = consumed == 0;
-        for (RouteOption route : routes) {
+        for (var route : routes) {
             if ((!checkBank || route.isViaBank() == previous.isViaBank()) && route.getMethods().equals(remaining))
                 return route;
         }

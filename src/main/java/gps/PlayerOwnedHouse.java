@@ -68,7 +68,7 @@ public final class PlayerOwnedHouse {
             boolean stepInside = isInside(unpackWorldX(stepLocation), unpackWorldY(stepLocation));
             boolean nextInside = isInside(unpackWorldX(nextLocation), unpackWorldY(nextLocation));
             if (stepInside && !nextInside) {
-                for (Transport transport : transportsForEdge.apply(path.get(i), path.get(i + 1))) {
+                for (var transport : transportsForEdge.apply(path.get(i), path.get(i + 1))) {
                     String exitInfo = transport.getDisplayInfo();
                     return exitInfo == null || exitInfo.isEmpty() ? null : exitLabel(transport, exitInfo);
                 }
@@ -123,13 +123,13 @@ public final class PlayerOwnedHouse {
     private static Set<Integer> sceneObjectIds(WorldView worldView) {
         Set<Integer> ids = new HashSet<>();
         Tile[][][] tiles = worldView.getScene().getTiles();
-        for (Tile[][] plane : tiles) {
+        for (var plane : tiles) {
             if (plane == null) continue;
-            for (Tile[] column : plane) {
+            for (var column : plane) {
                 if (column == null) continue;
-                for (Tile tile : column) {
+                for (var tile : column) {
                     if (tile == null || tile.getGameObjects() == null) continue;
-                    for (GameObject object : tile.getGameObjects()) {
+                    for (var object : tile.getGameObjects()) {
                         if (object != null) ids.add(object.getId());
                     }
                 }

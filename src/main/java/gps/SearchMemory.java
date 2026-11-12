@@ -34,7 +34,7 @@ import lombok.RequiredArgsConstructor;
     /** Saves a favourite position; a favourite with the same label is replaced; the list is capped. */
     void addFavorite(String label, int packedPosition) {
         List<Destinations.Entry> updated = new ArrayList<>();
-        for (Destinations.Entry entry : favorites) {
+        for (var entry : favorites) {
             if (!entry.name.equals(label)) updated.add(entry);
         }
         if (updated.size() < ChoiceStore.FAVORITES_LIMIT)
@@ -46,7 +46,7 @@ import lombok.RequiredArgsConstructor;
     /** Removes the favourite with that label and position. */
     void removeFavorite(Destinations.Entry favorite) {
         List<Destinations.Entry> updated = new ArrayList<>();
-        for (Destinations.Entry entry : favorites) {
+        for (var entry : favorites) {
             if (!entry.name.equals(favorite.name) || entry.packedPosition != favorite.packedPosition)
                 updated.add(entry);
         }

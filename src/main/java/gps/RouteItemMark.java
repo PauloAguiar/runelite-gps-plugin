@@ -32,7 +32,7 @@ import net.runelite.client.util.*;
      */
     static BufferedImage thickened(BufferedImage sprite, BufferedImage ring, int rgb) {
         int w = ring.getWidth(), h = ring.getHeight();
-        BufferedImage out = new BufferedImage(w + 2, h + 2, BufferedImage.TYPE_INT_ARGB);
+        var out = new BufferedImage(w + 2, h + 2, BufferedImage.TYPE_INT_ARGB);
         for (int x = 0; x < w + 2; x++) {
             for (int y = 0; y < h + 2; y++) {
                 int ringPixel = pixel(ring, x - 1, y - 1);

@@ -166,13 +166,13 @@ public final class DistanceField {
      */
     static DistanceField build(PathfinderConfig config, Set<Integer> targets, int costMultiple) {
         CollisionMap map = config.getMap();
-        DistanceField field = new DistanceField(map);
+        var field = new DistanceField(map);
         PrimitiveIntHashMap<Map<Integer, Integer>> reverseTransports = buildReverseTransportIndex(config);
-        VisitedTiles settled = new VisitedTiles(map);
-        IntDeque fifo = new IntDeque(4096);
+        var settled = new VisitedTiles(map);
+        var fifo = new IntDeque(4096);
         // Transport relaxations only (a few tens of thousands at most): boxed entries are fine.
         // Entry = (distance << 32) | (packed & 0xFFFFFFFF); natural ordering sorts by distance.
-        PriorityQueue<Long> heap = new PriorityQueue<>();
+        var heap = new PriorityQueue<Long>();
         // Bounded mode: cheapest cast cost per origin-free teleport landing, for in-flood floor
         // discovery. Null = unbounded (full flood).
         PrimitiveIntHashMap<Integer> landingCasts = costMultiple > 0 ? buildTeleportLandingIndex(config) : null;
@@ -215,7 +215,7 @@ public final class DistanceField {
 
             Map<Integer, Integer> intoHere = reverseTransports.get(packed);
             if (intoHere != null) {
-                for (Map.Entry<Integer, Integer> edge : intoHere.entrySet()) {
+                for (var edge : intoHere.entrySet()) {
                     int origin = edge.getKey();
                     int cost = edge.getValue();
                     int candidate = distance + cost;
@@ -249,7 +249,7 @@ public final class DistanceField {
         Set<Integer> landings = new HashSet<>();
         for (int destination : transportDestinations) landings.add(destination);
         for (boolean bankVisited : new boolean[]{false, true}) {
-            for (Transport teleport : config.getUsableTeleports(bankVisited)) {
+            for (var teleport : config.getUsableTeleports(bankVisited)) {
                 if (teleport.getDestination() != WorldPointUtil.UNDEFINED) landings.add(teleport.getDestination());
             }
         }
@@ -375,9 +375,9 @@ public final class DistanceField {
      * contribute — the floor stays a little high and the horizon a little wide, which is safe.
      */
     private static PrimitiveIntHashMap<Integer> buildTeleportLandingIndex(PathfinderConfig config) {
-        PrimitiveIntHashMap<Integer> index = new PrimitiveIntHashMap<>(256);
+        var index = new PrimitiveIntHashMap<Integer>(256);
         for (boolean bankVisited : new boolean[]{false, true}) {
-            for (Transport teleport : config.getUsableTeleports(bankVisited)) {
+            for (var teleport : config.getUsableTeleports(bankVisited)) {
                 int destination = teleport.getDestination();
                 if (destination == WorldPointUtil.UNDEFINED) continue;
                 int cost = Math.max(0, CostUnits.fromTicks(teleport.getDuration()) + config.getAdditionalTransportCost(teleport));
@@ -395,13 +395,13 @@ public final class DistanceField {
     // origin -> min-cost map stays boxed: it is only iterated for the few thousand tiles that are
     // actually transport destinations, not per settled tile.
     static PrimitiveIntHashMap<Map<Integer, Integer>> buildReverseTransportIndex(PathfinderConfig config) {
-        PrimitiveIntHashMap<Map<Integer, Integer>> index = new PrimitiveIntHashMap<>(4096);
+        var index = new PrimitiveIntHashMap<Map<Integer, Integer>>(4096);
         for (boolean bankVisited : new boolean[]{false, true}) {
             PrimitiveIntHashMap<Transport[]> transports = config.getTransportsPacked(bankVisited);
             for (int origin : transports.keys()) {
                 Transport[] set = transports.get(origin);
                 if (set == null) continue;
-                for (Transport transport : set) {
+                for (var transport : set) {
                     int destination = transport.getDestination();
                     if (destination == WorldPointUtil.UNDEFINED) continue;
                     int cost = Math.max(0, CostUnits.fromTicks(transport.getDuration()) + config.getAdditionalTransportCost(transport));

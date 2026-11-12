@@ -18,8 +18,8 @@ public class Util {
      * @throws IOException if an I/O error occurs while reading.
      */
     public static byte[] readAllBytes(InputStream in) throws IOException {
-        ByteArrayOutputStream result = new ByteArrayOutputStream();
-        byte[] buffer = new byte[1024];
+        var result = new ByteArrayOutputStream();
+        var buffer = new byte[1024];
 
         while (true) {
             int read = in.read(buffer, 0, buffer.length);
@@ -44,11 +44,11 @@ public class Util {
      */
     public static int[] concatenate(int[][] arrays) {
         int n = 0;
-        for (int[] value : arrays) n += (value == null) ? 0 : value.length;
+        for (var value : arrays) n += (value == null) ? 0 : value.length;
         if (n == 0) return null;
-        int[] array = new int[n];
+        var array = new int[n];
         int k = 0;
-        for (int[] ints : arrays) {
+        for (var ints : arrays) {
             if (ints != null) {
                 for (int anInt : ints) array[k++] = anInt;
             }

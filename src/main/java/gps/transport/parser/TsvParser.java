@@ -21,7 +21,7 @@ public class TsvParser {
      */
     public List<TransportRecord> parse(String contents) {
         List<TransportRecord> records = new ArrayList<>();
-        Scanner scanner = new Scanner(contents);
+        var scanner = new Scanner(contents);
 
         if (!scanner.hasNextLine()) {
             scanner.close();

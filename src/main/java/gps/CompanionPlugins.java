@@ -36,7 +36,7 @@ import net.runelite.client.plugins.*;
     void refresh() {
         boolean conflict = false;
         boolean off = false;
-        for (Plugin other : pluginManager.getPlugins()) {
+        for (var other : pluginManager.getPlugins()) {
             if (other == self) continue;
             PluginDescriptor descriptor = other.getClass().getAnnotation(PluginDescriptor.class);
             if (descriptor == null || !pluginManager.isPluginEnabled(other)) continue;

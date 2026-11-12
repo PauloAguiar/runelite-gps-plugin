@@ -39,9 +39,9 @@ final class PanelHeaderView extends JPanel {
         setBorder(new EmptyBorder(0, 0, 8, 0));
         add(titleRow(), BorderLayout.NORTH);
 
-        JPanel bottom = new JPanel(new BorderLayout());
+        var bottom = new JPanel(new BorderLayout());
         bottom.setBackground(ColorScheme.DARK_GRAY_COLOR);
-        JPanel northStack = new JPanel();
+        var northStack = new JPanel();
         northStack.setLayout(new BoxLayout(northStack, BoxLayout.Y_AXIS));
         northStack.setBackground(ColorScheme.DARK_GRAY_COLOR);
         buildReportBox();
@@ -96,22 +96,22 @@ final class PanelHeaderView extends JPanel {
     }
 
     private JPanel titleRow() {
-        JPanel titleRow = new JPanel(new BorderLayout());
+        var titleRow = new JPanel(new BorderLayout());
         titleRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
         // The plugin's identity mark: blue pin plus bold white "GPS", matching the overlay header
         // and the sidebar tab.
-        JLabel title = new JLabel("GPS", new ImageIcon(RouteIcons.gpsPin()), SwingConstants.LEADING);
+        var title = new JLabel("GPS", new ImageIcon(RouteIcons.gpsPin()), SwingConstants.LEADING);
         title.setIconTextGap(6);
         title.setFont(FontManager.getRunescapeBoldFont());
         title.setForeground(Color.WHITE);
         titleRow.add(title, BorderLayout.WEST);
 
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.TRAILING, 4, 0));
+        var actions = new JPanel(new FlowLayout(FlowLayout.TRAILING, 4, 0));
         actions.setBackground(ColorScheme.DARK_GRAY_COLOR);
         // A compact red button shows the routing context in a copy box below the header and opens
         // GitHub's new-issue page (a bare link: nothing rides in the URL, no clipboard API).
-        JButton reportButton = new JButton("Report an issue");
+        var reportButton = new JButton("Report an issue");
         reportButton.setFont(FontManager.getRunescapeSmallFont());
         reportButton.setForeground(ColorScheme.PROGRESS_ERROR_COLOR);
         reportButton.setMargin(new Insets(2, 6, 2, 6));
@@ -126,16 +126,16 @@ final class PanelHeaderView extends JPanel {
         actions.add(control(new IconActionLabel(RouteIcons.DISCORD, RouteIcons.DISCORD,
             "Join the GPS Discord", () -> LinkBrowser.browse(DISCORD_URL))));
         // Occasional actions (snapshot, reset) tuck into the burger.
-        JPopupMenu actionsMenu = new JPopupMenu();
-        JMenuItem debugItem = new JMenuItem("Save debug snapshot", RouteIcons.DEBUG);
+        var actionsMenu = new JPopupMenu();
+        var debugItem = new JMenuItem("Save debug snapshot", RouteIcons.DEBUG);
         debugItem.setToolTipText("Save a debug snapshot of the current routes to disk (for reproducing issues)");
         debugItem.addActionListener(e -> plugin.captureDebugSnapshot());
         actionsMenu.add(debugItem);
-        JMenuItem resetItem = new JMenuItem("Reset excluded methods", RouteIcons.CLEAR);
+        var resetItem = new JMenuItem("Reset excluded methods", RouteIcons.CLEAR);
         resetItem.setToolTipText("Re-include every method you've disabled");
         resetItem.addActionListener(e -> plugin.clearExclusions());
         actionsMenu.add(resetItem);
-        IconActionLabel[] menuButton = new IconActionLabel[1];
+        var menuButton = new IconActionLabel[1];
         menuButton[0] = new IconActionLabel(RouteIcons.MENU, RouteIcons.MENU_HOVER, "More actions",
             () -> actionsMenu.show(menuButton[0], 0, menuButton[0].getHeight()));
         actions.add(control(menuButton[0]));
@@ -152,13 +152,13 @@ final class PanelHeaderView extends JPanel {
         reportBox.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         reportBox.setBorder(new EmptyBorder(6, 6, 6, 6));
         reportBox.setVisible(false);
-        JPanel reportTitleRow = new JPanel(new BorderLayout());
+        var reportTitleRow = new JPanel(new BorderLayout());
         reportTitleRow.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-        JLabel reportTitle = new JLabel("<html>Select all (Ctrl+A), copy (Ctrl+C), and paste into the GitHub issue:</html>");
+        var reportTitle = new JLabel("<html>Select all (Ctrl+A), copy (Ctrl+C), and paste into the GitHub issue:</html>");
         reportTitle.setFont(FontManager.getRunescapeSmallFont());
         reportTitle.setForeground(ColorScheme.PROGRESS_COMPLETE_COLOR);
         reportTitleRow.add(reportTitle, BorderLayout.CENTER);
-        JButton reportHide = new JButton("Hide");
+        var reportHide = new JButton("Hide");
         reportHide.setFont(FontManager.getRunescapeSmallFont());
         reportHide.setMargin(new Insets(0, 4, 0, 4));
         reportHide.setFocusable(false);
@@ -174,7 +174,7 @@ final class PanelHeaderView extends JPanel {
         reportContext.setBackground(ColorScheme.DARK_GRAY_COLOR);
         reportContext.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
         reportContext.setFont(FontManager.getRunescapeSmallFont());
-        JScrollPane reportScroll = new JScrollPane(reportContext);
+        var reportScroll = new JScrollPane(reportContext);
         reportScroll.setBorder(null);
         // Fixed height, zero preferred width: a text area reports its longest line as preferred
         // width even when wrapping, which would stretch the whole sidebar (audit-panel lesson).
@@ -187,7 +187,7 @@ final class PanelHeaderView extends JPanel {
      * what you carry, plus your bank, everything in the game.
      */
     private JPanel modeRow() {
-        JPanel modeRow = new JPanel(new GridLayout(1, 3, 4, 0));
+        var modeRow = new JPanel(new GridLayout(1, 3, 4, 0));
         modeRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
         modeRow.setBorder(new EmptyBorder(8, 0, 0, 0));
         inventoryModeButton.setToolTipText("<html><b>Available now</b>: only methods usable with what you carry<br>"

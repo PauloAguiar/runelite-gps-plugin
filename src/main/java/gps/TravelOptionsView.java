@@ -86,12 +86,12 @@ final class TravelOptionsView extends JPanel {
             return section;
         }
 
-        JPanel body = new JPanel();
+        var body = new JPanel();
         body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
         body.setBackground(ColorScheme.DARK_GRAY_COLOR);
         body.setAlignmentX(Component.LEFT_ALIGNMENT);
         body.setBorder(new EmptyBorder(0, 8, 0, 0));
-        for (JPanel part : sections.sections()) body.add(part);
+        for (var part : sections.sections()) body.add(part);
         if (!methods.isEmpty()) body.add(catalog.section());
         section.add(body);
         return section;

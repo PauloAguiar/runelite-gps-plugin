@@ -87,8 +87,8 @@ import static gps.transport.TransportType.*;
         for (int i = 0; i < moorings.size(); i++) byLand.put((long) moorings.get(i)[0] << 16 | moorings.get(i)[1], i);
         try (InputStream tsv = SailingSea.class.getResourceAsStream("/sailing-sea-matrix.tsv");
             Scanner scanner = new Scanner(tsv, "UTF-8")) {
-            int[][] matrix = new int[moorings.size()][moorings.size()];
-            for (int[] row : matrix) Arrays.fill(row, Integer.MAX_VALUE);
+            var matrix = new int[moorings.size()][moorings.size()];
+            for (var row : matrix) Arrays.fill(row, Integer.MAX_VALUE);
             for (int i = 0; i < matrix.length; i++) matrix[i][i] = 0;
             while (scanner.hasNextLine()) {
                 String[] fields = scanner.nextLine().split("\t");
@@ -143,7 +143,7 @@ import static gps.transport.TransportType.*;
 
     private static SailingSea load() {
         try (InputStream in = SailingSea.class.getResourceAsStream("/sailing-sea.bin")) {
-            DataInputStream header = new DataInputStream(in);
+            var header = new DataInputStream(in);
             int minX = header.readInt();
             int minY = header.readInt();
             int width = header.readInt();
@@ -163,7 +163,7 @@ import static gps.transport.TransportType.*;
                     // tile are one mooring to routing: keep the first, or the second silently
                     // overwrites the first's matrix index and its rows are lost (Wyrmscraig).
                     boolean duplicateLand = false;
-                    for (int[] existing : moorings) {
+                    for (var existing : moorings) {
                         if (existing[0] == landX && existing[1] == landY) {
                             duplicateLand = true;
                             break;
@@ -175,7 +175,7 @@ import static gps.transport.TransportType.*;
                     mooringNames.add(fields.length > 6 ? fields[6].trim() : "");
                 }
             }
-            SailingSea loaded = new SailingSea(minX, minY, width, height, bits, moorings, mooringNames);
+            var loaded = new SailingSea(minX, minY, width, height, bits, moorings, mooringNames);
             loaded.portMatrix = loadPortMatrix(moorings);
             return loaded;
         }
@@ -318,11 +318,11 @@ import static gps.transport.TransportType.*;
         int y1 = Math.min(sea.height - 1, Math.max(start / sea.width, goal / sea.width) + margin);
         int boxWidth = x1 - x0 + 1;
         int boxHeight = y1 - y0 + 1;
-        int[] dist = new int[boxWidth * boxHeight];
+        var dist = new int[boxWidth * boxHeight];
         Arrays.fill(dist, Integer.MAX_VALUE);
         int boxStart = (start / sea.width - y0) * boxWidth + (start % sea.width - x0);
         int boxGoal = (goal / sea.width - y0) * boxWidth + (goal % sea.width - x0);
-        LongHeap queue = new LongHeap();
+        var queue = new LongHeap();
         dist[boxStart] = 0;
         queue.push(boxStart);
         while (!queue.isEmpty()) {
@@ -332,7 +332,7 @@ import static gps.transport.TransportType.*;
             if (index == boxGoal) return dist[index];
             int x = index % boxWidth;
             int y = index / boxWidth;
-            for (int[] move : MOVES) {
+            for (var move : MOVES) {
                 int nx = x + move[0];
                 int ny = y + move[1];
                 if (nx < 0 || ny < 0 || nx >= boxWidth || ny >= boxHeight || !bit(sea, x0 + nx, y0 + ny)
@@ -472,7 +472,7 @@ import static gps.transport.TransportType.*;
     public static synchronized int[] seaDistances(int targetPacked) {
         if (targetPacked == cachedTarget && cachedDistances != null) return cachedDistances;
         SailingSea sea = get();
-        int[] result = new int[sea.moorings.size()];
+        var result = new int[sea.moorings.size()];
         Arrays.fill(result, Integer.MAX_VALUE);
         if (!isSailable(targetPacked) || sea.width == 0) return result;
         if (wetScratch == null || wetScratch.length != sea.width * sea.height)
@@ -498,7 +498,7 @@ import static gps.transport.TransportType.*;
             }
             int x = index % sea.width;
             int y = index / sea.width;
-            for (int[] move : MOVES) {
+            for (var move : MOVES) {
                 int dx = move[0];
                 int dy = move[1];
                 int nx = x + dx;
@@ -576,7 +576,7 @@ import static gps.transport.TransportType.*;
     }
 
     private static PrimitiveIntHashMap<Boolean> copyMask(PrimitiveIntHashMap<Boolean> current) {
-        PrimitiveIntHashMap<Boolean> copy = new PrimitiveIntHashMap<>(256);
+        var copy = new PrimitiveIntHashMap<Boolean>(256);
         if (current != null) {
             for (int key : current.keys()) copy.put(key, Boolean.TRUE);
         }
@@ -584,7 +584,7 @@ import static gps.transport.TransportType.*;
     }
 
     private static boolean nearMooringWater(SailingSea sea, int x, int y) {
-        for (int[] mooring : sea.moorings) {
+        for (var mooring : sea.moorings) {
             if (Math.max(Math.abs(mooring[2] - x), Math.abs(mooring[3] - y)) <= 4) return true;
         }
         return false;
@@ -616,7 +616,7 @@ import static gps.transport.TransportType.*;
      */
     private static final Set<Long> tracksInFlight = ConcurrentHashMap.newKeySet();
     private static final ExecutorService trackExecutor = Executors.newSingleThreadExecutor(runnable -> {
-            Thread thread = new Thread(runnable, "gps-sea-track");
+            var thread = new Thread(runnable, "gps-sea-track");
             thread.setDaemon(true);
             return thread;
         });
@@ -694,16 +694,16 @@ import static gps.transport.TransportType.*;
         int y1 = margin >= sea.height ? sea.height - 1 : Math.min(sea.height - 1, Math.max(start / sea.width, goal / sea.width) + margin);
         int boxWidth = x1 - x0 + 1;
         int boxHeight = y1 - y0 + 1;
-        int[] dist = new int[boxWidth * boxHeight];
-        int[] parent = new int[boxWidth * boxHeight];
+        var dist = new int[boxWidth * boxHeight];
+        var parent = new int[boxWidth * boxHeight];
         Arrays.fill(dist, Integer.MAX_VALUE);
         Arrays.fill(parent, -1);
         int boxStart = (start / sea.width - y0) * boxWidth + (start % sea.width - x0);
         int boxGoal = (goal / sea.width - y0) * boxWidth + (goal % sea.width - x0);
         byte[] shore = shoreDistances(sea, x0, y0, boxWidth, boxHeight);
-        byte[] parentMove = new byte[boxWidth * boxHeight];
+        var parentMove = new byte[boxWidth * boxHeight];
         Arrays.fill(parentMove, (byte) -1);
-        LongHeap queue = new LongHeap();
+        var queue = new LongHeap();
         dist[boxStart] = 0;
         queue.push(boxStart);
         while (!queue.isEmpty()) {
@@ -765,9 +765,9 @@ import static gps.transport.TransportType.*;
      * table) — one linear pass instead of a 5x5 scan per relaxation.
      */
     private static byte[] shoreDistances(SailingSea sea, int x0, int y0, int boxWidth, int boxHeight) {
-        byte[] shore = new byte[boxWidth * boxHeight];
+        var shore = new byte[boxWidth * boxHeight];
         Arrays.fill(shore, (byte) (SHORE_PENALTIES.length - 1));
-        ArrayDeque<Integer> queue = new ArrayDeque<>();
+        var queue = new ArrayDeque<Integer>();
         for (int y = 0; y < boxHeight; y++) {
             for (int x = 0; x < boxWidth; x++) {
                 int gx = x0 + x;
@@ -864,7 +864,7 @@ import static gps.transport.TransportType.*;
         List<Integer> dense = new ArrayList<>();
         for (int c = 0; c + 1 < corners.size(); c++) densifyLeg(dense, corners.get(c), corners.get(c + 1));
         dense.add(corners.get(corners.size() - 1));
-        int[] track = new int[dense.size()];
+        var track = new int[dense.size()];
         for (int i = 0; i < track.length; i++) track[i] = dense.get(i);
         return track;
     }
@@ -1123,7 +1123,7 @@ import static gps.transport.TransportType.*;
     private static int trackEndpoint(SailingSea sea, int packed) {
         int x = unpackWorldX(packed);
         int y = unpackWorldY(packed);
-        for (int[] mooring : sea.moorings) {
+        for (var mooring : sea.moorings) {
             if (mooring[0] == x && mooring[1] == y)
                 return (mooring[3] - sea.minY) * sea.width + (mooring[2] - sea.minX);
         }

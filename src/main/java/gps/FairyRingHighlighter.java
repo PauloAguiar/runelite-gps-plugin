@@ -45,7 +45,7 @@ final class FairyRingHighlighter {
     static String routeCode(List<PathStep> path, BiFunction<PathStep, PathStep, Set<Transport>> transportsForEdge) {
         String code = null;
         for (int i = 1; i < path.size(); i++) {
-            for (Transport transport : transportsForEdge.apply(path.get(i - 1), path.get(i))) {
+            for (var transport : transportsForEdge.apply(path.get(i - 1), path.get(i))) {
                 if (TransportType.FAIRY_RING.equals(transport.getType())) code = transport.getDisplayInfo();
             }
         }
@@ -79,7 +79,7 @@ final class FairyRingHighlighter {
 
     private static Widget rowWithCode(Widget[] rows, String code) {
         if (rows == null) return null;
-        for (Widget widget : rows) {
+        for (var widget : rows) {
             if (widget != null) {
                 String text = widget.getText();
                 if (code.equals(text) || ("(GPS) " + code).equals(text)) return widget;

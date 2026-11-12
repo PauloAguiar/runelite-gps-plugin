@@ -98,7 +98,7 @@ import net.runelite.client.game.*;
                 int r = (rgb & 0x00ff0000) >> 16;
                 int g = (rgb & 0x0000ff00) >> 8;
                 int b = (rgb & 0x000000ff);
-                Color colour = new Color(r, g, b, a);
+                var colour = new Color(r, g, b, a);
                 if (x == 0 && y == 0) {
                     outsideColour = colour;
                     previousColour = colour;
@@ -109,8 +109,8 @@ import net.runelite.client.game.*;
                 previousColour = colour;
             }
         }
-        Polygon polygon = new Polygon();
-        for (Point point : points) polygon.addPoint(point.x + offsetX, point.y + offsetY);
+        var polygon = new Polygon();
+        for (var point : points) polygon.addPoint(point.x + offsetX, point.y + offsetY);
         return polygon;
     }
 }

@@ -97,7 +97,7 @@ final class OffRouteTracker {
     static int distanceFromPath(int location, List<PathStep> path, RouteOption displayed) {
         if (path == null || path.isEmpty()) return -1;
         int best = Integer.MAX_VALUE;
-        for (PathStep pathStep : path) best = Math.min(best, distanceBetween(location, pathStep.getPackedPosition()));
+        for (var pathStep : path) best = Math.min(best, distanceBetween(location, pathStep.getPackedPosition()));
         if (displayed != null && !displayed.sailingJumpDepartures().isEmpty() && SailingSea.isSailable(location)) {
             for (int departure : displayed.sailingJumpDepartures()) {
                 if (departure < 0 || departure + 1 >= path.size()) continue;

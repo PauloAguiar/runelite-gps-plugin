@@ -59,7 +59,7 @@ class IntDeque {
 
     private void grow() {
         int oldCapacity = elements.length;
-        int[] grown = new int[oldCapacity << 1];
+        var grown = new int[oldCapacity << 1];
         for (int i = 0; i < size; i++) grown[i] = elements[(head + i) % oldCapacity];
         elements = grown;
         head = 0;

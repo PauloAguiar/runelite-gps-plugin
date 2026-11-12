@@ -110,7 +110,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         if (index == null) {
             Map<Integer, Integer> masks = edgeMasks();
             index = new PrimitiveIntHashMap<>(Math.max(16, masks.size() * 2));
-            for (Map.Entry<Integer, Integer> entry : masks.entrySet()) index.put(entry.getKey(), entry.getValue());
+            for (var entry : masks.entrySet()) index.put(entry.getKey(), entry.getValue());
             edgeMaskIndex = index;
         }
         return index;
@@ -119,8 +119,8 @@ import static gps.WorldPointUtil.unpackWorldY;
     private static Map<Integer, Integer> buildEdgeMasks(Map<Integer, List<Door>> byTile) {
         // Pass 1: cardinal bits, projected onto both tiles of each gated boundary.
         Map<Integer, Integer> cardinal = new HashMap<>();
-        for (List<Door> doors : byTile.values()) {
-            for (Door door : doors) {
+        for (var doors : byTile.values()) {
+            for (var door : doors) {
                 if (door.placedOpen) continue;
                 if (door.type == TYPE_WALL_STRAIGHT) setEdgeBits(cardinal, door.packedPosition, door.orientation);
                 else {
@@ -135,7 +135,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         // candidates are every masked tile plus its 8 neighbours (a tile with no cardinal bits of
         // its own can still have a gated diagonal past a neighbouring door corner).
         Map<Integer, Integer> masks = new HashMap<>(cardinal);
-        for (Map.Entry<Integer, Integer> entry : cardinal.entrySet()) {
+        for (var entry : cardinal.entrySet()) {
             int tile = entry.getKey();
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
@@ -242,7 +242,7 @@ import static gps.WorldPointUtil.unpackWorldY;
     private static Door doorAt(int packedPosition, int facing) {
         List<Door> doors = get().get(packedPosition);
         if (doors == null) return null;
-        for (Door door : doors) {
+        for (var door : doors) {
             // Doors placed OPEN in the map data are open by default. Their rare closed state can't
             // be read reliably from the scene — the swung-open leaf anchors to a neighbouring tile,
             // so a presence check at the doorway misses it and wrongly reports "closed", which
@@ -292,7 +292,7 @@ import static gps.WorldPointUtil.unpackWorldY;
     private static Map<Integer, List<Door>> parse(String tsv) {
         Map<Integer, List<Door>> result = new HashMap<>();
         boolean header = true;
-        for (String line : tsv.split("\\R")) {
+        for (var line : tsv.split("\\R")) {
             if (header) {
                 header = false;
                 continue;

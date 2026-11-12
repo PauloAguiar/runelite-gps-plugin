@@ -22,11 +22,11 @@ public class QuestParser implements FieldParser<Set<Quest>> {
         if (value == null || value.isEmpty()) return quests;
 
         String[] questNames = value.split(DELIM_MULTI);
-        for (String questName : questNames) {
+        for (var questName : questNames) {
             String name = questName.trim();
             if (name.isEmpty()) continue;
             boolean found = false;
-            for (Quest quest : Quest.values()) {
+            for (var quest : Quest.values()) {
                 if (quest.getName().equals(name)) {
                     quests.add(quest);
                     found = true;

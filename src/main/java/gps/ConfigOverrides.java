@@ -35,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
     /** The transport types without a toggle keep an override key, so a message or a test can still switch one off. */
     private static Set<String> withTypeKeys(Collection<String> itemKeys) {
         Set<String> keys = new HashSet<>(itemKeys);
-        for (TransportType type : TransportType.values()) {
+        for (var type : TransportType.values()) {
             if (type.getEnabledKey() != null) keys.add(type.getEnabledKey());
         }
         return Collections.unmodifiableSet(keys);
@@ -50,7 +50,7 @@ import lombok.extern.slf4j.Slf4j;
      */
     static void apply(Map<String, Object> overrides) {
         OVERRIDES.clear();
-        for (Map.Entry<String, Object> entry : overrides.entrySet()) {
+        for (var entry : overrides.entrySet()) {
             if (!knownKeys().contains(entry.getKey())) {
                 log.warn("Plugin message config override ignored: unknown key '{}'", entry.getKey());
                 continue;

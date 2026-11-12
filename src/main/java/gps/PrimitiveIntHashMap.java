@@ -120,7 +120,7 @@ public class PrimitiveIntHashMap<V> {
      * @return array of all keys in unspecified order; length equals {@link #size()}.
      */
     @SuppressWarnings("unused") public int[] keys() {
-        int[] result = new int[size];
+        var result = new int[size];
         int index = 0;
         for (int i = 0; i < values.length; ++i) {
             if (values[i] != null) result[index++] = keys[i];

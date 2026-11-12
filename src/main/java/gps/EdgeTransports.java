@@ -31,15 +31,15 @@ final class EdgeTransports {
         boolean bankVisited = current.isBankVisited() || next.isBankVisited();
         int landing = next.getPackedPosition();
         Set<Transport> stepTransports = new HashSet<>();
-        for (Transport transport : config.getTransportsPacked(bankVisited)
+        for (var transport : config.getTransportsPacked(bankVisited)
             .getOrDefault(current.getPackedPosition(), TransportAvailability.EMPTY_TRANSPORTS)) {
             if (transport.getDestination() == landing) stepTransports.add(transport);
         }
-        for (Transport transport : config.getUsableTeleports(bankVisited)) {
+        for (var transport : config.getUsableTeleports(bankVisited)) {
             if (transport.getDestination() == landing) stepTransports.add(transport);
         }
         Set<TransportType> localTypes = EnumSet.noneOf(TransportType.class);
-        for (Transport t : stepTransports) {
+        for (var t : stepTransports) {
             if (t.getOrigin() != Transport.UNDEFINED_ORIGIN && t.getType() != null) localTypes.add(t.getType());
         }
         int edgeDistance = WorldPointUtil.distanceBetween2D(current.getPackedPosition(), next.getPackedPosition());
@@ -76,20 +76,20 @@ final class EdgeTransports {
         TeleportMethod method = methodOf(route, current, next);
         if (method == null) {
             if (route != null && usable.isEmpty())
-                for (Transport connector : route.getBankTransports())
+                for (var connector : route.getBankTransports())
                     if (connector.getOrigin() == current.getPackedPosition() && connector.getDestination() == next.getPackedPosition())
                         return Set.of(connector);
             return usable;
         }
         Set<Transport> own = new HashSet<>();
-        for (Transport transport : usable)
+        for (var transport : usable)
             if (method.equals(transport.method())) own.add(transport);
         if (!own.isEmpty()) return own;
         // Rows sharing the method (a spell and its Spellbook Swap twin) differ only in their varbits:
         // keep the ones the player's current values allow, so the cue does not ask for a swap on the
         // book the spell is cast from.
         Set<Transport> allowed = new HashSet<>();
-        for (Transport transport : config.getAllTransports())
+        for (var transport : config.getAllTransports())
             if (transport.getDestination() == next.getPackedPosition()
                 && (transport.getOrigin() == Transport.UNDEFINED_ORIGIN || transport.getOrigin() == current.getPackedPosition())
                 && method.equals(transport.method())) {

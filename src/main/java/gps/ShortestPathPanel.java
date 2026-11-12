@@ -48,10 +48,10 @@ public class ShortestPathPanel extends PluginPanel {
         // Fixed top area: the header, the Travel options slot (the catalog scrolls inside its own
         // bounded box instead of pushing the route list down), the destination search, the
         // notices. Only the routes scroll in the main area below.
-        JPanel top = new JPanel(new BorderLayout());
+        var top = new JPanel(new BorderLayout());
         top.setBackground(ColorScheme.DARK_GRAY_COLOR);
         top.add(header, BorderLayout.NORTH);
-        JPanel belowHeader = new JPanel(new BorderLayout());
+        var belowHeader = new JPanel(new BorderLayout());
         belowHeader.setBackground(ColorScheme.DARK_GRAY_COLOR);
         belowHeader.add(travelOptions, BorderLayout.NORTH);
         belowHeader.add(destinationSearch, BorderLayout.CENTER);

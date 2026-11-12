@@ -53,7 +53,7 @@ final class RouteVerdicts {
      * {@link Integer#MAX_VALUE} when nothing ahead blocks.
      */
     static int blockedFromIndex(List<PathStep> path, List<RouteDirections.Step> steps, int progress, Predicate<ClosedDoors.Door> doorOpen) {
-        for (RouteDirections.Step step : steps) {
+        for (var step : steps) {
             if (!step.gatesWalk() || step.getEndIndex() <= progress) continue;
             if (step.isDoor()) {
                 ClosedDoors.Door door = ClosedDoors.doorBetween(path.get(step.getStartIndex()).getPackedPosition(),

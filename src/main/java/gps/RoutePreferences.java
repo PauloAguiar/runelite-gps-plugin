@@ -78,7 +78,7 @@ import net.runelite.client.config.*;
     int adjustmentSeconds(RouteOption route) {
         if (route.getMethods().isEmpty()) return -walkPreferenceSeconds;
         int seconds = 0;
-        for (TeleportMethod method : route.getMethods())
+        for (var method : route.getMethods())
             seconds += priorities.getOrDefault(method, MethodPriority.NORMAL).adjustSeconds;
         if (route.isViaBank()) seconds -= bankPreferenceSeconds;
         return seconds;
@@ -105,8 +105,8 @@ import net.runelite.client.config.*;
     private void save() {
         try {
             List<PriorityEntry> entries = new ArrayList<>();
-            for (Map.Entry<TeleportMethod, MethodPriority> e : priorities.entrySet()) {
-                PriorityEntry entry = new PriorityEntry();
+            for (var e : priorities.entrySet()) {
+                var entry = new PriorityEntry();
                 entry.method = e.getKey();
                 entry.priority = e.getValue();
                 entries.add(entry);
@@ -126,7 +126,7 @@ import net.runelite.client.config.*;
             if (json != null && !json.isEmpty()) {
                 PriorityEntry[] saved = gson.get().fromJson(json, PriorityEntry[].class);
                 if (saved != null) {
-                    for (PriorityEntry entry : saved) {
+                    for (var entry : saved) {
                         if (entry != null && entry.method != null && entry.method.getType() != null
                             && entry.priority != null && entry.priority != MethodPriority.NORMAL
                             && entry.priority != MethodPriority.EXCLUDED) {

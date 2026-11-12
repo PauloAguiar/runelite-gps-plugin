@@ -87,7 +87,7 @@ import static gps.PanelWidgets.wrappedLabel;
     JPanel balloonLowBanner(List<String> lowTypes) {
         JPanel warning = banner(RouteIcons.BANNER_WARNING, "Log storage low", "Restock logs at a balloon station:", BANNER_WARN_ACCENT);
         int[] counts = plugin.getBalloonStoredCounts();
-        JPanel icons = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
+        var icons = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
         icons.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         for (int i = 0; i < BalloonLogStorage.TYPE_NAMES.length; i++) {
             if (lowTypes.contains(BalloonLogStorage.TYPE_NAMES[i])) icons.add(logIcon(i, counts[i]));
@@ -135,12 +135,12 @@ import static gps.PanelWidgets.wrappedLabel;
         }
 
         ConfigItem tier = item("pohJewelleryBoxTier");
-        JPanel tierInner = new JPanel(new BorderLayout(5, 0));
+        var tierInner = new JPanel(new BorderLayout(5, 0));
         tierInner.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-        JLabel tierLabel = new JLabel(tier.name() + ":");
+        var tierLabel = new JLabel(tier.name() + ":");
         tierLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
         tierInner.add(tierLabel, BorderLayout.WEST);
-        JComboBox<JewelleryBoxTier> tierBox = new JComboBox<>(JewelleryBoxTier.values());
+        var tierBox = new JComboBox<JewelleryBoxTier>(JewelleryBoxTier.values());
         tierBox.setSelectedItem(plugin.getGpsConfig().pohJewelleryBoxTier());
         tierBox.setEnabled(pohOn);
         tierBox.setToolTipText(tooltip(tier));
@@ -283,7 +283,7 @@ import static gps.PanelWidgets.wrappedLabel;
             else {
                 body.add(note("Log storage:", ColorScheme.LIGHT_GRAY_COLOR));
                 int[] counts = plugin.getBalloonStoredCounts();
-                JPanel storageRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
+                var storageRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
                 storageRow.setBackground(ColorScheme.DARKER_GRAY_COLOR);
                 storageRow.setAlignmentX(Component.LEFT_ALIGNMENT);
                 storageRow.setBorder(new EmptyBorder(0, 14, 2, 0));
@@ -323,8 +323,8 @@ import static gps.PanelWidgets.wrappedLabel;
             body.add(none);
         }
         else {
-            for (String[] row : berths) {
-                JPanel berthRow = new JPanel(new BorderLayout(8, 0));
+            for (var row : berths) {
+                var berthRow = new JPanel(new BorderLayout(8, 0));
                 berthRow.setOpaque(false);
                 berthRow.setBorder(new EmptyBorder(3, 18, 0, 0));
                 // A raw JPanel defaults to CENTER alignmentX (0.5); one such row in a vertical
@@ -332,14 +332,14 @@ import static gps.PanelWidgets.wrappedLabel;
                 // checkboxes rendered half-indented AND clipped off the right edge.
                 berthRow.setAlignmentX(Component.LEFT_ALIGNMENT);
                 String type = row.length > 2 ? row[2] : "";
-                JLabel name = new JLabel(row[0]);
+                var name = new JLabel(row[0]);
                 name.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
                 BoatHull hull = BoatHull.fromName(type);
                 if (hull != null) name.setIcon(RouteIcons.hullIcon(hull));
                 name.setIconTextGap(6);
                 name.setToolTipText(row[0] + (type.isEmpty() ? "" : " (" + type + ")") + ", moored at " + row[1]);
                 berthRow.add(name, BorderLayout.CENTER);
-                JLabel port = new JLabel(row[1]);
+                var port = new JLabel(row[1]);
                 port.setForeground(ColorScheme.PROGRESS_COMPLETE_COLOR);
                 port.setToolTipText(name.getToolTipText());
                 berthRow.add(port, BorderLayout.EAST);
@@ -383,8 +383,8 @@ import static gps.PanelWidgets.wrappedLabel;
         else if (planted.isEmpty()) body.add(note("No planted spirit trees detected.", ColorScheme.MEDIUM_GRAY_COLOR));
         else {
             body.add(note("Detected:", ColorScheme.LIGHT_GRAY_COLOR));
-            for (String name : planted) {
-                JLabel label = new JLabel(name);
+            for (var name : planted) {
+                var label = new JLabel(name);
                 label.setForeground(ColorScheme.PROGRESS_COMPLETE_COLOR);
                 label.setFont(FontManager.getRunescapeSmallFont());
                 body.add(iconRow("spirit_tree", 18, label));
@@ -397,7 +397,7 @@ import static gps.PanelWidgets.wrappedLabel;
 
     /** The body box of an expanded configuration section. */
     private static JPanel body() {
-        JPanel body = new JPanel();
+        var body = new JPanel();
         body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
         body.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         body.setBorder(new EmptyBorder(4, 6, 6, 6));
@@ -410,7 +410,7 @@ import static gps.PanelWidgets.wrappedLabel;
      * HTML-wrapped so text longer than the narrow panel wraps instead of clipping.
      */
     private static JLabel statusLabel(String text, Color color) {
-        JLabel label = new JLabel("<html>" + text + "</html>");
+        var label = new JLabel("<html>" + text + "</html>");
         label.setForeground(color);
         label.setAlignmentX(Component.LEFT_ALIGNMENT);
         label.setBorder(new EmptyBorder(0, 0, 4, 0));
@@ -419,7 +419,7 @@ import static gps.PanelWidgets.wrappedLabel;
 
     /** A small wrapped note line inside a section body. */
     private static JLabel note(String text, Color color) {
-        JLabel note = new JLabel("<html>" + text + "</html>");
+        var note = new JLabel("<html>" + text + "</html>");
         note.setFont(FontManager.getRunescapeSmallFont());
         note.setForeground(color);
         note.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -432,7 +432,7 @@ import static gps.PanelWidgets.wrappedLabel;
      * warning glyph), matching the panel's other banners; used for the "needs a sync" hints.
      */
     private static JPanel warningBanner(String text) {
-        JPanel wrap = new JPanel(new BorderLayout());
+        var wrap = new JPanel(new BorderLayout());
         wrap.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         wrap.setAlignmentX(Component.LEFT_ALIGNMENT);
         wrap.setBorder(new EmptyBorder(3, 0, 1, 0));
@@ -447,7 +447,7 @@ import static gps.PanelWidgets.wrappedLabel;
      * fit the row height and centred in a fixed-width slot so the row labels align.
      */
     private static JLabel pohIcon(String name) {
-        JLabel label = new JLabel();
+        var label = new JLabel();
         label.setPreferredSize(new Dimension(26, 20));
         label.setHorizontalAlignment(SwingConstants.CENTER);
         BufferedImage img = ImageUtil.loadImageResource(ConfigSectionsView.class, "/poh/" + name + ".png");
@@ -460,7 +460,7 @@ import static gps.PanelWidgets.wrappedLabel;
 
     /** A configuration row decorated with a small icon to the left of its control. */
     private static JPanel iconRow(String pohIconName, int leftInset, JComponent control) {
-        JPanel row = new JPanel(new BorderLayout(5, 0));
+        var row = new JPanel(new BorderLayout(5, 0));
         row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         row.setAlignmentX(Component.LEFT_ALIGNMENT);
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
@@ -475,7 +475,7 @@ import static gps.PanelWidgets.wrappedLabel;
      * (the same rendering the inventory uses) and spelled out in the tooltip.
      */
     private JLabel logIcon(int typeIndex, int count) {
-        JLabel icon = new JLabel();
+        var icon = new JLabel();
         icon.setToolTipText(count + " " + BalloonLogStorage.TYPE_NAMES[typeIndex] + " logs in storage");
         plugin.getItemManager().getImage(BalloonLogStorage.ITEM_IDS[typeIndex], count, true).addTo(icon);
         return icon;
@@ -499,7 +499,7 @@ import static gps.PanelWidgets.wrappedLabel;
      */
     private JCheckBox toggle(String key, int indent, boolean enabled) {
         ConfigItem item = item(key);
-        JCheckBox box = new JCheckBox("<html><body style='width:" + (LABEL_WIDTH - indent) + "px'>" + item.name() + "</body></html>",
+        var box = new JCheckBox("<html><body style='width:" + (LABEL_WIDTH - indent) + "px'>" + item.name() + "</body></html>",
             Boolean.TRUE.equals(plugin.configValue(key, Boolean.class)));
         if (indent > 0) box.setBorder(new EmptyBorder(2, indent, 2, 0));
         box.setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -541,15 +541,15 @@ import static gps.PanelWidgets.wrappedLabel;
 
     private static JPanel spinnerRow(String caption, String tooltip, int value, int min, int max, int step,
         int indent, boolean enabled, IntConsumer setter) {
-        JPanel row = new JPanel(new BorderLayout(5, 0));
+        var row = new JPanel(new BorderLayout(5, 0));
         row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         row.setAlignmentX(Component.LEFT_ALIGNMENT);
         row.setBorder(new EmptyBorder(2, indent, 2, 0));
-        JLabel label = new JLabel(caption);
+        var label = new JLabel(caption);
         label.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
         label.setToolTipText(tooltip);
         row.add(label, BorderLayout.CENTER);
-        JSpinner spinner = new JSpinner(new SpinnerNumberModel(value, min, max, step));
+        var spinner = new JSpinner(new SpinnerNumberModel(value, min, max, step));
         spinner.setEnabled(enabled);
         spinner.setToolTipText(tooltip);
         spinner.addChangeListener(e -> setter.accept((Integer) spinner.getValue()));

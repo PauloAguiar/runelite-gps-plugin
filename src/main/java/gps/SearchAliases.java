@@ -36,9 +36,9 @@ final class SearchAliases {
      */
     static String expand(String query) {
         String[] tokens = query.toLowerCase(Locale.ROOT).trim().split("\\s+");
-        StringBuilder out = new StringBuilder();
+        var out = new StringBuilder();
         boolean changed = false;
-        for (String token : tokens) {
+        for (var token : tokens) {
             String expansion = ALIASES.get(token);
             if (out.length() > 0) out.append(' ');
             out.append(expansion != null ? expansion : token);

@@ -280,11 +280,11 @@ public class WorldPointUtil {
         int[][][] chunks = worldView.getInstanceTemplateChunks();
         if (chunks == null) return "no chunk data";
         Set<Integer> seen = new HashSet<>();
-        TreeSet<Integer> planes = new TreeSet<>();
+        var planes = new TreeSet<Integer>();
         int minX = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, minY = Integer.MAX_VALUE, maxY = Integer.MIN_VALUE;
-        for (int[][] planeChunks : chunks) {
+        for (var planeChunks : chunks) {
             if (planeChunks == null) continue;
-            for (int[] column : planeChunks) {
+            for (var column : planeChunks) {
                 if (column == null) continue;
                 for (int chunkData : column) {
                     if (chunkData == -1 || !seen.add(chunkData)) continue;
@@ -298,7 +298,7 @@ public class WorldPointUtil {
             }
         }
         if (seen.isEmpty()) return "all chunks empty";
-        StringBuilder text = new StringBuilder(seen.size() + " template chunks, x " + minX + ".." + maxX + ", y " + minY + ".." + maxY + ", planes");
+        var text = new StringBuilder(seen.size() + " template chunks, x " + minX + ".." + maxX + ", y " + minY + ".." + maxY + ", planes");
         for (int plane : planes) text.append(' ').append(plane);
         return text.toString();
     }
@@ -382,7 +382,7 @@ public class WorldPointUtil {
     public static PrimitiveIntList toLocalInstance(Client client, int packedPoint) {
         WorldView worldView = client.getTopLevelWorldView();
 
-        PrimitiveIntList worldPoints = new PrimitiveIntList();
+        var worldPoints = new PrimitiveIntList();
         if (!worldView.isInstance()) {
             worldPoints.add(packedPoint);
             return worldPoints;

@@ -24,7 +24,7 @@ public final class ArrowHead {
         head.lineTo(size / 2.0, -size);
         head.closePath();
 
-        AffineTransform tx = new AffineTransform();
+        var tx = new AffineTransform();
         double angle = Math.atan2(y2 - y1, x2 - x1);
         tx.translate(x2, y2);
         tx.rotate(angle - Math.PI / 2d);

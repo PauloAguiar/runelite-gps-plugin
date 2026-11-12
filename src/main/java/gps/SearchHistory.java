@@ -14,7 +14,7 @@ final class SearchHistory {
     static List<Destinations.Entry> push(List<Destinations.Entry> history, Destinations.Entry entry) {
         List<Destinations.Entry> out = new ArrayList<>();
         out.add(entry);
-        for (Destinations.Entry old : history) {
+        for (var old : history) {
             if (out.size() >= LIMIT) break;
             if (old.packedPosition != entry.packedPosition || !old.name.equals(entry.name)) out.add(old);
         }
@@ -22,8 +22,8 @@ final class SearchHistory {
     }
 
     static String serialize(List<Destinations.Entry> history) {
-        StringBuilder sb = new StringBuilder();
-        for (Destinations.Entry entry : history) {
+        var sb = new StringBuilder();
+        for (var entry : history) {
             if (sb.length() > 0) sb.append('\n');
             sb.append(entry.category).append('\t').append(entry.name).append('\t').append(entry.packedPosition);
         }
@@ -36,7 +36,7 @@ final class SearchHistory {
     static List<Destinations.Entry> deserialize(String raw, int limit) {
         List<Destinations.Entry> out = new ArrayList<>();
         if (raw == null || raw.isEmpty()) return out;
-        for (String line : raw.split("\\R")) {
+        for (var line : raw.split("\\R")) {
             String[] fields = line.split("\t");
             if (fields.length < 3) continue;
             try {

@@ -86,7 +86,7 @@ import gps.*;
                 log.warn("League regions resource not found at {}; defaulting all tiles to NEUTRAL", RESOURCE_PATH);
                 return new HashMap<>();
             }
-            String body = new String(Util.readAllBytes(Objects.requireNonNull(in)), StandardCharsets.UTF_8);
+            var body = new String(Util.readAllBytes(Objects.requireNonNull(in)), StandardCharsets.UTF_8);
             return parse(body);
         }
         catch (IOException e) {
@@ -99,7 +99,7 @@ import gps.*;
         Map<Integer, LeagueRegion> result = new HashMap<>();
         if (tsv == null || tsv.isEmpty()) return result;
         int lineNumber = 0;
-        for (String rawLine : tsv.split("\\R")) {
+        for (var rawLine : tsv.split("\\R")) {
             lineNumber++;
             String line = rawLine.trim();
             if (line.isEmpty() || line.startsWith("#")) continue;

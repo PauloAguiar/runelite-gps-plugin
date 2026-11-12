@@ -135,7 +135,7 @@ public class Pathfinder implements Runnable {
 
     private static boolean anyInBlockedRegion(LeagueModeState league, Set<Integer> packed) {
         if (!league.isSeasonal() || packed == null || packed.isEmpty()) return false;
-        for (Integer point : packed) {
+        for (var point : packed) {
             if (league.isInBlockedRegion(point)) return true;
         }
         return false;

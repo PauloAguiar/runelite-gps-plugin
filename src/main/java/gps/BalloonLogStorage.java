@@ -99,7 +99,7 @@ public final class BalloonLogStorage {
         ConfigManager configManager, String configGroup) {
         if (!config.balloonSmartMode() || (type != ChatMessageType.SPAM && type != ChatMessageType.MESBOX)) return;
         Map<String, Integer> updates = parse(message);
-        for (Map.Entry<String, Integer> update : updates.entrySet())
+        for (var update : updates.entrySet())
             configManager.setConfiguration(configGroup, update.getKey(), update.getValue());
         if (!updates.isEmpty() && !config.balloonStorageSynced())
             configManager.setConfiguration(configGroup, "balloonStorageSynced", true);

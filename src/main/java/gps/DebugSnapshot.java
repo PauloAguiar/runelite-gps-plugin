@@ -57,7 +57,7 @@ import net.runelite.client.*;
         for (int target : session.lastTargets()) targets.add(packedPointJson(target));
         snapshot.put("targets", targets);
         List<String> exclusions = new ArrayList<>();
-        for (TeleportMethod method : plugin.getUserExclusions()) exclusions.add(methodKey(method));
+        for (var method : plugin.getUserExclusions()) exclusions.add(methodKey(method));
         snapshot.put("userExclusions", exclusions);
         snapshot.put("bankContentsKnown", plugin.isBankContentsKnown());
         snapshot.put("bankRestored", plugin.isBankRestored());
@@ -81,7 +81,7 @@ import net.runelite.client.*;
         List<RouteOption> routes = session.routes();
         snapshot.put("displayedRouteIndex", displayed != null ? routes.indexOf(displayed) : -1);
         List<Object> routesJson = new ArrayList<>();
-        for (RouteOption route : routes) routesJson.add(routeJson(route));
+        for (var route : routes) routesJson.add(routeJson(route));
         snapshot.put("routes", routesJson);
         Map<String, Object> timing = generationTiming(plugin.altRoutesService());
         if (timing != null) snapshot.put("altGenTiming", timing);
@@ -123,7 +123,7 @@ import net.runelite.client.*;
         routeJson.put("reached", route.isReached());
         routeJson.put("viaBank", route.isViaBank());
         List<String> methods = new ArrayList<>();
-        for (TeleportMethod method : route.getMethods()) methods.add(methodKey(method));
+        for (var method : route.getMethods()) methods.add(methodKey(method));
         routeJson.put("methods", methods);
         routeJson.put("methodEdgeIndexes", route.getMethodEdgeIndexes());
         routeJson.put("methodDurations", route.getMethodDurations());
@@ -161,7 +161,7 @@ import net.runelite.client.*;
         // Which searches the time went to and how much each explored (a flat A* heuristic shows
         // up as a huge node count).
         List<Object> searchDetails = new ArrayList<>();
-        for (AlternativeRoutesService.SearchRecord r : service.getLastSearchRecords()) {
+        for (var r : service.getLastSearchRecords()) {
             Map<String, Object> detail = new LinkedHashMap<>();
             detail.put("label", r.label);
             detail.put("cpuMs", r.cpuMs);
@@ -179,10 +179,10 @@ import net.runelite.client.*;
     }
 
     private File write(Map<String, Object> snapshot) throws IOException {
-        File dir = new File(RuneLite.RUNELITE_DIR, "gps-debug");
+        var dir = new File(RuneLite.RUNELITE_DIR, "gps-debug");
         //noinspection ResultOfMethodCallIgnored
         dir.mkdirs();
-        File out = new File(dir, "gps-capture-" + new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date()) + ".json");
+        var out = new File(dir, "gps-capture-" + new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date()) + ".json");
         Gson gson = plugin.gson().newBuilder().setPrettyPrinting().create();
         try (Writer writer = new OutputStreamWriter(new FileOutputStream(out), StandardCharsets.UTF_8)) {
             gson.toJson(snapshot, writer);
@@ -198,7 +198,7 @@ import net.runelite.client.*;
     /** The directions as JSON rows: text, indexes, ticks and the step kind flags. */
     static List<Object> stepsJson(List<RouteDirections.Step> steps) {
         List<Object> stepsJson = new ArrayList<>();
-        for (RouteDirections.Step step : steps) {
+        for (var step : steps) {
             Map<String, Object> stepJson = new LinkedHashMap<>();
             stepJson.put("text", step.getText());
             stepJson.put("startIndex", step.getStartIndex());

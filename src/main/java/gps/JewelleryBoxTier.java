@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
     private final String type;
 
     public static JewelleryBoxTier fromType(String type) {
-        for (JewelleryBoxTier tier : values()) {
+        for (var tier : values()) {
             if (tier.type.equals(type)) return tier;
         }
         return null;

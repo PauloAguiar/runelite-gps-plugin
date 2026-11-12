@@ -20,7 +20,7 @@ import net.runelite.api.gameval.InventoryID;
     String body() {
         RouteSession session = plugin.session();
         ShortestPathConfig config = plugin.getGpsConfig();
-        StringBuilder body = new StringBuilder();
+        var body = new StringBuilder();
         // No "describe the issue" headings here: the GitHub issue template provides those; this
         // block is what the player pastes under them.
         body.append("*Auto-captured context — please keep:*\n");
@@ -44,9 +44,9 @@ import net.runelite.api.gameval.InventoryID;
         Map<TeleportMethod, MethodAvailability> unavailable = plugin.unavailableMethods();
         if (!catalog.isEmpty()) {
             Map<MethodAvailability, Integer> counts = new EnumMap<>(MethodAvailability.class);
-            for (MethodAvailability status : unavailable.values()) counts.merge(status, 1, Integer::sum);
+            for (var status : unavailable.values()) counts.merge(status, 1, Integer::sum);
             body.append("- Methods: ").append(catalog.size() - unavailable.size()).append(" usable of ").append(catalog.size());
-            for (Map.Entry<MethodAvailability, Integer> entry : counts.entrySet()) {
+            for (var entry : counts.entrySet()) {
                 body.append(" · ").append(entry.getValue()).append(' ')
                     .append(entry.getKey().name().toLowerCase(Locale.ROOT).replace('_', ' '));
             }
@@ -55,7 +55,7 @@ import net.runelite.api.gameval.InventoryID;
         Set<TeleportMethod> userExclusions = plugin.getUserExclusions();
         if (!userExclusions.isEmpty()) {
             List<String> excluded = new ArrayList<>();
-            for (TeleportMethod method : userExclusions) excluded.add(method.routeLabel());
+            for (var method : userExclusions) excluded.add(method.routeLabel());
             Collections.sort(excluded);
             int cap = Math.min(excluded.size(), 10);
             body.append("- Excluded by user: ").append(String.join("; ", excluded.subList(0, cap)));
@@ -98,7 +98,7 @@ import net.runelite.api.gameval.InventoryID;
         ItemContainer container = client.getItemContainer(inventoryId);
         if (container == null) return "(unknown)";
         Map<String, Integer> names = new LinkedHashMap<>();
-        for (Item item : container.getItems()) {
+        for (var item : container.getItems()) {
             if (item == null || item.getId() <= 0) continue;
             String name;
             try {
@@ -112,7 +112,7 @@ import net.runelite.api.gameval.InventoryID;
         }
         if (names.isEmpty()) return "(empty)";
         List<String> parts = new ArrayList<>(names.size());
-        for (Map.Entry<String, Integer> entry : names.entrySet())
+        for (var entry : names.entrySet())
             parts.add(entry.getValue() > 1 ? entry.getKey() + " x" + entry.getValue() : entry.getKey());
         return String.join(", ", parts);
     }
@@ -128,7 +128,7 @@ import net.runelite.api.gameval.InventoryID;
     static String methodSummary(RouteOption route) {
         if (route.getMethods().isEmpty()) return "walk";
         List<String> parts = new ArrayList<>();
-        for (TeleportMethod method : route.getMethods()) parts.add(method.routeLabel());
+        for (var method : route.getMethods()) parts.add(method.routeLabel());
         return String.join(" + ", parts);
     }
 }

@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
     private final String type;
 
     public static TeleportationItem fromType(String type) {
-        for (TeleportationItem teleportationItem : values()) {
+        for (var teleportationItem : values()) {
             if (teleportationItem.type.equals(type)) return teleportationItem;
         }
         return null;

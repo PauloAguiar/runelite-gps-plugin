@@ -50,7 +50,7 @@ import net.runelite.client.config.*;
             TeleportMethod[] saved = gson.get().fromJson(json, TeleportMethod[].class);
             if (saved == null) return exclusions;
             boolean dropped = false;
-            for (TeleportMethod method : saved) {
+            for (var method : saved) {
                 if (method == null || method.getType() == null || method.getType() == TransportType.SEASONAL_TRANSPORTS) {
                     dropped = true;
                     continue;

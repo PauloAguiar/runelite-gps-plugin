@@ -231,7 +231,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
             lines.add(new Line(text, font, colour,
                 formatTime((int) Math.ceil(step.getTicks() * RouteDirections.SECONDS_PER_TICK)), colour));
             // The withdraw step's per-item list: indented, un-numbered, no own time.
-            for (String detail : step.getDetails()) {
+            for (var detail : step.getDetails()) {
                 if (shown + 1 >= maxLines) break;
                 lines.add(new Line("      • " + detail, fontOther, colour, null, null));
                 shown++;
@@ -257,7 +257,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         int minWidth = Math.round(MIN_WIDTH * widthScale);
         int maxWidth = Math.round(MAX_WIDTH * widthScale);
         int contentWidth = minWidth;
-        for (Line line : lines) {
+        for (var line : lines) {
             // A centred line (arrival, finding) reads as a label, not a list row: give it the
             // margin on both sides, or the text hugs the panel edges.
             int width = graphics.getFontMetrics(line.font).stringWidth(line.left)
@@ -272,7 +272,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         // The compact overlay has no header row at all.
         boolean compact = plugin.display().compactOverlay;
         if (!compact) panelComponent.getChildren().add(LineComponent.builder().left(" ").leftFont(fontCurrent).build());
-        for (Line line : lines) {
+        for (var line : lines) {
             if (line.centred) {
                 // Reserve the row with a spacer in the same font; the text itself is drawn
                 // centred over the panel afterwards.
@@ -312,7 +312,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
                 bottom -= line.font.getSize() / 2f + 5;
                 continue;
             }
-            TextLayout layout = new TextLayout(line.left, line.font, graphics.getFontRenderContext());
+            var layout = new TextLayout(line.left, line.font, graphics.getFontRenderContext());
             Rectangle2D bounds = layout.getBounds();
             float x = (float) ((panelSize.width - bounds.getWidth()) / 2 - bounds.getX());
             // Place the glyph box's bottom on the anchor, then move the anchor up past it.
@@ -403,7 +403,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
     static void drawPinGlyph(Graphics2D graphics, int px, int py, float s, Color accent) {
         graphics.setColor(accent);
         graphics.fillOval(px, py, Math.round(9 * s), Math.round(9 * s));
-        Polygon tail = new Polygon(new int[]{px + Math.round(1 * s), px + Math.round(8 * s), px + Math.round(4 * s)},
+        var tail = new Polygon(new int[]{px + Math.round(1 * s), px + Math.round(8 * s), px + Math.round(4 * s)},
             new int[]{py + Math.round(7 * s), py + Math.round(7 * s), py + Math.round(13 * s)},
             3);
         graphics.fillPolygon(tail);
@@ -435,7 +435,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
     private void drawEtaBadge(Graphics2D graphics, Dimension panelSize, String etaText) {
         // TextLayout gives the glyphs' tight pixel bounds — the RuneScape fonts' metrics (ascent,
         // leading) don't match their visual size, which kept mis-centring the text in the pill.
-        TextLayout layout = new TextLayout(etaText, fontOther, graphics.getFontRenderContext());
+        var layout = new TextLayout(etaText, fontOther, graphics.getFontRenderContext());
         Rectangle2D bounds = layout.getBounds();
         int width = (int) Math.ceil(bounds.getWidth()) + 12;
         int height = (int) Math.ceil(bounds.getHeight()) + 8;
@@ -714,7 +714,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         // still outside. Anything at or past that edge only counts once the player is standing
         // exactly on the path beyond it, which a one-tile doorway forces anyway.
         int doorGate = Integer.MAX_VALUE;
-        for (RouteDirections.Step step : steps) {
+        for (var step : steps) {
             if (step.isDoor() && step.getEndIndex() > reachedIndex) {
                 doorGate = step.getEndIndex();
                 break;
@@ -754,7 +754,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
      */
     private boolean lastLegClear(RouteOption route, List<RouteDirections.Step> steps) {
         List<PathStep> path = route.getPath();
-        for (RouteDirections.Step step : steps) {
+        for (var step : steps) {
             if (!step.isDoor() || step.getEndIndex() <= reachedIndex || step.getEndIndex() >= path.size()) continue;
             ClosedDoors.Door door = ClosedDoors.doorBetween(path.get(step.getStartIndex()).getPackedPosition(),
                 path.get(step.getEndIndex()).getPackedPosition());
@@ -777,7 +777,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
      * The step the player is currently executing: the first whose span isn't finished.
      */
     private RouteDirections.Step currentStep(List<RouteDirections.Step> steps) {
-        for (RouteDirections.Step step : steps) {
+        for (var step : steps) {
             if (!finished(step)) return step;
         }
         return steps.isEmpty() ? null : steps.get(steps.size() - 1);
@@ -801,7 +801,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         List<PathStep> path = route.getPath();
         RouteDirections.Step best = null;
         int bestDistance = 30;
-        for (RouteDirections.Step step : steps) {
+        for (var step : steps) {
             if (!step.isTransport() || step.getEndIndex() >= path.size() || !route.sailingJumpDepartures().contains(step.getStartIndex()))
                 continue;
             int origin = path.get(Math.max(0, step.getStartIndex())).getPackedPosition();
@@ -848,20 +848,20 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         List<PathStep> path = route.getPath();
         int pathSize = path.size();
         boolean costed = pathSize > 0;
-        for (PathStep step : path) {
+        for (var step : path) {
             if (step.getCost() == PathStep.UNKNOWN_COST) {
                 costed = false;
                 break;
             }
         }
         if (costed) {
-            double[] exact = new double[pathSize];
+            var exact = new double[pathSize];
             int end = path.get(pathSize - 1).getCost();
             for (int i = 0; i < pathSize; i++)
                 exact[i] = Math.max(0, end - path.get(i).getCost()) / (double) CostUnits.UNITS_PER_TICK;
             return exact;
         }
-        double[] remaining = new double[pathSize];
+        var remaining = new double[pathSize];
         double after = 0;
         for (int s = steps.size() - 1; s >= 0; s--) {
             RouteDirections.Step step = steps.get(s);

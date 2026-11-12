@@ -40,7 +40,7 @@ public final class BuildInfo {
     private static String property(String resource, String key) {
         try (InputStream in = BuildInfo.class.getResourceAsStream(resource)) {
             if (in != null) {
-                Properties props = new Properties();
+                var props = new Properties();
                 props.load(in);
                 String value = props.getProperty(key);
                 if (value != null && !value.isEmpty()) return value;

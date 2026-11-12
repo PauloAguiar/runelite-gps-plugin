@@ -51,7 +51,7 @@ public class SceneObjects {
             if (wall != null && wall.getId() == objectId) return Presence.PRESENT;
             GameObject[] gameObjects = tile.getGameObjects();
             if (gameObjects != null) {
-                for (GameObject gameObject : gameObjects) {
+                for (var gameObject : gameObjects) {
                     if (gameObject != null && gameObject.getId() == objectId) return Presence.PRESENT;
                 }
             }

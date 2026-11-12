@@ -40,12 +40,12 @@ import lombok.*;
 
     private static Map<String, ItemVariations> load() {
         Map<String, ItemVariations> families = new LinkedHashMap<>();
-        for (String[] row : rows("/item-variations.tsv")) {
+        for (var row : rows("/item-variations.tsv")) {
             ItemVariations family = families.computeIfAbsent(row[0], ItemVariations::new);
             family.ids = Arrays.copyOf(family.ids, family.ids.length + 1);
             family.ids[family.ids.length - 1] = Integer.parseInt(row[1]);
         }
-        for (String[] row : rows("/rune-sources.tsv")) {
+        for (var row : rows("/rune-sources.tsv")) {
             ItemVariations rune = families.get(row[0]);
             rune.staves = row.length > 1 && !row[1].isEmpty() ? families.get(row[1]) : null;
             rune.offhands = row.length > 2 && !row[2].isEmpty() ? families.get(row[2]) : null;

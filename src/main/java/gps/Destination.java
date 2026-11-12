@@ -44,9 +44,9 @@ import gps.transport.parser.*;
      */
     private static void addDestinations(Map<String, Set<Integer>> destinations, String path) {
         try {
-            String s = new String(Util.readAllBytes(Objects.requireNonNull(ShortestPathPlugin.class.getResourceAsStream(path))),
+            var s = new String(Util.readAllBytes(Objects.requireNonNull(ShortestPathPlugin.class.getResourceAsStream(path))),
                 StandardCharsets.UTF_8);
-            Scanner scanner = new Scanner(s);
+            var scanner = new Scanner(s);
 
             // Header line is the first line in the file and will start with either '#' or
             // '# '
@@ -69,9 +69,9 @@ import gps.transport.parser.*;
                         fieldMap.put(headers[i], values);
                     }
                 }
-                for (String field : fieldMap.keySet()) {
+                for (var field : fieldMap.keySet()) {
                     if ("Destination".equals(field)) {
-                        for (String value : fieldMap.get(field)) {
+                        for (var value : fieldMap.get(field)) {
                             try {
                                 String[] destinationArray = value.split(DELIM);
                                 if (destinationArray.length == 3) {
@@ -130,7 +130,7 @@ import gps.transport.parser.*;
         String DELIM = " ";
 
         try {
-            String s = new String(Util.readAllBytes(Objects.requireNonNull(ShortestPathPlugin.class.getResourceAsStream(path))), StandardCharsets.UTF_8);
+            var s = new String(Util.readAllBytes(Objects.requireNonNull(ShortestPathPlugin.class.getResourceAsStream(path))), StandardCharsets.UTF_8);
             try (Scanner scanner = new Scanner(s)) {
                 String[] headers = parse_header_line(scanner);
                 for (int i = 0; i < headers.length; i++) headers[i] = headers[i].trim();
@@ -170,7 +170,7 @@ import gps.transport.parser.*;
                     Set<VarRequirement> varbits = varbitsCol >= 0 ? VARBIT_PARSER.parse(blankToNull(varbitsStr)) : Set.of();
                     Set<VarRequirement> varPlayers = varPlayersCol >= 0 ? VARPLAYER_PARSER.parse(blankToNull(varPlayersStr)) : Set.of();
 
-                    DestinationRequirements rowReq = new DestinationRequirements(skillLevels, quests, varbits, varPlayers);
+                    var rowReq = new DestinationRequirements(skillLevels, quests, varbits, varPlayers);
                     requirements.merge(packed, rowReq, DestinationRequirements::merge);
                 }
             }

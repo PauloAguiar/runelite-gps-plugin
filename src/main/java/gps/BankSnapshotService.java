@@ -130,8 +130,8 @@ import net.runelite.client.config.*;
      */
     static String encode(Item[] items) {
         if (items == null) return null;
-        StringBuilder sb = new StringBuilder(items.length * 10);
-        for (Item item : items) {
+        var sb = new StringBuilder(items.length * 10);
+        for (var item : items) {
             if (item == null || item.getId() < 0 || item.getQuantity() <= 0) continue;
             if (sb.length() > 0) sb.append(',');
             sb.append(item.getId()).append(':').append(item.getQuantity());
@@ -143,7 +143,7 @@ import net.runelite.client.config.*;
     static Item[] decode(String encoded) {
         if (encoded == null || encoded.isEmpty()) return null;
         String[] pairs = encoded.split(",");
-        Item[] items = new Item[pairs.length];
+        var items = new Item[pairs.length];
         try {
             for (int i = 0; i < pairs.length; i++) {
                 int sep = pairs[i].indexOf(':');

@@ -52,7 +52,7 @@ final class RouteAcceptance {
     /** The costliest accepted route's cost (walk-only entries included: they bound the page too). */
     static int maxAcceptedCost(List<RouteOption> routes) {
         int max = 0;
-        for (RouteOption route : routes) max = Math.max(max, route.getTotalCost());
+        for (var route : routes) max = Math.max(max, route.getTotalCost());
         return max;
     }
 
@@ -140,7 +140,7 @@ final class RouteAcceptance {
 
     /** Whether any shown route already starts by disembarking at a port. */
     static boolean hasPortFirstRoute(List<RouteOption> routes) {
-        for (RouteOption route : routes) {
+        for (var route : routes) {
             if (portFirst(route)) return true;
         }
         return false;
@@ -152,7 +152,7 @@ final class RouteAcceptance {
      * route that also banks). Such a candidate adds nothing the page does not already say.
      */
     static boolean nestsAKeptRoute(List<TeleportMethod> candidate, boolean candidateViaBank, List<RouteOption> kept) {
-        for (RouteOption route : kept) {
+        for (var route : kept) {
             List<TeleportMethod> base = route.getMethods();
             if (base.isEmpty() || candidate.size() <= base.size() || (candidateViaBank && !route.isViaBank())) continue;
             if (candidate.subList(candidate.size() - base.size(), candidate.size()).equals(base)) return true;
@@ -174,7 +174,7 @@ final class RouteAcceptance {
                 || !flight.getType().equals(teleport.getType().sharesDestinationsWith())) {
                 continue;
             }
-            for (Transport candidate : baselineTeleports) {
+            for (var candidate : baselineTeleports) {
                 if (teleport.getType().equals(candidate.getType())
                     && WorldPointUtil.distanceBetween(candidate.getDestination(), flight.getDestination())
                         <= SHARED_DESTINATION_RADIUS) {

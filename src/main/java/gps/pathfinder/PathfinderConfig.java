@@ -171,7 +171,7 @@ import static gps.transport.TransportType.*;
     /** The coin fare a transport actually charges: its listed COINS requirement scaled by farePercent. */
     public int effectiveCoinFare(Transport transport) {
         if (transport == null || transport.getItemRequirements() == null) return 0;
-        for (ItemRequirement requirement : transport.getItemRequirements().getRequirements()) {
+        for (var requirement : transport.getItemRequirements().getRequirements()) {
             if (requirement.getItemIds() != null) {
                 for (int itemId : requirement.getItemIds()) {
                     if (itemId == ItemID.COINS) return scaleCoins(requirement.getQuantity(), farePercent(transport));
@@ -249,7 +249,7 @@ import static gps.transport.TransportType.*;
     private void refreshBoatLocations() {
         Set<Integer> moorings = new HashSet<>();
         boolean seen = false;
-        for (int[] boat : BOAT_VARBITS) {
+        for (var boat : BOAT_VARBITS) {
             // The owned varbit alone is unreliable (Where's My Boat's field lesson); a set
             // name descriptor also proves ownership, and covers Port Sarim's port id 0.
             if (client.getVarbitValue(boat[0]) <= 0 && client.getVarbitValue(boat[2]) <= 0) continue;
@@ -538,7 +538,7 @@ import static gps.transport.TransportType.*;
     }
 
     private void indexTransportOrigins() {
-        for (Transport transport : allTransports) {
+        for (var transport : allTransports) {
             if (transport.getOrigin() != Transport.UNDEFINED_ORIGIN) transportOriginTiles.add(transport.getOrigin());
         }
     }
@@ -581,7 +581,7 @@ import static gps.transport.TransportType.*;
      */
     public List<Transport> transportsOnEdge(int originPacked, int destinationPacked) {
         List<Transport> matches = new ArrayList<>();
-        for (Transport transport : allTransports) {
+        for (var transport : allTransports) {
             if (transport.getOrigin() == originPacked && transport.getDestination() == destinationPacked)
                 matches.add(transport);
         }
@@ -593,7 +593,7 @@ import static gps.transport.TransportType.*;
      * as {@link #transportsOnEdge}. */
     public List<Transport> teleportsOnEdge(int destinationPacked, String displayInfo) {
         List<Transport> matches = new ArrayList<>();
-        for (Transport transport : allTransports) {
+        for (var transport : allTransports) {
             if (transport.getOrigin() == Transport.UNDEFINED_ORIGIN && transport.getDestination() == destinationPacked
                 && displayInfo != null && displayInfo.equals(transport.getDisplayInfo())) {
                 matches.add(transport);
@@ -729,7 +729,7 @@ import static gps.transport.TransportType.*;
             return;
         }
         Set<Integer> acc = new HashSet<>(bankLocs.size());
-        for (Integer p : bankLocs) {
+        for (var p : bankLocs) {
             DestinationRequirements req = bankRequirements.getOrDefault(p, DestinationRequirements.EMPTY);
             if (satisfiesBankDestinationRequirements(req)) acc.add(p);
         }
@@ -738,7 +738,7 @@ import static gps.transport.TransportType.*;
     }
 
     private static PrimitiveIntHashMap<Boolean> indexOf(Set<Integer> tiles) {
-        PrimitiveIntHashMap<Boolean> index = new PrimitiveIntHashMap<>(Math.max(16, tiles.size() * 2));
+        var index = new PrimitiveIntHashMap<Boolean>(Math.max(16, tiles.size() * 2));
         for (int tile : tiles) index.put(tile, Boolean.TRUE);
         return index;
     }
@@ -753,13 +753,13 @@ import static gps.transport.TransportType.*;
             int need = i < requiredLevels.length ? requiredLevels[i] : 0;
             if (boostedSkillLevelsAndMore[i] < need) return false;
         }
-        for (Quest quest : dr.getQuests()) {
+        for (var quest : dr.getQuests()) {
             if (!QuestState.FINISHED.equals(getQuestState(quest))) return false;
         }
-        for (VarRequirement req : dr.getVarbits()) {
+        for (var req : dr.getVarbits()) {
             if (!req.checkWith(client::getVarbitValue)) return false;
         }
-        for (VarRequirement req : dr.getVarPlayers()) {
+        for (var req : dr.getVarPlayers()) {
             if (!req.checkWith(client::getVarpValue)) return false;
         }
         return true;
@@ -809,10 +809,10 @@ import static gps.transport.TransportType.*;
 
     static Map<String, Set<Integer>> filterDestinations(Map<String, Set<Integer>> allDestinations) {
         Map<String, Set<Integer>> filteredDestinations = new HashMap<>(allDestinations.size());
-        for (Map.Entry<String, Set<Integer>> entry : allDestinations.entrySet()) {
+        for (var entry : allDestinations.entrySet()) {
             String destinationType = entry.getKey();
             Set<Integer> usableDestinations = new HashSet<>(entry.getValue().size());
-            for (Integer destination : entry.getValue()) {
+            for (var destination : entry.getValue()) {
                 // We filter based on whether the destination is inside or outside wilderness
                 if (!WildernessChecker.isInWilderness(destination)) usableDestinations.add(destination);
             }
@@ -844,8 +844,8 @@ import static gps.transport.TransportType.*;
         transportTypeConfig.disableUnless(MAGIC_MUSHTREE, QuestState.FINISHED.equals(getQuestState(Quest.BONE_VOYAGE)));
         transportTypeConfig.disableUnless(SPIRIT_TREE, QuestState.FINISHED.equals(getQuestState(Quest.TREE_GNOME_VILLAGE)));
 
-        TransportAvailability.Builder withoutBank = new TransportAvailability.Builder(allTransports.length);
-        TransportAvailability.Builder withBank = new TransportAvailability.Builder(allTransports.length);
+        var withoutBank = new TransportAvailability.Builder(allTransports.length);
+        var withBank = new TransportAvailability.Builder(allTransports.length);
         // Planning copies capture the usable-transport base lists so per-exclusion rebuilds can run
         // off the client thread. Valid because the alt-routes service always runs this client-thread
         // refresh with an empty exclusion set (the catalog pass).
@@ -857,12 +857,12 @@ import static gps.transport.TransportType.*;
         long fingerprint = 0;
         for (int index = 0; index < allTransports.length; index++) {
             Transport transport = allTransports[index];
-            for (Quest quest : transport.getQuests())
+            for (var quest : transport.getQuests())
                 // The explicit put also covers getQuestState overrides (the test harness);
                 // with the base memo it is a redundant self-assignment, repeats are map hits.
                 questStates.put(quest, getQuestState(quest));
 
-            for (VarRequirement varRequirement : transport.getVarRequirements()) {
+            for (var varRequirement : transport.getVarRequirements()) {
                 for (int id : varRequirement.ids()) {
                     if (varRequirement.isVarbit()) {
                         if (!varbitValues.containsKey(id)) varbitValues.put(id, client.getVarbitValue(id));
@@ -970,7 +970,7 @@ import static gps.transport.TransportType.*;
             missing.add(typeQuest.getName());
         if (FAIRY_RING.equals(transport.getType()) && varbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST) <= 39)
             missing.add("Fairy Tale II (partial)");
-        for (Quest quest : transport.getQuests()) {
+        for (var quest : transport.getQuests()) {
             if (!QuestState.FINISHED.equals(getQuestState(quest)) && !missing.contains(quest.getName()))
                 missing.add(quest.getName());
         }
@@ -987,7 +987,7 @@ import static gps.transport.TransportType.*;
     private String itemRequirementNames(TransportItems items) {
         if (items == null) return null;
         List<String> names = new ArrayList<>();
-        for (ItemRequirement requirement : items.getRequirements()) {
+        for (var requirement : items.getRequirements()) {
             int[] ids = requirement.getItemIds();
             if (ids == null || ids.length == 0) continue;
             String name = itemName(ids[0]);
@@ -1078,7 +1078,7 @@ import static gps.transport.TransportType.*;
      */
     private boolean balloonStorageCovers(TransportItems items) {
         if (items == null) return true;
-        for (ItemRequirement requirement : items.getRequirements()) {
+        for (var requirement : items.getRequirements()) {
             boolean covered = false;
             if (requirement.getItemIds() != null) {
                 for (int itemId : requirement.getItemIds()) {
@@ -1135,7 +1135,7 @@ import static gps.transport.TransportType.*;
             // aboard port seeds find the same route (field capture 225226: six searches, six
             // identical results).
             extras = new ArrayList<>(extraTransports.size());
-            for (Transport transport : extraTransports) {
+            for (var transport : extraTransports) {
                 if (useTransport(transport) && !excluded.contains(transport.method())) extras.add(transport);
             }
         }
@@ -1194,14 +1194,14 @@ import static gps.transport.TransportType.*;
      */
     private static Transport[] flatten(Map<Integer, Set<Transport>> transports) {
         List<Transport> all = new ArrayList<>();
-        for (Set<Transport> set : transports.values()) all.addAll(set);
+        for (var set : transports.values()) all.addAll(set);
         return all.toArray(new Transport[0]);
     }
 
     static void remapPohDestinations(Map<Integer, Set<Transport>> transports) {
         int pohLanding = WorldPointUtil.packWorldPoint(1923, 5709, 0);
-        for (Set<Transport> transportSet : transports.values()) {
-            for (Transport transport : transportSet) {
+        for (var transportSet : transports.values()) {
+            for (var transport : transportSet) {
                 int destination = transport.getDestination();
                 int destX = unpackWorldX(destination);
                 int destY = unpackWorldY(destination);
@@ -1237,21 +1237,21 @@ import static gps.transport.TransportType.*;
     }
 
     private boolean completedQuests(Transport transport) {
-        for (Quest quest : transport.getQuests()) {
+        for (var quest : transport.getQuests()) {
             if (!QuestState.FINISHED.equals(questStates.getOrDefault(quest, QuestState.NOT_STARTED))) return false;
         }
         return true;
     }
 
     public boolean varbitChecks(Transport transport) {
-        for (VarRequirement varRequirement : transport.getVarbits()) {
+        for (var varRequirement : transport.getVarbits()) {
             if (!varRequirement.check(varbitValues)) return true;
         }
         return false;
     }
 
     public boolean varPlayerChecks(Transport transport) {
-        for (VarRequirement varRequirement : transport.getVarPlayers()) {
+        for (var varRequirement : transport.getVarPlayers()) {
             if (!varRequirement.check(varPlayerValues)) return true;
         }
         return false;
@@ -1522,7 +1522,7 @@ import static gps.transport.TransportType.*;
     public Map<Integer, String> getPohPortalNames() {
         if (pohPortalNames == null) {
             Map<Integer, String> names = new HashMap<>();
-            for (Transport transport : allTransports) {
+            for (var transport : allTransports) {
                 Integer id = TELEPORTATION_PORTAL_POH.equals(transport.getType()) && !isNexusRow(transport) ? objectIdOf(transport) : null;
                 if (id != null && transport.getDisplayInfo() != null) names.put(id, transport.getDisplayInfo());
             }
@@ -1594,7 +1594,7 @@ import static gps.transport.TransportType.*;
         int old = boostedSkillLevelsAndMore[skill.ordinal()];
         if (old == 0 || old == newLevel) return false;
         int low = Math.min(old, newLevel), high = Math.max(old, newLevel);
-        for (Transport transport : allTransports) {
+        for (var transport : allTransports) {
             int[] levels = transport.getSkillLevels();
             if (levels != null && levels.length > skill.ordinal() && levels[skill.ordinal()] > low && levels[skill.ordinal()] <= high)
                 return true;
@@ -1682,7 +1682,7 @@ import static gps.transport.TransportType.*;
         if (checkInventory) {
             ItemContainer inventory = client.getItemContainer(InventoryID.INV);
             if (inventory != null) {
-                for (Item item : inventory.getItems()) {
+                for (var item : inventory.getItems()) {
                     if (item.getId() >= 0 && item.getQuantity() > 0) items.put(item.getId(), item.getQuantity());
                 }
             }
@@ -1691,7 +1691,7 @@ import static gps.transport.TransportType.*;
         if (checkEquipment) {
             ItemContainer equipment = client.getItemContainer(InventoryID.WORN);
             if (equipment != null) {
-                for (Item item : equipment.getItems()) {
+                for (var item : equipment.getItems()) {
                     if (item.getId() >= 0 && item.getQuantity() > 0) items.put(item.getId(), item.getQuantity());
                 }
             }
@@ -1702,7 +1702,7 @@ import static gps.transport.TransportType.*;
             Item[] bankItems = resolveBankItems();
             if (bankItems != null && (forceBank || TeleportationItem.INVENTORY_AND_BANK.equals(teleportSetting)
                 || TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportSetting))) {
-                for (Item item : bankItems) {
+                for (var item : bankItems) {
                     if (item.getId() >= 0 && item.getQuantity() > 0) items.put(item.getId(), item.getQuantity());
                 }
             }
@@ -1771,7 +1771,7 @@ import static gps.transport.TransportType.*;
         // likewise a single offhand (tome) across the offhand-covered requirements.
         List<int[]> staffNeeds = new ArrayList<>();
         List<int[]> offhandNeeds = new ArrayList<>();
-        for (ItemRequirement req : transportItems.getRequirements()) {
+        for (var req : transportItems.getRequirements()) {
             boolean missing = true;
             int requiredQuantity = scaledQuantity(req, coinPercent);
             if (req.getItemIds() != null) {
@@ -1810,7 +1810,7 @@ import static gps.transport.TransportType.*;
      */
     private int[] presentIds(Map<Integer, Integer> items, int[] ids, int requiredQuantity) {
         int n = 0;
-        int[] out = new int[ids.length];
+        var out = new int[ids.length];
         for (int itemId : ids) {
             int quantity = items.getOrDefault(itemId, 0);
             if (requiredQuantity > 0 ? quantity >= 1 : quantity == 0) out[n++] = itemId;

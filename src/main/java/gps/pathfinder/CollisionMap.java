@@ -127,7 +127,7 @@ import static gps.WorldPointUtil.unpackWorldY;
 
         // Firstly check if there are any transports or teleports which are applicable from the current tile.
         Transport[] transports = config.getTransportsPacked(bankVisited).getOrDefault(packedPosition, TransportAvailability.EMPTY_TRANSPORTS);
-        for (Transport transport : transports) {
+        for (var transport : transports) {
             // A transport to an already-SETTLED destination is pointless (settled = final under
             // cost-ordered settling); same-destination competitors race in the queue otherwise.
             if (visited.get(transport.getDestination(), bankVisited)) continue;
@@ -204,7 +204,7 @@ import static gps.WorldPointUtil.unpackWorldY;
                 // items and spells)
                 Transport[] neighborTransports = config.getTransportsPacked(bankVisited).getOrDefault(neighborPacked,
                     TransportAvailability.EMPTY_TRANSPORTS);
-                for (Transport transport : neighborTransports) {
+                for (var transport : neighborTransports) {
                     // Remapped transports (POH interiors re-homed onto the landing by MAP KEY) keep
                     // their original origin field; stepping onto it would jump the path into the
                     // house template. Only true blocked-tile transports (origin == the map key,
@@ -232,7 +232,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         int sourceTile = graph.getClosestTilePosition(node);
         boolean bankVisited = graph.bankVisited(node);
         int maxWildernessLevel = graph.abstractKind(node).maxWildernessLevel();
-        for (Transport transport : config.getUsableTeleports(bankVisited)) {
+        for (var transport : config.getUsableTeleports(bankVisited)) {
             if (visited.get(transport.getDestination(), bankVisited)) continue;
             if (!transport.isUsableAtWildernessLevel(maxWildernessLevel)) continue;
             if (config.avoidWilderness(sourceTile, transport.getDestination(), targetInWilderness)) continue;

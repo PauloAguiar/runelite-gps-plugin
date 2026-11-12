@@ -90,7 +90,7 @@ import static gps.transport.TransportType.*;
     /** The named places (cities/towns/landmarks) from the bundled resource. */
     public static List<Entry> places() {
         List<Entry> places = new ArrayList<>();
-        for (Entry entry : resourceEntries()) {
+        for (var entry : resourceEntries()) {
             if ("place".equals(entry.category)) places.add(entry);
         }
         return places;
@@ -107,7 +107,7 @@ import static gps.transport.TransportType.*;
         List<Entry> out = new ArrayList<>();
         Map<String, Entry> amenityFirst = new LinkedHashMap<>();
         Map<String, List<Integer>> amenityTiles = new HashMap<>();
-        for (Entry entry : all(transports)) {
+        for (var entry : all(transports)) {
             if (NAMED_CATEGORIES.contains(entry.category)) out.add(entry);
             else if (AMENITY_CATEGORIES.contains(entry.category)) {
                 String key = entry.category + "\t" + entry.name;
@@ -115,7 +115,7 @@ import static gps.transport.TransportType.*;
                 amenityTiles.computeIfAbsent(key, k -> new ArrayList<>()).add(entry.packedPosition);
             }
         }
-        for (Map.Entry<String, Entry> grouped : amenityFirst.entrySet()) {
+        for (var grouped : amenityFirst.entrySet()) {
             Entry first = grouped.getValue();
             out.add(new Entry(first.category, first.name, first.packedPosition, Set.copyOf(amenityTiles.get(grouped.getKey())), null));
         }
@@ -131,7 +131,7 @@ import static gps.transport.TransportType.*;
         String q = query == null ? "" : query.toLowerCase(Locale.ROOT).trim().replaceAll("\\s+", " ");
         String rest = q.startsWith("nearest ") ? q.substring("nearest ".length()).trim() : q;
         if (rest.isEmpty()) return null;
-        for (NearestOption option : NEAREST_OPTIONS) {
+        for (var option : NEAREST_OPTIONS) {
             String label = option.label.toLowerCase(Locale.ROOT);
             if (rest.equals(option.id.replace('_', ' ')) || rest.equals(label) || rest.equals(label.replace("(", "").replace(")", "")))
                 return option;
@@ -141,7 +141,7 @@ import static gps.transport.TransportType.*;
 
     /** A category as the panel names it ("range" is "Cooking range"); title-cased otherwise. */
     public static String categoryLabel(String category) {
-        for (NearestOption option : NEAREST_OPTIONS) {
+        for (var option : NEAREST_OPTIONS) {
             if (option.id.equals(category)) return option.label;
         }
         String words = category.replace('_', ' ');
@@ -163,7 +163,7 @@ import static gps.transport.TransportType.*;
         String effective = "bank_round_trip".equals(category) ? "bank" : category;
         Set<Integer> tiles = new HashSet<>();
         boolean transportBacked = "fairy_ring".equals(effective) || "spirit_tree".equals(effective);
-        for (Entry entry : transportBacked ? all(transports) : resourceEntries()) {
+        for (var entry : transportBacked ? all(transports) : resourceEntries()) {
             if (effective.equals(entry.category)) tiles.add(entry.packedPosition);
         }
         return tiles;
@@ -269,7 +269,7 @@ import static gps.transport.TransportType.*;
         int x = unpackWorldX(packed);
         int y = unpackWorldY(packed);
         int plane = unpackWorldPlane(packed);
-        for (Remap remap : loadRemaps()) {
+        for (var remap : loadRemaps()) {
             if (plane == remap.plane && x >= remap.minX && x <= remap.maxX && y >= remap.minY && y <= remap.maxY)
                 return remap.anchor;
         }
@@ -329,17 +329,17 @@ import static gps.transport.TransportType.*;
     public static List<Entry> all(PrimitiveIntHashMap<Transport[]> transports) {
         List<Entry> entries = new ArrayList<>(resourceEntries());
         if (transports == null) return entries;
-        PrimitiveIntList seen = new PrimitiveIntList();
+        var seen = new PrimitiveIntList();
         // Seed with the bundled minigame entries (curated rows), so a transport-derived duplicate
         // of the same minigame isn't added twice.
         Set<String> seenMinigames = new HashSet<>();
-        for (Entry entry : entries) {
+        for (var entry : entries) {
             if ("minigame".equals(entry.category)) seenMinigames.add(entry.name.toLowerCase(Locale.ROOT));
         }
         for (int key : transports.keys()) {
             Transport[] set = transports.get(key);
             if (set == null) continue;
-            for (Transport transport : set) {
+            for (var transport : set) {
                 TransportType type = transport.getType();
                 if (type == FAIRY_RING || type == SPIRIT_TREE) {
                     int origin = transport.getOrigin();
@@ -401,7 +401,7 @@ import static gps.transport.TransportType.*;
         int x = unpackWorldX(packed);
         int y = unpackWorldY(packed);
         int plane = unpackWorldPlane(packed);
-        for (ExclusionZone zone : loadExclusionZones()) {
+        for (var zone : loadExclusionZones()) {
             if (plane == zone.plane && x >= zone.minX && x <= zone.maxX && y >= zone.minY && y <= zone.maxY)
                 return true;
         }
@@ -465,7 +465,7 @@ import static gps.transport.TransportType.*;
     private static List<Entry> parse(String tsv) {
         List<Entry> entries = new ArrayList<>();
         boolean header = true;
-        for (String line : tsv.split("\\R")) {
+        for (var line : tsv.split("\\R")) {
             if (header) {
                 header = false;
                 continue;

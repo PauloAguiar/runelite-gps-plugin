@@ -48,32 +48,32 @@ import lombok.Getter;
 
     // Array views of the requirements, as the transport gating and the item index read them.
     public int[][] getItems() {
-        int[][] items = new int[requirements.size()][];
+        var items = new int[requirements.size()][];
         for (int i = 0; i < requirements.size(); i++) items[i] = requirements.get(i).getItemIds();
         return items;
     }
 
     public int[][] getStaves() {
-        int[][] staves = new int[requirements.size()][];
+        var staves = new int[requirements.size()][];
         for (int i = 0; i < requirements.size(); i++) staves[i] = requirements.get(i).getStaffIds();
         return staves;
     }
 
     public int[][] getOffhands() {
-        int[][] offhands = new int[requirements.size()][];
+        var offhands = new int[requirements.size()][];
         for (int i = 0; i < requirements.size(); i++) offhands[i] = requirements.get(i).getOffhandIds();
         return offhands;
     }
 
     public int[] getQuantities() {
-        int[] quantities = new int[requirements.size()];
+        var quantities = new int[requirements.size()];
         for (int i = 0; i < requirements.size(); i++) quantities[i] = requirements.get(i).getQuantity();
         return quantities;
     }
 
     private String toString(int[][] array) {
-        StringBuilder text = new StringBuilder();
-        for (int[] inner : array) text.append((text.length() == 0) ? "" : ", ").append(Arrays.toString(inner));
+        var text = new StringBuilder();
+        for (var inner : array) text.append((text.length() == 0) ? "" : ", ").append(Arrays.toString(inner));
         return "[" + text + "]";
     }
 

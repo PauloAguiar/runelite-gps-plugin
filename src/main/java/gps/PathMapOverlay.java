@@ -160,7 +160,7 @@ public class PathMapOverlay extends Overlay {
         Widget overview = client.getWidget(InterfaceID.Worldmap.OVERVIEW_CONTAINER);
         Widget surfaceSelector = client.getWidget(InterfaceID.Worldmap.MAPLIST_BOX_GRAPHIC0);
 
-        Area clipArea = new Area(baseRectangle);
+        var clipArea = new Area(baseRectangle);
 
         if (overview != null && !overview.isHidden()) clipArea.subtract(new Area(overview.getBounds()));
 

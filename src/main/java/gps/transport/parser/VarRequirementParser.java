@@ -48,11 +48,11 @@ import lombok.extern.slf4j.Slf4j;
         if (value == null || value.isEmpty()) return result;
 
         try {
-            for (String requirement : value.split(DELIM_MULTI)) {
+            for (var requirement : value.split(DELIM_MULTI)) {
                 if (requirement.isEmpty()) continue;
 
                 List<VarRequirement> clauses = new ArrayList<>();
-                for (String clause : requirement.split(Pattern.quote(DELIM_OR))) {
+                for (var clause : requirement.split(Pattern.quote(DELIM_OR))) {
                     VarRequirement parsed = parseRequirement(clause);
                     if (parsed == null) {
                         clauses.clear();
@@ -71,7 +71,7 @@ import lombok.extern.slf4j.Slf4j;
     }
 
     private VarRequirement parseRequirement(String requirement) {
-        for (VarCheckType checkType : VarCheckType.values()) {
+        for (var checkType : VarCheckType.values()) {
             String[] parts = requirement.split(Pattern.quote(checkType.getCode()));
             if (parts.length == 2) {
                 int id = Integer.parseInt(parts[0]);

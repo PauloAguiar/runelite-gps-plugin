@@ -64,7 +64,7 @@ final class PluginMessageCodec {
 
         Set<Integer> targets = new HashSet<>();
         if (objTarget instanceof Set<?>) {
-            for (Object member : (Set<?>) objTarget) {
+            for (var member : (Set<?>) objTarget) {
                 int packed = packed(member);
                 if (packed == WorldPointUtil.UNDEFINED) return null;
                 targets.add(packed);
@@ -101,7 +101,7 @@ final class PluginMessageCodec {
         for (int i = 1; i < path.size(); i++) {
             PathStep from = path.get(i - 1);
             PathStep to = path.get(i);
-            for (Transport transport : transportsForEdge.apply(from, to)) {
+            for (var transport : transportsForEdge.apply(from, to)) {
                 origins.add(WorldPointUtil.unpackWorldPoint(from.getPackedPosition()));
                 destinations.add(WorldPointUtil.unpackWorldPoint(to.getPackedPosition()));
                 objectInfos.add(transport.getObjectInfo());

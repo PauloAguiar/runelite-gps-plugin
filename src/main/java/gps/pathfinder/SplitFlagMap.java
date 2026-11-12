@@ -38,7 +38,7 @@ public class SplitFlagMap {
         // First pass: decode each region and reserve it a slice of the shared word array.
         Map<Integer, long[]> regionWords = new HashMap<>(compressedRegions.size());
         int totalWords = 0;
-        for (Map.Entry<Integer, byte[]> entry : compressedRegions.entrySet()) {
+        for (var entry : compressedRegions.entrySet()) {
             int pos = entry.getKey();
             int index = getIndex(unpackX(pos), unpackY(pos));
             BitSet bits = BitSet.valueOf(entry.getValue());
@@ -53,7 +53,7 @@ public class SplitFlagMap {
         // Second pass: copy each region's words into its reserved slice (trailing zero words from
         // BitSet.toLongArray are left as the zero-filled remainder of the slice).
         flags = new long[totalWords];
-        for (Map.Entry<Integer, long[]> entry : regionWords.entrySet()) {
+        for (var entry : regionWords.entrySet()) {
             long[] words = entry.getValue();
             System.arraycopy(words, 0, flags, regionWordOffset[entry.getKey()], words.length);
         }

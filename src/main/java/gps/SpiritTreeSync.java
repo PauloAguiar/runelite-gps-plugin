@@ -51,7 +51,7 @@ import net.runelite.client.config.*;
         Set<String> available = pathfinderConfig.availableSpiritTrees;
         if (available == null) return List.of();
         List<String> planted = new ArrayList<>();
-        for (String name : PathfinderConfig.FARMABLE_SPIRIT_TREES) {
+        for (var name : PathfinderConfig.FARMABLE_SPIRIT_TREES) {
             if (available.contains(name)) planted.add(name);
         }
         return planted;
@@ -93,7 +93,7 @@ import net.runelite.client.config.*;
         if (container == null) return;
         Widget[] children = container.getDynamicChildren();
         if (children == null || children.length == 0) return;
-        String[] rows = new String[children.length];
+        var rows = new String[children.length];
         for (int i = 0; i < children.length; i++) rows[i] = children[i].getText();
         Set<String> available = parseLabels(rows, newMenu);
         if (available == null) return;
@@ -113,7 +113,7 @@ import net.runelite.client.config.*;
         if (rows == null || rows.length == 0 || rows[0] == null || rows[0].length() != FIRST_ROW_LENGTH) return null;
         Pattern pattern = newMenu ? LABEL_MENU_NEW : LABEL_MENU;
         Set<String> available = new HashSet<>();
-        for (String row : rows) {
+        for (var row : rows) {
             if (row == null) continue;
             Matcher matcher = pattern.matcher(row);
             if (!matcher.matches() || matcher.group(2) != null) continue;

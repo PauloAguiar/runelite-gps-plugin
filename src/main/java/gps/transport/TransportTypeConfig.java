@@ -78,7 +78,7 @@ import static gps.transport.TransportType.*;
         // Cache the teleportation item setting
         teleportationItemSetting = ConfigOverrides.override("useTeleportationItems", config.useTeleportationItems());
 
-        for (TransportType type : TransportType.values()) {
+        for (var type : TransportType.values()) {
             boolean enabled = getEnabledState(type);
             enabledStates.put(type, enabled);
             configEnabledStates.put(type, enabled);

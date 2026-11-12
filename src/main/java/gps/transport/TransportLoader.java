@@ -15,7 +15,7 @@ import gps.transport.parser.*;
     private static void addTransports(Map<Integer, Set<Transport>> transports, String path, TransportType transportType,
         int radiusThreshold) {
         try {
-            String s = new String(Util.readAllBytes(Objects.requireNonNull(ShortestPathPlugin.class.getResourceAsStream(path))),
+            var s = new String(Util.readAllBytes(Objects.requireNonNull(ShortestPathPlugin.class.getResourceAsStream(path))),
                 StandardCharsets.UTF_8);
             addTransportsFromContents(transports, s, transportType, radiusThreshold);
         }
@@ -29,8 +29,8 @@ import gps.transport.parser.*;
         List<TransportRecord> records = tsvParser.parse(contents);
 
         Set<Transport> newTransports = new HashSet<>();
-        for (TransportRecord record : records) {
-            Transport transport = new Transport(record, transportType);
+        for (var record : records) {
+            var transport = new Transport(record, transportType);
             newTransports.add(transport);
         }
 
@@ -54,7 +54,7 @@ import gps.transport.parser.*;
          */
         Set<Transport> transportOrigins = new HashSet<>();
         Set<Transport> transportDestinations = new HashSet<>();
-        for (Transport transport : newTransports) {
+        for (var transport : newTransports) {
             int origin = transport.getOrigin();
             int destination = transport.getDestination();
             // Logic to determine ordinary transport vs teleport vs permutation (e.g. fairy
@@ -75,12 +75,12 @@ import gps.transport.parser.*;
                 transports.computeIfAbsent(origin, k -> new HashSet<>()).add(transport);
             }
         }
-        for (Transport origin : transportOrigins) {
-            for (Transport destination : transportDestinations) {
+        for (var origin : transportOrigins) {
+            for (var destination : transportDestinations) {
                 // The radius threshold prevents transport permutations from including (almost)
                 // same origin and destination
                 if (WorldPointUtil.distanceBetween2D(origin.getOrigin(), destination.getDestination()) > radiusThreshold) {
-                    Transport combined = new Transport(origin, destination);
+                    var combined = new Transport(origin, destination);
                     transports.computeIfAbsent(origin.getOrigin(), k -> new HashSet<>()).add(combined);
                 }
             }
@@ -88,9 +88,9 @@ import gps.transport.parser.*;
     }
 
     public static HashMap<Integer, Set<Transport>> loadAllFromResources() {
-        HashMap<Integer, Set<Transport>> transports = new HashMap<>();
+        var transports = new HashMap<Integer, Set<Transport>>();
 
-        for (TransportType type : TransportType.values()) {
+        for (var type : TransportType.values()) {
             if (type.hasResourcePath())
                 addTransports(transports, type.getResourcePath(), type, type.hasRadiusThreshold() ? type.getRadiusThreshold() : 0);
         }
@@ -107,10 +107,10 @@ import gps.transport.parser.*;
      * once loading finishes.
      */
     private static void internRequirements(Map<Integer, Set<Transport>> transports) {
-        LoadInterner interner = new LoadInterner();
+        var interner = new LoadInterner();
         Set<Transport> visited = Collections.newSetFromMap(new IdentityHashMap<>());
-        for (Set<Transport> set : transports.values()) {
-            for (Transport transport : set) {
+        for (var set : transports.values()) {
+            for (var transport : set) {
                 if (visited.add(transport)) transport.internRequirements(interner);
             }
         }

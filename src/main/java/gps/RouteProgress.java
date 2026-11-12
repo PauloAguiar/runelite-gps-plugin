@@ -42,7 +42,7 @@ final class RouteProgress {
         if (map == null) return null;
         Map<Integer, Integer> distances = new HashMap<>();
         distances.put(fromPacked, 0);
-        ArrayDeque<Integer> queue = new ArrayDeque<>();
+        var queue = new ArrayDeque<Integer>();
         queue.add(fromPacked);
         int x = WorldPointUtil.unpackWorldX(fromPacked);
         int y = WorldPointUtil.unpackWorldY(fromPacked);

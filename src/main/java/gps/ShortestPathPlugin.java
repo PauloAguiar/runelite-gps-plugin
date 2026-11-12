@@ -147,7 +147,7 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     @Override protected void startUp() {
-        for (ConfigItemDescriptor item : configManager.getConfigDescriptor(config).getItems())
+        for (var item : configManager.getConfigDescriptor(config).getItems())
             configItems.put(item.key(), item.getItem());
         ConfigOverrides.declareKeys(configItems.keySet());
         cacheConfigValues();
@@ -776,7 +776,7 @@ public class ShortestPathPlugin extends Plugin {
     /** The panel's "Bank" and "Bank (and back)" quick buttons, and their hotkeys. */
     public void goToNearestBank(boolean roundTrip) {
         String id = roundTrip ? "bank_round_trip" : "bank";
-        for (Destinations.NearestOption option : Destinations.NEAREST_OPTIONS) {
+        for (var option : Destinations.NEAREST_OPTIONS) {
             if (option.id.equals(id)) {
                 goToNearest(option);
                 return;

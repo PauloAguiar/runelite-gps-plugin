@@ -25,7 +25,7 @@ final class PanelVarbits {
     /** Client thread, once per game tick. */
     void onTick(Client client) {
         houseLocationId = client.getVarbitValue(HOUSE_LOCATION);
-        int[] unlocks = new int[BALLOON_UNLOCKS.length];
+        var unlocks = new int[BALLOON_UNLOCKS.length];
         for (int i = 0; i < unlocks.length; i++) unlocks[i] = client.getVarbitValue(BALLOON_UNLOCKS[i]);
         balloonUnlockVarbits = unlocks;
     }

@@ -46,7 +46,7 @@ import net.runelite.client.util.*;
             addMenuEntry(event, SET, TARGET, 1);
             if (plugin.hasPathTargets()) {
                 int selectedTile = selectedWorldPoint();
-                for (PathStep pathStep : plugin.getDisplayPath()) {
+                for (var pathStep : plugin.getDisplayPath()) {
                     if (pathStep.getPackedPosition() == selectedTile) {
                         addMenuEntry(event, CLEAR, PATH, 1);
                         break;

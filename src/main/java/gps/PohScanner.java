@@ -46,7 +46,7 @@ public final class PohScanner {
      */
     public static String encode(Detected detected) {
         if (detected == null) return null;
-        StringBuilder sb = new StringBuilder(detected.jewelleryBox.name());
+        var sb = new StringBuilder(detected.jewelleryBox.name());
         if (detected.fairyRing) sb.append(",fairyRing");
         if (detected.spiritTree) sb.append(",spiritTree");
         if (detected.obelisk) sb.append(",obelisk");
@@ -68,7 +68,7 @@ public final class PohScanner {
         }
         Set<String> flags = new HashSet<>(Arrays.asList(parts));
         Set<Integer> portals = new HashSet<>();
-        for (String flag : flags)
+        for (var flag : flags)
             if (flag.startsWith("portal:"))
                 try {
                     portals.add(Integer.parseInt(flag.substring(7)));
