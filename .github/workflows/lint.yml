@@ -64,5 +64,5 @@ jobs:
       - name: Count tokens
         run: |
           pip install tiktoken
-          python scripts/hub_tokens.py --max 197000
+          python scripts/hub_tokens.py --max 190000
         shell: bash

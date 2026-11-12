@@ -14,7 +14,7 @@ bot's 200,591 on plugin-hub PR 18318, 2026-10-11): read the numbers as the bot's
     python scripts/hub_tokens.py --members src/main/java/gps/ShortestPathPlugin.java
     python scripts/hub_tokens.py --diff ../gps-old .  # per-file growth between two trees
     python scripts/hub_tokens.py --sections           # by plugin section (scripts/token-sections.tsv)
-    python scripts/hub_tokens.py --max 197000         # exit 1 above the budget (CI runs this)
+    python scripts/hub_tokens.py --max 190000         # exit 1 above the budget (CI runs this)
 
 A tree is a directory holding src/main/java; `git archive v0.13.2 src/main/java | tar -x -C dir`
 exports one from a tag. --members splits one file by top-level member (field, method, inner
