@@ -76,10 +76,8 @@ final class OffRouteTracker {
             recalc *= 2;
             warn *= 3;
         }
-        if (step > TRANSPORT_STEP_TILES)
-            graceTicks = TRANSPORT_GRACE_TICKS;
-        else if (graceTicks > 0)
-            graceTicks = (d >= 0 && d < warn) ? 0 : graceTicks - 1;
+        if (step > TRANSPORT_STEP_TILES) graceTicks = TRANSPORT_GRACE_TICKS;
+        else if (graceTicks > 0) graceTicks = (d >= 0 && d < warn) ? 0 : graceTicks - 1;
         if (d < 0 || graceTicks > 0) {
             warning = false;
             return Verdict.ON_ROUTE;
@@ -103,21 +101,16 @@ final class OffRouteTracker {
      * incomplete geometry.
      */
     static int distanceFromPath(int location, List<PathStep> path, RouteOption displayed) {
-        if (path == null || path.isEmpty())
-            return -1;
+        if (path == null || path.isEmpty()) return -1;
         int best = Integer.MAX_VALUE;
-        for (PathStep pathStep : path)
-            best = Math.min(best, distanceBetween(location, pathStep.getPackedPosition()));
+        for (PathStep pathStep : path) best = Math.min(best, distanceBetween(location, pathStep.getPackedPosition()));
         if (displayed != null && !displayed.sailingJumpDepartures().isEmpty() && SailingSea.isSailable(location)) {
             for (int departure : displayed.sailingJumpDepartures()) {
-                if (departure < 0 || departure + 1 >= path.size())
-                    continue;
+                if (departure < 0 || departure + 1 >= path.size()) continue;
                 int[] track = SailingSea.seaPath(path.get(departure).getPackedPosition(),
                     path.get(departure + 1).getPackedPosition());
-                if (track == null)
-                    return 0;
-                for (int waypoint : track)
-                    best = Math.min(best, distanceBetween(location, waypoint));
+                if (track == null) return 0;
+                for (int waypoint : track) best = Math.min(best, distanceBetween(location, waypoint));
             }
         }
         return best;

@@ -41,11 +41,9 @@ import net.runelite.api.Client;
     /** A real obstacle carries BLOCK_MOVEMENT_OBJECT; the border padding and margin are skipped. */
     private void scan() {
         WorldView view = client.getTopLevelWorldView();
-        if (view == null || view.getCollisionMaps() == null || view.getPlane() != 0)
-            return;
+        if (view == null || view.getCollisionMaps() == null || view.getPlane() != 0) return;
         CollisionData collision = view.getCollisionMaps()[0];
-        if (collision == null)
-            return;
+        if (collision == null) return;
         int[][] flags = collision.getFlags();
         int baseX = view.getBaseX();
         int baseY = view.getBaseY();
@@ -54,8 +52,7 @@ import net.runelite.api.Client;
         for (int sx = EDGE_MARGIN; sx < flags.length - EDGE_MARGIN; sx++) {
             for (int sy = EDGE_MARGIN; sy < flags[sx].length - EDGE_MARGIN; sy++) {
                 int tileFlags = flags[sx][sy];
-                if (tileFlags == 0xFFFFFF || (tileFlags & CollisionDataFlag.BLOCK_MOVEMENT_OBJECT) == 0)
-                    continue;
+                if (tileFlags == 0xFFFFFF || (tileFlags & CollisionDataFlag.BLOCK_MOVEMENT_OBJECT) == 0) continue;
                 int x = baseX + sx;
                 int y = baseY + sy;
                 if (playerAt != WorldPointUtil.UNDEFINED
@@ -65,13 +62,11 @@ import net.runelite.api.Client;
                 }
                 int packed = WorldPointUtil.packWorldPoint(x, y, 0);
                 if (SailingSea.isSailable(packed) && !SailingSea.obstacleAt(x, y)) {
-                    if (found == null)
-                        found = new ArrayList<>();
+                    if (found == null) found = new ArrayList<>();
                     found.add(packed);
                 }
             }
         }
-        if (found != null)
-            SailingSea.learnObstacles(found);
+        if (found != null) SailingSea.learnObstacles(found);
     }
 }

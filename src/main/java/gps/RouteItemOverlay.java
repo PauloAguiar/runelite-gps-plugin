@@ -31,12 +31,10 @@ final class RouteItemOverlay extends WidgetItemOverlay {
     }
 
     @Override public void renderItemOverlay(Graphics2D graphics, int itemId, WidgetItem item) {
-        if (!plugin.display().highlightRouteItem)
-            return;
+        if (!plugin.display().highlightRouteItem) return;
         int group = WidgetUtil.componentToInterface(item.getWidget().getId());
         if (group == InterfaceID.BANKMAIN || group == InterfaceID.SHARED_BANK) {
-            if (!plugin.bankPickupIds().contains(itemId))
-                return;
+            if (!plugin.bankPickupIds().contains(itemId)) return;
         }
         else {
             RouteItemCue cue = plugin.nextStepItems();

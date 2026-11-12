@@ -24,8 +24,7 @@ public class Util {
         while (true) {
             int read = in.read(buffer, 0, buffer.length);
 
-            if (read == -1)
-                return result.toByteArray();
+            if (read == -1) return result.toByteArray();
 
             result.write(buffer, 0, read);
         }
@@ -45,16 +44,13 @@ public class Util {
      */
     public static int[] concatenate(int[][] arrays) {
         int n = 0;
-        for (int[] value : arrays)
-            n += (value == null) ? 0 : value.length;
-        if (n == 0)
-            return null;
+        for (int[] value : arrays) n += (value == null) ? 0 : value.length;
+        if (n == 0) return null;
         int[] array = new int[n];
         int k = 0;
         for (int[] ints : arrays) {
             if (ints != null) {
-                for (int anInt : ints)
-                    array[k++] = anInt;
+                for (int anInt : ints) array[k++] = anInt;
             }
         }
         return array;

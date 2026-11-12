@@ -41,23 +41,19 @@ final class RouteItemCue {
 
     static RouteItemCue next(RouteOption route, int reachedIndex, BiFunction<PathStep, PathStep, Set<Transport>> transportsForEdge,
         boolean fairyRingsNeedStaff, Map<Integer, Integer> carried) {
-        if (route == null)
-            return null;
+        if (route == null) return null;
         List<PathStep> path = route.getPath();
         Set<Integer> ids = new LinkedHashSet<>();
         Set<Integer> wornDone = new HashSet<>();
         Transport cast = null;
         int ahead = 0;
         for (int edge : route.getMethodEdgeIndexes()) {
-            if (edge <= reachedIndex || edge <= 0 || edge >= path.size())
-                continue;
-            if (ahead++ > 1)
-                break;
+            if (edge <= reachedIndex || edge <= 0 || edge >= path.size()) continue;
+            if (ahead++ > 1) break;
             // Past the next step only the staff is asked for, ahead of its ring.
             Transport spell = collect(transportsForEdge.apply(path.get(edge - 1), path.get(edge)), ahead > 1,
                 fairyRingsNeedStaff, carried, ids, wornDone);
-            if (cast == null)
-                cast = spell;
+            if (cast == null) cast = spell;
         }
         return ids.isEmpty() && cast == null ? null : new RouteItemCue(ids, cast, wornDone);
     }
@@ -84,11 +80,9 @@ final class RouteItemCue {
                     }
                 continue;
             }
-            if (staffOnly)
-                continue;
+            if (staffOnly) continue;
             if (type == TransportType.TELEPORTATION_SPELL) {
-                if (spell == null)
-                    spell = transport;
+                if (spell == null) spell = transport;
                 if (transport.getItemRequirements() != null)
                     for (ItemRequirement req : transport.getItemRequirements().getRequirements())
                         if (req.getQuantity() > 0 && !held(carried, req.getItemIds(), req.getQuantity())) {
@@ -101,8 +95,7 @@ final class RouteItemCue {
                 && type != TransportType.TELEPORTATION_BOX) || transport.getItemRequirements() == null)
                 continue;
             for (int[] variants : transport.getItemRequirements().getItems())
-                for (int id : variants)
-                    ids.add(id);
+                for (int id : variants) ids.add(id);
         }
         return spell;
     }
@@ -115,17 +108,13 @@ final class RouteItemCue {
      */
     List<String> callouts(Map<Integer, Integer> carried, Set<Integer> worn, IntPredicate wornOnly, IntFunction<String> name) {
         List<String> lines = new ArrayList<>();
-        if (swap != null)
-            lines.add(swap);
+        if (swap != null) lines.add(swap);
         for (int id : itemIds) {
-            if (carried.getOrDefault(id, 0) <= 0)
-                continue;
+            if (carried.getOrDefault(id, 0) <= 0) continue;
             boolean wearFirst = wornDone.contains(id) || wornOnly.test(id);
-            if (wearFirst && worn.contains(id))
-                continue;
+            if (wearFirst && worn.contains(id)) continue;
             String line = (wearFirst ? "Equip " : "Use ") + name.apply(id);
-            if (!lines.contains(line))
-                lines.add(line);
+            if (!lines.contains(line)) lines.add(line);
         }
         return lines;
     }
@@ -133,8 +122,7 @@ final class RouteItemCue {
     private static boolean held(Map<Integer, Integer> carried, int[] ids, int quantity) {
         if (ids != null)
             for (int id : ids)
-                if (carried.getOrDefault(id, 0) >= quantity)
-                    return true;
+                if (carried.getOrDefault(id, 0) >= quantity) return true;
         return false;
     }
 
@@ -150,25 +138,20 @@ final class RouteItemCue {
 
     /** The index of the bank the route withdraws at (the first banked step), or -1 when it withdraws nothing. */
     static int bankStep(RouteOption route) {
-        if (route == null || !route.isViaBank())
-            return -1;
+        if (route == null || !route.isViaBank()) return -1;
         List<PathStep> path = route.getPath();
         for (int i = 0; i < path.size(); i++)
-            if (path.get(i).isBankVisited())
-                return i;
+            if (path.get(i).isBankVisited()) return i;
         return -1;
     }
 
     /** Whether the item teleports only from the worn slot: none of its inventory options uses it. */
     static boolean wornOnly(String[] inventoryActions) {
-        if (inventoryActions == null)
-            return true;
+        if (inventoryActions == null) return true;
         for (String action : inventoryActions) {
-            if (action == null)
-                continue;
+            if (action == null) continue;
             for (String verb : USE_VERBS)
-                if (action.contains(verb))
-                    return false;
+                if (action.contains(verb)) return false;
         }
         return true;
     }

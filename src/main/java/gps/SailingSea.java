@@ -87,24 +87,19 @@ import static gps.WorldPointUtil.unpackWorldY;
      * (composition disabled, floods stand alone) when the resource is missing. */
     private static int[][] loadPortMatrix(List<int[]> moorings) {
         Map<Long, Integer> byLand = new HashMap<>();
-        for (int i = 0; i < moorings.size(); i++)
-            byLand.put((long) moorings.get(i)[0] << 16 | moorings.get(i)[1], i);
+        for (int i = 0; i < moorings.size(); i++) byLand.put((long) moorings.get(i)[0] << 16 | moorings.get(i)[1], i);
         try (InputStream tsv = SailingSea.class.getResourceAsStream("/sailing-sea-matrix.tsv");
             Scanner scanner = new Scanner(tsv, "UTF-8")) {
             int[][] matrix = new int[moorings.size()][moorings.size()];
-            for (int[] row : matrix)
-                Arrays.fill(row, Integer.MAX_VALUE);
-            for (int i = 0; i < matrix.length; i++)
-                matrix[i][i] = 0;
+            for (int[] row : matrix) Arrays.fill(row, Integer.MAX_VALUE);
+            for (int i = 0; i < matrix.length; i++) matrix[i][i] = 0;
             while (scanner.hasNextLine()) {
                 String[] fields = scanner.nextLine().split("\t");
-                if (fields.length < 5 || fields[0].startsWith("#") || "fromLandX".equals(fields[0]))
-                    continue;
+                if (fields.length < 5 || fields[0].startsWith("#") || "fromLandX".equals(fields[0])) continue;
                 Integer from = byLand.get(Long.parseLong(fields[0]) << 16 | Long.parseLong(fields[1]));
                 Integer to = byLand.get(Long.parseLong(fields[2]) << 16 | Long.parseLong(fields[3]));
                 // Self-pairs never carry information (a mooring is 0 from itself).
-                if (from != null && to != null && !from.equals(to))
-                    matrix[from][to] = Integer.parseInt(fields[4]);
+                if (from != null && to != null && !from.equals(to)) matrix[from][to] = Integer.parseInt(fields[4]);
             }
             return matrix;
         }
@@ -123,12 +118,10 @@ import static gps.WorldPointUtil.unpackWorldY;
     private static int[] composedPortDistances(int packed) {
         int[] flood = seaDistances(packed);
         int[][] matrix = get().portMatrix;
-        if (matrix == null)
-            return flood;
+        if (matrix == null) return flood;
         int[] out = flood.clone();
         for (int far = 0; far < out.length; far++) {
-            if (flood[far] != Integer.MAX_VALUE)
-                continue;
+            if (flood[far] != Integer.MAX_VALUE) continue;
             for (int near = 0; near < flood.length; near++) {
                 if (flood[near] != Integer.MAX_VALUE && matrix[near][far] != Integer.MAX_VALUE)
                     out[far] = Math.min(out[far], flood[near] + matrix[near][far]);
@@ -166,8 +159,7 @@ import static gps.WorldPointUtil.unpackWorldY;
                 Scanner scanner = new Scanner(tsv, "UTF-8")) {
                 while (scanner.hasNextLine()) {
                     String[] fields = scanner.nextLine().split("\t");
-                    if (fields.length < 5 || fields[0].startsWith("#") || "type".equals(fields[0]))
-                        continue;
+                    if (fields.length < 5 || fields[0].startsWith("#") || "type".equals(fields[0])) continue;
                     int landX = Integer.parseInt(fields[1]);
                     int landY = Integer.parseInt(fields[2]);
                     // The port matrix is keyed by land tile, so two moorings sharing one landing
@@ -180,8 +172,7 @@ import static gps.WorldPointUtil.unpackWorldY;
                             break;
                         }
                     }
-                    if (duplicateLand)
-                        continue;
+                    if (duplicateLand) continue;
                     moorings.add(new int[]{landX, landY,
                         Integer.parseInt(fields[3]), Integer.parseInt(fields[4]),
                         fields.length > 5 && "true".equals(fields[5].trim()) ? 1 : 0});
@@ -201,13 +192,11 @@ import static gps.WorldPointUtil.unpackWorldY;
 
     /** Whether this tile is on the sailable ocean (plane 0 only). */
     public static boolean isSailable(int packed) {
-        if (WorldPointUtil.unpackWorldPlane(packed) != 0)
-            return false;
+        if (WorldPointUtil.unpackWorldPlane(packed) != 0) return false;
         SailingSea sea = get();
         int x = unpackWorldX(packed) - sea.minX;
         int y = unpackWorldY(packed) - sea.minY;
-        if (x < 0 || y < 0 || x >= sea.width || y >= sea.height)
-            return false;
+        if (x < 0 || y < 0 || x >= sea.width || y >= sea.height) return false;
         return bit(sea, x, y);
     }
 
@@ -225,8 +214,7 @@ import static gps.WorldPointUtil.unpackWorldY;
      * 2026-09-27).
      */
     public static Set<Integer> waterPins(CollisionMap map, Set<Integer> targets, boolean aboard) {
-        if (map == null || targets.isEmpty() || (!aboard && !isCompact(targets)))
-            return Set.of();
+        if (map == null || targets.isEmpty() || (!aboard && !isCompact(targets))) return Set.of();
         Set<Integer> wet = new HashSet<>();
         for (int target : targets) {
             if (map.isBlocked(unpackWorldX(target), unpackWorldY(target),
@@ -271,15 +259,13 @@ import static gps.WorldPointUtil.unpackWorldY;
      */
     public static List<Transport> aboardLegTransports(int startPacked,
         Set<Integer> targets) {
-        if (!isSailable(startPacked))
-            return List.of();
+        if (!isSailable(startPacked)) return List.of();
         List<Transport> legs = new ArrayList<>();
         SailingSea sea = get();
         int[] distances = composedPortDistances(startPacked);
         List<Integer> order = new ArrayList<>();
         for (int i = 0; i < distances.length; i++) {
-            if (distances[i] != Integer.MAX_VALUE)
-                order.add(i);
+            if (distances[i] != Integer.MAX_VALUE) order.add(i);
         }
         // Nearest-first so the service's port seeding keeps its ranking for free.
         order.sort(Comparator.comparingInt(i -> distances[i]));
@@ -310,8 +296,7 @@ import static gps.WorldPointUtil.unpackWorldY;
                     if (distances[i] != Integer.MAX_VALUE && toTarget[i] != Integer.MAX_VALUE)
                         best = Math.min(best, (long) distances[i] + toTarget[i]);
                 }
-                if (best < Long.MAX_VALUE)
-                    centitiles = (int) Math.min(Integer.MAX_VALUE, best);
+                if (best < Long.MAX_VALUE) centitiles = (int) Math.min(Integer.MAX_VALUE, best);
             }
             if (centitiles >= 0) {
                 legs.add(new Transport.TransportBuilder()
@@ -334,14 +319,12 @@ import static gps.WorldPointUtil.unpackWorldY;
      */
     public static synchronized int seaDistanceBetween(int fromPacked, int toPacked) {
         SailingSea sea = get();
-        if (sea.width == 0 || !isSailable(fromPacked) || !isSailable(toPacked))
-            return -1;
+        if (sea.width == 0 || !isSailable(fromPacked) || !isSailable(toPacked)) return -1;
         int start = (unpackWorldY(fromPacked) - sea.minY) * sea.width
             + (unpackWorldX(fromPacked) - sea.minX);
         int goal = (unpackWorldY(toPacked) - sea.minY) * sea.width
             + (unpackWorldX(toPacked) - sea.minX);
-        if (start == goal)
-            return 0;
+        if (start == goal) return 0;
         int cost = boxDistance(sea, start, goal, 60);
         return cost >= 0 ? cost : boxDistance(sea, start, goal, 600);
     }
@@ -364,10 +347,8 @@ import static gps.WorldPointUtil.unpackWorldY;
         while (!queue.isEmpty()) {
             long head = queue.pop();
             int index = (int) (head & 0xFFFFFFFFL);
-            if ((int) (head >>> 32) > dist[index])
-                continue;
-            if (index == boxGoal)
-                return dist[index];
+            if ((int) (head >>> 32) > dist[index]) continue;
+            if (index == boxGoal) return dist[index];
             int x = index % boxWidth;
             int y = index / boxWidth;
             for (int[] move : MOVES) {
@@ -401,16 +382,14 @@ import static gps.WorldPointUtil.unpackWorldY;
      */
     public static List<Transport> seaLegTransports(int targetPacked, int count,
         Set<Integer> mustIncludeLands) {
-        if (!isSailable(targetPacked))
-            return List.of();
+        if (!isSailable(targetPacked)) return List.of();
         int tx = unpackWorldX(targetPacked);
         int ty = unpackWorldY(targetPacked);
         int[] distances = composedPortDistances(targetPacked);
         List<int[]> moorings = get().moorings;
         List<Integer> order = new ArrayList<>();
         for (int i = 0; i < moorings.size(); i++) {
-            if (distances[i] != Integer.MAX_VALUE)
-                order.add(i);
+            if (distances[i] != Integer.MAX_VALUE) order.add(i);
         }
         order.sort(Comparator.comparingInt(i -> distances[i]));
         // Nearest-by-sea plus a guarantee of REACHABLE_LEGS walk-reachable ports. Near new
@@ -423,8 +402,7 @@ import static gps.WorldPointUtil.unpackWorldY;
             boolean reachable = reachable(moorings.get(i));
             if (chosen.size() < count) {
                 chosen.add(i);
-                if (reachable)
-                    reachableChosen++;
+                if (reachable) reachableChosen++;
             }
             else if (reachableChosen < REACHABLE_LEGS && reachable) {
                 chosen.add(i);
@@ -483,13 +461,11 @@ import static gps.WorldPointUtil.unpackWorldY;
         }
 
         void push(long value) {
-            if (size == heap.length)
-                heap = Arrays.copyOf(heap, size * 2);
+            if (size == heap.length) heap = Arrays.copyOf(heap, size * 2);
             int i = size++;
             while (i > 0) {
                 int parent = (i - 1) >> 1;
-                if (heap[parent] <= value)
-                    break;
+                if (heap[parent] <= value) break;
                 heap[i] = heap[parent];
                 i = parent;
             }
@@ -502,12 +478,9 @@ import static gps.WorldPointUtil.unpackWorldY;
             int i = 0;
             while (true) {
                 int child = 2 * i + 1;
-                if (child >= size)
-                    break;
-                if (child + 1 < size && heap[child + 1] < heap[child])
-                    child++;
-                if (heap[child] >= last)
-                    break;
+                if (child >= size) break;
+                if (child + 1 < size && heap[child + 1] < heap[child]) child++;
+                if (heap[child] >= last) break;
                 heap[i] = heap[child];
                 i = child;
             }
@@ -531,13 +504,11 @@ import static gps.WorldPointUtil.unpackWorldY;
      * {@link #REACHABLE_QUOTA} walk-reachable ports are settled.
      */
     public static synchronized int[] seaDistances(int targetPacked) {
-        if (targetPacked == cachedTarget && cachedDistances != null)
-            return cachedDistances;
+        if (targetPacked == cachedTarget && cachedDistances != null) return cachedDistances;
         SailingSea sea = get();
         int[] result = new int[sea.moorings.size()];
         Arrays.fill(result, Integer.MAX_VALUE);
-        if (!isSailable(targetPacked) || sea.width == 0)
-            return result;
+        if (!isSailable(targetPacked) || sea.width == 0) return result;
         if (wetScratch == null || wetScratch.length != sea.width * sea.height)
             wetScratch = new int[sea.width * sea.height];
         int[] dist = wetScratch;
@@ -554,14 +525,12 @@ import static gps.WorldPointUtil.unpackWorldY;
             && (settled < SETTLE_ENDPOINTS || settledReachable < REACHABLE_QUOTA)) {
             long head = queue.pop();
             int index = (int) (head & 0xFFFFFFFFL);
-            if ((int) (head >>> 32) > dist[index])
-                continue;
+            if ((int) (head >>> 32) > dist[index]) continue;
             Integer mooring = sea.endpointIndex.get(index);
             if (mooring != null && result[mooring] == Integer.MAX_VALUE) {
                 result[mooring] = dist[index];
                 settled++;
-                if (reachable(sea.moorings.get(mooring)))
-                    settledReachable++;
+                if (reachable(sea.moorings.get(mooring))) settledReachable++;
             }
             int x = index % sea.width;
             int y = index / sea.width;
@@ -574,8 +543,7 @@ import static gps.WorldPointUtil.unpackWorldY;
                     || !bit(sea, nx, ny) || obstacleAtGrid(sea, nx, ny)) {
                     continue;
                 }
-                if (knightBlocked(sea, x, y, dx, dy))
-                    continue;
+                if (knightBlocked(sea, x, y, dx, dy)) continue;
                 int next = ny * sea.width + nx;
                 if (dist[index] + move[2] < dist[next]) {
                     dist[next] = dist[index] + move[2];
@@ -618,8 +586,7 @@ import static gps.WorldPointUtil.unpackWorldY;
      */
     public static synchronized void learnObstacles(List<Integer> packedTiles) {
         SailingSea sea = get();
-        if (sea.width == 0 || packedTiles.isEmpty())
-            return;
+        if (sea.width == 0 || packedTiles.isEmpty()) return;
         PrimitiveIntHashMap<Boolean> current = liveObstacles;
         PrimitiveIntHashMap<Boolean> grown = null;
         for (int packed : packedTiles) {
@@ -633,8 +600,7 @@ import static gps.WorldPointUtil.unpackWorldY;
                         || (grown != null && grown.get(tile) != null)) {
                         continue;
                     }
-                    if (grown == null)
-                        grown = copyMask(current);
+                    if (grown == null) grown = copyMask(current);
                     grown.put(tile, Boolean.TRUE);
                 }
             }
@@ -653,16 +619,14 @@ import static gps.WorldPointUtil.unpackWorldY;
     private static PrimitiveIntHashMap<Boolean> copyMask(PrimitiveIntHashMap<Boolean> current) {
         PrimitiveIntHashMap<Boolean> copy = new PrimitiveIntHashMap<>(256);
         if (current != null) {
-            for (int key : current.keys())
-                copy.put(key, Boolean.TRUE);
+            for (int key : current.keys()) copy.put(key, Boolean.TRUE);
         }
         return copy;
     }
 
     private static boolean nearMooringWater(SailingSea sea, int x, int y) {
         for (int[] mooring : sea.moorings) {
-            if (Math.max(Math.abs(mooring[2] - x), Math.abs(mooring[3] - y)) <= 4)
-                return true;
+            if (Math.max(Math.abs(mooring[2] - x), Math.abs(mooring[3] - y)) <= 4) return true;
         }
         return false;
     }
@@ -710,10 +674,8 @@ import static gps.WorldPointUtil.unpackWorldY;
     public static int[] seaPath(int fromPacked, int toPacked) {
         long key = trackKey(fromPacked, toPacked);
         int[] cached = cachedTrack(key);
-        if (cached != null || trackCached(key))
-            return cached;
-        if (failureCoolingDown(key))
-            return null;
+        if (cached != null || trackCached(key)) return cached;
+        if (failureCoolingDown(key)) return null;
         if (tracksInFlight.add(key)) {
             trackExecutor.submit(() -> {
                 // try/finally: an exception here must not wedge the key in-flight forever
@@ -740,26 +702,21 @@ import static gps.WorldPointUtil.unpackWorldY;
     static int[] seaPathBlocking(int fromPacked, int toPacked) {
         long key = trackKey(fromPacked, toPacked);
         int[] cached = cachedTrack(key);
-        if (cached != null || trackCached(key))
-            return cached;
+        if (cached != null || trackCached(key)) return cached;
         int[] track = computeSeaPath(fromPacked, toPacked);
         synchronized (trackCache) {
-            if (track != null && track.length > 1)
-                trackCache.put(key, track);
-            else
-                failedTracks.put(key, System.currentTimeMillis());
+            if (track != null && track.length > 1) trackCache.put(key, track);
+            else failedTracks.put(key, System.currentTimeMillis());
         }
         return track;
     }
 
     private static int[] computeSeaPath(int fromPacked, int toPacked) {
         SailingSea sea = get();
-        if (sea.width == 0)
-            return null;
+        if (sea.width == 0) return null;
         int start = trackEndpoint(sea, fromPacked);
         int goal = trackEndpoint(sea, toPacked);
-        if (start < 0 || goal < 0 || start == goal)
-            return null;
+        if (start < 0 || goal < 0 || start == goal) return null;
         // Leg bounding box + margin first (cheap, covers open-water legs); a leg that must
         // round a continent — Sunset coast to Kandarin dips far south of its box — retries on
         // the full grid. Both results cache, so the expensive case pays once per leg.
@@ -767,8 +724,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         // (Sunset coast -> Kandarin dips ~500 south of its leg box). No full-grid stage —
         // a 6M-cell Dijkstra is too heavy for the render thread even once.
         int[] track = computeSeaPathInBox(sea, start, goal, 60);
-        if (track == null)
-            track = computeSeaPathInBox(sea, start, goal, 600);
+        if (track == null) track = computeSeaPathInBox(sea, start, goal, 600);
         if (track == null)
             // Rounding half the world (Weiss, Grimstone): full grid, seconds — but only ever
             // off-thread and only once per leg, then cached.
@@ -802,10 +758,8 @@ import static gps.WorldPointUtil.unpackWorldY;
         while (!queue.isEmpty()) {
             long head = queue.pop();
             int index = (int) (head & 0xFFFFFFFFL);
-            if ((int) (head >>> 32) > dist[index])
-                continue;
-            if (index == boxGoal)
-                break;
+            if ((int) (head >>> 32) > dist[index]) continue;
+            if (index == boxGoal) break;
             int x = index % boxWidth;
             int y = index / boxWidth;
             for (int m = 0; m < MOVES.length; m++) {
@@ -817,8 +771,7 @@ import static gps.WorldPointUtil.unpackWorldY;
                     || obstacleAtGrid(sea, x0 + nx, y0 + ny)) {
                     continue;
                 }
-                if (knightBlocked(sea, x0 + x, y0 + y, move[0], move[1]))
-                    continue;
+                if (knightBlocked(sea, x0 + x, y0 + y, move[0], move[1])) continue;
                 // Distance-optimal paths GRAZE obstacles (tangents are shortest) and
                 // stair-step for free, so pure Dijkstra hugs every coastline and wiggles.
                 // The graded shore penalty pushes tracks into open water wherever it is
@@ -835,8 +788,7 @@ import static gps.WorldPointUtil.unpackWorldY;
                 }
             }
         }
-        if (dist[boxGoal] == Integer.MAX_VALUE)
-            return null;
+        if (dist[boxGoal] == Integer.MAX_VALUE) return null;
         List<Integer> waypoints = new ArrayList<>();
         for (int at = boxGoal; at != -1; at = parent[at]) {
             waypoints.add(packWorldPoint(
@@ -882,16 +834,14 @@ import static gps.WorldPointUtil.unpackWorldY;
         while (!queue.isEmpty()) {
             int index = queue.poll();
             int depth = shore[index];
-            if (depth >= SHORE_PENALTIES.length - 1)
-                continue;
+            if (depth >= SHORE_PENALTIES.length - 1) continue;
             int x = index % boxWidth;
             int y = index / boxWidth;
             for (int dy = -1; dy <= 1; dy++) {
                 for (int dx = -1; dx <= 1; dx++) {
                     int nx = x + dx;
                     int ny = y + dy;
-                    if (nx < 0 || ny < 0 || nx >= boxWidth || ny >= boxHeight)
-                        continue;
+                    if (nx < 0 || ny < 0 || nx >= boxWidth || ny >= boxHeight) continue;
                     int next = ny * boxWidth + nx;
                     if (shore[next] > depth + 1) {
                         shore[next] = (byte) (depth + 1);
@@ -914,8 +864,7 @@ import static gps.WorldPointUtil.unpackWorldY;
             for (int dy = -STANDOFF; dy <= STANDOFF; dy++) {
                 int x = gridX + dx;
                 int y = gridY + dy;
-                if (x < 0 || y < 0 || x >= sea.width || y >= sea.height || !bit(sea, x, y))
-                    return true;
+                if (x < 0 || y < 0 || x >= sea.width || y >= sea.height || !bit(sea, x, y)) return true;
             }
         }
         return false;
@@ -967,12 +916,10 @@ import static gps.WorldPointUtil.unpackWorldY;
         // tracks neither straight nor on sailable headings).
         corners = snapCornersToBearings(sea, corners, trackStart, trackGoal);
         List<Integer> dense = new ArrayList<>();
-        for (int c = 0; c + 1 < corners.size(); c++)
-            densifyLeg(dense, corners.get(c), corners.get(c + 1));
+        for (int c = 0; c + 1 < corners.size(); c++) densifyLeg(dense, corners.get(c), corners.get(c + 1));
         dense.add(corners.get(corners.size() - 1));
         int[] track = new int[dense.size()];
-        for (int i = 0; i < track.length; i++)
-            track[i] = dense.get(i);
+        for (int i = 0; i < track.length; i++) track[i] = dense.get(i);
         return track;
     }
 
@@ -1033,8 +980,7 @@ import static gps.WorldPointUtil.unpackWorldY;
             // trade real shore clearance for grid purity (it legalized a hugging departure
             // at the Pandemonium; hulls gain nothing from relaxing, they are hard line
             // blockers with no clearance band).
-            if (!snapLeg(sea, snapped, from, to, trackStart, trackGoal, 0))
-                snapped.add(to);
+            if (!snapLeg(sea, snapped, from, to, trackStart, trackGoal, 0)) snapped.add(to);
         }
         return snapped;
     }
@@ -1083,8 +1029,7 @@ import static gps.WorldPointUtil.unpackWorldY;
                 int mid2 = packWorldPoint(
                     unpackWorldX(mid1) + unpackWorldX(to) - fx,
                     unpackWorldY(mid1) + unpackWorldY(to) - fy, 0);
-                if (mid1 == from || mid1 == mid2 || mid2 == to)
-                    continue;
+                if (mid1 == from || mid1 == mid2 || mid2 == to) continue;
                 if (lineKeepsStandoff(sea, from, mid1, trackStart, trackGoal)
                     && lineKeepsStandoff(sea, mid1, mid2, trackStart, trackGoal)
                     && lineKeepsStandoff(sea, mid2, to, trackStart, trackGoal)) {
@@ -1108,8 +1053,7 @@ import static gps.WorldPointUtil.unpackWorldY;
                     && snapLeg(sea, snapped, half, to, trackStart, trackGoal, depth + 1)) {
                     return true;
                 }
-                while (snapped.size() > mark)
-                    snapped.remove(snapped.size() - 1);
+                while (snapped.size() > mark) snapped.remove(snapped.size() - 1);
             }
         }
         return false;
@@ -1130,10 +1074,8 @@ import static gps.WorldPointUtil.unpackWorldY;
             // Real-valued cone test: the true bearing vectors have det 40-ish, so the
             // decomposition is fractional; the midpoint rounds to the nearest tile (the
             // half-tile error tilts a long leg by well under a degree).
-            if (a < -1e-9 || b < -1e-9)
-                continue;
-            if (a < 0.5 || b < 0.5)
-                return from;
+            if (a < -1e-9 || b < -1e-9) continue;
+            if (a < 0.5 || b < 0.5) return from;
             int x = unpackWorldX(from);
             int y = unpackWorldY(from);
             return swapOrder
@@ -1190,14 +1132,12 @@ import static gps.WorldPointUtil.unpackWorldY;
         for (int s = 0; s <= steps; s++) {
             int x = x0 + Math.round((float) (x1 - x0) * s / steps);
             int y = y0 + Math.round((float) (y1 - y0) * s / steps);
-            if (!bit(sea, x, y) || obstacleAtGrid(sea, x, y))
-                return false;
+            if (!bit(sea, x, y) || obstacleAtGrid(sea, x, y)) return false;
             int world = packWorldPoint(sea.minX + x, sea.minY + y, 0);
             boolean nearEndpoint =
                 WorldPointUtil.distanceBetween(world, trackStart) <= 8
                     || WorldPointUtil.distanceBetween(world, trackGoal) <= 8;
-            if (requireClearance && !nearEndpoint && nearLand(sea, x, y))
-                return false;
+            if (requireClearance && !nearEndpoint && nearLand(sea, x, y)) return false;
         }
         return true;
     }
@@ -1215,10 +1155,8 @@ import static gps.WorldPointUtil.unpackWorldY;
     private static boolean failureCoolingDown(long key) {
         synchronized (trackCache) {
             Long at = failedTracks.get(key);
-            if (at == null)
-                return false;
-            if (System.currentTimeMillis() - at < TRACK_RETRY_MS)
-                return true;
+            if (at == null) return false;
+            if (System.currentTimeMillis() - at < TRACK_RETRY_MS) return true;
             failedTracks.remove(key);
             return false;
         }
@@ -1261,8 +1199,7 @@ import static gps.WorldPointUtil.unpackWorldY;
             if (mooring[0] == x && mooring[1] == y)
                 return (mooring[3] - sea.minY) * sea.width + (mooring[2] - sea.minX);
         }
-        if (isSailable(packed))
-            return (y - sea.minY) * sea.width + (x - sea.minX);
+        if (isSailable(packed)) return (y - sea.minY) * sea.width + (x - sea.minX);
         return nearestSailable(sea, packed);
     }
 
@@ -1277,12 +1214,10 @@ import static gps.WorldPointUtil.unpackWorldY;
         for (int radius = 0; radius <= 10; radius++) {
             for (int dx = -radius; dx <= radius; dx++) {
                 for (int dy = -radius; dy <= radius; dy++) {
-                    if (Math.max(Math.abs(dx), Math.abs(dy)) != radius)
-                        continue;
+                    if (Math.max(Math.abs(dx), Math.abs(dy)) != radius) continue;
                     int x = px + dx - sea.minX;
                     int y = py + dy - sea.minY;
-                    if (x >= 0 && y >= 0 && x < sea.width && y < sea.height && bit(sea, x, y))
-                        return y * sea.width + x;
+                    if (x >= 0 && y >= 0 && x < sea.width && y < sea.height && bit(sea, x, y)) return y * sea.width + x;
                 }
             }
         }
@@ -1304,8 +1239,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         SailingSea sea = get();
         String name = mooringIndex < sea.mooringNames.size()
             ? sea.mooringNames.get(mooringIndex) : "";
-        if (!name.isEmpty())
-            return name;
+        if (!name.isEmpty()) return name;
         int[] mooring = sea.moorings.get(mooringIndex);
         return mooring[0] + "," + mooring[1];
     }

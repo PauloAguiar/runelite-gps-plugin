@@ -93,16 +93,13 @@ import net.runelite.api.ChatMessageType;
         // Read before the clear, which would forget it.
         BankDetour.Route resume = bankTrip.complete();
         clear();
-        if (resume == null)
-            return;
+        if (resume == null) return;
         source = resume.source;
-        if (resume.marker != WorldPointUtil.UNDEFINED)
-            marker.pinNextAt(resume.marker);
+        if (resume.marker != WorldPointUtil.UNDEFINED) marker.pinNextAt(resume.marker);
         setTargets(new HashSet<>(resume.targets), false);
         // After setTargets: it resets the round-trip flag for ordinary destinations.
         roundTrip = resume.roundTrip;
-        if (resume.roundTrip)
-            routes.recompute();
+        if (resume.roundTrip) routes.recompute();
         plugin.getClient().addChatMessage(ChatMessageType.GAMEMESSAGE, "",
             "GPS: bank reached, resuming your previous route.", null);
     }
@@ -131,8 +128,7 @@ import net.runelite.api.ChatMessageType;
         plugin.getClientThread().invokeLater(() -> {
             this.source = source;
             Set<Integer> expanded = new HashSet<>(walkable(packedPosition));
-            if (expanded.size() > 1)
-                marker.pinNextAt(packedPosition);
+            if (expanded.size() > 1) marker.pinNextAt(packedPosition);
             setTargets(expanded, false);
         });
     }
@@ -145,8 +141,7 @@ import net.runelite.api.ChatMessageType;
      * round-trip bank is not necessarily the nearest one-way bank).
      */
     void setNearestCategory(Set<Integer> tiles, String source, boolean roundTrip) {
-        if (tiles == null || tiles.isEmpty())
-            return;
+        if (tiles == null || tiles.isEmpty()) return;
         plugin.getClientThread().invokeLater(() -> {
             this.source = source;
             setTargets(new HashSet<>(tiles), false);
@@ -176,8 +171,7 @@ import net.runelite.api.ChatMessageType;
             setNearestCategory(tiles, label, false);
             return;
         }
-        if (tiles.isEmpty())
-            return;
+        if (tiles.isEmpty()) return;
         plugin.getClientThread().invokeLater(() -> {
             if (plugin.getPlayerLocation() == WorldPointUtil.UNDEFINED)
                 // Logged out: setTargets would change nothing, so no trip may start either.
@@ -208,8 +202,7 @@ import net.runelite.api.ChatMessageType;
             pathfinderConfig.setExcludedMethods(plugin.getUserExclusions());
             pathfinderConfig.refresh();
             pathfinderConfig.filterLocations(ends, canReviveFiltered);
-            if (ends.isEmpty())
-                setTarget(WorldPointUtil.UNDEFINED, false);
+            if (ends.isEmpty()) setTarget(WorldPointUtil.UNDEFINED, false);
             else {
                 start = newStart;
                 targets = Set.copyOf(ends);
@@ -240,8 +233,7 @@ import net.runelite.api.ChatMessageType;
             // closest-tile path (captured in-game: 11 exhausted searches, 8.2 s). Target the nearest
             // walkable ring instead; walkable pins stay exact, and the map pin stays on the tile.
             Set<Integer> ring = walkable(target);
-            if (ring.size() > 1)
-                marker.pinNextAt(target);
+            if (ring.size() > 1) marker.pinNextAt(target);
             expanded.addAll(ring);
         }
         setTargets(expanded, append);
@@ -273,13 +265,11 @@ import net.runelite.api.ChatMessageType;
             return;
         }
         int here = plugin.getPlayerLocation();
-        if (here == WorldPointUtil.UNDEFINED)
-            return;
+        if (here == WorldPointUtil.UNDEFINED) return;
         marker.place(newTargets);
         offRoute.reset(here);
         Set<Integer> destinations = new HashSet<>(newTargets);
-        if (append)
-            destinations.addAll(targets);
+        if (append) destinations.addAll(targets);
         // Arm the journey timer: it starts counting from the player's first movement.
         journey.arm();
         // The routes themselves come from the tick-level auto-compute (keyed on the target-set

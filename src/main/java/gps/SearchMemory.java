@@ -41,8 +41,7 @@ import lombok.RequiredArgsConstructor;
     void addFavorite(String label, int packedPosition) {
         List<Destinations.Entry> updated = new ArrayList<>();
         for (Destinations.Entry entry : favorites) {
-            if (!entry.name.equals(label))
-                updated.add(entry);
+            if (!entry.name.equals(label)) updated.add(entry);
         }
         if (updated.size() < ChoiceStore.FAVORITES_LIMIT)
             updated.add(new Destinations.Entry("favorite", label, packedPosition));

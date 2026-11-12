@@ -86,15 +86,13 @@ import net.runelite.client.config.ConfigManager;
 
     /** Client thread: re-read every boat's ownership, berth, name and hull, persist, and notify. */
     void refresh() {
-        if (!GameState.LOGGED_IN.equals(client.getGameState()))
-            return;
+        if (!GameState.LOGGED_IN.equals(client.getGameState())) return;
         List<String[]> rows = new ArrayList<>();
         for (int slot = 0; slot < BOAT_VARBITS.length; slot++) {
             int[] varbits = BOAT_VARBITS[slot];
             // Owned varbit alone is unreliable (Where's My Boat's field lesson); a set name
             // descriptor also proves ownership, and covers Port Sarim's port id 0.
-            if (client.getVarbitValue(varbits[0]) <= 0 && client.getVarbitValue(varbits[3]) <= 0)
-                continue;
+            if (client.getVarbitValue(varbits[0]) <= 0 && client.getVarbitValue(varbits[3]) <= 0) continue;
             BoatHull hull = BoatHull.fromVarbit(client.getVarbitValue(varbits[5]));
             rows.add(new String[]{decodeBoatName(slot, varbits),
                 SailingPorts.portName(client.getVarbitValue(varbits[1])),
@@ -108,8 +106,7 @@ import net.runelite.client.config.ConfigManager;
 
     /** Restores the persisted snapshot when nothing has been collected yet this session. */
     void restore() {
-        if (banner != null)
-            return;
+        if (banner != null) return;
         String raw = configManager.getRSProfileConfiguration(configGroup, CONFIG_KEY_BOAT_PORTS);
         if (raw != null) {
             banner = decode(raw);
@@ -118,8 +115,7 @@ import net.runelite.client.config.ConfigManager;
     }
 
     private void changed() {
-        if (onChanged != null)
-            onChanged.run();
+        if (onChanged != null) onChanged.run();
     }
 
     /** "name|port|hull" rows joined by ';'. */
@@ -160,8 +156,7 @@ import net.runelite.client.config.ConfigManager;
                     }
                 }
             }
-            if (!parts.isEmpty())
-                return String.join(" ", parts);
+            if (!parts.isEmpty()) return String.join(" ", parts);
         }
         catch (RuntimeException e) {
             // Name tables unavailable (cache quirk): the slot label below still identifies it.

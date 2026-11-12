@@ -40,28 +40,23 @@ public class SceneObjects {
         PrimitiveIntList points = WorldPointUtil.toLocalInstance(client, packedLocation);
         for (int i = 0; i < points.size(); i++) {
             LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
-            if (lp == null)
-                continue;
+            if (lp == null) continue;
             int plane = WorldPointUtil.unpackWorldPlane(points.get(i));
             Tile[][][] tiles = client.getTopLevelWorldView().getScene().getTiles();
-            if (plane < 0 || plane >= tiles.length)
-                continue;
+            if (plane < 0 || plane >= tiles.length) continue;
             int sceneX = lp.getSceneX();
             int sceneY = lp.getSceneY();
             if (sceneX < 0 || sceneY < 0 || sceneX >= tiles[plane].length || sceneY >= tiles[plane][sceneX].length)
                 continue;
             Tile tile = tiles[plane][sceneX][sceneY];
-            if (tile == null)
-                continue;
+            if (tile == null) continue;
             inScene = true;
             WallObject wall = tile.getWallObject();
-            if (wall != null && wall.getId() == objectId)
-                return Presence.PRESENT;
+            if (wall != null && wall.getId() == objectId) return Presence.PRESENT;
             GameObject[] gameObjects = tile.getGameObjects();
             if (gameObjects != null) {
                 for (GameObject gameObject : gameObjects) {
-                    if (gameObject != null && gameObject.getId() == objectId)
-                        return Presence.PRESENT;
+                    if (gameObject != null && gameObject.getId() == objectId) return Presence.PRESENT;
                 }
             }
         }

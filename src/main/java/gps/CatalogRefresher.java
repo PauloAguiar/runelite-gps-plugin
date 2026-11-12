@@ -36,8 +36,7 @@ final class CatalogRefresher {
      * fingerprint differs from the last one seen (the first one always counts). True when it did.
      */
     boolean noteItems(long routingItemsFingerprint) {
-        if (fingerprintValid && routingItemsFingerprint == fingerprint)
-            return false;
+        if (fingerprintValid && routingItemsFingerprint == fingerprint) return false;
         fingerprint = routingItemsFingerprint;
         fingerprintValid = true;
         dirty = true;
@@ -50,8 +49,7 @@ final class CatalogRefresher {
      * Claiming clears the flag and arms the cooldown from {@code tick}.
      */
     boolean claim(int tick, boolean panelVisible, boolean generationInFlight, boolean loggedIn) {
-        if (!dirty || !panelVisible || generationInFlight || !loggedIn || tick < backoffTick)
-            return false;
+        if (!dirty || !panelVisible || generationInFlight || !loggedIn || tick < backoffTick) return false;
         backoffTick = tick + COOLDOWN_TICKS;
         dirty = false;
         return true;

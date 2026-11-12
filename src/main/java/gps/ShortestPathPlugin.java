@@ -164,8 +164,7 @@ public class ShortestPathPlugin extends Plugin {
         ConfigOverrides.declareKeys(configItems.keySet());
         cacheConfigValues();
         boatBannerService = new BoatBannerService(client, configManager, CONFIG_GROUP, () -> {
-            if (altPanel != null)
-                SwingUtilities.invokeLater(altPanel::refreshConfigSections);
+            if (altPanel != null) SwingUtilities.invokeLater(altPanel::refreshConfigSections);
         });
         // (Named API constant: POH_BUILDING_MODE is 1 while building.)
         pohDetection = new PohDetectionService(() -> PlayerOwnedHouse.scene(client.getTopLevelWorldView()),
@@ -173,8 +172,7 @@ public class ShortestPathPlugin extends Plugin {
             () -> config.pohSmartDetect(), PlayerOwnedHouse.declarations(config, this::setPanelConfig),
             configManager, CONFIG_GROUP, () -> {
             applyPohPortalScan(true);
-            if (altPanel != null)
-                SwingUtilities.invokeLater(altPanel::refreshConfigSections);
+            if (altPanel != null) SwingUtilities.invokeLater(altPanel::refreshConfigSections);
         }, () -> pathfinderConfig == null ? Map.of() : pathfinderConfig.getPohPortalNames());
 
         worldMap = new WorldMapProjection(client);
@@ -186,8 +184,7 @@ public class ShortestPathPlugin extends Plugin {
         bankSnapshots = new BankSnapshotService(configManager, CONFIG_GROUP, config::rememberBank, pathfinderConfig);
         spiritTrees = new SpiritTreeSync(client, clientThread, configManager, CONFIG_GROUP, pathfinderConfig, () -> {
             // The panel's Spirit trees section shows the detected planted trees / sync state.
-            if (altPanel != null)
-                SwingUtilities.invokeLater(altPanel::refreshConfigSections);
+            if (altPanel != null) SwingUtilities.invokeLater(altPanel::refreshConfigSections);
             if (hasPathTargets()) {
                 // Spirit-tree availability just became known: refresh the live config and
                 // regenerate so the displayed route can use (or drop) spirit trees accordingly.
@@ -196,8 +193,7 @@ public class ShortestPathPlugin extends Plugin {
             }
         });
         fairyRingLog = new FairyRingHighlighter(client, this::getDisplayPath, this::transportsForEdge);
-        if (GameState.LOGGED_IN.equals(client.getGameState()))
-            clientThread.invokeLater(pathfinderConfig::refresh);
+        if (GameState.LOGGED_IN.equals(client.getGameState())) clientThread.invokeLater(pathfinderConfig::refresh);
 
         overlayManager.add(pathOverlay);
         overlayManager.add(pathMinimapOverlay);
@@ -243,8 +239,7 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     @Override protected void shutDown() {
-        if (bankSnapshots != null)
-            bankSnapshots.persist();
+        if (bankSnapshots != null) bankSnapshots.persist();
         overlayManager.remove(pathOverlay);
         overlayManager.remove(pathMinimapOverlay);
         overlayManager.remove(pathMapOverlay);
@@ -346,8 +341,7 @@ public class ShortestPathPlugin extends Plugin {
      */
     public int blockedFromIndex(List<PathStep> path) {
         RouteOption route = getDisplayedRoute();
-        if (route == null || route.getPath() != path)
-            return Integer.MAX_VALUE;
+        if (route == null || route.getPath() != path) return Integer.MAX_VALUE;
         return RouteVerdicts.blockedFromIndex(path, getRouteDirections(route), displayedRouteProgress(),
             door -> ClosedDoors.state(client, door) == ClosedDoors.State.OPEN);
     }
@@ -360,8 +354,7 @@ public class ShortestPathPlugin extends Plugin {
     public Color getPathColor() {
         // The displayed route is a static snapshot: colour it from its own endpoint.
         RouteOption displayed = getDisplayedRoute();
-        if (displayed != null)
-            return isRouteEndTooFar(displayed) ? display.colourPathUnreachable : display.colourPath;
+        if (displayed != null) return isRouteEndTooFar(displayed) ? display.colourPathUnreachable : display.colourPath;
         return session.inFlight() ? display.colourPathCalculating : display.colourPath;
     }
 
@@ -403,18 +396,15 @@ public class ShortestPathPlugin extends Plugin {
             companions.refresh();
             return;
         }
-        if (!CONFIG_GROUP.equals(event.getGroup()))
-            return;
+        if (!CONFIG_GROUP.equals(event.getGroup())) return;
 
         cacheConfigValues();
 
         // Transport option changed; rerun pathfinding
-        if ("defaultRouteCount".equals(event.getKey()))
-            session.setLimit(routes.defaultLimit());
+        if ("defaultRouteCount".equals(event.getKey())) session.setLimit(routes.defaultLimit());
 
         // Display-order only: the keep-sailing preference re-ranks the routes it already has.
-        if ("sailingKeepSailing".equals(event.getKey()))
-            resortRoutesByPriority();
+        if ("sailingKeepSailing".equals(event.getKey())) resortRoutesByPriority();
 
         if (ConfigOverrides.affectsRouting(event.getKey())) {
             if (hasPathTargets()) {
@@ -472,8 +462,7 @@ public class ShortestPathPlugin extends Plugin {
 
         // Scene rebuild: the spawn-evidence set belongs to the old scene (LOADING fires before the
         // new scene's object spawns), and the once-per-scene chunk-dump log re-arms.
-        if (GameState.LOADING.equals(event.getGameState()))
-            pohDetection.onSceneLoading();
+        if (GameState.LOADING.equals(event.getGameState())) pohDetection.onSceneLoading();
 
         // Logout: save any unsaved bank snapshot (with the profile key captured while logged in) and
         // forget everything this session detected about the character — bank, planted spirit trees,
@@ -510,8 +499,7 @@ public class ShortestPathPlugin extends Plugin {
      * {@code PathfinderConfig.refresh()} pass after every hop.
      */
     @Subscribe public void onWorldChanged(WorldChanged event) {
-        if (pathfinderConfig == null)
-            return;
+        if (pathfinderConfig == null) return;
         pendingTasks.add(new PendingTask(client.getTickCount() + 1, pathfinderConfig::refresh));
     }
 
@@ -539,14 +527,11 @@ public class ShortestPathPlugin extends Plugin {
         routes.maybeAutoCompute();
         panelVarbits.onTick(client);
         Player localPlayer = client.getLocalPlayer();
-        if (localPlayer == null)
-            return;
+        if (localPlayer == null) return;
         pohDetection.onTick();
-        if (!hasPathTargets())
-            return;
+        if (!hasPathTargets()) return;
         int currentLocation = fromLocalInstance(client, localPlayer);
-        if (trackJourneyAndArrival(localPlayer, currentLocation))
-            return;
+        if (trackJourneyAndArrival(localPlayer, currentLocation)) return;
         trackOffRoute(currentLocation);
     }
 
@@ -561,8 +546,7 @@ public class ShortestPathPlugin extends Plugin {
 
     private void runPendingTasks() {
         for (int i = 0; i < pendingTasks.size(); i++) {
-            if (pendingTasks.get(i).check(client.getTickCount()))
-                pendingTasks.remove(i--).run();
+            if (pendingTasks.get(i).check(client.getTickCount())) pendingTasks.remove(i--).run();
         }
     }
 
@@ -575,13 +559,10 @@ public class ShortestPathPlugin extends Plugin {
     private boolean trackJourneyAndArrival(Player localPlayer, int currentLocation) {
         // The journey clock starts on the first move or animation after arming (JourneyTracker).
         journey.tick(currentLocation, localPlayer.getAnimation() != -1, System.currentTimeMillis());
-        if (!hasArrived(currentLocation))
-            return false;
+        if (!hasArrived(currentLocation)) return false;
         long elapsed = journey.elapsedMillis(System.currentTimeMillis());
-        if (routeDirectionsOverlay != null)
-            routeDirectionsOverlay.markArrived(destination.source(), elapsed);
-        if (altPanel != null)
-            altPanel.markArrived(elapsed);
+        if (routeDirectionsOverlay != null) routeDirectionsOverlay.markArrived(destination.source(), elapsed);
+        if (altPanel != null) altPanel.markArrived(elapsed);
         // Clears the target; a completed bank trip resumes the destination it replaced.
         destination.arrived();
         return true;
@@ -604,8 +585,7 @@ public class ShortestPathPlugin extends Plugin {
                 destination.clear();
                 break;
             case RECALCULATE:
-                if (!session.inFlight())
-                    destination.recalculateFrom(currentLocation, destination.targets());
+                if (!session.inFlight()) destination.recalculateFrom(currentLocation, destination.targets());
                 break;
             default:
                 break;
@@ -624,18 +604,15 @@ public class ShortestPathPlugin extends Plugin {
                 client.getItemContainer(InventoryID.WORN));
             return;
         }
-        if (event.getContainerId() != InventoryID.BANK)
-            return;
+        if (event.getContainerId() != InventoryID.BANK) return;
         if (bankSnapshots.bankOpened(event.getItemContainer())) {
             // First sight of the bank this session: regenerate so the availability map is rebuilt
             // with the bank contents — banked teleports classify IN_BANK (usable in Inv + bank
             // mode) and the catalog header count updates. Also clears the panel warning. NOT
             // during a round trip: opening the bank is the trip's halfway point, and regenerating
             // would discard the displayed route (and with it the way back).
-            if (destination.isRoundTrip())
-                routes.refreshPanel(session.inFlight());
-            else
-                recomputeAlternatives();
+            if (destination.isRoundTrip()) routes.refreshPanel(session.inFlight());
+            else recomputeAlternatives();
         }
     }
 
@@ -652,8 +629,7 @@ public class ShortestPathPlugin extends Plugin {
         // banking mid-trip is the whole point, and regenerating would discard the way back.
         if (event.getGroupId() == InterfaceID.BANKMAIN && bankSnapshots.isKnown() && !destination.isRoundTrip())
             recomputeAlternatives();
-        if (event.getGroupId() == InterfaceID.BANKMAIN)
-            bankSnapshots.persist();
+        if (event.getGroupId() == InterfaceID.BANKMAIN) bankSnapshots.persist();
     }
 
     /**
@@ -673,8 +649,7 @@ public class ShortestPathPlugin extends Plugin {
     }
 
     @Subscribe public void onVarbitChanged(VarbitChanged event) {
-        if (boatBannerService != null && boatBannerService.tracks(event.getVarbitId()))
-            boatBannerService.markDirty();
+        if (boatBannerService != null && boatBannerService.tracks(event.getVarbitId())) boatBannerService.markDirty();
         if (event.getVarbitId() == VarbitID.SPELLBOOK && pathfinderConfig != null) {
             // The book showing decides which spell rows apply (a spell, or its Spellbook Swap twin):
             // re-read it for the usable set, the item cue and the step list, and re-classify the catalog.
@@ -702,8 +677,7 @@ public class ShortestPathPlugin extends Plugin {
         applyPohPortalScan(false);
         boatBannerService.restore();
         // The panel's sections label their sync state — reflect what was just restored.
-        if (altPanel != null)
-            SwingUtilities.invokeLater(altPanel::refreshConfigSections);
+        if (altPanel != null) SwingUtilities.invokeLater(altPanel::refreshConfigSections);
     }
 
     @Subscribe public void onPostClientTick(PostClientTick event) {
@@ -829,8 +803,7 @@ public class ShortestPathPlugin extends Plugin {
 
     /** The focus-search hotkey: opens the GPS side panel (if it is not already) and focuses its search box. */
     private void focusSearch() {
-        if (altPanel == null || sidebar == null)
-            return;
+        if (altPanel == null || sidebar == null) return;
         SwingUtilities.invokeLater(() -> {
             sidebar.open();
             altPanel.focusSearch();
@@ -975,8 +948,7 @@ public class ShortestPathPlugin extends Plugin {
      */
     public Set<Integer> getDisplaySailingEdges() {
         RouteOption route = getDisplayedRoute();
-        if (route == null)
-            return Set.of();
+        if (route == null) return Set.of();
         return route.sailingJumpDepartures();
     }
 
@@ -1014,8 +986,7 @@ public class ShortestPathPlugin extends Plugin {
             excludeMethod(method);
             return;
         }
-        if (exclusions.contains(method))
-            includeMethod(method);
+        if (exclusions.contains(method)) includeMethod(method);
         preferences.setTier(method, priority);
         resortRoutesByPriority();
     }
@@ -1084,8 +1055,7 @@ public class ShortestPathPlugin extends Plugin {
      * next route.
      */
     private void applyPohPortalScan(boolean changed) {
-        if (pathfinderConfig == null || pohDetection == null)
-            return;
+        if (pathfinderConfig == null || pohDetection == null) return;
         pathfinderConfig.setPohPortalScan(pohDetection.isScanned() ? pohDetection.builtPortals() : null, pohDetection.hasNexus());
         if (changed) {
             pathfinderConfig.refresh();
@@ -1161,8 +1131,7 @@ public class ShortestPathPlugin extends Plugin {
     /** A config item the side panel binds by key: its name is the control's label, its description the tooltip. */
     ConfigItem configItem(String key) {
         ConfigItem item = configItems.get(key);
-        if (item == null)
-            throw new IllegalArgumentException("no config item " + key);
+        if (item == null) throw new IllegalArgumentException("no config item " + key);
         return item;
     }
 
@@ -1178,8 +1147,7 @@ public class ShortestPathPlugin extends Plugin {
      * (Slepe's "Bank Chest-wreck" defeated its name matching).
      */
     public Set<Integer> getEngineBankTiles() {
-        if (pathfinderConfig == null)
-            return Set.of();
+        if (pathfinderConfig == null) return Set.of();
         Set<Integer> tiles = pathfinderConfig.getDestinations("bank");
         return tiles == null ? Set.of() : tiles;
     }
@@ -1253,8 +1221,7 @@ public class ShortestPathPlugin extends Plugin {
      */
     int altStart() {
         Player localPlayer = client.getLocalPlayer();
-        if (localPlayer != null)
-            return fromLocalInstance(client, localPlayer);
+        if (localPlayer != null) return fromLocalInstance(client, localPlayer);
         return destination.start();
     }
 
@@ -1300,8 +1267,7 @@ public class ShortestPathPlugin extends Plugin {
         clientThread.invokeLater(() -> {
             final String context = new IssueReport(this).body();
             SwingUtilities.invokeLater(() -> {
-                if (altPanel != null)
-                    altPanel.showReportContext(context);
+                if (altPanel != null) altPanel.showReportContext(context);
                 LinkBrowser.browse(BuildInfo.GITHUB_NEW_ISSUE);
             });
         });

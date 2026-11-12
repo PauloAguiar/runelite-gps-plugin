@@ -43,12 +43,10 @@ public class PathMinimapOverlay extends Overlay {
     }
 
     @Override public Dimension render(Graphics2D graphics) {
-        if (!plugin.display().drawMinimap || !plugin.hasPathTargets())
-            return null;
+        if (!plugin.display().drawMinimap || !plugin.hasPathTargets()) return null;
 
         Shape minimapClipArea = plugin.minimapClip().area();
-        if (minimapClipArea == null)
-            return null;
+        if (minimapClipArea == null) return null;
         graphics.setClip(minimapClipArea);
         graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
@@ -61,8 +59,7 @@ public class PathMinimapOverlay extends Overlay {
         int blockedFrom = plugin.blockedFromIndex(pathPoints);
         for (int i = 0; i < pathPoints.size(); i++) {
             int pathPoint = pathPoints.get(i).getPackedPosition();
-            if (WorldPointUtil.unpackWorldPlane(pathPoint) != client.getTopLevelWorldView().getPlane())
-                continue;
+            if (WorldPointUtil.unpackWorldPlane(pathPoint) != client.getTopLevelWorldView().getPlane()) continue;
 
             Color color = i <= progress ? doneColor
                 : (i >= blockedFrom ? plugin.display().colourPathBlocked : pathColor);
@@ -81,13 +78,11 @@ public class PathMinimapOverlay extends Overlay {
         for (int i = 0; i < points.size(); i++) {
             LocalPoint lp = WorldPointUtil.toLocalPoint(client, points.get(i));
 
-            if (lp == null)
-                continue;
+            if (lp == null) continue;
 
             Point posOnMinimap = Perspective.localToMinimap(client, lp);
 
-            if (posOnMinimap == null)
-                continue;
+            if (posOnMinimap == null) continue;
 
             renderMinimapRect(client, graphics, posOnMinimap, color);
         }

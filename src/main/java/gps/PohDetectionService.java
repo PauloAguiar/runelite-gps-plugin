@@ -89,24 +89,17 @@ import net.runelite.client.config.ConfigManager;
     /** The furniture the last scan recognised, as display names (empty until scanned). */
     List<String> detectedNames() {
         PohScanner.Detected found = detected;
-        if (found == null)
-            return List.of();
+        if (found == null) return List.of();
         List<String> names = new ArrayList<>();
-        if (found.jewelleryBox != JewelleryBoxTier.NONE)
-            names.add(found.jewelleryBox + " jewellery box");
-        if (found.fairyRing)
-            names.add("Fairy ring");
-        if (found.spiritTree)
-            names.add("Spirit tree");
-        if (found.obelisk)
-            names.add("Obelisk");
+        if (found.jewelleryBox != JewelleryBoxTier.NONE) names.add(found.jewelleryBox + " jewellery box");
+        if (found.fairyRing) names.add("Fairy ring");
+        if (found.spiritTree) names.add("Spirit tree");
+        if (found.obelisk) names.add("Obelisk");
         List<String> portals = new ArrayList<>();
-        for (int id : found.portals)
-            portals.add(portalNames.get().getOrDefault(id, "Portal " + id));
+        for (int id : found.portals) portals.add(portalNames.get().getOrDefault(id, "Portal " + id));
         Collections.sort(portals);
         names.addAll(portals);
-        if (found.nexus)
-            names.add("Portal nexus");
+        if (found.nexus) names.add("Portal nexus");
         return names;
     }
 
@@ -147,8 +140,7 @@ import net.runelite.client.config.ConfigManager;
 
     /** Restores the persisted scan when none has run this session. */
     void restore() {
-        if (scanned)
-            return;
+        if (scanned) return;
         PohScanner.Detected stored = PohScanner.decode(
             configManager.getRSProfileConfiguration(configGroup, CONFIG_KEY_POH_FURNITURE));
         if (stored != null) {
@@ -186,8 +178,7 @@ import net.runelite.client.config.ConfigManager;
             attempts = 0;
         }
         building = buildingNow;
-        if (!smartDetect.getAsBoolean() || foundThisVisit || attempts >= MAX_ATTEMPTS)
-            return;
+        if (!smartDetect.getAsBoolean() || foundThisVisit || attempts >= MAX_ATTEMPTS) return;
         attempts++;
         log.debug("[poh] scan attempt {} (sceneIsHouse={}, spawned={})", attempts, sceneIsHouse, spawned);
         scan(current);
@@ -210,15 +201,11 @@ import net.runelite.client.config.ConfigManager;
         configManager.setRSProfileConfiguration(configGroup, CONFIG_KEY_POH_FURNITURE, PohScanner.encode(found));
         // Only ever raise declarations (turn a feature on, raise the jewellery tier): a partial
         // scene load that missed a piece can never wipe an existing declaration.
-        if (found.fairyRing && !declarations.fairyRing())
-            declarations.raise("usePohFairyRing", true);
-        if (found.spiritTree && !declarations.spiritTree())
-            declarations.raise("usePohSpiritTree", true);
-        if (found.obelisk && !declarations.obelisk())
-            declarations.raise("usePohObelisk", true);
+        if (found.fairyRing && !declarations.fairyRing()) declarations.raise("usePohFairyRing", true);
+        if (found.spiritTree && !declarations.spiritTree()) declarations.raise("usePohSpiritTree", true);
+        if (found.obelisk && !declarations.obelisk()) declarations.raise("usePohObelisk", true);
         if (found.jewelleryBox.ordinal() > declarations.jewelleryBoxTier().ordinal())
             declarations.raise("pohJewelleryBoxTier", found.jewelleryBox);
-        if (onChanged != null)
-            onChanged.run();
+        if (onChanged != null) onChanged.run();
     }
 }

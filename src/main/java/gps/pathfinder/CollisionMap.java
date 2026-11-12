@@ -72,26 +72,17 @@ import static gps.WorldPointUtil.unpackWorldY;
         int x = unpackWorldX(fromPacked);
         int y = unpackWorldY(fromPacked);
         int z = unpackWorldPlane(fromPacked);
-        if (z != unpackWorldPlane(toPacked))
-            return false;
+        if (z != unpackWorldPlane(toPacked)) return false;
         int dx = unpackWorldX(toPacked) - x;
         int dy = unpackWorldY(toPacked) - y;
-        if (dx == 0 && dy == 1)
-            return n(x, y, z);
-        if (dx == 0 && dy == -1)
-            return s(x, y, z);
-        if (dx == 1 && dy == 0)
-            return e(x, y, z);
-        if (dx == -1 && dy == 0)
-            return w(x, y, z);
-        if (dx == 1 && dy == 1)
-            return ne(x, y, z);
-        if (dx == -1 && dy == 1)
-            return nw(x, y, z);
-        if (dx == 1 && dy == -1)
-            return se(x, y, z);
-        if (dx == -1 && dy == -1)
-            return sw(x, y, z);
+        if (dx == 0 && dy == 1) return n(x, y, z);
+        if (dx == 0 && dy == -1) return s(x, y, z);
+        if (dx == 1 && dy == 0) return e(x, y, z);
+        if (dx == -1 && dy == 0) return w(x, y, z);
+        if (dx == 1 && dy == 1) return ne(x, y, z);
+        if (dx == -1 && dy == 1) return nw(x, y, z);
+        if (dx == 1 && dy == -1) return se(x, y, z);
+        if (dx == -1 && dy == -1) return sw(x, y, z);
         return false;
     }
 
@@ -125,10 +116,8 @@ import static gps.WorldPointUtil.unpackWorldY;
      * (tile, bank) state is skipped before its node is even created.
      */
     public PrimitiveIntList getNeighbors(int node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel, boolean targetInWilderness, NodeGraph graph, TentativeCosts tentative) {
-        if (graph.isTile(node))
-            return getTileNeighbors(node, visited, config, wildernessLevel, graph, tentative);
-        else
-            return getAbstractNodeNeighbors(node, visited, config, targetInWilderness, graph);
+        if (graph.isTile(node)) return getTileNeighbors(node, visited, config, wildernessLevel, graph, tentative);
+        else return getAbstractNodeNeighbors(node, visited, config, targetInWilderness, graph);
     }
 
     // Get neighbours for a walkable tile:
@@ -163,8 +152,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         for (Transport transport : transports) {
             // A transport to an already-SETTLED destination is pointless (settled = final under
             // cost-ordered settling); same-destination competitors race in the queue otherwise.
-            if (visited.get(transport.getDestination(), bankVisited))
-                continue;
+            if (visited.get(transport.getDestination(), bankVisited)) continue;
             // NB: Do not need to check for wilderness level for transports, since transports have specific origin tile.
             // The whistle differential is REAL cost inside getAdditionalTransportCost, so a chain
             // (whistle -> landing site A -> fly to B) prices itself above the direct whistle-to-B
@@ -230,8 +218,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         for (int i = 0; i < traversable.length; i++) {
             OrdinalDirection d = ORDINAL_VALUES[i];
             int neighborPacked = packedPointFromOrdinal(packedPosition, d);
-            if (visited.get(neighborPacked, bankVisited))
-                continue;
+            if (visited.get(neighborPacked, bankVisited)) continue;
 
             if (traversable[i]) {
                 final int doorCost = (doorMask & (1 << i)) != 0 ? DOOR_COST_UNITS : 0;
@@ -275,12 +262,9 @@ import static gps.WorldPointUtil.unpackWorldY;
         boolean bankVisited = graph.bankVisited(node);
         int maxWildernessLevel = graph.abstractKind(node).maxWildernessLevel();
         for (Transport transport : config.getUsableTeleports(bankVisited)) {
-            if (visited.get(transport.getDestination(), bankVisited))
-                continue;
-            if (!transport.isUsableAtWildernessLevel(maxWildernessLevel))
-                continue;
-            if (config.avoidWilderness(sourceTile, transport.getDestination(), targetInWilderness))
-                continue;
+            if (visited.get(transport.getDestination(), bankVisited)) continue;
+            if (!transport.isUsableAtWildernessLevel(maxWildernessLevel)) continue;
+            if (config.avoidWilderness(sourceTile, transport.getDestination(), targetInWilderness)) continue;
             neighbors.add(graph.createTransport(
                 transport.getDestination(),
                 node,

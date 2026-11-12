@@ -28,30 +28,25 @@ import net.runelite.client.events.PluginMessage;
 
     /** An inbound message on either namespace: a path request or a clear. */
     void receive(PluginMessage event) {
-        if (!PluginMessageCodec.isOurs(event.getNamespace()))
-            return;
+        if (!PluginMessageCodec.isOurs(event.getNamespace())) return;
         String action = event.getName();
         if (PluginMessageCodec.ACTION_PATH.equals(action)) {
             Map<String, Object> data = event.getData();
             Map<String, Object> overrides = PluginMessageCodec.configOverrideOf(data);
-            if (!overrides.isEmpty())
-                plugin.applyConfigOverrides(overrides);
+            if (!overrides.isEmpty()) plugin.applyConfigOverrides(overrides);
             PluginMessageCodec.PathRequest request = PluginMessageCodec.parsePath(data);
-            if (request == null)
-                return;
+            if (request == null) return;
             int start = request.start;
             if (start == WorldPointUtil.UNDEFINED) {
                 start = plugin.getPlayerLocation();
-                if (start == WorldPointUtil.UNDEFINED)
-                    return;
+                if (start == WorldPointUtil.UNDEFINED) return;
             }
             // Attribute the destination for the GPS header (a "source" the sender chose, else
             // all we can say is that a plugin asked for it).
             plugin.setTargetSource(request.source);
             boolean useOld = request.targets.isEmpty() && plugin.hasPathTargets();
             Set<Integer> ends;
-            if (useOld)
-                ends = new HashSet<>(plugin.getPathTargets());
+            if (useOld) ends = new HashSet<>(plugin.getPathTargets());
             else {
                 // A NEW destination from another plugin bypasses the manual target path, so the
                 // journey timer is armed here too; otherwise the arrival time would carry over from
@@ -86,8 +81,7 @@ import net.runelite.client.events.PluginMessage;
             return;
         }
         List<PathStep> currentPath = plugin.getDisplayPath();
-        if (currentPath.isEmpty())
-            return;
+        if (currentPath.isEmpty()) return;
         Map<String, Object> data = PluginMessageCodec.encodeTransports(currentPath, plugin::transportsForEdge);
         EventBus bus = eventBus.get();
         bus.post(new PluginMessage(PluginMessageCodec.NAMESPACE, PluginMessageCodec.ACTION_TRANSPORTS, data));

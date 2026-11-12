@@ -9,12 +9,9 @@ public enum AbstractNodeKind {
     GLOBAL_TELEPORTS_NORMAL;
 
     public static AbstractNodeKind fromWildernessLevel(int wildernessLevel) {
-        if (wildernessLevel > 30)
-            return GLOBAL_TELEPORTS_OVER_30;
-        if (wildernessLevel > 20)
-            return GLOBAL_TELEPORTS_OVER_20;
-        if (wildernessLevel > 0)
-            return GLOBAL_TELEPORTS_OVER_0;
+        if (wildernessLevel > 30) return GLOBAL_TELEPORTS_OVER_30;
+        if (wildernessLevel > 20) return GLOBAL_TELEPORTS_OVER_20;
+        if (wildernessLevel > 0) return GLOBAL_TELEPORTS_OVER_0;
         return GLOBAL_TELEPORTS_NORMAL;
     }
 

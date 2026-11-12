@@ -52,13 +52,11 @@ import lombok.extern.slf4j.Slf4j;
 
     @Override public Set<VarRequirement> parse(String value) {
         Set<VarRequirement> result = new HashSet<>();
-        if (value == null || value.isEmpty())
-            return result;
+        if (value == null || value.isEmpty()) return result;
 
         try {
             for (String requirement : value.split(DELIM_MULTI)) {
-                if (requirement.isEmpty())
-                    continue;
+                if (requirement.isEmpty()) continue;
 
                 List<VarRequirement> clauses = new ArrayList<>();
                 for (String clause : requirement.split(Pattern.quote(DELIM_OR))) {
@@ -69,8 +67,7 @@ import lombok.extern.slf4j.Slf4j;
                     }
                     clauses.add(parsed);
                 }
-                if (!clauses.isEmpty())
-                    result.add(VarRequirement.anyOf(clauses));
+                if (!clauses.isEmpty()) result.add(VarRequirement.anyOf(clauses));
             }
         }
         catch (NumberFormatException e) {

@@ -24,15 +24,13 @@ import net.runelite.api.Skill;
     @Override public int[] parse(String value) {
         int[] skillLevels = new int[Skill.values().length + 3];
 
-        if (value == null)
-            return skillLevels;
+        if (value == null) return skillLevels;
 
         String[] skillRequirements = value.split(DELIM_MULTI);
 
         try {
             for (String requirement : skillRequirements) {
-                if (requirement.isEmpty())
-                    continue;
+                if (requirement.isEmpty()) continue;
                 String[] levelAndSkill = requirement.split(DELIM_SPACE);
                 if (levelAndSkill.length != 2) {
                     log.error("Invalid level and skill: '{}'", requirement);
@@ -46,17 +44,13 @@ import net.runelite.api.Skill;
                 Skill[] skills = Skill.values();
                 int i = 0;
                 for (; i < skills.length; i++) {
-                    if (skills[i].getName().equals(skillName))
-                        skillLevels[i] = level;
+                    if (skills[i].getName().equals(skillName)) skillLevels[i] = level;
                 }
-                if (skillName.toLowerCase().startsWith("total"))
-                    skillLevels[i] = level;
+                if (skillName.toLowerCase().startsWith("total")) skillLevels[i] = level;
                 i++;
-                if (skillName.toLowerCase().startsWith("combat"))
-                    skillLevels[i] = level;
+                if (skillName.toLowerCase().startsWith("combat")) skillLevels[i] = level;
                 i++;
-                if (skillName.toLowerCase().startsWith("quest"))
-                    skillLevels[i] = level;
+                if (skillName.toLowerCase().startsWith("quest")) skillLevels[i] = level;
             }
         }
         catch (NumberFormatException e) {

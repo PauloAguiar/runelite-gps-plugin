@@ -34,11 +34,9 @@ public class PathMapOverlay extends Overlay {
     }
 
     @Override public Dimension render(Graphics2D graphics) {
-        if (!plugin.display().drawMap)
-            return null;
+        if (!plugin.display().drawMap) return null;
 
-        if (client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) == null)
-            return null;
+        if (client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) == null) return null;
 
         Rectangle worldMapRectangle = Objects.requireNonNull(client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER)).getBounds();
         Area worldMapClipArea = getWorldMapClipArea(worldMapRectangle);
@@ -94,8 +92,7 @@ public class PathMapOverlay extends Overlay {
                         drawMapSegment(graphics, track[s], track[s + 1], walkStroke);
                     graphics.setColor(pathColour);
                 }
-                else
-                    drawMapSegment(graphics, from, next, jumpStroke);
+                else drawMapSegment(graphics, from, next, jumpStroke);
                 i++;
                 continue;
             }
@@ -131,8 +128,7 @@ public class PathMapOverlay extends Overlay {
         graphics.setStroke(stroke);
         graphics.drawLine(x1, y1, x2, y2);
         // Skip the head on segments too short to fit it (e.g. zoomed far out).
-        if (Math.hypot(x2 - x1, y2 - y1) >= 10)
-            ArrowHead.draw(graphics, x1, y1, x2, y2, 7);
+        if (Math.hypot(x2 - x1, y2 - y1) >= 10) ArrowHead.draw(graphics, x1, y1, x2, y2, 7);
     }
 
     private void drawOnMap(Graphics2D graphics, int point, boolean checkHover, Point cursorPos) {
@@ -177,8 +173,7 @@ public class PathMapOverlay extends Overlay {
 
         Area clipArea = new Area(baseRectangle);
 
-        if (overview != null && !overview.isHidden())
-            clipArea.subtract(new Area(overview.getBounds()));
+        if (overview != null && !overview.isHidden()) clipArea.subtract(new Area(overview.getBounds()));
 
         if (surfaceSelector != null && !surfaceSelector.isHidden())
             clipArea.subtract(new Area(surfaceSelector.getBounds()));

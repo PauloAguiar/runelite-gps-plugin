@@ -22,16 +22,14 @@ class IntDeque {
     }
 
     void addLast(int value) {
-        if (size == elements.length)
-            grow();
+        if (size == elements.length) grow();
         elements[tail] = value;
         tail = increment(tail);
         size++;
     }
 
     void addFirst(int value) {
-        if (size == elements.length)
-            grow();
+        if (size == elements.length) grow();
         head = decrement(head);
         elements[head] = value;
         size++;
@@ -48,8 +46,7 @@ class IntDeque {
      * @return the removed first element, or {@link NodeGraph#NO_NODE} if empty.
      */
     int pollFirst() {
-        if (size == 0)
-            return NodeGraph.NO_NODE;
+        if (size == 0) return NodeGraph.NO_NODE;
         final int value = elements[head];
         head = increment(head);
         size--;
@@ -73,8 +70,7 @@ class IntDeque {
     private void grow() {
         final int oldCapacity = elements.length;
         final int[] grown = new int[oldCapacity << 1];
-        for (int i = 0; i < size; i++)
-            grown[i] = elements[(head + i) % oldCapacity];
+        for (int i = 0; i < size; i++) grown[i] = elements[(head + i) % oldCapacity];
         elements = grown;
         head = 0;
         tail = size;

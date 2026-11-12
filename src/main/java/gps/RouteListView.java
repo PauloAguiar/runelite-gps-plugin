@@ -99,8 +99,7 @@ final class RouteListView extends JPanel {
         routes = newRoutes;
         unavailable = newUnavailable;
         headerHolder.removeAll();
-        if (hasTarget || calculating || !routes.isEmpty())
-            headerHolder.add(header(routes.size(), calculating));
+        if (hasTarget || calculating || !routes.isEmpty()) headerHolder.add(header(routes.size(), calculating));
         headerHolder.revalidate();
         headerHolder.repaint();
         listPanel.removeAll();
@@ -131,8 +130,7 @@ final class RouteListView extends JPanel {
 
     /** Seconds as "59s" or "1m 5s". */
     static String formatDuration(int seconds) {
-        if (seconds < 60)
-            return seconds + "s";
+        if (seconds < 60) return seconds + "s";
         return (seconds / 60) + "m " + (seconds % 60) + "s";
     }
 
@@ -142,8 +140,7 @@ final class RouteListView extends JPanel {
      * alternatives, so the busy note says so instead of a bare "calculating".
      */
     static boolean searchingLongerRoutes(List<RouteOption> routes) {
-        if (routes.isEmpty())
-            return false;
+        if (routes.isEmpty()) return false;
         int min = Integer.MAX_VALUE;
         int max = 0;
         for (RouteOption route : routes) {
@@ -276,8 +273,7 @@ final class RouteListView extends JPanel {
             + ".<br>Includes your cost modifiers: real-world corrections for the clicks and"
             + "<br>menus a method costs beyond raw travel (charged items, transport type,"
             + "<br>currency). Routes are ordered by this plus the green/red priority chips.</html>");
-        if (!reaches)
-            eta.setToolTipText("The target can't be reached; this ends at the closest reachable tile");
+        if (!reaches) eta.setToolTipText("The target can't be reached; this ends at the closest reachable tile");
         left.add(eta);
         // Explicit-priority chip beside the ETA. Implicit cost modifiers are inside the ETA
         // itself now, so the chip is purely the user's prefer/avoid/walk/bank bias, and list
@@ -307,8 +303,7 @@ final class RouteListView extends JPanel {
             StringBuilder needs = new StringBuilder(joinLabels(route.getBankMethods()));
             for (Transport connector : route.getBankTransports()) {
                 String text = RouteDirections.objectText(connector);
-                if (text != null && needs.indexOf(text) < 0)
-                    needs.append(needs.length() == 0 ? "" : ", ").append(text);
+                if (text != null && needs.indexOf(text) < 0) needs.append(needs.length() == 0 ? "" : ", ").append(text);
             }
             bankChip.setToolTipText("<html>Walks to a bank first; withdraws the item for: <b>"
                 + escapeHtml(needs.toString()) + "</b></html>");
@@ -316,8 +311,7 @@ final class RouteListView extends JPanel {
                 List<String> pickups = RouteDirections.pickupLines(plugin, route);
                 if (!pickups.isEmpty()) {
                     StringBuilder tip = new StringBuilder("<html>Withdraws at a bank:");
-                    for (String pickup : pickups)
-                        tip.append("<br>• <b>").append(escapeHtml(pickup)).append("</b>");
+                    for (String pickup : pickups) tip.append("<br>• <b>").append(escapeHtml(pickup)).append("</b>");
                     SwingUtilities.invokeLater(() ->
                         bankChip.setToolTipText(tip.append("</html>").toString()));
                 }
@@ -341,10 +335,8 @@ final class RouteListView extends JPanel {
         // One walking row for the WHOLE route: every leg between methods plus the trailing leg;
         // per-method walk counts live in the method tooltips instead of cluttering each row.
         int totalWalk = route.getTrailingWalkSteps();
-        for (int m = 0; m < route.getMethods().size(); m++)
-            totalWalk += route.walkBefore(m);
-        if (totalWalk > 0 || route.isWalkOnly())
-            methods.add(walkRow(totalWalk));
+        for (int m = 0; m < route.getMethods().size(); m++) totalWalk += route.walkBefore(m);
+        if (totalWalk > 0 || route.isWalkOnly()) methods.add(walkRow(totalWalk));
         // One sailing row for the whole route, mirroring the walk row: total sea tiles across
         // every sailing leg (distances inverted from the legs' durations).
         int totalSail = 0;
@@ -354,8 +346,7 @@ final class RouteListView extends JPanel {
                 totalSail += SailingSea.tilesFromDuration(route.getMethodDurations().get(m));
             }
         }
-        if (totalSail > 0)
-            methods.add(sailRow(totalSail));
+        if (totalSail > 0) methods.add(sailRow(totalSail));
         card.add(methods, BorderLayout.CENTER);
 
         // The best route is the fallback whenever nothing else is selected, so hiding it never
@@ -386,8 +377,7 @@ final class RouteListView extends JPanel {
 
             @Override public void mouseExited(MouseEvent e) {
                 Point p = SwingUtilities.convertPoint((Component) e.getSource(), e.getPoint(), root);
-                if (!root.contains(p))
-                    handler.accept(false);
+                if (!root.contains(p)) handler.accept(false);
             }
         };
         addHoverListener(root, hover);
@@ -396,8 +386,7 @@ final class RouteListView extends JPanel {
     private static void addHoverListener(Component component, MouseAdapter hover) {
         component.addMouseListener(hover);
         if (component instanceof Container) {
-            for (Component child : ((Container) component).getComponents())
-                addHoverListener(child, hover);
+            for (Component child : ((Container) component).getComponents()) addHoverListener(child, hover);
         }
     }
 

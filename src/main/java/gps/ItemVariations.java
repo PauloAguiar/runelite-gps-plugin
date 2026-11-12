@@ -64,8 +64,7 @@ import lombok.*;
             boolean header = true;
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
-                if (line.isEmpty() || line.startsWith("#"))
-                    continue;
+                if (line.isEmpty() || line.startsWith("#")) continue;
                 if (header) {
                     header = false;
                     continue;

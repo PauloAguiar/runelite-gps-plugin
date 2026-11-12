@@ -121,8 +121,7 @@ import gps.transport.parser.TsvParser;
         Set<Transport> visited = Collections.newSetFromMap(new IdentityHashMap<>());
         for (Set<Transport> set : transports.values()) {
             for (Transport transport : set) {
-                if (visited.add(transport))
-                    transport.internRequirements(interner);
+                if (visited.add(transport)) transport.internRequirements(interner);
             }
         }
     }

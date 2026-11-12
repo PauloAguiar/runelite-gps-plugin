@@ -35,8 +35,7 @@ import net.runelite.client.util.ImageUtil;
         int tile = pinNext != WorldPointUtil.UNDEFINED ? pinNext
             : (targets.size() == 1 ? targets.iterator().next() : WorldPointUtil.UNDEFINED);
         pinNext = WorldPointUtil.UNDEFINED;
-        if (tile == WorldPointUtil.UNDEFINED)
-            return;
+        if (tile == WorldPointUtil.UNDEFINED) return;
         marker = new WorldMapPoint(WorldPointUtil.unpackWorldPoint(tile), IMAGE);
         marker.setName("Target");
         marker.setTarget(marker.getWorldPoint());

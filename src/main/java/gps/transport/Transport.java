@@ -170,18 +170,12 @@ import gps.transport.requirement.TransportItems;
         builder.type(transportType);
 
         // Origin/Destination use hasKey because empty string means LOCATION_PERMUTATION
-        if (record.hasKey(TransportRecord.Fields.ORIGIN))
-            builder.origin(record.getOrigin());
-        if (record.hasKey(TransportRecord.Fields.DESTINATION))
-            builder.destination(record.getDestination());
-        if (record.has(TransportRecord.Fields.SKILLS))
-            builder.skillLevels(record.getSkills());
-        if (record.has(TransportRecord.Fields.ITEMS))
-            builder.itemRequirements(record.getItems());
-        if (record.has(TransportRecord.Fields.QUESTS))
-            builder.quests(record.getQuests());
-        if (record.has(TransportRecord.Fields.DURATION))
-            builder.duration(record.getDuration());
+        if (record.hasKey(TransportRecord.Fields.ORIGIN)) builder.origin(record.getOrigin());
+        if (record.hasKey(TransportRecord.Fields.DESTINATION)) builder.destination(record.getDestination());
+        if (record.has(TransportRecord.Fields.SKILLS)) builder.skillLevels(record.getSkills());
+        if (record.has(TransportRecord.Fields.ITEMS)) builder.itemRequirements(record.getItems());
+        if (record.has(TransportRecord.Fields.QUESTS)) builder.quests(record.getQuests());
+        if (record.has(TransportRecord.Fields.DURATION)) builder.duration(record.getDuration());
         else if (transportType == TransportType.TRANSPORT)
             // Object transports (stairs, ladders, doors, gates, dungeon portals, passages) without an
             // explicit duration are NOT free: interacting with the object and crossing takes at least a
@@ -189,22 +183,15 @@ import gps.transport.requirement.TransportItems;
             // of a dungeon and back through an exit that shares its surface tile (Stronghold of
             // Security). Specific transports still override this with a larger duration in the data.
             builder.duration(OBJECT_TRANSPORT_MIN_DURATION);
-        if (record.has(TransportRecord.Fields.DISPLAY_INFO))
-            builder.displayInfo(record.getDisplayInfo());
-        if (record.has(TransportRecord.Fields.CONSUMABLE))
-            builder.isConsumable(record.getConsumable());
+        if (record.has(TransportRecord.Fields.DISPLAY_INFO)) builder.displayInfo(record.getDisplayInfo());
+        if (record.has(TransportRecord.Fields.CONSUMABLE)) builder.isConsumable(record.getConsumable());
         if (record.has(TransportRecord.Fields.WILDERNESS_LEVEL))
             builder.maxWildernessLevel(record.getWildernessLevel());
-        if (record.has(TransportRecord.Fields.OBJECT_INFO))
-            builder.objectInfo(record.getObjectInfo());
-        if (record.has(TransportRecord.Fields.NOTE))
-            builder.note(record.getNote());
-        if (record.has(TransportRecord.Fields.VARBITS))
-            builder.varbits(record.getVarbits());
-        if (record.has(TransportRecord.Fields.VAR_PLAYERS))
-            builder.varPlayers(record.getVarPlayers());
-        if (record.has(TransportRecord.Fields.REGION_OVERRIDE))
-            builder.regionOverride(record.getRegionOverride());
+        if (record.has(TransportRecord.Fields.OBJECT_INFO)) builder.objectInfo(record.getObjectInfo());
+        if (record.has(TransportRecord.Fields.NOTE)) builder.note(record.getNote());
+        if (record.has(TransportRecord.Fields.VARBITS)) builder.varbits(record.getVarbits());
+        if (record.has(TransportRecord.Fields.VAR_PLAYERS)) builder.varPlayers(record.getVarPlayers());
+        if (record.has(TransportRecord.Fields.REGION_OVERRIDE)) builder.regionOverride(record.getRegionOverride());
 
         Transport builtTransport = builder.build();
         this.origin = builtTransport.origin;
@@ -251,8 +238,7 @@ import gps.transport.requirement.TransportItems;
      */
     private static int[] compactSkills(int[] skills) {
         for (int level : skills) {
-            if (level != 0)
-                return skills;
+            if (level != 0) return skills;
         }
         return NO_SKILLS;
     }
@@ -270,14 +256,12 @@ import gps.transport.requirement.TransportItems;
         objectInfo = interner.internString(objectInfo);
         if (!varRequirements.isEmpty()) {
             Set<VarRequirement> interned = new HashSet<>(varRequirements.size() * 2);
-            for (VarRequirement requirement : varRequirements)
-                interned.add(interner.intern(requirement));
+            for (VarRequirement requirement : varRequirements) interned.add(interner.intern(requirement));
             // Transports with identical var requirements (very common across permutations) share one
             // read-only Set instead of each keeping a copy.
             varRequirements = interner.internVarSet(interned);
         }
-        if (!quests.isEmpty())
-            quests = interner.internQuestSet(quests);
+        if (!quests.isEmpty()) quests = interner.internQuestSet(quests);
     }
 
     @Override public String toString() {
@@ -326,8 +310,7 @@ import gps.transport.requirement.TransportItems;
     public Set<VarRequirement> getVarbits() {
         Set<VarRequirement> varbits = new HashSet<>();
         for (VarRequirement req : varRequirements) {
-            if (req.isVarbit())
-                varbits.add(req);
+            if (req.isVarbit()) varbits.add(req);
         }
         return varbits;
     }
@@ -337,8 +320,7 @@ import gps.transport.requirement.TransportItems;
      */
     public boolean hasVarbit(int varbitId) {
         for (VarRequirement req : varRequirements) {
-            if (req.isVarbit() && req.getId() == varbitId)
-                return true;
+            if (req.isVarbit() && req.getId() == varbitId) return true;
         }
         return false;
     }
@@ -350,8 +332,7 @@ import gps.transport.requirement.TransportItems;
     public Set<VarRequirement> getVarPlayers() {
         Set<VarRequirement> varPlayers = new HashSet<>();
         for (VarRequirement req : varRequirements) {
-            if (req.isVarPlayer())
-                varPlayers.add(req);
+            if (req.isVarPlayer()) varPlayers.add(req);
         }
         return varPlayers;
     }
@@ -401,8 +382,7 @@ import gps.transport.requirement.TransportItems;
         public TransportBuilder skillLevels(String value) {
             int[] parsedSkills = skillParser.parse(value);
             for (int i = 0; i < skillLevels.length; i++) {
-                if (parsedSkills[i] > 0)
-                    skillLevels[i] = parsedSkills[i];
+                if (parsedSkills[i] > 0) skillLevels[i] = parsedSkills[i];
             }
             return this;
         }
@@ -498,8 +478,7 @@ import gps.transport.requirement.TransportItems;
         }
 
         public TransportBuilder regionOverride(LeagueRegion regionOverride) {
-            if (regionOverride != null)
-                this.regionOverride = regionOverride;
+            if (regionOverride != null) this.regionOverride = regionOverride;
             return this;
         }
 
@@ -551,8 +530,7 @@ import gps.transport.requirement.TransportItems;
             if (transport.type != null && transport.type.isTeleport())
                 transport.duration = Math.max(transport.duration, 1);
 
-            if (transport.type != null)
-                transport.type = transport.type.refine(transport.skillLevels);
+            if (transport.type != null) transport.type = transport.type.refine(transport.skillLevels);
 
             return transport;
         }

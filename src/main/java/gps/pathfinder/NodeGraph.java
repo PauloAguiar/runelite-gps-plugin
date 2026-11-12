@@ -86,8 +86,7 @@ public class NodeGraph {
         orderCost = new int[pages][];
         flags = new byte[pages][];
         abstractKind = new byte[pages][];
-        for (int page = 0; page < pages; page++)
-            allocatePage(page);
+        for (int page = 0; page < pages; page++) allocatePage(page);
         capacity = pages * PAGE_SIZE;
         this.heuristic = heuristic;
     }
@@ -106,8 +105,7 @@ public class NodeGraph {
     }
 
     private void ensureCapacity() {
-        if (size < capacity)
-            return;
+        if (size < capacity) return;
         // One more page per array. The page tables are small (one reference per 16K nodes), so
         // growing them by copy is cheap and keeps every existing page for a concurrent reader.
         final int pages = packedPosition.length;
@@ -178,8 +176,7 @@ public class NodeGraph {
     public int createTransport(int packedPosition, int previous, int travelTime, int additionalCost,
         boolean bankVisited) {
         byte flagBits = FLAG_TRANSPORT;
-        if (bankVisited)
-            flagBits |= FLAG_BANK_VISITED;
+        if (bankVisited) flagBits |= FLAG_BANK_VISITED;
         return append(packedPosition, previous, costOf(previous) + Math.max(0, travelTime + additionalCost),
             flagBits, (byte) 0);
     }
@@ -192,8 +189,7 @@ public class NodeGraph {
      */
     public int createAbstract(AbstractNodeKind abstractKind, int previous, boolean bankVisited, int extraCost) {
         byte flagBits = FLAG_ABSTRACT;
-        if (bankVisited)
-            flagBits |= FLAG_BANK_VISITED;
+        if (bankVisited) flagBits |= FLAG_BANK_VISITED;
         return append(WorldPointUtil.UNDEFINED, previous, costOf(previous) + Math.max(0, extraCost), flagBits,
             (byte) abstractKind.ordinal());
     }
@@ -240,8 +236,7 @@ public class NodeGraph {
 
     /** A node id the snapshotted page tables can serve (every page up to the table's length exists). */
     private static boolean readable(int id, int[][] prev, int[][] packed, byte[][] flg) {
-        if (id == NO_NODE)
-            return false;
+        if (id == NO_NODE) return false;
         final int page = id >>> PAGE_SHIFT;
         return page < prev.length && page < packed.length && page < flg.length
             && prev[page] != null && packed[page] != null && flg[page] != null;
@@ -260,20 +255,17 @@ public class NodeGraph {
         final int[][] packed = packedPosition;
         final byte[][] flg = flags;
         final int[][] cst = cost;
-        if (prev == null || packed == null || flg == null || cst == null || id == NO_NODE)
-            return new ArrayList<>();
+        if (prev == null || packed == null || flg == null || cst == null || id == NO_NODE) return new ArrayList<>();
 
         int node = id;
         int n = 0;
         while (readable(node, prev, packed, flg)) {
-            if ((flg[node >>> PAGE_SHIFT][node & PAGE_MASK] & FLAG_ABSTRACT) == 0)
-                n++;
+            if ((flg[node >>> PAGE_SHIFT][node & PAGE_MASK] & FLAG_ABSTRACT) == 0) n++;
             node = prev[node >>> PAGE_SHIFT][node & PAGE_MASK];
         }
 
         final List<PathStep> pathSteps = new ArrayList<>(n);
-        for (int i = 0; i < n; i++)
-            pathSteps.add(null);
+        for (int i = 0; i < n; i++) pathSteps.add(null);
 
         node = id;
         int i = n;
@@ -299,8 +291,7 @@ public class NodeGraph {
         final int[][] prev = previous;
         final int[][] packed = packedPosition;
         final byte[][] flg = flags;
-        if (prev == null || packed == null || flg == null)
-            return WorldPointUtil.UNDEFINED;
+        if (prev == null || packed == null || flg == null) return WorldPointUtil.UNDEFINED;
         int node = id;
         while (readable(node, prev, packed, flg) && (flg[node >>> PAGE_SHIFT][node & PAGE_MASK] & FLAG_ABSTRACT) != 0)
             node = prev[node >>> PAGE_SHIFT][node & PAGE_MASK];

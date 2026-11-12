@@ -20,14 +20,12 @@ public class QuestParser implements FieldParser<Set<Quest>> {
 
     @Override public Set<Quest> parse(String value) {
         Set<Quest> quests = new HashSet<>();
-        if (value == null || value.isEmpty())
-            return quests;
+        if (value == null || value.isEmpty()) return quests;
 
         String[] questNames = value.split(DELIM_MULTI);
         for (String questName : questNames) {
             String name = questName.trim();
-            if (name.isEmpty())
-                continue;
+            if (name.isEmpty()) continue;
             boolean found = false;
             for (Quest quest : Quest.values()) {
                 if (quest.getName().equals(name)) {

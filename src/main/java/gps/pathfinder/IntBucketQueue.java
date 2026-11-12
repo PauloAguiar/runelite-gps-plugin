@@ -33,8 +33,7 @@ class IntBucketQueue {
             // Monotonicity safety net: never true with non-negative edges, but a backwards insert
             // must not be silently skipped by the cursor.
             cursor = key;
-        while (buckets.size() <= key)
-            buckets.add(null);
+        while (buckets.size() <= key) buckets.add(null);
         IntDeque bucket = buckets.get(key);
         if (bucket == null) {
             bucket = new IntDeque(16);
@@ -48,8 +47,7 @@ class IntBucketQueue {
      * @return the minimum-key element, or {@link NodeGraph#NO_NODE} if empty.
      */
     int poll() {
-        if (size == 0)
-            return NodeGraph.NO_NODE;
+        if (size == 0) return NodeGraph.NO_NODE;
         while (cursor < buckets.size()) {
             IntDeque bucket = buckets.get(cursor);
             if (bucket != null && !bucket.isEmpty()) {

@@ -7,6 +7,7 @@ costs about one token whatever the depth, so the style joins lines wherever that
 - the braces around a single-statement if / else / for / while body go when that is safe (the body
   is one statement, comment lines before it allowed, not a declaration, not itself a control
   statement, so no dangling else, and the header sits on one line);
+- that single statement then sits on its header line (up to 120 columns);
 - marker and one-line annotations sit on the line of what they annotate (up to 120 columns);
 - leading tabs become four spaces.
 
@@ -130,6 +131,28 @@ def unbrace(lines):
     return out, removed
 
 
+def control_bodies(lines):
+    """`if (x)` / `    return;` becomes `if (x) return;` (an unbraced body, so one statement)."""
+    code = code_lines(lines)
+    out = []
+    joined = 0
+    i = 0
+    n = len(lines)
+    while i < n:
+        line = lines[i]
+        if (i + 1 < n and code[i] and code[i + 1] and BARE_HEADER.match(line)
+                and indent_of(lines[i + 1]) > indent_of(line) and statement_ok(lines[i + 1])):
+            merged = line.rstrip() + ' ' + lines[i + 1].strip()
+            if len(merged) <= CONTROL_LIMIT:
+                out.append(merged)
+                joined += 1
+                i += 2
+                continue
+        out.append(line)
+        i += 1
+    return out, joined
+
+
 def annotations(lines):
     """`@Override` / `public String toString()` becomes one line, like any one-line annotation."""
     code = code_lines(lines)
@@ -147,7 +170,8 @@ def annotations(lines):
     return out, joined
 
 
-RULES = [('braces unbraced', unbrace), ('annotations joined', annotations)]
+RULES = [('braces unbraced', unbrace), ('bodies on their header', control_bodies),
+         ('annotations joined', annotations)]
 
 
 def main():

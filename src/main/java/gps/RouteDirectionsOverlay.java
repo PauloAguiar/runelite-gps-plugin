@@ -126,8 +126,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
     }
 
     @Override public Dimension render(Graphics2D graphics) {
-        if (!plugin.display().showDirections)
-            return null;
+        if (!plugin.display().showDirections) return null;
         // Override RuneLite's overlay transparency on request: the base OverlayPanel only
         // substitutes the user's preferred colour when the panel still has the STANDARD
         // background, so setting our own (and restoring STANDARD when the override is off)
@@ -159,15 +158,13 @@ public class RouteDirectionsOverlay extends OverlayPanel {
                 arrivalElapsedMillis = journeyStart == 0 ? 0 : Math.max(0, now - journeyStart);
             }
             nearEndAtMillis = Long.MIN_VALUE / 2;
-            if (arrivalShowing && now < arrivalUntilMillis)
-                return renderArrival(graphics);
+            if (arrivalShowing && now < arrivalUntilMillis) return renderArrival(graphics);
             arrivalShowing = false;
             return null;
         }
         arrivalShowing = false;
         List<RouteDirections.Step> steps = plugin.getRouteDirections(route);
-        if (steps.isEmpty())
-            return null;
+        if (steps.isEmpty()) return null;
         updateProgress(route, steps);
         // "About to arrive" needs more than a small ETA — straight-line proximity can undercut
         // walls (the goal one tile away across a fence). It must be EARNED: standing exactly on
@@ -194,8 +191,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         // The compact overlay shows the steps only.
         final boolean compact = plugin.display().compactOverlay;
         String destinationLine = plugin.getDestinationLine();
-        if (destinationLine != null && !compact)
-            lines.add(new Line(destinationLine, fontOther, UPCOMING, null, null));
+        if (destinationLine != null && !compact) lines.add(new Line(destinationLine, fontOther, UPCOMING, null, null));
         // Drifting off the drawn path: warn before the route is recomputed (the middle of the three
         // distance bands — see ShortestPathPlugin's off-route handling).
         if (plugin.isOffRouteWarning()) {
@@ -248,19 +244,16 @@ public class RouteDirectionsOverlay extends OverlayPanel {
                 formatTime((int) Math.ceil(step.getTicks() * RouteDirections.SECONDS_PER_TICK)), colour));
             // The withdraw step's per-item list: indented, un-numbered, no own time.
             for (String detail : step.getDetails()) {
-                if (shown + 1 >= maxLines)
-                    break;
+                if (shown + 1 >= maxLines) break;
                 lines.add(new Line("      • " + detail, fontOther, colour, null, null));
                 shown++;
             }
         }
-        if (i < steps.size())
-            lines.add(new Line("… " + (steps.size() - i) + " more", fontOther, DONE, null, null));
+        if (i < steps.size()) lines.add(new Line("… " + (steps.size() - i) + " more", fontOther, DONE, null, null));
 
         // Compact overlay: the steps only, no header row and no ETA pill.
         Dimension dimension = renderPanel(graphics, lines);
-        if (dimension != null && !compact)
-            drawEtaBadge(graphics, dimension, etaText);
+        if (dimension != null && !compact) drawEtaBadge(graphics, dimension, etaText);
         return dimension;
     }
 
@@ -319,8 +312,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
 
         Dimension dimension = super.render(graphics);
         if (dimension != null) {
-            if (!compact)
-                drawTitle(graphics, dimension);
+            if (!compact) drawTitle(graphics, dimension);
             drawCentredLines(graphics, dimension, lines);
         }
         return dimension;
@@ -333,8 +325,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
      */
     private void drawCentredLines(Graphics2D graphics, Dimension panelSize, List<Line> lines) {
         int first = lines.size();
-        while (first > 0 && lines.get(first - 1).centred)
-            first--;
+        while (first > 0 && lines.get(first - 1).centred) first--;
         float bottom = panelSize.height - 7;
         for (int i = lines.size() - 1; i >= first; i--) {
             Line line = lines.get(i);
@@ -379,8 +370,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         final FontType custom = display.useCustomOverlayFont ? display.overlayFont : null;
         final String key = custom == null ? "native"
             : custom.getFamily() + "|" + custom.getSize() + "|" + custom.isBold() + "|" + custom.isItalic();
-        if (key.equals(fontKey))
-            return;
+        if (key.equals(fontKey)) return;
         fontKey = key;
         Font[] fonts = fontsFor(custom);
         fontCurrent = fonts[0];
@@ -419,10 +409,8 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         final int py = 4;
         // The destination's glyph: a location pin, or a bank while a bank trip will resume a
         // replaced route (the destination line says what comes after it).
-        if (plugin.isBankDetour())
-            drawBankGlyph(graphics, px, py, s, accent);
-        else
-            drawPinGlyph(graphics, px, py, s, accent);
+        if (plugin.isBankDetour()) drawBankGlyph(graphics, px, py, s, accent);
+        else drawPinGlyph(graphics, px, py, s, accent);
 
         graphics.setFont(fontCurrent);
         graphics.setColor(Color.BLACK);
@@ -524,8 +512,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
      * Compact wall-time: "34s" under a minute, "2m 05s" above.
      */
     private static String formatTime(int seconds) {
-        if (seconds < 60)
-            return seconds + "s";
+        if (seconds < 60) return seconds + "s";
         return (seconds / 60) + "m " + String.format("%02ds", seconds % 60);
     }
 
@@ -536,11 +523,9 @@ public class RouteDirectionsOverlay extends OverlayPanel {
      */
     private static String ellipsize(Graphics2D graphics, Font font, String text, int maxWidth) {
         FontMetrics metrics = graphics.getFontMetrics(font);
-        if (metrics.stringWidth(text) <= maxWidth)
-            return text;
+        if (metrics.stringWidth(text) <= maxWidth) return text;
         int end = text.length();
-        while (end > 1 && metrics.stringWidth(text.substring(0, end) + "…") > maxWidth)
-            end--;
+        while (end > 1 && metrics.stringWidth(text.substring(0, end) + "…") > maxWidth) end--;
         return text.substring(0, end) + "…";
     }
 
@@ -551,13 +536,11 @@ public class RouteDirectionsOverlay extends OverlayPanel {
      */
     private String doorStepText(RouteOption route, RouteDirections.Step step) {
         List<PathStep> path = route.getPath();
-        if (step.getStartIndex() < 0 || step.getEndIndex() >= path.size())
-            return step.getText();
+        if (step.getStartIndex() < 0 || step.getEndIndex() >= path.size()) return step.getText();
         ClosedDoors.Door door = ClosedDoors.doorBetween(
             path.get(step.getStartIndex()).getPackedPosition(),
             path.get(step.getEndIndex()).getPackedPosition());
-        if (door != null && ClosedDoors.state(client, door) == ClosedDoors.State.OPEN)
-            return "Go through " + door.name;
+        if (door != null && ClosedDoors.state(client, door) == ClosedDoors.State.OPEN) return "Go through " + door.name;
         return step.getText();
     }
 
@@ -568,8 +551,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
      */
     private boolean nearEnd(RouteDirections.Step step) {
         int span = step.getEndIndex() - step.getStartIndex();
-        if (span < 8)
-            return false;
+        if (span < 8) return false;
         int remaining = step.getEndIndex() - reachedIndex;
         return remaining <= Math.max(3, span / 5);
     }
@@ -617,11 +599,9 @@ public class RouteDirectionsOverlay extends OverlayPanel {
      * the plugin's mouse listener; returns true when the click was consumed.
      */
     public boolean dismissArrivalAt(Point point) {
-        if (!arrivalShowing)
-            return false;
+        if (!arrivalShowing) return false;
         Rectangle bounds = getBounds();
-        if (bounds == null || !bounds.contains(point))
-            return false;
+        if (bounds == null || !bounds.contains(point)) return false;
         arrivalShowing = false;
         return true;
     }
@@ -656,14 +636,12 @@ public class RouteDirectionsOverlay extends OverlayPanel {
             liveRemainingTicks = remainingTicksAt.length > 0 ? remainingTicksAt[0] : 0;
         }
         Player player = client.getLocalPlayer();
-        if (player == null || remainingTicksAt.length != path.size())
-            return;
+        if (player == null || remainingTicksAt.length != path.size()) return;
         // Boat-aware: aboard, the raw local position is in the boat's sub-WorldView — the
         // tracker froze the moment the player boarded. UNDEFINED transients (view swaps)
         // simply skip this frame's update.
         int playerPacked = WorldPointUtil.fromLocalInstance(client, player);
-        if (playerPacked == WorldPointUtil.UNDEFINED)
-            return;
+        if (playerPacked == WorldPointUtil.UNDEFINED) return;
         int playerPlane = unpackWorldPlane(playerPacked);
 
         // Rolling speed estimate (tiles/second): faster than any running player means a transport is
@@ -816,13 +794,11 @@ public class RouteDirectionsOverlay extends OverlayPanel {
     private boolean lastLegClear(RouteOption route, List<RouteDirections.Step> steps) {
         List<PathStep> path = route.getPath();
         for (RouteDirections.Step step : steps) {
-            if (!step.isDoor() || step.getEndIndex() <= reachedIndex || step.getEndIndex() >= path.size())
-                continue;
+            if (!step.isDoor() || step.getEndIndex() <= reachedIndex || step.getEndIndex() >= path.size()) continue;
             ClosedDoors.Door door = ClosedDoors.doorBetween(
                 path.get(step.getStartIndex()).getPackedPosition(),
                 path.get(step.getEndIndex()).getPackedPosition());
-            if (door != null && ClosedDoors.state(client, door) != ClosedDoors.State.OPEN)
-                return false;
+            if (door != null && ClosedDoors.state(client, door) != ClosedDoors.State.OPEN) return false;
         }
         return true;
     }
@@ -844,8 +820,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
      */
     private RouteDirections.Step currentStep(List<RouteDirections.Step> steps) {
         for (RouteDirections.Step step : steps) {
-            if (!finished(step))
-                return step;
+            if (!finished(step)) return step;
         }
         return steps.isEmpty() ? null : steps.get(steps.size() - 1);
     }
@@ -856,8 +831,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
      * the dock is not boarding, only the BOARDED varbit finishes it.
      */
     private boolean finished(RouteDirections.Step step) {
-        if (step.getEndIndex() > reachedIndex)
-            return false;
+        if (step.getEndIndex() > reachedIndex) return false;
         return !step.isEmbark() || aboard();
     }
 

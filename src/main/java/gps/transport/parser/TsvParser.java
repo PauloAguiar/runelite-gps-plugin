@@ -35,8 +35,7 @@ public class TsvParser {
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine();
 
-            if (line.startsWith(PREFIX_COMMENT) || line.isBlank())
-                continue;
+            if (line.startsWith(PREFIX_COMMENT) || line.isBlank()) continue;
 
             TransportRecord record = parseLine(line, headers);
             records.add(record);
@@ -51,10 +50,8 @@ public class TsvParser {
      */
     private String[] parseHeaderLine(String headerLine) {
         String normalized = headerLine;
-        if (normalized.startsWith(PREFIX_COMMENT + " "))
-            normalized = normalized.substring(2);
-        else if (normalized.startsWith(PREFIX_COMMENT))
-            normalized = normalized.substring(1);
+        if (normalized.startsWith(PREFIX_COMMENT + " ")) normalized = normalized.substring(2);
+        else if (normalized.startsWith(PREFIX_COMMENT)) normalized = normalized.substring(1);
         return normalized.split(DELIM_COLUMN);
     }
 
@@ -67,8 +64,7 @@ public class TsvParser {
         Map<String, String> fieldMap = new HashMap<>();
 
         for (int i = 0; i < headers.length; i++) {
-            if (i < fields.length)
-                fieldMap.put(headers[i], fields[i]);
+            if (i < fields.length) fieldMap.put(headers[i], fields[i]);
         }
 
         return new TransportRecord(fieldMap);

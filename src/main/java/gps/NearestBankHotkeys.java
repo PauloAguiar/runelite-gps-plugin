@@ -38,8 +38,7 @@ final class NearestBankHotkeys {
 
             @Override public void keyPressed(KeyEvent e) {
                 Keybind bound = key.get();
-                if (bound != null && bound.matches(e))
-                    action.run();
+                if (bound != null && bound.matches(e)) action.run();
             }
 
             @Override public void keyReleased(KeyEvent e) {

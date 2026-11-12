@@ -146,8 +146,7 @@ import static gps.WorldPointUtil.distanceBetween;
     public void refreshCatalog(AlternativeRoutesMode mode, CatalogListener listener) {
         executor.submit(() -> {
             try {
-                if (!refreshOnClientThread(Collections.emptySet(), null, mode))
-                    return;
+                if (!refreshOnClientThread(Collections.emptySet(), null, mode)) return;
                 List<TeleportMethod> catalog = new ArrayList<>(planningConfig.getMethodCatalog());
                 listener.onCatalog(catalog, notUsable(catalog));
             }
@@ -168,8 +167,7 @@ import static gps.WorldPointUtil.distanceBetween;
         final Map<TeleportMethod, MethodAvailability> notUsable = new HashMap<>();
         for (TeleportMethod method : catalog) {
             MethodAvailability status = statuses.getOrDefault(method, MethodAvailability.AVAILABLE);
-            if (status != MethodAvailability.AVAILABLE)
-                notUsable.put(method, status);
+            if (status != MethodAvailability.AVAILABLE) notUsable.put(method, status);
         }
         return Collections.unmodifiableMap(notUsable);
     }
@@ -189,12 +187,10 @@ import static gps.WorldPointUtil.distanceBetween;
         // run the exclusion chain, fill the page (seeds, tail diversity), append the baselines,
         // finish (round trips, timing, resume state, the unreachable cause, the terminal update).
         Generation g = prepare(gen, start, targets, userExclusions, mode, maxRoutes, costMultiple, roundTrip, listener);
-        if (g == null)
-            return;
+        if (g == null) return;
         buildField(g);
         startWalkSearch(g);
-        if (!runChain(g))
-            return;
+        if (!runChain(g)) return;
         fillPage(g);
         appendBaselines(g);
         finish(g);
@@ -269,8 +265,7 @@ import static gps.WorldPointUtil.distanceBetween;
             // dies on the start node and the whole generation reports unreachable. Gated on the
             // BOARDED varbit, not tile wateriness: stilt decks (the Pandemonium) are sailable
             // tiles a player stands on afoot, and offering "sail from here" there was wrong.
-            if (planningConfig.isOnSailingBoat())
-                seaLegs.addAll(SailingSea.aboardLegTransports(start, wetTargets));
+            if (planningConfig.isOnSailingBoat()) seaLegs.addAll(SailingSea.aboardLegTransports(start, wetTargets));
             planningConfig.setExtraTransports(seaLegs);
         };
 
@@ -338,8 +333,7 @@ import static gps.WorldPointUtil.distanceBetween;
                 planningConfig.getUsableTeleports(mode == AlternativeRoutesMode.OWNED_WITH_BANK)));
             // Abandonment forbidden: teleport-FIRST seeds would cast from the helm — the
             // search itself blocks that (teleportsBlockedAt), so the seeds are dead weight.
-            if (planningConfig.teleportsBlockedAt(start))
-                seedCandidates.clear();
+            if (planningConfig.teleportsBlockedAt(start)) seedCandidates.clear();
         // Aboard: EVERY disembark port gets its own seeded search — nearest first. With
             // abandonment forbidden this is the whole diversity engine (teleport-first seeds
             // are barred, and one port seed + chains produced exactly one route in the
@@ -404,8 +398,7 @@ import static gps.WorldPointUtil.distanceBetween;
         final boolean fieldReused = cachedField != null
             && fieldKey.sameInputs(cachedFieldKey, cachedField.horizon() == Integer.MAX_VALUE);
         final DistanceField field;
-        if (fieldReused)
-            field = cachedField;
+        if (fieldReused) field = cachedField;
         else {
             field = DistanceField.buildIfCompact(planningConfig, ends, 2 * costMultiple);
             cachedField = field;
@@ -502,8 +495,7 @@ import static gps.WorldPointUtil.distanceBetween;
         boolean chainExhausted = false;
 
         for (int i = routes.size(); i < limit; i++) {
-            if (gen != generation.get())
-                return false;
+            if (gen != generation.get()) return false;
             if (chainBudgetNanos > 0 && !routes.isEmpty() && routes.get(0).isReached() && !targetProvablyUnreachable
                 && clock.getAsLong() - g.wallStart > chainBudgetNanos) {
                 // The chain is cut, not exhausted: the page can be continued. The walk search is
@@ -523,8 +515,7 @@ import static gps.WorldPointUtil.distanceBetween;
             long rebuildStart = System.nanoTime();
             // The pre-field rebuild covered the first iteration's exclusion set; later
             // iterations rebuild because the chain grows the set between them.
-            if (!availabilityCurrent)
-                planningConfig.rebuildAvailabilityWithExclusions(excluded);
+            if (!availabilityCurrent) planningConfig.rebuildAvailabilityWithExclusions(excluded);
             availabilityCurrent = false;
             timer.rebuildNanos += System.nanoTime() - rebuildStart;
 
@@ -574,8 +565,7 @@ import static gps.WorldPointUtil.distanceBetween;
                 chainExhausted = true;
                 break;
             }
-            if (bestRemaining < 0)
-                bestRemaining = remaining;
+            if (bestRemaining < 0) bestRemaining = remaining;
 
             // Hybrid band edge: routes inside the display band are always accepted; past it the page
             // keeps filling while the next cost stays within a modest gap of max(band, costliest
@@ -630,8 +620,7 @@ import static gps.WorldPointUtil.distanceBetween;
             }
             routes.add(new RouteOption(withoutIdleBankFlip(path, scan), methods, scan.methodEdges, scan.methodDurations,
                 totalCost, scan.rawCost, reached, scan.bankGated, scan.bankGatedTransports, scan.walkBefore, scan.trailingWalk));
-            if (methods.size() >= 2)
-                chainTailCounts.merge(tailSignature(methods), 1, Integer::sum);
+            if (methods.size() >= 2) chainTailCounts.merge(tailSignature(methods), 1, Integer::sum);
             // The chain's first route is the cheapest; drop the concurrent walk search's ceiling to the
             // search sanity ceiling (twice the display band). A walk costlier than that can never be
             // shown, so a walk to an unreachable/far target stops instead of flooding the map. Only when
@@ -641,8 +630,7 @@ import static gps.WorldPointUtil.distanceBetween;
                 walkCeiling.set((int) Math.min(Integer.MAX_VALUE, (long) totalCost * 2 * costMultiple));
             // Stream the route we just found so the panel shows it immediately. Round-trip mode
             // streams only the merged results — one-way costs would reorder once returns are added.
-            if (!roundTrip)
-                emit(gen, listener, new ArrayList<>(routes), catalog, unavailable, false);
+            if (!roundTrip) emit(gen, listener, new ArrayList<>(routes), catalog, unavailable, false);
 
             // Unreached target: every extra route is another escape toward the same closest area,
             // and with the heuristic degenerate (sealed pocket) each iteration is an uninformed
@@ -741,8 +729,7 @@ import static gps.WorldPointUtil.distanceBetween;
             // evicted the very route this block exists to surface (plan step N10).
             while (routes.size() > limit) {
                 int drop = RouteAcceptance.evictionIndex(routes, -1, r -> r != walk.route && !r.isWalkOnly());
-                if (drop < 0)
-                    break;
+                if (drop < 0) break;
                 routes.remove(drop);
             }
         }
@@ -756,8 +743,7 @@ import static gps.WorldPointUtil.distanceBetween;
             routes.add(sailBaseline);
             while (routes.size() > limit) {
                 int drop = RouteAcceptance.evictionIndex(routes, -1, r -> !r.isWalkOnly() && !r.isPureSail());
-                if (drop < 0)
-                    break;
+                if (drop < 0) break;
                 routes.remove(drop);
             }
         }
@@ -828,15 +814,13 @@ import static gps.WorldPointUtil.distanceBetween;
             // show them: a panel-hidden limit-1 generation would poison the full limit-10 resume,
             // silently dropping cheap routes (user capture: Quest-Helper target lost the 164 route).
             Set<String> shownSignatures = new HashSet<>();
-            for (RouteOption route : routes)
-                shownSignatures.add(signature(route.getMethods()));
+            for (RouteOption route : routes) shownSignatures.add(signature(route.getMethods()));
             resumeState = new ResumeState(start, rawTargets, Set.copyOf(ends), Set.copyOf(userExclusions),
                 mode, limit, costMultiple, Set.copyOf(excluded), shownSignatures,
                 List.copyOf(routes), bestRemaining, catalog, unavailable, seedCandidates,
                 Map.copyOf(chainTailCounts));
         }
-        if (gen == generation.get())
-            lastUnreachableCause = unreachableCause(routes, start, ends, mode);
+        if (gen == generation.get()) lastUnreachableCause = unreachableCause(routes, start, ends, mode);
         // A superseded run leaves the previous state alone: the newer generation overwrites it when it
         // completes, and the eligibility check (start/targets/mode/exclusions) guards staleness anyway.
         emit(gen, listener, new ArrayList<>(routes), catalog, unavailable, true);
@@ -1145,14 +1129,11 @@ import static gps.WorldPointUtil.distanceBetween;
      */
     private UnreachableCause unreachableCause(List<RouteOption> routes, int start, Set<Integer> ends,
         AlternativeRoutesMode mode) {
-        if (routes.isEmpty() || ends.isEmpty())
-            return UnreachableCause.NONE;
+        if (routes.isEmpty() || ends.isEmpty()) return UnreachableCause.NONE;
         for (RouteOption route : routes) {
-            if (route.isReached())
-                return UnreachableCause.NONE;
+            if (route.isReached()) return UnreachableCause.NONE;
         }
-        if (mode == AlternativeRoutesMode.ALL_EVERYTHING)
-            return UnreachableCause.NO_KNOWN_ROUTE;
+        if (mode == AlternativeRoutesMode.ALL_EVERYTHING) return UnreachableCause.NO_KNOWN_ROUTE;
         PathfinderConfig probe = planningConfig.copyForPlanning();
         if (!refreshOnClientThread(probe, Collections.emptySet(), null, AlternativeRoutesMode.ALL_EVERYTHING))
             return UnreachableCause.NO_KNOWN_ROUTE;
@@ -1190,8 +1171,7 @@ import static gps.WorldPointUtil.distanceBetween;
         // Every global teleport is excluded from each seed search except the seed itself, so the
         // exclusion universe must span ALL candidates — including ones that don't get an attempt.
         final Set<TeleportMethod> allSeedMethods = new HashSet<>();
-        for (Transport transport : seedCandidates)
-            allSeedMethods.add(transport.method());
+        for (Transport transport : seedCandidates) allSeedMethods.add(transport.method());
 
         // A floor of attempts even when the chain filled every slot: the best-ranked seeds are the
         // safety net against a missed-cheap-route bug, and cost nearly nothing when they lose.
@@ -1212,22 +1192,19 @@ import static gps.WorldPointUtil.distanceBetween;
                 }
             }
             if (nearestPort != null && !attempts.contains(nearestPort)) {
-                if (attempts.size() >= maxAttempts && !attempts.isEmpty())
-                    attempts.remove(attempts.size() - 1);
+                if (attempts.size() >= maxAttempts && !attempts.isEmpty()) attempts.remove(attempts.size() - 1);
                 attempts.add(nearestPort);
             }
             nearestPortInfo = nearestPort != null ? nearestPort.getDisplayInfo() : null;
         }
-        if (attempts.isEmpty())
-            return;
+        if (attempts.isEmpty()) return;
 
         // One config per concurrent worker (shares immutable data + the refreshed state); the seed
         // searches are independent, so they run in parallel on the seed pool. Results are collected
         // and accepted on this (generation) thread in completion order.
         final int workers = Math.min(SEED_POOL_SIZE, attempts.size());
         final Queue<PathfinderConfig> configPool = new ConcurrentLinkedQueue<>();
-        for (int i = 0; i < workers; i++)
-            configPool.add(planningConfig.copyForParallelSearch());
+        for (int i = 0; i < workers; i++) configPool.add(planningConfig.copyForParallelSearch());
         final AtomicBoolean stop = new AtomicBoolean(false);
         final String nearestPortRetained = nearestPortInfo;
         final CompletionService<SeedResult> completion = new ExecutorCompletionService<>(seedExecutor);
@@ -1249,8 +1226,7 @@ import static gps.WorldPointUtil.distanceBetween;
             for (int i = 0; i < futures.size() && gen == generation.get(); i++) {
                 try {
                     SeedResult seedResult = completion.take().get();
-                    if (seedResult != null)
-                        results.add(seedResult);
+                    if (seedResult != null) results.add(seedResult);
                 }
                 catch (ExecutionException e) {
                     log.warn("Seed search failed", e);
@@ -1259,8 +1235,7 @@ import static gps.WorldPointUtil.distanceBetween;
             results.sort(Comparator.comparingInt((SeedResult r) -> r.totalCost)
                 .thenComparing(r -> signature(r.scan.methods)));
             for (SeedResult seedResult : results) {
-                if (gen != generation.get())
-                    break;
+                if (gen != generation.get()) break;
                 // Same hybrid acceptance as the chain: a seed beyond the page-fill ceiling isn't shown
                 // (skip, not stop — seeds complete in parallel, a later one can be cheaper). Checked
                 // BEFORE the signature is consumed: a cost-rejected seed must stay eligible for a
@@ -1289,18 +1264,15 @@ import static gps.WorldPointUtil.distanceBetween;
                             seedResult.scan.trailingWalk));
                     }
                 }
-                if (!portPromise && RouteAcceptance.beyondBand(seedResult.totalCost, routes, costMultiple))
-                    continue;
+                if (!portPromise && RouteAcceptance.beyondBand(seedResult.totalCost, routes, costMultiple)) continue;
                 // The port promise IS a detour with the same ending (Disembark + the teleport
                 // the bare route uses) — the nesting filter would always drop it.
                 if (!portPromise && RouteAcceptance.nestsAKeptRoute(seedResult.scan.methods,
                     !seedResult.scan.bankGated.isEmpty(), routes)) {
                     continue;
                 }
-                if (RouteAcceptance.hasRedundantTeleportHop(hopBaselineTeleports, seedResult.scan.methods))
-                    continue;
-                if (!seenSignatures.add(signature(seedResult.scan.methods)))
-                    continue;
+                if (RouteAcceptance.hasRedundantTeleportHop(hopBaselineTeleports, seedResult.scan.methods)) continue;
+                if (!seenSignatures.add(signature(seedResult.scan.methods))) continue;
                 // A full list doesn't end the pass: a strictly cheaper seed evicts the costliest
                 // teleport route — the seeds are the safety net for anything the chain missed.
                 if (routes.size() >= limit) {
@@ -1311,8 +1283,7 @@ import static gps.WorldPointUtil.distanceBetween;
                     // evict any cost; every other seed only a strictly costlier route.
                     int evict = RouteAcceptance.evictionIndex(routes, portPromise ? -1 : seedResult.totalCost,
                         r -> limit == 1 || !r.isWalkOnly());
-                    if (evict < 0)
-                        continue;
+                    if (evict < 0) continue;
                     routes.remove(evict);
                 }
                 routes.add(new RouteOption(withoutIdleBankFlip(seedResult.path, seedResult.scan),
@@ -1330,8 +1301,7 @@ import static gps.WorldPointUtil.distanceBetween;
         }
         finally {
             stop.set(true);
-            for (Future<SeedResult> future : futures)
-                future.cancel(false);
+            for (Future<SeedResult> future : futures) future.cancel(false);
         }
     }
 
@@ -1360,21 +1330,18 @@ import static gps.WorldPointUtil.distanceBetween;
         // must rank last rather than overflow into ranking first.
         final int[] targetArray = new int[targets.size()];
         int t = 0;
-        for (int target : targets)
-            targetArray[t++] = target;
+        for (int target : targets) targetArray[t++] = target;
         ranked.sort(Comparator.comparingLong(
             candidate -> (long) CostUnits.fromTicks(candidate.getDuration())
                 + distanceToNearest(candidate.getDestination(), targetArray)));
         final Map<Integer, Transport> byDestination = new LinkedHashMap<>();
         for (Transport transport : ranked) {
-            if (userExclusions.contains(transport.method()))
-                continue;
+            if (userExclusions.contains(transport.method())) continue;
             byDestination.putIfAbsent(transport.getDestination(), transport);
         }
         final List<Transport> attempts = new ArrayList<>(Math.max(0, Math.min(maxAttempts, byDestination.size())));
         for (Transport seed : byDestination.values()) {
-            if (attempts.size() >= maxAttempts)
-                break;
+            if (attempts.size() >= maxAttempts) break;
             attempts.add(seed);
         }
         return attempts;
@@ -1383,8 +1350,7 @@ import static gps.WorldPointUtil.distanceBetween;
     /** Straight-line distance from a landing to its nearest target (MAX_VALUE across planes). */
     private static int distanceToNearest(int packedPoint, int[] targets) {
         int best = Integer.MAX_VALUE;
-        for (int target : targets)
-            best = Math.min(best, distanceBetween(packedPoint, target));
+        for (int target : targets) best = Math.min(best, distanceBetween(packedPoint, target));
         return best;
     }
 
@@ -1429,8 +1395,7 @@ import static gps.WorldPointUtil.distanceBetween;
         Map<String, List<RouteOption>> byTail = new LinkedHashMap<>();
         for (RouteOption route : routes) {
             String tail = tailSignature(route.getMethods());
-            if (tail != null)
-                byTail.computeIfAbsent(tail, k -> new ArrayList<>()).add(route);
+            if (tail != null) byTail.computeIfAbsent(tail, k -> new ArrayList<>()).add(route);
         }
         String dominantTail = null;
         List<RouteOption> family = null;
@@ -1440,17 +1405,14 @@ import static gps.WorldPointUtil.distanceBetween;
                 family = entry.getValue();
             }
         }
-        if (family == null || family.size() < TAIL_DOMINANCE)
-            return;
+        if (family == null || family.size() < TAIL_DOMINANCE) return;
 
         List<TeleportMethod> sharedTail = family.get(0).getMethods();
         sharedTail = sharedTail.subList(1, sharedTail.size());
         int searches = 0;
         for (TeleportMethod shared : sharedTail) {
-            if (searches >= TAIL_DIVERSITY_SEARCHES || gen != generation.get())
-                break;
-            if (userExclusions.contains(shared))
-                continue;
+            if (searches >= TAIL_DIVERSITY_SEARCHES || gen != generation.get()) break;
+            if (userExclusions.contains(shared)) continue;
             searches++;
             PathfinderConfig config = planningConfig.copyForParallelSearch();
             Set<TeleportMethod> exclusions = new HashSet<>(userExclusions);
@@ -1471,15 +1433,12 @@ import static gps.WorldPointUtil.distanceBetween;
 
             PathfinderResult result = pathfinder.getResult();
             List<PathStep> path = (result != null) ? result.getPathSteps() : List.of();
-            if (result == null || path.isEmpty())
-                continue;
+            if (result == null || path.isEmpty()) continue;
             boolean reached = result.isReached();
             int remaining = reached ? 0 : remainingDistance(path, ends);
-            if (RouteAcceptance.tooFar(reached, remaining, bestRemaining))
-                continue;
+            if (RouteAcceptance.tooFar(reached, remaining, bestRemaining)) continue;
             final int totalCost = result.getTotalCost();
-            if (RouteAcceptance.beyondBand(totalCost, routes, costMultiple))
-                continue;
+            if (RouteAcceptance.beyondBand(totalCost, routes, costMultiple)) continue;
             MethodScan scan = scanMethods(config, path);
             if (scan.methods.isEmpty()
                 || RouteAcceptance.nestsAKeptRoute(scan.methods, !scan.bankGated.isEmpty(), routes)
@@ -1492,8 +1451,7 @@ import static gps.WorldPointUtil.distanceBetween;
                 final String familyTail = dominantTail;
                 int evict = RouteAcceptance.evictionIndex(routes, -1,
                     kept -> !kept.isWalkOnly() && familyTail.equals(tailSignature(kept.getMethods())));
-                if (evict < 0)
-                    continue;
+                if (evict < 0) continue;
                 routes.remove(evict);
             }
             routes.add(new RouteOption(withoutIdleBankFlip(path, scan), scan.methods, scan.methodEdges,
@@ -1512,12 +1470,10 @@ import static gps.WorldPointUtil.distanceBetween;
         final int bestRemaining = g.bestRemaining;
         final DistanceField field = g.field;
         final GenTimer timer = g.timer;
-        if (gen != generation.get() || stop.get())
-            return null;
+        if (gen != generation.get() || stop.get()) return null;
         // Unreached-target seeds are uninformed sweeps too — same budget as the chain, checked as
         // each queued seed comes up so a long tail of pending seeds drains cheaply.
-        if (bestRemaining > 0 && searchBudgetExhausted(timer))
-            return null;
+        if (bestRemaining > 0 && searchBudgetExhausted(timer)) return null;
         PathfinderConfig config = configPool.poll();
         if (config == null)
             // Should not happen (pool size == max concurrency), but never block on it.
@@ -1535,8 +1491,7 @@ import static gps.WorldPointUtil.distanceBetween;
             if (portPromiseSeed) {
                 effectiveExclusions = new HashSet<>();
                 for (TeleportMethod method : seedExclusions) {
-                    if (!method.getType().isTeleport())
-                        effectiveExclusions.add(method);
+                    if (!method.getType().isTeleport()) effectiveExclusions.add(method);
                 }
             }
             long rebuildStart = System.nanoTime();
@@ -1561,12 +1516,10 @@ import static gps.WorldPointUtil.distanceBetween;
 
             PathfinderResult result = pathfinder.getResult();
             List<PathStep> path = (result != null) ? result.getPathSteps() : List.of();
-            if (result == null || path.isEmpty())
-                return null;
+            if (result == null || path.isEmpty()) return null;
             boolean reached = result.isReached();
             int remaining = reached ? 0 : remainingDistance(path, ends);
-            if (RouteAcceptance.tooFar(reached, remaining, bestRemaining))
-                return null;
+            if (RouteAcceptance.tooFar(reached, remaining, bestRemaining)) return null;
             MethodScan scan = scanMethods(config, path);
             if (scan.methods.isEmpty())
                 // Walk-only: the seed teleport didn't help.
@@ -1593,8 +1546,7 @@ import static gps.WorldPointUtil.distanceBetween;
         final List<TeleportMethod> catalog = g.catalog;
         final DistanceField field = g.field;
         final GenTimer timer = g.timer;
-        if (gen != generation.get())
-            return null;
+        if (gen != generation.get()) return null;
         PathfinderConfig config = planningConfig.copyForParallelSearch();
         Set<TeleportMethod> walkExclusions = new HashSet<>(catalog);
         walkExclusions.addAll(userExclusions);
@@ -1617,8 +1569,7 @@ import static gps.WorldPointUtil.distanceBetween;
 
         PathfinderResult result = pathfinder.getResult();
         List<PathStep> path = (result != null) ? result.getPathSteps() : List.of();
-        if (result == null || path.isEmpty())
-            return null;
+        if (result == null || path.isEmpty()) return null;
         MethodScan scan = scanMethods(config, path);
         if (!scan.methods.isEmpty()) {
             // Aboard, the catalog-wide exclusion leaves the SAILING legs untouched (sea legs are
@@ -1628,8 +1579,7 @@ import static gps.WorldPointUtil.distanceBetween;
             // chain and the band culled all keep-sailing options), not a defect - return it,
             // and its cost still serves as the universal ceiling. Any NON-sailing method here
             // remains a defect and must not become the walk cap or route.
-            if (!(planningConfig.isOnSailingBoat() && isPureSail(scan.methods)))
-                return null;
+            if (!(planningConfig.isOnSailingBoat() && isPureSail(scan.methods))) return null;
         }
         boolean reached = result.isReached();
         RouteOption route = new RouteOption(withoutIdleBankFlip(path, scan), scan.methods, scan.methodEdges, scan.methodDurations,
@@ -1673,8 +1623,7 @@ import static gps.WorldPointUtil.distanceBetween;
         final List<RouteOption> merged = new ArrayList<>();
         final Set<String> signatures = new HashSet<>();
         for (RouteOption oneWay : oneWays) {
-            if (gen != generation.get())
-                return merged;
+            if (gen != generation.get()) return merged;
             final List<PathStep> outPath = oneWay.getPath();
             final int endpoint = outPath.get(outPath.size() - 1).getPackedPosition();
             long searchStart = System.nanoTime();
@@ -1690,8 +1639,7 @@ import static gps.WorldPointUtil.distanceBetween;
 
             PathfinderResult result = back.getResult();
             List<PathStep> returnPath = (result != null) ? result.getPathSteps() : List.of();
-            if (result == null || returnPath.isEmpty() || !result.isReached())
-                continue;
+            if (result == null || returnPath.isEmpty() || !result.isReached()) continue;
             // Concatenate, dropping the duplicated endpoint tile, and re-derive the method scan
             // over the whole loop so edges/durations/legs are consistent for the overlay.
             List<PathStep> fullPath = new ArrayList<>(outPath);
@@ -1752,8 +1700,7 @@ import static gps.WorldPointUtil.distanceBetween;
     }
 
     private static int capOf(Future<WalkResult> walkFuture) {
-        if (walkFuture == null || !walkFuture.isDone())
-            return Integer.MAX_VALUE;
+        if (walkFuture == null || !walkFuture.isDone()) return Integer.MAX_VALUE;
         try {
             WalkResult walk = walkFuture.get();
             return walk == null ? Integer.MAX_VALUE : walk.cap;
@@ -1770,8 +1717,7 @@ import static gps.WorldPointUtil.distanceBetween;
 
     /** The finished walk search's result, waiting for it if needed (used once, at generation end). */
     private static WalkResult walkResult(Future<WalkResult> walkFuture) {
-        if (walkFuture == null)
-            return null;
+        if (walkFuture == null) return null;
         try {
             return walkFuture.get();
         }
@@ -1813,8 +1759,7 @@ import static gps.WorldPointUtil.distanceBetween;
     private static int remainingDistance(List<PathStep> path, Set<Integer> targets) {
         int end = path.get(path.size() - 1).getPackedPosition();
         int best = Integer.MAX_VALUE;
-        for (int target : targets)
-            best = Math.min(best, distanceBetween(end, target));
+        for (int target : targets) best = Math.min(best, distanceBetween(end, target));
         return best;
     }
 
@@ -1822,8 +1767,7 @@ import static gps.WorldPointUtil.distanceBetween;
         List<TeleportMethod> catalog, Map<TeleportMethod, MethodAvailability> unavailable, boolean done) {
         // A null listener means streaming is suppressed for this phase (round-trip mode streams
         // only merged results).
-        if (listener != null && gen == generation.get())
-            listener.onUpdate(routes, catalog, unavailable, done);
+        if (listener != null && gen == generation.get()) listener.onUpdate(routes, catalog, unavailable, done);
     }
 
     /**
@@ -1847,8 +1791,7 @@ import static gps.WorldPointUtil.distanceBetween;
                 target.setConsiderBank(mode == AlternativeRoutesMode.OWNED_WITH_BANK);
                 target.setExcludedMethods(excludedSnapshot);
                 target.refresh();
-                if (endsToFilter != null)
-                    target.filterLocations(endsToFilter, true);
+                if (endsToFilter != null) target.filterLocations(endsToFilter, true);
             }
             finally {
                 latch.countDown();
@@ -1923,8 +1866,7 @@ import static gps.WorldPointUtil.distanceBetween;
                 ? CostUnits.fromTicks(edgeTransport.getDuration())
                 : distanceBetween(from.getPackedPosition(), to.getPackedPosition());
             rawCost += edgeCost;
-            if (chosen == null)
-                legSteps += edgeCost;
+            if (chosen == null) legSteps += edgeCost;
         }
         return new MethodScan(methods, methodEdges, methodDurations, bankGated, bankGatedTransports, rawCost, walkBefore, legSteps);
     }
@@ -1938,8 +1880,7 @@ import static gps.WorldPointUtil.distanceBetween;
      * still line up with the path.
      */
     static List<PathStep> withoutIdleBankFlip(List<PathStep> path, MethodScan scan) {
-        if (path == null || !scan.bankGated.isEmpty() || !scan.bankGatedTransports.isEmpty())
-            return path;
+        if (path == null || !scan.bankGated.isEmpty() || !scan.bankGatedTransports.isEmpty()) return path;
         boolean flipped = false;
         for (PathStep step : path) {
             if (step.isBankVisited()) {
@@ -1947,8 +1888,7 @@ import static gps.WorldPointUtil.distanceBetween;
                 break;
             }
         }
-        if (!flipped)
-            return path;
+        if (!flipped) return path;
         List<PathStep> plain = new ArrayList<>(path.size());
         for (PathStep step : path)
             plain.add(step.isBankVisited() ? new PathStep(step.getPackedPosition(), false, step.getCost()) : step);
@@ -1958,12 +1898,10 @@ import static gps.WorldPointUtil.distanceBetween;
     private static boolean availableWithoutBank(PathfinderConfig config, int origin, Transport transport) {
         for (Transport candidate : config.getTransportsPacked(false)
             .getOrDefault(origin, TransportAvailability.EMPTY_TRANSPORTS)) {
-            if (candidate == transport)
-                return true;
+            if (candidate == transport) return true;
         }
         for (Transport candidate : config.getUsableTeleports(false)) {
-            if (candidate == transport)
-                return true;
+            if (candidate == transport) return true;
         }
         return false;
     }
@@ -2068,11 +2006,9 @@ import static gps.WorldPointUtil.distanceBetween;
      */
     /** Whether every method is a sailing leg (see RouteOption#isPureSail). */
     static boolean isPureSail(List<TeleportMethod> methods) {
-        if (methods.isEmpty())
-            return false;
+        if (methods.isEmpty()) return false;
         for (TeleportMethod method : methods) {
-            if (method.getType() != TransportType.SAILING)
-                return false;
+            if (method.getType() != TransportType.SAILING) return false;
         }
         return true;
     }
@@ -2099,8 +2035,7 @@ import static gps.WorldPointUtil.distanceBetween;
     private volatile List<Transport> hopBaselineTeleports = List.of();
 
     private static String signature(List<TeleportMethod> methods) {
-        if (methods.isEmpty())
-            return "<walk-only>";
+        if (methods.isEmpty()) return "<walk-only>";
         StringBuilder sb = new StringBuilder();
         // Parking-variant collapse (capture 233931): when a LATER method re-embarks under
         // the summon assumption, the boat gets summoned away from wherever the route just

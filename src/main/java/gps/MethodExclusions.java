@@ -43,33 +43,27 @@ import lombok.RequiredArgsConstructor;
     }
 
     void exclude(TeleportMethod method) {
-        if (method != null && live.add(method))
-            changed();
+        if (method != null && live.add(method)) changed();
     }
 
     void include(TeleportMethod method) {
-        if (method != null && live.remove(method))
-            changed();
+        if (method != null && live.remove(method)) changed();
     }
 
     void excludeAll(Collection<TeleportMethod> methods) {
         boolean changed = false;
         if (methods != null) {
-            for (TeleportMethod method : methods)
-                changed |= live.add(method);
+            for (TeleportMethod method : methods) changed |= live.add(method);
         }
-        if (changed)
-            changed();
+        if (changed) changed();
     }
 
     void includeAll(Collection<TeleportMethod> methods) {
         boolean changed = false;
         if (methods != null) {
-            for (TeleportMethod method : methods)
-                changed |= live.remove(method);
+            for (TeleportMethod method : methods) changed |= live.remove(method);
         }
-        if (changed)
-            changed();
+        if (changed) changed();
     }
 
     void clear() {

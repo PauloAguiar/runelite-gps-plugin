@@ -110,12 +110,10 @@ public class SplitFlagMap {
 
     public boolean get(int x, int y, int z, int flag) {
         final int index = getIndex(x / REGION_SIZE, y / REGION_SIZE);
-        if (index < 0 || index >= regionWordOffset.length)
-            return false;
+        if (index < 0 || index >= regionWordOffset.length) return false;
 
         final int wordOffset = regionWordOffset[index];
-        if (wordOffset < 0 || z < 0 || z >= regionMapPlaneCounts[index])
-            return false;
+        if (wordOffset < 0 || z < 0 || z >= regionMapPlaneCounts[index]) return false;
 
         // SplitFlagMap routes (x, y) to the region that contains it, so the in-region coordinates
         // are simply the low REGION_SIZE bits; this matches the old FlagMap.index arithmetic.

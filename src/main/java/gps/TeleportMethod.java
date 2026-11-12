@@ -54,17 +54,12 @@ import gps.transport.Transport;
 
     /** The furniture a jewellery-box-type row belongs to, from its "menuOption menuTarget id". */
     static String mountOf(String objectInfo) {
-        if (objectInfo == null)
-            return null;
+        if (objectInfo == null) return null;
         String lower = objectInfo.toLowerCase(Locale.ROOT);
-        if (lower.contains("xeric"))
-            return "Xeric's talisman";
-        if (lower.contains("glory"))
-            return "Amulet of glory";
-        if (lower.contains("digsite"))
-            return "Digsite pendant";
-        if (lower.contains("mythical"))
-            return "Mythical cape";
+        if (lower.contains("xeric")) return "Xeric's talisman";
+        if (lower.contains("glory")) return "Amulet of glory";
+        if (lower.contains("digsite")) return "Digsite pendant";
+        if (lower.contains("mythical")) return "Mythical cape";
         return null;
     }
 
@@ -83,12 +78,10 @@ import gps.transport.Transport;
         if (displayInfo != null) {
             // A mounted item under the jewellery-box type names its furniture, or the catalog
             // shows "2: Glade" under a "Jewellery box" heading it never belonged to.
-            if (mount != null)
-                return mount + ": " + displayInfo;
+            if (mount != null) return mount + ": " + displayInfo;
             // Charters share the "Boats & ships" bucket with ships to the same towns — two bare
             // "Port Sarim" rows were indistinguishable, and searching "charter" found nothing.
-            if (TransportType.CHARTER_SHIP.equals(type))
-                return "Charter: " + displayInfo;
+            if (TransportType.CHARTER_SHIP.equals(type)) return "Charter: " + displayInfo;
             return displayInfo;
         }
         int x = WorldPointUtil.unpackWorldX(destination);

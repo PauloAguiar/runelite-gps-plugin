@@ -41,15 +41,13 @@ class TentativeCosts {
      * on an already-queued arrival (prune it); records the candidate as the new best otherwise.
      */
     boolean shouldPrune(int packedPoint, boolean bankVisited, int candidate) {
-        if (candidate > MAX_PRUNABLE || candidate < 0)
-            return false;
+        if (candidate > MAX_PRUNABLE || candidate < 0) return false;
         final int x = WorldPointUtil.unpackWorldX(packedPoint);
         final int y = WorldPointUtil.unpackWorldY(packedPoint);
         final int plane = WorldPointUtil.unpackWorldPlane(packedPoint);
         final int regionIndex = getRegionIndex(x / REGION_SIZE, y / REGION_SIZE);
         final short[][] regions = bankVisited ? regionsWithBank : regionsWithoutBank;
-        if (regionIndex < 0 || regionIndex >= regions.length)
-            return false;
+        if (regionIndex < 0 || regionIndex >= regions.length) return false;
         short[] region = regions[regionIndex];
         if (region == null) {
             final byte planeCount = map.getRegionPlaneCounts(regionIndex);
@@ -58,11 +56,9 @@ class TentativeCosts {
             regions[regionIndex] = region;
         }
         final int index = (plane * REGION_SIZE + (y % REGION_SIZE)) * REGION_SIZE + (x % REGION_SIZE);
-        if (index >= region.length)
-            return false;
+        if (index >= region.length) return false;
         final short current = region[index];
-        if (current != EMPTY && current <= candidate)
-            return true;
+        if (current != EMPTY && current <= candidate) return true;
         region[index] = (short) candidate;
         return false;
     }

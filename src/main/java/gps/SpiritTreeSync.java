@@ -52,20 +52,17 @@ import net.runelite.client.config.ConfigManager;
     /** The farmable trees detected as planted-and-grown (menu order), or empty when not synced. */
     List<String> planted() {
         Set<String> available = pathfinderConfig.availableSpiritTrees;
-        if (available == null)
-            return List.of();
+        if (available == null) return List.of();
         List<String> planted = new ArrayList<>();
         for (String name : PathfinderConfig.FARMABLE_SPIRIT_TREES) {
-            if (available.contains(name))
-                planted.add(name);
+            if (available.contains(name)) planted.add(name);
         }
         return planted;
     }
 
     /** A widget opened: the travel menu (either interface) is parsed once per session. */
     void widgetLoaded(int groupId) {
-        if (parsedLive)
-            return;
+        if (parsedLive) return;
         switch (groupId) {
             case InterfaceID.MENU:
                 clientThread.invokeLater(() -> parseMenu(false));
@@ -80,8 +77,7 @@ import net.runelite.client.config.ConfigManager;
 
     /** Restores the persisted set when none is known yet (login, plugin start). */
     void restore() {
-        if (pathfinderConfig.availableSpiritTrees != null)
-            return;
+        if (pathfinderConfig.availableSpiritTrees != null) return;
         String raw = configManager.getRSProfileConfiguration(configGroup, CONFIG_KEY_SPIRIT_TREES);
         if (raw != null) {
             pathfinderConfig.availableSpiritTrees = raw.isEmpty()
@@ -99,17 +95,13 @@ import net.runelite.client.config.ConfigManager;
         // Referencing
         // https://github.com/trs/runelite-teleport-maps/blob/e006270494500ab8e4826903b377bb945ca9fc96/src/main/java/com/mjhylkema/TeleportMaps/components/adventureLog/SpiritTreeMap.java#L141
         Widget container = newMenu ? client.getWidget(InterfaceID.MENU_NEW, 9) : client.getWidget(InterfaceID.MENU, 3);
-        if (container == null)
-            return;
+        if (container == null) return;
         Widget[] children = container.getDynamicChildren();
-        if (children == null || children.length == 0)
-            return;
+        if (children == null || children.length == 0) return;
         String[] rows = new String[children.length];
-        for (int i = 0; i < children.length; i++)
-            rows[i] = children[i].getText();
+        for (int i = 0; i < children.length; i++) rows[i] = children[i].getText();
         Set<String> available = parseLabels(rows, newMenu);
-        if (available == null)
-            return;
+        if (available == null) return;
         pathfinderConfig.availableSpiritTrees = available;
         parsedLive = true;
         // Persist per character, so next session starts synced instead of asking for a travel-menu
@@ -123,16 +115,13 @@ import net.runelite.client.config.ConfigManager;
      * travel menu. A greyed row (group 2, the disabled colour tag) is a tree the player cannot use.
      */
     static Set<String> parseLabels(String[] rows, boolean newMenu) {
-        if (rows == null || rows.length == 0 || rows[0] == null || rows[0].length() != FIRST_ROW_LENGTH)
-            return null;
+        if (rows == null || rows.length == 0 || rows[0] == null || rows[0].length() != FIRST_ROW_LENGTH) return null;
         Pattern pattern = newMenu ? LABEL_MENU_NEW : LABEL_MENU;
         Set<String> available = new HashSet<>();
         for (String row : rows) {
-            if (row == null)
-                continue;
+            if (row == null) continue;
             Matcher matcher = pattern.matcher(row);
-            if (!matcher.matches() || matcher.group(2) != null)
-                continue;
+            if (!matcher.matches() || matcher.group(2) != null) continue;
             available.add(matcher.group(3));
         }
         return available;

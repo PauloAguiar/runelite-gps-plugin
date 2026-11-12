@@ -33,13 +33,10 @@ import net.runelite.client.ui.NavigationButton;
     }
 
     void show(boolean show) {
-        if (show == shown)
-            return;
+        if (show == shown) return;
         shown = show;
-        if (show)
-            toolbar.addNavigation(button);
-        else
-            toolbar.removeNavigation(button);
+        if (show) toolbar.addNavigation(button);
+        else toolbar.removeNavigation(button);
     }
 
     /** Opens the panel (the focus-search hotkey). */

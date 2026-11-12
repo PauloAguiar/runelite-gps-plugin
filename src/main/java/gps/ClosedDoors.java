@@ -80,8 +80,7 @@ import static gps.WorldPointUtil.unpackWorldY;
 
     public static State state(Client client, Door door) {
         SceneObjects.Presence presence = SceneObjects.presence(client, door.packedPosition, door.id);
-        if (presence == SceneObjects.Presence.OUT_OF_SCENE)
-            return State.UNKNOWN;
+        if (presence == SceneObjects.Presence.OUT_OF_SCENE) return State.UNKNOWN;
         boolean present = presence == SceneObjects.Presence.PRESENT;
         return door.placedOpen == present ? State.OPEN : State.CLOSED;
     }
@@ -115,8 +114,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         if (index == null) {
             Map<Integer, Integer> masks = edgeMasks();
             index = new PrimitiveIntHashMap<>(Math.max(16, masks.size() * 2));
-            for (Map.Entry<Integer, Integer> entry : masks.entrySet())
-                index.put(entry.getKey(), entry.getValue());
+            for (Map.Entry<Integer, Integer> entry : masks.entrySet()) index.put(entry.getKey(), entry.getValue());
             edgeMaskIndex = index;
         }
         return index;
@@ -127,10 +125,8 @@ import static gps.WorldPointUtil.unpackWorldY;
         Map<Integer, Integer> cardinal = new HashMap<>();
         for (List<Door> doors : byTile.values()) {
             for (Door door : doors) {
-                if (door.placedOpen)
-                    continue;
-                if (door.type == TYPE_WALL_STRAIGHT)
-                    setEdgeBits(cardinal, door.packedPosition, door.orientation);
+                if (door.placedOpen) continue;
+                if (door.type == TYPE_WALL_STRAIGHT) setEdgeBits(cardinal, door.packedPosition, door.orientation);
                 else {
                     // Diagonal walls and corner pieces gate the whole tile: every boundary.
                     for (int orientation = 0; orientation < 4; orientation++)
@@ -152,8 +148,7 @@ import static gps.WorldPointUtil.unpackWorldY;
                         unpackWorldY(tile) + dy,
                         unpackWorldPlane(tile));
                     int diagonals = diagonalBits(cardinal, candidate);
-                    if (diagonals != 0)
-                        masks.merge(candidate, diagonals, (a, b) -> a | b);
+                    if (diagonals != 0) masks.merge(candidate, diagonals, (a, b) -> a | b);
                 }
             }
         }
@@ -212,14 +207,10 @@ import static gps.WorldPointUtil.unpackWorldY;
 
         int bits = 0;
         // Bit order: SW=4, SE=5, NW=6, NE=7 (OrdinalDirection ordinals).
-        if (((own | south) & BIT_WEST) != 0 || ((own | west) & BIT_SOUTH) != 0)
-            bits |= 1 << 4;
-        if (((own | south) & BIT_EAST) != 0 || ((own | east) & BIT_SOUTH) != 0)
-            bits |= 1 << 5;
-        if (((own | north) & BIT_WEST) != 0 || ((own | west) & BIT_NORTH) != 0)
-            bits |= 1 << 6;
-        if (((own | north) & BIT_EAST) != 0 || ((own | east) & BIT_NORTH) != 0)
-            bits |= 1 << 7;
+        if (((own | south) & BIT_WEST) != 0 || ((own | west) & BIT_SOUTH) != 0) bits |= 1 << 4;
+        if (((own | south) & BIT_EAST) != 0 || ((own | east) & BIT_SOUTH) != 0) bits |= 1 << 5;
+        if (((own | north) & BIT_WEST) != 0 || ((own | west) & BIT_NORTH) != 0) bits |= 1 << 6;
+        if (((own | north) & BIT_EAST) != 0 || ((own | east) & BIT_NORTH) != 0) bits |= 1 << 7;
         return bits;
     }
 
@@ -230,14 +221,12 @@ import static gps.WorldPointUtil.unpackWorldY;
      */
     public static Door doorBetween(int from, int to) {
         int plane = unpackWorldPlane(from);
-        if (plane != unpackWorldPlane(to))
-            return null;
+        if (plane != unpackWorldPlane(to)) return null;
         int fromX = unpackWorldX(from);
         int fromY = unpackWorldY(from);
         int dx = unpackWorldX(to) - fromX;
         int dy = unpackWorldY(to) - fromY;
-        if ((dx == 0 && dy == 0) || Math.abs(dx) > 1 || Math.abs(dy) > 1)
-            return null;
+        if ((dx == 0 && dy == 0) || Math.abs(dx) > 1 || Math.abs(dy) > 1) return null;
 
         if (dx != 0 && dy != 0) {
             // A diagonal step crosses a corner: it is blocked if any of the boundaries of the
@@ -245,12 +234,9 @@ import static gps.WorldPointUtil.unpackWorldY;
             int cornerX = packWorldPoint(fromX + dx, fromY, plane);
             int cornerY = packWorldPoint(fromX, fromY + dy, plane);
             Door door = doorBetween(from, cornerX);
-            if (door == null)
-                door = doorBetween(from, cornerY);
-            if (door == null)
-                door = doorBetween(cornerX, to);
-            if (door == null)
-                door = doorBetween(cornerY, to);
+            if (door == null) door = doorBetween(from, cornerY);
+            if (door == null) door = doorBetween(cornerX, to);
+            if (door == null) door = doorBetween(cornerY, to);
             return door;
         }
 
@@ -259,27 +245,23 @@ import static gps.WorldPointUtil.unpackWorldY;
             : dy > 0 ? ORIENTATION_NORTH
             : ORIENTATION_SOUTH;
         Door door = doorAt(from, facing);
-        if (door == null)
-            door = doorAt(to, opposite(facing));
+        if (door == null) door = doorAt(to, opposite(facing));
         return door;
     }
 
     private static Door doorAt(int packedPosition, int facing) {
         List<Door> doors = get().get(packedPosition);
-        if (doors == null)
-            return null;
+        if (doors == null) return null;
         for (Door door : doors) {
             // Doors placed OPEN in the map data are open by default. Their rare closed state can't
             // be read reliably from the scene — the swung-open leaf anchors to a neighbouring tile,
             // so a presence check at the doorway misses it and wrongly reports "closed", which
             // false-blocked open doorways. They're skipped: an open door needs no hint, and never
             // blocking one is far better than blocking one that's actually open.
-            if (door.placedOpen)
-                continue;
+            if (door.placedOpen) continue;
             // Straight walls sit on one edge; anything else (diagonal walls, corner pieces) blocks
             // its whole tile, so every edge of the tile matches.
-            if (door.type != TYPE_WALL_STRAIGHT || door.orientation == facing)
-                return door;
+            if (door.type != TYPE_WALL_STRAIGHT || door.orientation == facing) return door;
         }
         return null;
     }
@@ -327,8 +309,7 @@ import static gps.WorldPointUtil.unpackWorldY;
                 header = false;
                 continue;
             }
-            if (line.isEmpty())
-                continue;
+            if (line.isEmpty()) continue;
             // id, name, x, y, plane, type, orientation, sizeX, sizeY, state
             String[] fields = line.split("\t");
             if (fields.length < 7) {

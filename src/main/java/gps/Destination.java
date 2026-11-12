@@ -59,8 +59,7 @@ import gps.transport.parser.*;
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
 
-                if (line.startsWith(PREFIX_COMMENT) || line.isBlank())
-                    continue;
+                if (line.startsWith(PREFIX_COMMENT) || line.isBlank()) continue;
 
                 String[] fields = line.split(DELIM_COLUMN);
                 Map<String, List<String>> fieldMap = new HashMap<>();
@@ -138,28 +137,23 @@ import gps.transport.parser.*;
             String s = new String(Util.readAllBytes(Objects.requireNonNull(ShortestPathPlugin.class.getResourceAsStream(path))), StandardCharsets.UTF_8);
             try (Scanner scanner = new Scanner(s)) {
                 String[] headers = parse_header_line(scanner);
-                for (int i = 0; i < headers.length; i++)
-                    headers[i] = headers[i].trim();
+                for (int i = 0; i < headers.length; i++) headers[i] = headers[i].trim();
 
                 int destCol = indexOf(headers, "Destination");
                 int skillsCol = indexOf(headers, "Skills");
                 int questsCol = indexOf(headers, "Quests");
                 int varbitsCol = indexOf(headers, "Varbits");
                 int varPlayersCol = indexOf(headers, "VarPlayers");
-                if (destCol < 0)
-                    return requirements;
+                if (destCol < 0) return requirements;
 
                 while (scanner.hasNextLine()) {
                     String line = scanner.nextLine();
-                    if (line.startsWith(PREFIX_COMMENT) || line.isBlank())
-                        continue;
+                    if (line.startsWith(PREFIX_COMMENT) || line.isBlank()) continue;
                     String[] fields = line.split(DELIM_COLUMN, -1);
-                    if (fields.length <= destCol)
-                        continue;
+                    if (fields.length <= destCol) continue;
                     String destField = fields[destCol].trim();
                     String[] destinationArray = destField.split(DELIM);
-                    if (destinationArray.length != 3)
-                        continue;
+                    if (destinationArray.length != 3) continue;
                     int packed;
                     try {
                         packed = WorldPointUtil.packWorldPoint(
@@ -195,15 +189,13 @@ import gps.transport.parser.*;
 
     private static int indexOf(String[] headers, String name) {
         for (int i = 0; i < headers.length; i++) {
-            if (name.equals(headers[i]))
-                return i;
+            if (name.equals(headers[i])) return i;
         }
         return -1;
     }
 
     private static String fieldAt(String[] fields, int col) {
-        if (col < 0 || col >= fields.length)
-            return "";
+        if (col < 0 || col >= fields.length) return "";
         return fields[col];
     }
 

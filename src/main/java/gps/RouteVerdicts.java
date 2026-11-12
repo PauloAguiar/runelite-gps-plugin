@@ -20,11 +20,9 @@ final class RouteVerdicts {
      * or object spot) still counts while its endpoint is within {@code tolerance}.
      */
     static boolean endTooFar(RouteOption route, Set<Integer> targets, int tolerance) {
-        if (route.isReached())
-            return false;
+        if (route.isReached()) return false;
         List<PathStep> path = route.getPath();
-        if (path == null || path.isEmpty() || targets.isEmpty())
-            return false;
+        if (path == null || path.isEmpty() || targets.isEmpty()) return false;
         return closestTargetDistance(path, targets) > tolerance;
     }
 
@@ -36,10 +34,8 @@ final class RouteVerdicts {
      * reachable only by a teleport is not misreported.
      */
     static boolean reachesTarget(RouteOption route, Set<Integer> targets, int tolerance) {
-        if (route == null)
-            return false;
-        if (route.isReached())
-            return true;
+        if (route == null) return false;
+        if (route.isReached()) return true;
         List<PathStep> path = route.getPath();
         if (path == null || path.isEmpty() || targets.isEmpty()) {
             return true; // not enough information to declare it unreachable
@@ -50,8 +46,7 @@ final class RouteVerdicts {
     private static int closestTargetDistance(List<PathStep> path, Set<Integer> targets) {
         int endPoint = path.get(path.size() - 1).getPackedPosition();
         int closest = Integer.MAX_VALUE;
-        for (int target : targets)
-            closest = Math.min(closest, WorldPointUtil.distanceBetween(target, endPoint));
+        for (int target : targets) closest = Math.min(closest, WorldPointUtil.distanceBetween(target, endPoint));
         return closest;
     }
 
@@ -64,14 +59,12 @@ final class RouteVerdicts {
     static int blockedFromIndex(List<PathStep> path, List<RouteDirections.Step> steps, int progress,
         Predicate<ClosedDoors.Door> doorOpen) {
         for (RouteDirections.Step step : steps) {
-            if (!step.gatesWalk() || step.getEndIndex() <= progress)
-                continue;
+            if (!step.gatesWalk() || step.getEndIndex() <= progress) continue;
             if (step.isDoor()) {
                 ClosedDoors.Door door = ClosedDoors.doorBetween(
                     path.get(step.getStartIndex()).getPackedPosition(),
                     path.get(step.getEndIndex()).getPackedPosition());
-                if (door == null || doorOpen.test(door))
-                    continue;
+                if (door == null || doorOpen.test(door)) continue;
             }
             return step.getEndIndex();
         }

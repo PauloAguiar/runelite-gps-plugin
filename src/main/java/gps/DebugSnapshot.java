@@ -59,12 +59,10 @@ import net.runelite.client.RuneLite;
         snapshot.put("targetSource", plugin.getTargetSource());
         snapshot.put("altStart", packedPointJson(session.lastStart()));
         List<Object> targets = new ArrayList<>();
-        for (int target : session.lastTargets())
-            targets.add(packedPointJson(target));
+        for (int target : session.lastTargets()) targets.add(packedPointJson(target));
         snapshot.put("targets", targets);
         List<String> exclusions = new ArrayList<>();
-        for (TeleportMethod method : plugin.getUserExclusions())
-            exclusions.add(methodKey(method));
+        for (TeleportMethod method : plugin.getUserExclusions()) exclusions.add(methodKey(method));
         snapshot.put("userExclusions", exclusions);
         snapshot.put("bankContentsKnown", plugin.isBankContentsKnown());
         snapshot.put("bankRestored", plugin.isBankRestored());
@@ -88,12 +86,10 @@ import net.runelite.client.RuneLite;
         List<RouteOption> routes = session.routes();
         snapshot.put("displayedRouteIndex", displayed != null ? routes.indexOf(displayed) : -1);
         List<Object> routesJson = new ArrayList<>();
-        for (RouteOption route : routes)
-            routesJson.add(routeJson(route));
+        for (RouteOption route : routes) routesJson.add(routeJson(route));
         snapshot.put("routes", routesJson);
         Map<String, Object> timing = generationTiming(plugin.altRoutesService());
-        if (timing != null)
-            snapshot.put("altGenTiming", timing);
+        if (timing != null) snapshot.put("altGenTiming", timing);
         if (displayed != null) {
             snapshot.put("directions", stepsJson(plugin.getRouteDirections(displayed)));
             RouteDirectionsOverlay overlay = plugin.routeDirectionsOverlay();
@@ -116,8 +112,7 @@ import net.runelite.client.RuneLite;
         for (int id = 0; id <= 32767; id++) {
             try {
                 int value = client.getVarbitValue(id);
-                if (value != 0)
-                    varbits.put(Integer.toString(id), value);
+                if (value != 0) varbits.put(Integer.toString(id), value);
             }
             catch (Exception ignored) {
                 // Unknown varbit ids past the cache's definitions: skip.
@@ -133,8 +128,7 @@ import net.runelite.client.RuneLite;
         routeJson.put("reached", route.isReached());
         routeJson.put("viaBank", route.isViaBank());
         List<String> methods = new ArrayList<>();
-        for (TeleportMethod method : route.getMethods())
-            methods.add(methodKey(method));
+        for (TeleportMethod method : route.getMethods()) methods.add(methodKey(method));
         routeJson.put("methods", methods);
         routeJson.put("methodEdgeIndexes", route.getMethodEdgeIndexes());
         routeJson.put("methodDurations", route.getMethodDurations());
@@ -163,16 +157,14 @@ import net.runelite.client.RuneLite;
     /** The last generation's timing and per-search profiles (slowest first), or null when none ran. */
     private static Map<String, Object> generationTiming(AlternativeRoutesService service) {
         long[] genTiming = service != null ? service.getLastTimingSummary() : null;
-        if (genTiming == null)
-            return null;
+        if (genTiming == null) return null;
         Map<String, Object> timingJson = new LinkedHashMap<>();
         timingJson.put("wallMs", genTiming[0]);
         timingJson.put("clientMs", genTiming[1]);
         timingJson.put("rebuildMs", genTiming[2]);
         timingJson.put("searchCpuMs", genTiming[3]);
         timingJson.put("searches", genTiming[4]);
-        if (genTiming.length > 5)
-            timingJson.put("fieldMs", genTiming[5]);
+        if (genTiming.length > 5) timingJson.put("fieldMs", genTiming[5]);
         // Which searches the time went to and how much each explored (a flat A* heuristic shows
         // up as a huge node count).
         List<Object> searchDetails = new ArrayList<>();
@@ -229,8 +221,7 @@ import net.runelite.client.RuneLite;
 
     /** A packed point as {packed, x, y, plane}, or null when undefined. */
     static Map<String, Object> packedPointJson(int packed) {
-        if (packed == WorldPointUtil.UNDEFINED)
-            return null;
+        if (packed == WorldPointUtil.UNDEFINED) return null;
         Map<String, Object> point = new LinkedHashMap<>();
         point.put("packed", packed);
         point.put("x", WorldPointUtil.unpackWorldX(packed));

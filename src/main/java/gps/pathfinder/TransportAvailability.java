@@ -64,8 +64,7 @@ public final class TransportAvailability {
                 Transport[] kept = without(transports, excluded);
                 if (kept != transports) {
                     copy.packed().put(origin, kept);
-                    if (displayTransports.get(origin) != null)
-                        copy.display().put(origin, kept);
+                    if (displayTransports.get(origin) != null) copy.display().put(origin, kept);
                 }
             });
         }
@@ -79,8 +78,7 @@ public final class TransportAvailability {
             copy.packed().put(origin, append(copy.packed().getOrDefault(origin, EMPTY_TRANSPORTS), extra));
             copy.display().put(origin, append(copy.display().getOrDefault(origin, EMPTY_TRANSPORTS), extra));
         }
-        if (copy.packed == null && copy.display == null && teleports == usableTeleports)
-            return this;
+        if (copy.packed == null && copy.display == null && teleports == usableTeleports) return this;
         return new TransportAvailability(
             copy.packed == null ? transportsPacked : copy.packed,
             copy.display == null ? displayTransports : copy.display,
@@ -93,34 +91,28 @@ public final class TransportAvailability {
         private PrimitiveIntHashMap<Transport[]> display;
 
         PrimitiveIntHashMap<Transport[]> packed() {
-            if (packed == null)
-                packed = new PrimitiveIntHashMap<>(transportsPacked);
+            if (packed == null) packed = new PrimitiveIntHashMap<>(transportsPacked);
             return packed;
         }
 
         PrimitiveIntHashMap<Transport[]> display() {
-            if (display == null)
-                display = new PrimitiveIntHashMap<>(displayTransports);
+            if (display == null) display = new PrimitiveIntHashMap<>(displayTransports);
             return display;
         }
     }
 
     /** {@code transports} without the excluded methods, or the same array when nothing is excluded. */
     private static Transport[] without(Transport[] transports, Set<TeleportMethod> excluded) {
-        if (excluded.isEmpty())
-            return transports;
+        if (excluded.isEmpty()) return transports;
         int kept = 0;
         for (Transport transport : transports) {
-            if (!excluded.contains(transport.method()))
-                kept++;
+            if (!excluded.contains(transport.method())) kept++;
         }
-        if (kept == transports.length)
-            return transports;
+        if (kept == transports.length) return transports;
         Transport[] result = new Transport[kept];
         int index = 0;
         for (Transport transport : transports) {
-            if (!excluded.contains(transport.method()))
-                result[index++] = transport;
+            if (!excluded.contains(transport.method())) result[index++] = transport;
         }
         return result;
     }
@@ -194,8 +186,7 @@ public final class TransportAvailability {
             for (int origin : transportsByOrigin.keys()) {
                 Transport[] transports = transportsByOrigin.get(origin).toArray(EMPTY_TRANSPORTS);
                 packed.put(origin, transports);
-                if (!pohOrigins.contains(origin))
-                    display.put(origin, transports);
+                if (!pohOrigins.contains(origin)) display.put(origin, transports);
             }
             return new TransportAvailability(packed, display, usableTeleports.toArray(EMPTY_TRANSPORTS));
         }

@@ -14,8 +14,7 @@ import lombok.RequiredArgsConstructor;
 
     public static JewelleryBoxTier fromType(String type) {
         for (JewelleryBoxTier tier : values()) {
-            if (tier.type.equals(type))
-                return tier;
+            if (tier.type.equals(type)) return tier;
         }
         return null;
     }

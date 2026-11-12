@@ -114,8 +114,7 @@ final class DestinationSearchView extends JPanel {
         SwingUtilities.invokeLater(() -> {
             searchField.requestFocusInWindow();
             JTextField inner = innerTextField(searchField);
-            if (inner != null)
-                inner.selectAll();
+            if (inner != null) inner.selectAll();
             // Surface the recent-searches list (the focus listener does this too, but requesting
             // focus on an already-focused field will not re-fire it).
             renderResults();
@@ -133,13 +132,11 @@ final class DestinationSearchView extends JPanel {
      */
     static int parseCoordinateQuery(String query) {
         Matcher matcher = COORDINATE_QUERY.matcher(query);
-        if (!matcher.matches())
-            return WorldPointUtil.UNDEFINED;
+        if (!matcher.matches()) return WorldPointUtil.UNDEFINED;
         int x = Integer.parseInt(matcher.group(1));
         int y = Integer.parseInt(matcher.group(2));
         int plane = matcher.group(3) != null ? Integer.parseInt(matcher.group(3)) : 0;
-        if (x > 4600 || y > 12900)
-            return WorldPointUtil.UNDEFINED;
+        if (x > 4600 || y > 12900) return WorldPointUtil.UNDEFINED;
         return WorldPointUtil.packWorldPoint(x, y, plane);
     }
 
@@ -162,8 +159,7 @@ final class DestinationSearchView extends JPanel {
         Comparator<Destinations.Entry> byScore = Comparator.comparingInt(e -> -scores.getOrDefault(e, 0));
         if (player != WorldPointUtil.UNDEFINED)
             matches.sort(byScore.thenComparingInt(e -> WorldPointUtil.distanceBetween(player, e.packedPosition)));
-        else
-            matches.sort(byScore.thenComparing(e -> e.name));
+        else matches.sort(byScore.thenComparing(e -> e.name));
         return matches.size() > MAX_DESTINATION_RESULTS ? matches.subList(0, MAX_DESTINATION_RESULTS) : matches;
     }
 
@@ -173,8 +169,7 @@ final class DestinationSearchView extends JPanel {
         // moves between them, Enter saves from either, Esc closes.
         KeyAdapter escapeCloses = new KeyAdapter() {
             @Override public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
-                    favoriteEditor.setVisible(false);
+                if (e.getKeyCode() == KeyEvent.VK_ESCAPE) favoriteEditor.setVisible(false);
             }
         };
         for (JTextField field : new JTextField[]{favoriteLabelInput, favoritePositionInput}) {
@@ -250,8 +245,7 @@ final class DestinationSearchView extends JPanel {
         // Clicking into the empty box offers the recent searches; IconTextField does not expose its
         // inner text field, so find it in the component tree to hear focus.
         JTextField inner = innerTextField(searchField);
-        if (inner == null)
-            return;
+        if (inner == null) return;
         inner.addFocusListener(new FocusAdapter() {
             @Override public void focusGained(FocusEvent e) {
                 renderResults();
@@ -261,8 +255,7 @@ final class DestinationSearchView extends JPanel {
         // destination can be chosen without leaving the keyboard.
         inner.addKeyListener(new KeyAdapter() {
             @Override public void keyPressed(KeyEvent e) {
-                if (!popup.isVisible())
-                    return;
+                if (!popup.isVisible()) return;
                 switch (e.getKeyCode()) {
                     case KeyEvent.VK_DOWN:
                         moveSelection(1);
@@ -310,11 +303,9 @@ final class DestinationSearchView extends JPanel {
         quick.setBackground(ColorScheme.DARK_GRAY_COLOR);
         JButton bank = nearestQuickButton("bank");
         bankButton = bank;
-        if (bank != null)
-            quick.add(bank);
+        if (bank != null) quick.add(bank);
         JButton bankAndBack = nearestQuickButton("bank_round_trip");
-        if (bankAndBack != null)
-            quick.add(bankAndBack);
+        if (bankAndBack != null) quick.add(bankAndBack);
         row.add(quick, BorderLayout.EAST);
 
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
@@ -328,8 +319,7 @@ final class DestinationSearchView extends JPanel {
      * Called on every render; restyles only on a change. EDT.
      */
     void showBankStop(boolean addsStop) {
-        if (bankButton == null || addsStop == bankButtonAddsStop)
-            return;
+        if (bankButton == null || addsStop == bankButtonAddsStop) return;
         bankButtonAddsStop = addsStop;
         bankButton.setIcon(RouteIcons.bankButtonIcon(addsStop));
         bankButton.setToolTipText(BankDetour.bankButtonTooltip(addsStop));
@@ -373,11 +363,9 @@ final class DestinationSearchView extends JPanel {
     /** The cached name-search index; (re)built only once the transport data is available. */
     private List<Destinations.Entry> index() {
         List<Destinations.Entry> cached = index;
-        if (cached != null)
-            return cached;
+        if (cached != null) return cached;
         List<Destinations.Entry> built = Destinations.searchable(plugin.getTransports());
-        if (plugin.getTransports() != null)
-            index = built;
+        if (plugin.getTransports() != null) index = built;
         return built;
     }
 
@@ -399,13 +387,11 @@ final class DestinationSearchView extends JPanel {
             }
             if (!favorites.isEmpty()) {
                 results.add(resultsHeader("Favourites"));
-                for (Destinations.Entry entry : favorites)
-                    addResultRow(entry, player);
+                for (Destinations.Entry entry : favorites) addResultRow(entry, player);
             }
             if (!history.isEmpty()) {
                 results.add(resultsHeader("Recent searches"));
-                for (Destinations.Entry entry : history)
-                    addResultRow(entry, player);
+                for (Destinations.Entry entry : history) addResultRow(entry, player);
             }
             preselectFirstResult();
             showPopup();
@@ -439,8 +425,7 @@ final class DestinationSearchView extends JPanel {
         // their label.
         List<Destinations.Entry> pool = new ArrayList<>(plugin.getFavoriteDestinations());
         pool.addAll(index());
-        for (Destinations.Entry entry : rank(pool, query, player))
-            addResultRow(entry, player);
+        for (Destinations.Entry entry : rank(pool, query, player)) addResultRow(entry, player);
         if (resultEntries.isEmpty()) {
             JLabel none = new JLabel("No matching destination");
             none.setForeground(Color.GRAY);
@@ -526,8 +511,7 @@ final class DestinationSearchView extends JPanel {
         }
         plugin.addFavoriteDestination(label, position);
         favoriteEditor.setVisible(false);
-        if (popup.isVisible())
-            renderResults();
+        if (popup.isVisible()) renderResults();
     }
 
     private void favoriteInputError(String message) {
@@ -559,8 +543,7 @@ final class DestinationSearchView extends JPanel {
 
     /** Moves the keyboard selection by {@code delta}, wrapping around the result list. */
     private void moveSelection(int delta) {
-        if (resultRows.isEmpty())
-            return;
+        if (resultRows.isEmpty()) return;
         selectedResult = ((selectedResult + delta) % resultRows.size() + resultRows.size()) % resultRows.size();
         applySelectionHighlight();
     }
@@ -568,15 +551,12 @@ final class DestinationSearchView extends JPanel {
     /** Commits a destination selection (from a click or Enter): route to it, remember it, close. */
     private void selectEntry(Destinations.Entry entry) {
         Destinations.Entry resolved = withTiles(entry);
-        if (resolved.nearest != null)
-            plugin.goToNearest(resolved.nearest);
+        if (resolved.nearest != null) plugin.goToNearest(resolved.nearest);
         else if (resolved.tiles.size() > 1)
             // A named amenity (Falador Bank: every booth): the nearest of its tiles, like "nearest X".
             plugin.setNearestCategory(resolved.tiles, resolved.name);
-        else
-            plugin.setDestination(entry.packedPosition, "search");
-        if (entry.nearest == null)
-            plugin.recordSearchSelection(entry);
+        else plugin.setDestination(entry.packedPosition, "search");
+        if (entry.nearest == null) plugin.recordSearchSelection(entry);
         // Clearing the text re-renders the popup with the recent list; a selection should end the
         // interaction instead.
         searchField.setText("");
@@ -588,8 +568,7 @@ final class DestinationSearchView extends JPanel {
      * from the index by category and name.
      */
     private Destinations.Entry withTiles(Destinations.Entry entry) {
-        if (entry.tiles.size() > 1 || entry.nearest != null)
-            return entry;
+        if (entry.tiles.size() > 1 || entry.nearest != null) return entry;
         for (Destinations.Entry indexed : index()) {
             if (indexed.tiles.size() > 1 && indexed.category.equals(entry.category) && indexed.name.equals(entry.name))
                 return indexed;
@@ -609,8 +588,7 @@ final class DestinationSearchView extends JPanel {
             popup.repaint();
             popup.pack();
         }
-        else
-            popup.show(searchField, 0, searchField.getHeight());
+        else popup.show(searchField, 0, searchField.getHeight());
     }
 
     private JPanel destinationRow(Destinations.Entry entry, int player) {
@@ -650,8 +628,7 @@ final class DestinationSearchView extends JPanel {
                 renderResults();
             }));
         }
-        if (east.getComponentCount() > 0)
-            row.add(verticallyCentered(east), BorderLayout.EAST);
+        if (east.getComponentCount() > 0) row.add(verticallyCentered(east), BorderLayout.EAST);
 
         row.addMouseListener(new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent e) {

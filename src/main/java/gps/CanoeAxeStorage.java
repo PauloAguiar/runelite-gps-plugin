@@ -21,10 +21,8 @@ final class CanoeAxeStorage {
 
     /** TRUE when the line says an axe was stored, FALSE when withdrawn, null for any other line. */
     static Boolean parse(String message) {
-        if (STORED.matcher(message).find())
-            return Boolean.TRUE;
-        if (WITHDRAWN.matcher(message).find())
-            return Boolean.FALSE;
+        if (STORED.matcher(message).find()) return Boolean.TRUE;
+        if (WITHDRAWN.matcher(message).find()) return Boolean.FALSE;
         return null;
     }
 
@@ -33,7 +31,6 @@ final class CanoeAxeStorage {
         if (type != ChatMessageType.GAMEMESSAGE && type != ChatMessageType.SPAM && type != ChatMessageType.MESBOX)
             return;
         Boolean stored = parse(message);
-        if (stored != null)
-            configManager.setConfiguration(configGroup, CONFIG_KEY, stored);
+        if (stored != null) configManager.setConfiguration(configGroup, CONFIG_KEY, stored);
     }
 }

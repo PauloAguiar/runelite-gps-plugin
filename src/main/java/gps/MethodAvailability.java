@@ -25,8 +25,7 @@ public enum MethodAvailability {
      * transports that can share one method identity down to a single, best-case status.
      */
     public MethodAvailability best(MethodAvailability other) {
-        if (other == null)
-            return this;
+        if (other == null) return this;
         return ordinal() <= other.ordinal() ? this : other;
     }
 }

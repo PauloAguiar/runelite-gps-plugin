@@ -27,8 +27,7 @@ public final class RoutingItemDependencies {
         Map<Integer, TreeSet<Integer>> collected = new HashMap<>();
         for (Transport transport : transports) {
             TransportItems items = transport.getItemRequirements();
-            if (items == null)
-                continue;
+            if (items == null) continue;
             for (ItemRequirement req : items.getRequirements()) {
                 // Threshold 1 is always included alongside the required quantity, so checks
                 // with presence semantics (staff substitution) are covered regardless of the
@@ -52,21 +51,18 @@ public final class RoutingItemDependencies {
         for (Map.Entry<Integer, TreeSet<Integer>> entry : collected.entrySet()) {
             int[] sorted = new int[entry.getValue().size()];
             int i = 0;
-            for (int quantity : entry.getValue())
-                sorted[i++] = quantity;
+            for (int quantity : entry.getValue()) sorted[i++] = quantity;
             thresholds.put(entry.getKey(), sorted);
         }
         return new RoutingItemDependencies(thresholds);
     }
 
     private static void collect(Map<Integer, TreeSet<Integer>> collected, int[] ids, int quantity) {
-        if (ids == null)
-            return;
+        if (ids == null) return;
         for (int id : ids) {
             TreeSet<Integer> set = collected.computeIfAbsent(id, k -> new TreeSet<>());
             set.add(1);
-            if (quantity > 1)
-                set.add(quantity);
+            if (quantity > 1) set.add(quantity);
         }
     }
 
@@ -94,19 +90,15 @@ public final class RoutingItemDependencies {
     }
 
     private long containerDigest(ItemContainer container, int tag) {
-        if (container == null)
-            return 0;
+        if (container == null) return 0;
         // Duplicate un-stacked items (two dramen staffs) aggregate per id before thresholding.
         Map<Integer, Integer> quantities = null;
         for (Item item : container.getItems()) {
-            if (item == null || !thresholds.containsKey(item.getId()))
-                continue;
-            if (quantities == null)
-                quantities = new HashMap<>();
+            if (item == null || !thresholds.containsKey(item.getId())) continue;
+            if (quantities == null) quantities = new HashMap<>();
             quantities.merge(item.getId(), item.getQuantity(), Integer::sum);
         }
-        if (quantities == null)
-            return 0;
+        if (quantities == null) return 0;
         long digest = 0;
         for (Map.Entry<Integer, Integer> entry : quantities.entrySet()) {
             int[] sorted = thresholds.get(entry.getKey());

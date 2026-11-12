@@ -76,14 +76,12 @@ import net.runelite.client.config.ConfigManager;
      * it. One write per bank session: bank close, logout, plugin shutdown.
      */
     void persist() {
-        if (!saveDirty || saveProfileKey == null)
-            return;
+        if (!saveDirty || saveProfileKey == null) return;
         String encoded = encode(pathfinderConfig.getBankSnapshot());
         if (encoded == null)
             // Bank seen but nothing in it: drop any stale saved snapshot rather than keeping it.
             configManager.unsetConfiguration(configGroup, saveProfileKey, CONFIG_KEY_BANK_SNAPSHOT);
-        else
-            configManager.setConfiguration(configGroup, saveProfileKey, CONFIG_KEY_BANK_SNAPSHOT, encoded);
+        else configManager.setConfiguration(configGroup, saveProfileKey, CONFIG_KEY_BANK_SNAPSHOT, encoded);
         saveDirty = false;
     }
 
@@ -92,11 +90,9 @@ import net.runelite.client.config.ConfigManager;
      * bank has not been seen live. Login and plugin start.
      */
     void restore() {
-        if (!rememberBank.getAsBoolean() || known)
-            return;
+        if (!rememberBank.getAsBoolean() || known) return;
         Item[] items = decode(configManager.getRSProfileConfiguration(configGroup, CONFIG_KEY_BANK_SNAPSHOT));
-        if (items == null)
-            return;
+        if (items == null) return;
         pathfinderConfig.setBankSnapshot(items);
         known = true;
         restored = true;
@@ -126,8 +122,7 @@ import net.runelite.client.config.ConfigManager;
     boolean forgetStored() {
         configManager.unsetRSProfileConfiguration(configGroup, CONFIG_KEY_BANK_SNAPSHOT);
         saveDirty = false;
-        if (!restored)
-            return false;
+        if (!restored) return false;
         restored = false;
         known = false;
         pathfinderConfig.clearBank();
@@ -140,14 +135,11 @@ import net.runelite.client.config.ConfigManager;
      * worth saving.
      */
     static String encode(Item[] items) {
-        if (items == null)
-            return null;
+        if (items == null) return null;
         StringBuilder sb = new StringBuilder(items.length * 10);
         for (Item item : items) {
-            if (item == null || item.getId() < 0 || item.getQuantity() <= 0)
-                continue;
-            if (sb.length() > 0)
-                sb.append(',');
+            if (item == null || item.getId() < 0 || item.getQuantity() <= 0) continue;
+            if (sb.length() > 0) sb.append(',');
             sb.append(item.getId()).append(':').append(item.getQuantity());
         }
         return sb.length() > 0 ? sb.toString() : null;
@@ -155,15 +147,13 @@ import net.runelite.client.config.ConfigManager;
 
     /** Parses {@link #encode}'s format back into items. Null on missing or malformed data. */
     static Item[] decode(String encoded) {
-        if (encoded == null || encoded.isEmpty())
-            return null;
+        if (encoded == null || encoded.isEmpty()) return null;
         String[] pairs = encoded.split(",");
         Item[] items = new Item[pairs.length];
         try {
             for (int i = 0; i < pairs.length; i++) {
                 int sep = pairs[i].indexOf(':');
-                if (sep <= 0)
-                    return null;
+                if (sep <= 0) return null;
                 items[i] = new Item(Integer.parseInt(pairs[i].substring(0, sep)),
                     Integer.parseInt(pairs[i].substring(sep + 1)));
             }

@@ -49,13 +49,11 @@ public final class PlayerOwnedHouse {
      * template region.
      */
     public static boolean isHouseScene(WorldView worldView) {
-        if (worldView == null || !worldView.isInstance())
-            return false;
+        if (worldView == null || !worldView.isInstance()) return false;
         int[] regions = worldView.getMapRegions();
         if (regions != null) {
             for (int region : regions) {
-                if (TEMPLATE_REGIONS.contains(region))
-                    return true;
+                if (TEMPLATE_REGIONS.contains(region)) return true;
             }
         }
         return false;
@@ -69,10 +67,8 @@ public final class PlayerOwnedHouse {
      */
     public static String exitInfo(int destination, List<PathStep> path, int currentIndex,
         BiFunction<PathStep, PathStep, Set<Transport>> transportsForEdge) {
-        if (path == null || currentIndex < 0)
-            return null;
-        if (!isInside(unpackWorldX(destination), unpackWorldY(destination)))
-            return null;
+        if (path == null || currentIndex < 0) return null;
+        if (!isInside(unpackWorldX(destination), unpackWorldY(destination))) return null;
         for (int i = currentIndex + 1; i < path.size() - 1; i++) {
             int stepLocation = path.get(i).getPackedPosition();
             int nextLocation = path.get(i + 1).getPackedPosition();
@@ -96,24 +92,16 @@ public final class PlayerOwnedHouse {
         TransportType exitType = transport.getType();
         if (TransportType.TELEPORTATION_BOX.equals(exitType)) {
             String objInfo = transport.getObjectInfo();
-            if (objInfo != null && objInfo.contains("Amulet of Glory"))
-                return "Mounted Glory: " + exitInfo;
-            if (objInfo != null && objInfo.contains("Mythical cape"))
-                return "Mythical Cape: " + exitInfo;
-            if (objInfo != null && objInfo.contains("Xeric's Talisman"))
-                return "Xeric's Talisman: " + exitInfo;
-            if (objInfo != null && objInfo.contains("Digsite"))
-                return "Digsite Pendant: " + exitInfo;
+            if (objInfo != null && objInfo.contains("Amulet of Glory")) return "Mounted Glory: " + exitInfo;
+            if (objInfo != null && objInfo.contains("Mythical cape")) return "Mythical Cape: " + exitInfo;
+            if (objInfo != null && objInfo.contains("Xeric's Talisman")) return "Xeric's Talisman: " + exitInfo;
+            if (objInfo != null && objInfo.contains("Digsite")) return "Digsite Pendant: " + exitInfo;
             return "Jewelry Box: " + exitInfo;
         }
-        if (TransportType.TELEPORTATION_PORTAL_POH.equals(exitType))
-            return "Nexus: " + exitInfo;
-        if (TransportType.FAIRY_RING.equals(exitType))
-            return "Fairy Ring " + exitInfo;
-        if (TransportType.SPIRIT_TREE.equals(exitType))
-            return "Spirit Tree: " + exitInfo;
-        if (TransportType.WILDERNESS_OBELISK.equals(exitType))
-            return "Obelisk: " + exitInfo;
+        if (TransportType.TELEPORTATION_PORTAL_POH.equals(exitType)) return "Nexus: " + exitInfo;
+        if (TransportType.FAIRY_RING.equals(exitType)) return "Fairy Ring " + exitInfo;
+        if (TransportType.SPIRIT_TREE.equals(exitType)) return "Spirit Tree: " + exitInfo;
+        if (TransportType.WILDERNESS_OBELISK.equals(exitType)) return "Obelisk: " + exitInfo;
         return exitInfo;
     }
 
@@ -143,17 +131,13 @@ public final class PlayerOwnedHouse {
         Set<Integer> ids = new HashSet<>();
         Tile[][][] tiles = worldView.getScene().getTiles();
         for (Tile[][] plane : tiles) {
-            if (plane == null)
-                continue;
+            if (plane == null) continue;
             for (Tile[] column : plane) {
-                if (column == null)
-                    continue;
+                if (column == null) continue;
                 for (Tile tile : column) {
-                    if (tile == null || tile.getGameObjects() == null)
-                        continue;
+                    if (tile == null || tile.getGameObjects() == null) continue;
                     for (GameObject object : tile.getGameObjects()) {
-                        if (object != null)
-                            ids.add(object.getId());
+                        if (object != null) ids.add(object.getId());
                     }
                 }
             }

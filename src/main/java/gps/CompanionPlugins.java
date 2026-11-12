@@ -42,20 +42,16 @@ import net.runelite.client.plugins.*;
         boolean conflict = false;
         boolean off = false;
         for (Plugin other : pluginManager.getPlugins()) {
-            if (other == self)
-                continue;
+            if (other == self) continue;
             PluginDescriptor descriptor = other.getClass().getAnnotation(PluginDescriptor.class);
-            if (descriptor == null || !pluginManager.isPluginEnabled(other))
-                continue;
-            if (SHORTEST_PATH.equals(descriptor.name()))
-                conflict = true;
+            if (descriptor == null || !pluginManager.isPluginEnabled(other)) continue;
+            if (SHORTEST_PATH.equals(descriptor.name())) conflict = true;
             else if (QUEST_HELPER.equals(descriptor.name()))
                 off = !Boolean.parseBoolean(configManager.getConfiguration("questhelper", "useShortestPath"));
         }
         boolean changed = conflict != shortestPathConflict || off != questHelperPathingOff;
         shortestPathConflict = conflict;
         questHelperPathingOff = off;
-        if (changed)
-            onChanged.run();
+        if (changed) onChanged.run();
     }
 }

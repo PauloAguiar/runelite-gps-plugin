@@ -64,15 +64,13 @@ import static gps.PanelWidgets.wrappedLabel;
      * therefore displays as minus 15 s; showing the raw preference read as a surcharge.
      */
     static String biasChip(int preferenceSeconds) {
-        if (preferenceSeconds == 0)
-            return "neutral";
+        if (preferenceSeconds == 0) return "neutral";
         int adjustment = -preferenceSeconds;
         return (adjustment > 0 ? "+" : "−") + Math.abs(adjustment) + "s";
     }
 
     static Color biasColor(int seconds) {
-        if (seconds == 0)
-            return ColorScheme.LIGHT_GRAY_COLOR;
+        if (seconds == 0) return ColorScheme.LIGHT_GRAY_COLOR;
         return seconds > 0 ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.PROGRESS_INPROGRESS_COLOR;
     }
 
@@ -83,10 +81,8 @@ import static gps.PanelWidgets.wrappedLabel;
 
     /** The spirit-tree section's chip: all (smart tracking off), on (not synced yet), none, or the count. */
     static String spiritTreeState(boolean smart, boolean synced, int planted) {
-        if (!smart)
-            return "all";
-        if (!synced)
-            return "on";
+        if (!smart) return "all";
+        if (!synced) return "on";
         return planted == 0 ? "none" : planted + " planted";
     }
 
@@ -101,8 +97,7 @@ import static gps.PanelWidgets.wrappedLabel;
         JPanel icons = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
         icons.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         for (int i = 0; i < BalloonLogStorage.TYPE_NAMES.length; i++) {
-            if (lowTypes.contains(BalloonLogStorage.TYPE_NAMES[i]))
-                icons.add(logIcon(i, counts[i]));
+            if (lowTypes.contains(BalloonLogStorage.TYPE_NAMES[i])) icons.add(logIcon(i, counts[i]));
         }
         warning.add(icons, BorderLayout.SOUTH);
         warning.setMaximumSize(new Dimension(Integer.MAX_VALUE, warning.getPreferredSize().height));
@@ -125,8 +120,7 @@ import static gps.PanelWidgets.wrappedLabel;
             pohExpanded, () -> pohExpanded = !pohExpanded,
             pohOn ? "on" : "off",
             pohOn ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.LIGHT_GRAY_COLOR);
-        if (!pohExpanded)
-            return section;
+        if (!pohExpanded) return section;
 
         JPanel body = body();
 
@@ -144,12 +138,10 @@ import static gps.PanelWidgets.wrappedLabel;
         body.add(iconRow("house_portal", 18, toggle("pohSmartDetect", 0, true)));
         if (plugin.getGpsConfig().pohSmartDetect()) {
             List<String> detected = plugin.getDetectedPohFurniture();
-            if (!plugin.isPohScanned())
-                body.add(warningBanner("Enter your house once to auto-detect its furniture."));
+            if (!plugin.isPohScanned()) body.add(warningBanner("Enter your house once to auto-detect its furniture."));
             else if (detected.isEmpty())
                 body.add(note("No auto-detectable furniture found in your house.", ColorScheme.MEDIUM_GRAY_COLOR));
-            else
-                body.add(note("Detected: " + String.join(", ", detected), ColorScheme.LIGHT_GRAY_COLOR));
+            else body.add(note("Detected: " + String.join(", ", detected), ColorScheme.LIGHT_GRAY_COLOR));
         }
 
         ConfigItem tier = item("pohJewelleryBoxTier");
@@ -191,8 +183,7 @@ import static gps.PanelWidgets.wrappedLabel;
             wildernessExpanded, () -> wildernessExpanded = !wildernessExpanded,
             avoid ? "avoided" : "allowed",
             avoid ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.PROGRESS_INPROGRESS_COLOR);
-        if (!wildernessExpanded)
-            return section;
+        if (!wildernessExpanded) return section;
 
         JPanel body = body();
         body.add(toggle("avoidWilderness", 0, true));
@@ -213,8 +204,7 @@ import static gps.PanelWidgets.wrappedLabel;
             "How plain walking ranks against travel methods",
             walkingExpanded, () -> walkingExpanded = !walkingExpanded,
             biasChip(bias), biasColor(bias));
-        if (!walkingExpanded)
-            return section;
+        if (!walkingExpanded) return section;
         JPanel body = body();
         body.add(statusLabel(bias == 0
                 ? "No preference: routes rank purely by time."
@@ -243,8 +233,7 @@ import static gps.PanelWidgets.wrappedLabel;
             "How bank-detour routes rank, and remembering your bank between sessions",
             bankExpanded, () -> bankExpanded = !bankExpanded,
             biasChip(bankBias), biasColor(bankBias));
-        if (!bankExpanded)
-            return section;
+        if (!bankExpanded) return section;
 
         JPanel body = body();
 
@@ -297,8 +286,7 @@ import static gps.PanelWidgets.wrappedLabel;
             "Balloon travel and smart tracking of the stations' Log storage",
             balloonExpanded, () -> balloonExpanded = !balloonExpanded,
             balloonState(balloonsOn, !lowTypes.isEmpty()), stateColor);
-        if (!balloonExpanded)
-            return section;
+        if (!balloonExpanded) return section;
 
         JPanel body = body();
         body.add(toggle("useHotAirBalloons", 0, true));
@@ -317,8 +305,7 @@ import static gps.PanelWidgets.wrappedLabel;
                 storageRow.setBackground(ColorScheme.DARKER_GRAY_COLOR);
                 storageRow.setAlignmentX(Component.LEFT_ALIGNMENT);
                 storageRow.setBorder(new EmptyBorder(0, 14, 2, 0));
-                for (int i = 0; i < counts.length; i++)
-                    storageRow.add(logIcon(i, counts[i]));
+                for (int i = 0; i < counts.length; i++) storageRow.add(logIcon(i, counts[i]));
                 storageRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, storageRow.getPreferredSize().height));
                 body.add(storageRow);
             }
@@ -336,8 +323,7 @@ import static gps.PanelWidgets.wrappedLabel;
             sailingExpanded, () -> sailingExpanded = !sailingExpanded,
             sailingOn ? "on" : "off",
             sailingOn ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.LIGHT_GRAY_COLOR);
-        if (!sailingExpanded)
-            return section;
+        if (!sailingExpanded) return section;
 
         JPanel body = body();
         body.add(toggle("useSailing", 0, true));
@@ -370,8 +356,7 @@ import static gps.PanelWidgets.wrappedLabel;
                 JLabel name = new JLabel(row[0]);
                 name.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
                 BoatHull hull = BoatHull.fromName(type);
-                if (hull != null)
-                    name.setIcon(RouteIcons.hullIcon(hull));
+                if (hull != null) name.setIcon(RouteIcons.hullIcon(hull));
                 name.setIconTextGap(6);
                 name.setToolTipText(row[0] + (type.isEmpty() ? "" : " (" + type + ")") + ", moored at " + row[1]);
                 berthRow.add(name, BorderLayout.CENTER);
@@ -409,20 +394,17 @@ import static gps.PanelWidgets.wrappedLabel;
             "Smart detection of the farmable spirit trees you have grown (permanent trees are in Travel methods)",
             spiritTreeExpanded, () -> spiritTreeExpanded = !spiritTreeExpanded,
             spiritTreeState(smart, synced, planted.size()), stateColor);
-        if (!spiritTreeExpanded)
-            return section;
+        if (!spiritTreeExpanded) return section;
 
         JPanel body = body();
         body.add(iconRow("spirit_tree", 0, toggle("spiritTreeSmartMode", 0, true)));
 
-        if (!smart)
-            body.add(note("All farmable spirit trees assumed available.", ColorScheme.MEDIUM_GRAY_COLOR));
+        if (!smart) body.add(note("All farmable spirit trees assumed available.", ColorScheme.MEDIUM_GRAY_COLOR));
         else if (!synced) {
             body.add(warningBanner("Not synced yet: open a spirit tree travel menu once to detect"
                 + " your planted trees."));
         }
-        else if (planted.isEmpty())
-            body.add(note("No planted spirit trees detected.", ColorScheme.MEDIUM_GRAY_COLOR));
+        else if (planted.isEmpty()) body.add(note("No planted spirit trees detected.", ColorScheme.MEDIUM_GRAY_COLOR));
         else {
             body.add(note("Detected:", ColorScheme.LIGHT_GRAY_COLOR));
             for (String name : planted) {
@@ -546,8 +528,7 @@ import static gps.PanelWidgets.wrappedLabel;
         JCheckBox box = new JCheckBox(
             "<html><body style='width:" + (LABEL_WIDTH - indent) + "px'>" + item.name() + "</body></html>",
             Boolean.TRUE.equals(plugin.configValue(key, Boolean.class)));
-        if (indent > 0)
-            box.setBorder(new EmptyBorder(2, indent, 2, 0));
+        if (indent > 0) box.setBorder(new EmptyBorder(2, indent, 2, 0));
         box.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         box.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
         // HTML text ignores the look-and-feel's disabled dimming: mirror it by hand.

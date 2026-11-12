@@ -56,8 +56,7 @@ final class RouteAcceptance {
     /** The costliest accepted route's cost (walk-only entries included: they bound the page too). */
     static int maxAcceptedCost(List<RouteOption> routes) {
         int max = 0;
-        for (RouteOption route : routes)
-            max = Math.max(max, route.getTotalCost());
+        for (RouteOption route : routes) max = Math.max(max, route.getTotalCost());
         return max;
     }
 
@@ -68,8 +67,7 @@ final class RouteAcceptance {
      * {@code multiple <= 0} (uncapped), or when the product exceeds {@code cap}.
      */
     static int cappedByBestCost(int cap, List<RouteOption> routes, int multiple) {
-        if (routes.isEmpty() || multiple <= 0)
-            return cap;
+        if (routes.isEmpty() || multiple <= 0) return cap;
         long byBest = band(routes, multiple);
         return byBest < cap ? (int) byBest : cap;
     }
@@ -84,8 +82,7 @@ final class RouteAcceptance {
      * the passes that evict pass {@link Integer#MAX_VALUE}.
      */
     static boolean beyondBand(int cost, List<RouteOption> routes, int multiple, int limit) {
-        if (multiple <= 0 || routes.size() < MIN_PAGE_ROUTES || cost <= band(routes, multiple))
-            return false;
+        if (multiple <= 0 || routes.size() < MIN_PAGE_ROUTES || cost <= band(routes, multiple)) return false;
         return routes.size() >= limit
             || cost > pageFillCeiling(routes.get(0).getTotalCost(), maxAcceptedCost(routes), multiple);
     }
@@ -103,8 +100,7 @@ final class RouteAcceptance {
      * nothing is too far; the caller records the first as the best.
      */
     static boolean tooFar(boolean reached, int remaining, int bestRemaining) {
-        if (!reached && bestRemaining == 0)
-            return true;
+        if (!reached && bestRemaining == 0) return true;
         return bestRemaining >= 0 && remaining > bestRemaining + CLOSEST_DISTANCE_TOLERANCE;
     }
 
@@ -142,8 +138,7 @@ final class RouteAcceptance {
         int found = -1;
         for (int r = 0; r < routes.size(); r++) {
             if (portFirst(routes.get(r))) {
-                if (found >= 0)
-                    return -1;
+                if (found >= 0) return -1;
                 found = r;
             }
         }
@@ -153,8 +148,7 @@ final class RouteAcceptance {
     /** Whether any shown route already starts by disembarking at a port. */
     static boolean hasPortFirstRoute(List<RouteOption> routes) {
         for (RouteOption route : routes) {
-            if (portFirst(route))
-                return true;
+            if (portFirst(route)) return true;
         }
         return false;
     }
@@ -172,8 +166,7 @@ final class RouteAcceptance {
                 || (candidateViaBank && !route.isViaBank())) {
                 continue;
             }
-            if (candidate.subList(candidate.size() - base.size(), candidate.size()).equals(base))
-                return true;
+            if (candidate.subList(candidate.size() - base.size(), candidate.size()).equals(base)) return true;
         }
         return false;
     }

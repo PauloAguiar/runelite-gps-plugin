@@ -42,8 +42,7 @@ import net.runelite.client.util.ImageUtil;
                     out.setRGB(x, y, ringPixel);
                     continue;
                 }
-                if (pixel(sprite, x - 1, y - 1) >>> 24 == 0 && touchesRing(ring, x - 1, y - 1))
-                    out.setRGB(x, y, rgb);
+                if (pixel(sprite, x - 1, y - 1) >>> 24 == 0 && touchesRing(ring, x - 1, y - 1)) out.setRGB(x, y, rgb);
             }
         }
         return out;
@@ -52,8 +51,7 @@ import net.runelite.client.util.ImageUtil;
     private static boolean touchesRing(BufferedImage ring, int x, int y) {
         for (int dx = -1; dx <= 1; dx++)
             for (int dy = -1; dy <= 1; dy++)
-                if (pixel(ring, x + dx, y + dy) >>> 24 != 0)
-                    return true;
+                if (pixel(ring, x + dx, y + dy) >>> 24 != 0) return true;
         return false;
     }
 

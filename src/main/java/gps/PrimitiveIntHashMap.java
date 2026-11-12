@@ -93,8 +93,7 @@ public class PrimitiveIntHashMap<V> {
      */
     @SuppressWarnings("unchecked") public void forEach(IntObjConsumer<? super V> consumer) {
         for (int i = 0; i < values.length; ++i) {
-            if (values[i] != null)
-                consumer.accept(keys[i], (V) values[i]);
+            if (values[i] != null) consumer.accept(keys[i], (V) values[i]);
         }
     }
 
@@ -129,8 +128,7 @@ public class PrimitiveIntHashMap<V> {
         int[] result = new int[size];
         int index = 0;
         for (int i = 0; i < values.length; ++i) {
-            if (values[i] != null)
-                result[index++] = keys[i];
+            if (values[i] != null) result[index++] = keys[i];
         }
         return result;
     }
@@ -154,8 +152,7 @@ public class PrimitiveIntHashMap<V> {
      */
     @SuppressWarnings("unchecked") public V getOrDefault(int key, V defaultValue) {
         final int slot = findSlot(key);
-        if (slot < 0)
-            return defaultValue;
+        if (slot < 0) return defaultValue;
         return (V) values[slot];
     }
 
@@ -175,8 +172,7 @@ public class PrimitiveIntHashMap<V> {
      * @throws IllegalArgumentException if {@code value} is {@code null}.
      */
     @SuppressWarnings({"unchecked"}) public <E> V put(int key, V value) {
-        if (value == null)
-            throw new IllegalArgumentException("Cannot insert a null value");
+        if (value == null) throw new IllegalArgumentException("Cannot insert a null value");
 
         int i = (hash(key) & 0x7FFFFFFF) & mask;
         while (values[i] != null) {
@@ -211,8 +207,7 @@ public class PrimitiveIntHashMap<V> {
     private int findSlot(int key) {
         int i = (hash(key) & 0x7FFFFFFF) & mask;
         while (values[i] != null) {
-            if (keys[i] == key)
-                return i;
+            if (keys[i] == key) return i;
             i = (i + 1) & mask;
         }
         return -1;
@@ -220,20 +215,17 @@ public class PrimitiveIntHashMap<V> {
 
     private void incrementSize() {
         size++;
-        if (size >= capacity)
-            rehash();
+        if (size >= capacity) rehash();
     }
 
     private int getNewMaxSize(int size) {
         int nextPow2 = -1 >>> Integer.numberOfLeadingZeros(size);
-        if (nextPow2 >= (Integer.MAX_VALUE >>> 1))
-            return (Integer.MAX_VALUE >>> 1) + 1;
+        if (nextPow2 >= (Integer.MAX_VALUE >>> 1)) return (Integer.MAX_VALUE >>> 1) + 1;
         return nextPow2 + 1;
     }
 
     private void setNewSize(int size) {
-        if (size < MINIMUM_SIZE)
-            size = MINIMUM_SIZE - 1;
+        if (size < MINIMUM_SIZE) size = MINIMUM_SIZE - 1;
 
         maxSize = getNewMaxSize(size);
         mask = maxSize - 1;
@@ -253,12 +245,10 @@ public class PrimitiveIntHashMap<V> {
         recreateArrays();
 
         for (int i = 0; i < oldValues.length; ++i) {
-            if (oldValues[i] == null)
-                continue;
+            if (oldValues[i] == null) continue;
 
             int slot = (hash(oldKeys[i]) & 0x7FFFFFFF) & mask;
-            while (values[slot] != null)
-                slot = (slot + 1) & mask;
+            while (values[slot] != null) slot = (slot + 1) & mask;
             keys[slot] = oldKeys[i];
             values[slot] = oldValues[i];
         }
@@ -276,8 +266,7 @@ public class PrimitiveIntHashMap<V> {
      * empty.
      */
     public double calculateFullness() {
-        if (size == 0)
-            return Double.NaN;
+        if (size == 0) return Double.NaN;
         return 100.0 * (double) size / (double) maxSize;
     }
 

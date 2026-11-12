@@ -101,8 +101,7 @@ final class RouteDirections {
     static List<Step> build(ShortestPathPlugin plugin, RouteOption route) {
         List<Step> steps = new ArrayList<>();
         List<PathStep> path = route.getPath();
-        if (path == null || path.size() < 2)
-            return steps;
+        if (path == null || path.size() < 2) return steps;
         // When the target can't be reached, the route stops at the closest tile — the final leg walks
         // "as close as possible", not "to the destination", so the overlay doesn't imply arrival.
         boolean reaches = plugin.routeReachesTarget(route);
@@ -135,8 +134,7 @@ final class RouteDirections {
                 walk = 0;
                 TeleportMethod method = route.getMethods().get(nextMethod);
                 int duration = route.getMethodDurations().get(nextMethod);
-                if (TransportType.SAILING.equals(method.getType()))
-                    addSailingSteps(steps, method, duration, i);
+                if (TransportType.SAILING.equals(method.getType())) addSailingSteps(steps, method, duration, i);
                 else {
                     List<String> callouts = itemCallouts(plugin, route, from, to);
                     String text = methodText(method);
@@ -167,8 +165,7 @@ final class RouteDirections {
                 boolean isDoor = isDoorway(object);
                 // Advisory note from the transport data ("fire arrow needed", "can fail") — the
                 // route is offered regardless; the player just gets told what to expect.
-                if (object.getNote() != null)
-                    text += " — " + object.getNote();
+                if (object.getNote() != null) text += " — " + object.getNote();
                 // Doors carry the door flag (closed-state gated); every other object transport
                 // (climbs, agility shortcuts, tunnels) is an obstacle the player must click to
                 // cross, so the path beyond it is blocked until used.
@@ -209,11 +206,9 @@ final class RouteDirections {
      * keep the estimates above.
      */
     private static List<Step> alignedToPathCosts(List<Step> steps, List<PathStep> path) {
-        if (path.isEmpty())
-            return steps;
+        if (path.isEmpty()) return steps;
         for (PathStep step : path) {
-            if (step.getCost() == PathStep.UNKNOWN_COST)
-                return steps;
+            if (step.getCost() == PathStep.UNKNOWN_COST) return steps;
         }
         List<Step> aligned = new ArrayList<>(steps.size());
         for (Step step : steps) {
@@ -257,8 +252,7 @@ final class RouteDirections {
         for (Transport transport : plugin.getPathfinderConfig()
             .transportsOnEdge(from.getPackedPosition(), to.getPackedPosition())) {
             int coins = coinsOf(plugin, transport);
-            if (coins > 0)
-                fare = Math.min(fare, coins);
+            if (coins > 0) fare = Math.min(fare, coins);
         }
         return fare == Integer.MAX_VALUE ? "" : " — " + fare + " gp fare";
     }
@@ -271,20 +265,17 @@ final class RouteDirections {
     /** The fare the player actually pays: the listed coins scaled by the charter discount. */
     private static int coinsOf(ShortestPathPlugin plugin, Transport transport) {
         int base = coinsOf(transport);
-        if (base <= 0 || plugin == null || plugin.getPathfinderConfig() == null)
-            return base;
+        if (base <= 0 || plugin == null || plugin.getPathfinderConfig() == null) return base;
         // A mocked config answers 0: treat anything outside 1..99 as no discount.
         return PathfinderConfig.scaleCoins(base, plugin.getPathfinderConfig().farePercent(transport));
     }
 
     private static int coinsOf(Transport transport) {
-        if (transport.getItemRequirements() == null)
-            return 0;
+        if (transport.getItemRequirements() == null) return 0;
         for (ItemRequirement requirement
             : transport.getItemRequirements().getRequirements()) {
             for (int itemId : requirement.getItemIds()) {
-                if (itemId == COINS_ITEM_ID)
-                    return requirement.getQuantity();
+                if (itemId == COINS_ITEM_ID) return requirement.getQuantity();
             }
         }
         return 0;
@@ -293,15 +284,13 @@ final class RouteDirections {
     private static Transport findObjectTransport(ShortestPathPlugin plugin, PathStep from, PathStep to) {
         Set<Transport> candidates = plugin.transportsForEdge(from, to);
         for (Transport transport : candidates) {
-            if (objectText(transport) != null)
-                return transport;
+            if (objectText(transport) != null) return transport;
         }
         return null;
     }
 
     private static void flushWalk(List<Step> steps, int walk, int legStart, int endIndex) {
-        if (walk <= 0)
-            return;
+        if (walk <= 0) return;
         // No coordinates or tile counts: they mean nothing to the player. The leg's endpoint is
         // marked in the world instead (section marker / destination pulse), the next step names
         // what's there, and the time column already sizes the leg.
@@ -367,11 +356,9 @@ final class RouteDirections {
     private static String fairyRingLabel(String displayInfo) {
         StringBuilder sb = new StringBuilder();
         for (String hop : displayInfo.split(" - ")) {
-            if (sb.length() > 0)
-                sb.append(" → ");
+            if (sb.length() > 0) sb.append(" → ");
             String code = hop.replace(" ", "");
-            if (code.length() > 3)
-                code = code.charAt(0) + code.substring(1).toLowerCase(Locale.ROOT);
+            if (code.length() > 3) code = code.charAt(0) + code.substring(1).toLowerCase(Locale.ROOT);
             sb.append(code);
         }
         return sb.toString();
@@ -399,8 +386,7 @@ final class RouteDirections {
      */
     private static List<String> itemCallouts(ShortestPathPlugin plugin, RouteOption route, PathStep from, PathStep to) {
         Client client = plugin.getClient();
-        if (client == null)
-            return List.of();
+        if (client == null) return List.of();
         Map<Integer, Integer> carried = BankPickupRequirements.collectPlayerItems(client);
         Set<Transport> rows = EdgeTransports.forRouteEdge(plugin.getPathfinderConfig(), route, from, to);
         // A canoe paddled with the axe stored at the stations: say what the route is counting on.
@@ -409,13 +395,11 @@ final class RouteDirections {
                 return List.of("Axe stored at the canoe station");
         RouteItemCue cue = RouteItemCue.ofStep(rows,
             client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1, carried);
-        if (cue == null)
-            return List.of();
+        if (cue == null) return List.of();
         Set<Integer> worn = new HashSet<>();
         ItemContainer equipment = client.getItemContainer(InventoryID.WORN);
         if (equipment != null)
-            for (Item item : equipment.getItems())
-                worn.add(item.getId());
+            for (Item item : equipment.getItems()) worn.add(item.getId());
         return cue.callouts(carried, worn, plugin::wornOnly, id -> client.getItemDefinition(id).getName());
     }
 
@@ -429,15 +413,12 @@ final class RouteDirections {
         for (Transport connector : route.getBankTransports()) {
             String label = objectText(connector);
             String line = pickupLine(plugin, List.of(connector), label == null ? "the way" : label);
-            if (line != null && !details.contains(line))
-                details.add(line);
+            if (line != null && !details.contains(line)) details.add(line);
         }
         for (TeleportMethod method : route.getMethods()) {
-            if (!route.getBankMethods().contains(method))
-                continue;
+            if (!route.getBankMethods().contains(method)) continue;
             String line = pickupLineFor(plugin, route, method);
-            if (line != null && !details.contains(line))
-                details.add(line);
+            if (line != null && !details.contains(line)) details.add(line);
         }
         // The fairy-ring staff is a SPECIAL requirement (hasRequiredItems' Dramen/Lunar case),
         // carried on no ring row — so the loops above name nothing for a bank-gated ring and
@@ -457,8 +438,7 @@ final class RouteDirections {
         if (bankedRing != null && plugin.getClient()
             .getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1) {
             String line = bankedStaffName(plugin) + " — " + joinLabels(Set.of(bankedRing));
-            if (!details.contains(line))
-                details.add(line);
+            if (!details.contains(line)) details.add(line);
         }
         return details;
     }
@@ -471,8 +451,7 @@ final class RouteDirections {
                 for (Item item : bank) {
                     if (item.getId() == staffId && item.getQuantity() > 0) {
                         String name = plugin.getClient().getItemDefinition(staffId).getName();
-                        if (name != null && !name.isEmpty() && !"null".equals(name))
-                            return name;
+                        if (name != null && !name.isEmpty() && !"null".equals(name)) return name;
                     }
                 }
             }
@@ -486,11 +465,9 @@ final class RouteDirections {
         List<Integer> edges = route.getMethodEdgeIndexes();
         List<PathStep> path = route.getPath();
         for (int m = 0; m < methods.size() && m < edges.size(); m++) {
-            if (!methods.get(m).equals(method))
-                continue;
+            if (!methods.get(m).equals(method)) continue;
             int edge = edges.get(m);
-            if (path == null || edge <= 0 || edge >= path.size())
-                continue;
+            if (path == null || edge <= 0 || edge >= path.size()) continue;
             List<Transport> rows = plugin.getPathfinderConfig().transportsOnEdge(
                 path.get(edge - 1).getPackedPosition(), path.get(edge).getPackedPosition());
             if (rows.isEmpty()) {
@@ -498,8 +475,7 @@ final class RouteDirections {
                     path.get(edge).getPackedPosition(), method.getDisplayInfo());
             }
             String line = pickupLine(plugin, rows, joinLabels(Set.of(method)));
-            if (line != null)
-                return line;
+            if (line != null) return line;
         }
         return null;
     }
@@ -508,25 +484,20 @@ final class RouteDirections {
     private static String pickupLine(ShortestPathPlugin plugin, List<Transport> rows, String label) {
         for (Transport row : rows) {
             int coins = coinsOf(plugin, row);
-            if (coins > 0)
-                return coins + " gp — " + label + " fare";
-            if (row.getItemRequirements() == null)
-                continue;
+            if (coins > 0) return coins + " gp — " + label + " fare";
+            if (row.getItemRequirements() == null) continue;
             List<String> names = new ArrayList<>();
             for (ItemRequirement requirement
                 : row.getItemRequirements().getRequirements()) {
                 int[] ids = requirement.getItemIds();
-                if (ids.length == 0)
-                    continue;
+                if (ids.length == 0) continue;
                 // The first alternative is the data's canonical choice for this slot.
                 String name = plugin.getClient().getItemDefinition(ids[0]).getName();
-                if (name == null || name.isEmpty() || "null".equals(name))
-                    continue;
+                if (name == null || name.isEmpty() || "null".equals(name)) continue;
                 names.add(requirement.getQuantity() > 1
                     ? name + " (" + requirement.getQuantity() + ")" : name);
             }
-            if (!names.isEmpty())
-                return String.join(", ", names) + " — " + label;
+            if (!names.isEmpty()) return String.join(", ", names) + " — " + label;
         }
         return null;
     }
@@ -556,8 +527,7 @@ final class RouteDirections {
     private static String joinLabels(Set<TeleportMethod> methods) {
         StringBuilder sb = new StringBuilder();
         for (TeleportMethod method : methods) {
-            if (sb.length() > 0)
-                sb.append(", ");
+            if (sb.length() > 0) sb.append(", ");
             sb.append(method.label());
         }
         return sb.toString();
@@ -584,8 +554,7 @@ final class RouteDirections {
 
     static String objectText(Transport transport) {
         String objectInfo = transport.getObjectInfo();
-        if (objectInfo == null || objectInfo.isEmpty())
-            return null;
+        if (objectInfo == null || objectInfo.isEmpty()) return null;
         int lastSpace = objectInfo.lastIndexOf(' ');
         if (lastSpace > 0 && objectInfo.substring(lastSpace + 1).chars().allMatch(Character::isDigit))
             return objectInfo.substring(0, lastSpace);

@@ -43,24 +43,19 @@ import net.runelite.client.game.SpriteManager;
             spriteResizeable = null;
         }
 
-        if (minimapWidget == null || minimapWidget.isHidden())
-            return null;
+        if (minimapWidget == null || minimapWidget.isHidden()) return null;
 
         if (client.isResized()) {
-            if (clipResizeable != null)
-                return clipResizeable;
-            if (spriteResizeable == null)
-                spriteResizeable = spriteManager.getSprite(SpriteID.RESIZE_MAP_MASK, 0);
+            if (clipResizeable != null) return clipResizeable;
+            if (spriteResizeable == null) spriteResizeable = spriteManager.getSprite(SpriteID.RESIZE_MAP_MASK, 0);
             if (spriteResizeable != null) {
                 clipResizeable = polygonOf(spriteResizeable, rectangle.x, rectangle.y);
                 return clipResizeable;
             }
             return simpleArea();
         }
-        if (clipFixed != null)
-            return clipFixed;
-        if (spriteFixed == null)
-            spriteFixed = spriteManager.getSprite(SpriteID.FIXED_MAP_MASK, 0);
+        if (clipFixed != null) return clipFixed;
+        if (spriteFixed == null) spriteFixed = spriteManager.getSprite(SpriteID.FIXED_MAP_MASK, 0);
         if (spriteFixed != null) {
             clipFixed = polygonOf(spriteFixed, rectangle.x, rectangle.y);
             return clipFixed;
@@ -80,8 +75,7 @@ import net.runelite.client.game.SpriteManager;
     private Shape simpleArea() {
         Widget minimapDrawArea = drawWidget();
 
-        if (minimapDrawArea == null || minimapDrawArea.isHidden())
-            return null;
+        if (minimapDrawArea == null || minimapDrawArea.isHidden()) return null;
 
         Rectangle bounds = minimapDrawArea.getBounds();
 
@@ -112,16 +106,14 @@ import net.runelite.client.game.SpriteManager;
                     outsideColour = colour;
                     previousColour = colour;
                 }
-                if (!colour.equals(outsideColour) && previousColour.equals(outsideColour))
-                    points.add(new Point(x, y));
+                if (!colour.equals(outsideColour) && previousColour.equals(outsideColour)) points.add(new Point(x, y));
                 if ((colour.equals(outsideColour) || x == (width - 1)) && !previousColour.equals(outsideColour))
                     points.add(0, new Point(x, y));
                 previousColour = colour;
             }
         }
         Polygon polygon = new Polygon();
-        for (Point point : points)
-            polygon.addPoint(point.x + offsetX, point.y + offsetY);
+        for (Point point : points) polygon.addPoint(point.x + offsetX, point.y + offsetY);
         return polygon;
     }
 }

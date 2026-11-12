@@ -84,11 +84,9 @@ final class NoticesView extends JPanel {
      */
     static Status status(boolean calculating, boolean anyRoute, boolean allStopShort, boolean missingUnlocks,
         boolean hasTarget, boolean arrived, boolean arrivedImmediately, boolean allMode) {
-        if (calculating)
-            return null;
+        if (calculating) return null;
         if (anyRoute) {
-            if (!allStopShort)
-                return null;
+            if (!allStopShort) return null;
             // Plan step N12: the generator tells "reachable with everything, not with what you
             // have" from "no known route" (a sealed tile, or a gap in the map data).
             return new Status(missingUnlocks
@@ -113,16 +111,14 @@ final class NoticesView extends JPanel {
     /** Rebuilds the strip for the current routes and the plugin's state. EDT. */
     void show(List<RouteOption> routes, boolean calculating, boolean hasTarget) {
         // A live destination (or its routes) supersedes any lingering arrival banner.
-        if (hasTarget)
-            showingArrival = false;
+        if (hasTarget) showingArrival = false;
         removeAll();
         Status status = status(calculating, !routes.isEmpty(),
             routes.stream().noneMatch(plugin::routeReachesTarget),
             plugin.getUnreachableCause() == AlternativeRoutesService.UnreachableCause.MISSING_UNLOCKS,
             hasTarget, showingArrival, arrivalImmediate,
             plugin.getRoutesMode() == AlternativeRoutesMode.ALL_EVERYTHING);
-        if (status != null)
-            add(banner(icon(status.kind), status.text, accent(status.kind)));
+        if (status != null) add(banner(icon(status.kind), status.text, accent(status.kind)));
 
         // The sync hints (house, spirit trees, balloon logs) live here at the top: inside their
         // (collapsed) sections they were easy to miss.
@@ -153,8 +149,7 @@ final class NoticesView extends JPanel {
         }
         // Log storage running low at the balloon stations (smart mode, synced, unlocked routes only).
         List<String> lowLogs = plugin.getBalloonLowLogTypes();
-        if (!lowLogs.isEmpty())
-            warnings.add(balloonLowBanner.apply(lowLogs));
+        if (!lowLogs.isEmpty()) warnings.add(balloonLowBanner.apply(lowLogs));
         ShortestPathConfig cfg = plugin.getGpsConfig();
         if (cfg.usePoh() && cfg.pohSmartDetect() && !plugin.isPohScanned()) {
             warnings.add(banner(RouteIcons.BANNER_WARNING,
@@ -176,8 +171,7 @@ final class NoticesView extends JPanel {
         }
         if (!warnings.isEmpty()) {
             boolean hidden = cfg.hideWarningBanners();
-            if (getComponentCount() > 0)
-                add(verticalGap(4));
+            if (getComponentCount() > 0) add(verticalGap(4));
             add(warningToggleRow(warnings.size(), hidden));
             if (!hidden) {
                 for (JPanel warning : warnings) {

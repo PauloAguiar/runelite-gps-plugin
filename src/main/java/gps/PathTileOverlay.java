@@ -164,8 +164,7 @@ public class PathTileOverlay extends Overlay {
                     || directionChanges(currentStep.getPackedPosition(), nextStep.getPackedPosition(),
                         path.get(i + 1).getPackedPosition());
                 double phase = (i - waveOffset) % WAVE_SPACING;
-                if (phase < 0)
-                    phase += WAVE_SPACING;
+                if (phase < 0) phase += WAVE_SPACING;
                 double waveDistance = Math.min(phase, WAVE_SPACING - phase);
                 if (cullByScene
                     && !nearScene(currentStep.getPackedPosition(), sceneMinX, sceneMinY, sceneMaxX, sceneMaxY)
@@ -184,11 +183,9 @@ public class PathTileOverlay extends Overlay {
             // GPS decorations for the displayed route: a small waypoint dot where each section ends
             // (walk up to here, then do the next step) and a growing green pulse on the destination.
             RouteOption displayedRoute = plugin.getDisplayedRoute();
-            if (displayedRoute != null && plugin.display().showDirections)
-                drawGpsMarkers(graphics, displayedRoute);
+            if (displayedRoute != null && plugin.display().showDirections) drawGpsMarkers(graphics, displayedRoute);
 
-            if (plugin.isPathUnreachable())
-                drawLabelOnPlayerTile(graphics, plugin.display().unreachableText);
+            if (plugin.isPathUnreachable()) drawLabelOnPlayerTile(graphics, plugin.display().unreachableText);
         }
 
         return null;
@@ -202,14 +199,11 @@ public class PathTileOverlay extends Overlay {
      */
     private String closedDoorText(Transport transport) {
         String objectInfo = transport.getObjectInfo();
-        if (objectInfo == null || !RouteDirections.isDoorway(transport))
-            return null;
+        if (objectInfo == null || !RouteDirections.isDoorway(transport)) return null;
         int lastSpace = objectInfo.lastIndexOf(' ');
-        if (lastSpace <= 0)
-            return null;
+        if (lastSpace <= 0) return null;
         String idText = objectInfo.substring(lastSpace + 1);
-        if (idText.isEmpty() || !idText.chars().allMatch(Character::isDigit))
-            return null;
+        if (idText.isEmpty() || !idText.chars().allMatch(Character::isDigit)) return null;
         int objectId = Integer.parseInt(idText);
         if (objectPresent(transport.getOrigin(), objectId) || objectPresent(transport.getDestination(), objectId))
             return objectInfo.substring(0, lastSpace);
@@ -223,8 +217,7 @@ public class PathTileOverlay extends Overlay {
     private void drawGpsMarkers(Graphics2D graphics, RouteOption route) {
         List<RouteDirections.Step> steps = plugin.getRouteDirections(route);
         List<PathStep> path = route.getPath();
-        if (steps.isEmpty() || path.isEmpty())
-            return;
+        if (steps.isEmpty() || path.isEmpty()) return;
         int destinationIndex = path.size() - 1;
         Set<Integer> marked = new HashSet<>();
         for (RouteDirections.Step step : steps) {
@@ -233,8 +226,7 @@ public class PathTileOverlay extends Overlay {
                 continue; // the destination gets the pulse, not a dot
             }
             int packed = path.get(end).getPackedPosition();
-            if (marked.add(packed))
-                drawSectionMarker(graphics, packed);
+            if (marked.add(packed)) drawSectionMarker(graphics, packed);
         }
         // A round trip's halfway point (the bank) pulses GOLD while the outbound leg is being
         // walked — reach it and the beacon vanishes, leaving the green home pulse for the way back.
@@ -257,11 +249,9 @@ public class PathTileOverlay extends Overlay {
         PrimitiveIntList points = toLocalInstance(client, location);
         for (int i = 0; i < points.size(); i++) {
             LocalPoint lp = toLocalPoint(client, points.get(i));
-            if (lp == null)
-                continue;
+            if (lp == null) continue;
             Polygon poly = Perspective.getCanvasTilePoly(client, lp);
-            if (poly == null)
-                continue;
+            if (poly == null) continue;
             final double cx = poly.getBounds().getCenterX();
             final double cy = poly.getBounds().getCenterY();
             graphics.setColor(Color.WHITE);
@@ -291,8 +281,7 @@ public class PathTileOverlay extends Overlay {
         final Player player = client.getLocalPlayer();
         final int recalc = plugin.getRecalculateDistance();
         final List<PathStep> path = plugin.getDisplayPath();
-        if (player == null || recalc < 0 || path == null || path.isEmpty())
-            return;
+        if (player == null || recalc < 0 || path == null || path.isEmpty()) return;
         final int warn = plugin.getOffRouteWarnDistance();
         final int centre = fromLocalInstance(client, player);
         final int cx = unpackWorldX(centre);
@@ -321,17 +310,14 @@ public class PathTileOverlay extends Overlay {
                     int dmin = Integer.MAX_VALUE;
                     for (int k = 0; k < nearCount; k++) {
                         final int dist = distanceBetween(tile, near[k]);
-                        if (dist < dmin)
-                            dmin = dist;
+                        if (dist < dmin) dmin = dist;
                         if (dmin < warn) {
                             break; // interior to the warning band — not a boundary tile
                         }
                     }
                     // Only the two contour lines; the recalc boundary wins a tie with the warn boundary.
-                    if (dmin == recalc)
-                        highlightWorldTile(graphics, tile, recalcFill, recalcLine);
-                    else if (dmin == warn)
-                        highlightWorldTile(graphics, tile, warnFill, warnLine);
+                    if (dmin == recalc) highlightWorldTile(graphics, tile, recalcFill, recalcLine);
+                    else if (dmin == warn) highlightWorldTile(graphics, tile, warnFill, warnLine);
                 }
             }
         }
@@ -350,11 +336,9 @@ public class PathTileOverlay extends Overlay {
         final PrimitiveIntList points = toLocalInstance(client, location);
         for (int i = 0; i < points.size(); i++) {
             final LocalPoint lp = toLocalPoint(client, points.get(i));
-            if (lp == null)
-                continue;
+            if (lp == null) continue;
             final Polygon poly = Perspective.getCanvasTilePoly(client, lp);
-            if (poly == null)
-                continue;
+            if (poly == null) continue;
             graphics.setColor(fill);
             graphics.fill(poly);
             graphics.setColor(outline);
@@ -370,8 +354,7 @@ public class PathTileOverlay extends Overlay {
     private void drawArrivalTiles(Graphics2D graphics) {
         final Color fill = new Color(0x3C, 0xC8, 0x6A, 60);
         final Color outline = new Color(0x3C, 0xC8, 0x6A, 170);
-        for (int tile : plugin.getArrivalTiles())
-            highlightWorldTile(graphics, tile, fill, outline);
+        for (int tile : plugin.getArrivalTiles()) highlightWorldTile(graphics, tile, fill, outline);
     }
 
     // The two pulse colours: green marks the journey's end; gold marks a round trip's turnaround
@@ -388,11 +371,9 @@ public class PathTileOverlay extends Overlay {
         PrimitiveIntList points = toLocalInstance(client, location);
         for (int i = 0; i < points.size(); i++) {
             LocalPoint lp = toLocalPoint(client, points.get(i));
-            if (lp == null)
-                continue;
+            if (lp == null) continue;
             Polygon poly = Perspective.getCanvasTilePoly(client, lp);
-            if (poly == null)
-                continue;
+            if (poly == null) continue;
             final double cx = poly.getBounds().getCenterX();
             final double cy = poly.getBounds().getCenterY();
             final double tileWidth = Math.max(8, poly.getBounds().getWidth());
@@ -409,8 +390,7 @@ public class PathTileOverlay extends Overlay {
                     / (double) period;
                 double radius = tileWidth * (0.25 + phase * 1.1);
                 int alpha = (int) Math.round(180 * (1.0 - phase));
-                if (alpha <= 0)
-                    continue;
+                if (alpha <= 0) continue;
                 graphics.setColor(new Color(colour.getRed(), colour.getGreen(), colour.getBlue(), alpha));
                 graphics.draw(new Ellipse2D.Double(
                     cx - radius, cy - radius * flatten, radius * 2, radius * 2 * flatten));
@@ -439,21 +419,18 @@ public class PathTileOverlay extends Overlay {
         PrimitiveIntList starts = toLocalInstance(client, startLoc);
         PrimitiveIntList ends = toLocalInstance(client, endLoc);
 
-        if (starts.isEmpty() || ends.isEmpty())
-            return;
+        if (starts.isEmpty() || ends.isEmpty()) return;
 
         int start = starts.get(0);
         int end = ends.get(0);
 
         final int z = client.getTopLevelWorldView().getPlane();
-        if (unpackWorldPlane(start) != z)
-            return;
+        if (unpackWorldPlane(start) != z) return;
 
         LocalPoint lpStart = toLocalPoint(client, start);
         LocalPoint lpEnd = toLocalPoint(client, end);
 
-        if (lpStart == null || lpEnd == null)
-            return;
+        if (lpStart == null || lpEnd == null) return;
 
         final int startHeight = Perspective.getTileHeight(client, lpStart, z);
         final int endHeight = Perspective.getTileHeight(client, lpEnd, z);
@@ -461,8 +438,7 @@ public class PathTileOverlay extends Overlay {
         Point p1 = Perspective.localToCanvas(client, lpStart.getX(), lpStart.getY(), startHeight);
         Point p2 = Perspective.localToCanvas(client, lpEnd.getX(), lpEnd.getY(), endHeight);
 
-        if (p1 == null || p2 == null)
-            return;
+        if (p1 == null || p2 == null) return;
 
         Line2D.Double line = new Line2D.Double(p1.getX(), p1.getY(), p2.getX(), p2.getY());
 
@@ -471,8 +447,7 @@ public class PathTileOverlay extends Overlay {
             // Teleport/transport jumps: a thin dashed hint, like the world map draws them —
             // a full solid beam across the scene reads as a walkable line, which it isn't.
             graphics.setStroke(JUMP_STROKE);
-        else
-            graphics.setStroke(LINE_STROKE);
+        else graphics.setStroke(LINE_STROKE);
         graphics.draw(line);
         if (arrowHead && plugin.display().showPathArrows)
             ArrowHead.draw(graphics, p1.getX(), p1.getY(), p2.getX(), p2.getY(), 12);
@@ -490,8 +465,7 @@ public class PathTileOverlay extends Overlay {
     }
 
     private int drawLabelAtCanvasPoint(Graphics2D graphics, Point point, String text, int verticalOffset) {
-        if (point == null || text == null || text.isEmpty())
-            return 0;
+        if (point == null || text == null || text.isEmpty()) return 0;
 
         double height = drawLabel(graphics, point, text, verticalOffset);
 
@@ -505,12 +479,10 @@ public class PathTileOverlay extends Overlay {
         PrimitiveIntList points = toLocalInstance(client, location);
         for (int i = 0; i < points.size(); i++) {
             LocalPoint lp = toLocalPoint(client, points.get(i));
-            if (lp == null)
-                continue;
+            if (lp == null) continue;
 
             Point p = Perspective.localToCanvas(client, lp, client.getTopLevelWorldView().getPlane());
-            if (p == null)
-                continue;
+            if (p == null) continue;
 
             // an instanced tile has a copy per chunk: each copy gets the label at the same height
             used = Math.max(used, base + drawLabelAtCanvasPoint(graphics, p, text, base));
@@ -528,11 +500,9 @@ public class PathTileOverlay extends Overlay {
         PrimitiveIntList points = toLocalInstance(client, location);
         for (int i = 0; i < points.size(); i++) {
             LocalPoint lp = toLocalPoint(client, points.get(i));
-            if (lp == null)
-                continue;
+            if (lp == null) continue;
             Polygon poly = Perspective.getCanvasTilePoly(client, lp);
-            if (poly == null || poly.npoints == 0)
-                continue;
+            if (poly == null || poly.npoints == 0) continue;
             final double cx = poly.getBounds().getCenterX();
             final double cy = poly.getBounds().getCenterY();
 
@@ -548,16 +518,13 @@ public class PathTileOverlay extends Overlay {
                     / (double) period;
                 double scale = 1.0 + phase * 2.6;
                 int alpha = (int) Math.round(170 * (1.0 - phase));
-                if (alpha <= 0)
-                    continue;
+                if (alpha <= 0) continue;
                 Path2D ring = new Path2D.Double();
                 for (int v = 0; v < poly.npoints; v++) {
                     double x = cx + (poly.xpoints[v] - cx) * scale;
                     double y = cy + (poly.ypoints[v] - cy) * scale;
-                    if (v == 0)
-                        ring.moveTo(x, y);
-                    else
-                        ring.lineTo(x, y);
+                    if (v == 0) ring.moveTo(x, y);
+                    else ring.lineTo(x, y);
                 }
                 ring.closePath();
                 graphics.setColor(new Color(base.getRed(), base.getGreen(), base.getBlue(), alpha));
@@ -580,8 +547,7 @@ public class PathTileOverlay extends Overlay {
     }
 
     private void drawLabelOnPlayerTile(Graphics2D graphics, String text) {
-        if (client.getLocalPlayer() == null)
-            return;
+        if (client.getLocalPlayer() == null) return;
 
         LocalPoint local = client.getLocalPlayer().getLocalLocation();
         int tile = fromLocalInstance(client, local);
@@ -612,8 +578,7 @@ public class PathTileOverlay extends Overlay {
             return;
         }
 
-        if (plugin.isPathUnreachable())
-            return;
+        if (plugin.isPathUnreachable()) return;
         int locationEnd = nextStep.getPackedPosition();
 
         // Workaround for weird pathing inside PoH to instead show info on the player
@@ -631,24 +596,20 @@ public class PathTileOverlay extends Overlay {
         // When inside POH, only show the POH exit info once (not per-transport)
         if (transportAndPlayerInsidePoh) {
             String pohExitInfo = PlayerOwnedHouse.exitInfo(locationEnd, path, pathIndex, plugin::transportsForEdge);
-            if (pohExitInfo == null)
-                return;
+            if (pohExitInfo == null) return;
 
             // Find the display name of the teleport that brought us to POH using bank-aware
             // lookup
             String text = null;
             for (Transport transport : candidateTransports) {
                 text = transport.getDisplayInfo();
-                if (text != null && !text.isEmpty())
-                    break;
+                if (text != null && !text.isEmpty()) break;
             }
-            if (text == null || text.isEmpty())
-                return;
+            if (text == null || text.isEmpty()) return;
             text = text + " (Exit: " + pohExitInfo + ")";
 
             Point p = Perspective.localToCanvas(client, playerLocalPoint, client.getTopLevelWorldView().getPlane());
-            if (p == null)
-                return;
+            if (p == null) return;
 
             drawLabel(graphics, p, text, 0);
             return;
@@ -682,13 +643,11 @@ public class PathTileOverlay extends Overlay {
             ).phrases;
             if (!bankPickupItems.isEmpty()) {
                 String pickupText = "Pick up: " + String.join(", ", bankPickupItems);
-                if (hintedPickups.add(pickupText))
-                    drawLabelAtPackedLocation(graphics, location, pickupText);
+                if (hintedPickups.add(pickupText)) drawLabelAtPackedLocation(graphics, location, pickupText);
 
                 // By default, bank pickup info replaces the default transport hint text;
                 // enable the option to show both
-                if (!plugin.display().showBankPickupInfo)
-                    return;
+                if (!plugin.display().showBankPickupInfo) return;
             }
         }
 
@@ -711,10 +670,8 @@ public class PathTileOverlay extends Overlay {
         }
         // Also pulse when the DISPLAYED route teleports on this edge but the config-derived lookup
         // above missed it — a charged jewellery leg under a "perm-only" teleport-item setting.
-        if (!teleportEdge)
-            teleportEdge = plugin.displayedRouteTeleportsAt(pathIndex);
-        if (teleportEdge && plugin.display().showTeleportPulse)
-            drawTeleportPulse(graphics, location);
+        if (!teleportEdge) teleportEdge = plugin.displayedRouteTeleportsAt(pathIndex);
+        if (teleportEdge && plugin.display().showTeleportPulse) drawTeleportPulse(graphics, location);
 
         Set<String> shownTexts = new HashSet<>();
         for (Transport transport : transportsToShow) {
@@ -726,22 +683,19 @@ public class PathTileOverlay extends Overlay {
                 // use them. Doors are left to the closed-door hint below — an open door needs no
                 // label.
                 String objectText = RouteDirections.objectText(transport);
-                if (objectText != null && !RouteDirections.isDoorway(transport))
-                    text = objectText;
+                if (objectText != null && !RouteDirections.isDoorway(transport)) text = objectText;
             }
             if (text == null || text.isEmpty())
                 // Doors/gates: hint only while the door is actually closed (the closed object still
                 // stands in the scene) — an open door needs no cue, and labelling every doorway on
                 // the path would be noise.
                 text = closedDoorText(transport);
-            if (text == null || text.isEmpty() || !shownTexts.add(text))
-                continue;
+            if (text == null || text.isEmpty() || !shownTexts.add(text)) continue;
 
             // Check if this transport goes to POH - if so, look ahead to find the exit
             // transport
             String pohExitInfo = PlayerOwnedHouse.exitInfo(locationEnd, path, pathIndex, plugin::transportsForEdge);
-            if (pohExitInfo != null)
-                text = text + " (Exit: " + pohExitInfo + ")";
+            if (pohExitInfo != null) text = text + " (Exit: " + pohExitInfo + ")";
 
             drawLabelAtPackedLocation(graphics, location, text);
         }
@@ -754,8 +708,7 @@ public class PathTileOverlay extends Overlay {
             TeleportMethod routeMethod = plugin.displayedRouteMethodAt(pathIndex);
             if (routeMethod != null && routeMethod.getType() != null && routeMethod.getType().isTeleport()) {
                 String label = routeMethod.label();
-                if (label != null && !label.isEmpty())
-                    drawLabelAtPackedLocation(graphics, location, label);
+                if (label != null && !label.isEmpty()) drawLabelAtPackedLocation(graphics, location, label);
             }
         }
     }

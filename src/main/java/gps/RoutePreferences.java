@@ -44,19 +44,15 @@ import net.runelite.client.config.ConfigManager;
 
     /** The method's tier: EXCLUDED when in the exclusion set, else its stored tier or NORMAL. */
     MethodPriority priorityOf(TeleportMethod method) {
-        if (exclusions.contains(method))
-            return MethodPriority.EXCLUDED;
+        if (exclusions.contains(method)) return MethodPriority.EXCLUDED;
         return priorities.getOrDefault(method, MethodPriority.NORMAL);
     }
 
     /** Stores a ranking tier (NORMAL removes the entry) and persists. EXCLUDED is not a stored tier. */
     void setTier(TeleportMethod method, MethodPriority tier) {
-        if (tier == MethodPriority.EXCLUDED)
-            throw new IllegalArgumentException("exclusion is not a stored tier");
-        if (tier == MethodPriority.NORMAL)
-            priorities.remove(method);
-        else
-            priorities.put(method, tier);
+        if (tier == MethodPriority.EXCLUDED) throw new IllegalArgumentException("exclusion is not a stored tier");
+        if (tier == MethodPriority.NORMAL) priorities.remove(method);
+        else priorities.put(method, tier);
         save();
     }
 
@@ -86,13 +82,11 @@ import net.runelite.client.config.ConfigManager;
      * wins ties up to that many seconds).
      */
     int adjustmentSeconds(RouteOption route) {
-        if (route.getMethods().isEmpty())
-            return -walkPreferenceSeconds;
+        if (route.getMethods().isEmpty()) return -walkPreferenceSeconds;
         int seconds = 0;
         for (TeleportMethod method : route.getMethods())
             seconds += priorities.getOrDefault(method, MethodPriority.NORMAL).adjustSeconds;
-        if (route.isViaBank())
-            seconds -= bankPreferenceSeconds;
+        if (route.isViaBank()) seconds -= bankPreferenceSeconds;
         return seconds;
     }
 

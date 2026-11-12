@@ -139,8 +139,7 @@ public class ShortestPathPanel extends PluginPanel {
         notices.show(cachedRoutes, cachedCalculating, cachedHasTarget);
         // The Travel options slot is rebuilt only when its inputs changed: streamed route updates
         // leave it untouched so its toggles stay responsive while a generation is running.
-        if (travelOptions.needsRebuild(cachedCatalog, cachedExclusions, cachedUnavailable))
-            refreshCatalog();
+        if (travelOptions.needsRebuild(cachedCatalog, cachedExclusions, cachedUnavailable)) refreshCatalog();
         // The highlighted card is the route drawn on the map: the explicitly selected one, or
         // route 1 by default.
         routeList.show(cachedRoutes, plugin.getDisplayedRoute(), cachedCalculating, cachedHasTarget, cachedUnavailable);

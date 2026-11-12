@@ -43,13 +43,10 @@ public final class DestinationRequirements {
      * @return a merged requirement when the same tile appears on multiple rows (max skills, union sets).
      */
     public static DestinationRequirements merge(DestinationRequirements a, DestinationRequirements b) {
-        if (a == null || a.isEmpty())
-            return b != null ? b : EMPTY;
-        if (b == null || b.isEmpty())
-            return a;
+        if (a == null || a.isEmpty()) return b != null ? b : EMPTY;
+        if (b == null || b.isEmpty()) return a;
         int[] skills = new int[Skill.values().length + 3];
-        for (int i = 0; i < skills.length; i++)
-            skills[i] = Math.max(a.skillLevels[i], b.skillLevels[i]);
+        for (int i = 0; i < skills.length; i++) skills[i] = Math.max(a.skillLevels[i], b.skillLevels[i]);
         Set<Quest> q = new HashSet<>(a.quests);
         q.addAll(b.quests);
         Set<VarRequirement> vb = new HashSet<>(a.varbits);
@@ -60,13 +57,10 @@ public final class DestinationRequirements {
     }
 
     public boolean isEmpty() {
-        if (!quests.isEmpty())
-            return false;
-        if (!varbits.isEmpty() || !varPlayers.isEmpty())
-            return false;
+        if (!quests.isEmpty()) return false;
+        if (!varbits.isEmpty() || !varPlayers.isEmpty()) return false;
         for (int level : skillLevels) {
-            if (level > 0)
-                return false;
+            if (level > 0) return false;
         }
         return true;
     }

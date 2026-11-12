@@ -47,21 +47,17 @@ import lombok.Getter;
 
     /** Every variable id this requirement reads. */
     public List<Integer> ids() {
-        if (alternatives == null)
-            return List.of(id);
+        if (alternatives == null) return List.of(id);
         List<Integer> out = new ArrayList<>(alternatives.size());
-        for (VarRequirement clause : alternatives)
-            out.add(clause.id);
+        for (VarRequirement clause : alternatives) out.add(clause.id);
         return out;
     }
 
     /** Whether the requirement holds with the variables read through {@code lookup}. */
     public boolean checkWith(IntUnaryOperator lookup) {
-        if (alternatives == null)
-            return checkValue(lookup.applyAsInt(id));
+        if (alternatives == null) return checkValue(lookup.applyAsInt(id));
         for (VarRequirement clause : alternatives)
-            if (clause.checkValue(lookup.applyAsInt(clause.id)))
-                return true;
+            if (clause.checkValue(lookup.applyAsInt(clause.id))) return true;
         return false;
     }
 
@@ -88,13 +84,11 @@ import lombok.Getter;
     public boolean check(Map<Integer, Integer> values) {
         if (alternatives != null) {
             for (VarRequirement clause : alternatives)
-                if (clause.check(values))
-                    return true;
+                if (clause.check(values)) return true;
             return false;
         }
         Integer currentValue = values.get(id);
-        if (currentValue == null)
-            return false;
+        if (currentValue == null) return false;
         return checkValue(currentValue);
     }
 
@@ -127,8 +121,7 @@ import lombok.Getter;
     }
 
     @Override public String toString() {
-        if (alternatives != null)
-            return varType + "[any of " + alternatives + "]";
+        if (alternatives != null) return varType + "[any of " + alternatives + "]";
         return varType + "[" + id + " " + checkType.getCode() + " " + value + "]";
     }
 

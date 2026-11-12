@@ -23,8 +23,7 @@ import lombok.RequiredArgsConstructor;
     /** The hull for a hull-type varbit value, or null for a value this build does not know. */
     public static BoatHull fromVarbit(int value) {
         for (BoatHull hull : values()) {
-            if (hull.varbitValue == value)
-                return hull;
+            if (hull.varbitValue == value) return hull;
         }
         return null;
     }
@@ -32,8 +31,7 @@ import lombok.RequiredArgsConstructor;
     /** The hull for a persisted display name ("Raft"), or null for anything else. */
     public static BoatHull fromName(String name) {
         for (BoatHull hull : values()) {
-            if (hull.displayName.equals(name))
-                return hull;
+            if (hull.displayName.equals(name)) return hull;
         }
         return null;
     }

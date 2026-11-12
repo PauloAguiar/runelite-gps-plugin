@@ -38,8 +38,7 @@ public class WorldPointUtil {
      * {@code null}.
      */
     public static int packWorldPoint(WorldPoint point) {
-        if (point == null)
-            return -1;
+        if (point == null) return -1;
         return packWorldPoint(point.getX(), point.getY(), point.getPlane());
     }
 
@@ -190,8 +189,7 @@ public class WorldPointUtil {
         int diagonal) {
         final int dz = previousZ - currentZ;
 
-        if (dz != 0)
-            return Integer.MAX_VALUE;
+        if (dz != 0) return Integer.MAX_VALUE;
 
         return distanceBetween2D(previousX, previousY, currentX, currentY, diagonal);
     }
@@ -213,10 +211,8 @@ public class WorldPointUtil {
         final int dx = previousX - currentX;
         final int dy = previousY - currentY;
 
-        if (diagonal == CHEBYSHEV_DISTANCE_METRIC)
-            return Math.max(Math.abs(dx), Math.abs(dy));
-        else if (diagonal == MANHATTAN_DISTANCE_METRIC)
-            return Math.abs(dx) + Math.abs(dy);
+        if (diagonal == CHEBYSHEV_DISTANCE_METRIC) return Math.max(Math.abs(dx), Math.abs(dy));
+        else if (diagonal == MANHATTAN_DISTANCE_METRIC) return Math.abs(dx) + Math.abs(dy);
 
         return dx * dx + dy * dy;
     }
@@ -246,8 +242,7 @@ public class WorldPointUtil {
      */
     public static int distanceToArea(int packedPoint, WorldArea area) {
         final int plane = unpackWorldPlane(packedPoint);
-        if (area.getPlane() != plane)
-            return Integer.MAX_VALUE;
+        if (area.getPlane() != plane) return Integer.MAX_VALUE;
         return distanceToArea2D(packedPoint, area);
     }
 
@@ -305,23 +300,18 @@ public class WorldPointUtil {
      * "not an instance" when the world view isn't one.
      */
     public static String describeInstanceChunks(WorldView worldView) {
-        if (worldView == null || !worldView.isInstance())
-            return "not an instance";
+        if (worldView == null || !worldView.isInstance()) return "not an instance";
         int[][][] chunks = worldView.getInstanceTemplateChunks();
-        if (chunks == null)
-            return "no chunk data";
+        if (chunks == null) return "no chunk data";
         Set<Integer> seen = new HashSet<>();
         TreeSet<Integer> planes = new TreeSet<>();
         int minX = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, minY = Integer.MAX_VALUE, maxY = Integer.MIN_VALUE;
         for (int[][] planeChunks : chunks) {
-            if (planeChunks == null)
-                continue;
+            if (planeChunks == null) continue;
             for (int[] column : planeChunks) {
-                if (column == null)
-                    continue;
+                if (column == null) continue;
                 for (int chunkData : column) {
-                    if (chunkData == -1 || !seen.add(chunkData))
-                        continue;
+                    if (chunkData == -1 || !seen.add(chunkData)) continue;
                     int x = unpackChunkTemplateX(chunkData), y = unpackChunkTemplateY(chunkData);
                     minX = Math.min(minX, x);
                     maxX = Math.max(maxX, x);
@@ -331,11 +321,9 @@ public class WorldPointUtil {
                 }
             }
         }
-        if (seen.isEmpty())
-            return "all chunks empty";
+        if (seen.isEmpty()) return "all chunks empty";
         StringBuilder text = new StringBuilder(seen.size() + " template chunks, x " + minX + ".." + maxX + ", y " + minY + ".." + maxY + ", planes");
-        for (int plane : planes)
-            text.append(' ').append(plane);
+        for (int plane : planes) text.append(' ').append(plane);
         return text.toString();
     }
 
@@ -350,11 +338,9 @@ public class WorldPointUtil {
             // RuneLite's own fromLocalInstance, which stays correct on the open sea
             // (port-tasks' path matching depends on the same call mid-sail).
             WorldEntity worldEntity = client.getTopLevelWorldView().worldEntities().byIndex(worldViewId);
-            if (worldEntity == null)
-                return UNDEFINED;
+            if (worldEntity == null) return UNDEFINED;
             LocalPoint boatLocal = worldEntity.getLocalLocation();
-            if (boatLocal == null)
-                return UNDEFINED;
+            if (boatLocal == null) return UNDEFINED;
             WorldPoint world =
                 WorldPoint.fromLocalInstance(client, boatLocal);
             return world != null
@@ -488,11 +474,9 @@ public class WorldPointUtil {
     public static LocalPoint toLocalPoint(Client client, int packedPoint) {
         WorldView worldView = client.getTopLevelWorldView();
 
-        if (worldView.getPlane() != unpackWorldPlane(packedPoint))
-            return null;
+        if (worldView.getPlane() != unpackWorldPlane(packedPoint)) return null;
 
-        if (!isInScene(worldView, packedPoint))
-            return null;
+        if (!isInScene(worldView, packedPoint)) return null;
 
         return new LocalPoint(
             (unpackWorldX(packedPoint) - worldView.getBaseX() << LOCAL_COORD_BITS) + (1 << LOCAL_COORD_BITS - 1),

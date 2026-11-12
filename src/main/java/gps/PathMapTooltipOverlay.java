@@ -36,16 +36,14 @@ public class PathMapTooltipOverlay extends Overlay {
     }
 
     @Override public Dimension render(Graphics2D graphics) {
-        if (!plugin.display().drawMap || client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) == null)
-            return null;
+        if (!plugin.display().drawMap || client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER) == null) return null;
 
         if (plugin.hasPathTargets()) {
             List<PathStep> path = plugin.getDisplayPath();
             Point cursorPos = client.getMouseCanvasPosition();
             for (int i = 0; i < path.size(); i++) {
                 int nextPoint = WorldPointUtil.UNDEFINED;
-                if (path.size() > i + 1)
-                    nextPoint = path.get(i + 1).getPackedPosition();
+                if (path.size() > i + 1) nextPoint = path.get(i + 1).getPackedPosition();
                 if (drawTooltip(graphics, cursorPos, path.get(i).getPackedPosition(), nextPoint, i + 1, path, i))
                     return null;
             }
@@ -89,8 +87,7 @@ public class PathMapTooltipOverlay extends Overlay {
                     // Check if this transport goes to POH - if so, look ahead to find the exit
                     // transport
                     String pohExitInfo = PlayerOwnedHouse.exitInfo(nextPoint, path, pathIndex, plugin::transportsForEdge);
-                    if (pohExitInfo != null)
-                        displayInfo = displayInfo + " (Exit: " + pohExitInfo + ")";
+                    if (pohExitInfo != null) displayInfo = displayInfo + " (Exit: " + pohExitInfo + ")";
                     rows.add(displayInfo);
                     break;
                 }
@@ -112,10 +109,8 @@ public class PathMapTooltipOverlay extends Overlay {
 
         int drawPointX = startX + TOOLTIP_OFFSET_WIDTH;
         int drawPointY = startY;
-        if (drawPointX + clippedWidth > worldMapRightBoundary)
-            drawPointX = worldMapRightBoundary - clippedWidth;
-        if (drawPointY + clippedHeight > worldMapBottomBoundary)
-            drawPointY = startY - clippedHeight;
+        if (drawPointX + clippedWidth > worldMapRightBoundary) drawPointX = worldMapRightBoundary - clippedWidth;
+        if (drawPointY + clippedHeight > worldMapBottomBoundary) drawPointY = startY - clippedHeight;
         drawPointY += TOOLTIP_OFFSET_HEIGHT;
 
         int tooltipRectX = drawPointX - TOOLTIP_PADDING_WIDTH;

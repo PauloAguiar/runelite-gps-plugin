@@ -28,8 +28,7 @@ public final class BuildInfo {
     }
 
     static String pluginVersion(PluginHubManifest.DisplayData hub) {
-        if (hub != null && hub.getVersion() != null && !hub.getVersion().isEmpty())
-            return hub.getVersion();
+        if (hub != null && hub.getVersion() != null && !hub.getVersion().isEmpty()) return hub.getVersion();
         return property("/runelite-plugin.properties", "version");
     }
 
@@ -49,8 +48,7 @@ public final class BuildInfo {
                 Properties props = new Properties();
                 props.load(in);
                 String value = props.getProperty(key);
-                if (value != null && !value.isEmpty())
-                    return value;
+                if (value != null && !value.isEmpty()) return value;
             }
         }
         catch (IOException ignored) {

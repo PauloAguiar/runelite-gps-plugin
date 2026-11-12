@@ -33,19 +33,16 @@ final class FairyRingHighlighter {
 
     /** A widget opened: the log counts as open only while a destination is set. */
     void widgetLoaded(int groupId, boolean hasTargets) {
-        if (hasTargets && groupId == InterfaceID.FAIRYRINGS_LOG)
-            logOpen = true;
+        if (hasTargets && groupId == InterfaceID.FAIRYRINGS_LOG) logOpen = true;
     }
 
     void widgetClosed(int groupId) {
-        if (groupId == InterfaceID.FAIRYRINGS_LOG)
-            logOpen = false;
+        if (groupId == InterfaceID.FAIRYRINGS_LOG) logOpen = false;
     }
 
     /** After each client tick: re-mark and re-scroll while the log is open. */
     void onPostClientTick(boolean hasTargets) {
-        if (logOpen && hasTargets)
-            highlight();
+        if (logOpen && hasTargets) highlight();
     }
 
     /** The fairy-ring code the route uses (the last one on the path), or null. */
@@ -53,8 +50,7 @@ final class FairyRingHighlighter {
         String code = null;
         for (int i = 1; i < path.size(); i++) {
             for (Transport transport : transportsForEdge.apply(path.get(i - 1), path.get(i))) {
-                if (TransportType.FAIRY_RING.equals(transport.getType()))
-                    code = transport.getDisplayInfo();
+                if (TransportType.FAIRY_RING.equals(transport.getType())) code = transport.getDisplayInfo();
             }
         }
         return code;
@@ -62,29 +58,23 @@ final class FairyRingHighlighter {
 
     private void highlight() {
         List<PathStep> path = displayPath.get();
-        if (path.isEmpty())
-            return;
+        if (path.isEmpty()) return;
         String fairyRingCode = routeCode(path, transportsForEdge);
-        if (fairyRingCode == null)
-            return;
+        if (fairyRingCode == null) return;
 
         Widget codeWidget = null;
         Widget favesPanel = client.getWidget(InterfaceID.FairyringsLog.FAVES);
-        if (favesPanel != null)
-            codeWidget = rowWithCode(favesPanel.getStaticChildren(), fairyRingCode);
+        if (favesPanel != null) codeWidget = rowWithCode(favesPanel.getStaticChildren(), fairyRingCode);
         Widget contentsList = client.getWidget(InterfaceID.FairyringsLog.CONTENTS);
         if (contentsList != null && codeWidget == null)
             codeWidget = rowWithCode(contentsList.getDynamicChildren(), fairyRingCode);
-        if (codeWidget == null)
-            return;
+        if (codeWidget == null) return;
 
         codeWidget.setTextColor(0x00FF00);
         String codeWidgetText = codeWidget.getText();
-        if (codeWidgetText != null && !codeWidgetText.contains("(GPS)"))
-            codeWidget.setText("(GPS) " + codeWidgetText);
+        if (codeWidgetText != null && !codeWidgetText.contains("(GPS)")) codeWidget.setText("(GPS) " + codeWidgetText);
 
-        if (contentsList == null)
-            return;
+        if (contentsList == null) return;
         int panelScrollY = Math.min(codeWidget.getRelativeY(), contentsList.getScrollHeight() - contentsList.getHeight());
         contentsList.setScrollY(panelScrollY);
         contentsList.revalidateScroll();
@@ -93,13 +83,11 @@ final class FairyRingHighlighter {
     }
 
     private static Widget rowWithCode(Widget[] rows, String code) {
-        if (rows == null)
-            return null;
+        if (rows == null) return null;
         for (Widget widget : rows) {
             if (widget != null) {
                 String text = widget.getText();
-                if (code.equals(text) || ("(GPS) " + code).equals(text))
-                    return widget;
+                if (code.equals(text) || ("(GPS) " + code).equals(text)) return widget;
             }
         }
         return null;

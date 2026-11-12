@@ -53,26 +53,19 @@ public final class PohScanner {
      * {@code "ORNATE,fairyRing,obelisk,nexus,portal:60790"}).
      */
     public static String encode(Detected detected) {
-        if (detected == null)
-            return null;
+        if (detected == null) return null;
         StringBuilder sb = new StringBuilder(detected.jewelleryBox.name());
-        if (detected.fairyRing)
-            sb.append(",fairyRing");
-        if (detected.spiritTree)
-            sb.append(",spiritTree");
-        if (detected.obelisk)
-            sb.append(",obelisk");
-        if (detected.nexus)
-            sb.append(",nexus");
-        for (int id : new TreeSet<>(detected.portals))
-            sb.append(",portal:").append(id);
+        if (detected.fairyRing) sb.append(",fairyRing");
+        if (detected.spiritTree) sb.append(",spiritTree");
+        if (detected.obelisk) sb.append(",obelisk");
+        if (detected.nexus) sb.append(",nexus");
+        for (int id : new TreeSet<>(detected.portals)) sb.append(",portal:").append(id);
         return sb.toString();
     }
 
     /** Parses {@link #encode}'s format. Null on missing or malformed data (treated as "never scanned"). */
     public static Detected decode(String encoded) {
-        if (encoded == null || encoded.isEmpty())
-            return null;
+        if (encoded == null || encoded.isEmpty()) return null;
         String[] parts = encoded.split(",");
         JewelleryBoxTier tier;
         try {
@@ -117,8 +110,7 @@ public final class PohScanner {
         Set<Integer> portals = new HashSet<>(objectIds);
         portals.retainAll(portalIds);
         boolean nexus = false;
-        for (int id : NEXUS_IDS)
-            nexus |= objectIds.contains(id);
+        for (int id : NEXUS_IDS) nexus |= objectIds.contains(id);
         boolean fairyRing = objectIds.contains(ObjectID.POH_FAIRY_RING)
             || objectIds.contains(ObjectID.POH_FAIRY_HOUSE)
             || objectIds.contains(ObjectID.POH_FAIRY_HOUSE_OPEN);
@@ -126,12 +118,9 @@ public final class PohScanner {
         boolean obelisk = objectIds.contains(ObjectID.POH_WILDERNESS_OBELISK);
         // Tiers are cumulative (each includes the ones below); pick the highest built.
         JewelleryBoxTier box = JewelleryBoxTier.NONE;
-        if (objectIds.contains(ObjectID.POH_JEWELLERY_BOX_3))
-            box = JewelleryBoxTier.ORNATE;
-        else if (objectIds.contains(ObjectID.POH_JEWELLERY_BOX_2))
-            box = JewelleryBoxTier.FANCY;
-        else if (objectIds.contains(ObjectID.POH_JEWELLERY_BOX_1))
-            box = JewelleryBoxTier.BASIC;
+        if (objectIds.contains(ObjectID.POH_JEWELLERY_BOX_3)) box = JewelleryBoxTier.ORNATE;
+        else if (objectIds.contains(ObjectID.POH_JEWELLERY_BOX_2)) box = JewelleryBoxTier.FANCY;
+        else if (objectIds.contains(ObjectID.POH_JEWELLERY_BOX_1)) box = JewelleryBoxTier.BASIC;
         return new Detected(fairyRing, spiritTree, obelisk, box, portals, nexus);
     }
 }

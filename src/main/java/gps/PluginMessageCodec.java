@@ -62,8 +62,7 @@ final class PluginMessageCodec {
     static PathRequest parsePath(Map<String, Object> data) {
         Object objStart = data.get(KEY_START);
         Object objTarget = data.get(KEY_TARGET);
-        if (objStart == null && objTarget == null)
-            return null;
+        if (objStart == null && objTarget == null) return null;
         int start = objStart instanceof WorldPoint ? WorldPointUtil.packWorldPoint((WorldPoint) objStart)
             : objStart instanceof Integer ? (Integer) objStart : WorldPointUtil.UNDEFINED;
 
@@ -71,15 +70,13 @@ final class PluginMessageCodec {
         if (objTarget instanceof Set<?>) {
             for (Object member : (Set<?>) objTarget) {
                 int packed = packed(member);
-                if (packed == WorldPointUtil.UNDEFINED)
-                    return null;
+                if (packed == WorldPointUtil.UNDEFINED) return null;
                 targets.add(packed);
             }
         }
         else if (objTarget instanceof Integer || objTarget instanceof WorldPoint) {
             int packed = packed(objTarget);
-            if (packed == WorldPointUtil.UNDEFINED)
-                return null;
+            if (packed == WorldPointUtil.UNDEFINED) return null;
             targets.add(packed);
         }
 
@@ -90,10 +87,8 @@ final class PluginMessageCodec {
     }
 
     private static int packed(Object value) {
-        if (value instanceof Integer)
-            return (Integer) value;
-        if (value instanceof WorldPoint)
-            return WorldPointUtil.packWorldPoint((WorldPoint) value);
+        if (value instanceof Integer) return (Integer) value;
+        if (value instanceof WorldPoint) return WorldPointUtil.packWorldPoint((WorldPoint) value);
         return WorldPointUtil.UNDEFINED;
     }
 

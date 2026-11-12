@@ -22,8 +22,7 @@ class IconActionLabel extends JLabel {
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         addMouseListener(new MouseAdapter() {
             @Override public void mousePressed(MouseEvent e) {
-                if (SwingUtilities.isLeftMouseButton(e))
-                    onClick.run();
+                if (SwingUtilities.isLeftMouseButton(e)) onClick.run();
             }
 
             @Override public void mouseEntered(MouseEvent e) {
@@ -41,7 +40,6 @@ class IconActionLabel extends JLabel {
     /** Sets the at-rest icon; applied immediately unless the cursor is directly over this control. */
     void setRestIcon(ImageIcon icon) {
         restIcon = icon;
-        if (!hovered)
-            setIcon(icon);
+        if (!hovered) setIcon(icon);
     }
 }

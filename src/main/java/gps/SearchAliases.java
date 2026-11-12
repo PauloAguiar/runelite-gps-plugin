@@ -46,8 +46,7 @@ final class SearchAliases {
         boolean changed = false;
         for (String token : tokens) {
             String expansion = ALIASES.get(token);
-            if (out.length() > 0)
-                out.append(' ');
+            if (out.length() > 0) out.append(' ');
             out.append(expansion != null ? expansion : token);
             changed |= expansion != null;
         }

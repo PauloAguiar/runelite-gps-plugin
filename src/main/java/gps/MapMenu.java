@@ -64,8 +64,7 @@ import net.runelite.client.util.Text;
             if (map.getBounds().contains(client.getMouseCanvasPosition().getX(), client.getMouseCanvasPosition().getY())) {
                 addMenuEntry(event, SET, TARGET, 0);
                 for (int target : plugin.getPathTargets()) {
-                    if (target != WorldPointUtil.UNDEFINED)
-                        addMenuEntry(event, CLEAR, PATH, 0);
+                    if (target != WorldPointUtil.UNDEFINED) addMenuEntry(event, CLEAR, PATH, 0);
                 }
             }
             if (event.getOption().equals(FLASH_ICONS)
@@ -87,16 +86,13 @@ import net.runelite.client.util.Text;
     }
 
     private void onMenuOptionClicked(MenuEntry entry) {
-        if (entry.getOption().equals(SET) && entry.getTarget().equals(TARGET))
-            plugin.pinTarget(selectedWorldPoint());
-        else if (entry.getOption().equals(CLEAR) && entry.getTarget().equals(PATH))
-            plugin.clearPinnedTarget();
+        if (entry.getOption().equals(SET) && entry.getTarget().equals(TARGET)) plugin.pinTarget(selectedWorldPoint());
+        else if (entry.getOption().equals(CLEAR) && entry.getTarget().equals(PATH)) plugin.clearPinnedTarget();
         else if (entry.getOption().equals(DISMISS) && entry.getTarget().equals(ARRIVAL)) {
             plugin.routeDirectionsOverlay().dismissArrival();
             plugin.clearPinnedTarget();
         }
-        else if (entry.getOption().equals(FIND_CLOSEST))
-            plugin.findClosest(simplify(entry.getTarget()));
+        else if (entry.getOption().equals(FIND_CLOSEST)) plugin.findClosest(simplify(entry.getTarget()));
     }
 
     /**
@@ -108,12 +104,9 @@ import net.runelite.client.util.Text;
     void addDirectionsEntry(MenuEntryAdded event) {
         RouteDirectionsOverlay directions = plugin.routeDirectionsOverlay();
         Point mouse = client.getMouseCanvasPosition();
-        if (directions == null || !directions.getBounds().contains(mouse.getX(), mouse.getY()))
-            return;
-        if (directions.isArrivalShowing())
-            addMenuEntry(event, DISMISS, ARRIVAL, 0);
-        else if (plugin.hasPathTargets())
-            addMenuEntry(event, CLEAR, PATH, 0);
+        if (directions == null || !directions.getBounds().contains(mouse.getX(), mouse.getY())) return;
+        if (directions.isArrivalShowing()) addMenuEntry(event, DISMISS, ARRIVAL, 0);
+        else if (plugin.hasPathTargets()) addMenuEntry(event, CLEAR, PATH, 0);
     }
 
     /** The tile under the menu: the selected scene tile, or the world-map tile where the menu opened. */
@@ -130,8 +123,7 @@ import net.runelite.client.util.Text;
 
     private void addMenuEntry(MenuEntryAdded event, String option, String target, int position) {
         List<MenuEntry> entries = new LinkedList<>(Arrays.asList(client.getMenu().getMenuEntries()));
-        if (entries.stream().anyMatch(e -> e.getOption().equals(option) && e.getTarget().equals(target)))
-            return;
+        if (entries.stream().anyMatch(e -> e.getOption().equals(option) && e.getTarget().equals(target))) return;
         client.getMenu().createMenuEntry(position)
             .setOption(option)
             .setTarget(target)

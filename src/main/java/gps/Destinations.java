@@ -96,8 +96,7 @@ import static gps.WorldPointUtil.unpackWorldY;
     public static List<Entry> places() {
         List<Entry> places = new ArrayList<>();
         for (Entry entry : resourceEntries()) {
-            if ("place".equals(entry.category))
-                places.add(entry);
+            if ("place".equals(entry.category)) places.add(entry);
         }
         return places;
     }
@@ -114,8 +113,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         Map<String, Entry> amenityFirst = new LinkedHashMap<>();
         Map<String, List<Integer>> amenityTiles = new HashMap<>();
         for (Entry entry : all(transports)) {
-            if (NAMED_CATEGORIES.contains(entry.category))
-                out.add(entry);
+            if (NAMED_CATEGORIES.contains(entry.category)) out.add(entry);
             else if (AMENITY_CATEGORIES.contains(entry.category)) {
                 String key = entry.category + "\t" + entry.name;
                 amenityFirst.putIfAbsent(key, entry);
@@ -138,8 +136,7 @@ import static gps.WorldPointUtil.unpackWorldY;
     public static NearestOption parseNearest(String query) {
         String q = query == null ? "" : query.toLowerCase(Locale.ROOT).trim().replaceAll("\\s+", " ");
         String rest = q.startsWith("nearest ") ? q.substring("nearest ".length()).trim() : q;
-        if (rest.isEmpty())
-            return null;
+        if (rest.isEmpty()) return null;
         for (NearestOption option : NEAREST_OPTIONS) {
             String label = option.label.toLowerCase(Locale.ROOT);
             if (rest.equals(option.id.replace('_', ' ')) || rest.equals(label)
@@ -153,8 +150,7 @@ import static gps.WorldPointUtil.unpackWorldY;
     /** A category as the panel names it ("range" is "Cooking range"); title-cased otherwise. */
     public static String categoryLabel(String category) {
         for (NearestOption option : NEAREST_OPTIONS) {
-            if (option.id.equals(category))
-                return option.label;
+            if (option.id.equals(category)) return option.label;
         }
         String words = category.replace('_', ' ');
         return words.isEmpty() ? words : Character.toUpperCase(words.charAt(0)) + words.substring(1);
@@ -176,8 +172,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         Set<Integer> tiles = new HashSet<>();
         boolean transportBacked = "fairy_ring".equals(effective) || "spirit_tree".equals(effective);
         for (Entry entry : transportBacked ? all(transports) : resourceEntries()) {
-            if (effective.equals(entry.category))
-                tiles.add(entry.packedPosition);
+            if (effective.equals(entry.category)) tiles.add(entry.packedPosition);
         }
         return tiles;
     }
@@ -225,8 +220,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         final int x = unpackWorldX(packed);
         final int y = unpackWorldY(packed);
         final int plane = unpackWorldPlane(packed);
-        if (map == null || !map.isBlocked(x, y, plane))
-            return Set.of(packed);
+        if (map == null || !map.isBlocked(x, y, plane)) return Set.of(packed);
         // Pass 1: a transport origin near the blocked tile beats plain proximity, even when it
         // sits a radius further out than the first walkable ring.
         if (transportOrigin != null) {
@@ -234,25 +228,20 @@ import static gps.WorldPointUtil.unpackWorldY;
                 Set<Integer> origins = new HashSet<>();
                 for (int dx = -radius; dx <= radius; dx++) {
                     for (int dy = -radius; dy <= radius; dy++) {
-                        if (Math.max(Math.abs(dx), Math.abs(dy)) != radius)
-                            continue;
+                        if (Math.max(Math.abs(dx), Math.abs(dy)) != radius) continue;
                         int tile = packWorldPoint(x + dx, y + dy, plane);
-                        if (!map.isBlocked(x + dx, y + dy, plane) && transportOrigin.test(tile))
-                            origins.add(tile);
+                        if (!map.isBlocked(x + dx, y + dy, plane) && transportOrigin.test(tile)) origins.add(tile);
                     }
                 }
-                if (!origins.isEmpty())
-                    return origins;
+                if (!origins.isEmpty()) return origins;
             }
         }
         for (int radius = 1; radius <= MAX_WALKABLE_RING; radius++) {
             Set<Integer> ring = new HashSet<>();
             for (int dx = -radius; dx <= radius; dx++) {
                 for (int dy = -radius; dy <= radius; dy++) {
-                    if (Math.max(Math.abs(dx), Math.abs(dy)) != radius)
-                        continue;
-                    if (!map.isBlocked(x + dx, y + dy, plane))
-                        ring.add(packWorldPoint(x + dx, y + dy, plane));
+                    if (Math.max(Math.abs(dx), Math.abs(dy)) != radius) continue;
+                    if (!map.isBlocked(x + dx, y + dy, plane)) ring.add(packWorldPoint(x + dx, y + dy, plane));
                 }
             }
             if (!ring.isEmpty()) {
@@ -300,19 +289,16 @@ import static gps.WorldPointUtil.unpackWorldY;
     }
 
     private static synchronized List<Remap> loadRemaps() {
-        if (remaps != null)
-            return remaps;
+        if (remaps != null) return remaps;
         List<Remap> loaded = new ArrayList<>();
         try (InputStream in = ShortestPathPlugin.class.getResourceAsStream("/destination-remaps.tsv")) {
             if (in != null) {
                 try (Scanner scanner = new Scanner(in, "UTF-8")) {
                     while (scanner.hasNextLine()) {
                         String line = scanner.nextLine();
-                        if (line.startsWith("#") || line.isBlank())
-                            continue;
+                        if (line.startsWith("#") || line.isBlank()) continue;
                         String[] f = line.split("\t");
-                        if (f.length < 9)
-                            continue;
+                        if (f.length < 9) continue;
                         loaded.add(new Remap(Integer.parseInt(f[0].trim()), Integer.parseInt(f[1].trim()),
                             Integer.parseInt(f[2].trim()), Integer.parseInt(f[3].trim()),
                             Integer.parseInt(f[4].trim()),
@@ -358,26 +344,22 @@ import static gps.WorldPointUtil.unpackWorldY;
      */
     public static List<Entry> all(PrimitiveIntHashMap<Transport[]> transports) {
         List<Entry> entries = new ArrayList<>(resourceEntries());
-        if (transports == null)
-            return entries;
+        if (transports == null) return entries;
         PrimitiveIntList seen = new PrimitiveIntList();
         // Seed with the bundled minigame entries (curated rows), so a transport-derived duplicate
         // of the same minigame isn't added twice.
         Set<String> seenMinigames = new HashSet<>();
         for (Entry entry : entries) {
-            if ("minigame".equals(entry.category))
-                seenMinigames.add(entry.name.toLowerCase(Locale.ROOT));
+            if ("minigame".equals(entry.category)) seenMinigames.add(entry.name.toLowerCase(Locale.ROOT));
         }
         for (int key : transports.keys()) {
             Transport[] set = transports.get(key);
-            if (set == null)
-                continue;
+            if (set == null) continue;
             for (Transport transport : set) {
                 TransportType type = transport.getType();
                 if (type == TransportType.FAIRY_RING || type == TransportType.SPIRIT_TREE) {
                     int origin = transport.getOrigin();
-                    if (origin == Transport.UNDEFINED_ORIGIN || seen.contains(origin))
-                        continue;
+                    if (origin == Transport.UNDEFINED_ORIGIN || seen.contains(origin)) continue;
                     seen.add(origin);
                     String label = type == TransportType.FAIRY_RING ? "Fairy ring" : "Spirit tree";
                     String info = transport.getDisplayInfo();
@@ -405,8 +387,7 @@ import static gps.WorldPointUtil.unpackWorldY;
      * "Castle Wars", and "Rat Pits Minigame Teleport: 1. Ardougne" -&gt; "Rat Pits: Ardougne".
      */
     private static String minigameName(String info) {
-        if (info == null || info.isEmpty())
-            return "Minigame";
+        if (info == null || info.isEmpty()) return "Minigame";
         String name = info.replace("Minigame Teleport", " ").replaceAll("\\s+", " ").trim();
         name = name.replace(" :", ":").replaceAll(":\\s*\\d+\\.\\s*", ": ");
         return name.trim();
@@ -449,19 +430,16 @@ import static gps.WorldPointUtil.unpackWorldY;
     }
 
     private static synchronized List<ExclusionZone> loadExclusionZones() {
-        if (exclusionZones != null)
-            return exclusionZones;
+        if (exclusionZones != null) return exclusionZones;
         List<ExclusionZone> loaded = new ArrayList<>();
         try (InputStream in = ShortestPathPlugin.class.getResourceAsStream(EXCLUSIONS_PATH)) {
             if (in != null) {
                 try (Scanner scanner = new Scanner(in, "UTF-8")) {
                     while (scanner.hasNextLine()) {
                         String line = scanner.nextLine();
-                        if (line.isEmpty() || line.startsWith("#"))
-                            continue;
+                        if (line.isEmpty() || line.startsWith("#")) continue;
                         String[] f = line.split("	");
-                        if (f.length < 5)
-                            continue;
+                        if (f.length < 5) continue;
                         loaded.add(new ExclusionZone(Integer.parseInt(f[0].trim()), Integer.parseInt(f[1].trim()),
                             Integer.parseInt(f[2].trim()), Integer.parseInt(f[3].trim()), Integer.parseInt(f[4].trim())));
                     }
@@ -486,8 +464,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         for (int i = 0; i < entries.size(); i++) {
             Entry entry = entries.get(i);
             int remapped = remapTemplateOnlyZones(entry.packedPosition);
-            if (remapped != entry.packedPosition)
-                entries.set(i, new Entry(entry.category, entry.name, remapped));
+            if (remapped != entry.packedPosition) entries.set(i, new Entry(entry.category, entry.name, remapped));
         }
         return entries;
     }
@@ -514,13 +491,11 @@ import static gps.WorldPointUtil.unpackWorldY;
                 header = false;
                 continue;
             }
-            if (line.isEmpty())
-                continue;
+            if (line.isEmpty()) continue;
             // category, name, x, y, plane [, verified_source, verified_date] — the trailing
             // verification columns are metadata for maintenance and are ignored at load time.
             String[] fields = line.split("\t");
-            if (fields.length < 5)
-                continue;
+            if (fields.length < 5) continue;
             try {
                 int packed = packWorldPoint(
                     Integer.parseInt(fields[2]), Integer.parseInt(fields[3]), Integer.parseInt(fields[4]));
@@ -545,14 +520,11 @@ import static gps.WorldPointUtil.unpackWorldY;
     public static Set<Integer> externalTargets(Set<Integer> targets, CollisionMap map,
         IntPredicate transportOrigin) {
         Set<Integer> ends = new HashSet<>();
-        for (int target : targets)
-            ends.addAll(walkableTargets(map, target, transportOrigin));
-        if (transportOrigin == null)
-            return ends;
+        for (int target : targets) ends.addAll(walkableTargets(map, target, transportOrigin));
+        if (transportOrigin == null) return ends;
         Set<Integer> origins = new HashSet<>();
         for (int end : ends) {
-            if (transportOrigin.test(end))
-                origins.add(end);
+            if (transportOrigin.test(end)) origins.add(end);
         }
         return origins.isEmpty() ? ends : origins;
     }

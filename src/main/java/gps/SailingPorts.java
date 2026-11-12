@@ -26,8 +26,7 @@ public final class SailingPorts {
             Scanner scanner = new Scanner(in, "UTF-8")) {
             while (scanner.hasNextLine()) {
                 String[] fields = scanner.nextLine().split("\t");
-                if (fields.length < 4 || fields[0].startsWith("#") || "portId".equals(fields[0]))
-                    continue;
+                if (fields.length < 4 || fields[0].startsWith("#") || "portId".equals(fields[0])) continue;
                 int id = Integer.parseInt(fields[0]);
                 names.putIfAbsent(id, fields[1].trim());
                 moorings.computeIfAbsent(id, k -> new ArrayList<>()).add(WorldPointUtil.packWorldPoint(
@@ -44,8 +43,7 @@ public final class SailingPorts {
         if (loaded == null) {
             synchronized (SailingPorts.class) {
                 loaded = instance;
-                if (loaded == null)
-                    instance = loaded = new SailingPorts();
+                if (loaded == null) instance = loaded = new SailingPorts();
             }
         }
         return loaded;
@@ -58,10 +56,8 @@ public final class SailingPorts {
 
     /** Display name for a port id; capsized/bottled and unknown ids get honest fallbacks. */
     public static String portName(int portId) {
-        if (portId == PORT_CAPSIZED)
-            return "capsized";
-        if (portId == PORT_BOTTLED)
-            return "in a bottle";
+        if (portId == PORT_CAPSIZED) return "capsized";
+        if (portId == PORT_BOTTLED) return "in a bottle";
         String name = get().names.get(portId);
         return name != null ? name : "port " + portId;
     }

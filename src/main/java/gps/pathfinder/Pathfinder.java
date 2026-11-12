@@ -119,8 +119,7 @@ public class Pathfinder implements Runnable {
         wildernessLevel = 31;
         targetArray = new int[targets.size()];
         int i = 0;
-        for (int target : targets)
-            targetArray[i++] = target;
+        for (int target : targets) targetArray[i++] = target;
         // Sorted so the per-node target check is a binary search over ints: Set<Integer>.contains
         // boxed an Integer for every settled tile (plan step N2).
         Arrays.sort(targetArray);
@@ -141,11 +140,9 @@ public class Pathfinder implements Runnable {
     }
 
     private static boolean anyInBlockedRegion(LeagueModeState league, Set<Integer> packed) {
-        if (!league.isSeasonal() || packed == null || packed.isEmpty())
-            return false;
+        if (!league.isSeasonal() || packed == null || packed.isEmpty()) return false;
         for (Integer point : packed) {
-            if (league.isInBlockedRegion(point))
-                return true;
+            if (league.isInBlockedRegion(point)) return true;
         }
         return false;
     }
@@ -163,8 +160,7 @@ public class Pathfinder implements Runnable {
     }
 
     public PathfinderStats getStats() {
-        if (stats.started && stats.ended)
-            return stats;
+        if (stats.started && stats.ended) return stats;
 
         // Don't give incomplete results
         return null;
@@ -178,8 +174,7 @@ public class Pathfinder implements Runnable {
 
     public PathfinderResult getResult() {
         PathfinderStats currentStats = getStats();
-        if (currentStats == null)
-            return null;
+        if (currentStats == null) return null;
 
         List<PathStep> currentPath = getPath();
         boolean reached = reachedTarget != WorldPointUtil.UNDEFINED;
@@ -210,10 +205,8 @@ public class Pathfinder implements Runnable {
             final boolean neighborIsTile = graph.isTile(neighbor);
             if (nodeIsTile && neighborIsTile) {
                 final int neighborPacked = graph.packedPosition(neighbor);
-                if (config.avoidWilderness(nodePacked, neighborPacked, targetInWilderness))
-                    continue;
-                if (config.avoidBlockedRegion(nodePacked, neighborPacked, targetInBlockedRegion))
-                    continue;
+                if (config.avoidWilderness(nodePacked, neighborPacked, targetInWilderness)) continue;
+                if (config.avoidBlockedRegion(nodePacked, neighborPacked, targetInBlockedRegion)) continue;
             }
 
             final boolean neighborIsTransport = graph.isTransport(neighbor);
@@ -223,10 +216,8 @@ public class Pathfinder implements Runnable {
             // (pop) rather than here: enqueues include duplicates, so counting them would make the
             // explored-size numbers incomparable with the FIFO search.
             if (heapMode) {
-                if (buckets != null)
-                    buckets.add(neighbor, graph.cost(neighbor));
-                else
-                    pending.add(neighbor);
+                if (buckets != null) buckets.add(neighbor, graph.cost(neighbor));
+                else pending.add(neighbor);
                 continue;
             }
             visited.set(neighbor, graph);
@@ -283,12 +274,9 @@ public class Pathfinder implements Runnable {
         if (wildernessLevel > 0) {
             // These are overlapping boundaries, so if the node isn't in level 30, it's in 0-29
             // likewise, if the node isn't in level 20, it's in 0-19
-            if (wildernessLevel > 30 && !WildernessChecker.isInLevel30Wilderness(packedPosition))
-                wildernessLevel = 30;
-            if (wildernessLevel > 20 && !WildernessChecker.isInLevel20Wilderness(packedPosition))
-                wildernessLevel = 20;
-            if (wildernessLevel > 0 && !WildernessChecker.isInWilderness(packedPosition))
-                wildernessLevel = 0;
+            if (wildernessLevel > 30 && !WildernessChecker.isInLevel30Wilderness(packedPosition)) wildernessLevel = 30;
+            if (wildernessLevel > 20 && !WildernessChecker.isInLevel20Wilderness(packedPosition)) wildernessLevel = 20;
+            if (wildernessLevel > 0 && !WildernessChecker.isInWilderness(packedPosition)) wildernessLevel = 0;
         }
     }
 
@@ -321,8 +309,7 @@ public class Pathfinder implements Runnable {
                 // In heap mode EVERY node dedups here: nothing is marked at enqueue, and cost
                 // ordering (plus a consistent heuristic in A* mode) makes the first dequeue optimal.
                 if (heapMode) {
-                    if (visited.get(node, graph))
-                        continue;
+                    if (visited.get(node, graph)) continue;
                     visited.set(node, graph);
                 }
                 if (validateSettleOrder && heapMode) {
@@ -337,14 +324,11 @@ public class Pathfinder implements Runnable {
                 // Heap mode counts distinct settled states (enqueues include duplicates); the FIFO
                 // search counts at enqueue, where marking makes every count unique.
                 if (heapMode) {
-                    if (graph.isTransport(node))
-                        ++stats.transportsChecked;
-                    else
-                        ++stats.nodesChecked;
+                    if (graph.isTransport(node)) ++stats.transportsChecked;
+                    else ++stats.nodesChecked;
                 }
             }
-            if (node == NodeGraph.NO_NODE)
-                continue;
+            if (node == NodeGraph.NO_NODE) continue;
             // Cost cap, checked against f = g + h (orderCost), not g alone: with an admissible h,
             // g + h > cap proves no completion within the cap exists through this node, so it can be
             // skipped long before its g reaches the ceiling. This is what keeps a capped search that
@@ -356,11 +340,9 @@ public class Pathfinder implements Runnable {
             int effectiveCap = costCap;
             if (dynamicCostCap != null) {
                 int dynamic = dynamicCostCap.getAsInt();
-                if (dynamic < effectiveCap)
-                    effectiveCap = dynamic;
+                if (dynamic < effectiveCap) effectiveCap = dynamic;
             }
-            if (effectiveCap != Integer.MAX_VALUE && graph.orderCost(node) > effectiveCap)
-                continue;
+            if (effectiveCap != Integer.MAX_VALUE && graph.orderCost(node) > effectiveCap) continue;
             // Read the node's tile-ness and position once; every graph.xxx(id) re-indexes a backing
             // array, and these are used by several of the checks below.
             final boolean nodeIsTile = graph.isTile(node);
@@ -395,16 +377,14 @@ public class Pathfinder implements Runnable {
             addNeighbors(node, nodeIsTile, nodePacked);
         }
 
-        if (terminationReason == null)
-            terminationReason = PathTerminationReason.SEARCH_EXHAUSTED;
+        if (terminationReason == null) terminationReason = PathTerminationReason.SEARCH_EXHAUSTED;
 
         // The search ended without reaching a target: recover the exact closest tile (same
         // tie-breaking as the sampled in-loop tracking) in one pass over the explored nodes —
         // paying O(nodes × targets) once, instead of on every expansion.
         if (reachedTarget == WorldPointUtil.UNDEFINED && targetArray.length > 0) {
             for (int id = 0; id < graph.size(); id++) {
-                if (graph.isTile(id))
-                    updateBestPathWhenUnreachable(id, graph.packedPosition(id));
+                if (graph.isTile(id)) updateBestPathWhenUnreachable(id, graph.packedPosition(id));
             }
         }
 
@@ -424,10 +404,8 @@ public class Pathfinder implements Runnable {
         boundary.clear();
         visited.clear();
         pending.clear();
-        if (buckets != null)
-            buckets.clear();
-        if (tentative != null)
-            tentative.clear();
+        if (buckets != null) buckets.clear();
+        if (tentative != null) tentative.clear();
         graph.release();
 
         stats.end(); // Include cleanup in stats to get the total cost of pathfinding

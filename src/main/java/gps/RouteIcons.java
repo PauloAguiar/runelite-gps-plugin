@@ -113,10 +113,8 @@ final class RouteIcons {
      * dest_altar, ...), a few categories sharing one, the location pin for anything without.
      */
     static synchronized ImageIcon destinationIcon(String category) {
-        if ("favorite".equals(category))
-            return FAVORITE;
-        if ("bank".equals(category))
-            return DEST_BANK;
+        if ("favorite".equals(category)) return FAVORITE;
+        if ("bank".equals(category)) return DEST_BANK;
         String name = category.replace("spellbook_altar", "altar").replace("spinning_wheel", "spinning").replace("fairy_ring", "fairy");
         return DESTINATION_ICONS.computeIfAbsent(name,
             n -> RouteIcons.class.getResource("/icons/dest_" + n + ".png") == null ? DEST_PIN : icon("dest_" + n));

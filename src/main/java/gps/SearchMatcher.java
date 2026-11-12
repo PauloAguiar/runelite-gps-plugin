@@ -33,17 +33,12 @@ final class SearchMatcher {
     private static int scoreLiteral(String name, String query) {
         final String n = name.toLowerCase(Locale.ROOT);
         final String q = query;
-        if (q.isEmpty())
-            return 0;
+        if (q.isEmpty()) return 0;
         final int lengthPenalty = Math.min(n.length(), MAX_LENGTH_PENALTY);
-        if (n.equals(q))
-            return TIER_EXACT;
-        if (n.startsWith(q))
-            return TIER_PREFIX - lengthPenalty;
-        if (wordPrefixes(n, q))
-            return TIER_WORD_PREFIX - lengthPenalty;
-        if (n.contains(q))
-            return TIER_SUBSTRING - lengthPenalty;
+        if (n.equals(q)) return TIER_EXACT;
+        if (n.startsWith(q)) return TIER_PREFIX - lengthPenalty;
+        if (wordPrefixes(n, q)) return TIER_WORD_PREFIX - lengthPenalty;
+        if (n.contains(q)) return TIER_SUBSTRING - lengthPenalty;
         final String letters = q.replaceAll("\\s+", "");
         if (letters.length() >= MIN_SUBSEQUENCE_QUERY && isSubsequence(n, letters))
             return TIER_SUBSEQUENCE - lengthPenalty;
@@ -63,8 +58,7 @@ final class SearchMatcher {
                     break;
                 }
             }
-            if (!matched)
-                return false;
+            if (!matched) return false;
         }
         return true;
     }
@@ -73,8 +67,7 @@ final class SearchMatcher {
     private static boolean isSubsequence(String name, String letters) {
         int i = 0;
         for (int j = 0; j < name.length() && i < letters.length(); j++) {
-            if (name.charAt(j) == letters.charAt(i))
-                i++;
+            if (name.charAt(j) == letters.charAt(i)) i++;
         }
         return i == letters.length();
     }

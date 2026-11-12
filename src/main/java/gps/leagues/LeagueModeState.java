@@ -106,8 +106,7 @@ public class LeagueModeState {
 
         EnumSet<LeagueRegion> next = EnumSet.noneOf(LeagueRegion.class);
         if (seasonal) {
-            for (int varbitId : AREA_SELECTION_VARBITS)
-                addRegionFromSlot(client, varbitId, next);
+            for (int varbitId : AREA_SELECTION_VARBITS) addRegionFromSlot(client, varbitId, next);
         }
         unlockedRegions = next;
     }
@@ -117,14 +116,10 @@ public class LeagueModeState {
      * seasonal mode every region is considered unlocked.
      */
     public boolean isUnlocked(LeagueRegion region) {
-        if (region == null)
-            return true;
-        if (region.isAlwaysUnlocked())
-            return true;
-        if (!seasonal)
-            return true;
-        if (region.isAlwaysBlocked())
-            return false;
+        if (region == null) return true;
+        if (region.isAlwaysUnlocked()) return true;
+        if (!seasonal) return true;
+        if (region.isAlwaysBlocked()) return false;
         return unlockedRegions.contains(region);
     }
 
@@ -134,8 +129,7 @@ public class LeagueModeState {
      * worlds so normal pathfinding is unaffected.
      */
     public boolean isInBlockedRegion(int packedPoint) {
-        if (!seasonal)
-            return false;
+        if (!seasonal) return false;
         return LeagueRegionChecker.getRegion(packedPoint).isAlwaysBlocked();
     }
 
@@ -152,10 +146,8 @@ public class LeagueModeState {
 
     private static void addRegionFromSlot(Client client, int varbitId, Set<LeagueRegion> out) {
         int value = client.getVarbitValue(varbitId);
-        if (value <= 0)
-            return;
+        if (value <= 0) return;
         LeagueRegion region = AREA_VARBIT_TO_REGION.get(value);
-        if (region != null)
-            out.add(region);
+        if (region != null) out.add(region);
     }
 }

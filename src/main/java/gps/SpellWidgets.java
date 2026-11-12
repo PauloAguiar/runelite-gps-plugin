@@ -17,24 +17,21 @@ final class SpellWidgets {
 
     /** The packed component id of the spell, or -1 when the table has no row for it. */
     static synchronized int componentFor(String spell) {
-        if (spell == null)
-            return -1;
+        if (spell == null) return -1;
         if (components == null) {
             components = new HashMap<>();
             for (String[] row : ItemVariations.rows("/spell-widgets.tsv"))
                 components.put(row[0], Integer.parseInt(row[1]));
         }
         Integer id = components.get(spell);
-        if (id == null)
-            id = components.get(stem(spell));
+        if (id == null) id = components.get(stem(spell));
         return id == null ? -1 : id;
     }
 
     private static String stem(String spell) {
         for (String qualifier : QUALIFIERS) {
             int at = spell.indexOf(qualifier);
-            if (at > 0)
-                spell = spell.substring(0, at);
+            if (at > 0) spell = spell.substring(0, at);
         }
         return spell;
     }

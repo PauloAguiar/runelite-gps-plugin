@@ -177,13 +177,11 @@ import static gps.WorldPointUtil.unpackWorldY;
 
     /** The coin fare a transport actually charges: its listed COINS requirement scaled by farePercent. */
     public int effectiveCoinFare(Transport transport) {
-        if (transport == null || transport.getItemRequirements() == null)
-            return 0;
+        if (transport == null || transport.getItemRequirements() == null) return 0;
         for (ItemRequirement requirement : transport.getItemRequirements().getRequirements()) {
             if (requirement.getItemIds() != null) {
                 for (int itemId : requirement.getItemIds()) {
-                    if (itemId == ItemID.COINS)
-                        return scaleCoins(requirement.getQuantity(), farePercent(transport));
+                    if (itemId == ItemID.COINS) return scaleCoins(requirement.getQuantity(), farePercent(transport));
                 }
             }
         }
@@ -197,11 +195,9 @@ import static gps.WorldPointUtil.unpackWorldY;
     /** A requirement's quantity with the coin discount applied when it is a coin requirement. */
     private static int scaledQuantity(ItemRequirement requirement, int coinPercent) {
         int quantity = requirement.getQuantity();
-        if (coinPercent >= 100 || quantity <= 0 || requirement.getItemIds() == null)
-            return quantity;
+        if (coinPercent >= 100 || quantity <= 0 || requirement.getItemIds() == null) return quantity;
         for (int itemId : requirement.getItemIds()) {
-            if (itemId == ItemID.COINS)
-                return scaleCoins(quantity, coinPercent);
+            if (itemId == ItemID.COINS) return scaleCoins(quantity, coinPercent);
         }
         return quantity;
     }
@@ -267,8 +263,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         for (int[] boat : BOAT_VARBITS) {
             // The owned varbit alone is unreliable (Where's My Boat's field lesson); a set
             // name descriptor also proves ownership, and covers Port Sarim's port id 0.
-            if (client.getVarbitValue(boat[0]) <= 0 && client.getVarbitValue(boat[2]) <= 0)
-                continue;
+            if (client.getVarbitValue(boat[0]) <= 0 && client.getVarbitValue(boat[2]) <= 0) continue;
             seen = true;
             moorings.addAll(SailingPorts.portMoorings(client.getVarbitValue(boat[1])));
         }
@@ -483,8 +478,7 @@ import static gps.WorldPointUtil.unpackWorldY;
      * when the contents are guaranteed present.
      */
     public void setBankSnapshot(Item[] items) {
-        if (items != null && items.length > 0)
-            this.bankSnapshot = items.clone();
+        if (items != null && items.length > 0) this.bankSnapshot = items.clone();
     }
 
     /** The captured bank snapshot, for persisting it across sessions. Null if never seen. */
@@ -505,10 +499,8 @@ import static gps.WorldPointUtil.unpackWorldY;
      */
     private Item[] resolveBankItems() {
         Item[] live = (bank != null) ? bank.getItems() : null;
-        if (live != null && live.length > 0)
-            return live;
-        if (bankSnapshot != null)
-            return bankSnapshot;
+        if (live != null && live.length > 0) return live;
+        if (bankSnapshot != null) return bankSnapshot;
         return (planningSource != null) ? planningSource.resolveBankItems() : live;
     }
 
@@ -558,23 +550,17 @@ import static gps.WorldPointUtil.unpackWorldY;
         "Port Sarim", "Etceteria", "Brimhaven", "Hosidius", "Farming Guild");
 
     static String getPlantedSpiritTreeName(int x, int y) {
-        if (x >= 3058 && x <= 3062 && y >= 3256 && y <= 3260)
-            return "Port Sarim";
-        if (x >= 2611 && x <= 2615 && y >= 3855 && y <= 3860)
-            return "Etceteria";
-        if (x >= 2800 && x <= 2804 && y >= 3201 && y <= 3205)
-            return "Brimhaven";
-        if (x >= 1691 && x <= 1695 && y >= 3540 && y <= 3544)
-            return "Hosidius";
-        if (x >= 1251 && x <= 1255 && y >= 3748 && y <= 3752)
-            return "Farming Guild";
+        if (x >= 3058 && x <= 3062 && y >= 3256 && y <= 3260) return "Port Sarim";
+        if (x >= 2611 && x <= 2615 && y >= 3855 && y <= 3860) return "Etceteria";
+        if (x >= 2800 && x <= 2804 && y >= 3201 && y <= 3205) return "Brimhaven";
+        if (x >= 1691 && x <= 1695 && y >= 3540 && y <= 3544) return "Hosidius";
+        if (x >= 1251 && x <= 1255 && y >= 3748 && y <= 3752) return "Farming Guild";
         return null;
     }
 
     private void indexTransportOrigins() {
         for (Transport transport : allTransports) {
-            if (transport.getOrigin() != Transport.UNDEFINED_ORIGIN)
-                transportOriginTiles.add(transport.getOrigin());
+            if (transport.getOrigin() != Transport.UNDEFINED_ORIGIN) transportOriginTiles.add(transport.getOrigin());
         }
     }
 
@@ -744,11 +730,9 @@ import static gps.WorldPointUtil.unpackWorldY;
             isOnSailingBoat = client.getVarbitValue(VarbitID.SAILING_BOARDED_BOAT) != 0;
 
             int farePercent = 100;
-            if (QuestState.FINISHED.equals(getQuestState(Quest.CABIN_FEVER)))
-                farePercent /= 2;
+            if (QuestState.FINISHED.equals(getQuestState(Quest.CABIN_FEVER))) farePercent /= 2;
             ItemContainer worn = client.getItemContainer(InventoryID.WORN);
-            if (worn != null && worn.contains(ItemID.RING_OF_CHAROS_UNLOCKED))
-                farePercent /= 2;
+            if (worn != null && worn.contains(ItemID.RING_OF_CHAROS_UNLOCKED)) farePercent /= 2;
             charterFarePercent = farePercent;
 
             int i = 0;
@@ -788,8 +772,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         Set<Integer> acc = new HashSet<>(bankLocs.size());
         for (Integer p : bankLocs) {
             DestinationRequirements req = bankRequirements.getOrDefault(p, DestinationRequirements.EMPTY);
-            if (satisfiesBankDestinationRequirements(req))
-                acc.add(p);
+            if (satisfiesBankDestinationRequirements(req)) acc.add(p);
         }
         accessibleBankTiles = Collections.unmodifiableSet(acc);
         accessibleBankIndex = indexOf(accessibleBankTiles);
@@ -797,8 +780,7 @@ import static gps.WorldPointUtil.unpackWorldY;
 
     private static PrimitiveIntHashMap<Boolean> indexOf(Set<Integer> tiles) {
         PrimitiveIntHashMap<Boolean> index = new PrimitiveIntHashMap<>(Math.max(16, tiles.size() * 2));
-        for (int tile : tiles)
-            index.put(tile, Boolean.TRUE);
+        for (int tile : tiles) index.put(tile, Boolean.TRUE);
         return index;
     }
 
@@ -806,25 +788,20 @@ import static gps.WorldPointUtil.unpackWorldY;
      * Quest/skill/var gates for bank tiles (not used for transport overlays).
      */
     private boolean satisfiesBankDestinationRequirements(DestinationRequirements dr) {
-        if (dr == null || dr.isEmpty())
-            return true;
+        if (dr == null || dr.isEmpty()) return true;
         int[] requiredLevels = dr.getSkillLevels();
         for (int i = 0; i < boostedSkillLevelsAndMore.length; i++) {
             int need = i < requiredLevels.length ? requiredLevels[i] : 0;
-            if (boostedSkillLevelsAndMore[i] < need)
-                return false;
+            if (boostedSkillLevelsAndMore[i] < need) return false;
         }
         for (Quest quest : dr.getQuests()) {
-            if (!QuestState.FINISHED.equals(getQuestState(quest)))
-                return false;
+            if (!QuestState.FINISHED.equals(getQuestState(quest))) return false;
         }
         for (VarRequirement req : dr.getVarbits()) {
-            if (!req.checkWith(client::getVarbitValue))
-                return false;
+            if (!req.checkWith(client::getVarbitValue)) return false;
         }
         for (VarRequirement req : dr.getVarPlayers()) {
-            if (!req.checkWith(client::getVarpValue))
-                return false;
+            if (!req.checkWith(client::getVarpValue)) return false;
         }
         return true;
     }
@@ -836,8 +813,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         if (avoidWilderness) {
             locations.removeIf(location -> {
                 boolean inWilderness = WildernessChecker.isInWilderness(location);
-                if (inWilderness)
-                    filteredTargets.add(location);
+                if (inWilderness) filteredTargets.add(location);
                 return inWilderness;
             });
             // If we ended up with no valid locations we re-include the filtered locations
@@ -880,8 +856,7 @@ import static gps.WorldPointUtil.unpackWorldY;
             Set<Integer> usableDestinations = new HashSet<>(entry.getValue().size());
             for (Integer destination : entry.getValue()) {
                 // We filter based on whether the destination is inside or outside wilderness
-                if (!WildernessChecker.isInWilderness(destination))
-                    usableDestinations.add(destination);
+                if (!WildernessChecker.isInWilderness(destination)) usableDestinations.add(destination);
             }
             // If all destinations of a destination type have been filtered away then we don't add the entry
             if (!usableDestinations.isEmpty())
@@ -936,11 +911,9 @@ import static gps.WorldPointUtil.unpackWorldY;
             for (VarRequirement varRequirement : transport.getVarRequirements()) {
                 for (int id : varRequirement.ids()) {
                     if (varRequirement.isVarbit()) {
-                        if (!varbitValues.containsKey(id))
-                            varbitValues.put(id, client.getVarbitValue(id));
+                        if (!varbitValues.containsKey(id)) varbitValues.put(id, client.getVarbitValue(id));
                     }
-                    else if (!varPlayerValues.containsKey(id))
-                        varPlayerValues.put(id, client.getVarpValue(id));
+                    else if (!varPlayerValues.containsKey(id)) varPlayerValues.put(id, client.getVarpValue(id));
                 }
             }
 
@@ -957,15 +930,12 @@ import static gps.WorldPointUtil.unpackWorldY;
                 if (prior == null || status.ordinal() < prior.ordinal()) {
                     catalog.put(method, status);
                     String detail = availabilityDetail(transport, status);
-                    if (detail != null)
-                        catalogDetail.put(method, detail);
-                    else
-                        catalogDetail.remove(method);
+                    if (detail != null) catalogDetail.put(method, detail);
+                    else catalogDetail.remove(method);
                 }
             }
 
-            if (!useTransport(transport))
-                continue;
+            if (!useTransport(transport)) continue;
 
             boolean usableWithoutBank = bypassItemPossession || hasRequiredItems(transport, true, true, false, true);
             boolean usableWithBank = bypassItemPossession || hasRequiredItems(transport, true, true, includeBankPath, true);
@@ -1031,8 +1001,7 @@ import static gps.WorldPointUtil.unpackWorldY;
                 || (leagueModeState.isSeasonal() && i == skills.length)) {
                 continue;
             }
-            if (i < skills.length)
-                missing.add(required[i] + " " + skills[i].getName());
+            if (i < skills.length) missing.add(required[i] + " " + skills[i].getName());
             else {
                 String name = i == skills.length ? "total level" : (i == skills.length + 1 ? "combat level" : "quest points");
                 missing.add(required[i] + " " + name);
@@ -1069,24 +1038,20 @@ import static gps.WorldPointUtil.unpackWorldY;
      * under test mocks), so callers fall back to the generic status wording.
      */
     private String itemRequirementNames(TransportItems items) {
-        if (items == null)
-            return null;
+        if (items == null) return null;
         List<String> names = new ArrayList<>();
         for (ItemRequirement requirement : items.getRequirements()) {
             int[] ids = requirement.getItemIds();
-            if (ids == null || ids.length == 0)
-                continue;
+            if (ids == null || ids.length == 0) continue;
             String name = itemName(ids[0]);
-            if (name != null)
-                names.add(requirement.getQuantity() > 1 ? name + " x" + requirement.getQuantity() : name);
+            if (name != null) names.add(requirement.getQuantity() > 1 ? name + " x" + requirement.getQuantity() : name);
         }
         return names.isEmpty() ? null : String.join(", ", names);
     }
 
     private String itemName(int itemId) {
         String cached = itemNames.get(itemId);
-        if (cached != null)
-            return cached.isEmpty() ? null : cached;
+        if (cached != null) return cached.isEmpty() ? null : cached;
         String name = null;
         try {
             ItemComposition definition = client.getItemDefinition(itemId);
@@ -1121,8 +1086,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         // Rows never leave the catalog for a structural reason (house off, box tier, a
         // planted tree not detected, no boat at a berth...): they stay, locked, with the
         // rule named in the tooltip. Only the seasonal rules remove rows (passesCatalogGates).
-        if (!passesStructuralGates(transport))
-            return MethodAvailability.LOCKED;
+        if (!passesStructuralGates(transport)) return MethodAvailability.LOCKED;
 
         // A travel option the user switched OFF: the method stays listed, locked, with the toggle
         // named — otherwise the catalog shows it as usable while routing never picks it (field
@@ -1145,15 +1109,11 @@ import static gps.WorldPointUtil.unpackWorldY;
         }
 
         // A mount the player says isn't built: present in the catalog, locked.
-        if (!mountBuilt(transport))
-            return MethodAvailability.LOCKED;
+        if (!mountBuilt(transport)) return MethodAvailability.LOCKED;
         // Per-transport unlock gates.
-        if (!hasRequiredLevels(transport))
-            return MethodAvailability.MISSING_LEVEL;
-        if (transport.isQuestLocked() && !completedQuests(transport))
-            return MethodAvailability.MISSING_QUEST;
-        if (varbitChecks(transport) || varPlayerChecks(transport))
-            return MethodAvailability.LOCKED;
+        if (!hasRequiredLevels(transport)) return MethodAvailability.MISSING_LEVEL;
+        if (transport.isQuestLocked() && !completedQuests(transport)) return MethodAvailability.MISSING_QUEST;
+        if (varbitChecks(transport) || varPlayerChecks(transport)) return MethodAvailability.LOCKED;
 
         // Fairy rings additionally need a Dramen/Lunar staff unless the Lumbridge Elite diary is complete
         // (mirrors hasRequiredItems' special case).
@@ -1167,8 +1127,7 @@ import static gps.WorldPointUtil.unpackWorldY;
             && balloonStorageCovers(transport.getItemRequirements())) {
             return MethodAvailability.AVAILABLE;
         }
-        if (TransportType.CANOE.equals(type) && canoeAxeStored)
-            return MethodAvailability.AVAILABLE;
+        if (TransportType.CANOE.equals(type) && canoeAxeStored) return MethodAvailability.AVAILABLE;
         return classifyItems(transport.getItemRequirements(), farePercent(transport));
     }
 
@@ -1179,8 +1138,7 @@ import static gps.WorldPointUtil.unpackWorldY;
      * (chat-parsed counts; conservative zero until the game confirms contents).
      */
     private boolean balloonStorageCovers(TransportItems items) {
-        if (items == null)
-            return true;
+        if (items == null) return true;
         for (ItemRequirement requirement : items.getRequirements()) {
             boolean covered = false;
             if (requirement.getItemIds() != null) {
@@ -1191,8 +1149,7 @@ import static gps.WorldPointUtil.unpackWorldY;
                     }
                 }
             }
-            if (!covered)
-                return false;
+            if (!covered) return false;
         }
         return true;
     }
@@ -1204,12 +1161,9 @@ import static gps.WorldPointUtil.unpackWorldY;
      * on the teleportation-item setting) so a banked item is reported the same way in every mode.
      */
     private MethodAvailability classifyItems(TransportItems items, int coinPercent) {
-        if (items == null)
-            return MethodAvailability.AVAILABLE;
-        if (hasRequiredItems(items, true, true, false, true, false, coinPercent))
-            return MethodAvailability.AVAILABLE;
-        if (hasRequiredItems(items, true, true, true, true, true, coinPercent))
-            return MethodAvailability.IN_BANK;
+        if (items == null) return MethodAvailability.AVAILABLE;
+        if (hasRequiredItems(items, true, true, false, true, false, coinPercent)) return MethodAvailability.AVAILABLE;
+        if (hasRequiredItems(items, true, true, true, true, true, coinPercent)) return MethodAvailability.IN_BANK;
         return MethodAvailability.MISSING_ITEM;
     }
 
@@ -1236,8 +1190,7 @@ import static gps.WorldPointUtil.unpackWorldY;
     public void rebuildAvailabilityWithExclusions(Set<TeleportMethod> excluded) {
         TransportAvailability baseWithoutBank = baseAvailabilityWithoutBank;
         TransportAvailability baseWithBank = baseAvailabilityWithBank;
-        if (baseWithoutBank == null || baseWithBank == null)
-            return;
+        if (baseWithoutBank == null || baseWithBank == null) return;
         List<Transport> extras = List.of();
         if (!extraTransports.isEmpty()) {
             // The exclusion filter applies to extras exactly as to the base rows: seed searches
@@ -1246,8 +1199,7 @@ import static gps.WorldPointUtil.unpackWorldY;
             // identical results).
             extras = new ArrayList<>(extraTransports.size());
             for (Transport transport : extraTransports) {
-                if (useTransport(transport) && !excluded.contains(transport.method()))
-                    extras.add(transport);
+                if (useTransport(transport) && !excluded.contains(transport.method())) extras.add(transport);
             }
         }
         if (excluded.isEmpty() && extras.isEmpty()) {
@@ -1273,8 +1225,7 @@ import static gps.WorldPointUtil.unpackWorldY;
      * unaffected.
      */
     public boolean avoidBlockedRegion(int packedPosition, int packedNeighborPosition, boolean targetInBlockedRegion) {
-        if (!leagueModeState.isSeasonal())
-            return false;
+        if (!leagueModeState.isSeasonal()) return false;
         return !targetInBlockedRegion
             && !leagueModeState.isInBlockedRegion(packedPosition)
             && leagueModeState.isInBlockedRegion(packedNeighborPosition);
@@ -1293,11 +1244,9 @@ import static gps.WorldPointUtil.unpackWorldY;
      * Wilderness, but the shortcut is wiki-listed as Asgarnia).
      */
     private boolean isTransportRegionAllowed(Transport transport) {
-        if (!leagueModeState.isSeasonal())
-            return true;
+        if (!leagueModeState.isSeasonal()) return true;
         LeagueRegion origin = LeagueRegionChecker.getRegion(transport.getOrigin());
-        if (!leagueModeState.isUnlocked(origin))
-            return false;
+        if (!leagueModeState.isUnlocked(origin)) return false;
         LeagueRegion destination = transport.getRegionOverride() != null
             ? transport.getRegionOverride()
             : LeagueRegionChecker.getRegion(transport.getDestination());
@@ -1312,8 +1261,7 @@ import static gps.WorldPointUtil.unpackWorldY;
      */
     private static Transport[] flatten(Map<Integer, Set<Transport>> transports) {
         List<Transport> all = new ArrayList<>();
-        for (Set<Transport> set : transports.values())
-            all.addAll(set);
+        for (Set<Transport> set : transports.values()) all.addAll(set);
         return all.toArray(new Transport[0]);
     }
 
@@ -1338,8 +1286,7 @@ import static gps.WorldPointUtil.unpackWorldY;
      * items no transport cares about (issues #23/#24).
      */
     public RoutingItemDependencies getRoutingItemDependencies() {
-        if (routingItemDependencies == null)
-            routingItemDependencies = RoutingItemDependencies.build(allTransports);
+        if (routingItemDependencies == null) routingItemDependencies = RoutingItemDependencies.build(allTransports);
         return routingItemDependencies;
     }
 
@@ -1350,8 +1297,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         // (issues #23/#24, micro stutters). refreshTransports() clears the memo at the top of
         // each pass so quest progress is still re-read live.
         QuestState cached = questStates.get(quest);
-        if (cached != null)
-            return cached;
+        if (cached != null) return cached;
         QuestState state = quest.getState(client);
         questStates.put(quest, state);
         return state;
@@ -1359,37 +1305,32 @@ import static gps.WorldPointUtil.unpackWorldY;
 
     private boolean completedQuests(Transport transport) {
         for (Quest quest : transport.getQuests()) {
-            if (!QuestState.FINISHED.equals(questStates.getOrDefault(quest, QuestState.NOT_STARTED)))
-                return false;
+            if (!QuestState.FINISHED.equals(questStates.getOrDefault(quest, QuestState.NOT_STARTED))) return false;
         }
         return true;
     }
 
     public boolean varbitChecks(Transport transport) {
         for (VarRequirement varRequirement : transport.getVarbits()) {
-            if (!varRequirement.check(varbitValues))
-                return true;
+            if (!varRequirement.check(varbitValues)) return true;
         }
         return false;
     }
 
     public boolean varPlayerChecks(Transport transport) {
         for (VarRequirement varRequirement : transport.getVarPlayers()) {
-            if (!varRequirement.check(varPlayerValues))
-                return true;
+            if (!varRequirement.check(varPlayerValues)) return true;
         }
         return false;
     }
 
     private boolean useTransport(Transport transport) {
         // Alternative-routes exclusion: the user switched this exact method off for the next search.
-        if (!excludedMethods.isEmpty() && excludedMethods.contains(transport.method()))
-            return false;
+        if (!excludedMethods.isEmpty() && excludedMethods.contains(transport.method())) return false;
 
         // Structural world rules (sailing, POH master switch, league regions, POH variants, planted
         // spirit trees): apply in every mode, including the catalog pass and full planning mode.
-        if (!passesStructuralGates(transport))
-            return false;
+        if (!passesStructuralGates(transport)) return false;
 
         final boolean isQuestLocked = transport.isQuestLocked();
         TransportType type = transport.getType();
@@ -1398,8 +1339,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         // alternative-routes "All" family. See PathfinderConfig#bypassItemPossession.
         if (!bypassItemPossession) {
             // Check if transport type is enabled in config
-            if (!transportTypeConfig.isEnabled(type))
-                return false;
+            if (!transportTypeConfig.isEnabled(type)) return false;
 
             // Boat-location gate: a boarding leg needs the boat AT that mooring, or Summon
             // Boat assumed and castable. With boat state read (logged in) and NO boat
@@ -1413,27 +1353,21 @@ import static gps.WorldPointUtil.unpackWorldY;
             }
 
             // Handle special cases for teleportation items and seasonal transports
-            if (!checkTeleportationItemRules(transport, type))
-                return false;
+            if (!checkTeleportationItemRules(transport, type)) return false;
 
         }
 
         // Character-unlock gates (skills, quests, varbits/varplayers): only bypassed by the full
         // planning mode ("Everything"); the "All available" variant keeps them.
         if (!planningMode) {
-            if (!mountBuilt(transport))
-                return false;
-            if (!hasRequiredLevels(transport))
-                return false;
+            if (!mountBuilt(transport)) return false;
+            if (!hasRequiredLevels(transport)) return false;
 
-            if (isQuestLocked && !completedQuests(transport))
-                return false;
+            if (isQuestLocked && !completedQuests(transport)) return false;
 
-            if (varbitChecks(transport))
-                return false;
+            if (varbitChecks(transport)) return false;
 
-            if (varPlayerChecks(transport))
-                return false;
+            if (varPlayerChecks(transport)) return false;
         }
 
         return true;
@@ -1478,8 +1412,7 @@ import static gps.WorldPointUtil.unpackWorldY;
             unpackWorldY(transport.getOrigin()))
             || PlayerOwnedHouse.isInside(unpackWorldX(transport.getDestination()),
             unpackWorldY(transport.getDestination()));
-        if (inHouse && !usePoh)
-            return "House is off (House section)";
+        if (inHouse && !usePoh) return "House is off (House section)";
         if (inHouse && !checkPohVariant(transport, type)) {
             return (TransportType.FAIRY_RING.equals(type) ? "Fairy ring"
                 : TransportType.SPIRIT_TREE.equals(type) ? "Spirit tree" : "Wilderness obelisk")
@@ -1494,8 +1427,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         }
         if (TransportType.SPIRIT_TREE.equals(type) && !checkPlantedSpiritTrees(transport))
             return "Planted spirit tree not detected (Planted spirit trees section)";
-        if (!mountBuilt(transport))
-            return "Not built in your house (House section)";
+        if (!mountBuilt(transport)) return "Not built in your house (House section)";
         return null;
     }
 
@@ -1510,8 +1442,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         // Master sailing gate: sailing is a structural world switch (own Travel options
         // section), not a catalog method — with it off, sailing edges must not exist in ANY
         // mode, planning included, or "every method excluded" would still sail to islands.
-        if (!useSailing && type == TransportType.SAILING)
-            return false;
+        if (!useSailing && type == TransportType.SAILING) return false;
 
         // (The boat-location gate for BOARDING legs lives in useTransport's possession
         // block, not here: boat ownership is a possession, so the "All" family bypasses
@@ -1531,27 +1462,22 @@ import static gps.WorldPointUtil.unpackWorldY;
             int originY = unpackWorldY(transport.getOrigin());
             int destX = unpackWorldX(transport.getDestination());
             int destY = unpackWorldY(transport.getDestination());
-            if (PlayerOwnedHouse.isInside(originX, originY) || PlayerOwnedHouse.isInside(destX, destY))
-                return false;
+            if (PlayerOwnedHouse.isInside(originX, originY) || PlayerOwnedHouse.isInside(destX, destY)) return false;
         }
 
         // League region gate: in seasonal mode, drop transports that touch the always-blocked region or
         // a region the player has not unlocked.
-        if (!isTransportRegionAllowed(transport))
-            return false;
+        if (!isTransportRegionAllowed(transport)) return false;
 
         // POH variants (fairy ring / spirit tree / obelisk inside the POH) depend on POH sub-settings.
-        if (!checkPohVariant(transport, type))
-            return false;
+        if (!checkPohVariant(transport, type)) return false;
 
-        if (TransportType.TELEPORTATION_PORTAL_POH.equals(type) && !pohPortalBuilt(transport))
-            return false;
+        if (TransportType.TELEPORTATION_PORTAL_POH.equals(type) && !pohPortalBuilt(transport)) return false;
 
         // The jewellery-box tier and mounted-item toggle describe what furniture EXISTS in the
         // player's house — structural facts like the POH variants above, not character unlocks —
         // so they apply in every mode, including the "All" family.
-        if (TransportType.TELEPORTATION_BOX.equals(type) && !checkJewelleryBoxTier(transport))
-            return false;
+        if (TransportType.TELEPORTATION_BOX.equals(type) && !checkJewelleryBoxTier(transport)) return false;
 
         // Seasonal (Leagues) transports are hidden entirely unless the master toggle is on: gating
         // here (a structural rule that applies in EVERY mode, including the catalog pass and the
@@ -1561,8 +1487,7 @@ import static gps.WorldPointUtil.unpackWorldY;
             return transportTypeConfig.isEnabled(TransportType.SEASONAL_TRANSPORTS)
                 && checkPlantedSpiritTrees(transport);
         }
-        if (TransportType.SPIRIT_TREE.equals(type))
-            return checkPlantedSpiritTrees(transport);
+        if (TransportType.SPIRIT_TREE.equals(type)) return checkPlantedSpiritTrees(transport);
 
         return true;
     }
@@ -1572,8 +1497,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         int originY = unpackWorldY(transport.getOrigin());
 
         // Check planted spirit tree origins (travel FROM a planted tree)
-        if (isPlantedSpiritTreeBlocked(originX, originY))
-            return false;
+        if (isPlantedSpiritTreeBlocked(originX, originY)) return false;
 
         // Check planted spirit tree destinations (travel TO a planted tree)
         int destX = unpackWorldX(transport.getDestination());
@@ -1597,14 +1521,11 @@ import static gps.WorldPointUtil.unpackWorldY;
         }
 
         // POH fairy ring
-        if (TransportType.FAIRY_RING.equals(type))
-            return usePohFairyRing;
+        if (TransportType.FAIRY_RING.equals(type)) return usePohFairyRing;
         // POH spirit tree
-        if (TransportType.SPIRIT_TREE.equals(type))
-            return usePohSpiritTree;
+        if (TransportType.SPIRIT_TREE.equals(type)) return usePohSpiritTree;
         // POH obelisk
-        if (TransportType.WILDERNESS_OBELISK.equals(type))
-            return usePohObelisk;
+        if (TransportType.WILDERNESS_OBELISK.equals(type)) return usePohObelisk;
 
         return true;
     }
@@ -1649,10 +1570,8 @@ import static gps.WorldPointUtil.unpackWorldY;
      * while the house was never scanned.
      */
     private boolean pohPortalBuilt(Transport transport) {
-        if (pohBuiltPortals == null)
-            return true;
-        if (isNexusRow(transport))
-            return pohNexus;
+        if (pohBuiltPortals == null) return true;
+        if (isNexusRow(transport)) return pohNexus;
         Integer id = objectIdOf(transport);
         return id != null && pohBuiltPortals.contains(id);
     }
@@ -1664,8 +1583,7 @@ import static gps.WorldPointUtil.unpackWorldY;
     /** The object id ending a row's "menuOption menuTarget objectID" column, or null. */
     private static Integer objectIdOf(Transport transport) {
         String info = transport.getObjectInfo();
-        if (info == null)
-            return null;
+        if (info == null) return null;
         try {
             return Integer.parseInt(info.substring(info.lastIndexOf(' ') + 1));
         }
@@ -1687,8 +1605,7 @@ import static gps.WorldPointUtil.unpackWorldY;
             for (Transport transport : allTransports) {
                 Integer id = TransportType.TELEPORTATION_PORTAL_POH.equals(transport.getType()) && !isNexusRow(transport)
                     ? objectIdOf(transport) : null;
-                if (id != null && transport.getDisplayInfo() != null)
-                    names.put(id, transport.getDisplayInfo());
+                if (id != null && transport.getDisplayInfo() != null) names.put(id, transport.getDisplayInfo());
             }
             pohPortalNames = Collections.unmodifiableMap(names);
         }
@@ -1697,16 +1614,11 @@ import static gps.WorldPointUtil.unpackWorldY;
 
     private boolean mountBuilt(Transport transport) {
         String objectInfo = transport.getObjectInfo();
-        if (!TransportType.TELEPORTATION_BOX.equals(transport.getType()) || objectInfo == null)
-            return true;
-        if (objectInfo.contains("Amulet of Glory"))
-            return pohMountGlory;
-        if (objectInfo.contains("Xeric's Talisman"))
-            return pohMountXerics;
-        if (objectInfo.contains("Digsite"))
-            return pohMountDigsite;
-        if (objectInfo.contains("Mythical cape"))
-            return pohMountMythical;
+        if (!TransportType.TELEPORTATION_BOX.equals(transport.getType()) || objectInfo == null) return true;
+        if (objectInfo.contains("Amulet of Glory")) return pohMountGlory;
+        if (objectInfo.contains("Xeric's Talisman")) return pohMountXerics;
+        if (objectInfo.contains("Digsite")) return pohMountDigsite;
+        if (objectInfo.contains("Mythical cape")) return pohMountMythical;
         return true;
     }
 
@@ -1716,8 +1628,7 @@ import static gps.WorldPointUtil.unpackWorldY;
      */
     private boolean checkJewelleryBoxTier(Transport transport) {
         String objectInfo = transport.getObjectInfo();
-        if (objectInfo == null)
-            return false;
+        if (objectInfo == null) return false;
 
         // Check if this is a mounted item (glory, xeric's, digsite, mythical cape)
         boolean isMountedGlory = objectInfo.contains("Amulet of Glory");
@@ -1729,16 +1640,14 @@ import static gps.WorldPointUtil.unpackWorldY;
         if (isMountedItem) {
             // If mounted glory and ornate jewellery box is enabled, skip the glory
             // because the ornate box already covers all 4 destinations with correct prefixes
-            if (isMountedGlory && JewelleryBoxTier.ORNATE.equals(pohJewelleryBoxTier))
-                return false;
+            if (isMountedGlory && JewelleryBoxTier.ORNATE.equals(pohJewelleryBoxTier)) return false;
             // Per-mount choice is an UNLOCK, not structure: the row stays in the catalog with a
             // lock (see mountBuilt), so nothing vanishes when a mount is unticked.
             return usePohMountedItems;
         }
 
         // Filter jewellery boxes by tier
-        if (JewelleryBoxTier.NONE.equals(pohJewelleryBoxTier))
-            return false;
+        if (JewelleryBoxTier.NONE.equals(pohJewelleryBoxTier)) return false;
 
         // Basic box (37492): destinations 1-9
         if (objectInfo.contains("Basic Jewellery Box 37492")) {
@@ -1768,8 +1677,7 @@ import static gps.WorldPointUtil.unpackWorldY;
      */
     public boolean levelGateCrossed(Skill skill, int newLevel) {
         int old = boostedSkillLevelsAndMore[skill.ordinal()];
-        if (old == 0 || old == newLevel)
-            return false;
+        if (old == 0 || old == newLevel) return false;
         int low = Math.min(old, newLevel), high = Math.max(old, newLevel);
         for (Transport transport : allTransports) {
             int[] levels = transport.getSkillLevels();
@@ -1786,12 +1694,10 @@ import static gps.WorldPointUtil.unpackWorldY;
         final int totalLevelIndex = Skill.values().length;
         int[] requiredLevels = transport.getSkillLevels();
         for (int i = 0; i < boostedSkillLevelsAndMore.length; i++) {
-            if (leagueModeState.isSeasonal() && i == totalLevelIndex)
-                continue;
+            if (leagueModeState.isSeasonal() && i == totalLevelIndex) continue;
             int boostedLevel = boostedSkillLevelsAndMore[i];
             int requiredLevel = requiredLevels[i];
-            if (boostedLevel < requiredLevel)
-                return false;
+            if (boostedLevel < requiredLevel) return false;
         }
         return true;
     }
@@ -1811,8 +1717,7 @@ import static gps.WorldPointUtil.unpackWorldY;
             && balloonStorageCovers(transport.getItemRequirements())) {
             return true;
         }
-        if (TransportType.CANOE.equals(transport.getType()) && canoeAxeStored)
-            return true;
+        if (TransportType.CANOE.equals(transport.getType()) && canoeAxeStored) return true;
 
         if (TransportType.TELEPORTATION_ITEM.equals(transport.getType()) ||
             TransportType.SEASONAL_TRANSPORTS.equals(transport.getType()) ||
@@ -1874,8 +1779,7 @@ import static gps.WorldPointUtil.unpackWorldY;
             ItemContainer inventory = client.getItemContainer(InventoryID.INV);
             if (inventory != null) {
                 for (Item item : inventory.getItems()) {
-                    if (item.getId() >= 0 && item.getQuantity() > 0)
-                        items.put(item.getId(), item.getQuantity());
+                    if (item.getId() >= 0 && item.getQuantity() > 0) items.put(item.getId(), item.getQuantity());
                 }
             }
         }
@@ -1884,8 +1788,7 @@ import static gps.WorldPointUtil.unpackWorldY;
             ItemContainer equipment = client.getItemContainer(InventoryID.WORN);
             if (equipment != null) {
                 for (Item item : equipment.getItems()) {
-                    if (item.getId() >= 0 && item.getQuantity() > 0)
-                        items.put(item.getId(), item.getQuantity());
+                    if (item.getId() >= 0 && item.getQuantity() > 0) items.put(item.getId(), item.getQuantity());
                 }
             }
         }
@@ -1898,8 +1801,7 @@ import static gps.WorldPointUtil.unpackWorldY;
                 || TeleportationItem.INVENTORY_AND_BANK.equals(teleportSetting)
                 || TeleportationItem.INVENTORY_AND_BANK_NON_CONSUMABLE.equals(teleportSetting))) {
                 for (Item item : bankItems) {
-                    if (item.getId() >= 0 && item.getQuantity() > 0)
-                        items.put(item.getId(), item.getQuantity());
+                    if (item.getId() >= 0 && item.getQuantity() > 0) items.put(item.getId(), item.getQuantity());
                 }
             }
         }
@@ -1918,8 +1820,7 @@ import static gps.WorldPointUtil.unpackWorldY;
                     int runeEnumId = client.getVarbitValue(RUNE_POUCH_RUNE_VARBITS[i]);
                     int runeId = runeEnumId > 0 ? runePouchEnum.getIntValue(runeEnumId) : 0;
                     int runeAmount = client.getVarbitValue(RUNE_POUCH_AMOUNT_VARBITS[i]);
-                    if (runeId > 0 && runeAmount > 0)
-                        items.put(runeId, runeAmount);
+                    if (runeId > 0 && runeAmount > 0) items.put(runeId, runeAmount);
                 }
             }
         }
@@ -1965,8 +1866,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         boolean checkRunePouch,
         boolean forceBank,
         int coinPercent) {
-        if (transportItems == null)
-            return true;
+        if (transportItems == null) return true;
         Map<Integer, Integer> items = itemSnapshot(checkInventory, checkEquipment, checkBank, checkRunePouch, forceBank);
 
         // One staff is wielded per cast, but a COMBO staff covers both its elements at once: the
@@ -1984,8 +1884,7 @@ import static gps.WorldPointUtil.unpackWorldY;
                 for (int itemId : req.getItemIds()) {
                     int quantity = items.getOrDefault(itemId, 0);
                     if (requiredQuantity > 0 && quantity >= requiredQuantity || requiredQuantity == 0 && quantity == 0) {
-                        if (CURRENCIES.contains(itemId) && requiredQuantity > currencyThreshold)
-                            return false;
+                        if (CURRENCIES.contains(itemId) && requiredQuantity > currencyThreshold) return false;
                         missing = false;
                         break;
                     }
@@ -1994,21 +1893,18 @@ import static gps.WorldPointUtil.unpackWorldY;
             if (missing && req.getStaffIds() != null) {
                 int[] present = presentIds(items, req.getStaffIds(), requiredQuantity);
                 if (requiredQuantity == 0 ? present.length == req.getStaffIds().length : present.length > 0) {
-                    if (requiredQuantity > 0)
-                        staffNeeds.add(present);
+                    if (requiredQuantity > 0) staffNeeds.add(present);
                     missing = false;
                 }
             }
             if (missing && req.getOffhandIds() != null) {
                 int[] present = presentIds(items, req.getOffhandIds(), requiredQuantity);
                 if (requiredQuantity == 0 ? present.length == req.getOffhandIds().length : present.length > 0) {
-                    if (requiredQuantity > 0)
-                        offhandNeeds.add(present);
+                    if (requiredQuantity > 0) offhandNeeds.add(present);
                     missing = false;
                 }
             }
-            if (missing)
-                return false;
+            if (missing) return false;
         }
         return coveredByOneItem(staffNeeds) && coveredByOneItem(offhandNeeds);
     }
@@ -2023,16 +1919,14 @@ import static gps.WorldPointUtil.unpackWorldY;
         int[] out = new int[ids.length];
         for (int itemId : ids) {
             int quantity = items.getOrDefault(itemId, 0);
-            if (requiredQuantity > 0 ? quantity >= 1 : quantity == 0)
-                out[n++] = itemId;
+            if (requiredQuantity > 0 ? quantity >= 1 : quantity == 0) out[n++] = itemId;
         }
         return Arrays.copyOf(out, n);
     }
 
     /** Whether one single item id appears in every set — one wielded staff / one offhand tome. */
     private static boolean coveredByOneItem(List<int[]> needs) {
-        if (needs.size() <= 1)
-            return true;
+        if (needs.size() <= 1) return true;
         outer:
         for (int candidate : needs.get(0)) {
             for (int i = 1; i < needs.size(); i++) {
@@ -2043,8 +1937,7 @@ import static gps.WorldPointUtil.unpackWorldY;
                         break;
                     }
                 }
-                if (!found)
-                    continue outer;
+                if (!found) continue outer;
             }
             return true;
         }
@@ -2077,15 +1970,13 @@ import static gps.WorldPointUtil.unpackWorldY;
         }
         // Smart tracking off: assume every farmable tree is grown; the Spirit trees catalog toggle
         // is then the only gate (mirrors how the All modes assume balloon flights are available).
-        if (!spiritTreeSmartMode)
-            return false;
+        if (!spiritTreeSmartMode) return false;
         // Smart on: only the trees the travel menu confirmed are grown. The parsed set lives on the
         // main config; planning copies read it through their source (mirrors resolveBankItems), so
         // widget updates reach the search engine. Until the menu is seen (null), stay conservative.
         Set<String> available = (planningSource != null)
             ? planningSource.availableSpiritTrees : availableSpiritTrees;
-        if (available == null)
-            return true;
+        if (available == null) return true;
         return !available.contains(treeName);
     }
 }

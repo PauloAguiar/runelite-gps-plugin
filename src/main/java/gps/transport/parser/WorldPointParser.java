@@ -17,11 +17,9 @@ public class WorldPointParser implements FieldParser<Integer> {
     private static final String DELIM_SPACE = " ";
 
     @Override public Integer parse(String value) {
-        if (value == null || value.isEmpty())
-            return Transport.LOCATION_PERMUTATION;
+        if (value == null || value.isEmpty()) return Transport.LOCATION_PERMUTATION;
         String trimmed = value.trim();
-        if (trimmed.isEmpty())
-            return Transport.LOCATION_PERMUTATION;
+        if (trimmed.isEmpty()) return Transport.LOCATION_PERMUTATION;
         String[] parts = trimmed.split(DELIM_SPACE);
         if (parts.length != 3) {
             // A padded or malformed cell used to become a silent location permutation: a row

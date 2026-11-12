@@ -43,8 +43,7 @@ import lombok.extern.slf4j.Slf4j;
     private static Set<String> withTypeKeys(Collection<String> itemKeys) {
         Set<String> keys = new HashSet<>(itemKeys);
         for (TransportType type : TransportType.values()) {
-            if (type.getEnabledKey() != null)
-                keys.add(type.getEnabledKey());
+            if (type.getEnabledKey() != null) keys.add(type.getEnabledKey());
         }
         return Collections.unmodifiableSet(keys);
     }
@@ -99,8 +98,7 @@ import lombok.extern.slf4j.Slf4j;
         Object value = OVERRIDES.isEmpty() ? null : OVERRIDES.get(key);
         if (value instanceof String) {
             TeleportationItem item = TeleportationItem.fromType((String) value);
-            if (item != null)
-                return item;
+            if (item != null) return item;
         }
         return defaultValue;
     }
@@ -109,8 +107,7 @@ import lombok.extern.slf4j.Slf4j;
         Object value = OVERRIDES.isEmpty() ? null : OVERRIDES.get(key);
         if (value instanceof String) {
             JewelleryBoxTier tier = JewelleryBoxTier.fromType((String) value);
-            if (tier != null)
-                return tier;
+            if (tier != null) return tier;
         }
         return defaultValue;
     }

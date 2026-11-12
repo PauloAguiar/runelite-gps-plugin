@@ -26,8 +26,7 @@ final class PluginHotkeys {
         this.focusSearch = hotkey(focusSearchKey, onFocusSearch);
         this.dismissArrival = new MouseAdapter() {
             @Override public MouseEvent mousePressed(MouseEvent event) {
-                if (dismissArrivalAt.test(event.getPoint()))
-                    event.consume();
+                if (dismissArrivalAt.test(event.getPoint())) event.consume();
                 return event;
             }
         };
@@ -39,8 +38,7 @@ final class PluginHotkeys {
             }
 
             @Override public void keyPressed(KeyEvent e) {
-                if (key.get().matches(e))
-                    action.run();
+                if (key.get().matches(e)) action.run();
             }
 
             @Override public void keyReleased(KeyEvent e) {

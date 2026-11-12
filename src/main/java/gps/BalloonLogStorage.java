@@ -101,8 +101,7 @@ public final class BalloonLogStorage {
      */
     public static void track(ChatMessageType type, String message, ShortestPathConfig config,
         ConfigManager configManager, String configGroup) {
-        if (!config.balloonSmartMode() || (type != ChatMessageType.SPAM && type != ChatMessageType.MESBOX))
-            return;
+        if (!config.balloonSmartMode() || (type != ChatMessageType.SPAM && type != ChatMessageType.MESBOX)) return;
         Map<String, Integer> updates = parse(message);
         for (Map.Entry<String, Integer> update : updates.entrySet())
             configManager.setConfiguration(configGroup, update.getKey(), update.getValue());
@@ -113,16 +112,14 @@ public final class BalloonLogStorage {
     public static List<String> lowTypes(int[] stored, boolean[] unlocked, int threshold) {
         List<String> low = new ArrayList<>();
         for (int i = 0; i < TYPE_NAMES.length; i++) {
-            if (unlocked[i] && stored[i] < threshold)
-                low.add(TYPE_NAMES[i]);
+            if (unlocked[i] && stored[i] < threshold) low.add(TYPE_NAMES[i]);
         }
         return low;
     }
 
     private static void put(Map<String, Integer> updates, String type, int count) {
         String key = keyOf(type);
-        if (key != null)
-            updates.put(key, count);
+        if (key != null) updates.put(key, count);
     }
 
     private static String keyOf(String type) {

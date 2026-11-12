@@ -106,12 +106,10 @@ final class PanelWidgets {
     /** The first JTextField inside a composite component (IconTextField hides its own). */
     static JTextField innerTextField(Container root) {
         for (Component component : root.getComponents()) {
-            if (component instanceof JTextField)
-                return (JTextField) component;
+            if (component instanceof JTextField) return (JTextField) component;
             if (component instanceof Container) {
                 JTextField inner = innerTextField((Container) component);
-                if (inner != null)
-                    return inner;
+                if (inner != null) return inner;
             }
         }
         return null;
@@ -151,15 +149,13 @@ final class PanelWidgets {
         JPanel row = new JPanel(new BorderLayout());
         row.setOpaque(false);
         JLabel text = wrappedLabel(innerHtml);
-        if (tooltip != null)
-            text.setToolTipText(tooltip);
+        if (tooltip != null) text.setToolTipText(tooltip);
         row.add(text, BorderLayout.WEST);
         return row;
     }
 
     static String escapeHtml(String text) {
-        if (text == null)
-            return "";
+        if (text == null) return "";
         return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 
@@ -256,8 +252,7 @@ final class PanelWidgets {
      */
     static JPanel banner(Icon icon, String title, String body, Color accent) {
         String html = "<font color='#FFFFFF'><b>" + escapeHtml(title) + "</b></font>";
-        if (body != null && !body.isEmpty())
-            html += "<br>" + body;
+        if (body != null && !body.isEmpty()) html += "<br>" + body;
         return banner(icon, html, accent);
     }
 
@@ -287,8 +282,7 @@ final class PanelWidgets {
             titleLabel.setFont(FontManager.getRunescapeBoldFont());
             titleLabel.setForeground(ColorScheme.BRAND_ORANGE);
         }
-        else
-            titleLabel.setForeground(Color.WHITE);
+        else titleLabel.setForeground(Color.WHITE);
         titleRow.add(titleLabel, BorderLayout.CENTER);
         JLabel state = new JLabel(stateText);
         state.setForeground(stateColor);
@@ -377,8 +371,7 @@ final class PanelWidgets {
         StringBuilder joined = new StringBuilder();
         int i = 0;
         for (TeleportMethod method : methods) {
-            if (i > 0)
-                joined.append(i == methods.size() - 1 ? " and " : ", ");
+            if (i > 0) joined.append(i == methods.size() - 1 ? " and " : ", ");
             joined.append(method.label());
             i++;
         }
@@ -391,12 +384,10 @@ final class PanelWidgets {
      * under the cursor, hence the recursion.
      */
     static void addClickRecursively(Component component, MouseListener listener) {
-        if (component instanceof IconActionLabel)
-            return;
+        if (component instanceof IconActionLabel) return;
         component.addMouseListener(listener);
         if (component instanceof Container) {
-            for (Component child : ((Container) component).getComponents())
-                addClickRecursively(child, listener);
+            for (Component child : ((Container) component).getComponents()) addClickRecursively(child, listener);
         }
     }
 
@@ -409,8 +400,7 @@ final class PanelWidgets {
     static JLabel statusMarker(ShortestPathPlugin plugin, MethodAvailability status, TeleportMethod method) {
         JLabel label = new JLabel(status == MethodAvailability.IN_BANK ? RouteIcons.IN_BANK : RouteIcons.LOCKED);
         String detail = plugin.methodUnavailabilityDetail(method);
-        if (detail == null)
-            label.setToolTipText(statusReason(status));
+        if (detail == null) label.setToolTipText(statusReason(status));
         else {
             label.setToolTipText(status == MethodAvailability.IN_BANK
                 ? detail + ": switch to + Bank or withdraw it"

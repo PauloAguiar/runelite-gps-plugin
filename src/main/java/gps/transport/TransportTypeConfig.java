@@ -116,8 +116,7 @@ import gps.*;
      */
     private int getCostThreshold(TransportType type) {
         // No cost getter means no additional cost
-        if (!type.hasCostGetter())
-            return 0;
+        if (!type.hasCostGetter()) return 0;
 
         int configValue = type.getCostGetter().apply(config);
         return ConfigOverrides.override(type, configValue);
@@ -177,7 +176,6 @@ import gps.*;
     }
 
     public void disableUnless(TransportType type, boolean condition) {
-        if (!condition)
-            enabledStates.put(type, false);
+        if (!condition) enabledStates.put(type, false);
     }
 }

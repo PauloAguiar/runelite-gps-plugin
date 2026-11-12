@@ -34,8 +34,7 @@ class IntMinHeap {
     }
 
     void add(int id) {
-        if (size == heap.length)
-            heap = Arrays.copyOf(heap, heap.length << 1);
+        if (size == heap.length) heap = Arrays.copyOf(heap, heap.length << 1);
         heap[size] = id;
         siftUp(size);
         size++;
@@ -45,8 +44,7 @@ class IntMinHeap {
      * @return the removed minimum-cost element, or {@link NodeGraph#NO_NODE} if empty.
      */
     int poll() {
-        if (size == 0)
-            return NodeGraph.NO_NODE;
+        if (size == 0) return NodeGraph.NO_NODE;
         final int top = heap[0];
         size--;
         if (size > 0) {
@@ -78,12 +76,10 @@ class IntMinHeap {
     private boolean less(int a, int b) {
         final int costA = graph.orderCost(a);
         final int costB = graph.orderCost(b);
-        if (costA != costB)
-            return costA < costB;
+        if (costA != costB) return costA < costB;
         final int gA = graph.cost(a);
         final int gB = graph.cost(b);
-        if (gA != gB)
-            return gA > gB;
+        if (gA != gB) return gA > gB;
         return a < b;
     }
 
@@ -91,8 +87,7 @@ class IntMinHeap {
         final int id = heap[index];
         while (index > 0) {
             final int parent = (index - 1) >> 1;
-            if (!less(id, heap[parent]))
-                break;
+            if (!less(id, heap[parent])) break;
             heap[index] = heap[parent];
             index = parent;
         }
@@ -105,10 +100,8 @@ class IntMinHeap {
         while (index < half) {
             int child = (index << 1) + 1;
             final int right = child + 1;
-            if (right < size && less(heap[right], heap[child]))
-                child = right;
-            if (!less(heap[child], id))
-                break;
+            if (right < size && less(heap[right], heap[child])) child = right;
+            if (!less(heap[child], id)) break;
             heap[index] = heap[child];
             index = child;
         }

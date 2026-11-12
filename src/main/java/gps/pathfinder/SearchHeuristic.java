@@ -52,11 +52,9 @@ public final class SearchHeuristic {
      * global-teleport hub nodes) gets the floor, unflooded tiles min(horizon, floor).
      */
     public int of(int packedPosition) {
-        if (packedPosition == WorldPointUtil.UNDEFINED)
-            return floor;
+        if (packedPosition == WorldPointUtil.UNDEFINED) return floor;
         final int distance = field.distance(packedPosition);
-        if (distance == DistanceField.UNREACHED)
-            return Math.min(horizon, floor);
+        if (distance == DistanceField.UNREACHED) return Math.min(horizon, floor);
         return distance >= floor ? floor : distance;
     }
 
@@ -91,8 +89,7 @@ public final class SearchHeuristic {
     }
 
     public static SearchHeuristic buildWithField(PathfinderConfig config, DistanceField field) {
-        if (field == null)
-            return null;
+        if (field == null) return null;
         final int horizon = field.horizon();
         int floor = UNBOUNDED_FLOOR;
         // Both bank states: a path may flip into the banked state mid-search, so the floor must
@@ -100,8 +97,7 @@ public final class SearchHeuristic {
         for (boolean bankVisited : new boolean[]{false, true}) {
             for (Transport teleport : config.getUsableTeleports(bankVisited)) {
                 final int destination = teleport.getDestination();
-                if (destination == WorldPointUtil.UNDEFINED)
-                    continue;
+                if (destination == WorldPointUtil.UNDEFINED) continue;
                 int landingDistance = field.distance(destination);
                 if (landingDistance == DistanceField.UNREACHED) {
                     if (horizon == Integer.MAX_VALUE)

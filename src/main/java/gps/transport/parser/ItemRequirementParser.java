@@ -29,8 +29,7 @@ import gps.transport.requirement.TransportItems;
     private static final String DELIM_OR = "|";
 
     @Override public TransportItems parse(String value) {
-        if (value == null || value.isEmpty())
-            return null;
+        if (value == null || value.isEmpty()) return null;
 
         // Normalize the input
         String normalized = value.replace(" ", "")
@@ -72,8 +71,7 @@ import gps.transport.requirement.TransportItems;
 
         for (String orPart : orParts) {
             String[] itemAndQuantity = orPart.split(DELIM_STATE);
-            if (itemAndQuantity.length != 2)
-                throw new NumberFormatException("Invalid format: " + part);
+            if (itemAndQuantity.length != 2) throw new NumberFormatException("Invalid format: " + part);
 
             String itemName = itemAndQuantity[0];
             int quantity = Integer.parseInt(itemAndQuantity[1]);

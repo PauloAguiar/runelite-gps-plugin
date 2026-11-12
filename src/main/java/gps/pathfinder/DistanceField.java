@@ -88,14 +88,11 @@ public final class DistanceField {
         final int y = unpackWorldY(packedPosition);
         final int plane = unpackWorldPlane(packedPosition);
         final int regionIndex = getRegionIndex(x / REGION_SIZE, y / REGION_SIZE);
-        if (regionIndex < 0 || regionIndex >= regions.length)
-            return UNREACHED;
+        if (regionIndex < 0 || regionIndex >= regions.length) return UNREACHED;
         final short[] region = regions[regionIndex];
-        if (region == null)
-            return UNREACHED;
+        if (region == null) return UNREACHED;
         final int index = tileIndex(x, y, plane, region.length);
-        if (index < 0)
-            return UNREACHED;
+        if (index < 0) return UNREACHED;
         final short value = region[index];
         return value == EMPTY ? UNREACHED : value;
     }
@@ -103,8 +100,7 @@ public final class DistanceField {
     /** Relaxes a tile to the given distance; true when it improved (and should be enqueued). */
     private boolean relax(int x, int y, int plane, int distance) {
         final int regionIndex = getRegionIndex(x / REGION_SIZE, y / REGION_SIZE);
-        if (regionIndex < 0 || regionIndex >= regions.length)
-            return false;
+        if (regionIndex < 0 || regionIndex >= regions.length) return false;
         short[] region = regions[regionIndex];
         if (region == null) {
             final byte planeCount = map.getRegionPlaneCounts(regionIndex);
@@ -113,12 +109,10 @@ public final class DistanceField {
             regions[regionIndex] = region;
         }
         final int index = tileIndex(x, y, plane, region.length);
-        if (index < 0)
-            return false;
+        if (index < 0) return false;
         final short clamped = (short) Math.min(distance, MAX_DISTANCE);
         final short current = region[index];
-        if (current != EMPTY && current <= clamped)
-            return false;
+        if (current != EMPTY && current <= clamped) return false;
         region[index] = clamped;
         return true;
     }
@@ -141,8 +135,7 @@ public final class DistanceField {
      * any search of the generation. 0 floods the full map.
      */
     public static DistanceField buildIfCompact(PathfinderConfig config, Set<Integer> targets, int costMultiple) {
-        if (targets == null || targets.isEmpty())
-            return null;
+        if (targets == null || targets.isEmpty()) return null;
         // No span gate any more (plan step N1): a map-wide "nearest bank" set used to get NO field
         // on the theory that such searches are cheap and h ~ 0 everywhere, so every search of
         // the generation ran blind. They are cheap only when the nearest target is close; when it
@@ -194,8 +187,7 @@ public final class DistanceField {
             final int x = unpackWorldX(target);
             final int y = unpackWorldY(target);
             final int plane = unpackWorldPlane(target);
-            if (field.relax(x, y, plane, 0))
-                fifo.addLast(target);
+            if (field.relax(x, y, plane, 0)) fifo.addLast(target);
         }
 
         while (!fifo.isEmpty() || !heap.isEmpty()) {
@@ -204,13 +196,11 @@ public final class DistanceField {
                 && (fifo.isEmpty() || (heap.peek() >>> 32) < field.distance(fifo.peekFirst()))) {
                 packed = (int) (long) heap.poll();
             }
-            else
-                packed = fifo.pollFirst();
+            else packed = fifo.pollFirst();
             final int x = unpackWorldX(packed);
             final int y = unpackWorldY(packed);
             final int plane = unpackWorldPlane(packed);
-            if (!settled.set(x, y, plane, false))
-                continue;
+            if (!settled.set(x, y, plane, false)) continue;
             final int distance = field.distance(packed);
 
             if (landingCasts != null) {
@@ -263,20 +253,17 @@ public final class DistanceField {
      */
     private void patchBlockedLandings(PathfinderConfig config, int[] transportDestinations) {
         final Set<Integer> landings = new HashSet<>();
-        for (int destination : transportDestinations)
-            landings.add(destination);
+        for (int destination : transportDestinations) landings.add(destination);
         for (boolean bankVisited : new boolean[]{false, true}) {
             for (Transport teleport : config.getUsableTeleports(bankVisited)) {
-                if (teleport.getDestination() != WorldPointUtil.UNDEFINED)
-                    landings.add(teleport.getDestination());
+                if (teleport.getDestination() != WorldPointUtil.UNDEFINED) landings.add(teleport.getDestination());
             }
         }
         for (int landing : landings) {
             final int x = unpackWorldX(landing);
             final int y = unpackWorldY(landing);
             final int plane = unpackWorldPlane(landing);
-            if (distance(landing) != UNREACHED || !map.isBlocked(x, y, plane))
-                continue;
+            if (distance(landing) != UNREACHED || !map.isBlocked(x, y, plane)) continue;
             // Forward step-off adjacency from a blocked tile (CollisionMap.getTileNeighbors'
             // isBlocked branch): any unblocked cardinal; diagonals need both flanking cardinals too.
             final boolean westBlocked = map.isBlocked(x - 1, y, plane);
@@ -292,14 +279,11 @@ public final class DistanceField {
             };
             int best = UNREACHED;
             for (int i = 0; i < 8; i++) {
-                if (!stepOpen[i])
-                    continue;
+                if (!stepOpen[i]) continue;
                 final int neighbour = distance(packWorldPoint(x + DX[i], y + DY[i], plane));
-                if (neighbour != UNREACHED && neighbour + 1 < best)
-                    best = neighbour + 1;
+                if (neighbour != UNREACHED && neighbour + 1 < best) best = neighbour + 1;
             }
-            if (best != UNREACHED)
-                relax(x, y, plane, best);
+            if (best != UNREACHED) relax(x, y, plane, best);
         }
     }
 
@@ -370,10 +354,8 @@ public final class DistanceField {
                     canStep = true;
                 }
             }
-            if (!canStep || settled.get(nx, ny, plane, false))
-                continue;
-            if (relax(nx, ny, plane, distance + 1))
-                fifo.addLast(packWorldPoint(nx, ny, plane));
+            if (!canStep || settled.get(nx, ny, plane, false)) continue;
+            if (relax(nx, ny, plane, distance + 1)) fifo.addLast(packWorldPoint(nx, ny, plane));
         }
     }
 
@@ -403,13 +385,11 @@ public final class DistanceField {
         for (boolean bankVisited : new boolean[]{false, true}) {
             for (Transport teleport : config.getUsableTeleports(bankVisited)) {
                 final int destination = teleport.getDestination();
-                if (destination == WorldPointUtil.UNDEFINED)
-                    continue;
+                if (destination == WorldPointUtil.UNDEFINED) continue;
                 final int cost = Math.max(0, CostUnits.fromTicks(teleport.getDuration())
                     + config.getAdditionalTransportCost(teleport));
                 final Integer current = index.get(destination);
-                if (current == null || cost < current)
-                    index.put(destination, cost);
+                if (current == null || cost < current) index.put(destination, cost);
             }
         }
         return index;
@@ -427,12 +407,10 @@ public final class DistanceField {
             final PrimitiveIntHashMap<Transport[]> transports = config.getTransportsPacked(bankVisited);
             for (int origin : transports.keys()) {
                 final Transport[] set = transports.get(origin);
-                if (set == null)
-                    continue;
+                if (set == null) continue;
                 for (Transport transport : set) {
                     final int destination = transport.getDestination();
-                    if (destination == WorldPointUtil.UNDEFINED)
-                        continue;
+                    if (destination == WorldPointUtil.UNDEFINED) continue;
                     final int cost = Math.max(0, CostUnits.fromTicks(transport.getDuration())
                         + config.getAdditionalTransportCost(transport));
                     Map<Integer, Integer> byOrigin = index.get(destination);

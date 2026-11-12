@@ -88,12 +88,10 @@ import gps.transport.Transport;
         // Memoized: the overlay asks once per rendered frame, and this object is immutable.
         // Benign race — concurrent first calls compute identical sets.
         Set<Integer> cached = sailingJumpDeparturesCache;
-        if (cached != null)
-            return cached;
+        if (cached != null) return cached;
         Set<Integer> departures = new HashSet<>();
         for (int i = 0; i < methods.size() && i < methodEdgeIndexes.size(); i++) {
-            if (methods.get(i).getType() == TransportType.SAILING)
-                departures.add(methodEdgeIndexes.get(i) - 1);
+            if (methods.get(i).getType() == TransportType.SAILING) departures.add(methodEdgeIndexes.get(i) - 1);
         }
         sailingJumpDeparturesCache = Collections.unmodifiableSet(departures);
         return sailingJumpDeparturesCache;
@@ -160,11 +158,9 @@ import gps.transport.Transport;
 
     /** Whether every method is a sailing leg: the route never leaves the water system. */
     public boolean isPureSail() {
-        if (methods.isEmpty())
-            return false;
+        if (methods.isEmpty()) return false;
         for (TeleportMethod method : methods) {
-            if (method.getType() != TransportType.SAILING)
-                return false;
+            if (method.getType() != TransportType.SAILING) return false;
         }
         return true;
     }
@@ -176,8 +172,7 @@ import gps.transport.Transport;
     /** The method whose edge arrives at path index {@code arriveIndex}, or null when that edge is walking. */
     public TeleportMethod methodArrivingAt(int arriveIndex) {
         for (int m = 0; m < methodEdgeIndexes.size() && m < methods.size(); m++) {
-            if (methodEdgeIndexes.get(m) == arriveIndex)
-                return methods.get(m);
+            if (methodEdgeIndexes.get(m) == arriveIndex) return methods.get(m);
         }
         return null;
     }

@@ -42,8 +42,7 @@ public class VisitedTiles {
         }
 
         final VisitedRegion region = visitedRegions[regionIndex];
-        if (region == null)
-            return false;
+        if (region == null) return false;
 
         return region.get(x % REGION_SIZE, y % REGION_SIZE, plane);
     }
@@ -56,8 +55,7 @@ public class VisitedTiles {
     }
 
     public boolean get(int id, NodeGraph graph) {
-        if (graph.isTile(id))
-            return get(graph.packedPosition(id), graph.bankVisited(id));
+        if (graph.isTile(id)) return get(graph.packedPosition(id), graph.bankVisited(id));
         return getAbstract(graph.abstractKind(id), graph.bankVisited(id));
     }
 
@@ -68,8 +66,7 @@ public class VisitedTiles {
     }
 
     public boolean set(int id, NodeGraph graph) {
-        if (graph.isTile(id))
-            return set(graph.packedPosition(id), graph.bankVisited(id));
+        if (graph.isTile(id)) return set(graph.packedPosition(id), graph.bankVisited(id));
 
         final AbstractNodeKind abstractKind = graph.abstractKind(id);
         boolean visited = getAbstract(abstractKind, graph.bankVisited(id));

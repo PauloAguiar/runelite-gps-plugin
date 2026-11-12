@@ -44,8 +44,7 @@ final class RouteProgress {
      * available (callers fall back to straight-line rules).
      */
     static Map<Integer, Integer> walkDistances(CollisionMap map, int fromPacked, int radius) {
-        if (map == null)
-            return null;
+        if (map == null) return null;
         Map<Integer, Integer> distances = new HashMap<>();
         distances.put(fromPacked, 0);
         ArrayDeque<Integer> queue = new ArrayDeque<>();
@@ -56,14 +55,12 @@ final class RouteProgress {
         while (!queue.isEmpty()) {
             int tile = queue.poll();
             int steps = distances.get(tile);
-            if (steps >= radius)
-                continue;
+            if (steps >= radius) continue;
             int tx = WorldPointUtil.unpackWorldX(tile);
             int ty = WorldPointUtil.unpackWorldY(tile);
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
-                    if (dx == 0 && dy == 0)
-                        continue;
+                    if (dx == 0 && dy == 0) continue;
                     int next = WorldPointUtil.packWorldPoint(tx + dx, ty + dy, plane);
                     if (!distances.containsKey(next)
                         && Math.max(Math.abs(tx + dx - x), Math.abs(ty + dy - y)) <= radius
@@ -95,8 +92,7 @@ final class RouteProgress {
         int bestDistance = Integer.MAX_VALUE;
         int bestOffset = Integer.MAX_VALUE;
         for (int i = 0; i < path.size(); i++) {
-            if (i > returnGate)
-                break;
+            if (i > returnGate) break;
             int packed = path.get(i).getPackedPosition();
             // distanceBetween is MAX_VALUE across planes, so other-plane tiles filter out here.
             int straight = WorldPointUtil.distanceBetween(packed, playerPacked);
@@ -108,10 +104,8 @@ final class RouteProgress {
                 // Wall-aware rules: same tile always counts; "on path" needs a genuinely walkable
                 // single step; near-line matches must be walkable in about their straight-line
                 // distance, or the "closeness" is through a wall.
-                if (beyondDoor)
-                    eligible = straight == 0;
-                else if (walked != null && walked <= 1)
-                    eligible = true;
+                if (beyondDoor) eligible = straight == 0;
+                else if (walked != null && walked <= 1) eligible = true;
                 else {
                     eligible = walked != null
                         && Math.abs(i - reachedIndex) <= STEP_WINDOW
@@ -128,8 +122,7 @@ final class RouteProgress {
                 eligible = incremental || onPath;
                 metric = straight;
             }
-            if (!eligible)
-                continue;
+            if (!eligible) continue;
             int offset = Math.abs(i - reachedIndex);
             if (metric < bestDistance || (metric == bestDistance && offset < bestOffset)) {
                 best = i;

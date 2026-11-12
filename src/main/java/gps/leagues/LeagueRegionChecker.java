@@ -103,14 +103,12 @@ import gps.*;
 
     private static Map<Integer, LeagueRegion> parse(String tsv) {
         Map<Integer, LeagueRegion> result = new HashMap<>();
-        if (tsv == null || tsv.isEmpty())
-            return result;
+        if (tsv == null || tsv.isEmpty()) return result;
         int lineNumber = 0;
         for (String rawLine : tsv.split("\\R")) {
             lineNumber++;
             String line = rawLine.trim();
-            if (line.isEmpty() || line.startsWith("#"))
-                continue;
+            if (line.isEmpty() || line.startsWith("#")) continue;
             String[] parts = line.split("\\s+", 2);
             if (parts.length != 2) {
                 log.warn("Skipping malformed league regions row {}: '{}'", lineNumber, rawLine);

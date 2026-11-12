@@ -100,8 +100,7 @@ final class RouteSession {
      */
     void begin(int start, Set<Integer> targets) {
         Set<Integer> ends = targets == null ? Set.of() : Set.copyOf(targets);
-        if (!ends.equals(lastTargets))
-            committed = null;
+        if (!ends.equals(lastTargets)) committed = null;
         lastStart = start;
         lastTargets = ends;
         lastLimit = limit;
@@ -156,13 +155,10 @@ final class RouteSession {
      */
     RouteOption displayed(Set<Integer> currentTargets) {
         RouteOption pick = selected;
-        if (pick != null)
-            return pick;
-        if (inFlight)
-            return committed;
+        if (pick != null) return pick;
+        if (inFlight) return committed;
         List<RouteOption> page = routes;
-        if (page.isEmpty() || currentTargets.isEmpty() || !lastTargets.equals(currentTargets))
-            return null;
+        if (page.isEmpty() || currentTargets.isEmpty() || !lastTargets.equals(currentTargets)) return null;
         return page.get(0);
     }
 
@@ -178,8 +174,7 @@ final class RouteSession {
     /** Toggles the pick at {@code index} (clicking the shown route hides it). False when out of range. */
     boolean select(int index) {
         List<RouteOption> page = routes;
-        if (index < 0 || index >= page.size())
-            return false;
+        if (index < 0 || index >= page.size()) return false;
         RouteOption route = page.get(index);
         selected = selected == route ? null : route;
         return true;
@@ -200,8 +195,7 @@ final class RouteSession {
      * destination or the last generation left nothing unshown.
      */
     boolean widen(int defaultLimit, int cap) {
-        if (lastTargets.isEmpty() || !moreLikely)
-            return false;
+        if (lastTargets.isEmpty() || !moreLikely) return false;
         costMultiple += COST_MULTIPLE_STEP;
         limit = Math.min(limit + defaultLimit, cap);
         return true;
@@ -226,8 +220,7 @@ final class RouteSession {
         List<TeleportMethod> methods = previous.getMethods();
         List<Integer> edges = previous.getMethodEdgeIndexes();
         int consumed = 0;
-        while (consumed < methods.size() && consumed < edges.size() && edges.get(consumed) <= progress)
-            consumed++;
+        while (consumed < methods.size() && consumed < edges.size() && edges.get(consumed) <= progress) consumed++;
         List<TeleportMethod> remaining = methods.subList(consumed, methods.size());
         boolean checkBank = consumed == 0;
         for (RouteOption route : routes) {

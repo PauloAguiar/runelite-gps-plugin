@@ -37,8 +37,7 @@ import lombok.RequiredArgsConstructor;
 
     /** The +Ns / -Ns chip text ("" for no adjustment). */
     public String chipText() {
-        if (adjustSeconds == 0)
-            return "";
+        if (adjustSeconds == 0) return "";
         return (adjustSeconds > 0 ? "+" : "−") + Math.abs(adjustSeconds) + "s";
     }
 }

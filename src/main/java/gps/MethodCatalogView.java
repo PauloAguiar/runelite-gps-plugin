@@ -129,8 +129,7 @@ final class MethodCatalogView {
     int enabledCount() {
         int enabled = 0;
         for (TeleportMethod method : catalog) {
-            if (isUsable(method) && !exclusions.contains(method))
-                enabled++;
+            if (isUsable(method) && !exclusions.contains(method)) enabled++;
         }
         return enabled;
     }
@@ -181,10 +180,8 @@ final class MethodCatalogView {
      */
     static boolean matches(TeleportMethod method, Filter filter, String text,
         Set<TeleportMethod> exclusions, Map<TeleportMethod, MethodAvailability> unavailable) {
-        if (filter.disabled && !exclusions.contains(method))
-            return false;
-        if (filter.availability != null && unavailable.get(method) != filter.availability)
-            return false;
+        if (filter.disabled && !exclusions.contains(method)) return false;
+        if (filter.availability != null && unavailable.get(method) != filter.availability) return false;
         String needle = text.trim().toLowerCase(Locale.ROOT);
         return needle.isEmpty()
             || method.category().toLowerCase(Locale.ROOT).contains(needle)
@@ -209,16 +206,12 @@ final class MethodCatalogView {
         for (TeleportMethod method : catalog) {
             boolean canUse = isUsable(method);
             boolean isIncluded = !exclusions.contains(method);
-            if (canUse)
-                usable++;
-            if (isIncluded)
-                included++;
+            if (canUse) usable++;
+            if (isIncluded) included++;
             if (canUse && isIncluded) {
                 enabled++;
-                if (method.isConsumable())
-                    charged++;
-                else
-                    permanent++;
+                if (method.isConsumable()) charged++;
+                else permanent++;
             }
         }
         // Same collapsible shell as the other Travel options sub-sections; the enabled count is
@@ -372,8 +365,7 @@ final class MethodCatalogView {
     private void populateRows() {
         JPanel rows = rowsPanel;
         JScrollPane scroll = rowsScroll;
-        if (rows == null || scroll == null)
-            return;
+        if (rows == null || scroll == null) return;
         rows.removeAll();
 
         String text = search.getText() == null ? "" : search.getText().trim();
@@ -402,8 +394,7 @@ final class MethodCatalogView {
             boolean open = filtering || filter.isActive() || expandedCategories.contains(category);
             rows.add(categoryHeader(category, items, open));
             if (open) {
-                for (TeleportMethod item : items)
-                    rows.add(itemRow(item));
+                for (TeleportMethod item : items) rows.add(itemRow(item));
             }
         }
 
@@ -419,8 +410,7 @@ final class MethodCatalogView {
     private JPanel categoryHeader(String category, List<TeleportMethod> items, boolean open) {
         int excludedCount = 0;
         for (TeleportMethod method : items) {
-            if (exclusions.contains(method))
-                excludedCount++;
+            if (exclusions.contains(method)) excludedCount++;
         }
         boolean allIncluded = excludedCount == 0;
         boolean allExcluded = excludedCount == items.size();
@@ -508,8 +498,7 @@ final class MethodCatalogView {
 
         JLabel text = wrappedLabel(escapeHtml(item.label()));
         text.setToolTipText(methodTooltip(item));
-        if (excluded)
-            text.setForeground(ColorScheme.LIGHT_GRAY_COLOR.darker());
+        if (excluded) text.setForeground(ColorScheme.LIGHT_GRAY_COLOR.darker());
         // Centre the label at its preferred height instead of letting BorderLayout stretch it: a
         // stretched html JLabel top-anchors its text (the html view claims the full height), which
         // left the text floating high beside the vertically-centred icons.
@@ -521,8 +510,7 @@ final class MethodCatalogView {
     }
 
     private void toggleCategory(String category) {
-        if (!expandedCategories.add(category))
-            expandedCategories.remove(category);
+        if (!expandedCategories.add(category)) expandedCategories.remove(category);
         // Repopulate the rows in place: cheaper than a full rebuild, and the slot's dirty check
         // (which does not track per-category expansion) would skip the rebuild anyway.
         populateRows();

@@ -48,11 +48,9 @@ import net.runelite.client.config.ConfigManager;
         Set<TeleportMethod> exclusions = new HashSet<>();
         try {
             String json = configManager.get().getConfiguration(configGroup, CONFIG_KEY_EXCLUSIONS);
-            if (json == null || json.isEmpty())
-                return exclusions;
+            if (json == null || json.isEmpty()) return exclusions;
             TeleportMethod[] saved = gson.get().fromJson(json, TeleportMethod[].class);
-            if (saved == null)
-                return exclusions;
+            if (saved == null) return exclusions;
             boolean dropped = false;
             for (TeleportMethod method : saved) {
                 if (method == null || method.getType() == null
@@ -62,8 +60,7 @@ import net.runelite.client.config.ConfigManager;
                 }
                 exclusions.add(method);
             }
-            if (dropped)
-                saveExclusions(exclusions);
+            if (dropped) saveExclusions(exclusions);
         }
         catch (Exception e) {
             log.warn("Failed to load alternative-route exclusions", e);
@@ -82,8 +79,7 @@ import net.runelite.client.config.ConfigManager;
 
     /** A mode by name, the legacy 3-mode names mapped onto the Owned/All split, else null. */
     static AlternativeRoutesMode decodeRoutesMode(String value) {
-        if (value == null || value.isEmpty())
-            return null;
+        if (value == null || value.isEmpty()) return null;
         try {
             return AlternativeRoutesMode.valueOf(value);
         }

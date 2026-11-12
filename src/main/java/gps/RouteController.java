@@ -41,8 +41,7 @@ import net.runelite.api.ItemContainer;
     /** Startup, before the panel exists: the saved mode, the generator, the page budget. */
     void start(AlternativeRoutesService generator) {
         AlternativeRoutesMode saved = choices.loadRoutesMode();
-        if (saved != null)
-            mode = saved;
+        if (saved != null) mode = saved;
         service = generator;
         session.setLimit(defaultLimit());
     }
@@ -74,8 +73,7 @@ import net.runelite.api.ItemContainer;
     /** Panel (EDT) entry point: routing state is client-thread owned, so hop over (invoke runs inline when already there). */
     void setMode(AlternativeRoutesMode newMode) {
         plugin.getClientThread().invoke(() -> {
-            if (newMode == null || mode == newMode)
-                return;
+            if (newMode == null || mode == newMode) return;
             mode = newMode;
             choices.saveRoutesMode(newMode);
             trigger(session.lastStart(), session.lastTargetsCopy());
@@ -99,8 +97,7 @@ import net.runelite.api.ItemContainer;
                 session.setLimit(defaultLimit());
                 trigger(start, new HashSet<>(targets));
             }
-            else
-                catalogRefresh.markDirty();
+            else catalogRefresh.markDirty();
         });
     }
 
@@ -144,13 +141,11 @@ import net.runelite.api.ItemContainer;
      * cannot thrash it. If it ever misses, the panel's Find routes button forces a recompute.
      */
     void maybeAutoCompute() {
-        if (service == null)
-            return;
+        if (service == null) return;
         Set<Integer> targets = plugin.getPathTargets();
         // The full route budget, panel shown or hidden (see routeLimitFor).
         int desiredLimit = defaultLimit();
-        if (!RouteSession.shouldAutoCompute(targets, session.lastTargets(), session.lastLimit(), desiredLimit))
-            return;
+        if (!RouteSession.shouldAutoCompute(targets, session.lastTargets(), session.lastLimit(), desiredLimit)) return;
         session.setLimit(desiredLimit);
         trigger(plugin.altStart(), new HashSet<>(targets));
     }
@@ -162,14 +157,12 @@ import net.runelite.api.ItemContainer;
      */
     void setPanelVisible(boolean visible) {
         panelVisible = visible;
-        if (visible)
-            plugin.getClientThread().invokeLater(this::maybeAutoCompute);
+        if (visible) plugin.getClientThread().invokeLater(this::maybeAutoCompute);
     }
 
     /** Starts a generation for {@code targets} from {@code start}; with no target, the catalog alone streams. */
     void trigger(int start, Set<Integer> targets) {
-        if (service == null)
-            return;
+        if (service == null) return;
         Set<Integer> ends = (targets == null) ? new HashSet<>() : new HashSet<>(targets);
         // The session clears the committed route for a NEW destination (so the overlay stays blank
         // until the fresh routes settle) and keeps it for the same one; the previous routes go

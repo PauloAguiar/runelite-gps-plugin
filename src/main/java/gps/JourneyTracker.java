@@ -27,8 +27,7 @@ final class JourneyTracker {
      */
     void tick(int location, boolean acting, long nowMillis) {
         boolean moved = lastLocation != WorldPointUtil.UNDEFINED && location != lastLocation;
-        if (startMillis == 0 && (moved || acting))
-            startMillis = nowMillis;
+        if (startMillis == 0 && (moved || acting)) startMillis = nowMillis;
         lastLocation = location;
     }
 

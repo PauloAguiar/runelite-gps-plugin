@@ -37,11 +37,9 @@ public class PrimitiveIntList {
      * @throws IllegalArgumentException if {@code initialCapacity < 0}.
      */
     public PrimitiveIntList(int initialCapacity, boolean initialize) {
-        if (initialCapacity < 0)
-            throw new IllegalArgumentException("Illegal capacity: " + initialCapacity);
+        if (initialCapacity < 0) throw new IllegalArgumentException("Illegal capacity: " + initialCapacity);
         this.elementData = new int[initialCapacity];
-        if (initialize)
-            size = initialCapacity;
+        if (initialize) size = initialCapacity;
     }
 
     /**
@@ -76,22 +74,18 @@ public class PrimitiveIntList {
      * @param minCapacity the desired minimum capacity (ignored if {@code <= 0}).
      */
     public void ensureCapacity(int minCapacity) {
-        if (minCapacity > 0)
-            ensureCapacityInternal(minCapacity);
+        if (minCapacity > 0) ensureCapacityInternal(minCapacity);
     }
 
     private void ensureCapacityInternal(int minCapacity) {
-        if (minCapacity - elementData.length > 0)
-            grow(minCapacity);
+        if (minCapacity - elementData.length > 0) grow(minCapacity);
     }
 
     private void grow(int minCapacity) {
         int oldCapacity = elementData.length;
         int newCapacity = oldCapacity + (oldCapacity >> 1);
-        if (newCapacity - minCapacity < 0)
-            newCapacity = minCapacity;
-        if (newCapacity - MAX_ARRAY_SIZE > 0)
-            newCapacity = hugeCapacity(minCapacity);
+        if (newCapacity - minCapacity < 0) newCapacity = minCapacity;
+        if (newCapacity - MAX_ARRAY_SIZE > 0) newCapacity = hugeCapacity(minCapacity);
         elementData = Arrays.copyOf(elementData, newCapacity);
     }
 
@@ -134,8 +128,7 @@ public class PrimitiveIntList {
      */
     public int indexOf(int e) {
         for (int i = 0; i < size; i++) {
-            if (e == elementData[i])
-                return i;
+            if (e == elementData[i]) return i;
         }
         return -1;
     }
@@ -206,8 +199,7 @@ public class PrimitiveIntList {
         rangeCheck(index);
         int oldValue = elementData[index];
         int numMoved = size - index - 1;
-        if (numMoved > 0)
-            System.arraycopy(elementData, index + 1, elementData, index, numMoved);
+        if (numMoved > 0) System.arraycopy(elementData, index + 1, elementData, index, numMoved);
         elementData[--size] = 0;
         return oldValue;
     }
@@ -230,8 +222,7 @@ public class PrimitiveIntList {
 
     private void fastRemove(int index) {
         int numMoved = size - index - 1;
-        if (numMoved > 0)
-            System.arraycopy(elementData, index + 1, elementData, index, numMoved);
+        if (numMoved > 0) System.arraycopy(elementData, index + 1, elementData, index, numMoved);
         elementData[--size] = 0;
     }
 
@@ -240,18 +231,15 @@ public class PrimitiveIntList {
      * The backing array is retained for reuse.
      */
     public void clear() {
-        for (int i = 0; i < size; i++)
-            elementData[i] = 0;
+        for (int i = 0; i < size; i++) elementData[i] = 0;
         size = 0;
     }
 
     private void rangeCheck(int index) {
-        if (index >= size)
-            throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + size);
+        if (index >= size) throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + size);
     }
 
     private void rangeCheckForAdd(int index) {
-        if (index > size || index < 0)
-            throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + size);
+        if (index > size || index < 0) throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + size);
     }
 }

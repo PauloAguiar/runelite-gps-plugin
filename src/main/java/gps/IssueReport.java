@@ -32,8 +32,7 @@ import net.runelite.api.gameval.InventoryID;
             .append(" · band x").append(session.costMultiple()).append('\n');
         body.append("- Start: ").append(pointText(session.lastStart())).append('\n');
         List<String> targets = new ArrayList<>();
-        for (int target : session.lastTargets())
-            targets.add(pointText(target));
+        for (int target : session.lastTargets()) targets.add(pointText(target));
         body.append("- Target(s): ").append(targets.isEmpty() ? "(none)" : String.join("; ", targets)).append('\n');
         // Only settings that genuinely affect routing here: avoidWilderness applies in every mode,
         // bankPickup weights the bank detour. The mode (above) already implies bank routing and the
@@ -49,8 +48,7 @@ import net.runelite.api.gameval.InventoryID;
         Map<TeleportMethod, MethodAvailability> unavailable = plugin.unavailableMethods();
         if (!catalog.isEmpty()) {
             Map<MethodAvailability, Integer> counts = new EnumMap<>(MethodAvailability.class);
-            for (MethodAvailability status : unavailable.values())
-                counts.merge(status, 1, Integer::sum);
+            for (MethodAvailability status : unavailable.values()) counts.merge(status, 1, Integer::sum);
             body.append("- Methods: ").append(catalog.size() - unavailable.size()).append(" usable of ")
                 .append(catalog.size());
             for (Map.Entry<MethodAvailability, Integer> entry : counts.entrySet()) {
@@ -62,13 +60,11 @@ import net.runelite.api.gameval.InventoryID;
         Set<TeleportMethod> userExclusions = plugin.getUserExclusions();
         if (!userExclusions.isEmpty()) {
             List<String> excluded = new ArrayList<>();
-            for (TeleportMethod method : userExclusions)
-                excluded.add(method.routeLabel());
+            for (TeleportMethod method : userExclusions) excluded.add(method.routeLabel());
             Collections.sort(excluded);
             int cap = Math.min(excluded.size(), 10);
             body.append("- Excluded by user: ").append(String.join("; ", excluded.subList(0, cap)));
-            if (excluded.size() > cap)
-                body.append(" … ").append(excluded.size() - cap).append(" more");
+            if (excluded.size() > cap) body.append(" … ").append(excluded.size() - cap).append(" more");
             body.append('\n');
         }
         // What the player carries decides the Owned modes' teleports, so name it (user-reviewed
@@ -80,8 +76,7 @@ import net.runelite.api.gameval.InventoryID;
             .append(plugin.isBankRestored() ? " (restored from previous session)" : "").append('\n');
         body.append("- House scanned: ").append(plugin.isPohScanned());
         String pohEncoded = PohScanner.encode(plugin.pohDetection().detected());
-        if (pohEncoded != null)
-            body.append(" (").append(pohEncoded).append(')');
+        if (pohEncoded != null) body.append(" (").append(pohEncoded).append(')');
         body.append('\n');
         body.append("- Spirit trees synced: ").append(plugin.isSpiritTreeSynced())
             .append(plugin.spiritTreesParsedLive() ? " (live)" : "").append('\n');
@@ -94,8 +89,7 @@ import net.runelite.api.gameval.InventoryID;
             body.append("  ").append(i).append(". ").append(route.getTotalCost())
                 .append(route.isReached() ? "" : " (closest)").append(" · ").append(methodSummary(route)).append('\n');
         }
-        if (routes.size() > shown)
-            body.append("  … ").append(routes.size() - shown).append(" more\n");
+        if (routes.size() > shown) body.append("  … ").append(routes.size() - shown).append(" more\n");
         body.append("\nFor a full reproduction, attach the newest file from your `.runelite/gps-debug/` folder"
             + " (use \"Save debug snapshot\" in the ⋯ menu first).\n");
         return body.toString();
@@ -107,12 +101,10 @@ import net.runelite.api.gameval.InventoryID;
      */
     static String itemNames(Client client, int inventoryId) {
         ItemContainer container = client.getItemContainer(inventoryId);
-        if (container == null)
-            return "(unknown)";
+        if (container == null) return "(unknown)";
         Map<String, Integer> names = new LinkedHashMap<>();
         for (Item item : container.getItems()) {
-            if (item == null || item.getId() <= 0)
-                continue;
+            if (item == null || item.getId() <= 0) continue;
             String name;
             try {
                 ItemComposition definition = client.getItemDefinition(item.getId());
@@ -123,8 +115,7 @@ import net.runelite.api.gameval.InventoryID;
             }
             names.merge(name, Math.max(1, item.getQuantity()), Integer::sum);
         }
-        if (names.isEmpty())
-            return "(empty)";
+        if (names.isEmpty()) return "(empty)";
         List<String> parts = new ArrayList<>(names.size());
         for (Map.Entry<String, Integer> entry : names.entrySet())
             parts.add(entry.getValue() > 1 ? entry.getKey() + " x" + entry.getValue() : entry.getKey());
@@ -133,19 +124,16 @@ import net.runelite.api.gameval.InventoryID;
 
     /** A packed point as "x, y, plane", or "(none)" when undefined. */
     static String pointText(int packed) {
-        if (packed == WorldPointUtil.UNDEFINED)
-            return "(none)";
+        if (packed == WorldPointUtil.UNDEFINED) return "(none)";
         return WorldPointUtil.unpackWorldX(packed) + ", " + WorldPointUtil.unpackWorldY(packed)
             + ", " + WorldPointUtil.unpackWorldPlane(packed);
     }
 
     /** A route's methods joined with " + ", or "walk" when it has none. */
     static String methodSummary(RouteOption route) {
-        if (route.getMethods().isEmpty())
-            return "walk";
+        if (route.getMethods().isEmpty()) return "walk";
         List<String> parts = new ArrayList<>();
-        for (TeleportMethod method : route.getMethods())
-            parts.add(method.routeLabel());
+        for (TeleportMethod method : route.getMethods()) parts.add(method.routeLabel());
         return String.join(" + ", parts);
     }
 }

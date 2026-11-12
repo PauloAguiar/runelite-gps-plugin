@@ -29,14 +29,12 @@ final class SpellbookOverlay extends Overlay {
 
     @Override public Dimension render(Graphics2D graphics) {
         RouteItemCue cue = plugin.nextStepItems();
-        if (cue == null || cue.spell == null || !plugin.display().highlightRouteItem)
-            return null;
+        if (cue == null || cue.spell == null || !plugin.display().highlightRouteItem) return null;
         int component = SpellWidgets.componentFor(cue.spell);
         Widget spell = component < 0 ? null : client.getWidget(component);
         if ((spell == null || spell.isHidden()) && cue.swap != null && cue.swap.startsWith("Spellbook Swap"))
             spell = client.getWidget(SpellWidgets.componentFor("Spellbook Swap"));
-        if (spell == null || spell.isHidden())
-            return null;
+        if (spell == null || spell.isHidden()) return null;
         Rectangle bounds = spell.getBounds();
         graphics.setColor(plugin.display().colourRouteItem);
         graphics.setStroke(new BasicStroke(2));

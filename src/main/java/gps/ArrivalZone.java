@@ -40,8 +40,7 @@ final class ArrivalZone {
      * path or the finish distance is negative (never finish).
      */
     Set<Integer> tiles(List<PathStep> path, int radius) {
-        if (path == null || path.isEmpty() || radius < 0)
-            return Set.of();
+        if (path == null || path.isEmpty() || radius < 0) return Set.of();
         int end = path.get(path.size() - 1).getPackedPosition();
         Cache cached = cache;
         if (end != cached.end || radius != cached.radius) {
@@ -72,11 +71,9 @@ final class ArrivalZone {
                 }
             }
         }
-        if (!inZone)
-            return false;
+        if (!inZone) return false;
         boolean roundTrip = displayed != null && displayed.isRoundTrip();
-        if (roundTripWanted && !roundTrip)
-            return false;
+        if (roundTripWanted && !roundTrip) return false;
         if (roundTrip) {
             int turnaround = displayed.getTurnaroundIndex();
             return turnaround < 0 || progress >= turnaround - 2;
@@ -93,8 +90,7 @@ final class ArrivalZone {
     static Set<Integer> flood(CollisionMap map, int end, int maxSteps) {
         Set<Integer> zone = new HashSet<>();
         zone.add(end);
-        if (map == null || maxSteps <= 0)
-            return zone;
+        if (map == null || maxSteps <= 0) return zone;
         final int plane = WorldPointUtil.unpackWorldPlane(end);
         List<Integer> frontier = new ArrayList<>();
         frontier.add(end);
@@ -122,10 +118,8 @@ final class ArrivalZone {
     }
 
     private static void grow(Set<Integer> zone, List<Integer> next, int x, int y, int plane, boolean open) {
-        if (!open)
-            return;
+        if (!open) return;
         int packed = WorldPointUtil.packWorldPoint(x, y, plane);
-        if (zone.add(packed))
-            next.add(packed);
+        if (zone.add(packed)) next.add(packed);
     }
 }
