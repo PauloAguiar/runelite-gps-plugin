@@ -1,6 +1,5 @@
 package gps;
 
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 /**
  * The player's boat hull tiers (plan step L5), as the hull type varbit counts them in
@@ -8,7 +7,7 @@ import lombok.RequiredArgsConstructor;
  * 2 (verified against a capture with all three owned). An unknown future tier maps to nothing
  * and the panel simply shows no type.
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE) public enum BoatHull {
+@RequiredArgsConstructor public enum BoatHull {
     RAFT(0, "Raft"),
     SKIFF(1, "Skiff"),
     SLOOP(2, "Sloop");

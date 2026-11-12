@@ -3,7 +3,6 @@ package gps;
 import java.awt.image.*;
 import java.util.*;
 import java.util.function.*;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.runelite.client.ui.overlay.worldmap.*;
 import net.runelite.client.util.*;
@@ -14,7 +13,7 @@ import net.runelite.client.util.*;
  * unless a one-shot override names the tile the set was expanded from (a searched bank booth
  * and its walkable surround still pins the booth). Clicking the pin jumps the map to it.
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE) final class WorldMapMarker {
+@RequiredArgsConstructor final class WorldMapMarker {
     private static final BufferedImage IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "/marker.png");
 
     // A supplier: the manager is injected into the plugin after field initialisation.

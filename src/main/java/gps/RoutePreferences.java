@@ -5,7 +5,6 @@ import java.util.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.config.*;
@@ -17,7 +16,7 @@ import net.runelite.client.config.*;
  * not a tier here: it lives in the plugin's exclusion set (it affects the search) and reads back
  * as EXCLUDED, a mask over the stored tier so re-including restores the user's tuning.
  */
-@Slf4j @RequiredArgsConstructor(access = AccessLevel.PACKAGE) final class RoutePreferences {
+@Slf4j @RequiredArgsConstructor final class RoutePreferences {
     static final String CONFIG_KEY_PRIORITIES = "methodPriorities";
     static final String CONFIG_KEY_WALK_PREFERENCE = "walkPreferenceSeconds";
     static final String CONFIG_KEY_BANK_PREFERENCE = "bankPreferenceSeconds";

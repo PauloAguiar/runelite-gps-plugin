@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.function.*;
 import javax.swing.*;
 import javax.swing.border.*;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.runelite.client.ui.*;
 
@@ -35,7 +34,7 @@ final class NoticesView extends JPanel {
     }
 
     /** What the status banner says. */
-    @RequiredArgsConstructor(access = AccessLevel.PACKAGE) static final class Status {
+    @RequiredArgsConstructor static final class Status {
         final String text;
         final Kind kind;
 

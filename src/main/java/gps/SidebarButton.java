@@ -1,6 +1,5 @@
 package gps;
 
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.runelite.api.*;
 import net.runelite.client.ui.*;
@@ -10,7 +9,7 @@ import net.runelite.client.ui.*;
  * it does nothing useful on the login screen. LOADING, HOPPING and CONNECTION_LOST leave it as
  * it is, so world hops do not flicker it.
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE) final class SidebarButton {
+@RequiredArgsConstructor final class SidebarButton {
     private final ClientToolbar toolbar;
     private final NavigationButton button;
     private boolean shown;

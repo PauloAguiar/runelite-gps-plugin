@@ -1,7 +1,6 @@
 package gps;
 
 import gps.pathfinder.*;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -11,7 +10,7 @@ import lombok.RequiredArgsConstructor;
  * existing list instantly with no recalculation. EXCLUDED is the terminal tier and delegates to
  * the existing exclusion machinery (which does affect the search).
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE) public enum MethodPriority {
+@RequiredArgsConstructor public enum MethodPriority {
     PREFER_3(-20, "Strongly prefer"),
     PREFER_2(-10, "Prefer"),
     PREFER_1(-5, "Slightly prefer"),

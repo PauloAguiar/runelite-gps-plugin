@@ -2,7 +2,6 @@ package gps;
 
 import java.util.*;
 import java.util.concurrent.*;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -12,7 +11,7 @@ import lombok.RequiredArgsConstructor;
  * The live set is shared by reference with the ranking preferences (the EXCLUDED mask) and the
  * generation.
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE) final class MethodExclusions {
+@RequiredArgsConstructor final class MethodExclusions {
     private final Set<TeleportMethod> live = ConcurrentHashMap.newKeySet();
     // The exclusions the current route list was generated with; diverging from the live set
     // means the list is stale until the user refreshes.

@@ -19,7 +19,7 @@ import net.runelite.client.config.*;
  * synced, and restored from that snapshot until the live menu is seen. The pathfinder config
  * holds the set (null = never synced: farmable trees are then treated conservatively).
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE) final class SpiritTreeSync {
+@RequiredArgsConstructor final class SpiritTreeSync {
     /** RSProfile-scoped: the planted spirit trees detected from the travel menu, comma-separated. */
     static final String CONFIG_KEY_SPIRIT_TREES = "plantedSpiritTrees";
 

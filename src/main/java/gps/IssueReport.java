@@ -2,7 +2,6 @@ package gps;
 
 import java.util.*;
 import java.util.*;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.runelite.api.*;
 import net.runelite.api.*;
@@ -14,7 +13,7 @@ import net.runelite.api.gameval.InventoryID;
  * GitHub issue. Nothing is sent anywhere by the plugin and the player sees exactly what they
  * share. Built on the client thread (item names come from the item definitions).
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE) final class IssueReport {
+@RequiredArgsConstructor final class IssueReport {
     private final ShortestPathPlugin plugin;
 
     /** The context block, CLIENT THREAD. */

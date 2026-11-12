@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.function.*;
 import javax.swing.*;
 import javax.swing.border.*;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.runelite.client.config.*;
 import net.runelite.client.ui.*;
@@ -28,7 +27,7 @@ import static gps.PanelWidgets.wrappedLabel;
  * ConfigManager's descriptor, since shipped code may not use reflection), reads the stored value
  * by key and writes the key back through the ConfigManager; any change regenerates the routes.
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE) final class ConfigSectionsView {
+@RequiredArgsConstructor final class ConfigSectionsView {
     private static final int LABEL_WIDTH = 168;
 
     private final ShortestPathPlugin plugin;

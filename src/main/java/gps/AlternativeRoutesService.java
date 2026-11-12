@@ -7,7 +7,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import com.google.common.util.concurrent.*;
 import java.util.function.*;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.callback.*;
@@ -1024,7 +1023,7 @@ import static gps.transport.TransportType.*;
      * explored — for the benchmark report and for pinpointing slow searches (the aggregate GenTimer
      * numbers can't tell a few expensive searches from many cheap ones).
      */
-    @RequiredArgsConstructor(access = AccessLevel.PACKAGE) static final class SearchRecord {
+    @RequiredArgsConstructor static final class SearchRecord {
         final String label;
         final long cpuMs;
         /** Total cost of the found path, -1 when the search produced none. */
@@ -1698,7 +1697,7 @@ import static gps.transport.TransportType.*;
      * A candidate route produced by one parallel seed search, before signature dedup on the
      * generation thread.
      */
-    @RequiredArgsConstructor(access = AccessLevel.PACKAGE) private static final class SeedResult {
+    @RequiredArgsConstructor private static final class SeedResult {
         private final List<PathStep> path;
         private final MethodScan scan;
         private final int totalCost;
@@ -1852,7 +1851,7 @@ import static gps.transport.TransportType.*;
         return false;
     }
 
-    @RequiredArgsConstructor(access = AccessLevel.PACKAGE) private static final class MethodScan {
+    @RequiredArgsConstructor private static final class MethodScan {
         private final List<TeleportMethod> methods;
         // Path index of the edge each method sits on (parallel to methods): the index of the step the
         // method arrives at. Authoritative for the directions overlay, which cannot re-derive methods

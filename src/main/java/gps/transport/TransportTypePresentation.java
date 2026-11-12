@@ -1,7 +1,6 @@
 package gps.transport;
 
 import java.util.*;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.runelite.api.*;
 import static gps.transport.TransportType.*;
@@ -18,7 +17,7 @@ public final class TransportTypePresentation {
     /** The travel option named for a type no checkbox owns. */
     static final String NO_TRAVEL_OPTION = "That travel option";
 
-    @RequiredArgsConstructor(access = AccessLevel.PACKAGE) private static final class Row {
+    @RequiredArgsConstructor private static final class Row {
         final String category;
         final String vehicle;
         final String travelOption;

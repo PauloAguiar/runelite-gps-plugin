@@ -2,7 +2,6 @@ package gps;
 
 import gps.pathfinder.*;
 import java.util.function.*;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.runelite.api.*;
 import net.runelite.client.config.*;
@@ -14,7 +13,7 @@ import net.runelite.client.config.*;
  * previous session's snapshot, persisted per character (RSProfile-scoped) when the setting is
  * on, and replaced by the live contents the first time the bank opens.
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE) final class BankSnapshotService {
+@RequiredArgsConstructor final class BankSnapshotService {
     /** RSProfile-scoped (per character, per world type): {@code id:quantity} pairs. */
     static final String CONFIG_KEY_BANK_SNAPSHOT = "bankSnapshot";
 

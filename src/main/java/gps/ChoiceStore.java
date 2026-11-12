@@ -5,7 +5,6 @@ import gps.transport.*;
 import java.util.*;
 import java.util.*;
 import java.util.function.*;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.config.*;
@@ -15,7 +14,7 @@ import net.runelite.client.config.*;
  * routes mode, the search history and the favourite destinations, each as one config value.
  * The plugin owns the live copies; this is where they are read at startup and written on change.
  */
-@Slf4j @RequiredArgsConstructor(access = AccessLevel.PACKAGE) final class ChoiceStore {
+@Slf4j @RequiredArgsConstructor final class ChoiceStore {
     static final String CONFIG_KEY_EXCLUSIONS = "alternativeRoutesExclusions";
     static final String CONFIG_KEY_MODE = "alternativeRoutesMode";
     // The search box's recent selections (most recent first).

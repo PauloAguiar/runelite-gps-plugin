@@ -3,7 +3,6 @@ package gps;
 import gps.pathfinder.*;
 import java.util.*;
 import java.util.*;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -31,7 +30,7 @@ final class RouteProgress {
     }
 
     /** A selection: the reached path index and the walking distance to it (for the ETA). */
-    @RequiredArgsConstructor(access = AccessLevel.PACKAGE) static final class Result {
+    @RequiredArgsConstructor static final class Result {
         final int index;
         final int distance;
 

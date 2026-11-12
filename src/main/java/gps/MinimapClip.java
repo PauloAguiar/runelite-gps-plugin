@@ -7,7 +7,6 @@ import java.awt.geom.*;
 import java.awt.image.*;
 import java.util.*;
 import java.util.List;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.*;
@@ -20,7 +19,7 @@ import net.runelite.client.game.*;
  * or changes size; an ellipse over the widget bounds when the sprite is not loaded yet. The
  * minimap overlay clips to it and the map menu tests the mouse against it.
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE) final class MinimapClip {
+@RequiredArgsConstructor final class MinimapClip {
     private final Client client;
     private final SpriteManager spriteManager;
 

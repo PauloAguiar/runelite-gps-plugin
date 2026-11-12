@@ -5,7 +5,6 @@ import gps.transport.*;
 import java.util.*;
 import java.util.*;
 import java.util.function.*;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.runelite.api.coords.*;
 
@@ -30,7 +29,7 @@ final class PluginMessageCodec {
     static final String DEFAULT_SOURCE = "another plugin";
 
     /** A parsed "path" request. */
-    @RequiredArgsConstructor(access = AccessLevel.PACKAGE) static final class PathRequest {
+    @RequiredArgsConstructor static final class PathRequest {
         /** The packed start, or {@link WorldPointUtil#UNDEFINED} for "where the player stands". */
         final int start;
         /** The packed targets; empty means "keep the current destination". */

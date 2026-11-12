@@ -3,7 +3,6 @@ package gps;
 import java.util.*;
 import java.util.*;
 import java.util.function.*;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.config.*;
@@ -19,7 +18,7 @@ import net.runelite.client.config.*;
  * tick), capped so a bare house does not rescan forever; leaving the house or leaving building
  * mode re-arms it. The result persists per character so the next session starts scanned.
  */
-@Slf4j @RequiredArgsConstructor(access = AccessLevel.PACKAGE) final class PohDetectionService {
+@Slf4j @RequiredArgsConstructor final class PohDetectionService {
     /** RSProfile-scoped: the last scan's furniture (see PohScanner.encode); present = scanned. */
     static final String CONFIG_KEY_POH_FURNITURE = "pohFurniture";
     /** Bounds the "scene still loading" retries. */

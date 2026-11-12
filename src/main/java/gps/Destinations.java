@@ -245,7 +245,7 @@ import static gps.transport.TransportType.*;
     private static final int MAX_WALKABLE_RING = 5;
 
     /** A template-only zone: destinations inside the box snap to the anchor tile. */
-    @RequiredArgsConstructor(access = AccessLevel.PACKAGE) static final class Remap {
+    @RequiredArgsConstructor static final class Remap {
         final int minX;
         final int minY;
         final int maxX;

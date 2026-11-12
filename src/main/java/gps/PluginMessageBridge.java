@@ -4,7 +4,6 @@ import gps.pathfinder.*;
 import java.util.*;
 import java.util.*;
 import java.util.function.*;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.runelite.client.eventbus.*;
 import net.runelite.client.events.*;
@@ -20,7 +19,7 @@ import net.runelite.client.events.*;
  * {@link PluginMessageCodec}; this is the flow: which start, which ends, whether the journey
  * re-arms.
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE) final class PluginMessageBridge {
+@RequiredArgsConstructor final class PluginMessageBridge {
     private final ShortestPathPlugin plugin;
     // A supplier: the plugin builds the bridge at field initialisation, before injection.
     private final Supplier<EventBus> eventBus;

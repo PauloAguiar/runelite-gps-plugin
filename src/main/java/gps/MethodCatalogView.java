@@ -38,7 +38,7 @@ import static gps.PanelWidgets.wrappedLabel;
  */
 final class MethodCatalogView {
     /** The funnel-filter options. */
-    @RequiredArgsConstructor(access = AccessLevel.PACKAGE) enum Filter {
+    @RequiredArgsConstructor enum Filter {
         ALL("Show all methods", null, false),
         DISABLED("Disabled (excluded)", null, true),
         MISSING_ITEM("Missing an item", MethodAvailability.MISSING_ITEM, false),
