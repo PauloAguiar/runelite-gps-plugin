@@ -111,7 +111,7 @@ import static gps.PanelWidgets.wrappedLabel;
      * in the house, facts GPS cannot detect from outside the house, so the player states them once.
      */
     private JPanel poh() {
-        final boolean pohOn = plugin.getGpsConfig().usePoh();
+        boolean pohOn = plugin.getGpsConfig().usePoh();
         JPanel section = shell("Player-owned house", "Declare which teleport features are built in your house so routes can use them",
             pohExpanded, () -> pohExpanded = !pohExpanded,
             pohOn ? "on" : "off",
@@ -171,7 +171,7 @@ import static gps.PanelWidgets.wrappedLabel;
 
     /** The wilderness travel policy: whether routes may cross the wilderness at all. */
     private JPanel wilderness() {
-        final boolean avoid = plugin.getGpsConfig().avoidWilderness();
+        boolean avoid = plugin.getGpsConfig().avoidWilderness();
         JPanel section = shell("Wilderness", "Choose whether routes may cross the wilderness",
             wildernessExpanded, () -> wildernessExpanded = !wildernessExpanded,
             avoid ? "avoided" : "allowed",
@@ -262,9 +262,9 @@ import static gps.PanelWidgets.wrappedLabel;
      * since the counts only become known once a storage message has been seen.
      */
     private JPanel balloon() {
-        final ShortestPathConfig config = plugin.getGpsConfig();
-        final boolean balloonsOn = config.useHotAirBalloons();
-        final boolean smart = config.balloonSmartMode();
+        ShortestPathConfig config = plugin.getGpsConfig();
+        boolean balloonsOn = config.useHotAirBalloons();
+        boolean smart = config.balloonSmartMode();
         List<String> lowTypes = plugin.getBalloonLowLogTypes();
 
         Color stateColor = !balloonsOn ? ColorScheme.LIGHT_GRAY_COLOR
@@ -303,7 +303,7 @@ import static gps.PanelWidgets.wrappedLabel;
 
     /** Sailing your own boat: the master switch, the boarding assumptions and the known berths. */
     private JPanel sailing() {
-        final boolean sailingOn = plugin.getGpsConfig().useSailing();
+        boolean sailingOn = plugin.getGpsConfig().useSailing();
         JPanel section = shell("Sailing (beta)", "Sail your own boat between mooring points and port berths",
             sailingExpanded, () -> sailingExpanded = !sailingExpanded,
             sailingOn ? "on" : "off",
@@ -367,8 +367,8 @@ import static gps.PanelWidgets.wrappedLabel;
      * here (or a sync hint, since GPS cannot see a farming patch until the menu has been opened).
      */
     private JPanel spiritTree() {
-        final boolean smart = plugin.getGpsConfig().spiritTreeSmartMode();
-        final boolean synced = plugin.isSpiritTreeSynced();
+        boolean smart = plugin.getGpsConfig().spiritTreeSmartMode();
+        boolean synced = plugin.isSpiritTreeSynced();
         List<String> planted = smart && synced ? plugin.getAvailablePlantedSpiritTrees() : List.of();
 
         Color stateColor = smart && !planted.isEmpty() ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.LIGHT_GRAY_COLOR;

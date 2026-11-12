@@ -169,7 +169,7 @@ final class PanelWidgets {
 
     /** A 9px rounded dot icon in {@code colour}. */
     static Icon dot(Color colour) {
-        final int s = 9;
+        int s = 9;
         BufferedImage image = new BufferedImage(s, s, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = image.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);

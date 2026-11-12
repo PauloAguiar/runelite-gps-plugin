@@ -32,21 +32,21 @@ public class SplitFlagMap {
 
     public SplitFlagMap(Map<Integer, byte[]> compressedRegions) {
         widthInclusive = regionExtents.getWidth() + 1;
-        final int heightInclusive = regionExtents.getHeight() + 1;
-        final int regionCount = widthInclusive * heightInclusive;
+        int heightInclusive = regionExtents.getHeight() + 1;
+        int regionCount = widthInclusive * heightInclusive;
         regionMapPlaneCounts = new byte[regionCount];
         regionWordOffset = new int[regionCount];
         Arrays.fill(regionWordOffset, -1);
 
         // First pass: decode each region and reserve it a slice of the shared word array.
-        final Map<Integer, long[]> regionWords = new HashMap<>(compressedRegions.size());
+        Map<Integer, long[]> regionWords = new HashMap<>(compressedRegions.size());
         int totalWords = 0;
         for (Map.Entry<Integer, byte[]> entry : compressedRegions.entrySet()) {
-            final int pos = entry.getKey();
-            final int index = getIndex(unpackX(pos), unpackY(pos));
-            final BitSet bits = BitSet.valueOf(entry.getValue());
+            int pos = entry.getKey();
+            int index = getIndex(unpackX(pos), unpackY(pos));
+            BitSet bits = BitSet.valueOf(entry.getValue());
             // Same plane-count derivation the old FlagMap used.
-            final int planeCount = (bits.size() + BITS_PER_PLANE - 1) / BITS_PER_PLANE;
+            int planeCount = (bits.size() + BITS_PER_PLANE - 1) / BITS_PER_PLANE;
             regionMapPlaneCounts[index] = (byte) planeCount;
             regionWordOffset[index] = totalWords;
             regionWords.put(index, bits.toLongArray());
@@ -57,7 +57,7 @@ public class SplitFlagMap {
         // BitSet.toLongArray are left as the zero-filled remainder of the slice).
         flags = new long[totalWords];
         for (Map.Entry<Integer, long[]> entry : regionWords.entrySet()) {
-            final long[] words = entry.getValue();
+            long[] words = entry.getValue();
             System.arraycopy(words, 0, flags, regionWordOffset[entry.getKey()], words.length);
         }
     }
@@ -79,8 +79,8 @@ public class SplitFlagMap {
             ZipEntry entry;
             while ((entry = in.getNextEntry()) != null) {
                 String[] n = entry.getName().split("_");
-                final int x = Integer.parseInt(n[0]);
-                final int y = Integer.parseInt(n[1]);
+                int x = Integer.parseInt(n[0]);
+                int y = Integer.parseInt(n[1]);
                 minX = Math.min(minX, x);
                 minY = Math.min(minY, y);
                 maxX = Math.max(maxX, x);
@@ -101,15 +101,15 @@ public class SplitFlagMap {
     public byte getRegionPlaneCounts(int index) { return regionMapPlaneCounts[index]; }
 
     public boolean get(int x, int y, int z, int flag) {
-        final int index = getIndex(x / REGION_SIZE, y / REGION_SIZE);
+        int index = getIndex(x / REGION_SIZE, y / REGION_SIZE);
         if (index < 0 || index >= regionWordOffset.length) return false;
 
-        final int wordOffset = regionWordOffset[index];
+        int wordOffset = regionWordOffset[index];
         if (wordOffset < 0 || z < 0 || z >= regionMapPlaneCounts[index]) return false;
 
         // SplitFlagMap routes (x, y) to the region that contains it, so the in-region coordinates
         // are simply the low REGION_SIZE bits; this matches the old FlagMap.index arithmetic.
-        final int localBit = (z * REGION_SIZE * REGION_SIZE + (y & REGION_MASK) * REGION_SIZE + (x & REGION_MASK)) * FLAG_COUNT + flag;
+        int localBit = (z * REGION_SIZE * REGION_SIZE + (y & REGION_MASK) * REGION_SIZE + (x & REGION_MASK)) * FLAG_COUNT + flag;
         return (flags[wordOffset + (localBit >> 6)] >>> (localBit & 63) & 1L) != 0L;
     }
 

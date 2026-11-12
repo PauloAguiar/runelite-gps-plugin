@@ -1131,7 +1131,7 @@ public class ShortestPathPlugin extends Plugin {
         // Item names come from the item definitions, which are client-thread-only: build the
         // whole body there; the panel work then happens on the EDT.
         clientThread.invokeLater(() -> {
-            final String context = new IssueReport(this).body();
+            String context = new IssueReport(this).body();
             SwingUtilities.invokeLater(() -> {
                 if (altPanel != null) altPanel.showReportContext(context);
                 LinkBrowser.browse(BuildInfo.GITHUB_NEW_ISSUE);

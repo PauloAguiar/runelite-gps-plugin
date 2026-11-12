@@ -24,22 +24,22 @@ final class SearchMatcher {
     }
 
     static int score(String name, String query) {
-        final String literal = query.toLowerCase(Locale.ROOT).trim();
-        final String expanded = SearchAliases.expand(query);
-        final int direct = scoreLiteral(name, literal);
+        String literal = query.toLowerCase(Locale.ROOT).trim();
+        String expanded = SearchAliases.expand(query);
+        int direct = scoreLiteral(name, literal);
         return expanded.equals(literal) ? direct : Math.max(direct, scoreLiteral(name, expanded));
     }
 
     private static int scoreLiteral(String name, String query) {
-        final String n = name.toLowerCase(Locale.ROOT);
-        final String q = query;
+        String n = name.toLowerCase(Locale.ROOT);
+        String q = query;
         if (q.isEmpty()) return 0;
-        final int lengthPenalty = Math.min(n.length(), MAX_LENGTH_PENALTY);
+        int lengthPenalty = Math.min(n.length(), MAX_LENGTH_PENALTY);
         if (n.equals(q)) return TIER_EXACT;
         if (n.startsWith(q)) return TIER_PREFIX - lengthPenalty;
         if (wordPrefixes(n, q)) return TIER_WORD_PREFIX - lengthPenalty;
         if (n.contains(q)) return TIER_SUBSTRING - lengthPenalty;
-        final String letters = q.replaceAll("\\s+", "");
+        String letters = q.replaceAll("\\s+", "");
         if (letters.length() >= MIN_SUBSEQUENCE_QUERY && isSubsequence(n, letters))
             return TIER_SUBSEQUENCE - lengthPenalty;
         return 0;
@@ -47,8 +47,8 @@ final class SearchMatcher {
 
     /** Every whitespace-separated query token prefixes a distinct name word, in order. */
     private static boolean wordPrefixes(String name, String query) {
-        final String[] tokens = query.split("\\s+");
-        final String[] words = name.split("[^a-z0-9]+");
+        String[] tokens = query.split("\\s+");
+        String[] words = name.split("[^a-z0-9]+");
         int w = 0;
         for (String token : tokens) {
             boolean matched = false;

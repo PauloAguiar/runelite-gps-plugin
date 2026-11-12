@@ -66,8 +66,8 @@ public class PathMapOverlay extends Overlay {
      * DirectionArrow, see {@link ArrowHead}.)
      */
     private void drawArrowPath(Graphics2D graphics, List<PathStep> path, Set<Integer> sailingEdges) {
-        final Stroke walkStroke = new BasicStroke(2, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
-        final Stroke jumpStroke = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{9}, 0);
+        Stroke walkStroke = new BasicStroke(2, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
+        Stroke jumpStroke = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{9}, 0);
 
         int i = 0;
         while (i < path.size() - 1) {
@@ -140,8 +140,8 @@ public class PathMapOverlay extends Overlay {
 
         int x = startX;
         int y = startY;
-        final int width = endX - x;
-        final int height = endY - y;
+        int width = endX - x;
+        int height = endY - y;
         x -= width / 2;
         y -= height / 2;
 
@@ -159,8 +159,8 @@ public class PathMapOverlay extends Overlay {
     }
 
     private Area getWorldMapClipArea(Rectangle baseRectangle) {
-        final Widget overview = client.getWidget(InterfaceID.Worldmap.OVERVIEW_CONTAINER);
-        final Widget surfaceSelector = client.getWidget(InterfaceID.Worldmap.MAPLIST_BOX_GRAPHIC0);
+        Widget overview = client.getWidget(InterfaceID.Worldmap.OVERVIEW_CONTAINER);
+        Widget surfaceSelector = client.getWidget(InterfaceID.Worldmap.MAPLIST_BOX_GRAPHIC0);
 
         Area clipArea = new Area(baseRectangle);
 

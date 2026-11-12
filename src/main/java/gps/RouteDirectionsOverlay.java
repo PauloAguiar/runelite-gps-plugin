@@ -188,7 +188,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         arrivalSource = plugin.getTargetSource();
         // "Destination set by ...", or during a bank trip what resumes after it (BankDetour.headerLine).
         // The compact overlay shows the steps only.
-        final boolean compact = plugin.display().compactOverlay;
+        boolean compact = plugin.display().compactOverlay;
         String destinationLine = plugin.getDestinationLine();
         if (destinationLine != null && !compact) lines.add(new Line(destinationLine, fontOther, UPCOMING, null, null));
         // Drifting off the drawn path: warn before the route is recomputed (the middle of the three
@@ -260,9 +260,9 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         // Fit the panel to the content: widest left text + its time column, clamped to sane bounds.
         // The bounds scale with the text-size preset (2x for Large) — at doubled glyph widths a
         // fixed cap would ellipsize twice as much of every step.
-        final float widthScale = fontCurrent.getSize2D() / 16f;
-        final int minWidth = Math.round(MIN_WIDTH * widthScale);
-        final int maxWidth = Math.round(MAX_WIDTH * widthScale);
+        float widthScale = fontCurrent.getSize2D() / 16f;
+        int minWidth = Math.round(MIN_WIDTH * widthScale);
+        int maxWidth = Math.round(MAX_WIDTH * widthScale);
         int contentWidth = minWidth;
         for (Line line : lines) {
             // A centred line (arrival, finding) reads as a label, not a list row: give it the
@@ -277,7 +277,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         // Spacer reserving the header row; the decorated title (pin glyph + bold text + accent rule)
         // is custom-drawn over it after the panel renders — TitleComponent supports no font/styling.
         // The compact overlay has no header row at all.
-        final boolean compact = plugin.display().compactOverlay;
+        boolean compact = plugin.display().compactOverlay;
         if (!compact) panelComponent.getChildren().add(LineComponent.builder().left(" ").leftFont(fontCurrent).build());
         for (Line line : lines) {
             if (line.centred) {
@@ -343,16 +343,16 @@ public class RouteDirectionsOverlay extends OverlayPanel {
      * RuneLite's palette. Never null — a null would re-enable the base panel's colour handling.
      */
     private static Color overriddenBackground(int transparencyPercent) {
-        final int alpha = Math.max(0, Math.min(255, Math.round(255 * (100 - transparencyPercent) / 100f)));
-        final Color standard = ComponentConstants.STANDARD_BACKGROUND_COLOR;
+        int alpha = Math.max(0, Math.min(255, Math.round(255 * (100 - transparencyPercent) / 100f)));
+        Color standard = ComponentConstants.STANDARD_BACKGROUND_COLOR;
         return new Color(standard.getRed(), standard.getGreen(), standard.getBlue(), alpha);
     }
 
     /** Rebuilds the three fonts when the custom font changes or is switched on or off. */
     private void refreshFonts() {
-        final OverlaySettings display = plugin.display();
-        final FontType custom = display.useCustomOverlayFont ? display.overlayFont : null;
-        final String key = custom == null ? "native"
+        OverlaySettings display = plugin.display();
+        FontType custom = display.useCustomOverlayFont ? display.overlayFont : null;
+        String key = custom == null ? "native"
             : custom.getFamily() + "|" + custom.getSize() + "|" + custom.isBold() + "|" + custom.isItalic();
         if (key.equals(fontKey)) return;
         fontKey = key;
@@ -387,9 +387,9 @@ public class RouteDirectionsOverlay extends OverlayPanel {
      */
     private void drawTitle(Graphics2D graphics, Dimension panelSize) {
         // All header geometry scales with the header font (1x at the native 16, 2x for Large).
-        final float s = fontCurrent.getSize2D() / 16f;
-        final int px = 8;
-        final int py = 4;
+        float s = fontCurrent.getSize2D() / 16f;
+        int px = 8;
+        int py = 4;
         // The destination's glyph: a location pin, or a bank while a bank trip will resume a
         // replaced route (the destination line says what comes after it).
         if (plugin.isBankDetour()) drawBankGlyph(graphics, px, py, s, accent);

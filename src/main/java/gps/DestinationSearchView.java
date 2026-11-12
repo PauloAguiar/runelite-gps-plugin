@@ -222,7 +222,7 @@ final class DestinationSearchView extends JPanel {
             + " or type coordinates (\"3221, 3218\", optional plane: \"3221 3218 1\")");
         // Taller than the default field height for an easier click target and more presence: it
         // is the section's primary control.
-        final int searchHeight = 32;
+        int searchHeight = 32;
         searchField.setPreferredSize(new Dimension(searchField.getPreferredSize().width, searchHeight));
         searchField.setMinimumSize(new Dimension(0, searchHeight));
         searchField.setMaximumSize(new Dimension(Integer.MAX_VALUE, searchHeight));
@@ -373,7 +373,7 @@ final class DestinationSearchView extends JPanel {
         resultEntries.clear();
         selectedResult = -1;
         String query = searchField.getText().trim();
-        final int player = plugin.getLastKnownPlayerLocation();
+        int player = plugin.getLastKnownPlayerLocation();
         if (query.isEmpty()) {
             // An empty box offers the saved favourites and the recent selections instead of hiding:
             // reopening a frequent destination without retyping it.

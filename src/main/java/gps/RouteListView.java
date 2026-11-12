@@ -479,7 +479,7 @@ final class RouteListView extends JPanel {
         // stays quiet), the stacked arrows when a preference is set. Hovering the row brightens
         // it; clicking opens the priority menu (prefer/avoid tiers; exclude at the bottom).
         MethodPriority cardTier = plugin.getMethodPriority(method);
-        final IconActionLabel[] holder = new IconActionLabel[1];
+        IconActionLabel[] holder = new IconActionLabel[1];
         holder[0] = new IconActionLabel(cardTier == MethodPriority.NORMAL ? RouteIcons.PRIORITY_NEUTRAL_DIM : priorityRestIcon(cardTier),
             priorityHoverIcon(cardTier),
             "Priority: " + cardTier.label + ", click to change",
@@ -492,7 +492,7 @@ final class RouteListView extends JPanel {
         row.add(actionWrap, BorderLayout.EAST);
 
         // Reveal only this row's control on hover, not the whole card.
-        final MethodPriority hoverTier = cardTier;
+        MethodPriority hoverTier = cardTier;
         addHoverRecursively(row, hovered -> priority.setRestIcon(hovered ? priorityHoverIcon(hoverTier)
                 : (hoverTier == MethodPriority.NORMAL ? RouteIcons.PRIORITY_NEUTRAL_DIM : priorityRestIcon(hoverTier))));
         return row;

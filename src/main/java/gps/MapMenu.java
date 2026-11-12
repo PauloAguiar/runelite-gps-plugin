@@ -57,7 +57,7 @@ import net.runelite.client.util.Text;
             }
         }
 
-        final Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
+        Widget map = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
         if (map != null) {
             if (map.getBounds().contains(client.getMouseCanvasPosition().getX(), client.getMouseCanvasPosition().getY())) {
                 addMenuEntry(event, SET, TARGET, 0);
@@ -69,7 +69,7 @@ import net.runelite.client.util.Text;
                 addMenuEntry(event, FIND_CLOSEST, event.getTarget(), 1);
         }
 
-        final Shape minimap = minimapClip.area();
+        Shape minimap = minimapClip.area();
         if (minimap != null && plugin.hasPathTargets()
             && minimap.contains(client.getMouseCanvasPosition().getX(), client.getMouseCanvasPosition().getY())) {
             addMenuEntry(event, CLEAR, PATH, 0);

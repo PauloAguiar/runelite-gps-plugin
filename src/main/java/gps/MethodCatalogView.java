@@ -135,7 +135,7 @@ final class MethodCatalogView {
      */
     void restoreScroll(int position) {
         if (position > 0 && rowsScroll != null) {
-            final JScrollPane scroll = rowsScroll;
+            JScrollPane scroll = rowsScroll;
             SwingUtilities.invokeLater(() -> SwingUtilities.invokeLater(() -> scroll.getVerticalScrollBar().setValue(position)));
         }
     }
@@ -462,7 +462,7 @@ final class MethodCatalogView {
         // tier (check = normal, stacked arrows = prefer/avoid, cross = excluded) and clicking
         // opens the tier menu (exclude is its bottom entry).
         MethodPriority tier = plugin.getMethodPriority(item);
-        final IconActionLabel[] toggleHolder = new IconActionLabel[1];
+        IconActionLabel[] toggleHolder = new IconActionLabel[1];
         toggleHolder[0] = new IconActionLabel(priorityRestIcon(tier), priorityHoverIcon(tier), priorityTooltip(item.label(), tier),
             () -> showPriorityMenu(toggleHolder[0], item));
         IconActionLabel toggle = toggleHolder[0];

@@ -31,8 +31,8 @@ import net.runelite.api.worldmap.WorldMap;
 
         if (pixelX == NONE || pixelY == NONE || middleX == NONE || middleY == NONE) return WorldPointUtil.UNDEFINED;
 
-        final int dx = (int) ((pixelX - middleX) / zoom);
-        final int dy = (int) ((-(pixelY - middleY)) / zoom);
+        int dx = (int) ((pixelX - middleX) / zoom);
+        int dy = (int) ((-(pixelY - middleY)) / zoom);
 
         return WorldPointUtil.dxdy(mapPoint, dx, dy);
     }

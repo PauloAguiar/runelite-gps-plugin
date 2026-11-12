@@ -53,7 +53,7 @@ public final class SearchHeuristic {
      */
     public int of(int packedPosition) {
         if (packedPosition == WorldPointUtil.UNDEFINED) return floor;
-        final int distance = field.distance(packedPosition);
+        int distance = field.distance(packedPosition);
         if (distance == DistanceField.UNREACHED) return Math.min(horizon, floor);
         return distance >= floor ? floor : distance;
     }
@@ -86,13 +86,13 @@ public final class SearchHeuristic {
 
     public static SearchHeuristic buildWithField(PathfinderConfig config, DistanceField field) {
         if (field == null) return null;
-        final int horizon = field.horizon();
+        int horizon = field.horizon();
         int floor = UNBOUNDED_FLOOR;
         // Both bank states: a path may flip into the banked state mid-search, so the floor must
         // cover every teleport either state can use (a superset only lowers the floor = safe).
         for (boolean bankVisited : new boolean[]{false, true}) {
             for (Transport teleport : config.getUsableTeleports(bankVisited)) {
-                final int destination = teleport.getDestination();
+                int destination = teleport.getDestination();
                 if (destination == WorldPointUtil.UNDEFINED) continue;
                 int landingDistance = field.distance(destination);
                 if (landingDistance == DistanceField.UNREACHED) {
@@ -104,8 +104,7 @@ public final class SearchHeuristic {
                     // the truly-cheapest teleport happens to land just past the horizon.
                     landingDistance = horizon;
                 }
-                final int effectiveCost = Math.max(0,
-                    CostUnits.fromTicks(teleport.getDuration()) + config.getAdditionalTransportCost(teleport));
+                int effectiveCost = Math.max(0, CostUnits.fromTicks(teleport.getDuration()) + config.getAdditionalTransportCost(teleport));
                 floor = (int) Math.min(floor, (long) effectiveCost + landingDistance);
             }
         }

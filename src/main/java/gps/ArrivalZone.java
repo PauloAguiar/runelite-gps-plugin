@@ -89,18 +89,18 @@ final class ArrivalZone {
         Set<Integer> zone = new HashSet<>();
         zone.add(end);
         if (map == null || maxSteps <= 0) return zone;
-        final int plane = WorldPointUtil.unpackWorldPlane(end);
+        int plane = WorldPointUtil.unpackWorldPlane(end);
         List<Integer> frontier = new ArrayList<>();
         frontier.add(end);
         for (int depth = 0; depth < maxSteps && !frontier.isEmpty(); depth++) {
             List<Integer> next = new ArrayList<>();
             for (int tile : frontier) {
-                final int x = WorldPointUtil.unpackWorldX(tile);
-                final int y = WorldPointUtil.unpackWorldY(tile);
-                final boolean n = map.n(x, y, plane);
-                final boolean s = map.s(x, y, plane);
-                final boolean e = map.e(x, y, plane);
-                final boolean w = map.w(x, y, plane);
+                int x = WorldPointUtil.unpackWorldX(tile);
+                int y = WorldPointUtil.unpackWorldY(tile);
+                boolean n = map.n(x, y, plane);
+                boolean s = map.s(x, y, plane);
+                boolean e = map.e(x, y, plane);
+                boolean w = map.w(x, y, plane);
                 grow(zone, next, x, y + 1, plane, n);
                 grow(zone, next, x, y - 1, plane, s);
                 grow(zone, next, x + 1, y, plane, e);

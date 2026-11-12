@@ -41,7 +41,7 @@ class IntDeque {
      */
     int pollFirst() {
         if (size == 0) return NodeGraph.NO_NODE;
-        final int value = elements[head];
+        int value = elements[head];
         head = increment(head);
         size--;
         return value;
@@ -58,8 +58,8 @@ class IntDeque {
     private int decrement(int index) { return index == 0 ? elements.length - 1 : index - 1; }
 
     private void grow() {
-        final int oldCapacity = elements.length;
-        final int[] grown = new int[oldCapacity << 1];
+        int oldCapacity = elements.length;
+        int[] grown = new int[oldCapacity << 1];
         for (int i = 0; i < size; i++) grown[i] = elements[(head + i) % oldCapacity];
         elements = grown;
         head = 0;

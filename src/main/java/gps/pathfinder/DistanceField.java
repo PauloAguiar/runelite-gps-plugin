@@ -76,40 +76,40 @@ public final class DistanceField {
         this.map = map;
         regionExtents = SplitFlagMap.getRegionExtents();
         widthInclusive = regionExtents.getWidth() + 1;
-        final int heightInclusive = regionExtents.getHeight() + 1;
+        int heightInclusive = regionExtents.getHeight() + 1;
         regions = new short[widthInclusive * heightInclusive][];
     }
 
     /** The field value for a packed tile: cost lower bound to the nearest target, or UNREACHED. */
     public int distance(int packedPosition) {
-        final int x = unpackWorldX(packedPosition);
-        final int y = unpackWorldY(packedPosition);
-        final int plane = unpackWorldPlane(packedPosition);
-        final int regionIndex = getRegionIndex(x / REGION_SIZE, y / REGION_SIZE);
+        int x = unpackWorldX(packedPosition);
+        int y = unpackWorldY(packedPosition);
+        int plane = unpackWorldPlane(packedPosition);
+        int regionIndex = getRegionIndex(x / REGION_SIZE, y / REGION_SIZE);
         if (regionIndex < 0 || regionIndex >= regions.length) return UNREACHED;
-        final short[] region = regions[regionIndex];
+        short[] region = regions[regionIndex];
         if (region == null) return UNREACHED;
-        final int index = tileIndex(x, y, plane, region.length);
+        int index = tileIndex(x, y, plane, region.length);
         if (index < 0) return UNREACHED;
-        final short value = region[index];
+        short value = region[index];
         return value == EMPTY ? UNREACHED : value;
     }
 
     /** Relaxes a tile to the given distance; true when it improved (and should be enqueued). */
     private boolean relax(int x, int y, int plane, int distance) {
-        final int regionIndex = getRegionIndex(x / REGION_SIZE, y / REGION_SIZE);
+        int regionIndex = getRegionIndex(x / REGION_SIZE, y / REGION_SIZE);
         if (regionIndex < 0 || regionIndex >= regions.length) return false;
         short[] region = regions[regionIndex];
         if (region == null) {
-            final byte planeCount = map.getRegionPlaneCounts(regionIndex);
+            byte planeCount = map.getRegionPlaneCounts(regionIndex);
             region = new short[planeCount * REGION_SIZE * REGION_SIZE];
             Arrays.fill(region, EMPTY);
             regions[regionIndex] = region;
         }
-        final int index = tileIndex(x, y, plane, region.length);
+        int index = tileIndex(x, y, plane, region.length);
         if (index < 0) return false;
-        final short clamped = (short) Math.min(distance, MAX_DISTANCE);
-        final short current = region[index];
+        short clamped = (short) Math.min(distance, MAX_DISTANCE);
+        short current = region[index];
         if (current != EMPTY && current <= clamped) return false;
         region[index] = clamped;
         return true;
@@ -120,7 +120,7 @@ public final class DistanceField {
     }
 
     private static int tileIndex(int x, int y, int plane, int regionLength) {
-        final int index = (plane * REGION_SIZE + (y % REGION_SIZE)) * REGION_SIZE + (x % REGION_SIZE);
+        int index = (plane * REGION_SIZE + (y % REGION_SIZE)) * REGION_SIZE + (x % REGION_SIZE);
         return index < regionLength ? index : -1;
     }
 
@@ -166,24 +166,24 @@ public final class DistanceField {
      * change a result.
      */
     static DistanceField build(PathfinderConfig config, Set<Integer> targets, int costMultiple) {
-        final CollisionMap map = config.getMap();
-        final DistanceField field = new DistanceField(map);
-        final PrimitiveIntHashMap<Map<Integer, Integer>> reverseTransports = buildReverseTransportIndex(config);
-        final VisitedTiles settled = new VisitedTiles(map);
-        final IntDeque fifo = new IntDeque(4096);
+        CollisionMap map = config.getMap();
+        DistanceField field = new DistanceField(map);
+        PrimitiveIntHashMap<Map<Integer, Integer>> reverseTransports = buildReverseTransportIndex(config);
+        VisitedTiles settled = new VisitedTiles(map);
+        IntDeque fifo = new IntDeque(4096);
         // Transport relaxations only (a few tens of thousands at most): boxed entries are fine.
         // Entry = (distance << 32) | (packed & 0xFFFFFFFF); natural ordering sorts by distance.
-        final PriorityQueue<Long> heap = new PriorityQueue<>();
+        PriorityQueue<Long> heap = new PriorityQueue<>();
         // Bounded mode: cheapest cast cost per origin-free teleport landing, for in-flood floor
         // discovery. Null = unbounded (full flood).
-        final PrimitiveIntHashMap<Integer> landingCasts = costMultiple > 0 ? buildTeleportLandingIndex(config) : null;
+        PrimitiveIntHashMap<Integer> landingCasts = costMultiple > 0 ? buildTeleportLandingIndex(config) : null;
         int cheapestFloor = Integer.MAX_VALUE;
         long horizonTarget = Long.MAX_VALUE;
 
         for (int target : targets) {
-            final int x = unpackWorldX(target);
-            final int y = unpackWorldY(target);
-            final int plane = unpackWorldPlane(target);
+            int x = unpackWorldX(target);
+            int y = unpackWorldY(target);
+            int plane = unpackWorldPlane(target);
             if (field.relax(x, y, plane, 0)) fifo.addLast(target);
         }
 
@@ -192,11 +192,11 @@ public final class DistanceField {
             if (!heap.isEmpty() && (fifo.isEmpty() || (heap.peek() >>> 32) < field.distance(fifo.peekFirst())))
                 packed = (int) (long) heap.poll();
             else packed = fifo.pollFirst();
-            final int x = unpackWorldX(packed);
-            final int y = unpackWorldY(packed);
-            final int plane = unpackWorldPlane(packed);
+            int x = unpackWorldX(packed);
+            int y = unpackWorldY(packed);
+            int plane = unpackWorldPlane(packed);
             if (!settled.set(x, y, plane, false)) continue;
-            final int distance = field.distance(packed);
+            int distance = field.distance(packed);
 
             if (landingCasts != null) {
                 // Everything below the popped distance is settled (cost-ordered), so once it passes
@@ -205,7 +205,7 @@ public final class DistanceField {
                     field.floodHorizon = (int) Math.min(Integer.MAX_VALUE - 1L, horizonTarget);
                     break;
                 }
-                final Integer cast = landingCasts.get(packed);
+                Integer cast = landingCasts.get(packed);
                 if (cast != null && cast + distance < cheapestFloor) {
                     cheapestFloor = cast + distance;
                     horizonTarget = (long) cheapestFloor * costMultiple + cheapestFloor + HORIZON_SLACK;
@@ -214,15 +214,15 @@ public final class DistanceField {
 
             field.expandWalking(packed, x, y, plane, distance, fifo, settled, config, reverseTransports);
 
-            final Map<Integer, Integer> intoHere = reverseTransports.get(packed);
+            Map<Integer, Integer> intoHere = reverseTransports.get(packed);
             if (intoHere != null) {
                 for (Map.Entry<Integer, Integer> edge : intoHere.entrySet()) {
-                    final int origin = edge.getKey();
-                    final int cost = edge.getValue();
-                    final int candidate = distance + cost;
-                    final int ox = unpackWorldX(origin);
-                    final int oy = unpackWorldY(origin);
-                    final int oplane = unpackWorldPlane(origin);
+                    int origin = edge.getKey();
+                    int cost = edge.getValue();
+                    int candidate = distance + cost;
+                    int ox = unpackWorldX(origin);
+                    int oy = unpackWorldY(origin);
+                    int oplane = unpackWorldPlane(origin);
                     if (!settled.get(ox, oy, oplane, false) && field.relax(ox, oy, oplane, candidate))
                         heap.add(((long) candidate << 32) | (origin & 0xFFFFFFFFL));
                 }
@@ -247,7 +247,7 @@ public final class DistanceField {
      * neighbours settled only after the horizon cut the flood.
      */
     private void patchBlockedLandings(PathfinderConfig config, int[] transportDestinations) {
-        final Set<Integer> landings = new HashSet<>();
+        Set<Integer> landings = new HashSet<>();
         for (int destination : transportDestinations) landings.add(destination);
         for (boolean bankVisited : new boolean[]{false, true}) {
             for (Transport teleport : config.getUsableTeleports(bankVisited)) {
@@ -255,17 +255,17 @@ public final class DistanceField {
             }
         }
         for (int landing : landings) {
-            final int x = unpackWorldX(landing);
-            final int y = unpackWorldY(landing);
-            final int plane = unpackWorldPlane(landing);
+            int x = unpackWorldX(landing);
+            int y = unpackWorldY(landing);
+            int plane = unpackWorldPlane(landing);
             if (distance(landing) != UNREACHED || !map.isBlocked(x, y, plane)) continue;
             // Forward step-off adjacency from a blocked tile (CollisionMap.getTileNeighbors'
             // isBlocked branch): any unblocked cardinal; diagonals need both flanking cardinals too.
-            final boolean westBlocked = map.isBlocked(x - 1, y, plane);
-            final boolean eastBlocked = map.isBlocked(x + 1, y, plane);
-            final boolean southBlocked = map.isBlocked(x, y - 1, plane);
-            final boolean northBlocked = map.isBlocked(x, y + 1, plane);
-            final boolean[] stepOpen = {
+            boolean westBlocked = map.isBlocked(x - 1, y, plane);
+            boolean eastBlocked = map.isBlocked(x + 1, y, plane);
+            boolean southBlocked = map.isBlocked(x, y - 1, plane);
+            boolean northBlocked = map.isBlocked(x, y + 1, plane);
+            boolean[] stepOpen = {
                 !westBlocked, !eastBlocked, !southBlocked, !northBlocked,
                 !map.isBlocked(x - 1, y - 1, plane) && !westBlocked && !southBlocked,
                 !map.isBlocked(x + 1, y - 1, plane) && !eastBlocked && !southBlocked,
@@ -275,7 +275,7 @@ public final class DistanceField {
             int best = UNREACHED;
             for (int i = 0; i < 8; i++) {
                 if (!stepOpen[i]) continue;
-                final int neighbour = distance(packWorldPoint(x + DX[i], y + DY[i], plane));
+                int neighbour = distance(packWorldPoint(x + DX[i], y + DY[i], plane));
                 if (neighbour != UNREACHED && neighbour + 1 < best) best = neighbour + 1;
             }
             if (best != UNREACHED) relax(x, y, plane, best);
@@ -291,12 +291,12 @@ public final class DistanceField {
     private void expandWalking(int packed, int x, int y, int plane, int distance,
         IntDeque fifo, VisitedTiles settled, PathfinderConfig config,
         PrimitiveIntHashMap<Map<Integer, Integer>> reverseTransports) {
-        final boolean fromBlocked = map.isBlocked(x, y, plane);
+        boolean fromBlocked = map.isBlocked(x, y, plane);
         if (map.isBlocked(x, y, plane)) {
-            final boolean westBlocked = map.isBlocked(x - 1, y, plane);
-            final boolean eastBlocked = map.isBlocked(x + 1, y, plane);
-            final boolean southBlocked = map.isBlocked(x, y - 1, plane);
-            final boolean northBlocked = map.isBlocked(x, y + 1, plane);
+            boolean westBlocked = map.isBlocked(x - 1, y, plane);
+            boolean eastBlocked = map.isBlocked(x + 1, y, plane);
+            boolean southBlocked = map.isBlocked(x, y - 1, plane);
+            boolean northBlocked = map.isBlocked(x, y + 1, plane);
             traversable[0] = !westBlocked;
             traversable[1] = !eastBlocked;
             traversable[2] = !southBlocked;
@@ -309,10 +309,10 @@ public final class DistanceField {
         else {
             // Diagonals composed exactly like CollisionMap's private sw/se/nw/ne: the diagonal is
             // walkable when all four half-edges around it are.
-            final boolean w = map.w(x, y, plane);
-            final boolean e = map.e(x, y, plane);
-            final boolean s = map.s(x, y, plane);
-            final boolean n = map.n(x, y, plane);
+            boolean w = map.w(x, y, plane);
+            boolean e = map.e(x, y, plane);
+            boolean s = map.s(x, y, plane);
+            boolean n = map.n(x, y, plane);
             traversable[0] = w;
             traversable[1] = e;
             traversable[2] = s;
@@ -323,12 +323,12 @@ public final class DistanceField {
             traversable[7] = n && map.e(x, y + 1, plane) && e && map.n(x + 1, y, plane);
         }
         for (int i = 0; i < 8; i++) {
-            final int nx = x + DX[i];
-            final int ny = y + DY[i];
+            int nx = x + DX[i];
+            int ny = y + DY[i];
             boolean canStep = traversable[i];
             if (!canStep && map.isBlocked(nx, ny, plane)) {
-                final int neighborPacked = packWorldPoint(nx, ny, plane);
-                final boolean cardinal = Math.abs(DX[i] + DY[i]) == 1;
+                int neighborPacked = packWorldPoint(nx, ny, plane);
+                boolean cardinal = Math.abs(DX[i] + DY[i]) == 1;
                 if (cardinal && config.getTransportsPacked(true)
                     .getOrDefault(neighborPacked, TransportAvailability.EMPTY_TRANSPORTS).length > 0) {
                     // Mirror of the forward rule that lets a path step onto a blocked tile hosting
@@ -376,13 +376,13 @@ public final class DistanceField {
      * contribute — the floor stays a little high and the horizon a little wide, which is safe.
      */
     private static PrimitiveIntHashMap<Integer> buildTeleportLandingIndex(PathfinderConfig config) {
-        final PrimitiveIntHashMap<Integer> index = new PrimitiveIntHashMap<>(256);
+        PrimitiveIntHashMap<Integer> index = new PrimitiveIntHashMap<>(256);
         for (boolean bankVisited : new boolean[]{false, true}) {
             for (Transport teleport : config.getUsableTeleports(bankVisited)) {
-                final int destination = teleport.getDestination();
+                int destination = teleport.getDestination();
                 if (destination == WorldPointUtil.UNDEFINED) continue;
-                final int cost = Math.max(0, CostUnits.fromTicks(teleport.getDuration()) + config.getAdditionalTransportCost(teleport));
-                final Integer current = index.get(destination);
+                int cost = Math.max(0, CostUnits.fromTicks(teleport.getDuration()) + config.getAdditionalTransportCost(teleport));
+                Integer current = index.get(destination);
                 if (current == null || cost < current) index.put(destination, cost);
             }
         }
@@ -396,17 +396,16 @@ public final class DistanceField {
     // origin -> min-cost map stays boxed: it is only iterated for the few thousand tiles that are
     // actually transport destinations, not per settled tile.
     static PrimitiveIntHashMap<Map<Integer, Integer>> buildReverseTransportIndex(PathfinderConfig config) {
-        final PrimitiveIntHashMap<Map<Integer, Integer>> index = new PrimitiveIntHashMap<>(4096);
+        PrimitiveIntHashMap<Map<Integer, Integer>> index = new PrimitiveIntHashMap<>(4096);
         for (boolean bankVisited : new boolean[]{false, true}) {
-            final PrimitiveIntHashMap<Transport[]> transports = config.getTransportsPacked(bankVisited);
+            PrimitiveIntHashMap<Transport[]> transports = config.getTransportsPacked(bankVisited);
             for (int origin : transports.keys()) {
-                final Transport[] set = transports.get(origin);
+                Transport[] set = transports.get(origin);
                 if (set == null) continue;
                 for (Transport transport : set) {
-                    final int destination = transport.getDestination();
+                    int destination = transport.getDestination();
                     if (destination == WorldPointUtil.UNDEFINED) continue;
-                    final int cost = Math.max(0, CostUnits.fromTicks(transport.getDuration())
-                        + config.getAdditionalTransportCost(transport));
+                    int cost = Math.max(0, CostUnits.fromTicks(transport.getDuration()) + config.getAdditionalTransportCost(transport));
                     Map<Integer, Integer> byOrigin = index.get(destination);
                     if (byOrigin == null) {
                         byOrigin = new HashMap<>();

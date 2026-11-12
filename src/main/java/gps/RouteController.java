@@ -158,11 +158,11 @@ import net.runelite.api.ItemContainer;
         // Snapshot the exclusions this generation runs with, so the panel can flag the route list as
         // stale once the user toggles methods afterwards (recalculation is manual via Refresh).
         exclusions.markGenerated();
-        final List<TeleportMethod> currentCatalog = catalog;
-        final boolean hasTarget = !ends.isEmpty();
+        List<TeleportMethod> currentCatalog = catalog;
+        boolean hasTarget = !ends.isEmpty();
         ShortestPathPanel panel = plugin.panel();
         if (panel != null) {
-            final Map<TeleportMethod, MethodAvailability> currentUnavailable = unavailable;
+            Map<TeleportMethod, MethodAvailability> currentUnavailable = unavailable;
             SwingUtilities.invokeLater(() ->
                 panel.displayRoutes(List.of(), currentCatalog, currentUnavailable, plugin.getUserExclusions(), true, hasTarget));
         }
@@ -175,7 +175,7 @@ import net.runelite.api.ItemContainer;
         Map<TeleportMethod, MethodAvailability> newUnavailable, boolean done) {
         // Priorities re-rank the list (effective ETA = cost + tier adjustments): everything
         // downstream (panel, default display pick, rematch) sees the effective order.
-        final List<RouteOption> ordered = plugin.sortByEffectiveOrder(routes);
+        List<RouteOption> ordered = plugin.sortByEffectiveOrder(routes);
         catalog = newCatalog;
         unavailable = newUnavailable;
         if (done) {
@@ -189,7 +189,7 @@ import net.runelite.api.ItemContainer;
             // Mid-stream updates deliberately do NOT clear a stale selection: the overlay keeps
             // drawing the picked route steadily while the new list streams in.
             session.stream(ordered);
-        final boolean hasTarget = !session.lastTargets().isEmpty();
+        boolean hasTarget = !session.lastTargets().isEmpty();
         SwingUtilities.invokeLater(() -> {
             ShortestPathPanel panel = plugin.panel();
             if (panel != null)
@@ -246,7 +246,7 @@ import net.runelite.api.ItemContainer;
 
     /** Pushes the current routes and catalog to the panel (EDT). */
     void refreshPanel(boolean calculating) {
-        final boolean hasTarget = !session.lastTargets().isEmpty();
+        boolean hasTarget = !session.lastTargets().isEmpty();
         ShortestPathPanel panel = plugin.panel();
         if (panel != null) {
             SwingUtilities.invokeLater(() ->

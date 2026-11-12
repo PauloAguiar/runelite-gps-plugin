@@ -31,7 +31,7 @@ class TentativeCosts {
         this.map = map;
         regionExtents = SplitFlagMap.getRegionExtents();
         widthInclusive = regionExtents.getWidth() + 1;
-        final int heightInclusive = regionExtents.getHeight() + 1;
+        int heightInclusive = regionExtents.getHeight() + 1;
         regionsWithoutBank = new short[widthInclusive * heightInclusive][];
         regionsWithBank = new short[widthInclusive * heightInclusive][];
     }
@@ -42,22 +42,22 @@ class TentativeCosts {
      */
     boolean shouldPrune(int packedPoint, boolean bankVisited, int candidate) {
         if (candidate > MAX_PRUNABLE || candidate < 0) return false;
-        final int x = WorldPointUtil.unpackWorldX(packedPoint);
-        final int y = WorldPointUtil.unpackWorldY(packedPoint);
-        final int plane = WorldPointUtil.unpackWorldPlane(packedPoint);
-        final int regionIndex = getRegionIndex(x / REGION_SIZE, y / REGION_SIZE);
-        final short[][] regions = bankVisited ? regionsWithBank : regionsWithoutBank;
+        int x = WorldPointUtil.unpackWorldX(packedPoint);
+        int y = WorldPointUtil.unpackWorldY(packedPoint);
+        int plane = WorldPointUtil.unpackWorldPlane(packedPoint);
+        int regionIndex = getRegionIndex(x / REGION_SIZE, y / REGION_SIZE);
+        short[][] regions = bankVisited ? regionsWithBank : regionsWithoutBank;
         if (regionIndex < 0 || regionIndex >= regions.length) return false;
         short[] region = regions[regionIndex];
         if (region == null) {
-            final byte planeCount = map.getRegionPlaneCounts(regionIndex);
+            byte planeCount = map.getRegionPlaneCounts(regionIndex);
             region = new short[planeCount * REGION_SIZE * REGION_SIZE];
             Arrays.fill(region, EMPTY);
             regions[regionIndex] = region;
         }
-        final int index = (plane * REGION_SIZE + (y % REGION_SIZE)) * REGION_SIZE + (x % REGION_SIZE);
+        int index = (plane * REGION_SIZE + (y % REGION_SIZE)) * REGION_SIZE + (x % REGION_SIZE);
         if (index >= region.length) return false;
-        final short current = region[index];
+        short current = region[index];
         if (current != EMPTY && current <= candidate) return true;
         region[index] = (short) candidate;
         return false;

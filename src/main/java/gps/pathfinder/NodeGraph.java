@@ -77,7 +77,7 @@ public class NodeGraph {
     public NodeGraph(int initialCapacity) { this(initialCapacity, null); }
 
     public NodeGraph(int initialCapacity, SearchHeuristic heuristic) {
-        final int pages = Math.max(1, (Math.max(1, initialCapacity) + PAGE_MASK) >>> PAGE_SHIFT);
+        int pages = Math.max(1, (Math.max(1, initialCapacity) + PAGE_MASK) >>> PAGE_SHIFT);
         packedPosition = new int[pages][];
         previous = new int[pages][];
         cost = new int[pages][];
@@ -104,8 +104,8 @@ public class NodeGraph {
         if (size < capacity) return;
         // One more page per array. The page tables are small (one reference per 16K nodes), so
         // growing them by copy is cheap and keeps every existing page for a concurrent reader.
-        final int pages = packedPosition.length;
-        final int newPages = pages + Math.max(1, pages >> 1);
+        int pages = packedPosition.length;
+        int newPages = pages + Math.max(1, pages >> 1);
         packedPosition = Arrays.copyOf(packedPosition, newPages);
         previous = Arrays.copyOf(previous, newPages);
         cost = Arrays.copyOf(cost, newPages);
@@ -118,9 +118,9 @@ public class NodeGraph {
 
     private int append(int packed, int prev, int nodeCost, byte flagBits, byte kind) {
         ensureCapacity();
-        final int id = size;
-        final int page = id >>> PAGE_SHIFT;
-        final int slot = id & PAGE_MASK;
+        int id = size;
+        int page = id >>> PAGE_SHIFT;
+        int slot = id & PAGE_MASK;
         if (packedPosition[page] == null) {
             allocatePage(page);
             capacity = Math.max(capacity, (page + 1) * PAGE_SIZE);
@@ -151,9 +151,9 @@ public class NodeGraph {
      * edge would break the search's Dijkstra invariant.
      */
     public int createTile(int packedPosition, int previous, boolean bankVisited, int extraCost) {
-        final int travelTime = (previous != NO_NODE && isTile(previous))
+        int travelTime = (previous != NO_NODE && isTile(previous))
             ? WorldPointUtil.distanceBetween(packedPosition(previous), packedPosition) : 0;
-        final byte flagBits = bankVisited ? FLAG_BANK_VISITED : 0;
+        byte flagBits = bankVisited ? FLAG_BANK_VISITED : 0;
         return append(packedPosition, previous, costOf(previous) + Math.max(0, travelTime + extraCost), flagBits, (byte) 0);
     }
 
@@ -209,7 +209,7 @@ public class NodeGraph {
     /** A node id the snapshotted page tables can serve (every page up to the table's length exists). */
     private static boolean readable(int id, int[][] prev, int[][] packed, byte[][] flg) {
         if (id == NO_NODE) return false;
-        final int page = id >>> PAGE_SHIFT;
+        int page = id >>> PAGE_SHIFT;
         return page < prev.length && page < packed.length && page < flg.length
             && prev[page] != null && packed[page] != null && flg[page] != null;
     }
@@ -223,10 +223,10 @@ public class NodeGraph {
      * empty or one-frame-stale result rather than throwing.
      */
     public List<PathStep> getPathSteps(int id) {
-        final int[][] prev = previous;
-        final int[][] packed = packedPosition;
-        final byte[][] flg = flags;
-        final int[][] cst = cost;
+        int[][] prev = previous;
+        int[][] packed = packedPosition;
+        byte[][] flg = flags;
+        int[][] cst = cost;
         if (prev == null || packed == null || flg == null || cst == null || id == NO_NODE) return new ArrayList<>();
 
         int node = id;
@@ -236,14 +236,14 @@ public class NodeGraph {
             node = prev[node >>> PAGE_SHIFT][node & PAGE_MASK];
         }
 
-        final List<PathStep> pathSteps = new ArrayList<>(n);
+        List<PathStep> pathSteps = new ArrayList<>(n);
         for (int i = 0; i < n; i++) pathSteps.add(null);
 
         node = id;
         int i = n;
         while (readable(node, prev, packed, flg) && i > 0) {
-            final int page = node >>> PAGE_SHIFT;
-            final int slot = node & PAGE_MASK;
+            int page = node >>> PAGE_SHIFT;
+            int slot = node & PAGE_MASK;
             if ((flg[page][slot] & FLAG_ABSTRACT) == 0)
                 pathSteps.set(--i, new PathStep(packed[page][slot], (flg[page][slot] & FLAG_BANK_VISITED) != 0, cst[page][slot]));
             node = prev[page][slot];
@@ -258,9 +258,9 @@ public class NodeGraph {
      * {@link #getPathSteps}.
      */
     public int getClosestTilePosition(int id) {
-        final int[][] prev = previous;
-        final int[][] packed = packedPosition;
-        final byte[][] flg = flags;
+        int[][] prev = previous;
+        int[][] packed = packedPosition;
+        byte[][] flg = flags;
         if (prev == null || packed == null || flg == null) return WorldPointUtil.UNDEFINED;
         int node = id;
         while (readable(node, prev, packed, flg) && (flg[node >>> PAGE_SHIFT][node & PAGE_MASK] & FLAG_ABSTRACT) != 0)

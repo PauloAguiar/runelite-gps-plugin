@@ -42,9 +42,9 @@ import gps.*;
      * {@link LeagueRegion#NEUTRAL}.
      */
     public static LeagueRegion getRegion(int packedPoint) {
-        final int x = WorldPointUtil.unpackWorldX(packedPoint);
-        final int y = WorldPointUtil.unpackWorldY(packedPoint);
-        final int regionId = ((x >> 6) << 8) | (y >> 6);
+        int x = WorldPointUtil.unpackWorldX(packedPoint);
+        int y = WorldPointUtil.unpackWorldY(packedPoint);
+        int regionId = ((x >> 6) << 8) | (y >> 6);
         return regions().getOrDefault(regionId, LeagueRegion.NEUTRAL);
     }
 
@@ -112,7 +112,7 @@ import gps.*;
                 log.warn("Skipping malformed league regions row {}: '{}'", lineNumber, rawLine);
                 continue;
             }
-            final int regionId;
+            int regionId;
             try {
                 regionId = Integer.parseInt(parts[0]);
             }
@@ -120,7 +120,7 @@ import gps.*;
                 log.warn("Skipping league regions row {} with non-numeric region id '{}'", lineNumber, parts[0]);
                 continue;
             }
-            final LeagueRegion region;
+            LeagueRegion region;
             try {
                 region = LeagueRegion.valueOf(parts[1]);
             }

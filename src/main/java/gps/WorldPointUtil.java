@@ -64,9 +64,9 @@ public class WorldPointUtil {
      * @return decoded {@link WorldPoint}.
      */
     public static WorldPoint unpackWorldPoint(int packedPoint) {
-        final int x = unpackWorldX(packedPoint);
-        final int y = unpackWorldY(packedPoint);
-        final int plane = unpackWorldPlane(packedPoint);
+        int x = unpackWorldX(packedPoint);
+        int y = unpackWorldY(packedPoint);
+        int plane = unpackWorldPlane(packedPoint);
         return new WorldPoint(x, y, plane);
     }
 
@@ -135,12 +135,12 @@ public class WorldPointUtil {
      * @return distance or {@code Integer.MAX_VALUE} if plane differs.
      */
     public static int distanceBetween(int previousPacked, int currentPacked, int diagonal) {
-        final int previousX = WorldPointUtil.unpackWorldX(previousPacked);
-        final int previousY = WorldPointUtil.unpackWorldY(previousPacked);
-        final int previousZ = WorldPointUtil.unpackWorldPlane(previousPacked);
-        final int currentX = WorldPointUtil.unpackWorldX(currentPacked);
-        final int currentY = WorldPointUtil.unpackWorldY(currentPacked);
-        final int currentZ = WorldPointUtil.unpackWorldPlane(currentPacked);
+        int previousX = WorldPointUtil.unpackWorldX(previousPacked);
+        int previousY = WorldPointUtil.unpackWorldY(previousPacked);
+        int previousZ = WorldPointUtil.unpackWorldPlane(previousPacked);
+        int currentX = WorldPointUtil.unpackWorldX(currentPacked);
+        int currentY = WorldPointUtil.unpackWorldY(currentPacked);
+        int currentZ = WorldPointUtil.unpackWorldPlane(currentPacked);
         return distanceBetween(previousX, previousY, previousZ, currentX, currentY, currentZ, diagonal);
     }
 
@@ -151,10 +151,10 @@ public class WorldPointUtil {
      * @see #distanceBetween(int, int, int, int, int, int, int)
      */
     public static int distanceBetween2D(int previousPacked, int currentPacked, int diagonal) {
-        final int previousX = WorldPointUtil.unpackWorldX(previousPacked);
-        final int previousY = WorldPointUtil.unpackWorldY(previousPacked);
-        final int currentX = WorldPointUtil.unpackWorldX(currentPacked);
-        final int currentY = WorldPointUtil.unpackWorldY(currentPacked);
+        int previousX = WorldPointUtil.unpackWorldX(previousPacked);
+        int previousY = WorldPointUtil.unpackWorldY(previousPacked);
+        int currentX = WorldPointUtil.unpackWorldX(currentPacked);
+        int currentY = WorldPointUtil.unpackWorldY(currentPacked);
         return distanceBetween2D(previousX, previousY, currentX, currentY, diagonal);
     }
 
@@ -173,7 +173,7 @@ public class WorldPointUtil {
      * @return distance or {@code Integer.MAX_VALUE} if planes differ.
      */
     public static int distanceBetween(int previousX, int previousY, int previousZ, int currentX, int currentY, int currentZ, int diagonal) {
-        final int dz = previousZ - currentZ;
+        int dz = previousZ - currentZ;
 
         if (dz != 0) return Integer.MAX_VALUE;
 
@@ -193,8 +193,8 @@ public class WorldPointUtil {
      * @return distance.
      */
     public static int distanceBetween2D(int previousX, int previousY, int currentX, int currentY, int diagonal) {
-        final int dx = previousX - currentX;
-        final int dy = previousY - currentY;
+        int dx = previousX - currentX;
+        int dy = previousY - currentY;
 
         if (diagonal == CHEBYSHEV_DISTANCE_METRIC) return Math.max(Math.abs(dx), Math.abs(dy));
         else if (diagonal == MANHATTAN_DISTANCE_METRIC) return Math.abs(dx) + Math.abs(dy);
@@ -226,7 +226,7 @@ public class WorldPointUtil {
      * Returns {@code Integer.MAX_VALUE} if the plane differs.
      */
     public static int distanceToArea(int packedPoint, WorldArea area) {
-        final int plane = unpackWorldPlane(packedPoint);
+        int plane = unpackWorldPlane(packedPoint);
         if (area.getPlane() != plane) return Integer.MAX_VALUE;
         return distanceToArea2D(packedPoint, area);
     }
@@ -237,12 +237,12 @@ public class WorldPointUtil {
      * {@link WorldArea#distanceTo(WorldPoint)} semantics in 2D.
      */
     public static int distanceToArea2D(int packedPoint, WorldArea area) {
-        final int y = unpackWorldY(packedPoint);
-        final int x = unpackWorldX(packedPoint);
-        final int areaMaxX = area.getX() + area.getWidth() - 1;
-        final int areaMaxY = area.getY() + area.getHeight() - 1;
-        final int dx = Math.max(Math.max(area.getX() - x, 0), x - areaMaxX);
-        final int dy = Math.max(Math.max(area.getY() - y, 0), y - areaMaxY);
+        int y = unpackWorldY(packedPoint);
+        int x = unpackWorldX(packedPoint);
+        int areaMaxX = area.getX() + area.getWidth() - 1;
+        int areaMaxY = area.getY() + area.getHeight() - 1;
+        int dx = Math.max(Math.max(area.getX() - x, 0), x - areaMaxX);
+        int dy = Math.max(Math.max(area.getY() - y, 0), y - areaMaxY);
 
         return Math.max(dx, dy);
     }

@@ -182,20 +182,20 @@ public class Pathfinder implements Runnable {
 
     private void addNeighbors(int node, boolean nodeIsTile, int nodePacked) {
         PrimitiveIntList nodes = map.getNeighbors(node, visited, config, wildernessLevel, targetInWilderness, graph, tentative);
-        final int count = nodes.size();
+        int count = nodes.size();
         for (int i = 0; i < count; i++) {
             int neighbor = nodes.get(i);
             // Each graph.xxx(id) re-indexes a backing array, so read each neighbour field once and
             // reuse the loop-invariant node fields passed in (the JIT cached these for free when nodes
             // were objects, but not when they are int ids into structure-of-arrays storage).
-            final boolean neighborIsTile = graph.isTile(neighbor);
+            boolean neighborIsTile = graph.isTile(neighbor);
             if (nodeIsTile && neighborIsTile) {
-                final int neighborPacked = graph.packedPosition(neighbor);
+                int neighborPacked = graph.packedPosition(neighbor);
                 if (config.avoidWilderness(nodePacked, neighborPacked, targetInWilderness)) continue;
                 if (config.avoidBlockedRegion(nodePacked, neighborPacked, targetInBlockedRegion)) continue;
             }
 
-            final boolean neighborIsTransport = graph.isTransport(neighbor);
+            boolean neighborIsTransport = graph.isTransport(neighbor);
             // Heap mode: nothing is marked at enqueue (the pop dedups instead — see the run loop)
             // and every node is ordered through the cost-ordered queue — the g-keyed bucket queue
             // for uninformed searches, the (g+h)-keyed heap for A*. Stats are counted at settle
@@ -231,10 +231,10 @@ public class Pathfinder implements Runnable {
     private boolean updateBestPathWhenUnreachable(int node, int packedPosition) {
         boolean update = false;
 
-        final int travelledDistance = graph.cost(node);
+        int travelledDistance = graph.cost(node);
         // Loop-invariant: this runs once per explored node in the post-pass, times every target.
-        final int x = WorldPointUtil.unpackWorldX(packedPosition);
-        final int y = WorldPointUtil.unpackWorldY(packedPosition);
+        int x = WorldPointUtil.unpackWorldX(packedPosition);
+        int y = WorldPointUtil.unpackWorldY(packedPosition);
         for (int target : targetArray) {
             int remainingDistance = WorldPointUtil.distanceBetween(target, packedPosition, WorldPointUtil.EUCLIDEAN_SQUARED_DISTANCE_METRIC);
             if ((remainingDistance < bestRemainingDistance) ||
@@ -298,7 +298,7 @@ public class Pathfinder implements Runnable {
                     visited.set(node, graph);
                 }
                 if (validateSettleOrder && heapMode) {
-                    final int settledKey = graph.orderCost(node);
+                    int settledKey = graph.orderCost(node);
                     if (settledKey < lastSettledOrderCost) {
                         throw new IllegalStateException("Settle order violated: orderCost " + settledKey
                             + " settled after " + lastSettledOrderCost + " — inadmissible heuristic or polluted ordering key");
@@ -329,8 +329,8 @@ public class Pathfinder implements Runnable {
             if (effectiveCap != Integer.MAX_VALUE && graph.orderCost(node) > effectiveCap) continue;
             // Read the node's tile-ness and position once; every graph.xxx(id) re-indexes a backing
             // array, and these are used by several of the checks below.
-            final boolean nodeIsTile = graph.isTile(node);
-            final int nodePacked = nodeIsTile ? graph.packedPosition(node) : WorldPointUtil.UNDEFINED;
+            boolean nodeIsTile = graph.isTile(node);
+            int nodePacked = nodeIsTile ? graph.packedPosition(node) : WorldPointUtil.UNDEFINED;
             if (nodeIsTile) {
                 updateWildernessLevel(nodePacked);
 

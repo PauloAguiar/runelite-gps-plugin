@@ -26,9 +26,9 @@ import static gps.WorldPointUtil.unpackWorldY;
     private final PrimitiveIntHashMap<Integer> doorMasks = ClosedDoors.edgeMaskIndex();
 
     private static int packedPointFromOrdinal(int startPacked, OrdinalDirection direction) {
-        final int x = unpackWorldX(startPacked);
-        final int y = unpackWorldY(startPacked);
-        final int plane = unpackWorldPlane(startPacked);
+        int x = unpackWorldX(startPacked);
+        int y = unpackWorldY(startPacked);
+        int plane = unpackWorldPlane(startPacked);
         return WorldPointUtil.packWorldPoint(x + direction.x, y + direction.y, plane);
     }
 
@@ -106,10 +106,10 @@ import static gps.WorldPointUtil.unpackWorldY;
     //        (priced at the bank-pickup cost — the un-banked path continues in parallel).
     //      * Transition into abstract global teleport nodes, if we haven't tried that yet.
     private PrimitiveIntList getTileNeighbors(int node, VisitedTiles visited, PathfinderConfig config, int wildernessLevel, NodeGraph graph, TentativeCosts tentative) {
-        final int packedPosition = graph.packedPosition(node);
-        final int x = unpackWorldX(packedPosition);
-        final int y = unpackWorldY(packedPosition);
-        final int z = unpackWorldPlane(packedPosition);
+        int packedPosition = graph.packedPosition(node);
+        int x = unpackWorldX(packedPosition);
+        int y = unpackWorldY(packedPosition);
+        int z = unpackWorldPlane(packedPosition);
 
         neighbors.clear();
 
@@ -119,7 +119,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         // used to be FORCED on every path touching a bank tile, which charged routes that never
         // withdraw anything — e.g. every route starting at the GE — cancelling the surcharge out
         // of the route ranking, and made plain walking detour around bank plazas to dodge it.)
-        final boolean bankVisited = graph.bankVisited(node);
+        boolean bankVisited = graph.bankVisited(node);
         if (!bankVisited && config.isBankPathEnabled() && config.bankAccessible(packedPosition) && !visited.get(packedPosition, true)
             && (tentative == null || !tentative.shouldPrune(packedPosition, true, graph.cost(node) + config.getBankPickupCost()))) {
             neighbors.add(graph.createTile(packedPosition, node, true, config.getBankPickupCost()));
@@ -135,8 +135,8 @@ import static gps.WorldPointUtil.unpackWorldY;
             // The whistle differential is REAL cost inside getAdditionalTransportCost, so a chain
             // (whistle -> landing site A -> fly to B) prices itself above the direct whistle-to-B
             // teleport with no special inheritance.
-            final int transportTravelTime = CostUnits.fromTicks(transport.getDuration());
-            final int transportAdditionalCost = config.getAdditionalTransportCost(transport);
+            int transportTravelTime = CostUnits.fromTicks(transport.getDuration());
+            int transportAdditionalCost = config.getAdditionalTransportCost(transport);
             if (tentative != null && tentative.shouldPrune(transport.getDestination(), bankVisited,
                 graph.cost(node) + Math.max(0, transportTravelTime + transportAdditionalCost))) {
                 continue;
@@ -184,16 +184,16 @@ import static gps.WorldPointUtil.unpackWorldY;
 
         // One walking step costs 1 (Chebyshev-adjacent); stepping through a doorway adds the
         // door's opening + reaction time on top.
-        final int walkStepCost = graph.cost(node) + 1;
-        final Integer doorMaskBoxed = doorMasks.get(packedPosition);
-        final int doorMask = doorMaskBoxed == null ? 0 : doorMaskBoxed;
+        int walkStepCost = graph.cost(node) + 1;
+        Integer doorMaskBoxed = doorMasks.get(packedPosition);
+        int doorMask = doorMaskBoxed == null ? 0 : doorMaskBoxed;
         for (int i = 0; i < traversable.length; i++) {
             OrdinalDirection d = ORDINAL_VALUES[i];
             int neighborPacked = packedPointFromOrdinal(packedPosition, d);
             if (visited.get(neighborPacked, bankVisited)) continue;
 
             if (traversable[i]) {
-                final int doorCost = (doorMask & (1 << i)) != 0 ? DOOR_COST_UNITS : 0;
+                int doorCost = (doorMask & (1 << i)) != 0 ? DOOR_COST_UNITS : 0;
                 if (tentative != null && tentative.shouldPrune(neighborPacked, bankVisited, walkStepCost + doorCost))
                     continue;
                 neighbors.add(graph.createTile(neighborPacked, node, bankVisited, doorCost));

@@ -90,8 +90,8 @@ import net.runelite.client.game.SpriteManager;
     static Polygon polygonOf(BufferedImage image, int offsetX, int offsetY) {
         Color outsideColour = null;
         Color previousColour;
-        final int width = image.getWidth();
-        final int height = image.getHeight();
+        int width = image.getWidth();
+        int height = image.getHeight();
         List<Point> points = new ArrayList<>();
         for (int y = 0; y < height; y++) {
             previousColour = outsideColour;

@@ -96,13 +96,13 @@ public class PathTileOverlay extends Overlay {
             // near the loaded scene draw nothing and are skipped; sea tracks cross the scene
             // between far endpoints, so they are handled before the cull. Instances map
             // template coordinates, so they are never culled by world bounds.
-            final WorldView worldView = client.getTopLevelWorldView();
-            final boolean cullByScene = !worldView.isInstance();
-            final int sceneMinX = worldView.getBaseX() - 2;
-            final int sceneMinY = worldView.getBaseY() - 2;
-            final int sceneMaxX = worldView.getBaseX() + worldView.getSizeX() + 2;
-            final int sceneMaxY = worldView.getBaseY() + worldView.getSizeY() + 2;
-            final Map<Integer, Integer> playerHas = plugin.display().showTransportInfo
+            WorldView worldView = client.getTopLevelWorldView();
+            boolean cullByScene = !worldView.isInstance();
+            int sceneMinX = worldView.getBaseX() - 2;
+            int sceneMinY = worldView.getBaseY() - 2;
+            int sceneMaxX = worldView.getBaseX() + worldView.getSizeX() + 2;
+            int sceneMaxY = worldView.getBaseY() + worldView.getSizeY() + 2;
+            Map<Integer, Integer> playerHas = plugin.display().showTransportInfo
                 ? BankPickupRequirements.collectPlayerItems(client) : Map.of();
             for (int i = 1; i < path.size(); i++) {
                 PathStep currentStep = path.get(i - 1);
@@ -234,8 +234,8 @@ public class PathTileOverlay extends Overlay {
             if (lp == null) continue;
             Polygon poly = Perspective.getCanvasTilePoly(client, lp);
             if (poly == null) continue;
-            final double cx = poly.getBounds().getCenterX();
-            final double cy = poly.getBounds().getCenterY();
+            double cx = poly.getBounds().getCenterX();
+            double cy = poly.getBounds().getCenterY();
             graphics.setColor(Color.WHITE);
             graphics.fill(new Ellipse2D.Double(cx - 4.5, cy - 4.5, 9, 9));
             Color pathColour = plugin.getPathColor();
@@ -260,35 +260,35 @@ public class PathTileOverlay extends Overlay {
      * the live distance from the path.
      */
     private void drawRecalculationRanges(Graphics2D graphics) {
-        final Player player = client.getLocalPlayer();
-        final int recalc = plugin.getRecalculateDistance();
-        final List<PathStep> path = plugin.getDisplayPath();
+        Player player = client.getLocalPlayer();
+        int recalc = plugin.getRecalculateDistance();
+        List<PathStep> path = plugin.getDisplayPath();
         if (player == null || recalc < 0 || path == null || path.isEmpty()) return;
-        final int warn = plugin.getOffRouteWarnDistance();
-        final int centre = fromLocalInstance(client, player);
-        final int cx = unpackWorldX(centre);
-        final int cy = unpackWorldY(centre);
-        final int plane = unpackWorldPlane(centre);
-        final int window = Math.min(recalc + 1, BAND_WINDOW);
+        int warn = plugin.getOffRouteWarnDistance();
+        int centre = fromLocalInstance(client, player);
+        int cx = unpackWorldX(centre);
+        int cy = unpackWorldY(centre);
+        int plane = unpackWorldPlane(centre);
+        int window = Math.min(recalc + 1, BAND_WINDOW);
 
         // Path tiles near enough to be some window tile's nearest (within window of a tile within window).
-        final int[] near = new int[path.size()];
+        int[] near = new int[path.size()];
         int nearCount = 0;
         for (PathStep step : path) {
-            final int p = step.getPackedPosition();
+            int p = step.getPackedPosition();
             if (unpackWorldPlane(p) == plane && distanceBetween(centre, p) <= 2 * window) near[nearCount++] = p;
         }
         if (nearCount > 0) {
-            final Color warnFill = new Color(0xFF, 0xE0, 0x00, 70);
-            final Color warnLine = new Color(0xFF, 0xE0, 0x00, 200);
-            final Color recalcFill = new Color(0xFF, 0x3C, 0x3C, 70);
-            final Color recalcLine = new Color(0xFF, 0x3C, 0x3C, 200);
+            Color warnFill = new Color(0xFF, 0xE0, 0x00, 70);
+            Color warnLine = new Color(0xFF, 0xE0, 0x00, 200);
+            Color recalcFill = new Color(0xFF, 0x3C, 0x3C, 70);
+            Color recalcLine = new Color(0xFF, 0x3C, 0x3C, 200);
             for (int dx = -window; dx <= window; dx++) {
                 for (int dy = -window; dy <= window; dy++) {
-                    final int tile = WorldPointUtil.packWorldPoint(cx + dx, cy + dy, plane);
+                    int tile = WorldPointUtil.packWorldPoint(cx + dx, cy + dy, plane);
                     int dmin = Integer.MAX_VALUE;
                     for (int k = 0; k < nearCount; k++) {
-                        final int dist = distanceBetween(tile, near[k]);
+                        int dist = distanceBetween(tile, near[k]);
                         if (dist < dmin) dmin = dist;
                         if (dmin < warn) {
                             break; // interior to the warning band — not a boundary tile
@@ -301,21 +301,21 @@ public class PathTileOverlay extends Overlay {
             }
         }
 
-        final int d = plugin.getPathDistance();
-        final Point anchor = Perspective.localToCanvas(client, player.getLocalLocation(), plane);
+        int d = plugin.getPathDistance();
+        Point anchor = Perspective.localToCanvas(client, player.getLocalLocation(), plane);
         if (anchor != null) {
-            final String label = "off-route: " + (d < 0 ? "?" : d) + " (warn " + warn + " / recalc " + recalc + ")";
+            String label = "off-route: " + (d < 0 ? "?" : d) + " (warn " + warn + " / recalc " + recalc + ")";
             graphics.setColor(plugin.isOffRouteWarning() ? new Color(0xFF, 0x4C, 0x4C) : Color.WHITE);
             graphics.drawString(label, anchor.getX() + 6, anchor.getY());
         }
     }
 
     private void highlightWorldTile(Graphics2D graphics, int location, Color fill, Color outline) {
-        final PrimitiveIntList points = toLocalInstance(client, location);
+        PrimitiveIntList points = toLocalInstance(client, location);
         for (int i = 0; i < points.size(); i++) {
-            final LocalPoint lp = toLocalPoint(client, points.get(i));
+            LocalPoint lp = toLocalPoint(client, points.get(i));
             if (lp == null) continue;
-            final Polygon poly = Perspective.getCanvasTilePoly(client, lp);
+            Polygon poly = Perspective.getCanvasTilePoly(client, lp);
             if (poly == null) continue;
             graphics.setColor(fill);
             graphics.fill(poly);
@@ -330,8 +330,8 @@ public class PathTileOverlay extends Overlay {
      * the arrival check tests membership of — standing on any tinted tile completes the journey.
      */
     private void drawArrivalTiles(Graphics2D graphics) {
-        final Color fill = new Color(0x3C, 0xC8, 0x6A, 60);
-        final Color outline = new Color(0x3C, 0xC8, 0x6A, 170);
+        Color fill = new Color(0x3C, 0xC8, 0x6A, 60);
+        Color outline = new Color(0x3C, 0xC8, 0x6A, 170);
         for (int tile : plugin.getArrivalTiles()) highlightWorldTile(graphics, tile, fill, outline);
     }
 
@@ -352,15 +352,15 @@ public class PathTileOverlay extends Overlay {
             if (lp == null) continue;
             Polygon poly = Perspective.getCanvasTilePoly(client, lp);
             if (poly == null) continue;
-            final double cx = poly.getBounds().getCenterX();
-            final double cy = poly.getBounds().getCenterY();
-            final double tileWidth = Math.max(8, poly.getBounds().getWidth());
+            double cx = poly.getBounds().getCenterX();
+            double cy = poly.getBounds().getCenterY();
+            double tileWidth = Math.max(8, poly.getBounds().getWidth());
             // Ground-plane flattening from the tile's own projection; clamped for degenerate polys.
-            final double flatten = Math.min(1.0, Math.max(0.1, poly.getBounds().getHeight() / Math.max(1.0, poly.getBounds().getWidth())));
+            double flatten = Math.min(1.0, Math.max(0.1, poly.getBounds().getHeight() / Math.max(1.0, poly.getBounds().getWidth())));
 
-            final long period = 1400L;
-            final int rings = 2;
-            final Stroke previousStroke = graphics.getStroke();
+            long period = 1400L;
+            int rings = 2;
+            Stroke previousStroke = graphics.getStroke();
             graphics.setStroke(new BasicStroke(2.2f));
             for (int r = 0; r < rings; r++) {
                 double phase = ((System.currentTimeMillis() + (long) (r * period / (double) rings)) % period) / (double) period;
@@ -398,7 +398,7 @@ public class PathTileOverlay extends Overlay {
         int start = starts.get(0);
         int end = ends.get(0);
 
-        final int z = client.getTopLevelWorldView().getPlane();
+        int z = client.getTopLevelWorldView().getPlane();
         if (unpackWorldPlane(start) != z) return;
 
         LocalPoint lpStart = toLocalPoint(client, start);
@@ -406,8 +406,8 @@ public class PathTileOverlay extends Overlay {
 
         if (lpStart == null || lpEnd == null) return;
 
-        final int startHeight = Perspective.getTileHeight(client, lpStart, z);
-        final int endHeight = Perspective.getTileHeight(client, lpEnd, z);
+        int startHeight = Perspective.getTileHeight(client, lpStart, z);
+        int endHeight = Perspective.getTileHeight(client, lpEnd, z);
 
         Point p1 = Perspective.localToCanvas(client, lpStart.getX(), lpStart.getY(), startHeight);
         Point p2 = Perspective.localToCanvas(client, lpEnd.getX(), lpEnd.getY(), endHeight);
@@ -476,13 +476,13 @@ public class PathTileOverlay extends Overlay {
             if (lp == null) continue;
             Polygon poly = Perspective.getCanvasTilePoly(client, lp);
             if (poly == null || poly.npoints == 0) continue;
-            final double cx = poly.getBounds().getCenterX();
-            final double cy = poly.getBounds().getCenterY();
+            double cx = poly.getBounds().getCenterX();
+            double cy = poly.getBounds().getCenterY();
 
-            final long period = 1400L;
-            final int rings = 2;
-            final Color base = plugin.display().colourTeleportPulse;
-            final Stroke previousStroke = graphics.getStroke();
+            long period = 1400L;
+            int rings = 2;
+            Color base = plugin.display().colourTeleportPulse;
+            Stroke previousStroke = graphics.getStroke();
             graphics.setStroke(new BasicStroke(2.2f));
             for (int r = 0; r < rings; r++) {
                 // Stagger the two rings by half a period so one is always small/bright while the other

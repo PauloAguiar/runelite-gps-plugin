@@ -20,37 +20,37 @@ public class VisitedTiles {
         this.map = map;
         regionExtents = SplitFlagMap.getRegionExtents();
         widthInclusive = regionExtents.getWidth() + 1;
-        final int heightInclusive = regionExtents.getHeight() + 1;
+        int heightInclusive = regionExtents.getHeight() + 1;
 
         visitedRegionsWithoutBank = new VisitedRegion[widthInclusive * heightInclusive];
         visitedRegionsWithBank = new VisitedRegion[widthInclusive * heightInclusive];
     }
 
     public boolean get(int packedPoint, boolean bankVisited) {
-        final int x = WorldPointUtil.unpackWorldX(packedPoint);
-        final int y = WorldPointUtil.unpackWorldY(packedPoint);
-        final int plane = WorldPointUtil.unpackWorldPlane(packedPoint);
+        int x = WorldPointUtil.unpackWorldX(packedPoint);
+        int y = WorldPointUtil.unpackWorldY(packedPoint);
+        int plane = WorldPointUtil.unpackWorldPlane(packedPoint);
         return get(x, y, plane, bankVisited);
     }
 
     public boolean get(int x, int y, int plane, boolean bankVisited) {
         VisitedRegion[] visitedRegions = bankVisited ? visitedRegionsWithBank : visitedRegionsWithoutBank;
-        final int regionIndex = getRegionIndex(x / REGION_SIZE, y / REGION_SIZE);
+        int regionIndex = getRegionIndex(x / REGION_SIZE, y / REGION_SIZE);
         if (regionIndex < 0 || regionIndex >= visitedRegions.length) {
             return true; // Region is out of bounds; report that it's been visited to avoid exploring it
             // further
         }
 
-        final VisitedRegion region = visitedRegions[regionIndex];
+        VisitedRegion region = visitedRegions[regionIndex];
         if (region == null) return false;
 
         return region.get(x % REGION_SIZE, y % REGION_SIZE, plane);
     }
 
     public boolean set(int packedPoint, boolean bankVisited) {
-        final int x = WorldPointUtil.unpackWorldX(packedPoint);
-        final int y = WorldPointUtil.unpackWorldY(packedPoint);
-        final int plane = WorldPointUtil.unpackWorldPlane(packedPoint);
+        int x = WorldPointUtil.unpackWorldX(packedPoint);
+        int y = WorldPointUtil.unpackWorldY(packedPoint);
+        int plane = WorldPointUtil.unpackWorldPlane(packedPoint);
         return set(x, y, plane, bankVisited);
     }
 
@@ -66,7 +66,7 @@ public class VisitedTiles {
     public boolean set(int id, NodeGraph graph) {
         if (graph.isTile(id)) return set(graph.packedPosition(id), graph.bankVisited(id));
 
-        final AbstractNodeKind abstractKind = graph.abstractKind(id);
+        AbstractNodeKind abstractKind = graph.abstractKind(id);
         boolean visited = getAbstract(abstractKind, graph.bankVisited(id));
         if (graph.bankVisited(id)) {
             abstractVisitedWithBank[abstractKind.ordinal()] = true;
@@ -77,7 +77,7 @@ public class VisitedTiles {
     }
 
     public boolean set(int x, int y, int plane, boolean bankVisited) {
-        final int regionIndex = getRegionIndex(x / REGION_SIZE, y / REGION_SIZE);
+        int regionIndex = getRegionIndex(x / REGION_SIZE, y / REGION_SIZE);
         if (regionIndex < 0 || regionIndex >= visitedRegionsWithoutBank.length) {
             return false; // Region is out of bounds; report that it's been visited to avoid exploring it
             // further
@@ -136,7 +136,7 @@ public class VisitedTiles {
                 // Plane is out of bounds; report that it has been visited to avoid further
                 // exploration
                 return false;
-            final int index = y + plane * REGION_SIZE;
+            int index = y + plane * REGION_SIZE;
             boolean unique = (planes[index] & (1L << x)) == 0;
             planes[index] |= 1L << x;
             return unique;

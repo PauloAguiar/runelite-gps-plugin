@@ -208,9 +208,9 @@ import static gps.WorldPointUtil.unpackWorldY;
     }
 
     private static Set<Integer> walkableLandTargets(CollisionMap map, int packed, IntPredicate transportOrigin) {
-        final int x = unpackWorldX(packed);
-        final int y = unpackWorldY(packed);
-        final int plane = unpackWorldPlane(packed);
+        int x = unpackWorldX(packed);
+        int y = unpackWorldY(packed);
+        int plane = unpackWorldPlane(packed);
         if (map == null || !map.isBlocked(x, y, plane)) return Set.of(packed);
         // Pass 1: a transport origin near the blocked tile beats plain proximity, even when it
         // sits a radius further out than the first walkable ring.
@@ -267,9 +267,9 @@ import static gps.WorldPointUtil.unpackWorldY;
      * nearest known-good tile, usually the entrance. Data: destination-remaps.tsv.
      */
     static int remapTemplateOnlyZones(int packed) {
-        final int x = unpackWorldX(packed);
-        final int y = unpackWorldY(packed);
-        final int plane = unpackWorldPlane(packed);
+        int x = unpackWorldX(packed);
+        int y = unpackWorldY(packed);
+        int plane = unpackWorldPlane(packed);
         for (Remap remap : loadRemaps()) {
             if (plane == remap.plane && x >= remap.minX && x <= remap.maxX && y >= remap.minY && y <= remap.maxY)
                 return remap.anchor;
@@ -402,9 +402,9 @@ import static gps.WorldPointUtil.unpackWorldY;
      * "there is no point in routing to it").
      */
     static boolean insideExcludedZone(int packed) {
-        final int x = unpackWorldX(packed);
-        final int y = unpackWorldY(packed);
-        final int plane = unpackWorldPlane(packed);
+        int x = unpackWorldX(packed);
+        int y = unpackWorldY(packed);
+        int plane = unpackWorldPlane(packed);
         for (ExclusionZone zone : loadExclusionZones()) {
             if (plane == zone.plane && x >= zone.minX && x <= zone.maxX && y >= zone.minY && y <= zone.maxY)
                 return true;

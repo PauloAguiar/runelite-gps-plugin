@@ -125,10 +125,10 @@ import gps.transport.parser.*;
      */
     public static Map<Integer, DestinationRequirements> loadBankRequirementsFromResources() {
         Map<Integer, DestinationRequirements> requirements = new HashMap<>();
-        final String path = "/destinations/game_features/bank.tsv";
-        final String DELIM_COLUMN = "\t";
-        final String PREFIX_COMMENT = "#";
-        final String DELIM = " ";
+        String path = "/destinations/game_features/bank.tsv";
+        String DELIM_COLUMN = "\t";
+        String PREFIX_COMMENT = "#";
+        String DELIM = " ";
 
         try {
             String s = new String(Util.readAllBytes(Objects.requireNonNull(ShortestPathPlugin.class.getResourceAsStream(path))), StandardCharsets.UTF_8);

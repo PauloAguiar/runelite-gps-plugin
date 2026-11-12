@@ -41,7 +41,7 @@ class IntMinHeap {
      */
     int poll() {
         if (size == 0) return NodeGraph.NO_NODE;
-        final int top = heap[0];
+        int top = heap[0];
         size--;
         if (size > 0) {
             heap[0] = heap[size];
@@ -68,19 +68,19 @@ class IntMinHeap {
      * that match the game's own click-walk movement, and makes searches fully deterministic.
      */
     private boolean less(int a, int b) {
-        final int costA = graph.orderCost(a);
-        final int costB = graph.orderCost(b);
+        int costA = graph.orderCost(a);
+        int costB = graph.orderCost(b);
         if (costA != costB) return costA < costB;
-        final int gA = graph.cost(a);
-        final int gB = graph.cost(b);
+        int gA = graph.cost(a);
+        int gB = graph.cost(b);
         if (gA != gB) return gA > gB;
         return a < b;
     }
 
     private void siftUp(int index) {
-        final int id = heap[index];
+        int id = heap[index];
         while (index > 0) {
-            final int parent = (index - 1) >> 1;
+            int parent = (index - 1) >> 1;
             if (!less(id, heap[parent])) break;
             heap[index] = heap[parent];
             index = parent;
@@ -89,11 +89,11 @@ class IntMinHeap {
     }
 
     private void siftDown(int index) {
-        final int id = heap[index];
-        final int half = size >> 1;
+        int id = heap[index];
+        int half = size >> 1;
         while (index < half) {
             int child = (index << 1) + 1;
-            final int right = child + 1;
+            int right = child + 1;
             if (right < size && less(heap[right], heap[child])) child = right;
             if (!less(heap[child], id)) break;
             heap[index] = heap[child];

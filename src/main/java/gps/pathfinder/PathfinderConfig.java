@@ -1270,7 +1270,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         // spirit trees): apply in every mode, including the catalog pass and full planning mode.
         if (!passesStructuralGates(transport)) return false;
 
-        final boolean isQuestLocked = transport.isQuestLocked();
+        boolean isQuestLocked = transport.isQuestLocked();
         TransportType type = transport.getType();
 
         // Config-preference gates (type toggles, consumable/None item rules): bypassed by the
@@ -1616,7 +1616,7 @@ import static gps.WorldPointUtil.unpackWorldY;
         // In leagues some skills are disabled so the max total level is lower than
         // the standard 2376. Holding the item (e.g. Max cape) already proves the
         // player is maxed for the available skills, so skip the total-level check.
-        final int totalLevelIndex = Skill.values().length;
+        int totalLevelIndex = Skill.values().length;
         int[] requiredLevels = transport.getSkillLevels();
         for (int i = 0; i < boostedSkillLevelsAndMore.length; i++) {
             if (leagueModeState.isSeasonal() && i == totalLevelIndex) continue;

@@ -145,7 +145,7 @@ public class PrimitiveIntHashMap<V> {
      * @return the mapped value, or {@code defaultValue} when absent.
      */
     @SuppressWarnings("unchecked") public V getOrDefault(int key, V defaultValue) {
-        final int slot = findSlot(key);
+        int slot = findSlot(key);
         if (slot < 0) return defaultValue;
         return (V) values[slot];
     }
@@ -232,8 +232,8 @@ public class PrimitiveIntHashMap<V> {
     private void rehash() {
         growCapacity();
 
-        final int[] oldKeys = keys;
-        final Object[] oldValues = values;
+        int[] oldKeys = keys;
+        Object[] oldValues = values;
         recreateArrays();
 
         for (int i = 0; i < oldValues.length; ++i) {

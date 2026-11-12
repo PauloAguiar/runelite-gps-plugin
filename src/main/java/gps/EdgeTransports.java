@@ -33,7 +33,7 @@ final class EdgeTransports {
     static Set<Transport> forEdge(PathfinderConfig config, PathStep current, PathStep next) {
         if (current == null || next == null) return Set.of();
         boolean bankVisited = current.isBankVisited() || next.isBankVisited();
-        final int landing = next.getPackedPosition();
+        int landing = next.getPackedPosition();
         Set<Transport> stepTransports = new HashSet<>();
         for (Transport transport : config.getTransportsPacked(bankVisited)
             .getOrDefault(current.getPackedPosition(), TransportAvailability.EMPTY_TRANSPORTS)) {
