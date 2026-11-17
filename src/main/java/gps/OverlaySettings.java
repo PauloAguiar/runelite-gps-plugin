@@ -34,8 +34,8 @@ final class OverlaySettings {
     final boolean overrideOverlayTransparency;
     final int overlayTransparency;
     // Display-only preferences; not part of the capture-replay override set. Compact: the steps
-    // only, no header row (title, pin, ETA pill). Custom font: RuneLite's font editor replaces the
-    // native RuneScape faces.
+    // only, no header row (title, pin, ETA pill) and no step times. Custom font: RuneLite's font
+    // editor replaces the native RuneScape faces.
     final boolean compactOverlay;
     final boolean useCustomOverlayFont;
     final FontType overlayFont;

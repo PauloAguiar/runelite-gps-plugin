@@ -180,7 +180,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         List<Line> lines = new ArrayList<>();
         arrivalSource = plugin.getTargetSource();
         // "Destination set by ...", or during a bank trip what resumes after it (BankDetour.headerLine).
-        // The compact overlay shows the steps only.
+        // The compact overlay shows the steps only, without their times.
         boolean compact = plugin.display().compactOverlay;
         String destinationLine = plugin.getDestinationLine();
         if (destinationLine != null && !compact) lines.add(new Line(destinationLine, fontOther, UPCOMING, null, null));
@@ -229,7 +229,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
                 font = fontOther;
             }
             lines.add(new Line(text, font, colour,
-                formatTime((int) Math.ceil(step.getTicks() * RouteDirections.SECONDS_PER_TICK)), colour));
+                compact ? null : formatTime((int) Math.ceil(step.getTicks() * RouteDirections.SECONDS_PER_TICK)), colour));
             // The withdraw step's per-item list: indented, un-numbered, no own time.
             for (var detail : step.getDetails()) {
                 if (shown + 1 >= maxLines) break;
@@ -239,7 +239,7 @@ public class RouteDirectionsOverlay extends OverlayPanel {
         }
         if (i < steps.size()) lines.add(new Line("… " + (steps.size() - i) + " more", fontOther, DONE, null, null));
 
-        // Compact overlay: the steps only, no header row and no ETA pill.
+        // Compact overlay: the steps only, no header row, no ETA pill and no step times.
         Dimension dimension = renderPanel(graphics, lines);
         if (dimension != null && !compact) drawEtaBadge(graphics, dimension, etaText);
         return dimension;

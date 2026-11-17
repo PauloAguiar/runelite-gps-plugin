@@ -403,7 +403,7 @@ public interface ShortestPathConfig extends Config {
     default int overlayTransparency() { return 100; }
 
     @ConfigItem(keyName = "compactOverlay", name = "Compact overlay", position = 78, section = sectionDisplay,
-        description = "Steps only: drop the directions overlay's header row (title, pin and the ETA pill) and the 'Destination set by' line")
+        description = "Steps only: drop the directions overlay's header row (title, pin and the ETA pill), the 'Destination set by' line and each step's time")
     default boolean compactOverlay() { return false; }
 
     @ConfigItem(keyName = "useCustomOverlayFont", name = "Custom overlay font", position = 78, section = sectionDisplay,
