@@ -64,7 +64,8 @@ public class GloryCueTest
 
 		Set<Transport> resolved = EdgeTransports.forRouteEdge(main, route, path.get(0), path.get(1));
 		assertTrue("the route's own method resolves anyway", resolved.stream().anyMatch(t -> glory.method().equals(t.method())));
-		RouteItemCue cue = RouteItemCue.next(route, 0, (a, b) -> EdgeTransports.forRouteEdge(main, route, a, b), true,
+		RouteItemCue cue = RouteItemCue.next(route, 0, (a, b) -> EdgeTransports.forRouteEdge(main, route, a, b),
+			ItemVariations.DRAMEN_STAFF.getIds(),
 			Map.of(ItemID.AMULET_OF_GLORY_4, 1));
 		assertNotNull("the glory step has a cue", cue);
 		assertTrue("the held glory is in it: " + cue.itemIds, cue.itemIds.contains(ItemID.AMULET_OF_GLORY_4));

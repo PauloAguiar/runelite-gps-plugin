@@ -34,7 +34,7 @@ public final class RoutingItemDependencies {
             }
         }
         // Implicit requirements that appear in no transport row: fairy rings demand a wielded
-        // or carried Dramen/Lunar staff (PathfinderConfig's DRAMEN_STAFF special case), and a
+        // or carried Dramen/Lunar staff (all of them here, see BankPickupRequirements.fairyRingStaves), and a
         // rune pouch in the inventory unlocks its varbit-tracked runes for spell requirements.
         collect(collected, ItemVariations.DRAMEN_STAFF.getIds(), 1);
         collect(collected, ItemVariations.staves(ItemVariations.DRAMEN_STAFF), 1);

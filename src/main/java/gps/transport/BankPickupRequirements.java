@@ -6,6 +6,7 @@ import java.util.function.*;
 import net.runelite.api.*;
 import net.runelite.api.*;
 import net.runelite.api.gameval.InventoryID;
+import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.*;
 import gps.*;
 import gps.pathfinder.*;
@@ -20,6 +21,18 @@ import gps.transport.requirement.*;
  */
 @SuppressWarnings("unused") // Only static methods are used, incorrectly flagged
 public final class BankPickupRequirements {
+    private static final int[] STAVES = ItemVariations.DRAMEN_STAFF.getIds(),
+        STAVES_UNTIL_LUNAR = Arrays.stream(STAVES).filter(id -> id != ItemID.LUNAR_MOONCLAN_LIMINAL_STAFF).toArray();
+
+    /**
+     * The staves that open fairy rings for this player, none once the Lumbridge elite diary waives the staff. The
+     * Lunar staff counts only past Lunar Diplomacy stage 145, where it is made and the Oneiromancer is given one:
+     * until then a finished Lunar staff can't be wielded. Dramen and part-made Lunar staves always work.
+     */
+    public static int[] fairyRingStaves(Client client) {
+        if (client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) == 1) return new int[0];
+        return client.getVarbitValue(VarbitID.LUNAR_QUEST_MAIN) > 145 ? STAVES : STAVES_UNTIL_LUNAR;
+    }
 
     /** What a bank step must supply: one phrase per edge for the labels, and the bank slots to light. */
     public static final class Pickup {
@@ -132,8 +145,8 @@ public final class BankPickupRequirements {
 
         // Fairy ring staff (Dramen / Lunar) is a single OR requirement across the whole trip.
         // Not needed if the Lumbridge Elite diary is complete.
-        if (usesFairyRing && client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1) {
-            int[] staffIds = ItemVariations.DRAMEN_STAFF.getIds();
+        int[] staffIds = fairyRingStaves(client);
+        if (usesFairyRing && staffIds.length > 0) {
             if (!hasAnyItem(playerHas, staffIds, 1)) {
                 int foundId = findItemIdInBank(bankHas, staffIds, 1);
                 if (foundId != -1) {

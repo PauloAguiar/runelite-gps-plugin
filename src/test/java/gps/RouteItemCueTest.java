@@ -25,6 +25,8 @@ import static org.junit.Assert.assertTrue;
 public class RouteItemCueTest
 {
 	private static final int CAMULET = 6707;
+	/** The staves a fairy ring asks for, and none: what the Lumbridge elite diary leaves. */
+	private static final int[] STAVES = ItemVariations.DRAMEN_STAFF.getIds(), WAIVED = {};
 
 	private static Transport camulet()
 	{
@@ -81,12 +83,12 @@ public class RouteItemCueTest
 	{
 		Transport camulet = camulet();
 		RouteOption route = route(List.of(1));
-		RouteItemCue cue = RouteItemCue.next(route, 0, (a, b) -> Set.of(camulet), true, Map.of());
+		RouteItemCue cue = RouteItemCue.next(route, 0, (a, b) -> Set.of(camulet), STAVES, Map.of());
 		assertEquals(Set.of(CAMULET), cue.itemIds);
 		assertTrue("the Camulet is operated, worn or not", cue.wornDone.isEmpty());
-		assertNull("teleported: the step is behind the player", RouteItemCue.next(route, 1, (a, b) -> Set.of(camulet), true, Map.of()));
-		assertNull("a route without methods has no item step", RouteItemCue.next(route(List.of()), 0, (a, b) -> Set.of(camulet), true, Map.of()));
-		assertNull("no route", RouteItemCue.next(null, 0, (a, b) -> Set.of(camulet), true, Map.of()));
+		assertNull("teleported: the step is behind the player", RouteItemCue.next(route, 1, (a, b) -> Set.of(camulet), STAVES, Map.of()));
+		assertNull("a route without methods has no item step", RouteItemCue.next(route(List.of()), 0, (a, b) -> Set.of(camulet), STAVES, Map.of()));
+		assertNull("no route", RouteItemCue.next(null, 0, (a, b) -> Set.of(camulet), STAVES, Map.of()));
 	}
 
 	@Test
@@ -98,10 +100,10 @@ public class RouteItemCueTest
 				+ "3106 9315 2\t\t\tLAW_RUNE=1\t\t4\tVarrock Teleport: GE\tT\t20\n",
 			TransportType.TELEPORTATION_SPELL, 0);
 		Transport spell = transports.values().iterator().next().iterator().next();
-		RouteItemCue cue = RouteItemCue.next(route(List.of(1)), 0, (a, b) -> Set.of(spell), true, Map.of());
+		RouteItemCue cue = RouteItemCue.next(route(List.of(1)), 0, (a, b) -> Set.of(spell), STAVES, Map.of());
 		assertEquals("the spellbook is clicked, not the runes", Set.of(), cue.itemIds);
 		assertEquals("Varrock Teleport: GE", cue.spell);
-		assertNull("an item step names no spell", RouteItemCue.next(route(List.of(1)), 0, (a, b) -> Set.of(camulet()), true, Map.of()).spell);
+		assertNull("an item step names no spell", RouteItemCue.next(route(List.of(1)), 0, (a, b) -> Set.of(camulet()), STAVES, Map.of()).spell);
 	}
 
 	@Test
@@ -117,27 +119,27 @@ public class RouteItemCueTest
 
 		// Law runes and a Mystic air staff in the bag, a Tome of fire worn: both stand in for runes.
 		Map<Integer, Integer> carried = Map.of(ItemID.LAWRUNE, 1, ItemID.MYSTIC_AIR_STAFF, 1, ItemID.TOME_OF_FIRE, 1);
-		RouteItemCue cue = RouteItemCue.next(route, 0, (a, b) -> Set.of(varrock), true, carried);
+		RouteItemCue cue = RouteItemCue.next(route, 0, (a, b) -> Set.of(varrock), STAVES, carried);
 		assertEquals("Varrock Teleport", cue.spell);
 		assertEquals("the staff and the tome, which do nothing in the bag", Set.of(ItemID.MYSTIC_AIR_STAFF, ItemID.TOME_OF_FIRE), cue.itemIds);
 		assertEquals("worn, they are done", cue.itemIds, cue.wornDone);
 
 		// The runes themselves in the bag: no staff to point at, whatever else is carried.
 		Map<Integer, Integer> runes = Map.of(ItemID.LAWRUNE, 1, ItemID.AIRRUNE, 3, ItemID.FIRERUNE, 1, ItemID.MYSTIC_AIR_STAFF, 1);
-		assertEquals(Set.of(), RouteItemCue.next(route, 0, (a, b) -> Set.of(varrock), true, runes).itemIds);
+		assertEquals(Set.of(), RouteItemCue.next(route, 0, (a, b) -> Set.of(varrock), STAVES, runes).itemIds);
 		// Two air runes only: short, so the staff is still the way.
 		Map<Integer, Integer> short2 = Map.of(ItemID.LAWRUNE, 1, ItemID.AIRRUNE, 2, ItemID.FIRERUNE, 1, ItemID.MYSTIC_AIR_STAFF, 1);
-		assertEquals(Set.of(ItemID.MYSTIC_AIR_STAFF), RouteItemCue.next(route, 0, (a, b) -> Set.of(varrock), true, short2).itemIds);
+		assertEquals(Set.of(ItemID.MYSTIC_AIR_STAFF), RouteItemCue.next(route, 0, (a, b) -> Set.of(varrock), STAVES, short2).itemIds);
 	}
 
 	@Test
 	public void aFairyRingStepAsksForTheStaffUnlessTheDiaryWaivesIt()
 	{
 		Transport ring = ring();
-		RouteItemCue cue = RouteItemCue.next(route(List.of(3)), 1, (a, b) -> Set.of(ring), true, Map.of());
+		RouteItemCue cue = RouteItemCue.next(route(List.of(3)), 1, (a, b) -> Set.of(ring), STAVES, Map.of());
 		assertEquals("a Dramen or Lunar staff, any of them", staves(), cue.itemIds);
 		assertEquals("the staff works worn: nothing to do once it is", staves(), cue.wornDone);
-		assertNull("Lumbridge Elite done: the ring needs nothing", RouteItemCue.next(route(List.of(3)), 1, (a, b) -> Set.of(ring), false, Map.of()));
+		assertNull("Lumbridge Elite done: the ring needs nothing", RouteItemCue.next(route(List.of(3)), 1, (a, b) -> Set.of(ring), WAIVED, Map.of()));
 	}
 
 	@Test
@@ -149,7 +151,7 @@ public class RouteItemCueTest
 		Transport ring = ring();
 		RouteOption route = route(List.of(1, 3));
 		RouteItemCue cue = RouteItemCue.next(route, 0, (a, b) -> b.getPackedPosition() == route.getPath().get(1).getPackedPosition()
-			? Set.of(camulet) : Set.of(ring), true, Map.of());
+			? Set.of(camulet) : Set.of(ring), STAVES, Map.of());
 		Set<Integer> expected = new java.util.HashSet<>(staves());
 		expected.add(CAMULET);
 		assertEquals(expected, cue.itemIds);
@@ -157,7 +159,7 @@ public class RouteItemCueTest
 		assertNull(cue.spell);
 		assertEquals("the diary waives the staff ahead too", Set.of(CAMULET),
 			RouteItemCue.next(route, 0, (a, b) -> b.getPackedPosition() == route.getPath().get(1).getPackedPosition()
-				? Set.of(camulet) : Set.of(ring), false, Map.of()).itemIds);
+				? Set.of(camulet) : Set.of(ring), WAIVED, Map.of()).itemIds);
 	}
 
 	/** Item names as the client would give them, for the callout lines. */
@@ -182,7 +184,7 @@ public class RouteItemCueTest
 	public void theStepListCallsOutWhatToUseOrEquip()
 	{
 		// A teleport item used from where it is: named, with "Use".
-		RouteItemCue camulet = RouteItemCue.ofStep(Set.of(camulet()), true, Map.of());
+		RouteItemCue camulet = RouteItemCue.ofStep(Set.of(camulet()), STAVES, Map.of());
 		assertEquals(List.of("Use Camulet"),
 			camulet.callouts(Map.of(CAMULET, 1), Set.of(), id -> false, RouteItemCueTest::name));
 		// The same item when it only works worn: "Equip" until it is worn, then nothing left to say.
@@ -193,12 +195,12 @@ public class RouteItemCueTest
 		assertEquals(List.of(), camulet.callouts(Map.of(), Set.of(), id -> false, RouteItemCueTest::name));
 
 		// The fairy-ring staff: the one carried, to equip; nothing once wielded.
-		RouteItemCue ring = RouteItemCue.ofStep(Set.of(ring()), true, Map.of());
+		RouteItemCue ring = RouteItemCue.ofStep(Set.of(ring()), STAVES, Map.of());
 		assertEquals(List.of("Equip Dramen staff"),
 			ring.callouts(Map.of(ItemID.DRAMEN_STAFF, 1), Set.of(), id -> false, RouteItemCueTest::name));
 		assertEquals(List.of(),
 			ring.callouts(Map.of(ItemID.DRAMEN_STAFF, 1), Set.of(ItemID.DRAMEN_STAFF), id -> false, RouteItemCueTest::name));
-		assertNull("the diary waives the staff: no cue at all", RouteItemCue.ofStep(Set.of(ring()), false, Map.of()));
+		assertNull("the diary waives the staff: no cue at all", RouteItemCue.ofStep(Set.of(ring()), WAIVED, Map.of()));
 
 		// A spell short of air runes with a Mystic air staff in the bag.
 		Map<Integer, Set<Transport>> transports = new HashMap<>();
@@ -209,7 +211,7 @@ public class RouteItemCueTest
 		Transport varrock = transports.values().iterator().next().iterator().next();
 		Map<Integer, Integer> carried = Map.of(ItemID.LAWRUNE, 1, ItemID.FIRERUNE, 1, ItemID.MYSTIC_AIR_STAFF, 1);
 		assertEquals(List.of("Equip Mystic air staff"),
-			RouteItemCue.ofStep(Set.of(varrock), true, carried).callouts(carried, Set.of(), id -> false, RouteItemCueTest::name));
+			RouteItemCue.ofStep(Set.of(varrock), STAVES, carried).callouts(carried, Set.of(), id -> false, RouteItemCueTest::name));
 	}
 
 	/**
@@ -226,12 +228,12 @@ public class RouteItemCueTest
 				+ "3213 3424 0\tAIR_RUNE=3&&FIRE_RUNE=1&&LAW_RUNE=2&&ASTRAL_RUNE=3&&COSMIC_RUNE=2\t96 Magic\tDream Mentor\t9\tVarrock Teleport\t20\t4070=2\tSpellbook Swap first: 3 astral, 2 cosmic, 1 law\n",
 			TransportType.TELEPORTATION_SPELL, 0);
 		Transport swapped = transports.values().iterator().next().iterator().next();
-		RouteItemCue cue = RouteItemCue.ofStep(Set.of(swapped), true, Map.of());
+		RouteItemCue cue = RouteItemCue.ofStep(Set.of(swapped), STAVES, Map.of());
 		assertEquals("Varrock Teleport", cue.spell);
 		assertEquals("Spellbook Swap first: 3 astral, 2 cosmic, 1 law", cue.swap);
 		assertEquals(List.of("Spellbook Swap first: 3 astral, 2 cosmic, 1 law"),
 			cue.callouts(Map.of(), Set.of(), id -> false, RouteItemCueTest::name));
-		assertNull("a plain spell row has no swap", RouteItemCue.ofStep(Set.of(camulet()), true, Map.of(CAMULET, 1)).swap);
+		assertNull("a plain spell row has no swap", RouteItemCue.ofStep(Set.of(camulet()), STAVES, Map.of(CAMULET, 1)).swap);
 	}
 
 	@Test

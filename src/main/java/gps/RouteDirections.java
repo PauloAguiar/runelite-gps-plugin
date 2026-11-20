@@ -375,7 +375,7 @@ final class RouteDirections {
         for (var row : rows)
             if (CANOE.equals(row.getType()) && plugin.getPathfinderConfig().isCanoeAxeStored())
                 return List.of("Axe stored at the canoe station");
-        RouteItemCue cue = RouteItemCue.ofStep(rows, client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1, carried);
+        RouteItemCue cue = RouteItemCue.ofStep(rows, BankPickupRequirements.fairyRingStaves(client), carried);
         if (cue == null) return List.of();
         Set<Integer> worn = new HashSet<>();
         ItemContainer equipment = client.getItemContainer(InventoryID.WORN);
@@ -416,18 +416,19 @@ final class RouteDirections {
             if (FAIRY_RING.equals(route.getBankTransports().get(i).getType()))
                 bankedRing = route.getBankTransports().get(i).method();
         }
-        if (bankedRing != null && plugin.getClient().getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1) {
-            String line = bankedStaffName(plugin) + " — " + joinLabels(Set.of(bankedRing));
+        int[] staves = BankPickupRequirements.fairyRingStaves(plugin.getClient());
+        if (bankedRing != null && staves.length > 0) {
+            String line = bankedStaffName(plugin, staves) + " — " + joinLabels(Set.of(bankedRing));
             if (!details.contains(line)) details.add(line);
         }
         return details;
     }
 
     /** The banked Dramen/Lunar staff's proper name, or the generic pair when unresolvable. */
-    private static String bankedStaffName(ShortestPathPlugin plugin) {
+    private static String bankedStaffName(ShortestPathPlugin plugin, int[] staves) {
         Item[] bank = plugin.getPathfinderConfig().getBankSnapshot();
         if (bank != null) {
-            for (int staffId : ItemVariations.DRAMEN_STAFF.getIds()) {
+            for (int staffId : staves) {
                 for (var item : bank) {
                     if (item.getId() == staffId && item.getQuantity() > 0) {
                         String name = plugin.getClient().getItemDefinition(staffId).getName();

@@ -40,7 +40,7 @@ final class RouteItemCue {
     }
 
     static RouteItemCue next(RouteOption route, int reachedIndex, BiFunction<PathStep, PathStep, Set<Transport>> transportsForEdge,
-        boolean fairyRingsNeedStaff, Map<Integer, Integer> carried) {
+        int[] ringStaves, Map<Integer, Integer> carried) {
         if (route == null) return null;
         List<PathStep> path = route.getPath();
         Set<Integer> ids = new LinkedHashSet<>();
@@ -52,32 +52,31 @@ final class RouteItemCue {
             if (ahead++ > 1) break;
             // Past the next step only the staff is asked for, ahead of its ring.
             Transport spell = collect(transportsForEdge.apply(path.get(edge - 1), path.get(edge)), ahead > 1,
-                fairyRingsNeedStaff, carried, ids, wornDone);
+                ringStaves, carried, ids, wornDone);
             if (cast == null) cast = spell;
         }
         return ids.isEmpty() && cast == null ? null : new RouteItemCue(ids, cast, wornDone);
     }
 
     /** What ONE step's transports ask for, for the step list's callouts; null when nothing. */
-    static RouteItemCue ofStep(Set<Transport> transports, boolean fairyRingsNeedStaff, Map<Integer, Integer> carried) {
+    static RouteItemCue ofStep(Set<Transport> transports, int[] ringStaves, Map<Integer, Integer> carried) {
         Set<Integer> ids = new LinkedHashSet<>();
         Set<Integer> wornDone = new HashSet<>();
-        Transport cast = collect(transports, false, fairyRingsNeedStaff, carried, ids, wornDone);
+        Transport cast = collect(transports, false, ringStaves, carried, ids, wornDone);
         return ids.isEmpty() && cast == null ? null : new RouteItemCue(ids, cast, wornDone);
     }
 
     /** Adds what the transports ask for to the two sets and returns the spell row they cast, if any. */
-    private static Transport collect(Set<Transport> transports, boolean staffOnly, boolean fairyRingsNeedStaff,
+    private static Transport collect(Set<Transport> transports, boolean staffOnly, int[] ringStaves,
         Map<Integer, Integer> carried, Set<Integer> ids, Set<Integer> wornDone) {
         Transport spell = null;
         for (var transport : transports) {
             TransportType type = transport.getType();
             if (type == FAIRY_RING) {
-                if (fairyRingsNeedStaff)
-                    for (int id : ItemVariations.DRAMEN_STAFF.getIds()) {
-                        ids.add(id);
-                        wornDone.add(id);
-                    }
+                for (int id : ringStaves) {
+                    ids.add(id);
+                    wornDone.add(id);
+                }
                 continue;
             }
             if (staffOnly) continue;

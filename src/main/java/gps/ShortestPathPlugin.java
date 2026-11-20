@@ -674,8 +674,7 @@ public class ShortestPathPlugin extends Plugin {
         if (tick != itemCueTick) {
             itemCueTick = tick;
             itemCue = RouteItemCue.next(getDisplayedRoute(), displayedRouteProgress(), this::transportsForEdge,
-                client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE) != 1,
-                BankPickupRequirements.collectPlayerItems(client));
+                BankPickupRequirements.fairyRingStaves(client), BankPickupRequirements.collectPlayerItems(client));
         }
         return itemCue;
     }

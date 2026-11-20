@@ -205,8 +205,42 @@ public class PathfinderTest
 		when(config.usePohFairyRing()).thenReturn(true);
 		setupInventory(new Item(ItemID.LUNAR_MOONCLAN_LIMINAL_STAFF, 1));
 		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
+		// Lunar Diplomacy past stage 145: the Oneiromancer has a staff, so this one can be wielded.
+		when(client.getVarbitValue(VarbitID.LUNAR_QUEST_MAIN)).thenReturn(155);
 
 		// Verify ALL fairy ring transports are available, but only calculate one path
+		testAllTransportsAvailableWithSinglePath(TransportType.FAIRY_RING);
+	}
+
+	@Test
+	public void testLunarStaffOpensNoFairyRingBeforeTheOneiromancerHasOne()
+	{
+		// Field report 2026-11-19: Lunar Diplomacy at stage 145, the staff made but not yet handed to the
+		// Oneiromancer. A finished Lunar staff can't be wielded until then, yet the route used a fairy ring.
+		setupInventory(new Item(ItemID.LUNAR_MOONCLAN_LIMINAL_STAFF, 1));
+		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
+		when(client.getVarbitValue(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE)).thenReturn(0);
+		when(client.getVarbitValue(VarbitID.LUNAR_QUEST_MAIN)).thenReturn(145);
+
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+
+		for (Transport t : activeTransportList())
+		{
+			assertNotEquals("Fairy ring on an unwieldable Lunar staff: " + t, TransportType.FAIRY_RING, t.getType());
+		}
+	}
+
+	@Test
+	public void testPartMadeLunarStaffStillOpensFairyRings()
+	{
+		// The air, fire and water stages of the Lunar staff work as a Dramen staff at any point of the quest.
+		TypeOverrides.only(TransportType.FAIRY_RING);
+		when(config.usePoh()).thenReturn(true);
+		when(config.usePohFairyRing()).thenReturn(true);
+		setupInventory(new Item(ItemID.DRAMEN_STAFF_WATER, 1));
+		when(client.getVarbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST)).thenReturn(100);
+		when(client.getVarbitValue(VarbitID.LUNAR_QUEST_MAIN)).thenReturn(145);
+
 		testAllTransportsAvailableWithSinglePath(TransportType.FAIRY_RING);
 	}
 

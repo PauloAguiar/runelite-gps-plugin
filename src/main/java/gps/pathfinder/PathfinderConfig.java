@@ -34,10 +34,6 @@ import static gps.transport.TransportType.*;
         };
     public static final Set<Integer> CURRENCIES = Set.of(
         ItemID.COINS, ItemID.VILLAGE_TRADE_STICKS, ItemID.ECTOTOKEN, ItemID.WARGUILD_TOKENS);
-    private static final TransportItems DRAMEN_STAFF = new TransportItems(new int[][]{null},
-        new int[][]{ItemVariations.DRAMEN_STAFF.getIds()},
-        new int[][]{null},
-        new int[]{1});
 
     private final SplitFlagMap mapData;
     private final ThreadLocal<CollisionMap> map;
@@ -200,6 +196,8 @@ import static gps.transport.TransportType.*;
     // An axe stored at a canoe station (any station, shared by all; chat-tracked or set by hand) paddles
     // without one on the player (see CanoeAxeStorage).
     @Getter private boolean canoeAxeStored;
+    /** This pass's fairy ring staff (see BankPickupRequirements.fairyRingStaves); null when the diary waives it. */
+    private TransportItems ringStaff;
     /**
      * Extra search cost (in tiles) charged once when a path first detours through a bank to withdraw a
      * teleport item, so the pathfinder only banks when it saves more than this many tiles overall.
@@ -438,6 +436,7 @@ import static gps.transport.TransportType.*;
         copy.charterFarePercent = charterFarePercent;
         copy.balloonStoredLogs.putAll(balloonStoredLogs);
         copy.canoeAxeStored = canoeAxeStored;
+        copy.ringStaff = ringStaff;
         copy.bankPickupCost = bankPickupCost;
         copy.bank = bank;
         copy.bankSnapshot = bankSnapshot;
@@ -838,7 +837,9 @@ import static gps.transport.TransportType.*;
         itemSnapshots.clear();
         refreshPassActive = true;
 
-        // Fairy ring staff/diary requirements are enforced later in hasRequiredItems().
+        // Fairy ring staff/diary requirements are enforced later in hasRequiredItems() and classifyAvailability().
+        int[] staves = BankPickupRequirements.fairyRingStaves(client);
+        ringStaff = staves.length == 0 ? null : new TransportItems(new int[][]{null}, new int[][]{staves}, new int[][]{null}, new int[]{1});
         transportTypeConfig.disableUnless(FAIRY_RING, varbitValue(VarbitID.FAIRY2_QUEENCURE_QUEST) > 39);
         transportTypeConfig.disableUnless(GNOME_GLIDER, QuestState.FINISHED.equals(getQuestState(Quest.THE_GRAND_TREE)));
         transportTypeConfig.disableUnless(MAGIC_MUSHTREE, QuestState.FINISHED.equals(getQuestState(Quest.BONE_VOYAGE)));
@@ -1060,8 +1061,7 @@ import static gps.transport.TransportType.*;
 
         // Fairy rings additionally need a Dramen/Lunar staff unless the Lumbridge Elite diary is complete
         // (mirrors hasRequiredItems' special case).
-        if (FAIRY_RING.equals(type) && varbitValues.getOrDefault(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE, 0) != 1)
-            return classifyItems(DRAMEN_STAFF, 100);
+        if (FAIRY_RING.equals(type) && ringStaff != null) return classifyItems(ringStaff, 100);
         // Balloon flights payable from the log storage are available without carrying logs; a canoe
         // with an axe stored at the stations likewise.
         if (HOT_AIR_BALLOON.equals(type) && balloonStorageCovers(transport.getItemRequirements()))
@@ -1644,13 +1644,8 @@ import static gps.transport.TransportType.*;
         }
 
         // Fairy rings require Dramen/Lunar staff unless Lumbridge Elite diary is complete
-        if (FAIRY_RING.equals(transport.getType())) {
-            int lumbridgeDiaryComplete = varbitValues.getOrDefault(VarbitID.LUMBRIDGE_DIARY_ELITE_COMPLETE, 0);
-            if (lumbridgeDiaryComplete != 1) {
-                if (!hasRequiredItems(DRAMEN_STAFF, checkInventory, checkEquipment, checkBank, checkRunePouch))
-                    return false;
-            }
-        }
+        if (FAIRY_RING.equals(transport.getType()) && ringStaff != null
+            && !hasRequiredItems(ringStaff, checkInventory, checkEquipment, checkBank, checkRunePouch)) return false;
 
         return hasRequiredItems(transport.getItemRequirements(),
             checkInventory, checkEquipment, checkBank, checkRunePouch, false, farePercent(transport));
