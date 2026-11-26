@@ -4171,6 +4171,16 @@
 2706 10147 0	2707 10147 0	Search Picture wall 23156			Olaf's Quest			2			~duration
 2725 10168 0	2726 10168 0	Open Gate 23216		11039=1|11040=1|11041=1|11042=1|11043=1				1	
 2726 10168 0	2725 10168 0	Open Gate 23216						1	
+# The way in and out (field report 2026-11-25: a target among the brine rats routed into the Keldagrim tunnel next
+# door). "Players can enter the dungeon by digging with a spade south of the windswept tree" and "The south-western
+# part of the cavern contains the exit back to the surface world" (OSRS Wiki, Brine Rat Cavern, read 2026-11-25). Dig
+# spot 2748 3732 0: the wiki map's pin and Quest Helper's "Dig next to the Windswept Tree.", its dig step at Olaf's
+# Quest stage 60 (varbit 3534). Exit: Cave 23157/23158 (Exit) at 2689 10124-10125 0 in the game cache, stood on from
+# the east. Landings read off the wiki's maps, not captured: the cavern map's "Entrance from windswept tree" (its map
+# drawn at about 8 px a tile, anchored on the picture wall) and the surface map's "Exit" pin 2730 3734 0.
+2748 3732 0	2697 10118 0			SPADE=1		3534>59		3	Dig with a spade		~geometry ~duration
+2690 10124 0	2730 3734 0	Exit Cave 23158						2			~geometry ~duration
+2690 10125 0	2730 3734 0	Exit Cave 23157						2			~geometry ~duration
 2666 3694 0	2666 3694 1	Climb-up Ladder 4187						2	
 2666 3694 1	2666 3694 0	Climb-down Ladder 4189						2	
 									

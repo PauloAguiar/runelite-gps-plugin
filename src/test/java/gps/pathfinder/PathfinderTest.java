@@ -245,6 +245,38 @@ public class PathfinderTest
 	}
 
 	@Test
+	public void testBrineRatCavernInWithASpadeAndOutThroughItsCave()
+	{
+		// Field report 2026-11-25: a target among the brine rats routed "as close as possible", into the
+		// Keldagrim tunnel next door, because GPS had no way into the cavern. One digs in with a spade south of
+		// the windswept tree and leaves by the cave in its south-west corner.
+		int digSpot = WorldPointUtil.packWorldPoint(2748, 3732, 0);
+		int brineRats = WorldPointUtil.packWorldPoint(2705, 10133, 0);
+		setupInventory(new Item(ItemID.SPADE, 1));
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE, Map.of(VarbitID.OLAF_QUEST_VAR, 80));
+
+		assertEquals("dug in to the brine rats", brineRats, lastTile(runPathfinder(digSpot, brineRats)));
+		assertEquals("out through the cave", digSpot, lastTile(runPathfinder(brineRats, digSpot)));
+	}
+
+	@Test
+	public void testBrineRatCavernNeedsTheSpade()
+	{
+		int digSpot = WorldPointUtil.packWorldPoint(2748, 3732, 0);
+		int brineRats = WorldPointUtil.packWorldPoint(2705, 10133, 0);
+		setupInventory();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE, Map.of(VarbitID.OLAF_QUEST_VAR, 80));
+
+		assertNotEquals("no spade, no way in", brineRats, lastTile(runPathfinder(digSpot, brineRats)));
+	}
+
+	private static int lastTile(Pathfinder pathfinder)
+	{
+		List<PathStep> path = pathfinder.getPath();
+		return path.get(path.size() - 1).getPackedPosition();
+	}
+
+	@Test
 	public void testFairyRingsNotUsedWithoutDramenStaff()
 	{
 		setupInventory();
