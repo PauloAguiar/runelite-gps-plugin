@@ -2179,9 +2179,11 @@
 3629 9680 0	3629 9681 0	Open Door 17911							
 3630 9681 0	3630 9680 0	Open Door 17912							
 3630 9680 0	3630 9681 0	Open Door 17912							
-# Ivandis's tomb (In Aid of the Myreque): the hidden entrance in the Hollows tunnel's eastern alcove (the 'Cave' wall at 3512,9811) and the exit 'Cave entrance' at 3492,9861; the inner pair 3484,9832 / 3491,9877 likewise. The 93 Agility Blood Altar shortcut is a different object (43759 at 3500,9803), not in the data yet.
+# Ivandis's tomb (In Aid of the Myreque): the 'Cave' wall 38016 at 3512,9811, at the laboratories' north end, leads into
+# the tomb, one way: from inside, the tomb's south 'Cave entrance' 12771 at 3492,9861 answers that the cave looks too small
+# to fit (field reports 2026-10-11 and 2026-11-25, In Aid of the Myreque complete; the OSRS Wiki's Meiyerditch Laboratories
+# page lists no way out through the tomb). The tomb's own pair, 12770 at 3484,9832 / 12771 at 3491,9877, works both ways. The 93 Agility Blood Altar shortcut is a different object (43759 at 3500,9803), not in the data yet.
 3513 9811 0	3492 9862 0	Enter Cave 38016			In Aid of the Myreque
-3492 9862 0	3513 9811 0	Enter Cave entrance 12771			In Aid of the Myreque
 3491 9876 0	3483 9832 0	Enter Cave entrance 12771			In Aid of the Myreque
 3483 9832 0	3491 9876 0	Enter Cave entrance 12770			In Aid of the Myreque
 3626 3293 0	3626 3291 1	Climb-up Ladder 17974							

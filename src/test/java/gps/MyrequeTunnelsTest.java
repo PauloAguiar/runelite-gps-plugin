@@ -19,26 +19,32 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * The Myreque tunnels under Mort Myre: the hidden "Cave" wall at 3512,9811 and the "Cave entrance" at
- * 3492,9861 are In Aid of the Myreque's way into and out of Ivandis's tomb (wiki; cache ids 38016
- * and 12771), and the inner pair at 3491,9876 and 3483,9832 the same. All four rows had lost that
- * gate. Upstream pins 93 Agility and 78 Mining on the first pair, but that is the Blood Altar
- * shortcut, object 43759 at 3500,9803, a different cave. A player with the quest done was still
- * refused at 3492,9861 ("too small to fit", capture gps-capture-20261011-194735): what gates that
- * is not known yet.
+ * The Myreque tunnels under Mort Myre: the hidden "Cave" wall 38016 at 3512,9811, at the Meiyerditch
+ * Laboratories' north end, leads into Ivandis's tomb, and the inner pair at 3491,9876 and 3483,9832
+ * (12771 / 12770) joins the tomb to the Hollows; all need In Aid of the Myreque (wiki; cache ids).
+ * Upstream pins 93 Agility and 78 Mining on the first, but that is the Blood Altar shortcut, object
+ * 43759 at 3500,9803, a different cave. The way back is not there: from inside the tomb its south
+ * "Cave entrance" (12771 at 3492,9861) answers that the cave looks too small to fit, quest done
+ * (captures gps-capture-20261011-194735 and gps-capture-20261125-224649).
  */
 public class MyrequeTunnelsTest
 {
-	private static final int HOLLOWS_END = WorldPointUtil.packWorldPoint(3492, 9862, 0);
-	private static final int FAR_END = WorldPointUtil.packWorldPoint(3513, 9811, 0);
+	private static final int TOMB = WorldPointUtil.packWorldPoint(3492, 9862, 0);
+	private static final int LABORATORIES = WorldPointUtil.packWorldPoint(3513, 9811, 0);
 	private static final int MYREQUE_A = WorldPointUtil.packWorldPoint(3491, 9876, 0);
 	private static final int MYREQUE_B = WorldPointUtil.packWorldPoint(3483, 9832, 0);
 
 	@Test
-	public void theTombsHiddenEntranceAndExitNeedInAidOfTheMyreque()
+	public void theTombsHiddenEntranceNeedsInAidOfTheMyreque()
 	{
-		assertTrue("quest done: one step through", jumps(HOLLOWS_END, FAR_END, 1, QuestState.FINISHED));
-		assertFalse("quest not done: no way in", jumps(HOLLOWS_END, FAR_END, 99, QuestState.NOT_STARTED));
+		assertTrue("quest done: one step through", jumps(LABORATORIES, TOMB, 1, QuestState.FINISHED));
+		assertFalse("quest not done: no way in", jumps(LABORATORIES, TOMB, 99, QuestState.NOT_STARTED));
+	}
+
+	@Test
+	public void theTombsSouthCaveIsNoWayOut()
+	{
+		assertFalse("too small to fit", jumps(TOMB, LABORATORIES, 99, QuestState.FINISHED));
 	}
 
 	@Test
