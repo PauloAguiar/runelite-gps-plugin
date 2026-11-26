@@ -8463,3 +8463,28 @@
 # Kraken Cove: OSRS Wiki, Kraken Cove; the way out is Cave Exit 30178 (Leave) in the game cache, landing at the entrance
 2278 3610 0	2276 9988 0	Enter Cave Entrance 30177						2			~geometry ~duration
 2276 9988 0	2278 3610 0	Leave Cave Exit 30178						2			~geometry ~duration
+# Dungeon entrances GPS had no way into, round 2 (2026-11-25): places the Slayer Best-in-Bank plugin's pins sit in.
+# Objects at their tiles in the game cache, stand and landing tiles checked walkable in our collision map.
+# Wilderness God Wars Dungeon (level 28 Wilderness): OSRS Wiki, Wilderness God Wars Dungeon, Boulder and Jutting wall
+# (Wilderness God Wars Dungeon): the cave leads to an entry cavern (the cache's floor 3); "the north-west one will lead
+# to a large boulder which can be moved with 60 Strength, or the south-east which passes through a jutting wall which
+# requires 60 Agility ... A small crevice is behind the obstacle", the Strength path to the Armadyl camp, the Agility
+# path to the Bandos camp. Cave 26766 and the way out, Crevice 26767 at 3065 10160, from the game's world-map link
+# (3017 3739 0 <-> 3066 10159 3). The boulder has no scenery object (the wiki's id 6621); its tiles are the cave floor's
+# gap at 3053-3054 10165. Crevices 26767 at 3049 10165 and 3066 10142 (floor 3) pair with Crevices 26769 at 3035 10158
+# and 3062 10131 (floor 0) by camp; each stand tile is the open side of its wall. Crevice landings await a capture.
+3017 3740 0	3066 10159 3	Enter Cave 26766						2			~duration
+3065 10159 3	3017 3740 0	Use Crevice 26767						2			~duration
+3055 10165 3	3052 10165 3	Move Boulder	60 Strength					2			~duration
+3052 10165 3	3055 10165 3	Move Boulder	60 Strength					2			~duration
+3066 10149 3	3066 10147 3	Pass Jutting wall 26768	60 Agility					2			~duration
+3066 10147 3	3066 10149 3	Pass Jutting wall 26768	60 Agility					2			~duration
+3050 10165 3	3034 10158 0	Use Crevice 26767						2			~geometry ~duration
+3034 10158 0	3050 10165 3	Use Crevice 26769						2			~geometry ~duration
+3066 10143 3	3062 10130 0	Use Crevice 26767						2			~geometry ~duration
+3062 10130 0	3066 10143 3	Use Crevice 26769						2			~geometry ~duration
+# Iorwerth Dungeon (Prifddinas): OSRS Wiki, Iorwerth Dungeon: "Players have access to the dungeon after the completion
+# of Song of the Elves quest". Cave 36690 and the way out, Steps 36691, from the game's world-map link (3225 6044 0 <->
+# 3225 12446 0); the link's dungeon end is the steps' own tile, so the landing is the open tile south of them.
+3225 6046 0	3225 12445 0	Enter Cave 36690			Song of the Elves			2			~geometry ~duration
+3225 12445 0	3225 6046 0	Exit Steps 36691			Song of the Elves			2			~geometry ~duration

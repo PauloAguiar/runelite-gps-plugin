@@ -270,6 +270,37 @@ public class PathfinderTest
 		assertNotEquals("no spade, no way in", brineRats, lastTile(runPathfinder(digSpot, brineRats)));
 	}
 
+	@Test
+	public void testWildernessGodWarsDungeonPastTheBoulderOrTheJuttingWall()
+	{
+		// Slayer Best-in-Bank pins (2026-11-25): GPS had no way into the Wilderness God Wars Dungeon. Its cave leads
+		// to an entry cavern; a boulder (60 Strength) or a jutting wall (60 Agility) leads on to a crevice into
+		// the main dungeon.
+		int cave = WorldPointUtil.packWorldPoint(3017, 3740, 0);
+		int spiritualCreatures = WorldPointUtil.packWorldPoint(3040, 10136, 0);
+		setupInventory();
+		setupConfig(QuestState.FINISHED, 60, TeleportationItem.NONE);
+		assertEquals("in through either obstacle", spiritualCreatures, lastTile(runPathfinder(cave, spiritualCreatures)));
+		assertEquals("and back out", cave, lastTile(runPathfinder(spiritualCreatures, cave)));
+
+		setupConfig(QuestState.FINISHED, 59, TeleportationItem.NONE);
+		assertNotEquals("neither obstacle below 60", spiritualCreatures, lastTile(runPathfinder(cave, spiritualCreatures)));
+	}
+
+	@Test
+	public void testIorwerthDungeonFromPrifddinas()
+	{
+		// Slayer Best-in-Bank pins (2026-11-25): GPS had no way into the Iorwerth Dungeon, under Prifddinas.
+		int cave = WorldPointUtil.packWorldPoint(3225, 6046, 0);
+		int darkBeasts = WorldPointUtil.packWorldPoint(3161, 12422, 0);
+		int kurask = WorldPointUtil.packWorldPoint(3254, 12382, 0);
+		setupInventory();
+		setupConfig(QuestState.FINISHED, 99, TeleportationItem.NONE);
+		assertEquals("dark beasts", darkBeasts, lastTile(runPathfinder(cave, darkBeasts)));
+		assertEquals("kurask", kurask, lastTile(runPathfinder(cave, kurask)));
+		assertEquals("and back out", cave, lastTile(runPathfinder(kurask, cave)));
+	}
+
 	private static int lastTile(Pathfinder pathfinder)
 	{
 		List<PathStep> path = pathfinder.getPath();

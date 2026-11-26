@@ -701,3 +701,9 @@
 3243 10145 0	3239 10145 0	Jump-to Pillar 31561	89 Agility				6
 2673 9583 0	2670 9583 2	Climb Vine 26880	87 Agility				4
 2670 9583 2	2673 9583 0	Climb Vine 26882	87 Agility				4
+# Iorwerth Dungeon tight gaps (OSRS Wiki, Iorwerth Dungeon: 78 Agility north, 84 Agility south); Tight Gap 36692/36693
+# at 3221/3217 12441 and 36694/36695 at 3241/3233 12420 in the game cache, used from the side each one faces.
+3222 12441 0	3216 12441 0	Pass Tight Gap 36692	78 Agility				2		~geometry ~duration
+3216 12441 0	3222 12441 0	Pass Tight Gap 36693	78 Agility				2		~geometry ~duration
+3242 12420 0	3232 12420 0	Pass Tight Gap 36694	84 Agility				2		~geometry ~duration
+3232 12420 0	3242 12420 0	Pass Tight Gap 36695	84 Agility				2		~geometry ~duration
