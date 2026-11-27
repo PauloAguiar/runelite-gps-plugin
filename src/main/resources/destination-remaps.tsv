@@ -7,3 +7,39 @@
 2130	4639	2143	4656	1	2145	4647	1	Iban's Temple interior (the real one is instanced; enter by the doors)
 2615	2550	2695	2630	0	2661	2655	0	Pest Control arena: entered only through the minigame lander - targets snap to the Void Knights' Outpost
 2368	5056	2431	5119	0	2438	5168	0	TzHaar Fight Cave arena template (the fight is instanced) - targets snap to the tile north of the cave entrance in Mor Ul Rek
+# Meaty Aura Logist, the sea charting weather troll, stands on shores and islets and is talked
+# to from the boat, so a target on her tile (Quest Helper sends it) snaps to the water beside
+# her and boat routes sail there; the walkable ring around that water still serves her on foot.
+# Boxes span Quest Helper's tile and the wiki's sea chart tile where the two differ. The water
+# tile is the nearest sailable, blocked tile, the most open one where several tie. Her spot at
+# 2341,3790 is on the water already.
+1188	2822	1188	2822	0	1187	2823	0	Meaty Aura Logist on a small island north of Laguna Aurorae
+1651	3461	1651	3461	0	1652	3460	0	Meaty Aura Logist on a small island south of the Woodcutting Guild
+1714	3193	1714	3193	0	1713	3194	0	Meaty Aura Logist on a small island north of Civitas illa Fortis
+1779	2940	1779	2940	0	1780	2939	0	Meaty Aura Logist south east of Stonecutter Outpost
+1817	3965	1817	3965	0	1818	3966	0	Meaty Aura Logist on a small island north of the River of Souls
+1867	3458	1867	3458	0	1868	3457	0	Meaty Aura Logist on a small island south east of the Tithe Farm
+1881	2445	1881	2445	0	1882	2444	0	Meaty Aura Logist on a small island east of the Isle of Serpents
+1928	2791	1928	2791	0	1926	2789	0	Meaty Aura Logist on the western coast of Deepfin Point
+1958	4065	1959	4065	0	1960	4066	0	Meaty Aura Logist on Brittle Isle
+2082	2590	2082	2590	0	2083	2589	0	Meaty Aura Logist on a small island south east of Wintumber Island
+2118	3159	2118	3159	0	2116	3157	0	Meaty Aura Logist on a small island west of the Tyras Camp
+2130	3395	2130	3395	0	2131	3394	0	Meaty Aura Logist south west of Mynydd
+2140	2806	2140	2806	0	2139	2805	0	Meaty Aura Logist on the south western coast of the Isle of Souls
+2149	3068	2149	3068	0	2148	3067	0	Meaty Aura Logist on a small island west of Zul-Andra
+2280	3518	2283	3520	0	2283	3518	0	Meaty Aura Logist on a small island north west of Eagles' Peak
+2335	2921	2335	2921	0	2336	2922	0	Meaty Aura Logist on the eastern coast of the Isle of Souls
+2447	3995	2447	3995	0	2446	3994	0	Meaty Aura Logist on a small island south west of the Island of Stone
+2498	3546	2498	3546	0	2497	3547	0	Meaty Aura Logist west of the Barbarian Outpost
+2542	2541	2542	2541	0	2543	2540	0	Meaty Aura Logist on the Isle of Bones
+2594	3644	2594	3644	0	2593	3643	0	Meaty Aura Logist on a small island south west of Rellekka
+2600	3908	2600	3910	0	2600	3908	0	Meaty Aura Logist on a small island north of Etceteria
+2638	3009	2638	3009	0	2639	3010	0	Meaty Aura Logist north east of Rantz's cave
+2656	3195	2656	3195	0	2657	3196	0	Meaty Aura Logist on a small island north of Port Khazard
+2793	4020	2793	4020	0	2792	4019	0	Meaty Aura Logist on the large rock formations in Weissmere
+2864	2311	2864	2311	0	2862	2313	0	Meaty Aura Logist on a small island south of Last Light
+2903	2698	2903	2698	0	2901	2696	0	Meaty Aura Logist on a small island south of Crash Island
+2912	3213	2912	3213	0	2911	3212	0	Meaty Aura Logist on a small island west of Rimmington
+2951	3962	2951	3962	0	2950	3961	0	Meaty Aura Logist on a small island north of the Frozen Waste Plateau
+2979	2905	2979	2905	0	2980	2904	0	Meaty Aura Logist on a small island east of the Kharazi Jungle
+3321	2327	3321	2327	0	3322	2326	0	Meaty Aura Logist at the south east tip of Cape Conch

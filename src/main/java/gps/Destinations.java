@@ -263,7 +263,9 @@ import static gps.transport.TransportType.*;
      * interior), display-only floors. A player can never stand there, so a destination inside
      * one — a clue step, a Quest Helper tile, a curious map pin — would either error as
      * unreachable or route to fake geometry. Those targets snap to the zone's anchor: the
-     * nearest known-good tile, usually the entrance. Data: destination-remaps.tsv.
+     * nearest known-good tile, usually the entrance. The same rows send an NPC talked to from
+     * the boat (Meaty Aura Logist, the weather troll) to the water beside her, which the sea
+     * legs sail to. Data: destination-remaps.tsv.
      */
     static int remapTemplateOnlyZones(int packed) {
         int x = unpackWorldX(packed);
